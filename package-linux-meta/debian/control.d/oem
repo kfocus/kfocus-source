@@ -1,0 +1,44 @@
+Package: linux-headers-oem${variant:suffix}-kfocus
+Architecture: amd64
+Section: kernel
+Provides: ${variant:provides-headers}
+Replaces: linux-headers-oem${variant-suffix}
+Conflicts: linux-headers-oem${variant-suffix}
+Depends: ${misc:Depends}, linux-headers-${kernel-abi-version}-oem
+Description: OEM Linux kernel headers
+ This package will always depend on the latest OEM kernel headers
+ available.
+
+Package: linux-image-oem${variant:suffix}-kfocus
+Architecture: amd64
+Section: kernel
+Provides: ${variant:provides-image} ${dkms:zfs-modules} ${dkms:wireguard-linux-compat-modules}
+Replaces: linux-image-oem${variant:suffix}
+Conflicts: linux-image-oem${variant:suffix}
+Depends: ${misc:Depends}, linux-image-${kernel-abi-version}-oem, linux-firmware, intel-microcode [amd64], amd64-microcode [amd64]
+Recommends: thermald [amd64]
+Description: OEM Linux kernel image
+ This package will always depend on the latest OEM kernel image
+ available.
+
+Package: linux-tools-oem${variant:suffix}-kfocus
+Architecture: amd64
+Section: kernel
+Provides: linux-tools
+Replaces: linux-tools-oem${variant:suffix}
+Conflicts: linux-tools-oem${variant:suffix}
+Depends: ${misc:Depends}, linux-tools-${kernel-abi-version}-oem
+Description: OEM Linux kernel tools
+ This package will always depend on the latest OEM kernel tools
+ available.
+
+Package: linux-oem${variant:suffix}-kfocus
+Architecture: amd64
+Section: kernel
+Provides:  ${test:provides-full-oem} ${test:provides-full-preferred} ${variant:provides}
+Replaces: linux-oem${variant:suffix}
+Conflicts: linux-oem${variant:suffix}
+Depends: ${misc:Depends}, linux-image-oem${variant:suffix}-kfocus (= ${binary:Version}), linux-headers-oem${variant:suffix}-kfocus (= ${binary:Version})
+Description: Complete OEM Linux kernel and headers
+ This package will always depend on the latest complete OEM Linux kernel
+ and headers.

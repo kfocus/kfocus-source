@@ -1,0 +1,22 @@
+# Kubuntu Focus Source
+All files are governed by the licenses described in their headers. If no license is described, the file is governed by the GPL-2, or (at your option) any later version. See COPYING for further details. Pull requests are welcome!
+## Purpose
+This is the source to to create packages to for Kubuntu Focus devices. It includes tools and optimizations for
+Kubuntu 22.04 LTS.
+
+## Development
+Any and all development and changes go into a branch labeled `JJ-{YYYY}-{MM}` which is then merged into the default (currently jammy) branch.  When released to the public, tags will be made in the following format:
+
+```
+{main|rest|apt-source|cuda-libs|hw|main|nvidia|settings|tools|wallpapers}/22.04.{x}
+```
+
+Where x is the numerical release order.
+
+When built, the packages are uploaded to the Kubuntu Focus repository, a PPA at https://launchpad.net/~kfocus-team/+archive/ubuntu/release.
+
+Packages are built normally in this fashion except for the following packages:
+
+`package-linux-meta` contains the metapackage for our latest supported kernel. This is merged from the corresponding source package as published by Canonical. The version in the latest development branch is most up-to-date and is likely to be the version currently in use.
+
+`package-qwe` contains the latest qwe source. As it is a hybrid upstream and kubuntu focus project, it is treated as an upstream project. Tarballs are generated separately but packaged here using the .source file as the only source.

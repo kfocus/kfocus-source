@@ -1,0 +1,33 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    remove)
+    if [ -x "/usr/bin/deb-systemd-helper" ]; then
+        /usr/bin/deb-systemd-helper unmask \
+          systemd-backlight@backlight:nvidia_0.service >/dev/null
+    fi
+    if [ -e "/etc/default/grub.d/kfocus.cfg" ]; then
+        rm -f /etc/default/grub.d/kfocus.cfg;
+    fi
+    if [ -e "/etc/modprobe.d/kfocus.conf" ]; then
+        rm -f /etc/modprobe.d/kfocus.conf
+    fi
+    if [ -x "/usr/sbin/update-grub" ]; then
+        /usr/sbin/update-grub
+    fi
+    if [ -x "/usr/sbin/update-initramfs" ]; then
+        /usr/sbin/update-initramfs -u
+    fi
+    ;;
+    abort-upgrade|abort-remove|abort-deconfigure|upgrade)
+    ;;
+
+    *)
+        echo "prerm called with unhandled argument \`$1'" >&2
+        exit 0
+    ;;
+esac
+#DEBHELPER#
+
+exit 0

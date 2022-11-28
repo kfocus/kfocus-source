@@ -1,0 +1,40 @@
+#!/bin/bash
+# kfocus-main preinst
+#
+# set -u is used to exist on uninitialized variables
+# set -e is not used as we do our own error checking
+#
+# set -u; # uncomment to debug
+set -e;
+
+## { BEGIN Declare common.2.source symbols
+#  IMPORT 2022-03-23 EXCERPT from test/test-scripts/common.2.source
+_cm2Arg01="${1:-}";
+
+_cm2BlockMsg='';
+_cm2EchoFn    () { 1>&2 echo -e "$*";  }
+_cm2SetMsgFn  () { _cm2BlockMsg="$*"; _cm2EchoFn "== BEGIN : ${_cm2BlockMsg}"; }
+_cm2SucFn     () { _cm2EchoFn "== . END : OK   ${_cm2BlockMsg}\n\n"; }
+_cm2SucStrFn  () { _cm2EchoFn "ok  : ${*}"; }
+_cm2WarnFn    () { _cm2EchoFn "== . END : WARN Could not ${_cm2BlockMsg}\n\n"; }
+_cm2WarnStrFn () { _cm2EchoFn "warn: ${*}"; }
+## } . END Declare common.2.source symbols
+
+## BEGIN MAIN {
+case "${_cm2Arg01}" in
+  abort-upgrade)
+  ;;
+
+  install|upgrade)
+    _cm2SetMsgFn 'Add i386 architecture for Vulkan';
+    if ( dpkg --add-architecture i386 ); then
+      _cm2SucFn; else _cm2WarnFn;
+    fi
+  ;;
+esac
+
+exit 0;
+## . END MAIN }
+
+# Tag to allow some debhelper commands to inject relevant code
+#DEBHELPER#

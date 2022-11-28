@@ -1,0 +1,130 @@
+#!/bin/bash
+#
+# Copyright 2021-2022 MindShare Inc.
+# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
+#
+# Name    : kfocus-rx-version
+# Purpose : Read or write focusrx versions from state file
+# License : GPL v2
+# Spec    : 744
+#
+set -u;
+
+## BEGIN _printHelpFn {
+_printHelpFn () {
+  1>&2 cat <<_EOH
+
+Usage: ${_baseName} [-h|-r|-s <version_string>]
+   -h: Show this help message.
+   -r: Read and print to STDOUT the version string.
+   -s <version_string>: Save version string to state file.
+   -S <version_string>: Save version string to state file
+      even if version is below current sysvers.
+_EOH
+}
+## END _printHelpFn }
+
+## BEGIN _setVersStrFn {
+_setVersStrFn () {
+  declare _tgt_vers_str _do_force _skip_msg _scrub_vers_str;
+
+  _tgt_vers_str="${1:-}";
+  _do_force="${2:-n}";
+
+  ## Begin Short-circuit block {
+  _skip_msg='';
+  while true; do
+
+    # Get scub version for use below
+    _scrub_vers_str="$(
+      sed -E 's/^[^0-9]*//g' <<< "${_tgt_vers_str}" |sed -E 's/[^0-9]*$//g'
+    )";
+
+    # Do not update if version is not the correct format
+    if ! grep -Pq '(\d+\.){2}\d+-\d+$' <<< "${_scrub_vers_str}" ; then
+      _skip_msg="Target semver |${_tgt_vers_str}| is not like 1.2.3-4";
+      break;
+    fi
+
+    # Do not update if the run is not forced and new vers < existing
+    if [ "${_do_force}" != 'y' ]; then
+      if ! [[ "${_tgt_vers_str}" > "${_sysVersStr}" ]]; then
+        _skip_msg="Target semver |${_tgt_vers_str}| is not "
+        _skip_msg+="greater than |${_sysVersStr}|";
+        break;
+      fi
+    fi
+
+    # Do not update if directory cannot be created
+    if ! mkdir -p "${_sysVersDir}"; then
+      _skip_msg="Could not create directory |${_sysVersDir}|";
+    fi
+
+    # Do not update if we cannot write the file
+    if ! echo "${_scrub_vers_str}" > "${_sysVersFile}"; then
+      _skip_msg="Could not write file |${_sysVersFile}|";
+      break;
+    fi
+
+    # Exit block
+    break;
+  done;
+  ## . End Short-circuit block }
+
+  # Echo current version to STDERR and exit
+  if [ -n "${_skip_msg}" ]; then
+    1>&2 echo "NOT WRITTEN: ${_skip_msg}";
+    echo "${_sysVersStr}";
+    exit 1;
+  else
+    echo "${_scrub_vers_str}";
+  fi
+}
+## . END _setVersStrFn }
+
+## BEGIN _mainFn {
+_mainFn () {
+  declare _do_force _tgt_vers_str _opt_str;
+
+  ## Begin Process options {
+  _do_force='n';
+  _tgt_vers_str='';
+  while getopts ':fhrs:S:' _opt_str; do
+    case "${_opt_str}" in
+      h) _printHelpFn; exit;;
+      r) echo "${_sysVersStr}"; exit;;
+      s) _tgt_vers_str="${OPTARG}"; shift;;
+      S) _tgt_vers_str="${OPTARG}"; _do_force='y'; shift;;
+      *) 1>&2 echo -e "\nInvalid option: -${OPTARG} \n";
+        _printHelpFn; exit 1;;
+    esac
+  done
+
+  if [ -n "${_tgt_vers_str}" ]; then
+    _setVersStrFn "${_tgt_vers_str}" "${_do_force}";
+  fi
+  ## . End Process options }
+}
+## . END MAIN }
+
+## BEGIN Set global vars {
+_rootDir='';
+# See https://refspecs.linuxfoundation.org/FHS_3.0/fhs/ch05s08.html
+_sysVersDir="${_rootDir}/var/lib/kfocus";
+_sysVersFile="${_sysVersDir}/focusrx_version";
+if [ -f "${_sysVersFile}" ]; then
+  _sysVersStr="$(head -n1 "${_sysVersFile}")" || _sysVersStr='0.0.0-0';
+else
+  _sysVersStr="0.0.0-0";
+fi
+## . END Set global vars }
+
+## BEGIN Run main if script is not sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"        )" || exit 101;
+  _baseName="$( basename "${_binName}"  )" || exit 101;
+  _binDir="$(   dirname  "${_binName}"  )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"   )" || exit 101;
+  _mainFn "$@";
+fi
+## . END Run main if script is not sourced }

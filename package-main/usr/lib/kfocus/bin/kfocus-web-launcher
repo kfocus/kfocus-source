@@ -1,0 +1,80 @@
+#!/bin/bash
+#
+# Copyright 2020-2022 MindShare Inc.
+# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
+#
+# Name    : kfocus-web-launcher
+# Purpose : Launcher for default-web-browser
+# License : GPL v2
+# Run By  : Mime handler (kfocus-mime)
+#           and Welcome Wizard (kfocus-firstrun)
+# Spec    : 745, 931
+#
+set -u;
+
+## BEGIN _errorExitFn {
+_errorExitFn () {
+  if [ -x "${_kdiagExe}" ]; then
+    "${_kdiagExe}" --msgbox 'Default browser not found';
+  else
+    echo 1>&2 'Default browser not found';
+  fi
+  exit;
+}
+## . END _errorExitFn }
+
+## BEGIN _findAppFilePathFn {
+_findAppFilePathFn () {
+  declare _file _dir_list _dir _fq_file _solve_file;
+  _file="${1:-}";
+  if [ -z "${_file}" ]; then echo ''; fi
+
+  IFS=: read -r -a _dir_list <<< "${XDG_DATA_DIRS}";
+
+  _solve_file='';
+  for _dir in "${_dir_list[@]}"; do
+    _fq_file="${_dir}/applications/${_file}";
+    if [ -f "${_fq_file}" ]; then
+      _solve_file="${_fq_file}";
+      break;
+    fi
+  done;
+  echo "${_solve_file}";
+}
+## . END _findAppFilePathFn }
+
+_runExecArrayFn () { "$@"; }
+
+## BEGIN _mainFn {
+_mainFn () {
+  declare _fq_desktop_file _exec_line _exec_list;
+
+  _fq_desktop_file="$(_findAppFilePathFn "${_desktopFile}")";
+  if [ -z "${_fq_desktop_file}" ]; then _errorExitFn; fi
+
+  _exec_line='';
+  if [ -r "${_fq_desktop_file}" ]; then
+    _exec_line="$(
+     grep -E '^Exec=' "${_fq_desktop_file}" | head -n 1 \
+       | sed 's/^Exec=//' | sed 's/\s*%[a-Z]\s*$//'
+    )";
+  fi
+
+  if [ -z "${_exec_line}" ]; then _errorExitFn; fi
+
+  IFS=' ' read -r -a _exec_list <<< "${_exec_line}";
+  _runExecArrayFn "${_exec_list[@]}" "${@}" || _errorExitFn;
+}
+## . END _mainFn }
+
+## BEGIN Set global vars {
+_desktopFile="$(xdg-settings get default-web-browser)";
+_kdiagExe="$(command -v kdialog)";
+## . END Set global vars }
+
+## BEGIN run main if script is not sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _mainFn "$@";
+fi
+## . END Run main if script is not sourced }
+

@@ -1,0 +1,514 @@
+#!/bin/bash
+#
+# Copyright 2019-2022 MindShare Inc.
+# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
+#
+# Name   : common.2.source
+# Purpose: Common report and script strings and methods
+# License: GPL v2
+# Example: source common.2.source
+# Run By : Scripts that source this file
+# Package: kfocus-main
+#
+_cm2EchoFn    () { 1>&2 echo -e  "$*"; }
+_cm2NechoFn   () { 1>&2 echo -ne "$*"; }
+_cm2EchoIntFn () { printf '%d' "${1:-0}" 2>/dev/null; }
+_cm2SetMsgFn  () { _cm2BlockMsg="$*"; _cm2EchoFn "== BEGIN : ${_cm2BlockMsg}"; }
+_cm2ErrStrFn  () { _cm2EchoFn "ERR :${*}"; }
+_cm2ErrFn     () { _cm2EchoFn "\n== . END : FAIL ${_cm2BlockMsg}
+Script aborted and must be rerun to complete.\n"; exit 1;
+}
+_cm2SucFn     () { _cm2EchoFn "== . END : OK   ${_cm2BlockMsg}\n\n"; }
+_cm2SucStrFn  () { _cm2EchoFn "ok  : ${*}"; }
+_cm2WarnFn    () { _cm2EchoFn "== . END : WARN Could not ${_cm2BlockMsg}\n\n"; }
+_cm2WarnStrFn () { _cm2EchoFn "warn: ${*}"; }
+
+_cm2MkTmpFileFn () { mktemp -t    'kf.XXXXXX' || return 203; }
+_cm2MkTmpDirFn  () { mktemp -t -d 'kf.XXXXXX' || return 203; }
+
+## BEGIN Error Control Section {
+_cm2EchoStackFn () {
+  declare _start_idx _stack_list _idx _str _bit_list;
+  _start_idx=1; # or use "${1:-1}";
+  _stack_list=();
+
+  for (( _idx="${_start_idx}"; _idx < 10; _idx++ )); do
+    _str="$(caller "${_idx:-}")" || break;
+    read -r -d '' -a _bit_list <<<"${_str}";
+    _stack_list+=("${_bit_list[1]} ${_bit_list[0]}");
+  done
+  { printf '%s\n' "${_stack_list[@]}" | tac | tr '\n' ':'; } 1>&2;
+}
+
+_cm2TrapExitFn () {
+  declare _error_int="$?";
+  if [ "${_error_int}" != '0' ]; then
+    _cm2EchoFn "Non-zero exit ${_error_int}";
+    _cm2EchoStackFn;
+  fi
+}
+
+_cm2TrapErrorFn () {
+  declare _error_int="$?";
+  _cm2EchoFn "Error ${_error_int} on line ${1:-}";
+  _cm2EchoStackFn;
+  exit "${_error_int:-0}";
+}
+
+_cm2TrapInterruptFn () {
+  declare _error_int="$?";
+  _cm2EchoFn "User interrupt.";
+  _cm2EchoStackFn;
+  exit "${_error_int:-0}";
+}
+## . END Error Control Section }
+
+_cm2GetEscExeFn () {
+  declare _esc_exe _uid_int _prompt_str _reply_str;
+  if [ "${_cm2IsTty}" = 'n' ]; then
+    _esc_exe='pkexec'; else _esc_exe='sudo';
+  fi
+  if [ "${_esc_exe}" = 'sudo' ]; then
+    _uid_int="$(id -u)";
+    if [ "${_uid_int}" = '0' ] || groups |grep -qE '(^|\s)sudo(\s|$)'; then
+      true;
+    else
+      _prompt_str='WARN: NO ADMIN RIGHTS!
+  Please run as a user with administrative (sudo) rights
+  to perform this action.';
+      _reply_str="$(_cm2PromptUserFn "${_prompt_str}" 'Cannot run' 'p')";
+      echo "${_esc_exe}";
+      return 1;
+    fi
+  fi
+  echo "${_esc_exe}";
+}
+
+_cm2AskExitFn () {
+  declare _exit_int _exit_str _reply_str;
+  _exit_int="$(printf '%d' "${1:-1}")";
+  _exit_str="${2:-}";
+
+  if [ -z "${_exit_str}" ]; then
+    _exit_str='Press <return> to finish';
+  fi
+
+  _cm2NechoFn "${_exit_str} ";
+  read -r _reply_str;
+  _cm2EchoFn "\n\n";
+  exit "${_exit_int}";
+}
+
+_cm2InterruptFn () {
+  declare _reply_str;
+  _cm2EchoFn "\nThis script has not completed all operations.\n";
+
+  _reply_str=$(_cm2ReadPromptYnFn 'Are you sure you want to quit' 'y');
+  if [ "${_reply_str}" = 'y' ]; then exit 98; fi
+  _cm2EchoFn '... Resumed';
+  _cm2EchoFn;
+}
+
+_cm2ReadPromptYnFn () {
+  declare _prompt_str _default_str _post_str _reply_str;
+  _prompt_str="${1:-}";
+  _default_str="${2:-}";
+
+  if [ "${_default_str}" = 'n' ]; then
+    _post_str='(y/N)'; else _post_str='(Y/n)'; fi
+
+  _cm2NechoFn "${_prompt_str}? ${_post_str} : ";
+  read -r _reply_str;
+
+  if [ "${_default_str}" = 'n' ]; then
+    if grep -qi '^n' <<< "${_reply_str:=n}"; then
+      echo 'n'; else echo 'y'; fi
+  else
+    if grep -qi '^y' <<< "${_reply_str:=y}";  then
+      echo 'y'; else echo 'n'; fi
+  fi
+}
+
+_cm2RunLongCmdFn () {
+  declare _prompt_msg _cmd_list _zenity_exe _exit_int _exit_str \
+    _tmp_str_file _tmp_int_file;
+
+  _prompt_msg="${1:-Please wait.}"; shift;
+
+  read -r -d '' -a _cmd_list <<< "$@";
+  if [ "${_cm2IsTty}" = 'y' ]; then
+    sudo "${_cmd_list[@]}";
+    return;
+  fi
+
+  _zenity_exe="$(command -v 'zenity')";
+  if [ -z "${_zenity_exe}" ]; then
+    pkexec "${_cmd_list[@]}";
+    _exit_int="$?";
+  else
+    _tmp_int_file="$(_cm2MkTmpFileFn)" || return;
+    _tmp_str_file="$(_cm2MkTmpFileFn)" || return;
+    ( pkexec "${_cmd_list[@]}" > "${_tmp_str_file}";
+      echo "$?" > "${_tmp_int_file}";
+    ) | "${_zenity_exe}" --window-icon 'kfocus-bug-rx' --progress \
+        --title "${_prompt_msg}" --pulsate --no-cancel --auto-close \
+        --text "${_prompt_msg}.\nThis can take a few minutes.";
+
+    _exit_int="$(cat "${_tmp_int_file}")";
+    _exit_str="$(cat "${_tmp_str_file}")";
+    "${_cm2RmExe}" "${_tmp_int_file}" "${_tmp_str_file}" || true;
+  fi
+  echo "${_exit_str}";
+  return "${_exit_int}";
+}
+
+_cm2CalcModelCodeFn () {
+  declare _do_quiet _dmi_name _code;
+  [ -n "${1:-}" ] && _do_quiet='y';
+
+  if [ -n "${_cm2ModelCode}" ]; then
+    [ -z "${_do_quiet:-}" ] && echo "${_cm2ModelCode}";
+    return;
+  fi
+
+  if [ -f "${_cm2ModelCodeFile}" ]; then
+    _dmi_name="$(tr -d '\n' < "${_cm2ModelCodeFile}" | sed 's/ //gm' )";
+  else
+    _dmi_name='other';
+  fi
+
+  shopt -s nocasematch;
+  case "${_dmi_name}" in
+    PD5x_7xPNP_*)     _code='m2g4';;
+    PC5x_7xHP_HR_HS*) _code='m2g3';;
+    PC5*)             _code='m2g2';;
+    PCX0DX*)          _code='m2g1';;
+    P95_96_97Ex,Rx*)  _code='m1g1';;
+    NV4XMB,ME,MZ*)    _code='xeg1';;
+    NUC11PAHi*)       _code='nxg1';;
+    NUC12WSHi*)       _code='nxg2';;
+    other|*)          _code='other';;
+  esac;
+
+  _cm2ModelCode="${_code}";
+  [ -z "${_do_quiet:-}" ] && echo "${_cm2ModelCode}";
+}
+
+_cm2CalcModelLineFn () {
+  declare _do_quiet _loop_line _loop_key _found_line;
+  [ -n "${1:-}" ] && _do_quiet='y';
+
+  if [ -n "${_cm2ModelLine:-}" ]; then
+    [ -z "${_do_quiet:-}" ] && echo "${_cm2ModelLine}";
+    return;
+  fi
+
+  if [ -z "${_cm2ModelCode:-}" ]; then
+    _cm2CalcModelCodeFn 'quiet';
+  fi
+
+  for _loop_line in "${_cm2ModelTable[@]:1}"; do
+    _loop_key="$(cut -f1 -d'|' <<< "${_loop_line}")";
+    if [ "${_loop_key}" = "${_cm2ModelCode}" ]; then
+      _found_line="${_loop_line}";
+      break;
+    fi
+  done
+  _cm2ModelLine="${_found_line:-}";
+  [ -z "${_do_quiet:-}" ] && echo "${_cm2ModelLine}";
+}
+
+_cm2MakeModelHeadListFn () {
+  declare _head_line;
+  _head_line="${_cm2ModelTable[0]}";
+  IFS='|' read -r -a _cm2ModelHeadList <<< "${_head_line}";
+}
+
+_cm2EchoModelStrFn () {
+  declare _search_key _loop_key _loop_idx _match_idx _bit_list;
+  _search_key="${1:-}";
+  _match_idx='';
+
+  if [ -z "${_search_key}" ]; then echo ''; return; fi
+  if [ "${#_cm2ModelHeadList[@]}" -eq 0 ]; then
+    _cm2MakeModelHeadListFn;
+  fi
+  if [ -z "${_cm2ModelLine}" ]; then
+    _cm2CalcModelLineFn 'quiet';
+  fi
+
+  _loop_idx=0;
+  for _loop_key in "${_cm2ModelHeadList[@]}"; do
+    if [ "${_search_key}" = "${_loop_key}" ]; then
+      _match_idx="${_loop_idx}";
+      break;
+    fi
+    (( _loop_idx++ ));
+  done
+
+  if [ -z "${_match_idx}" ]; then
+    _cm2WarnStrFn "Invalid search key |${_search_key}|.";
+    _cm2WarnStrFn "  Please use a value key |${_cm2ModelHeadList[*]}|";
+    echo '';
+    return;
+  fi
+
+  IFS='|' read -r -a _bit_list <<< "${_cm2ModelLine}";
+  echo "${_bit_list[$_match_idx]:-}";
+}
+
+_cm2ChkDupRunFn () {
+  declare _basename;
+  [ "$#" -gt 0 ] && _basename="$*" || _basename="$(basename "$0")";
+  pidof -x "${_basename}" -o "${BASHPID},$$,%PPID";
+}
+
+_cm2ChkInstalledPkgFn () {
+  declare _pkg_name _status_str;
+  _pkg_name="${1:-}";
+  _status_str="$( 2>&1 \
+    dpkg-query -f '${db:Status-abbrev}' -W "${_pkg_name}"
+  )";
+  if grep -qE '^.i ' <<< "${_status_str}"; then return 0; fi
+  return 1;
+}
+
+_cm2ChkPkgFn () {
+  declare _pkg_str _pkg_count;
+  _pkg_str="${1:-}";
+  if [ -z "${_pkg_str}" ]; then return 1; fi
+  _pkg_count="$(apt-cache search -n "^${_pkg_str}\$" |wc -l)";
+
+  if [ "${_pkg_count}" = '1' ]; then
+    return 0; else return 1;
+  fi
+}
+
+_cm2EchoInstalledVersFn () {
+  declare _pkg_name _pkg_stat_line _pkg_stat_list;
+  _pkg_name="${1:-}";
+  if [ -z "${_pkg_name}" ]; then return 1; fi
+
+  _pkg_stat_line="$(
+    dpkg-query -f '${db:Status-abbrev} ${Version}' \
+      -W "${_pkg_name}" 2>/dev/null
+  )";
+
+  IFS=' ' read -r -a _pkg_stat_list <<< "${_pkg_stat_line}";
+  if [[ "${_pkg_stat_list[0]:-}" =~ ^.i ]]; then
+    echo "${_pkg_stat_list[1]:-}";
+  else
+    echo '';
+  fi
+}
+
+_cm2AssignExeVarsFn () {
+  declare _var_list _line_str _bit_list _var_name \
+    _cmd_name _cmd_exe _return_int;
+
+  _var_list=("$@");
+  _return_int=0;
+
+  ## Begin: Iterate over variable list {
+  for _line_str in "${_var_list[@]}"; do
+    # printf remove trailing newline vs <<<"${_line_str}"
+    IFS='|' read -r -d '' -a _bit_list < <(printf '%s' "${_line_str}");
+    if [ "${#_bit_list[@]}" != 2 ]; then
+      _cm2WarnStrFn "Bad input ${_line_str}";
+      _return_int=1;
+      continue;
+    fi
+    _var_name="${_bit_list[0]}";
+    _cmd_name="${_bit_list[1]}";
+    _cmd_exe="$( command -v "${_cmd_name}" )";
+
+    if [ -z "${_cmd_exe}" ] || [ ! -x "${_cmd_exe}" ]; then
+      _cm2WarnStrFn "Command ${_cmd_name} NOT EXECUTABLE: ${_cmd_exe}";
+      _return_int=1;
+      continue;
+    fi
+
+    # Assign to variable
+    printf -v "${_var_name}" '%s' "${_cmd_exe}";
+    # TODO: This may be desirable: export "${_var_name}";
+  done
+  ## . End: iterate over variable list }
+
+  return "${_return_int}";
+}
+
+_cm2StripTagsFn () {
+  declare _arg_str _do_strip_last _strip_str _line_count;
+  _arg_str="${1:-}";
+  _do_strip_last="${2:-n}";
+
+  # shellcheck disable=SC2001
+  _strip_str="$(echo "${_arg_str}" | sed 's/^\s*//g')";
+  _strip_str="$(echo "${_strip_str//$'\n'/__nl__}" |
+    sed 's/<head>.*<\/head>//g'          |
+    sed 's/<style>.*<\/style>//g'        |
+    sed 's/<[^>]\+>//g'                  |
+    sed 's|&gt;|>|g' | sed 's|&lt;|<|g'  |
+    sed 's/^\(__nl__\)\{1,\}//g'         |
+    sed 's/\(__nl__\){2,\}$/__nl__/g'    |
+    sed 's/__nl__/\n/g'
+  )";
+
+  # Remove last line of text if directed
+  if [ "${_do_strip_last}" = 'y' ]; then
+    _line_count="$(echo "${_strip_str}" | wc -l)";
+    if [ "${_line_count}" -gt 1 ]; then
+      _strip_str="$(echo "${_strip_str}" | sed '$d')";
+    fi
+  # Otherwise ...
+  else
+    # Strip trailing question mark
+    _strip_str="$(echo "${_strip_str}" | sed '$ s|\?\s*$||g')";
+  fi
+  echo "${_strip_str}";
+}
+
+_cm2PromptUserFn () {
+  declare _icon_key _opt_str _prompt_str _window_title _query_type \
+    _cmd_list _ans_str;
+
+  _icon_key='kfocus-bug-rx';
+  local OPTIND=1;
+  while getopts ':i:' _opt_str; do
+    case "${_opt_str}" in
+      i) _icon_key="${OPTARG:-$_icon_key}";;
+      *) true;;
+    esac
+  done
+  shift "$((OPTIND-1))";
+
+  _prompt_str="${1:-Continue}";
+  _window_title="${2:-FocusRx Advice}";
+  _query_type="${3:-}";
+
+  # Handle GUI presentation
+  if [ "${_cm2IsTty}" = 'n' ]; then
+    _cmd_list=(
+      "${_cm2KdiagExe}" '--icon' "${_icon_key}" \
+      '--title' "${_window_title}"
+    );
+
+    case "${_query_type}" in
+      a) _cmd_list+=('--yesno') ;;
+      w) _cmd_list+=('--warningyesno') ;;
+      *) _cmd_list+=('--msgbox') ;;
+    esac
+
+    _cmd_list+=("${_prompt_str}");
+    if "${_cmd_list[@]}"; then _ans_str='y'; else _ans_str='n'; fi
+
+  # Handle TTY presentation
+  else
+    case "${_query_type}" in
+    [aw])
+      _prompt_str="$(_cm2StripTagsFn "${_prompt_str}")";
+      _cmd_list=('_cm2ReadPromptYnFn' "${_prompt_str}" 'y');
+      ;;
+    p)
+      # bashsupport disable=BP2002
+      _prompt_str="$(_cm2StripTagsFn "${_prompt_str}" 'y')";
+      _cm2EchoFn "${_prompt_str}\n";
+      _cmd_list=('read' '-rp' 'Press <return> to continue. ');
+      ;;
+    *)
+      _prompt_str="$(_cm2StripTagsFn "${_prompt_str}")";
+      _cmd_list=('_cm2EchoFn' "${_prompt_str}");
+      ;;
+    esac
+    _ans_str="$("${_cmd_list[@]}")";
+    _cm2EchoFn "\n";
+  fi
+
+  if [[ "${_query_type}" =~ [aw] ]]; then
+    echo "${_ans_str}";
+  fi
+}
+
+# shellcheck disable=2016
+_cm2EscapeRxCharsFn () {
+  printf '%s' "${1:-}" | sed 's/[.[\*^$()+?{|]/\\&/g';
+}
+
+_cm2TestVersFn () {
+  declare _v1 _v2;
+  _v1="${1:-}"; _v2="${2:-}";
+  [ "$_v1" = "$_v2" ] && return 1;
+  [ "$_v1" = "$(echo -e "$_v1\n$_v2" |sort -rV |head -n1)" ];
+}
+
+# Regression tests only
+_cm2SetIsTtyFn () {
+  if [ "${1:-}" = 'y' ]; then
+    _cm2IsTty='y';
+  else
+    _cm2IsTty='n';
+  fi
+  export _cm2IsTty;
+}
+
+## BEGIN Execute on source {
+# Get args
+_cm2Arg01="${1:-}";
+_cm2Arg02="${2:-}";
+
+# Cached product details
+_cm2ModelCode='';
+_cm2ModelLine='';
+_cm2ModelHeadList=();
+_cm2ModelTable=(
+  'code|config_code|label|is_nv_sys|has_kb_led'
+  'm2g4|m2g4|M2 GEN 4|y|y'
+  'm2g3|default|M2 GEN 3|y|y'
+  'm2g2|default|M2 GEN 2|y|y'
+  'm2g1|default|M2 GEN 1|y|y'
+  'm1g1|default|M1|y|y'
+  'xeg1|generic|XE GEN 1|n|n'
+  'nxg1|nxg1|NX GEN 1|n|n'
+  'nxg2|nxg1|NX GEN 2|n|n'
+  'other|other|other|n|n'
+);
+
+# Determine if tty, revert to tty if no kdialog executable found
+case "${XDG_SESSION_TYPE:-}" in
+  unspecified|tty|'' ) _cm2IsTty='y';;
+  *  ) _cm2IsTty='n';;
+esac
+
+_cm2KdiagExe="$(command -v 'kdialog')";
+if [ -z "${_cm2KdiagExe}" ]; then
+  _cm2WarnStrFn 'No kdialog executable found. Fallback to terminal';
+  _cm2IsTty='y';
+fi
+
+# Set shared strings
+_cm2ModelCodeFile='/sys/devices/virtual/dmi/id/product_name';
+_cm2BlockMsg='';
+_cm2RmExe='/bin/rm';
+_cm2HtmBeginStr='<html><body>';
+_cm2HtmEndStr='</body></html>';
+# shellcheck disable=SC2089
+_cm2HtmH3Str='<h3 style="color:#f7941d">FocusRx: ';
+# shellcheck disable=SC2089
+_cm2HtmPStr='<p style="margin-right:32px">';
+
+# Export String
+# shellcheck disable=2090 # Disable complaining about html vars
+export _cm2Arg01 _cm2Arg02 _cm2BlockMsg _cm2HtmBeginStr _cm2HtmEndStr \
+  _cm2HtmH3Str _cm2HtmPStr _cm2IsTty _cm2KdiagExe _cm2ModelCode _cm2RmExe;
+
+# Export Functions
+export -f _cm2AskExitFn _cm2AssignExeVarsFn _cm2ChkDupRunFn _cm2ChkPkgFn  \
+  _cm2ChkInstalledPkgFn _cm2EchoInstalledVersFn _cm2EchoFn _cm2EchoIntFn  \
+  _cm2EchoModelStrFn _cm2EchoStackFn _cm2ErrStrFn _cm2ErrFn               \
+  _cm2EscapeRxCharsFn _cm2CalcModelCodeFn _cm2CalcModelLineFn             \
+  _cm2GetEscExeFn _cm2InterruptFn _cm2MkTmpFileFn _cm2MkTmpDirFn          \
+  _cm2NechoFn _cm2PromptUserFn  _cm2ReadPromptYnFn _cm2RunLongCmdFn       \
+  _cm2SetMsgFn _cm2StripTagsFn _cm2SucFn _cm2SucStrFn _cm2TestVersFn      \
+  _cm2TrapErrorFn _cm2TrapExitFn _cm2TrapInterruptFn _cm2WarnFn           \
+  _cm2WarnStrFn _cm2SetIsTtyFn;
+## . END Execute on source }

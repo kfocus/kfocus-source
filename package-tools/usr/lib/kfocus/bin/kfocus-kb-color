@@ -1,0 +1,206 @@
+#!/bin/bash
+#
+# Copyright 2020-2022 MindShare Inc.
+# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
+#
+# Name    : kfocus-kb-color
+# Purpose : GUI to change keyboard LED settings
+#           that persist between reboots.
+# License : GPL v2
+# Run By  : Users
+# Spec    : 615
+#
+set -u;
+
+_cssStyleStr="$(cat << '_EOH';
+  <style>
+    h3{color:#f7941d;text-align:center}
+    a{color:#1d99f3}
+    .subt{text-align:center}
+    table{width:100%}
+    td{padding:4px 16px 4px 0;}
+    .prompt{text-align:center;padding:16px 0 8px 0;font-weight:800}
+  </style>
+_EOH
+)";
+
+## BEGIN _importCommonFn {
+# Run ls-common-symbols.sh to list in-use symbols
+#
+_importCommonFn () {
+  declare _lib_file;
+  _lib_file="${_baseDir}/lib/common.2.source";
+  if [ -r "${_lib_file}" ]; then
+    # shellcheck source=../lib/common.2.source
+    source "${_lib_file}" || exit 201;
+  else
+    1>&2 echo "${_baseName}: ABORT - Cannot source lib |${_lib_file}|";
+    exit 201;
+  fi
+}
+## . END _importCommonFn }
+
+## BEGIN _mainFn {
+_mainFn () {
+  declare _prompt_msg _model_code _model_label _kbd_cfg_str _kbd_cfg_file \
+    _bright_byte_int _bright_pct_int _color_hex_str _read_bright_str \
+    _read_hex_str _loop_line _bright_default_str _pick_bright_str \
+    _solve_bright_int _pick_hex_str;
+
+  if [ ! -x "${_cm2KdiagExe}" ]; then exit 1; fi;
+
+  _model_code="$(_cm2EchoModelStrFn 'code')";
+  _model_label="$(_cm2EchoModelStrFn 'label')";
+  _prompt_msg='';
+  case "${_model_code}" in
+    m1g1) true;;
+    m2g1|m2g2|m2g3|m2g4) true;;
+    xeg1) _prompt_msg="$(cat <<EOE
+<html><head>${_cssStyleStr}</head><body>
+<h3>Keyboard Color Settings</h3>
+${_cm2HtmPStr}This <b>Kubuntu Focus ${_model_label}</b> system has <br>
+monochromatic keyboard backlighting. Press Fn-F4 to increase <br>
+or decrease the effect.<br></p>
+</body></html>
+EOE
+      )";;
+    nxg1) _prompt_msg="$(cat <<EOE
+<html><head>${_cssStyleStr}</head><body>
+<h3>Keyboard Color Settings</h3>
+${_cm2HtmPStr}This <b>Kubuntu Focus ${_model_label}</b> system does <br>
+not have an internal keyboard. Consult your keyboard <br>
+documentation to determine if you can change backlight <br>
+color or intensity.<br></p>
+</body></html>
+EOE
+      )";;
+    *) _prompt_msg="$(cat <<EOE
+<html><head>${_cssStyleStr}</head><body>
+<h3>Keyboard Color Settings</h3>
+${_cm2HtmPStr}This <b>${_model_label}</b> system does not have color <br>
+keyboard support from Kubuntu Focus. See your keyboard or <br>
+system documentation to determine if color backlighting is <br>
+available using hardware settings or an app.<br></p>
+</body></html>
+EOE
+      )";;
+  esac
+
+  if [ -n "${_prompt_msg}" ]; then
+    "${_cm2KdiagExe}" --title 'Keyboard Color Error' \
+      --icon 'kfocus-bug-kbcolor' --msgbox "${_prompt_msg}";
+    exit 0;
+  fi
+
+  ## Begin Get keyboard string {
+  _kbd_cfg_str="$(
+    for _modStr in $(lsmod | grep 'tuxedo_keyboard' | cut -c 31-32); do
+      if [ "${_modStr}" = '0' ]; then exit;
+      else echo 'exists'; exit; fi
+    done
+  )";
+
+  if [ -z "${_kbd_cfg_str}" ]; then
+    "${_cm2KdiagExe}" --title 'Keyboard Color Error' \
+    --icon 'kfocus-bug-kbcolor' \
+    --error 'Configuration string not found.';
+    exit 1
+  fi
+  ## . End Get keyboard string }
+
+  ## Begin Handle selection loop {
+  while true; do
+    _kbd_cfg_file='/etc/modprobe.d/tuxedo_keyboard.conf';
+    if [ -f "${_kbd_cfg_file}" ]; then
+      _bright_byte_int=$(cut -d' ' -f4 "${_kbd_cfg_file}" | cut -c 12-);
+      _bright_pct_int=$(((_bright_byte_int / 25) * 10));
+      _color_hex_str=$(cut -d' ' -f5 "${_kbd_cfg_file}" | cut -c 14-);
+    else
+      _bright_pct_int='50';
+      _color_hex_str='00ff00';
+    fi
+    _prompt_msg="$(cat << EOH
+<html><head>${_cssStyleStr}</head><body>
+  <h3>Select Keyboard Color</h3>
+  <p class="subt">Doc: <a href="https://kfocus.org/wf/tools#kbc"
+ >https://kfocus.org/wf/tools#kbc</a><br></p>
+  <table>
+    <tr><td width="33%"><b>Brightness</b></td>
+      <td width="66%">${_bright_pct_int}%</td></tr>
+    <tr><td><b>Color</b></td>
+      <td style="background-color:#${_color_hex_str}"></td></tr>
+    <tr><td colspan="2" class="prompt">Select values to change or click
+      OK</td></tr>
+  </table>
+</body></html>
+EOH
+  )";
+    _read_bright_str='';
+    _read_hex_str='';
+    read -ra _change_list <<< "$(
+      "${_cm2KdiagExe}" --title "Keyboard Color" --icon kfocus-bug-kbcolor \
+      --checklist "${_prompt_msg}" \
+      _read_bright_str 'Brightness'   bright \
+      _read_hex_str    'Change Color' color
+    )";
+
+    if [ "${#_change_list[@]}" -eq 0 ]; then exit 0; fi
+
+    ## Begin Handle change list
+    for _loop_line in "${_change_list[@]}"; do
+      _loop_line="${_loop_line//\"/}";
+      _bright_default_str="${_bright_pct_int}%";
+      if [ "${_loop_line}" = '_read_bright_str' ]; then
+        _pick_bright_str=$("${_cm2KdiagExe}" --icon kfocus-bug-kbcolor --title\
+         'Brightness' --combobox 'Set Brightness' 0% 20% 40% 50% 60% \
+         80% 100% --default ${_bright_default_str});
+        if [ -z "${_pick_bright_str}" ]; then
+          "${_cm2KdiagExe}" --icon kfocus-bug-kbcolor \
+          --msgbox 'Brightness is unchanged';
+          _read_bright_str="${_bright_pct_int}";
+        else
+          _solve_bright_int="${_pick_bright_str//%/}";
+          _read_bright_str=$(((_solve_bright_int / 10 ) * 25));
+        fi
+      elif [ "${_loop_line}" = '_read_hex_str' ]; then
+        _pick_hex_str="$("${_cm2KdiagExe}" --icon kfocus-bug-kbcolor \
+          --title "Choose Color" --default "#${_color_hex_str}" \
+          --getcolor | cut -c 2- | tr '[:lower:]' '[:upper:]')"
+        if [ -z "${_pick_hex_str}" ]; then
+          "${_cm2KdiagExe}" --icon kfocus-bug-kbcolor \
+            --msgbox 'Color is unchanged';
+          _read_hex_str="${_color_hex_str}";
+        else
+          _read_hex_str="${_pick_hex_str}";
+        fi
+      fi
+    done
+    ## . End Handle change list
+
+    if [ -z "${_read_bright_str}" ]; then _read_bright_str=$(((_bright_pct_int / 10) * 25)); fi
+    if [ "${_read_bright_str}" = "250" ]; then _read_bright_str="255"; fi
+    if [ -z "${_read_hex_str}"  ]; then _read_hex_str="${_color_hex_str}";   fi
+
+    pkexec "${_colorSetExe}" "${_read_bright_str}" "${_read_hex_str}";
+  done
+  ## . End Handle selection loop }
+}
+## . END MAIN
+
+## BEGIN Run main if script is not sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+  _importCommonFn;
+
+  declare _colorSetExe;
+  _assignList=( "_colorSetExe|${_binDir}/kfocus-kb-color-set" );
+  if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
+    _cm2WarnStrFn 'ABORT: Required commands not found';
+    exit 1;
+  fi
+  _mainFn "$@";
+fi
+## . END Run main if script is not sourced }

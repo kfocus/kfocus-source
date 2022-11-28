@@ -1,0 +1,136 @@
+Source:            kfocus-tools
+Section:           misc
+Priority:          optional
+Maintainer:        Kubuntu Focus Team <support@kfocus.org>
+Standards-Version: 4.6.0
+Build-Depends:     debhelper-compat (=13)
+
+Package:      kfocus-tools
+Architecture: all
+Depends:      ${misc:Depends},
+              kfocus-power-fan,
+              tuxedo-keyboard
+Recommends:   kfocus-conda,
+              kfocus-fan,
+              kfocus-kb-color,
+              kfocus-pick-gcc,
+              kfocus-power,
+              kfocus-vidsync
+Breaks:       kfocus-tools-nxg1,
+              kfocus-tools-other
+Description:  Kubuntu Focus Tools Metapackage
+ This metapackage installs the Kubuntu Focus tools.
+
+Package:      kfocus-tools-nxg1
+Architecture: all
+Depends:      ${misc:Depends}
+Recommends:   kfocus-conda,
+              kfocus-fan,
+              kfocus-kb-color,
+              kfocus-pick-gcc,
+              kfocus-power,
+              kfocus-vidsync
+Breaks:       kfocus-power-fan,
+              tuxedo-keyboard,
+              kfocus-tools-other,
+              kfocus-tools
+Description:  Kubuntu Focus Tools - NX Metapackage
+ This metapackage installs the Kubuntu Focus tools
+ for the NX desktops.
+
+Package:      kfocus-tools-other
+Architecture: all
+Depends:      ${misc:Depends}
+Recommends:   kfocus-conda,
+              kfocus-fan,
+              kfocus-kb-color,
+              kfocus-pick-gcc,
+              kfocus-power,
+              kfocus-vidsync
+Breaks:       kfocus-power-fan,
+              tuxedo-keyboard,
+              kfocus-tools-nxg1,
+              kfocus-tools
+Description:  Kubuntu Focus Tools - Other Metapackage
+ This metapackage installs the Kubuntu Focus tools
+ for other systems
+
+Package:      kfocus-kb-color
+Architecture: all
+Depends:      ${misc:Depends},
+              kfocus-common,
+              hicolor-icon-theme,
+              kdialog,
+              policykit-1
+Suggests:     tuxedo-keyboard
+Description:  Keyboard Color Chooser for Kubuntu Focus M1/M2
+ With the Kubuntu Focus M1 and M2 laptops, you can customize
+ the color of the RGB backlit keyboard with this utility. Settings
+ made using this utility persist between reboots.
+
+Package:      kfocus-conda
+Architecture: all
+Depends:      ${misc:Depends},
+              kfocus-common,
+              hicolor-icon-theme,
+              kdialog,
+Suggests:     kfocus-nvidia
+Description:  Installer for Nvidia CUDA Deep Learning and AI libraries
+ The Kubuntu Focus M1 and M2 are very powerful Deep Learning and Artificial
+ Intelligence development platforms. This script has been engineered to install
+ those libraries and tools with little to no effort.
+
+Package:      kfocus-pick-gcc
+Architecture: all
+Depends:      ${misc:Depends},
+              kfocus-common,
+              hicolor-icon-theme,
+              kdialog
+Description:  Change default GCC Version
+ Some applications require compiling with a different GCC version
+ than the system default. This utility allows you to change the
+ system default GCC version pending availability in the repository.
+
+Package:      kfocus-power
+Architecture: all
+Depends:      ${misc:Depends},
+              kfocus-common,
+              cpufrequtils,
+              hicolor-icon-theme,
+              kdialog,
+              policykit-1
+Suggests:     kfocus-fan
+Description:  Utility to change power profile temporarily
+ This utility is available to switch between three power
+ profiles: Low, Normal, and High. The Kubuntu Focus computers
+ automatically go to Low when unplugged from AC power, and
+ automatically go to Normal when plugged-in. The High profile
+ should be used for extra performance needs.
+
+Package:      kfocus-vidsync
+Architecture: all
+Depends:      ${misc:Depends},
+              kfocus-common,
+              hicolor-icon-theme,
+              kdialog
+Suggests:     kfocus-nvidia
+Description:  Utility to help with vertical sync on Nvidia hardware
+ Some external displays lose vertical sync on the Kubuntu Focus
+ M1/M2 laptops. This utility helps to prevent that by enabling
+ the composition pipeline and full composition pipeline. Enabling
+ this can cause performance issues.
+
+Package:      kfocus-fan
+Architecture: all
+Depends:      ${misc:Depends},
+              kfocus-common,
+              hicolor-icon-theme,
+              kdialog,
+              policykit-1
+Suggests:     kfocus-power,
+              kfocus-power-fan
+Description:  Kubuntu Focus fan profile controller
+ This is a small utility to switch between fan profiles
+ on a Kubuntu Focus laptop computer. At this time it has
+ two profiles: the default linear profile and the quieter
+ logarithmic fan curve profile.

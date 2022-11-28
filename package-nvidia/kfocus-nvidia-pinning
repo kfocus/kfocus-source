@@ -1,0 +1,67 @@
+# See man apt_preferences
+#
+# THIS IS A MACHINE GENERATED FILE. DO NOT EDIT.
+#   REMOVE THE OWNING PACKAGE kfocus-001-nvidia TO REMOVE THIS FILE.
+#   KFOCUS_TEST_ID=1605
+#
+# IMPORTANT! THIS MUST COME BEFORE the nvidia-* match below to work.
+#   Use NVIDIA supplied version 520.* of nvidia-settings or
+#   nvidia-modprobe from NVIDIA ONLY if these are not available from the
+#   Jammy repositry (Prioriy 1000 < 1001, below). The package cuda-drivers-520.*
+#   requires these versions.
+#
+Package: nvidia-settings nvidia-modprobe libxnvctrl0
+Pin: origin "developer.download.nvidia.com"
+Pin: version 520.*
+Pin-Priority: 1000
+
+# BLACKLIST (alway ignore) nvidia-driver packages from the NVIDIA
+#   repository (Priority -1) execpt for specific files such as
+#   nvidia-modprobe and nvidia-settings are above.
+# Alternate selector: Pin: release l=NVIDIA CUDA
+#
+Package: nvidia-* libnvidia-* xserver-xorg-*
+Pin: origin "developer.download.nvidia.com"
+Pin-Priority: -1
+
+# IMPORTANT! THIS MUST COME BEFORE the cuda* match below,
+#   and PRIORITY MUST BE >= 1001 for this to work.
+# Pin cuda-drivers to use version 520.* because we found sometimes later
+#   version to require newer packages not available in ubuntu repo. This was
+#   last updated on 2022-11-01, and 520.x is the latest cuda-drivers version
+#   on that date. The 1001 Priority causes a version to be installed even if
+#   does not come from the target release ('Focal' or 'Jammy') and forces
+#   a downgrade if required.
+# Alternate selector: Pin: release l=NVIDIA CUDA
+#
+Package: cuda-drivers cuda-drivers-520
+Pin: origin "developer.download.nvidia.com"
+Pin: version 520.*
+Pin-Priority: 1001
+
+# Prefer all cuda* 520 packages from NVIDIA over any Ubuntu packages of the
+#   same name and version from any other respository.  The 990 Priority
+#   causes a version to be installed even if does not come from the target
+#   release ('Focal').
+# Alternate selector: Pin: release l=NVIDIA CUDA
+#
+Package: cuda*
+Pin: origin "developer.download.nvidia.com"
+Pin: version 520.*
+Pin-Priority: 1000
+
+# Favor all nvidia-driver packages from the target release ('Focal' or 'Jammy').
+#   The 1000 Priority causes a new version from this origin to be installed
+#   unless there is the same version from a target release. Since this IS the
+#   target release specification, and the 1000 Priority forces a downgrade
+#   and prevents packages from proceeding beyond 520.
+#
+Package: nvidia-* libnvidia-* xserver-xorg-*
+Pin: release l=Ubuntu, v=22.04, n=jammy
+Pin: version 520.*
+Pin-Priority: 1000
+
+Package: nvidia-settings nvidia-modprobe libxnvctrl0
+Pin: release l=Ubuntu, v=22.04, n=jammy
+Pin: version 520.*
+Pin-Priority: 1001

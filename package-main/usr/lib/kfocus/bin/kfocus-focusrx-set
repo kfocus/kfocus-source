@@ -1,0 +1,219 @@
+#!/bin/bash
+#
+# Copyright 2022 MindShare Inc.
+# Written for the Kubuntu Focus by Michael Mikowski
+#
+# - Michael Mikowski
+# - Erich Eickmeyer
+#
+# Name    : kfocus-focusrx-set
+# Purpose : run-as-root options for kfocus-focusrx
+# License : GPL v2
+# Run By  : kfocus-focusrx
+# Spec    : 744
+#
+set -u;
+
+_importCommonFn() {
+  declare _lib_file;
+  _lib_file="${_baseDir}/lib/common.2.source";
+  if [ -r "${_lib_file}" ]; then
+    # shellcheck source=../lib/common.2.source
+    source "${_lib_file}" || exit 202;
+  else
+    echo 1>&2 "${_baseName}: ABORT - Cannot source lib |${_lib_file}|";
+    exit 202;
+  fi
+}
+
+_updateUpgradeFn () {
+  _cm2SetMsgFn 'Update and upgrade all existing packages';
+  if apt-get update && apt-get dist-upgrade -y; then
+    _cm2SucFn; else _cm2WarnFn; fi
+}
+
+_reconfigHwPkgFn () {
+  declare _str;
+  _cm2SetMsgFn 'Adjust for hardware';
+  if _str="$(dpkg-reconfigure kfocus-hw 2>&1)"; then
+    _cm2SucFn; else _cm2WarnStrFn "${_str}"; _cm2WarnFn;
+  fi
+  # IMPORTANT: dpkg-configure kfocus-hw runs update-initramfs, update-grub
+}
+
+_installToolsPkgFn () {
+  declare _tools_pkg;
+  _tools_pkg="${1:-}";
+  _cm2SetMsgFn "Install Tools Package ${_tools_pkg}";
+  if ! [[ "${_tools_pkg}" =~ ^kfocus-tools ]]; then
+    _cm2WarnStrFn; return 1;
+  fi
+
+  if apt-get reinstall -y "${_tools_pkg}"; then
+    _cm2SucFn; else _cm2WarnFn; return 1;
+  fi
+}
+
+_installNvidiaFn () {
+  _cm2SetMsgFn 'Install NVIDIA Packages';
+  apt-get reinstall -y kfocus-nvidia-pinning || {
+    _cm2WarnStrFn 'Could not add nvidia-pinning.'; _cm2ErrFn; }
+  apt-get update || {
+    _cm2WarnStrFn 'Could not update'; _cm2WarnFn; }
+  apt-get reinstall -y kfocus-nvidia || {
+    _cm2WarnStrFn 'Could not install kfocus-nvidia'; _cm2ErrFn; }
+  _cm2SucFn;
+}
+
+_setStateFn () {
+  _cm2SetMsgFn 'Add value to state file';
+  if "${_focusRxVersExe}" '-s' '1.3.0-0'; then
+    _cm2SucFn; else _cm2WarnFn;
+  fi
+}
+
+## BEGIN _chkBiosUpdateFn {
+# Purpose: Return true if no bios upgrade needed, false otherwise
+_chkBiosUpdateFn () {
+  declare _model_code _min_vers _dmi_exe _bios_vers;
+  _model_code="$(_cm2EchoModelStrFn 'code')"  || exit 0;
+
+  # Only support m2g4 check at this time
+  if [ "${_model_code}" != 'm2g4' ]; then
+    echo "${_model_code} BIOS update not needed";
+    exit 0;
+  fi
+
+  # Get dmidecode for bios version
+  if ! _cm2AssignExeVarsFn '_dmi_exe|dmidecode'; then
+    _cm2WarnStrFn 'ABORT: Required dmidecode not found. Run:';
+    _cm2WarnStrFn '  sudo apt install dmidecode';
+    exit 0;
+  fi
+
+  _min_vers='1.07.07MIN29';
+  _bios_vers="$( "${_dmi_exe}" -s 'bios-version' )" || exit 0;
+  if [ "${_bios_vers}" = "${_min_vers}" ] ||
+    _cm2TestVersFn "${_bios_vers}" "${_min_vers}"; then
+    echo "${_model_code} ${_bios_vers} vs. ${_min_vers}";
+    exit 0;
+  else
+    echo "${_model_code} ${_bios_vers} vs. ${_min_vers}";
+    exit 1;
+  fi
+}
+
+# Purpose: Check hw config components and return useful string to parent
+_chkHwConfigFn () {
+  declare _is_nv_system _do_force _reason_list _dmi_hw_config_code \
+    _file_hw_config_code _is_hw_reconfig _msg _tool_pkg_name;
+
+  _do_force='n';
+  if [[ "${1:-}" =~ ^[Yy] ]]; then _do_force='y'; fi
+
+  _is_hw_reconfig='n';
+  _reason_list=();
+  _dmi_hw_config_code="$(_cm2EchoModelStrFn 'config_code')";
+  _file_hw_config_code="$(cat /var/lib/kfocus/hw_config_code || echo '')";
+
+  if [ "${_file_hw_config_code}" != "${_dmi_hw_config_code}" ]; then
+    _msg='reconfig-hw;;Hardware signature does not match expected: ';
+    _msg+="${_file_hw_config_code} != ${_dmi_hw_config_code}";
+    _reason_list+=( "${_msg}" );
+    _is_hw_reconfig='y';
+  elif [ "${_do_force}" = 'y' ]; then
+    _msg='reconfig-hw;;Hardware reconfigure forced.';
+    _reason_list+=( "${_msg}" );
+    _is_hw_reconfig='y';
+  fi
+
+  _tool_pkg_name="kfocus-tools-${_dmi_hw_config_code}";
+  if ! _cm2ChkPkgFn "${_tool_pkg_name}"; then
+    _tool_pkg_name='kfocus-tools';
+  fi
+  if ! _cm2ChkInstalledPkgFn "${_tool_pkg_name}"; then
+    _msg="install-hw-tools;${_tool_pkg_name};";
+    _msg+="Package ${_tool_pkg_name} needs to be installed.";
+    _reason_list+=( "${_msg}" );
+  elif [ "${_do_force}" = 'y' ]; then
+    _msg="install-hw-tools;${_tool_pkg_name};";
+    _msg+="Package ${_tool_pkg_name} forced reinstall.";
+    _reason_list+=( "${_msg}" );
+  fi
+
+  if [ "${_is_hw_reconfig}" = 'y' ]; then
+    _is_nv_system="$(_cm2EchoModelStrFn 'is_nv_sys')";
+    if [ "${_is_nv_system}" = 'y' ]; then
+      if ! _cm2ChkInstalledPkgFn 'kfocus-nvidia'; then
+        _msg='install-nvidia;;Nvidia libraries need to be installed.';
+        _reason_list+=( "${_msg}" );
+      elif [ "${_do_force}" = 'y' ]; then
+        _msg='install-nvidia;;Nvidia library forced reinstall.';
+        _reason_list+=( "${_msg}" );
+      fi
+    fi
+  fi
+  ( IFS=$'|'; echo "${_reason_list[*]}"; )
+}
+
+_fixHwConfigFn () {
+  declare _reason_str _reason_list _loop_line _bit_list _cmd_list;
+
+  _reason_str="${1:-}";
+  if [ -z "${_reason_str}" ]; then return 0; fi
+
+  IFS='|' read -r -a _reason_list <<< "${_reason_str}";
+  _updateUpgradeFn;
+  for _loop_line in "${_reason_list[@]}"; do
+    IFS=';' read -r -a _bit_list <<< "${_loop_line}";
+    case "${_bit_list[0]}" in
+      'reconfig-hw'      ) _cmd_list=( '_reconfigHwPkgFn' );;
+      'install-hw-tools' ) _cmd_list=( '_installToolsPkgFn' );
+         _cmd_list+=( "${_bit_list[1]:-}" );;
+      'install-nvidia'   ) _cmd_list=( '_installNvidiaFn' );;
+      *) _cm2EchoFn "Option ${_bit_list[0]} is not supported";
+        continue;
+        ;;
+    esac
+    if ! "${_cmd_list[@]}"; then
+      _cm2WarnStrFn "Trouble with step |${_loop_line}| |${_cmd_list[*]}|";
+    fi
+  done
+  _setStateFn; # set state in /var/lib/kfocus/focusrx_version
+}
+
+_mainFn () {
+  declare _arg_str;
+  _arg_str="${1:-}";
+  case "${_arg_str}" in
+    'chk-bios'        ) _chkBiosUpdateFn;;
+    'chk-hw-config'   ) _chkHwConfigFn;;
+    'force-hw-config' ) _chkHwConfigFn 'y';;
+    'fix-hw-config'   ) _fixHwConfigFn "${2:-}";;
+    *) _cm2WarnStrFn "Unrecognized directive |${_arg_str}|";;
+  esac
+}
+
+## BEGIN Declare global variables {
+declare _focusRxVersExe;
+## . END Declare global variables }
+
+## BEGIN Run main if script is not sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"        )" || exit 101;
+  _binDir="$(   dirname  "${_binName}"  )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"   )" || exit 101;
+  _baseName="$( basename "${_binName}"  )" || exit 101;
+  _importCommonFn;
+
+  _assignList=(
+    "_focusRxVersExe|${_binDir}/kfocus-rx-version"
+  );
+  if ! _cm2AssignExeVarsFn  "${_assignList[@]}"; then
+    _cm2ErrStrFn 'Could not assign variable';
+    exit 1;
+  fi
+
+  _mainFn "$@";
+fi
+## . END Run main if script is not sourced }

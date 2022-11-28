@@ -1,0 +1,284 @@
+#!/bin/bash
+#
+# Copyright 2019-2022 MindShare Inc.
+# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
+#
+# Name    : kfocus-power-set
+# Purpose : Run-as-root utility to set power profile
+# License : GPL v2
+# Run By  : kfocus-power, kfocus-pstate
+# Spec    : 1756, 2558
+# Test    : 00700
+#
+set -u;
+
+_optionTable=(
+  # _label;_power_idx;up_ratio;down_ratio;gov_key;noturbo_int;kbdled_int
+  'High;1;X;performance;0;1'
+  'Normal;1;X;powersave;0;1'
+  'Studio;0;X;performance;1;1'
+  'Medium;.5;X;powersave;0;1'
+  'Low;X;1;powersave;1;0'
+  'Frugal;X;.666666666;powersave;1;0'
+  'Minimal;X;.5;powersave;1;0'
+);
+
+_printIntFn () { printf '%.0f' "$*"; }
+_stderrFn () { 1>&2 echo -e "$*"; }
+_printMaxIntFn () {
+  declare _hw_base_int _hw_min_int _hw_max_int _up_ratio \
+    _down_ratio _calc_str;
+
+  _hw_base_int="$1";
+  _hw_min_int="$2";
+  _hw_max_int="$3";
+  _up_ratio="$4";
+  _down_ratio="$5";
+
+  _calc_str='';
+  if [ "${_up_ratio}" != 'X' ]; then
+    _calc_str="${_hw_base_int}+((${_hw_max_int}-${_hw_base_int})*${_up_ratio})";
+  elif [ "${_down_ratio}" != 'X' ]; then
+    _calc_str="${_hw_min_int}+((${_hw_base_int}-${_hw_min_int})*${_down_ratio})";
+  fi
+
+  if [ -n "${_calc_str}" ]; then
+    _printIntFn "$(bc <<< "${_calc_str}")";
+  else
+    _stderrFn 'WARN: No up or down ratio given.';
+    _printIntFn "${_hw_base_int}";
+  fi
+}
+
+_setNoTurboFn () {
+  if [ -f "${_noTurboFile}" ]; then
+    echo "$*" > "${_noTurboFile}";
+  else
+    _stderrFn "Warn: Missing |${_noTurboFile}|";
+  fi
+}
+
+_readNoTurboFn () {
+  if [ -f "${_noTurboFile}" ]; then
+    _noturbo_int="$(cat "${_noTurboFile}")";
+    if [[ "${_noturbo_int}" =~ ^[01]$ ]]; then
+      echo "${_noturbo_int}";
+    else
+      echo '';
+    fi
+  else
+    _stderrFn "Warn: Missing |${_noTurboFile}|";
+    echo '';
+  fi
+}
+
+_setKeyboardFn () {
+  if [ -f "${_keyboardFile}" ]; then
+    echo "$*" > "${_keyboardFile}";
+  else
+    _stderrFn "Warn: Missing |${_keyboardFile}|";
+  fi
+}
+
+_scanFn () {
+  declare _match_line _mode_key _bit_list _label _up_ratio \
+    _down_ratio _gov_key _noturbo_int _kbdled_int _proc_count \
+    _proc_idx _set_max_int _hw_freq_list _hw_min_int _hw_max_int \
+    _hw_base_file _hw_base_int _param_list _solve_line _prior_max_int;
+
+  _match_line="${1:-}";
+  _mode_key="${2:-}";
+
+  IFS=';' read -r -a _bit_list <<< "${_match_line}";
+
+  if [ "${#_bit_list[@]}" -ne 6 ]; then
+    _stderrFn "  ABORT: Bad element count |${#_bit_list[@]}|";
+    return 1;
+  fi
+
+  # _label;up_ratio;down_ratio;gov_key;noturbo_int;kbdled_int
+  _label="${_bit_list[0]}";
+  _up_ratio="${_bit_list[1]}";
+  _down_ratio="${_bit_list[2]}";
+  _gov_key="${_bit_list[3]}";
+  _noturbo_int="${_bit_list[4]}";
+  _kbdled_int="${_bit_list[5]}";
+
+  case "${_mode_key}" in
+    print|read) true;;
+    set)
+      _setNoTurboFn "${_noturbo_int}";
+      _setKeyboardFn "${_kbdled_int}";
+      ;;
+    *) _stderrFn "Unsupported mode |${_mode_key}|. Abort.";
+      return 1;
+      ;;
+  esac;
+
+  _proc_count="$("${_nprocExe}")";
+  _prior_max_int=0;
+  _solve_line='';
+  for (( _proc_idx=0; _proc_idx < "${_proc_count}"; _proc_idx++ )); do
+    _set_max_int='';
+    read -r -d '' -a _hw_freq_list \
+      < <("${_cpufreqInfoExe}" -c "${_proc_idx}" -l);
+    if [ "${#_hw_freq_list[@]}" = 0 ]; then continue; fi
+    _hw_min_int="$( _printIntFn "${_hw_freq_list[0]}")";
+    _hw_max_int="$( _printIntFn "${_hw_freq_list[1]}")";
+
+    _hw_base_file="${_rootDir}/sys/devices/system/cpu/cpu";
+    _hw_base_file+="${_proc_idx}/cpufreq/base_frequency";
+    _hw_base_int="$(_printIntFn "$(cat "${_hw_base_file}")")";
+
+    _param_list=(
+      "${_hw_base_int}"
+      "${_hw_min_int}"
+      "${_hw_max_int}"
+      "${_up_ratio}"
+      "${_down_ratio}"
+    );
+    _set_max_int="$(_printMaxIntFn "${_param_list[@]}")";
+
+    if [ "${_mode_key}" = 'print' ] || [ "${_mode_key}" = 'read' ]; then
+      if [ "${_set_max_int}" -gt "${_prior_max_int}" ]; then
+        _solve_line="${_label};${_set_max_int};${_gov_key};";
+        _solve_line+="${_noturbo_int};${_kbdled_int};";
+        _prior_max_int="${_set_max_int}"
+      fi
+    else
+      "${_cpufreqSetExe}" -c "${_proc_idx}" -g "${_gov_key}";
+      if [ -n "${_set_max_int}" ]; then
+        if [ "${_set_max_int}" -lt "${_hw_min_int}" ]; then
+          _stderrFn "|${_set_max_int}| below minimum |${_hw_min_int}|";
+          _stderrFn 'Value discarded';
+        elif [ "${_set_max_int}" -gt "${_hw_max_int}" ]; then
+          _stderrFn "|${_set_max_int}| above maximum |${_hw_max_int}|";
+          _stderrFn 'Value discarded';
+        else
+          "${_cpufreqSetExe}" -c "${_proc_idx}" -u "${_set_max_int}";
+        fi
+      fi
+    fi
+  done
+
+  if [ "${_mode_key}" = 'print' ] || [ "${_mode_key}" = 'read' ]; then
+    echo "${_solve_line}";
+  fi
+}
+
+_setModeFn () {
+  declare _arg_str _mode_list _match_line _key;
+
+  _arg_str="${1:-}";
+  _match_line='';
+  _mode_list=();
+
+  for _opt_line in "${_optionTable[@]}"; do
+    _key="$(echo "${_opt_line}" |cut -f1 -d';')";
+    if [ "${_arg_str}" = "${_key}" ]; then
+      _match_line="${_opt_line}";
+      break;
+    fi
+    _mode_list+=("${_key}");
+  done
+
+  if [ -z "${_match_line}" ]; then
+    _stderrFn "Mode |${_arg_str}| not supported. Abort.";
+    ( IFS='|'; _stderrFn "  ${_mode_list[*]}" );
+    return 1;
+  fi
+
+  _scanFn "${_match_line}" 'set';
+}
+
+_printOptionsFn () {
+  declare _opt_line;
+  for _opt_line in "${_optionTable[@]}"; do
+    _scanFn "${_opt_line}" 'print';
+  done
+}
+## . END _printOptionsFn }
+
+## BEGIN _readModeFn {
+# Returned from _scanFn <line> 'read'
+#   _label;_set_max_int;_gov_key;noturbo_int;kbdled_int
+# Fields to match from policy
+#          _set_max_int;_gov_key;noturbo_int
+#
+_readModeFn () {
+  declare _noturbo_int _scan_int _proc_count _proc_idx _policy_str \
+  _policy_list _search_line _opt_line _read_line _bit_list _max_ghz_num;
+
+  _noturbo_int="$(_readNoTurboFn)";
+  _scan_int=0;
+  _proc_count="$("${_nprocExe}")";
+
+  for (( _proc_idx=0; _proc_idx < "${_proc_count}"; _proc_idx++ )); do
+    _policy_str="$("${_cpufreqInfoExe}" -c"${_proc_idx}" -p)";
+    if [ -z "${_policy_str}" ]; then continue; fi
+    read -r -d '' -a _policy_list <<<"${_policy_str}";
+    if [ "${_policy_list[1]}" -gt "${_scan_int}" ]; then
+      # idx 1 is max_int, 2 is gov_str
+      _scan_int="${_policy_list[1]}";
+      _search_line="${_policy_list[1]} ${_policy_list[2]}";
+      if [ -n "${_noturbo_int}" ]; then
+        _search_line+=" ${_noturbo_int}";
+      fi
+    fi
+  done
+
+  if [ -z "${_search_line:-}" ]; then return 1; fi
+
+  for _opt_line in "${_optionTable[@]}"; do
+    _read_line="$(_scanFn "${_opt_line}" 'read')";
+    IFS=';' read -r -d '' -a _bit_list < <(echo -n "${_read_line}");
+    if [ "${_bit_list[*]:1:3}" = "${_search_line}" ]; then
+      echo "${_bit_list[0]}";
+      return 0;
+    fi
+  done
+
+  # Fall-through
+  _max_ghz_num="$(echo "${_policy_list[1]}*.000001"|bc)";
+  _max_ghz_num="$(printf '%.2f' "${_max_ghz_num}")";
+  echo "Custom (${_max_ghz_num} GHz ${_policy_list[2]^})";
+}
+## . END _readModeFn }
+
+_mainFn () {
+  declare _arg_str;
+  _arg_str="${1:-}";
+  case "${_arg_str}" in
+    '-p') _printOptionsFn;;
+    '-r') _readModeFn;;
+      '') _stderrFn 'Argument or flag required'; exit 1;;
+       *) _setModeFn "${_arg_str}";
+  esac
+}
+
+## BEGIN Set global vars {
+_noTurboFile='/sys/devices/system/cpu/intel_pstate/no_turbo';
+_keyboardFile='/sys/devices/platform/tuxedo_keyboard/state';
+_rootDir='';
+
+_nprocExe="$(command -v nproc)";
+_cpufreqSetExe="$(command -v cpufreq-set)";
+_cpufreqInfoExe="$(command -v cpufreq-info)";
+
+for _exeName in _nprocExe _cpufreqSetExe _cpufreqInfoExe; do
+  if [ ! -x "${!_exeName}" ]; then
+    _stderrFn "ABORT: Required command |${!_exeName}| not found.";
+    exit 1;
+  fi
+done;
+## . END Set global vars }
+
+## BEGIN Run main if script is not sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(readlink -f "$0")"        || exit 101;
+  _binDir="$(dirname "${_binName}")"    || exit 101;
+  _baseDir="$(dirname "${_binDir}")"    || exit 101;
+  _baseName="$(basename "${_binName}")" || exit 101;
+  _mainFn "$@";
+fi
+## . END Run main if script is not sourced }

@@ -1,0 +1,199 @@
+#!/bin/bash
+#
+# Copyright 2020-2022 MindShare Inc.
+# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
+#
+# Name    : kfocus-fan
+# Purpose : GUI to select fan profile
+# License : GPL v2
+# Run By  : Users
+# Spec    : 2617, 2558
+# Test    : 00710
+#
+set -u;
+
+_cssStyleStr="$(
+  cat <<'_EOH'
+  <style>
+    h3{color:#f7941d;text-align:center}
+    a{color:#1d99f3}
+    .subt{text-align:center}
+  </style>
+_EOH
+)";
+
+_importCommonFn () {
+  declare _lib_file;
+  _lib_file="${_baseDir}/lib/common.2.source";
+  if [ -r "${_lib_file}" ]; then
+    # shellcheck source=../lib/common.2.source
+    source "${_lib_file}" || exit 202;
+  else
+    echo 1>&2 "${_baseName}: ABORT - Cannot source lib |${_lib_file}|";
+    exit 202;
+  fi
+}
+
+_chkReportFanSupportFn () {
+  declare _model_label _model_code _prompt_key _model_msg \
+    _is_kpf_installed _kpf_msg _title _prompt_msg _ans_str \
+    _cmd_list _out_str;
+
+  _model_label="$(_cm2EchoModelStrFn 'label')";
+  _model_code="$(_cm2EchoModelStrFn 'code')";
+  _prompt_key='p';
+  if _cm2ChkInstalledPkgFn 'kfocus-power-fan'; then
+    _is_kpf_installed='y';
+    _kpf_msg=' <br><br>IMPORTANT: The kfocus-power-fan package <br>
+is unexpectedly installed. Please uninstall it as it is <br>
+not useful for this system.';
+  else
+    _is_kpf_installed='n';
+    _kpf_msg='';
+  fi
+
+  case "${_model_code}" in
+    m1*|m2*|xe*)
+    if [ "${_is_kpf_installed}" = 'y' ]; then return 0; fi
+    _title='Install Fan Control Backend?';
+      _prompt_key='a';
+      _model_msg="$(cat <<_EOH01
+This <b>Kubuntu Focus ${_model_label}</b> system is capable <br>
+of fan controls. However, the required software does not <br>
+appear available. Would you like to try to reinstall <br>
+<code>kfocus-power-fan</code> now?
+_EOH01
+      )";;
+
+    nxg1*) _title='Fan Control in BIOS';
+      _model_msg="$(cat <<_EOH02
+This <b>Kubuntu Focus ${_model_label}</b> system has <br>
+comprehensive fan controls available in the BIOS. To adjust <br>
+the settings, press <code>F2</code> on boot and select <br>
+<code>Cooling</code>. We recommend starting with <code>Fan <br>
+Control &gt; Balanced</code>.${_kpf_msg}
+_EOH02
+      )";;
+
+    nxg2*) _title='Fan Control in BIOS';
+      _model_msg="$(cat <<_EOH02
+This <b>Kubuntu Focus ${_model_label}</b> system has <br>
+comprehensive fan controls available in the BIOS. To adjust <br>
+the settings, press <code>F2</code> on boot and select <br>
+<code>Power, Performance and Cooling</code>. We recommend <br>
+starting with <code>Fan Control &gt; Balanced</code>.${_kpf_msg}
+_EOH02
+      )";;
+
+   *) _title='Other Fan Control';
+      _model_msg="$(cat <<_EOH03
+This <b>${_model_label}</b> system is not supported by Kubuntu <br>
+Focus fan controls. However, you may be able to control the <br>
+fans using the BIOS or a third-party apps. On many systems, <br>
+one can access the BIOS by pressing <code>F2</code>, 
+<code>Delete</code> or <br> <code>Escape</code> during boot.${_kpf_msg}
+_EOH03
+      )";;
+  esac
+
+    _prompt_msg="$(cat <<_EOH04
+<html><head>${_cssStyleStr}</head><body>
+<h3>Fan Control Status</h3>
+<p class="subt">Doc: <a href="https://kfocus.org/wf/tools#fan"
+  >https://kfocus.org/wf/tools#fan</a></p>
+${_cm2HtmPStr}${_model_msg}<br></p>
+</body></html>
+_EOH04
+     )";
+
+  _ans_str="$( _cm2PromptUserFn -i 'kfocus-bug-fan' \
+    "${_prompt_msg}" "${_title}" "${_prompt_key}"
+  )";
+
+  # Skip if user is not asked or if answer is no
+  if [ "${_prompt_key}" = 'p' ] || [ "${_ans_str:-}" = 'n' ]; then
+    return 1;
+  fi
+
+  _cmd_list=( 'apt-get' 'reinstall' '-y' 'kfocus-power-fan' );
+  if _out_str="$(
+    _cm2RunLongCmdFn 'Please wait while installing.' "${_cmd_list[@]}"
+  )"; then
+    _title='Installation Succeeded. ';
+    _prompt_msg="${_title}: Please run again to change fan settings.";
+    _cm2PromptUserFn -i 'kfocus-bug-fan' "${_prompt_msg}" "${_title}";
+  else
+    if [ "${#_out_str}" -gt 255 ]; then
+      _out_str="${_out_str:0,255}...";
+    fi
+    _title='Install Failed. ';
+    _prompt_msg="${_title}: Diagnostics\n${_out_str}";
+  fi
+  return 1;
+}
+
+## BEGIN _mainFn {
+_mainFn () {
+  declare _prompt_msg _current_mode_key \
+  _pick_table_str _key_list _pick_mode_str;
+
+  if [ ! -x "${_cm2KdiagExe}" ]; then
+    _cm2WarnStrFn 'kdialog executable missing. Abort.';
+    exit 203;
+  fi
+
+  if ! _chkReportFanSupportFn; then return; fi
+
+  _current_mode_key="$("${_fanSetExe}" -r)";
+  _pick_table_str="$("${_fanSetExe}" -p)";
+  IFS=$'\n' read -r -d '' -a _key_list <<< "${_pick_table_str}";
+
+  _prompt_msg="$(cat <<_EOH05
+<html><head>${_cssStyleStr}</head><body>
+<h3>Select a Fan Profile</h3>
+<p class="subt">Doc: <a href="https://kfocus.org/wf/tools#fan"
+  >https://kfocus.org/wf/tools#fan</a></p>
+</body></html>
+_EOH05
+  )";
+
+  if echo "${_current_mode_key}" |grep '^Custom'; then
+    _key_list+=("${_current_mode_key}");
+  fi
+
+  _pick_mode_str="$("${_cm2KdiagExe}" --title 'Fan Profile' \
+    --icon 'kfocus-bug-fan' --combobox "${_prompt_msg}" \
+    "${_key_list[@]}" --default "${_current_mode_key}"
+  )";
+
+  if [ -z "${_pick_mode_str}" ]; then exit 0; fi
+
+  if [ "${_pick_mode_str}" = "${_current_mode_key}" ]; then
+    "${_cm2KdiagExe}" --title 'Fan Profile' \
+      --icon 'kfocus-bug-fan' \
+      --msgbox 'Fan Profile is unchanged.';
+    exit 0;
+  fi
+
+  if pkexec "${_fanSetExe}" "${_pick_mode_str}"; then
+    "${_cm2KdiagExe}" --title 'Fan Profile' \
+      --icon 'kfocus-bug-fan' \
+      --msgbox "Fan Profile has been set to ${_pick_mode_str}.";
+  else
+    "${_cm2KdiagExe}" --title 'Fan Profile' \
+      --icon 'kfocus-bug-fan' --error 'An error has occurred.';
+  fi
+}
+## . END _mainFn }
+
+## BEGIN Run main if script is not sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+  _fanSetExe="${_binDir}/kfocus-fan-set";
+  _importCommonFn;
+  _mainFn "$@";
+fi
+## . END Run main if script is not sourced }

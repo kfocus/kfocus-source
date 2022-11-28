@@ -1,0 +1,307 @@
+#!/bin/bash
+#
+# Copyright 2020-2022 MindShare Inc.
+# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
+#
+# Name    : kfocus-pick-gcc
+# Purpose : GUI to select default gcc compiler
+# License : GPL v2
+# Run By  : Users
+# Spec    : 615
+#
+set -u;
+
+_cssStyleStr="$(cat << '_EOH';
+  <style>
+    h3{color:#f7941d;text-align:center}
+    a{color:#1d99f3}
+    p{margin: 0 32px 16px 32px}
+    .subt{text-align:center}
+  </style>
+_EOH
+)";
+
+## BEGIN _chkCallerFn {
+ # Purpose: Exit if called by brain-dead qtcreator which
+ # auto-magically launches anything with 'gcc' in its name.
+ #
+_chkCallerFn () {
+  declare _parent_name;
+  _parent_name="$(ps -o comm= ${PPID:-})";
+  if [[ "${_parent_name}" =~ ^qtcreator ]]; then
+    return 1;
+  fi
+}
+## . END _chkCallerFn }
+
+## BEGIN _killZombieProcFn {
+ # Purpose: Kill left-over installer processes from qapt-batch
+ #
+_killZombieProcFn () {
+  declare _pid_list _try_idx;
+
+  for _try_idx in $(seq 1 3); do
+    # shellcheck disable=SC2207
+    _pid_list=( $( pgrep 'qaptworker3' ) );
+
+    if [ "${#_pid_list[@]}" -lt 1 ]; then return 0; fi
+
+    "${_cm2KdiagExe}" --icon kfocus-bug \
+      --msgbox "The installer is stuck.
+Please provide your password to restart.";
+    if [ "${_try_idx}" = '1' ]; then
+      pkexec kill "${_pid_list[@]}";
+    elif [ "${_try_idx}" = '2' ]; then
+      pkexec kill -9 "${_pid_list[@]}";
+    fi
+  done
+
+  if [ "${#_pid_list[@]}" -gt 0 ]; then
+    "${_cm2KdiagExe}" --icon kfocus-bug \
+      --msgbox "Could not kill install PIDs\n${_pid_list[*]}\n
+Please see your administrator or reboot to fix.";
+    exit 1;
+  fi
+}
+## . END _killZombieProcFn }
+
+## BEGIN MAIN {
+# Begin Initialize {
+_binName="$(  readlink -f "$0"        )" || exit 101;
+_baseName="$( basename "${_binName}"  )" || exit 101;
+_binDir="$(   dirname  "${_binName}"  )" || exit 101;
+_baseDir="$(  dirname  "${_binDir}"   )" || exit 101;
+
+# Exit if called by qtcreator (work around their bug)
+if ! _chkCallerFn; then exit 0; fi
+
+_gccSetExe="${_binDir}/kfocus-pick-gcc-set";
+_iconStr='kfocus-bug-pick-gcc';
+_htmH3Str='<h3 style="color:#1d99f3;text-align:center">';
+_htmPStr='<p style="margin:0 32px">';
+## . End Initialize }
+
+# Begin Import Common {
+# Imports: _cm2EchoFn _cm2ErrFn _cm2HtmBeginStr _cm2HtmEndStr _cm2KdiagExe
+# _cm2SetMsgFn _cm2SucFn _cm2WarnFn
+#
+_libFile="${_baseDir}/lib/common.2.source"
+if [ -r "${_libFile}" ]; then
+  # shellcheck source=../lib/common.2.source
+  source "${_libFile}" || exit 201
+else
+  echo 1>&2 "${_baseName}: ABORT - Cannot source lib |${_libFile}|"
+  exit 201
+fi
+## . End Import Common }
+
+_osId='';
+if [ -r /etc/lsb-release ]; then
+  _osId="$(grep -E 'DISTRIB_RELEASE' /etc/lsb-release |cut -f2 -d'=')"
+fi
+
+_gccVersStr='';
+case "${_osId}" in
+  '22.04') _osId='Ubuntu 22.04 LTS'; _gccVersStr='11';;
+  '20.04') _osId='Ubuntu 20.04 LTS'; _gccVersStr='9';;
+  *) _osId="Unsupported ${_osId}"; _gccVersStr='<unknown>';;
+esac
+
+_mainHtml="$(cat << _EOH
+<html><head>${_cssStyleStr}</head><body>
+<h3>GCC Pick: Select Compiler Version</h3>
+<p class="subt">Doc: <a href="https://kfocus.org/wf/tools#pickgcc"
+ >https://kfocus.org/wf/tools#pickgcc</a></p>
+<p>Select the compiler version you wish to set as the system<br>
+default. If you select a version that is not yet installed, <br>
+you will be asked to enter your password to authorize.<br><br>
+<b>${_osId} uses GCC Version ${_gccVersStr} as the default.</b>
+<br></p>
+${_cm2HtmEndStr}
+_EOH
+)";
+
+## Begin Exit if required execs missing {
+if [ ! -x "${_cm2KdiagExe}" ]; then
+  _cm2SetMsgFn "No kdialog executable found";
+  _cm2ErrFn;
+fi
+
+if [ ! -x "${_gccSetExe}" ]; then
+  _cm2SetMsgFn "No set executable found";
+  _cm2ErrFn;
+fi
+## . End Exit if required execs missing }
+
+## Begin Find current linked gcc {
+_inUseVersStr='';
+_gccExeFile="$( command -v gcc )";
+if [ -n "${_gccExeFile}" ]; then
+  _inUseVersStr="$(
+    readlink -f "${_gccExeFile}" |sed 's/^.*-\([^-]\+\)/\1/g'
+  )";
+fi
+## . End Find current linked gcc }
+
+## Begin Find all installed and available versions {
+_masterLookupList=();
+
+_availablePkgStr="$(apt-cache pkgnames)";
+_installedPkgStr="$( dpkg-query -W | awk '{print $1}' )";
+_comboList=();
+_defaultPickStr='';
+
+for _versStr in {6..20}; do
+  _pkgList=( \
+   "gcc-${_versStr}" \
+   "gcc-${_versStr}-multilib" \
+   "g++-${_versStr}" \
+   "g++-${_versStr}-multilib" \
+  );
+
+  _isAvailable='y';
+  _installedPkgList=();
+  _availablePkgList=();
+
+  for _pkgName in "${_pkgList[@]}"; do
+    if echo "${_availablePkgStr}" |grep -q "^${_pkgName}$"; then
+      if echo "${_installedPkgStr}" |grep -q "^${_pkgName}$"; then
+        # debug
+        # _cm2EchoFn "Package ${_pkgName} installed";
+        _installedPkgList+=("${_pkgName}");
+      else
+        # debug
+        # _cm2EchoFn "Package ${_pkgName} available";
+        _availablePkgList+=("${_pkgName}");
+      fi
+    else
+      # debug
+      # _cm2EchoFn "Package ${_pkgName} not found";
+      _isAvailable='n';
+      break 1;
+    fi
+  done;
+
+  if [ "${_isAvailable}" = 'y' ]; then
+    _masterLookupList+=(
+      "GCC ${_versStr},${_installedPkgList[*]},${_availablePkgList[*]}"
+    );
+    if [ "${#_availablePkgList[@]}" -gt 0 ]; then
+      if [ "${#_installedPkgList[@]}" -gt 0 ]; then
+        _pickStr="GCC ${_versStr} (Requires partial install)";
+      else
+        _pickStr="GCC ${_versStr} (Requires install)";
+      fi
+    else
+      _pickStr="GCC ${_versStr}";
+    fi
+
+    _comboList+=( "${_pickStr}" );
+
+    # Set combobox default
+    if [ "${_inUseVersStr}" = "${_versStr}" ]; then
+      _defaultPickStr="${_pickStr}";
+    fi
+  fi
+done
+## . End Find all installed and available versions }
+
+# DEBUG
+# echo "Default: ${_inUseVersStr}";
+# IFS=$'\n' echo "List : ${_masterLookupList[*]}";
+# IFS=$'\n' echo "Combo: ${_comboList[*]}";
+
+## Begin Get user selection and matching _foundLineStr {
+_selectedStr="$(
+  "${_cm2KdiagExe}" --icon "${_iconStr}" \
+    --title "Set GCC Version" \
+    --combobox "${_mainHtml}" \
+    "${_comboList[@]}" --default "${_defaultPickStr}"
+)";
+
+if [ -z "${_selectedStr}" ]; then
+  _cm2EchoFn 'No GCC version selected. Exiting.';
+  exit 0;
+fi
+
+_keyStr="$(     echo "${_selectedStr}" | cut -f1-2 -d' ' )";
+_tgtVersStr="$( echo "${_selectedStr}" | cut -f2   -d' ' )";
+
+_foundLineStr="$(
+  IFS=$'\n'; echo "${_masterLookupList[*]}" | grep "^${_keyStr}"
+)";
+
+if [ -z "${_keyStr}" ] || [ -z "${_foundLineStr}" ]; then
+  _cm2EchoFn 'No GCC version selected. Exiting.';
+  exit 0;
+fi
+## . End Get user selection ... }
+
+## Begin Split _foundLineStr and install packages {
+_hasUpdates='n';
+IFS=',' read -ra _fieldList <<< "${_foundLineStr}";
+
+if [ "${#_fieldList[@]}" -gt 2 ] && [ -n "${_fieldList[2]}" ]; then
+  _hasUpdates='y';
+  IFS=' ' read -r -a _addPkgList <<< "${_fieldList[2]}";
+  _yesNoHtml="$(cat << _EOH02
+  ${_cm2HtmBeginStr}
+    ${_htmH3Str}GCC version ${_tgtVersStr} not fully installed</h3>
+    <p>If you proceed, you will be asked for your password<br>
+    to authorize installation of these packages:</p>
+    <pre><code>${_addPkgList[*]}</code></pre>
+    ${_htmPStr}<b>Proceed with installation?</b></p>
+  ${_cm2HtmEndStr}
+_EOH02
+  )";
+
+  if "${_cm2KdiagExe}" --icon "${_iconStr}" --yesno "${_yesNoHtml}"; then
+    _killZombieProcFn;
+    if qapt-batch --install "${_addPkgList[@]}"; then
+      _cm2EchoFn 'Install appears successful';
+    else
+      "${_cm2KdiagExe}" --icon "${_iconStr}" \
+        --msgbox "Installation of GCC ${_tgtVersStr} failed.
+Please see your administrator.";
+      exit 1;
+    fi
+  else
+    "${_cm2KdiagExe}" --icon "${_iconStr}" \
+        --msgbox "Installation of GCC ${_tgtVersStr} cancelled.  ";
+    exit 0;
+  fi
+fi
+## . End Split _foundLineStr ... }
+
+## Begin Bail if no change AND no install {
+if [ "${_inUseVersStr}" = "${_tgtVersStr}" ] && [ "${_hasUpdates}" = "n" ]; then
+  "${_cm2KdiagExe}" --icon "${_iconStr}" \
+    --msgbox "System GCC already set to version ${_tgtVersStr}.";
+  exit 0;
+fi
+## . End Bail if no change AND no install }
+
+## Begin Execute switch {
+_cm2SetMsgFn "Execute switch to ${_tgtVersStr}";
+
+_outputStr="$( pkexec "${_gccSetExe}" "${_tgtVersStr}"; )";
+_exitIdx="$?";
+
+if [ "${_exitIdx}" = '0' ]; then
+  "${_cm2KdiagExe}" --icon "${_iconStr}" \
+    --msgbox "SUCCESS: System GCC set to version ${_tgtVersStr}.  ";
+  _cm2SucFn;
+elif [ "${_exitIdx}" = '2' ]; then
+  "${_cm2KdiagExe}" --icon "${_iconStr}" \
+    --msgbox "SUCCESS: System GCC set to version ${_tgtVersStr}.
+WARNING: Some links were not successful:
+${_outputStr}";
+  _cm2WarnFn;
+else
+  "${_cm2KdiagExe}" --icon "${_iconStr}" \
+    --msgbox "FAIL: System GCC NOT set to version ${_tgtVersStr}:
+${_outputStr}";
+  _cm2ErrFn;
+fi
+## . End Execute switch }
+## . END MAIN }

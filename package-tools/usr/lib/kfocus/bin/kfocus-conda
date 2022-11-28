@@ -1,0 +1,655 @@
+#!/bin/bash
+#
+# Copyright 2020-2022 MindShare Inc.
+# Written for the Kubuntu Focus by:
+#   - Michael Mikowski
+#   - Vishwas Mruthyunjaya
+#   - Erich Eickmeyer
+#
+# Name    : kfocus-conda
+# Purpose : Install Anaconda AI environments
+# License : GPL v2
+# Run By  : Users
+# Spec    : 526
+#
+set -u;
+
+_abortFn () { 2>&1 echo; 2>&1 echo 'Ctrl+C exit'; sleep 1; exit 1; }
+
+_exitFn () {
+  _cm2WarnFn;
+  _cm2AskExitFn 1 "${_baseName} aborted. Press enter to exit.";
+}
+
+_getNvSeriesStrFn () {
+  declare _nv_line;
+
+  if ! lsmod | grep -q 'nvidia_drm'; then
+    1>&2 cat << _EOL01
+${_baseName} ERROR
+
+This script must be run with an Nvidia GPU and the nvidia_drm module loaded.
+If you have an Nvidia GPU, please switch to "Nvidia (Performance)" or "Nvidia
+(On-Demand)" mode using either the GPU selector in the system tray or
+nvidia-settings.
+
+_EOL01
+    _cm2AskExitFn 20 "${_baseName} aborted. Press enter to exit.";
+  fi;
+
+  _nv_line=$(lspci |grep -i 'VGA compatible controller' |grep -i 'nvidia' );
+  if echo "${_nv_line}" | grep -q 'RTX 20'; then
+    echo 'rtx20'; return 0;
+  elif echo "${_nv_line}" | grep -q 'RTX 30'; then
+    echo 'rtx30'; return 0;
+  fi
+
+  if [ -n "${_nv_line}" ]; then
+    _nv_line="Found: ${_nv_line}\n";
+  fi
+
+  1>&2 cat << _EOL02
+${_baseName} ERROR: Unsupported GPU
+${_nv_line}
+
+You do not appear to be running an Nvidia RTX-20 or RTX-30 series GPU.
+If you received this message in error, you may run the following to update
+your GPU information:
+
+sudo update-pciids
+
+And then run this script again.
+
+_EOL02
+
+  _cm2AskExitFn 30 "${_baseName} aborted. Press enter to exit.";
+}
+
+_chkCondaEnvFn () {
+  declare _env_name _mod_name _ret_int;
+  _ret_int=1;
+  [ "$#" -gt 0 ] && _env_name="${1}" || _env_name='__blank__';
+  [ "$#" -gt 1 ] && _mod_name="${2}" || _mod_name='__blank__';
+  if ( conda env list | grep -q --regexp="${_env_name}" ); then
+    if [ "${_mod_name}" = '__blank__' ]; then
+      _ret_int=0;
+    else
+      conda activate "${_env_name}" || _exitFn;
+      if ( echo "import ${_mod_name}" |&2>/dev/null python ); then
+        _ret_int=0;
+      fi
+      conda activate base;
+    fi
+  fi
+  return ${_ret_int};
+}
+
+_fixCondaEnvFn () {
+  declare _env_name _reply_str _orig_msg;
+  _env_name="$*";
+  if ( _chkCondaEnvFn "${_env_name}" ); then
+    _reply_str=$( _cm2ReadPromptYnFn \
+      "Delete and reinstall env '${_env_name}'" 'n'
+    );
+    if [ "${_reply_str}" = 'y' ]; then
+      _orig_msg="${_cm2BlockMsg}";
+      _cm2SetMsgFn "Deleting ${_env_name}";
+      conda activate base                    || _exitFn;
+      conda env remove --name "${_env_name}" || _exitFn;
+      _cm2SucFn;
+      _cm2BlockMsg="${_orig_msg}";
+    fi
+    echo "${_reply_str}";
+  else
+    _reply_str=$( _cm2ReadPromptYnFn \
+      "Install conda env '${_env_name}'" 'y'
+    );
+    echo "${_reply_str}"
+  fi
+}
+
+_setCudaPathsFn () {
+  declare _cuda_root_dir _append_list _cuda_home_dir;
+  _cuda_root_dir='/usr/local/cuda-11.7';
+
+  # bashsupport disable=BP2001
+  _append_list=(
+    "${_cuda_root_dir}/lib64"
+    "${_cuda_root_dir}/nvvm/lib64"
+    "${_cuda_root_dir}/targets/x86_64-linux"
+  );
+
+  _cuda_home_dir="${_cuda_root_dir}";
+  set +u;
+  _ldLibraryPath="$(_ap2AddPathFn "${LD_LIBRARY_PATH}" "${_append_list[@]}")";
+
+  export LD_LIBRARY_PATH="${_ldLibraryPath}";
+  export CUDA_HOME="${_cuda_home_dir}";
+  set -u;
+
+  _cm2EchoFn 'Environment variables TO EXPORT:';
+  _cm2EchoFn "CUDA_HOME       : ${_cuda_home_dir}";
+  _cm2EchoFn "LD_LIBRARY_PATH : ${_ldLibraryPath}";
+}
+
+_installEnvFn () {
+  declare  _reply_str _conda_installed_exe _conda_installed_vers \
+    _conda_expect_dir _conda_expect01_exe _conda_expect02_exe _conda_pkg_str \
+    _conda_repo_url _conda_md5_str _is_new_conda _chk_str __conda_setup;
+
+  ## Begin Install GPU Libs
+  _cm2SetMsgFn 'Check GPU and install libs if needed';
+  if [ -n "${_nvSeriesStr}" ]; then
+    _cm2EchoFn "\nNvidia ${_nvSeriesStr}-series GPU found";
+    # Use a new version of Anaconda
+
+    if _cm2ChkInstalledPkgFn 'kfocus-nvidia' \
+      && _cm2ChkInstalledPkgFn 'cuda-toolkit-11-7' \
+      && _cm2ChkInstalledPkgFn 'libcudnn8' \
+      && _cm2ChkInstalledPkgFn 'libnvinfer8'; then
+      _cm2EchoFn "All ${_nvSeriesStr}-series libraries appear installed";
+    else
+      _cm2EchoFn "Install ${_nvSeriesStr}-series required libraries";
+      _reply_str=$( _cm2ReadPromptYnFn 'Install libraries now' 'y' );
+
+      if [ "${_reply_str}" = 'y' ]; then
+        if "${_escExe}" apt-get install kfocus-nvidia cuda-toolkit-11-7 \
+          libcudnn8 libnvinfer8; then
+          _cm2SucStrFn 'Installation successful';
+        else
+          _exitFn;
+        fi
+      else
+        _cm2WarnStrFn 'Nvidia libraries must be installed to continue.';
+        _exitFn;
+      fi
+    fi
+  else
+    _cm2WarnStrFn 'Cannot locate Nvidia RTX GPU';
+    _exitFn;
+  fi
+  _cm2SucFn;
+  ## . End Install GPU Libs
+
+  ## Begin Install or Update Conda
+  _cm2SetMsgFn 'Begin Install or Update Conda';
+  _conda_expect_dir="${HOME}/anaconda3";
+  _conda_expect01_exe="${_conda_expect_dir}/condabin/conda";
+  _conda_expect02_exe="${_conda_expect_dir}/bin/conda";
+  _conda_installed_exe="$(command -v conda)";
+  _conda_installed_vers='';
+  _conda_md5_str='a01150aff48fcb6fcd6472381652de04';
+  _conda_pkg_str='Anaconda3-2022.05-Linux-x86_64.sh';
+
+  # Report unexpected exe, get installed conda version
+  if [ -e "${_conda_installed_exe}" ]; then
+    if [   "${_conda_installed_exe}" != "${_conda_expect01_exe}" ] \
+      && [ "${_conda_installed_exe}" != "${_conda_expect02_exe}" ]; then
+      _cm2EchoFn 'Conda is already installed, but does not point';
+      _cm2EchoFn "to the expected path (${_conda_expect01_exe}) or "
+      _cm2EchoFn "(${_conda_expect02_exe}) instead it is found at "
+      _cm2EchoFn "(${_conda_installed_exe}).";
+      _cm2EchoFn 'Please reset your environment and rerun to proceed.';
+      _exitFn;
+    fi
+    _conda_installed_vers="$(
+      conda list anaconda$ |tail -n1 |awk '{print $2}'
+    )";
+  fi
+
+  # Test Conda version from ${HOME}/anaconda3
+  case "${_conda_installed_vers}" in
+    '2022.05') _cm2EchoFn 'Using compatible conda';;
+    ''       ) _cm2EchoFn 'Conda not yet installed';;
+    '2020.11') _cm2WarnStrFn "The current installation in ${_conda_expect_dir}";
+      _cm2WarnStrFn 'was installed using an older version of kfocus-conda. Use '
+      _cm2WarnStrFn 'kfocus-conda-legacy-v01 if you wish to continue using this '
+      _cm2WarnStrFn 'installation. Exiting...';
+      _exitFn;;
+    '2020.07') _cm2WarnStrFn "The current installation in ${_conda_expect_dir}";
+      _cm2WarnStrFn 'was installed using an older version of kfocus-conda. Use '
+      _cm2WarnStrFn 'kfocus-conda-legacy-v01 if you wish to continue using this '
+      _cm2WarnStrFn 'installation. Exiting...';
+      _exitFn;;
+    *)_cm2WarnStrFn "Conda version (${_conda_installed_vers} found in";
+      _cm2WarnStrFn  "(${_conda_expect_dir}) is not recognized. Please move";
+      _cm2WarnStrFn  "this directory aside before proceeding.";
+      _exitFn;;
+  esac
+
+  if [ -d "${_conda_expect_dir}" ]; then
+    _reply_str=$( _cm2ReadPromptYnFn \
+      "\nSet aside existing dir to anaconda3.${_timeStr}" 'n'
+    );
+    _cm2EchoFn;
+
+    if [ "${_reply_str}" = 'n' ]; then
+      _cm2EchoFn 'Proceeding with existing anaconda3 install';
+    else
+      _cm2EchoFn "Move existing to ${_conda_expect_dir}.${_timeStr}";
+      mv "${_conda_expect_dir}" "${_conda_expect_dir}.${_timeStr}" \
+        || _exitFn;
+      _cm2EchoFn "Delete this directory after you have moved\n" \
+        "data to the new anaconda3 directory and confirmed it\n" \
+        "works as expected.";
+    fi
+  fi
+
+  _is_new_conda=0;
+  _conda_repo_url="https://repo.anaconda.com/archive/${_conda_pkg_str}";
+
+  if [ ! -d "${_conda_expect_dir}" ]; then
+    if [ ! -d "${_vendDirPath}" ]; then
+      _cm2EchoFn "Create ${_vendDirPath}";
+      mkdir -p "${_vendDirPath}" || _exitFn;
+    fi
+
+    if [ ! -f "${_vendDirPath}/${_conda_pkg_str}" ]; then
+      _cm2EchoFn 'Download Anaconda';
+      pushd "${_vendDirPath}"   || _exitFn;
+      wget "${_conda_repo_url}" || _exitFn;
+      popd || _exitFn;
+    fi;
+
+    _cm2EchoFn 'Check md5sum of Anaconda Package';
+    _chk_str=$( md5sum "${_vendDirPath}/${_conda_pkg_str}" \
+      | awk '{print $1}'
+    );
+
+    if [ "${_chk_str}" != "${_conda_md5_str}" ]; then
+      _cm2WarnStrFn 'Please rerun the script to download again.';
+      "${_rmFn}" -f "${_conda_pkg_str}";
+      _exitFn;
+    fi
+
+    _cm2EchoFn "Install anaconda to ${_conda_expect_dir}";
+    _is_new_conda=1;
+    sh "${_vendDirPath}/${_conda_pkg_str}" -b || _exitFn;
+    "${_rmFn}" -r "${_vendDirPath}" || _exitFn;
+  fi
+
+  _cm2EchoFn 'Initialize conda';
+  if __conda_setup=$(
+    "${_conda_expect_dir}/bin/conda" 'shell.bash' 'hook' 2>/dev/null
+  ); then
+    # These guys have serious problems with unset vars
+    set +u;
+    eval "$__conda_setup" || _exitFn;
+    set -u;
+  else
+    if [ -f "${_conda_expect_dir}/etc/profile.d/conda.sh" ]; then
+      # shellcheck disable=SC1090,SC1091
+      source "${HOME}/anaconda3/etc/profile.d/conda.sh" || _exitFn;
+    else
+      export PATH="${_conda_expect_dir}/bin:$PATH" || _exitFn;
+    fi
+  fi
+  unset __conda_setup
+
+  # source "$HOME/.bashrc"
+  if ( ! command -v 'conda' > /dev/null ); then
+    _cm2EchoFn 'Cannot confirm conda command';
+    _exitFn;
+  fi
+
+  if [ "${_is_new_conda}" = '1' ]; then
+    _cm2EchoFn 'Update conda (press return ONCE)';
+    _str="$(conda update -n base -c defaults conda)" || _exitFn;
+    _cm2EchoFn "${_str:=success}";
+  fi
+  _cm2SucFn;
+  ## . End Install or Update Conda
+
+  # Jupyter Notebook
+  #
+  _reply_str=$( _fixCondaEnvFn 'jnb') || _exitFn;
+  if [ "${_reply_str}" = 'y' ]; then
+    _cm2SetMsgFn 'Install Jupyter Notebook';
+    set +u;
+    conda activate base                    || _exitFn;
+    conda create -y --name jnb python=3.10 || _exitFn;
+    conda activate jnb                     || _exitFn;
+    conda install -y -q -c numpy matplotlib jupyter nb_conda || _exitFn;
+    set -u;
+    _cm2SucFn;
+  fi
+
+  ## TODO mxnet is not supported with cuda 11.7 (10.2 is latest)
+  # This is maintained here for reference.
+  #
+  # _reply_str=$( _fixCondaEnvFn 'mxnet-cu102') || _exitFn;
+  # if [ "${_reply_str}" = 'y' ]; then
+  #   _cm2SetMsgFn 'Install Mxnet-cu102';
+  #   set +u;
+  #   conda activate base                         || _exitFn;
+  #   conda create -y --name mxnet python=3.10    || _exitFn;
+  #   conda activate mxnet                        || _exitFn;
+  #   conda install -c anaconda mxnet-cu102       || _exitFn;
+  #   set -u;
+  #   _cm2SucFn;
+  # fi
+
+  # Pytorch
+  # https://pytorch.org/get-started/locally/#linux-anaconda
+  #
+  _reply_str=$( _fixCondaEnvFn 'pytorch') || _exitFn;
+  if [ "${_reply_str}" = 'y' ]; then
+    _cm2SetMsgFn 'Install Pytorch';
+    set +u;
+    conda activate base                          || _exitFn;
+    conda create -y --name pytorch python=3.10   || _exitFn;
+    conda activate pytorch                       || _exitFn;
+
+    _cm2EchoFn "Installing Pytorch for ${_nvSeriesStr}-series GPU";
+    conda install pytorch torchvision torchaudio pytorch-cuda=11.7 \
+      -c pytorch -c nvidia || _exitFn;
+    set -u;
+    _cm2SucFn;
+  fi
+
+  # TensorFlow
+  # https://www.tensorflow.org/install/gpu
+  # https://pypi.org/project/ai-benchmark/
+  # https://pypi.org/project/tensorflow
+  # https://github.com/tensorflow/tensorflow/tags
+  #
+  _reply_str=$( _fixCondaEnvFn 'tensorflow') || _exitFn;
+  if [ "${_reply_str}" = 'y' ]; then
+    _cm2SetMsgFn 'Install TensorFlow';
+    set +u;
+    conda activate base || _exitFn;
+
+    _cm2EchoFn "Installing TensorFlow for ${_nvSeriesStr}-series GPU";
+    conda create -n tensorflow pip python=3.10 || _exitFn;
+    conda activate tensorflow                  || _exitFn;
+    pip install -Iv tensorflow                 || _exitFn;
+    pip install ai-benchmark                   || _exitFn;
+    conda activate base                        || _exitFn;
+    set -u;
+    _cm2SucFn;
+  fi
+
+  # Theano
+  #
+  _reply_str=$( _fixCondaEnvFn 'theano') || _exitFn;
+  if [ "${_reply_str}" = 'y' ]; then
+    _cm2SetMsgFn 'Install Theano';
+    set +u;
+    conda activate base                       || _exitFn;
+    conda create -y --name theano python=3.10 || _exitFn;
+    conda activate theano                     || _exitFn;
+    conda install theano pygpu                || _exitFn;
+    conda activate base                       || _exitFn;
+    set -u;
+    _cm2SucFn;
+  fi
+
+  ## TODO mxnet is not supported with cuda 11.7 (10.2 is latest)
+  # This is maintained here for reference.
+  #
+  # if _chkCondaEnvFn 'mxnet'; then
+  #   _cm2SetMsgFn 'Test Mxnet';
+  #   set +u;
+  #   conda activate mxnet || _exitFn;
+  #   set -u;
+  #
+  #   2>/dev/null python -c "${_testMxnetStr}" || _cm2WarnFn;
+  #   _cm2SucFn;
+  # fi
+
+  ## TODO add theano test for GPU.
+  # This is close:
+  # https://stackoverflow.com/questions/34328467
+
+  if _chkCondaEnvFn 'pytorch'; then
+    _cm2SetMsgFn 'Test Pytorch';
+    set +u;
+    conda activate pytorch || _exitFn;
+    set -u;
+
+    2>/dev/null python -c "${_testPytorchStr}" || _cm2WarnFn;
+    _cm2SucFn;
+  fi
+
+  if _chkCondaEnvFn 'tensorflow'; then
+    _cm2SetMsgFn 'Test TensorFlow';
+    set +u;
+    conda activate tensorflow || _exitFn;
+    set -u;
+
+    2>/dev/null python -c "${_testTf01Str}" || _cm2WarnFn;
+    _cm2SucFn;
+  fi
+
+  if _chkCondaEnvFn 'tensorflow'; then
+    _reply_str=$( _cm2ReadPromptYnFn \
+      "Benchmarks TensorFlow (takes 5-10m)" 'n'
+    );
+    if [ "${_reply_str}" = 'y' ]; then
+      _cm2SetMsgFn 'Benchmark TensorFlow';
+      set +u;
+      conda activate tensorflow || _exitFn;
+      set -u;
+
+      2>/dev/null python -c "${_testTf02Str}" || _cm2WarnFn;
+    fi
+  fi
+  conda activate base;
+}
+
+## BEGIN MAIN {
+## Begin Initialize {
+# Set _binDir and _baseDir
+_binName=$(  readlink -f "$0"       );
+_baseName=$( basename "${_binName}" );
+_binDir=$(   dirname  "${_binName}" );
+_baseDir=$(  dirname  "${_binDir}"  );
+
+_ldLibraryPath='';
+_cudaHomePath='';
+_blkStr='/>>> conda initialize >>>/,/<<< conda initialize <<</d';
+_replyStr='';
+_rmFn=/bin/rm;
+_timeStr=$(date +%s);
+_userId=$(id -u);
+_vendDirPath="${HOME}/vendor.$(date +%s)";
+## . End Initialize }
+
+## Begin Import Common {
+# Import common: _cm2AskExitFn _cm2BlockMsg _cm2ChkInstalledPkgFn
+# _cm2EchoFn _cm2ReadPromptYnFn _cm2SetMsgFn _cm2SucFn _cm2SucStrFn
+# _cm2WarnFn _cm2WarnStrFn
+#
+# Import arrayPath: _ap2AddPathFn
+#
+for _fileName in 'common.2.source' 'arrayPath.source'; do
+  _libFile="${_baseDir}/lib/${_fileName}";
+  _doExitStr='n';
+
+  if [ -r "${_libFile}" ]; then
+    # shellcheck source=../lib/common.2.source
+    # shellcheck source=../lib/arrayPath.source
+    if ! source "${_libFile}"; then _doExitStr='y'; fi
+  else
+    _doExitStr='y';
+  fi
+
+  if [ "${_doExitStr}" = 'y' ]; then
+    1>&2 echo "${_baseName}: ABORT - Cannot source lib |${_libFile}|";
+    1>&2 echo 'Press return to exit.';
+    # shellcheck disable=2034
+    read -r _reply;
+    exit 201;
+  fi
+done
+## . End Import Common }
+
+# Get escalation exe
+_escExe="$(_cm2GetEscExeFn)" || exit;
+
+# trap ctrl-c to avoid 'bash crashed...' message
+trap _abortFn SIGINT;
+
+# Check Nvidia Modules and PCI devices
+if ! _nvSeriesStr="$( _getNvSeriesStrFn )"; then
+  exit "$?";
+fi
+
+_condaRawStr=$(cat << '_HERE01'
+# >>> conda initialize >>>
+# !! Contents within this block are managed by 'conda init' !!
+__conda_setup="$(
+  '${HOME}/anaconda3/bin/conda' 'shell.bash' 'hook' 2>/dev/null;
+)";
+if [ $? -eq 0 ]; then
+  eval "$__conda_setup";
+else
+  if [ -f "${HOME}/anaconda3/etc/profile.d/conda.sh" ]; then
+    source "${HOME}/anaconda3/etc/profile.d/conda.sh";
+  else
+    export PATH="${HOME}/anaconda3/bin:$PATH";
+  fi
+fi
+unset __conda_setup
+# <<< conda initialize <<<
+_HERE01
+);
+
+## TODO mxnet is not supported with cuda 11.7 (10.2 is latest)
+# This is maintained here for reference.
+#
+# _testMxnetStr=$(cat << '_HERE03';
+# # Test script to test if mxnet uses GPU
+# import mxnet as mx
+# a = mx.nd.ones((2, 3), mx.gpu())
+# b = a * 2 + 1
+# b.asnumpy()
+# print('GPU acceleration confirmed in mxnet', mx.__version__)
+# _HERE03
+# );
+
+_testPytorchStr=$(cat << '_HERE04';
+import torch
+# Setting a device on GPU if available, else CPU
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print('Using device:', device)
+print()
+
+# Additional Info when using cuda
+if device.type == 'cuda':
+    print(torch.cuda.get_device_name(0))
+    print('Memory Usage:')
+    print('Allocated:', round(torch.cuda.memory_allocated(0)/1024**3,1), 'GB')
+    print('Cached:   ', round(torch.cuda.memory_cached(0)/1024**3,1), 'GB')
+_HERE04
+);
+
+_testTf01Str=$(cat << '_HERE05';
+import tensorflow as tf
+print( 'TF Version: ', tf.__version__ )
+print( 'Devices   : ', tf.config.list_physical_devices('GPU') )
+_HERE05
+);
+
+_testTf02Str=$(cat << '_HERE05a';
+import tensorflow as tf
+print( 'TF Version: ', tf.__version__ )
+print( 'Devices   : ', tf.config.list_physical_devices('GPU') )
+
+# See https://github.com/tensorflow/tensorflow/issues/24496
+from tensorflow.compat.v1 import ConfigProto
+from tensorflow.compat.v1 import InteractiveSession
+config = ConfigProto()
+config.gpu_options.allow_growth = True
+session = InteractiveSession(config=config)
+
+from ai_benchmark import AIBenchmark
+benchmark = AIBenchmark()
+results = benchmark.run()
+
+_HERE05a
+);
+
+_welcomeStr=$(cat << '_HERE06';
+
+KUBUNTU FOCUS DEEP LEARNING SUITE
+  See https://kfocus.org/wf/deep.html for more information.
+
+Use this script to install Anaconda and selectively install GPU accelerated
+ Jupyter Notebook, PyTorch, TensorFlow, and Theano.
+
+BY PROCEEDING YOU ACKNOWLEDGE AND AGREE TO THE LICENSE AGREEMENT AT
+https://docs.anaconda.com/
+
+AND
+
+http://docs.nvidia.com/deeplearning/sdk/cudnn-sla/index.html
+
+AND
+
+All other appropriate package licenses.
+
+PLEASE REVIEW AND AGREE TO ALL LICENSES BEFORE PROCEEDING!
+
+_HERE06
+)
+
+# use ${variable//search/replace/}?
+# shellcheck disable=2001
+_condaSetupStr=$(echo "${_condaRawStr}" |sed "s%\${HOME}%${HOME}%g");
+
+_cm2EchoFn "${_welcomeStr}";
+
+if [ "${_userId}" = '0' ]; then
+  _cm2AskExitFn 5 "\nRun as regular user not root. Press return to exit.";
+fi
+
+_replyStr=$( _cm2ReadPromptYnFn \
+  "\nContinue review of Anaconda install" 'y'
+);
+
+if [ "${_replyStr}" = 'y' ]; then
+  _cm2EchoFn;
+else
+  _cm2AskExitFn 0 "\nRerun this at any time. Press return to exit.";
+fi
+
+if grep -q --regexp='^# >>> conda initialize >>>$' "${HOME}/.bashrc"; then
+  _cm2SetMsgFn "Remove Conda init in ${HOME}/.bashrc";
+  sed -i "${_blkStr}" "${HOME}/.bashrc" || _exitFn;
+  _cm2SucFn;
+fi
+
+_cm2SetMsgFn "Append Conda init to ${HOME}/.bashrc";
+echo "${_condaSetupStr}" >> "${HOME}/.bashrc" || _exitFn;
+_cm2SucFn;
+
+_cm2SetMsgFn 'Set CUDA paths';
+if ! _setCudaPathsFn; then _exitFn; fi
+_cm2SucFn;
+
+if ! _installEnvFn; then
+  _cm2WarnStrFn 'Installation not complete';
+  _cm2AskExitFn 2;
+fi
+
+conda deactivate;
+conda config --set auto_activate_base false;
+
+1>&2 cat << _EOL0X
+
+This script disables conda environments, so you can continue to run
+system Python scripts like backintime-qt when you open a new bash
+session (like when opening a new terminal tab). To enable the conda
+environment, use the following:
+
+* Auto-enable conda using 'conda config --set auto_activate_base true'.
+* Use 'false' with the above to disable auto-enable.
+* Deactivate the default conda environment with 'conda deactivate'.
+  This will allow you to run system Python scripts again.
+_EOL0X
+
+_cm2AskExitFn 0 "\n${_baseName} complete. Press return to exit.";
+
+exit 0;
+## . END MAIN }

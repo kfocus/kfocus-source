@@ -1,0 +1,208 @@
+#!/bin/bash
+#
+# Copyright 2020-2022 MindShare Inc.
+# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
+#
+# Name    : kfocus-power
+# Purpose : GUI to select power profile
+# License : GPL v2
+# Run By  : Users
+# Spec    : 729, 2558
+#
+set -u;
+
+_cssStyleStr="$(
+  cat <<'_EOH'
+  <style>
+    table{width:100%;margin:12px}
+    td,th{padding:6px 24px 6px 24px;text-align:left}
+    h3{color:#f7941d;text-align:center}
+    tr.p1{color:#000;background:#999}
+    td.t1{color:#f7941d}
+    tr.p1 td.t1 {color:#000}
+    .cx{color:#fff;font-weight:1000}
+    .c0{background:#f63114}
+    .c1{background:#f7941e}
+    .ca2{background:#e4a714}
+    .c2{background:#8eb519}
+    .c3{background:#33cc33}
+    .c4{background:#39ceba}
+    .c5{background:#3caae4}
+    .c6{background:#007dc6}
+    .c7{background:#006091}
+    .prompt{text-align:center;padding:16px 0 8px 0;font-weight:800}
+    a{color:#1d99f3}
+    .subt{text-align:center}
+  </style>
+_EOH
+)"
+
+## BEGIN _importCommonFn {
+# Imports: _cm2EchoModelStrFn _cm2KdiagExe _cm2WarnStrFn
+#
+# Run ls-common-symbols.sh to get this list
+#
+_importCommonFn () {
+  declare _lib_file;
+  _lib_file="${_baseDir}/lib/common.2.source";
+  if [ -r "${_lib_file}" ]; then
+    # shellcheck source=../lib/common.2.source
+    source "${_lib_file}" || exit 202;
+  else
+    echo 1>&2 "${_baseName}: ABORT - Cannot source lib |${_lib_file}|";
+    exit 202;
+  fi
+}
+## . END _importCommonFn }
+
+_echoTableRowsFn () {
+  declare _current_mode_key _pick_table_str _do_add_led \
+    _solve_list _pick_list _row_idx _row_str _class_str \
+    _word_str _bit_list _max_ghz_num;
+
+  _current_mode_key="${1:-}";
+  _pick_table_str="${2:-}";
+  _do_add_led="${3:-}";
+  _solve_list=();
+
+  IFS=$'\n' read -r -d '' -a _pick_list < <(echo -n "${_pick_table_str}");
+
+  _row_idx=0;
+  for _row_str in "${_pick_list[@]}"; do
+    # _label;_max_scaling_int;gov_key;_noturbo_int;_led_int
+    IFS=';' read -r -d '' -a _bit_list < <(echo -n "${_row_str}");
+    _max_ghz_num="$(echo "${_bit_list[1]}*.000001"|bc)";
+    _max_ghz_num="$(printf '%.2f' "${_max_ghz_num}")";
+
+    if [ "${_current_mode_key}" = "${_bit_list[0]}" ]; then
+      _row_str='<tr class="p1">';
+    else
+      _row_str='<tr>';
+    fi
+
+    # _label
+    _row_str+="<td class=\"cx c${_row_idx}\">${_bit_list[0]}</td>";
+
+    # _max_scaling_int
+    _row_str+="<td>${_max_ghz_num}</td>"
+
+    # _gov_key
+    if [ "${_bit_list[2]}" = 'performance' ]; then
+      _class_str=' class="t1"';
+    else
+      _class_str='';
+    fi
+    _row_str+="<td${_class_str}>${_bit_list[2]}</td>";
+
+    # _led_int
+    if [ -n "${_do_add_led}" ]; then
+      if [ "${_bit_list[4]}" = '0' ]; then
+        _word_str='no';
+        _class_str='';
+      else
+        _word_str='YES';
+        _class_str=' class="t1"';
+      fi
+      _row_str+="<td${_class_str}>${_word_str}</td>";
+    fi
+
+    _row_str+='</tr>';
+    _solve_list+=("$_row_str");
+    ((_row_idx++));
+  done
+
+  (IFS=$'\n'; echo "${_solve_list[*]}");
+}
+
+## BEGIN _mainFn {
+_mainFn () {
+  declare _has_kb_led _current_mode_key _pick_table_str \
+    _key_list _head_str _exe_list _rows_str _power_dialog_str \
+    _pick_mode_str;
+
+  if [ ! -x "${_cm2KdiagExe}" ]; then
+    _cm2WarnStrFn 'kdialog executable missing. Abort.';
+    exit 203;
+  fi
+
+  _has_kb_led="$(_cm2EchoModelStrFn 'has_kb_led')"  || exit 202;
+  _current_mode_key="$("${_powerSetExe}" -r)";
+  _pick_table_str="$("${_powerSetExe}" -p)";
+  read -r -d '' -a _key_list < <( echo "${_pick_table_str}" |cut -f1 -d';' );
+
+  if [ -z "${_key_list[*]:-}" ]; then
+    _power_dialog_str="$(cat <<_EOH
+<html><head>${_cssStyleStr}</head><body>
+<h3>CPU Power Profile Not Supported</h3>
+<p class="subt">Doc: <a href="https://kfocus.org/wf/tools#power"
+  >https://kfocus.org/wf/tools#power</a></p>
+<p>This tool does not recognize the CPU architecture, and therefore
+cannot provide controls. If you believe this is in error, please
+contact support.</p>
+</body></html>
+_EOH
+  )";
+    "${_cm2KdiagExe}" --title 'CPU Power Profile' --icon 'kfocus-bug-power' \
+    --msgbox "${_power_dialog_str}";
+    exit 0;
+  fi
+
+  _head_str='<tr><th>&nbsp;</th><th>GHz</th><th>Governor</th>'
+  _exe_list=( '_echoTableRowsFn' "${_current_mode_key}" "${_pick_table_str}" );
+
+  if [ "$_has_kb_led" = 'y' ]; then
+    _exe_list+=('add_leds');
+    _head_str+='<th>LEDs</th></tr>';
+  else
+    _head_str+='</tr>';
+  fi
+  _rows_str="$( "${_exe_list[@]}")";
+
+  _power_dialog_str="$(cat <<_EOH
+<html><head>${_cssStyleStr}</head><body>
+<h3>Select a CPU Power Profile</h3>
+<p class="subt">Doc: <a href="https://kfocus.org/wf/tools#power"
+  >https://kfocus.org/wf/tools#power</a></p>
+<table align="center">${_head_str}${_rows_str}</table>
+</body></html>
+_EOH
+  )";
+
+  if echo "${_current_mode_key}" |grep '^Custom'; then
+    _key_list+=("${_current_mode_key}");
+  fi
+
+  _pick_mode_str="$("${_cm2KdiagExe}" --title 'CPU Power Profile' \
+    --icon 'kfocus-bug-power' --combobox "${_power_dialog_str}" \
+    "${_key_list[@]}" --default "${_current_mode_key}"
+  )";
+
+  if [ -z "${_pick_mode_str}" ]; then exit 0; fi
+
+  if [ "${_pick_mode_str}" = "${_current_mode_key}" ]; then
+    "${_cm2KdiagExe}" --icon 'kfocus-bug-power' \
+      --msgbox 'CPU Power Profile is unchanged.';
+    exit 0;
+  fi
+
+  if pkexec "${_powerSetExe}" "${_pick_mode_str}"; then
+    "${_cm2KdiagExe}" --icon 'kfocus-bug-power' \
+      --msgbox "CPU Power Profile has been set to ${_pick_mode_str}.";
+  else
+    "${_cm2KdiagExe}" --icon 'kfocus-bug-power' \
+      --error 'An error has occurred.';
+  fi
+}
+## . END _mainFn }
+
+## BEGIN Run main if script is not sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+  _powerSetExe="${_binDir}/kfocus-power-set";
+  _importCommonFn;
+  _mainFn "$@";
+fi
+## . END Run main if script is not sourced }

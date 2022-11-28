@@ -1,0 +1,206 @@
+#!/bin/bash
+#
+# Copyright 2020-2022 MindShare Inc.
+# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
+#
+# Name    : kfocus-vidsync
+# Purpose : GUI to select mode to minimize or eliminate video tearing
+# License : GPL v2
+# Run By  : Users
+# Spec    : 745, 931
+#
+set -u;
+
+_cssStyleStr="$(
+  cat <<'_EOH01'
+  <style>
+    h3{color:#f7941d;text-align:center}
+    a{color:#1d99f3}
+    .subt{text-align:center}
+  </style>
+_EOH01
+)";
+
+## BEGIN _importCommonFn {
+# Imports: _cm2EchoModelStrFn _cm2ErrFn _cm2KdiagExe _cm2SetMsgFn
+# _cm2SucFn _cm2WarnStrFn
+#
+# Run ls-common-symbols.sh to get this list
+#
+_importCommonFn() {
+  declare _lib_file
+  _lib_file="${_baseDir}/lib/common.2.source";
+  if [ -r "${_lib_file}" ]; then
+    # shellcheck source=../lib/common.2.source
+    source "${_lib_file}" || exit 202;
+  else
+    echo 1>&2 "${_baseName}: ABORT - Cannot source lib |${_lib_file}|";
+    exit 202;
+  fi
+}
+## . END _importCommonFn }
+
+_promptUserFn () {
+  "${_cm2KdiagExe}" --icon 'kfocus-bug-vidsync' --title "${_titleStr}" \
+    --msgbox "${1:-Unexpected Error}";
+}
+
+_promptNoNvidiaFn () {
+  _promptUserFn "$(cat << _EOH02
+<html><head>${_cssStyleStr}</head><body>
+<h3>${_titleStr}: Nvidia Graphics Not in Use</h3>
+${_cm2HtmPStr}We did not detect an Nvidia GPU on this system.</p>
+${_cm2HtmPStr}This tool is useful when using an Nvidia GPU or eGPU. <br>
+Intel graphics should be tear-free. Please contact Kubuntu <br>
+Focus Support if you see otherwise.
+<br></p>
+${_cm2HtmEndStr}
+_EOH02
+  )";
+}
+
+_promptBadExesFn () {
+  _promptUserFn "$(
+    cat <<_EOH03
+<html><head>${_cssStyleStr}</head><body>
+<h3>${_titleStr}: Missing App</h3>
+${_cm2HtmPStr}<b>Please install <code>nvidia-settings</code> and <br>
+<code>nvidia-prime</code> packages</b> to use this tool. <br>
+You may use the Discover app or CLI <code>apt</code> <br>
+command for this purpose.<br></p>
+${_cm2HtmEndStr}
+_EOH03
+  )";
+}
+
+_promptBadModeFn () {
+    _promptUserFn "$(cat <<_EOH04
+<html><head>${_cssStyleStr}</head><body>
+<h3>${_titleStr}: Wrong Mode</h3>
+${_cm2HtmPStr}<b>This tool only works with Nvidia (Performance Mode)</b>.<br>
+Intel graphics should be tear-free. You may change the in-use <br>
+GPU by clicking the icon in the System Tray.<br></p>
+${_cm2HtmEndStr}
+_EOH04
+  )";
+}
+
+## BEGIN _mainFn {
+_mainFn () {
+  declare _nv_line _gfx_mode_str \
+    _solve_list_str _mod_list_str _solve_comp_str _solve_full_str \
+    _default_str _main_message_str _user_pick_str;
+
+  _cm2SetMsgFn 'Ensure nvidia device';
+  _nv_line=$(lspci |grep -i 'VGA compatible controller' |grep -i 'nvidia' );
+  if [ -z "${_nv_line}" ]; then
+    _promptNoNvidiaFn;
+    _cm2ErrFn;
+  fi
+  _cm2SucFn;
+
+  _cm2SetMsgFn 'Ensure needed executables';
+  if [ ! -x "${_nvSetExe}" ] || [ ! -x "${_primeSelectExe}" ]; then
+    _promptBadExesFn;
+    _cm2ErrFn;
+  fi
+  _cm2SucFn;
+
+  _cm2SetMsgFn 'Ensure Nvidia Performance mode';
+  _gfx_mode_str="$("${_primeSelectExe}" query || echo '')";
+  if [ "${_gfx_mode_str}" != 'nvidia' ]; then
+    _promptBadModeFn;
+    _cm2ErrFn;
+  fi
+  _cm2SucFn;
+
+  _cm2SetMsgFn 'Determine current meta mode';
+  _solve_list_str="$("${_nvSetExe}" -q CurrentMetaMode -t)";
+  _mod_list_str="${_solve_list_str#*" :: "}"; # snip off front of metastr
+  _solve_comp_str='Off';
+  _solve_full_str='Off';
+  _default_str='Off';
+
+  if echo "${_mod_list_str}"   | grep -q 'ForceFullCompositionPipeline=On'; then
+    _default_str='High';
+  elif echo "${_mod_list_str}" | grep -q 'ForceCompositionPipeline=On'; then
+    _default_str='Medium';
+  else
+    _default_str='Off';
+  fi
+  _cm2SucFn;
+
+  _cm2SetMsgFn 'Process user input';
+  _main_message_str="$( cat <<_EOH05
+<html><head>${_cssStyleStr}</head><body>
+<h3>${_titleStr}</h3>
+<p class="subt">Doc: <a href="https://kfocus.org/wf/tools#vidsync"
+ >https://kfocus.org/wf/tools#vidsync</a></p>
+${_localHtmPStr}<b>This tool can eliminate video playback tearing</b> across<br>
+ALL attached displays by activating pipeline rendering.</p>
+
+${_localHtmPStr}We recommend using <b>Medium</b> or <b>High</b> when
+watching <br>videos. At other times, it is preferable to use
+<b>Off</b> as this<br> usually provides the best desktop
+responsiveness.<br></p>
+${_cm2HtmEndStr}
+_EOH05
+  )";
+
+  _user_pick_str="$("${_cm2KdiagExe}" --icon 'kfocus-bug-vidsync' \
+    --title "${_titleStr}" --default "${_default_str}" \
+    --combobox "${_main_message_str}" 'Off' 'Medium' 'High'
+  )";
+  _user_pick_str="$(echo "${_user_pick_str}" | cut -f1 -d' ')";
+
+  case "${_user_pick_str}" in
+    Off )
+      _solve_comp_str='Off';
+      _solve_full_str='Off';
+      ;;
+    Medium )
+      _solve_comp_str='On';
+      _solve_full_str='Off';
+      ;;
+    High )
+      _solve_comp_str='On';
+      _solve_full_str='On';
+      ;;
+    * )
+      _solve_comp_str='';
+      _solve_full_str='';
+      ;;
+  esac
+
+  if [ -z "${_solve_comp_str}" ]; then
+    _cm2WarnStrFn 'Exit on user command';
+    _cm2SucFn;
+    return;
+  fi
+
+  _mod_list_str="${_mod_list_str//\}/, ForceCompositionPipeline=${_solve_comp_str}, ForceFullCompositionPipeline=${_solve_full_str}\}}";
+
+  if "${_nvSetExe}" -a CurrentMetaMode="${_mod_list_str}"; then
+    _cm2SucFn; else _cm2ErrFn; fi
+}
+## . END _mainFn }
+
+## BEGIN Set global vars {
+_localHtmPStr='<p style="margin-left:32px;margin-right:32px">'
+_titleStr='Focus Video Sync';
+
+_nvSetExe="$(command -v nvidia-settings)";
+_primeSelectExe="$(command -v 'prime-select')";
+## . END Set global vars }
+
+## BEGIN Run main if script is not sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+  _importCommonFn;
+  _mainFn "$@";
+fi
+## . END Run main if script is not sourced }
+

@@ -1,0 +1,101 @@
+#!/bin/bash
+#
+# Copyright 2020-2022 MindShare Inc.
+# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
+#
+# Name   : kfocus-reset-effects
+# Purpose: Reset KFocus desktop effects and keybindings
+# License: GPL v2
+# Run by : User
+# Spec   : 2169
+#
+set -u;
+echo '
+RESET KUBUNTU FOCUS DESKTOP UX DEFAULTS
+This app resets keyboard shortcuts and desktop
+effects to the Kubuntu Focus defaults. Please close
+System Settings before proceeding.
+';
+read -rp 'Shall we continue? (y/N) ' _reply;
+echo;
+
+if [[ "${_reply:-n}" =~ ^[Nn] ]]; then
+  echo 'Reset CANCELLED on user request';
+  exit 0;
+fi
+
+keyList=(
+  'kw|Desktops|Name_1|one'
+  'kw|Desktops|Name_2|two'
+  'kw|Desktops|Name_3|three'
+  'kw|Desktops|Name_4|four'
+  'kw|Desktops|Number|4'
+  'kw|Desktops|Rows|4'
+  'kw|Effect-CoverSwitch|TabBox|true'
+  'kw|Effect-CoverSwitch|TabBoxAlternative|false'
+  'kw|Effect-DesktopGrid|BorderActivate|9'
+  'kw|Effect-DesktopGrid|CustomLayoutRows|4'
+  'kw|Effect-DesktopGrid|DesktopNameAlignment|36'
+  'kw|Effect-DesktopGrid|LayoutMode|1'
+  'kw|Effect-DesktopGrid|PresentWindows|false'
+  'kw|Effect-DesktopGrid|ShowAddRemove|false'
+  'kw|Effect-Wobbly|Drag|85'
+  'kw|Effect-Wobbly|Stiffness|10'
+  'kw|Effect-Wobbly|WobblynessLevel|1'
+  'kw|Effect-kwin4_effect_translucency|MoveResize|80'
+  'kw|Plugins|kwin4_effect_translucencyEnabled|true'
+  'kw|Plugins|mouseclickEnabled|true'
+  'kw|Plugins|trackmouseEnabled|true'
+  'kw|Plugins|wobblywindowsEnabled|true'
+  'kw|Compositing|OpenGLIsUnsafe|false'
+  'gk|kwin|Switch to Previous Desktop|Meta+Ctrl+Up,,Switch to Previous Desktop'
+  'gk|kwin|Switch to Next Desktop|Meta+Ctrl+Down,,Switch to Next Desktop'
+  'gk|kwin|Window Fullscreen|Meta+F,,Make Window Fullscreen'
+  'kf|General|forceFontDPI|96'
+  'kf|General|forceFontDPI|136|m2g4'
+);
+
+_hwCode='';
+_hwCodeFile='/var/lib/kfocus/hw_config_code';
+if [ -f "${_hwCodeFile}" ]; then
+  _hwCode="$(cat "${_hwCodeFile}")";
+fi
+
+for _line in "${keyList[@]}"; do
+  IFS='|' read -r -a _bit_list < <( echo -n "${_line}" );
+  if [ -n "${_bit_list[4]:-}" ]; then
+    if grep -q "${_hwCode}" <<< "${_bit_list[4]:-}"; then
+      echo "APPLY hw config: ${_line}";
+    else
+      echo "SKIP hw config: ${_line}";
+      continue;
+    fi
+  else
+    echo "Apply ${_line}";
+  fi
+
+  case "${_bit_list[0]}" in
+    gk) _configFile="$HOME/.config/kglobalshortcutsrc";;
+    kf) _configFile="$HOME/.config/kcmfonts";;
+    kw) _configFile="$HOME/.config/kwinrc";;
+    *) 2>&1 echo "WARN: Config key |${_bit_list[0]}| not supported";
+       continue;;
+  esac
+
+  kwriteconfig5 --file "${_configFile}" --group "${_bit_list[1]}" \
+    --key "${_bit_list[2]}" "${_bit_list[3]}";
+done
+
+_configFile="$HOME/.config/powermanagementprofilesrc";
+if [ -f "${_configFile}" ]; then
+  echo;
+  read -rp 'Reset power management to default? (Y/n) ' _reply;
+  if [[ "${_reply:-y}" =~ ^[Yy] ]]; then
+    rm "${_configFile}" || true;
+  fi
+fi
+
+echo 'Reset performed on user request
+IMPORTANT: Please IMMEDIATELY log out and back in
+for the changes to take effect
+';

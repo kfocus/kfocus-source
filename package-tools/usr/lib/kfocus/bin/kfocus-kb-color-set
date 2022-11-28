@@ -1,0 +1,21 @@
+#!/bin/bash
+#
+# Copyright 2020-2022 MindShare Inc.
+# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
+#
+# Name    : kfocus-kb-color-set
+# Purpose : Run-as-root utility to set keyboard LEDs
+# License : GPL v2
+# Run By  : kfocus-kb-color
+# Spec    : 615
+#
+set -u;
+
+if [ "$#" -lt 2 ]; then exit 1; fi
+_tuxKeyDir='/sys/devices/platform/tuxedo_keyboard'
+if ! [ -d "${_tuxKeyDir}" ]; then exit 1; fi
+echo "options tuxedo-keyboard mode=0 brightness=$1 color_left=0x$2 color_center=0x$2 color_right=0x$2" > /etc/modprobe.d/tuxedo_keyboard.conf
+echo "$1"   | tee ${_tuxKeyDir}/brightness   > /dev/null
+echo "0x$2" | tee ${_tuxKeyDir}/color_left   > /dev/null
+echo "0x$2" | tee ${_tuxKeyDir}/color_center > /dev/null
+echo "0x$2" | tee ${_tuxKeyDir}/color_right  > /dev/null

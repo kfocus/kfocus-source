@@ -1,0 +1,15 @@
+Source: qwe
+Section: admin
+Priority: optional
+Maintainer: Erich Eickmeyer <eeickmeyer@ubuntu.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.0
+Homepage: https://github.com/olafurw/olafurw-home/blob/master/tools/qwe.sh
+Rules-Requires-Root: no
+
+Package: qwe
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends},
+         bash-completion
+Description: Command line bookmarks with autocomplete
+ <insert long description, indented with spaces>

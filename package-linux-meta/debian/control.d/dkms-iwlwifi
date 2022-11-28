@@ -1,0 +1,10 @@
+
+Package: linux-modules-iwlwifi-oem${variant:suffix}
+Architecture: amd64
+Section: kernel
+Provides: ${dkms:iwlwifi-modules}
+Depends:
+ ${misc:Depends},
+ linux-modules-iwlwifi-${kernel-abi-version}-oem,
+Description: Extra drivers for iwlwifi for the oem flavour
+ Install extra signed iwlwifi modules compatible with the oem flavour.

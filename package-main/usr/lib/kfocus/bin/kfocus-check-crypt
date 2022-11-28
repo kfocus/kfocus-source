@@ -1,0 +1,104 @@
+#!/bin/bash
+#
+# Copyright 2021-2022 MindShare Inc.
+# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
+#
+# Name    : kfocus-check-crypt
+# Purpose : Prompts user to change encrypted disk passwords.
+# License : GPL v2
+# Run by  : kfocus-firstrun in xterm
+# Spec    : 203, 1314
+#
+set -u;
+
+## BEGIN _importCommonFn {
+# Run ls-common-symbols.sh to list in-use symbols
+#
+_importCommonFn () {
+  declare _lib_file;
+  _lib_file="${_baseDir}/lib/common.2.source";
+  if [ -r "${_lib_file}" ]; then
+    # shellcheck source=../lib/common.2.source
+    source "${_lib_file}" || exit 201;
+  else
+    1>&2 echo "${_baseName}: ABORT - Cannot source lib |${_lib_file}|";
+    exit 201;
+  fi
+}
+## . END _importCommonFn }
+
+## BEGIN MAIN {
+_mainFn () {
+  declare _default_str _disk_str _reply_str _prompt_msg;
+  _default_str="$(echo 6b7562756e74750a |xxd -r -p)";
+
+  ## Begin Disk checks {
+  _disk_str="${1:-}";
+  if [ -z "${_disk_str}" ]; then
+    _cm2WarnStrFn "${_baseName}: Invalid disk |${_disk_str}|";
+    _cm2AskExitFn 1;
+  fi
+  if ! [ -b "${_disk_str}" ]; then
+    _cm2WarnStrFn "${_baseName}: Disk |${_disk_str}| not found.";
+    _cm2AskExitFn 1;
+  fi
+  if blkid "${_disk_str}" | grep -vq 'TYPE="crypto_LUKS"'; then
+    _cm2WarnStrFn "${_baseName}: Disk |${_disk_str}| does not look encrypted.";
+    _cm2AskExitFn 1;
+  fi
+  ## . End Disk checks }
+
+  ## Begin Check passphrase {
+  _cm2EchoFn "Checking passphrase for disk |${_disk_str}|";
+  # _cm2EchoFn "Please enter your user password to proceed\n";
+  if echo "${_default_str}" | "${_escExe}" cryptsetup luksOpen \
+    --test-passphrase "${_disk_str}" 1>&2 2>/dev/null; then
+    _reply_str="$( _cm2ReadPromptYnFn \
+      "\nDisk |${_disk_str}| is using the default passphrase.
+  Would you like to change it now (RECOMMENDED)" 'y'
+    )";
+  elif [ "$?" = '1' ]; then
+    _cm2WarnStrFn "${_baseName}: Incorrect password.";
+    _cm2AskExitFn 1;
+  else
+    _reply_str="$( _cm2ReadPromptYnFn \
+      "\nDisk |${_disk_str}| does not use the default passphrase.
+  Are you sure you still want to change it (NOT recommended)" 'n'
+    )";
+  fi
+  ## . End Check passphrase }
+
+  ## Begin Handle passphrase reply {
+  if [ "${_reply_str}" = 'y' ]; then
+    _prompt_msg="$( cat << _EOH
+Change the passphrase by following the prompts below.
+
+WARNING: DO NOT LOSE YOUR PASSPHRASE!
+You will not be able to access the disk without it.
+
+Press <Control>-C to cancel.\n
+_EOH
+    )";
+    _cm2EchoFn "${_prompt_msg}";
+    "${_escExe}" cryptsetup luksChangeKey "${_disk_str}";
+  else
+    _cm2EchoFn "\nPassphrase has NOT been changed";
+  fi
+  ## . End Handle passphrase reply }
+  _cm2AskExitFn 0;
+}
+# . END MAIN }
+
+## BEGIN Run main if script is not sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+  _importCommonFn;
+
+  # Get escalation exe
+  _escExe="$(_cm2GetEscExeFn)" || exit;
+  _mainFn "$@";
+fi
+## . END Run main if script is not sourced }

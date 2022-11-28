@@ -1,0 +1,51 @@
+#!/bin/bash
+# THIS IS A MACHINE GENERATED FILE. DO NOT EDIT.
+# REMOVE THE OWNING PACKAGE kfocus-hw TO REMOVE THIS FILE.
+# KFOCUS_TEST_ID=2231
+#
+# Install:
+#   * # Save as /usr/lib/systemd/system-sleep/zsleep-kfocus
+#   * sudo chmod 755  /usr/lib/systemd/system-sleep/zsleep-kfocus
+#   * sudo chown root:root  /usr/lib/systemd/system-sleep/zsleep-kfocus
+#   * tail -f /var/log/syslog # to view message in separate window
+#   * systemctl suspend # or close lid or suspend from GUI to test
+#   * # Press fn-f12, tap power button, or open lid to resume
+#
+# Original concept from
+# https://gist.github.com/ioggstream/8f380d398aef989ac455b93b92d42048
+#
+# Debugged and tested by kfocus team on ALL M-series models 2022-06-25
+#
+# This should fix usb hub sleep-reusme issues like these found in syslog:
+#   # The PCI 00:14.0 device is the usb xhci controller.
+#   kernel: pci_pm_suspend(): hcd_pci_suspend+0x0/0x30 returns -16
+#   kernel: dpm_run_callback(): pci_pm_suspend+0x0/0x150 returns -16
+#   kernel: PM: Device 0000:00:14.0 failed to suspend async: error -16
+#   kernel: PM: Some devices failed to suspend, or early wake event detected
+#
+# _pstateExe=/usr/lib/kfocus/bin/kfocus-pstate
+#
+_wakeFile=/proc/acpi/wakeup;
+_baseName='zsleep-kfocus';
+_reportFn () {
+  declare _grep_str;
+  _grep_str="$(grep "^XHCI" "${_wakeFile}")";
+  echo -e "Current acpi XHCI status:\n ${_grep_str}";
+}
+case "${1:-}" in
+  pre)
+    # Do the thing you want before suspend
+    echo "${_baseName}: Disable XHCI on sleep to avoid premature wake";
+    grep -q '^XHCI.*enable' "${_wakeFile}" && echo XHCI > "${_wakeFile}";
+    _reportFn;
+    ;;
+  post)
+    # 2258 Do NOT call _pstateExe here because /lib/systemd/systemd --user
+    #   now calls it without arguments, so it would be needlessly redundant.
+    echo "${_baseName}: Enable XHCI on wake";
+    grep -q '^XHCI.*disable' "${_wakeFile}" && echo XHCI > "${_wakeFile}";
+    _reportFn;
+    ;;
+  *) echo "Unsupported action: ${1:-}";
+esac
+

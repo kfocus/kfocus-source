@@ -1,0 +1,170 @@
+Source:            kfocus-main
+Section:           misc
+Priority:          optional
+Maintainer:        Kubuntu Focus Team <support@kfocus.org>
+Standards-Version: 4.6.0
+Build-Depends:     debhelper-compat (=13)
+
+Package:      kfocus-001-main
+Architecture: all
+Depends:      ${misc:Depends}, ${shlibs:depends},
+              kfocus-main (>= ${binary:Version})
+Description:  Transitional Dummy Package for kfocus-main
+ This is a transitional dummy package.
+ It can be safely removed.
+
+Package:      kfocus-main
+Architecture: all
+Pre-Depends:  kfocus-apt-source (>>20.04.12)
+Depends:      ${misc:Depends}, ${shlibs:Depends},
+              build-essential (>= 12.4),
+              cpufrequtils,
+              dmidecode (>= 3.1-1),
+              hicolor-icon-theme,
+              kdialog,
+              kfocus-common,
+              kfocus-hw,
+              kfocus-settings |
+              ubuntustudio-default-settings (>= 20.10),
+              policykit-1,
+              python3-pip,
+              rsync (>= 3.1.2),
+              zenity
+Recommends:   kfocus-tools-other,
+              bup,
+              backintime-qt,
+              kfocus-meta,
+              kfocus-power-scripts,
+              linux-oem-22.04a-kfocus,
+              linux-tools-oem-22.04a-kfocus,
+              pcmemtest,
+              xserver-xorg-input-evdev,
+              xserver-xorg-input-synaptics
+Conflicts:    kfocus-001-main (<< ${binary:Version})
+Replaces:     kfocus-001-main (<< ${binary:Version})
+Description:  Kubuntu Focus Hardware Optimizations
+ This package provides hardware optimizations and requirements
+ for Kubuntu Focus computers. This also includes the Welcome
+ Wizard and FocusRx.
+
+Package:      kfocus-meta
+Architecture: all
+Depends:      ${misc:Depends},
+              kfocus-common
+Recommends:   unattended-upgrades,
+              apt-rollback,
+              apt-file,
+              aptitude,
+              audacity,
+              awscli,
+              chrome-remote-desktop,
+              curl,
+              darktable,
+              dia,
+              diffpdf,
+              exfat-fuse,
+              exfat-utils,
+              ffmpeg,
+              gimp,
+              gimp-data-extras,
+              gimp-help-en,
+              git,
+              gitolite3,
+              gstreamer1.0-plugins-bad,
+              gstreamer1.0-plugins-ugly,
+              haskell-platform,
+              hplip,
+              hplip-gui,
+              htop,
+              hwinfo,
+              inkscape,
+              jetbrains-toolbox,
+              google-chrome-stable,
+              kdenlive,
+              kdiff3,
+              keepassxc,
+              kfind,
+              kleopatra,
+              kruler,
+              libreoffice-base,
+              libxcb-xtest0,
+              libxvidcore4,
+              meld,
+              mesa-utils,
+              mtp-tools,
+              neofetch,
+              net-tools,
+              nvme-cli,
+              obs-studio,
+              openssh-server,
+              openvpn,
+              optipng,
+              pavucontrol-qt,
+              pciutils,
+              p7zip-full,
+              p7zip-rar,
+              pandoc,
+              pandoc-citeproc,
+              pdfshuffler,
+              powertop,
+              ppa-purge,
+              python3-gpg,
+              python3-pip,
+              qwe,
+              rar,
+              rename,
+              scdaemon,
+              sdparm,
+              shellcheck,
+              simplescreenrecorder,
+              sqlite,
+              steam-installer,
+              sysstat,
+              telegram-desktop,
+              texlive,
+              tmux,
+              trash-cli,
+              tree,
+              vdpau-driver-all,
+              vdpauinfo,
+              vim-gtk,
+              vim-nox,
+              vim-syntax-gtk,
+              libvulkan1,
+              libvulkan1:i386,
+              vulkan-utils,
+              wajig,
+              webcamoid,
+              winff-qt,
+              x264,
+              xsel
+Suggests:     kfocus-rest
+Replaces:     kfocus-001-main (<= 20.04.75),
+Breaks:       kfocus-001-main (<= 20.04.75)
+Description:  Kubuntu Focus Curated Apps Metapackage
+ This metapackage provides curated apps for Kubuntu Focus laptops.
+
+Package:      kfocus-common
+Architecture: all
+Depends:      ${misc:Depends},
+              kdialog
+Replaces:     kfocus-001-main (<= 20.04.89)
+Breaks:       kfocus-001-main (<= 20.04.89)
+Description:  Kubuntu Focus Common Libraries
+ This package provides the common libraries and custom menu
+ for Kubuntu Focus Tools.
+
+Package:      kfocus-power-scripts
+Architecture: all
+Depends:      ${misc:Depends},
+              kfocus-power,
+              kfocus-common,
+              kdialog
+Breaks:       kfocus-001-main (<= 20.04.96.1),
+              tlp
+Replaces:     kfocus-001-main (<= 20.04.96.1),
+              tlp
+Description:  Automatic power management scripts for Kubuntu Focus
+ Power management scripts to be run automatically upon power
+ unplug/replug to optimize battery usage and suggest manual
+ power management actions.

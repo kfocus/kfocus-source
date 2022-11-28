@@ -1,0 +1,118 @@
+#!/bin/bash
+#
+# Copyright 2022 MindShare Inc.
+# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
+#
+# Name    : kfocus-extra
+# Purpose : Run-as-root utility to complete installation
+# License : GPL v2
+# Run By  : Users
+# Spec    : 615
+#
+set -u;
+
+_importCommonFn () {
+  declare _lib_list _is_loaded _lib_file;
+  _lib_list=(
+    "${_baseDir}/lib/common.2.source"
+    '/usr/lib/kfocus/lib/common.2.source'
+  );
+  _is_loaded='n';
+  for _lib_file in "${_lib_list[@]}"; do
+    if [ -r "${_lib_file}" ]; then
+      # shellcheck source=/usr/lib/kfocus/lib/common.2.source
+      if source "${_lib_file}"; then
+        _is_loaded='y';
+        break;
+      fi
+    fi
+  done
+
+  if [ "${_is_loaded}" = 'n' ]; then
+    echo 1>&2 "${_baseName}: ABORT - Cannot source common lib";
+    exit 202;
+  fi
+}
+
+_installExtraFn () {
+  declare _reply;
+
+  if _cm2ChkInstalledPkgFn 'kfocus-rest'; then
+    _cm2SucStrFn 'Restricted packages already installed';
+  else
+    _reply="$(_cm2ReadPromptYnFn 'Install restricted packages' 'n')";
+    if [ "${_reply}" = 'y' ]; then
+      _cm2SetMsgFn 'Install restricted packages (kfocus-rest)';
+      if apt-get install -y kfocus-rest; then
+        _cm2SucFn; else _cm2WarnFn;
+      fi
+    else
+      _cm2EchoFn;
+    fi
+  fi
+
+  if _cm2ChkInstalledPkgFn 'kfocus-wallpapers'; then
+    _cm2SucStrFn 'Kfocus Wallpapers already installed.';
+  else
+    _reply="$(_cm2ReadPromptYnFn 'Install kfocus wallpapers' 'n')";
+    if [ "${_reply}" = 'y' ]; then
+      if apt-get install -y kfocus-wallpapers; then
+        _cm2SucFn; else _cm2WarnFn;
+      fi
+    fi
+  fi
+
+  if _cm2ChkInstalledPkgFn 'libdvd-pkg'; then
+    _cm2SucStrFn 'DVD support package already installed.';
+  else
+    _reply="$(_cm2ReadPromptYnFn 'Install DVD tools' 'n')";
+    if [ "${_reply}" = 'y' ]; then
+      _cm2SetMsgFn 'Install libdvd-pkg, libdvdnav4, libdvdread7';
+      if apt-get install -y libdvd-pkg; then _cm2SucFn; else _cm2WarnFn; fi
+    else
+      _cm2EchoFn;
+    fi
+  fi
+
+  if _cm2ChkInstalledPkgFn 'libdvd-pkg'; then
+    _cm2SetMsgFn 'Updating DVD support...';
+    if dpkg-reconfigure libdvd-pkg; then _cm2SucFn; else _cm2WarnFn; fi
+  fi
+}
+
+## BEGIN _mainFn {
+_mainFn () {
+  declare _uid_int;
+
+  _uid_int="$(id -u)";
+  if [ "${_uid_int}" != '0' ]; then
+    _cm2WarnStrFn 'Please run using sudo or as root';
+    exit 1;
+  fi
+
+  if [ "${1:-}" = '-q' ]; then
+    _stdoutFile='/dev/null';
+  fi
+
+  _cm2EchoFn '== BEGIN : Install Extra Packages';
+  _installExtraFn;
+  _cm2EchoFn '== . END : Install Extra Packages';
+  read -rp $'\nPress enter to continue ';
+}
+## . END _mainFn }
+
+## BEGIN Declare global variables {
+_isNvidiaSystem='n';
+_stdoutFile='/dev/stdout';
+## . END Declare global variables }
+
+## BEGIN Run main if script is not sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+  _importCommonFn;
+  _mainFn "$@";
+fi
+## . END Run main if script is not sourced }

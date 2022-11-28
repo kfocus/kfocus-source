@@ -1,0 +1,829 @@
+#!/bin/bash
+#
+# Copyright 2020-2022 MindShare Inc.
+# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
+#
+# Name   : kfocus-mime
+# Purpose: Launch app for link with x-schema-handler/kfocus-mime
+#          Recent additions for repo add from get-apt project
+# License: GPL v2
+# Example: xdg-open ./link.kfocus-001
+#          kfocus-mime -k zoom
+# Run By : Browser through xdg-open, direct call to ensure app is installed
+# Spec   : 951
+#
+set -u;
+
+# app_str|cmd_str;with;args|sniff_str|pkg_str|descr_str
+# 1       2                 3         4       5
+_exeLookupList=(
+  'apt-rollback|konsole;-e;man;apt-rollback|apt-rollback|apt-rollback|AptRollback: Rollback System Packages'
+  'atom|atom;--no-sandbox||atom|Atom: A hackable text editor. Use atom --nosanbox to launch.'
+  'audacity|audacity||audacity|Audacity: Edit Sound'
+  'aws-cli|konsole;-e;aws;help|aws|awscli|AWS: Command Line DevOps Tool'
+  'azure-cli|konsole;--hold;-e;az;--help|az|azure-cli|Azure: Command Line DevOps Tool'
+  'backintime|backintime-qt||backintime-qt|BackInTime: Backup Files'
+  'brave-browser|brave-browser||brave-browser|Brave Browser'
+  'blender|blender||blender|Blender: 3D Modeller and Renderer'
+  'code|code||code|Microsoft Visual Studio Code: Development IDE'
+  'cpupower-gui|cpupower-gui|cpupower-gui|cpupower-gui|CPU Power GUI: Manage CPU power'
+  'darktable|darktable||darktable||DarkTable: Edit RAW Photos'
+  'docker|konsole;-e;man;docker|docker|docker-ce|Docker: Container Engine'
+  'dolphin|dolphin||dolphin|Dolphin: Manage Files'
+  'dropbox|dropbox;start;-i|dropbox|dropbox|Dropbox: Sync to Dropbox Cloud Storage'
+  'elisa|elisa||elisa|Elisa Music Player'
+  'ffmpeg|konsole;-e;man ffmpeg|ffmpeg|ffmpeg|Tools for Transcoding|FFMpeg: Stream and Play Multimedia Files'
+  'filezilla|filezilla||filezilla|Filezilla: Transfer Files'
+  'firefox|firefox||firefox|Firefox: Browse the Web with Mozilla Firefox'
+  'gcloud|konsole;-e;main;gcloud;help|gcloud|google-cloud-sdk|GCS: Google Cloud Services SDK'
+  'ghb|ghb||handbrake|Handbrake: Rip and Transcode DVDs and Video'
+  'git-cola|git-cola||git-cola|Git-Cola: Explore Git Branches GUI'
+  'gimp|gimp||gimp|Gimp: Edit and Create Raster Images'
+  'google-chrome|google-chrome||google-chrome-stable|Chrome: Browse the Web with Google Chrome'
+  'google-hangouts|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://meet.google.com||kfocus-main|Google Meet'
+  'gvim|gvim||vim-gtk3|Vim GUI: Edit Text With Extreme Power'
+  'gwenview|gwenview||gwenview|Gwenview: Image and Document Viewer'
+  'inkscape|inkscape||inkscape|Inkscape: Edit Scalable Vector Graphics'
+  'insync|insync;start||insync-dolphin|InSync: Sync to Google Drive, OneDrive, and Dropbox'
+  'jekyll|konsole;-e;man jekyll|jekyll|jekyll|Jekyll: Create Static Web Sites'
+  'kate|kate||kate|Kate: Edit Text with Power'
+  'kde-connect|kdeconnect-settings||kdeconnect|KDE Connect: Connect Smartphones to Desktop'
+  'kdenlive|kdenlive||kdenlive|KDEnlive: Edit  Non-Linear Videos'
+  'kdiff3|kdiff3||kdiff3|KDiff3: Diff and Merge Files and Directories'
+  'keepassxc|keepassxc||keepassxc|KeepassXC: Password Manager'
+  'kfocus_apps|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://kfocus.org/wf/apps.html||kfocus-main|KFocus Curated Apps: find and install apps'
+  'kfocus_conda|konsole;-e;kfocus-conda|kfocus-conda|kfocus-conda|KFocus Conda: Deep Learning Suite'
+  'kfocus_extra|konsole;-e;pkexec;kfocus-extra|kfocus-extra|kfocus-main|KFocus Extra: Install extra and restricted software'
+  'kfocus_fan|kfocus-fan||kfocus-fan|Fan Control: Select a desired fan profile.'
+  'kfocus_focusrx|focusrx;-f||kfocus-main|FocusRx: System diagnostics and repair'
+  'kfocus_guided|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://kfocus.org/wf||kfocus-main|KFocus Guided Solutions'
+  'kfocus_help|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://kfocus.org/wf/help.html||kfocus-main|KFocus Help: Help and FAQs'
+  'kfocus_kb_color|kfocus-kb-color||kfocus-kb-color|Keyboard Color: Set color and intensity'
+  'kfocus_kclean|/usr/lib/kfocus/bin/kfocus-kclean;-f|/usr/lib/kfocus/bin/kfocus-kclean|kfocus-main|Kernel Cleaner: Clean up old kernels'
+  'kfocus_pick_gcc|kfocus-pick-gcc||kfocus-pick-gcc|KFocus Pick GCC: Select default compiler toolchain'
+  'kfocus_power|kfocus-power||kfocus-power|KFocus Power: Control CPU Power'
+  'kfocus_vidsync|kfocus-vidsync||kfocus-vidsync|KFocus Vidsync: Sync video across all displays'
+  'kfocus_welcome|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://docs.google.com/presentation/d/e/2PACX-1vTsKGkzy_tFm2xZo-BYX7mqeLG43C2vy108qsWZ2L_c4XJGXEVh2fAt3sNvgiqXfw4OFPWynHS-32xx/pub?start=false&loop=false&delayms=3000||kfocus-main|KFocus Welcome Wizard: Consider first-run steps'
+  'kfocus_wizard|/usr/lib/kfocus/bin/kfocus-firstrun;-f||kfocus-main|KFocus Welcome Wizard: Consider first-run steps'
+  'kleopatra|kleopatra||kleopatra|Kleopatra: Unifiy Crypto GUI'
+  'konsole|konsole||konsole|Konsole: Use an X Terminal Emulator'
+  'krita|krita||krita|Krita: Rastor Image Editor'
+  'kruler|kruler||kruler|Kruler: Measure Screen Objects'
+  'kubectl|konsole;--hold;-e;kubectl;help|kubectl|kubectl|Kubernetes: Command Line Container Management'
+  'libreoffice-base|libreoffice;--base||libreoffice-base|LibreOffice Database: Connect Databases'
+  'libreoffice-calc|libreoffice;--calc||libreoffice-calc|LibreOffice Calc: Create and Edit Spreadsheets'
+  'libreoffice-draw|libreoffice;--draw||libreoffice-draw|LibreOffice Drawing: Create Vector and Raster Images'
+  'libreoffice-impress|libreoffice;--impress||libreoffice-impress|LibreOffice Impress: Create and Edit Presentations'
+  'libreoffice-writer|libreoffice;--writer||libreoffice-writer|LibreOffice Writer: Word Processor'
+  'meld|meld||meld|Meld: Visual Difference and Merge Tool'
+  'minecraft-launcher|minecraft-launcher||minecraft-launcher|Minecraft: Launch Minecraft'
+  'nvidia-settings|nvidia-settings||nvidia-settings|Nvidia Settings: Configure Nvidia GPUs'
+  'obs|obs||obs-studio|OBS Studio: Record and Stream Live Video'
+  'okular|okular||okular|Okular: View PDFs and Other Documents'
+  'optipng|konsole;-e;man optipng|optipng|optipng|Optpng: Optimize PNG Images'
+  'pavucontrol|pavucontrol-qt||pavucontrol-qt|PulseAudio: Mananage Audio Volume'
+  'plasma-discover|plasma-discover||plasma-discover|Discover: Manage Software'
+  'ppa-purge|konsole;-e;man ppa-purge|ppa-purge|ppa-purge|PPA Purge: Purge PPAs'
+  'rar|konsole;-e;man rar|rar|rar|Rar: Create .rar Archive Files'
+  'simplescreenrecorder|simplescreenrecorder||simplescreenrecorder|SimpleScreenRecorder: Record Your Screen with Powerful Options'
+  'skype|skypeforlinux||skypeforlinux|Skype: Video Call Platform'
+  'slack|slack||slack-desktop|Slack: Team Messaging'
+  'spectacle|spectacle||kde-spectacle|Spectacle: Take Screenshots'
+  'steam|steam||steam|Steam: Manage and Play Games'
+  'sublime-text|subl||sublime-text|Sublime Text editor'
+  'systemsettings5|systemsettings5||systemsettings|System Settings: Adjust Your System'
+  'telegram-desktop|telegram-desktop||telegram-desktop|Telegram: Encrypted Instant Messenger'
+  'thunderbird|thunderbird||thunderbird|Thunderbird: Email and Calendar'
+  'virtualbox|virtualbox||virtualbox|VirtualBox: Run Virtual Machines'
+  'vlc|vlc||vlc|VLC: Play and Stream Video and Multimedia'
+  'wallpapers|dolphin;/usr/share/wallpapers||dolphin|Wallpapers: View Wallpaper Images'
+  'webcamoid|webcamoid||webcamoid|Webcamoid: Test Your Web Cam'
+  'winff|winff||winff-qt|WinFF: Convert Video using ffmpeg'
+  'zoom|zoom||zoom|Zoom: Start and Join Video and Web Conferencing'
+
+  # Packages with special handlers
+  'jetbrains-toolbox|!jetbrains-toolbox|jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs'
+  'intellij|!intellij|jetbrains-toolbox|jetbrains-toolbox|IntelliJ: JetBrains Java IDE'
+  'pycharm|!pycharm|jetbrains-toolbox|jetbrains-toolbox|PyCharm: JetBrains Python IDE'
+  'webstorm|!webstorm|jetbrains-toolbox|jetbrains-toolbox|WebStorm: JetBrains Web IDE'
+
+  # 2022-11-01 2911 Disable Lutris as PPA has been disabled
+  # 'lutris|lutris||lutris|Lutris: Play Games With Wine'
+  # 2022-11-01 2911 MSTeams is deprecated 2022-12-01
+  # 'msteams|teams||teams|MS Teams: Video Conference'
+
+  # These are experimental and WIP
+  # 'nodejs16|konsole;-e man node|node|nodejs|NodeJS: Javascript + TCP Server'
+  # 'nvidia-cuda|!|!|nvidia-cuda|Nvidia CUDA libs'
+  # 'nvidia-ml|!|!|nvidia-ml|Nvidia Legacy ML libs'
+);
+
+## BEGIN _importCommonFn {
+# Run ls-common-symbols.sh to get list of used symbols
+#
+_importCommonFn () {
+  declare _lib_file;
+  _lib_file="${_baseDir}/lib/common.2.source";
+  if [ -r "${_lib_file}" ]; then
+    # shellcheck source=../lib/common.2.source
+    source "${_lib_file}" || exit 202;
+  else
+    echo 1>&2 "${_baseName}: ABORT - Cannot source lib |${_lib_file}|";
+    exit 202;
+  fi
+}
+## . END _importCommonFn }
+
+## BEGIN deb-get functions {
+# These functions are taken directly from the deb-get project with the
+# intention of contributing to it and making it our pkexec backend.
+function deb_atom() {
+  APT_KEY_URL="https://packagecloud.io/AtomEditor/atom/gpgkey"
+  APT_LIST_NAME="atom"
+  APT_REPO_URL="deb [arch=amd64] https://packagecloud.io/AtomEditor/atom/any/ any main"
+  PRETTY_NAME="Atom"
+  WEBSITE="https://atom.io/"
+}
+function deb_azure-cli() {
+  APT_KEY_URL="https://packages.microsoft.com/keys/microsoft.asc"
+  APT_LIST_NAME="azure-cli"
+  APT_REPO_URL="deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ ${UBUNTU_CODENAME} main"
+  PRETTY_NAME="Azure CLI"
+  WEBSITE="https://docs.microsoft.com/en-us/cli/azure/install-azure-cli"
+}
+function deb_backintime() {
+  PPA="ppa:ppa:bit-team/stable"
+  PRETTY_NAME="BackInTime"
+  WEBSITE="https://backintime.readthedocs.io/en/latest/"
+}
+function deb_brave-browser() {
+  APT_KEY_URL="https://brave-browser-apt-release.s3.brave.com/brave-core.asc"
+  APT_LIST_NAME="brave-browser-release"
+  APT_REPO_URL="deb [arch=amd64] https://brave-browser-apt-release.s3.brave.com/ stable main"
+  PRETTY_NAME="Brave"
+  WEBSITE="https://brave.com/"
+}
+function deb_code() {
+  APT_KEY_URL="https://packages.microsoft.com/keys/microsoft.asc"
+  APT_LIST_NAME="vscode"
+  APT_REPO_URL="deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main"
+  PRETTY_NAME="Visual Studio Code"
+  WEBSITE="https://code.visualstudio.com/"
+}
+function deb_docker-ce() {
+  ARCHS_SUPPORTED="amd64 arm64 armhf"
+  APT_KEY_URL="https://download.docker.com/linux/ubuntu/gpg"
+  APT_LIST_NAME="docker"
+  APT_REPO_URL="deb [arch=${HOST_ARCH}] https://download.docker.com/linux/ubuntu ${UBUNTU_CODENAME} stable"
+  PRETTY_NAME="Docker Engine"
+  WEBSITE="https://www.docker.com/"
+}
+function deb_dropbox() {
+  ARCHS_SUPPORTED="amd64 i386"
+  URL="https://linux.dropbox.com/packages/ubuntu/$(curl -s "https://linux.dropbox.com/packages/ubuntu/" | grep "${HOST_ARCH}.deb" | sed -e 's/<[^>]*>//g' | grep -v nautilus | cut -d' ' -f1 | tail -n1)"
+  VERSION_PUBLISHED="$(echo "${URL}" | cut -d'_' -f2)"
+  PRETTY_NAME="Dropbox"
+  WEBSITE="https://www.dropbox.com/"
+}
+function deb_google-chrome-stable() {
+  APT_KEY_URL="http://dl.google.com/linux/linux_signing_key.pub"
+  APT_LIST_NAME="google-chrome"
+  APT_REPO_URL="deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main"
+  EULA="By downloading Chrome, you agree to the Google Terms of Service and Chrome and Chrome OS Additional Terms of Service\n - https://policies.google.com/terms\n - https://www.google.co.uk/intl/en/chrome/terms/"
+  PRETTY_NAME="Google Chrome"
+  WEBSITE="https://www.google.com/chrome/"
+}
+function deb_insync-dolphin() {
+  ARCHS_SUPPORTED="amd64"
+  APT_KEY_URL="$(curl -s https://www.insynchq.com/downloads | grep gpgkey | cut -d'=' -f2)"
+  APT_LIST_NAME="insync"
+  APT_REPO_URL="deb http://apt.insync.io/ubuntu ${UBUNTU_CODENAME} non-free contrib"
+  PRETTY_NAME="Insync"
+  WEBSITE="https://www.insynchq.com/"
+}
+function deb_keepassxc() {
+  PPA="ppa:phoerious/keepassxc"
+  PRETTY_NAME="KeePassXC"
+  WEBSITE="https://keepassxc.org/"
+}
+function deb_kubectl() {
+  GPG_KEY_URL="https://packages.cloud.google.com/apt/doc/apt-key.gpg"
+  APT_LIST_NAME="kubectl"
+  # APT_REPO_URL="deb https://apt.kubernetes.io/ kubernetes-xenial main"
+  APT_REPO_URL="deb [signed-by=/usr/share/keyrings/kubectl-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main"
+  PRETTY_NAME="Kubernetes"
+  WEBSITE="https://kubernetes.io"
+}
+# 2911 2022-11-01 Disable Lutris as PPA has been disabled
+# function deb_lutris() {
+#   PPA="ppa:lutris-team/lutris"
+#   PRETTY_NAME="Lutris"
+#   WEBSITE="https://lutris.net/"
+# }
+
+# NodeJS is preinstalled. This implementation does not quite work.
+# function deb_nodejs() {
+#   GPG_KEY_URL="https://deb.nodesource.com/gpgkey/nodesource.gpg.key"
+#   APT_REPO_URL="deb https://deb.nodesource.com/node_16.x jammy main"
+#   APT_LIST_NAME="nodesource"
+#   PRETTY_NAME="NodeJS 16.x"
+# }
+function deb_nvidia-cuda() {
+  APT_KEY_URL="https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub"
+  APT_LIST_NAME="nvidia-cuda"
+  APT_REPO_URL="deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 /"
+  PRETTY_NAME="Nvidia CUDA and ML"
+  WEBSITE="https://developer.nvidia.com"
+}
+function deb_nvidia-ml() {
+  APT_KEY_URL="https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub"
+  APT_LIST_NAME="nvidia-ml"
+  APT_REPO_URL="deb https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64 /"
+  PRETTY_NAME="Nvidia ML (deprecated; use CUDA for later lib versions)"
+  WEBSITE="https://developer.nvidia.com"
+}
+function deb_skypeforlinux() {
+  APT_KEY_URL="https://repo.skype.com/data/SKYPE-GPG-KEY"
+  APT_LIST_NAME="skype-stable"
+  APT_REPO_URL="deb [arch=amd64] https://repo.skype.com/deb stable main"
+  PRETTY_NAME="Skype"
+  WEBSITE="https://www.skype.com/"
+}
+function deb_slack-desktop() {
+  APT_KEY_URL="https://packagecloud.io/slacktechnologies/slack/gpgkey"
+  APT_LIST_NAME="slack"
+  APT_REPO_URL="deb https://packagecloud.io/slacktechnologies/slack/debian/ jessie main"
+  PRETTY_NAME="Slack"
+  WEBSITE="https://slack.com/"
+}
+function deb_sublime-text() {
+  APT_KEY_URL="https://download.sublimetext.com/sublimehq-pub.gpg"
+  APT_LIST_NAME="sublime-text"
+  APT_REPO_URL="deb https://download.sublimetext.com/ apt/stable/"
+  PRETTY_NAME="Sublime Text"
+  WEBSITE="https://www.sublimetext.com/"
+}
+function deb_teams() {
+  APT_KEY_URL="https://packages.microsoft.com/keys/microsoft.asc"
+  APT_LIST_NAME="teams"
+  APT_REPO_URL="deb [arch=amd64] https://packages.microsoft.com/repos/ms-teams stable main"
+  PRETTY_NAME="Microsoft Teams"
+  WEBSITE="https://www.microsoft.com/microsoft-teams/group-chat-software"
+}
+function deb_minecraft-launcher() {
+  URL=$(unroll_url "https://launcher.mojang.com/download/Minecraft.deb")
+  VERSION_PUBLISHED='latest';
+  PRETTY_NAME="Minecraft Launcher"
+  WEBSITE="https://launcher.mojang.com"
+}
+function deb_zoom() {
+  URL=$(unroll_url "https://zoom.us/client/latest/zoom_amd64.deb")
+  VERSION_PUBLISHED="$(echo "${URL}" | cut -d'/' -f5)"
+  PRETTY_NAME="Zoom"
+  WEBSITE="https://zoom.us/"
+}
+# Extracted from main
+function _makeAppListFn () {
+  IFS=$'\n' read -r -d '' -a _pkgNameList < <(
+    declare -F | grep 'deb_' |sed 's|declare -f deb_||g' |sort
+  );
+}
+function version_deb() {
+  if _cm2ChkInstalledPkgFn "${APP}"; then
+    dpkg -s "${APP}" | grep ^Version: | cut -d' ' -f2
+  else
+    echo ""
+  fi
+}
+function unroll_url() {
+  curl -w "%{url_effective}\n" -I -L -s -S "${1}" -o /dev/null
+}
+# Extracted from validate_deb() and main
+function _readPkgRepoInfoFn () {
+  declare _pkg_name;
+  _pkg_name="${1:-}";
+  _makeAppListFn;
+
+  export CACHE_DIR ERROR_STR HOST_CPU HOST_ARCH USER_AGENT UBUNTU_CODENAME \
+    APT_KEY_URL GPG_KEY_URL APT_LIST_NAME APT_REPO_URL PPA ARCHS_SUPPORTED \
+    METHOD EULA SNAP_PKG_NAME URL VERSION_INSTALLED VERSION_PUBLISHED \
+    PRETTY_NAME WEBSITE;
+
+  CACHE_DIR='/var/cache/deb-get'
+
+  # shellcheck disable=SC2076
+  if [[ ! " ${_pkgNameList[*]} " =~ " ${_pkg_name} " ]]; then
+    ERROR_STR="ABORT: Package |${_pkg_name}| is not supported";
+    return 1;
+  fi
+
+  HOST_CPU="$(uname -m)"
+  case ${HOST_CPU} in
+    aarch64|armv7l|x86_64) HOST_ARCH="$(dpkg --print-architecture)";;
+    *) ERROR_STR="ABORT: CPU |${HOST_CPU}| is not supported.";
+      return 1;;
+  esac
+
+  readonly USER_AGENT="Mozilla/5.0 (X11; Linux ${HOST_CPU}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36"
+
+  if [ -e /etc/os-release ]; then
+    UBUNTU_CODENAME=$(grep UBUNTU_CODENAME /etc/os-release | cut -d'=' -f2)
+  else
+    ERROR_STR="ABORT: /etc/os-release not found.";
+    return 1;
+  fi
+
+  APT_KEY_URL='';
+  GPG_KEY_URL='';
+  APT_LIST_NAME='';
+  APT_REPO_URL='';
+  PPA='';
+  ARCHS_SUPPORTED='amd64';
+  METHOD='website';
+  EULA='';
+  SNAP_PKG_NAME='';
+  URL='';
+  VERSION_INSTALLED='';
+  VERSION_PUBLISHED='';
+  PRETTY_NAME='';
+  WEBSITE='';
+
+  # Source the variables
+  if "deb_${_pkg_name}"; then
+    APP="${_pkg_name}";
+  else
+    ERROR_STR="ABORT: Could not find info for |${_pkg_name}|";
+    return 1;
+  fi
+
+  VERSION_INSTALLED=$(version_deb)
+  if [ -n "${SNAP_PKG_NAME:-}" ]; then
+    METHOD='snap';
+  elif [ -n "${APT_REPO_URL:-}" ]; then
+    METHOD='apt';
+  elif  [ -n "${PPA:-}" ]; then
+    METHOD='ppa';
+  fi
+}
+function update_apt() {
+  apt-get -q -y update
+}
+function install_apt() {
+  if [ -n "${APT_KEY_URL}" ]; then
+    wget -q "${APT_KEY_URL}" -O \
+      "/etc/apt/trusted.gpg.d/${APT_LIST_NAME}.asc"
+  fi
+
+  if [ -n "${GPG_KEY_URL}" ]; then
+    if [ ! -d /usr/share/keyrings ]; then
+      mkdir -p /usr/share/keyrings 2>/dev/null
+    fi
+    wget -q "${GPG_KEY_URL}" -O \
+      "/usr/share/keyrings/${APT_LIST_NAME}-archive-keyring.gpg"
+  fi
+
+  ## TODO: https://superuser.com/questions/1641291
+  echo -e "${APT_REPO_URL}" > "/etc/apt/sources.list.d/${APT_LIST_NAME}.list"
+  update_apt
+
+  if ! _cm2ChkInstalledPkgFn "${APP}"; then
+    apt-get -q -y install "${APP}"
+  fi
+}
+function download_deb() {
+  local URL="${1}"
+  local FILE="${URL##*/}"
+  mkdir -p "${CACHE_DIR}" 2>/dev/null
+  chmod 755 "${CACHE_DIR}" 2>/dev/null
+
+  if ! wget --quiet --continue --show-progress --progress=bar:force:noscroll \
+    "${URL}" -O "${CACHE_DIR}/${FILE}"; then
+    _cm2WarnStrFn "Failed to download ${URL}. Deleting ${CACHE_DIR}/${FILE}..."
+    rm "${CACHE_DIR}/${FILE}" 2>/dev/null
+  fi
+}
+function install_deb() {
+  local URL="${1}"
+  local FILE="${URL##*/}"
+
+  if [ -z "${URL}" ]; then
+    echo "Download URL is empty. Skipping."
+    return
+  fi
+
+  if ! _cm2ChkInstalledPkgFn "${APP}"; then
+    download_deb "${URL}"
+    apt-get -q -y install "${CACHE_DIR}/${FILE}"
+  fi
+  if [ -f "${CACHE_DIR}/${FILE}" ]; then
+    rm "${CACHE_DIR}/${FILE}" 2>/dev/null
+  fi
+}
+function install_ppa() {
+  if apt-add-repository -y --no-update "${PPA}"; then
+    update_apt
+    if ! _cm2ChkInstalledPkgFn "${APP}"; then
+      apt-get -q -y install "${APP}"
+    fi
+  else
+    # Remove repo if something when wrong
+    apt-add-repository -y --remove "${PPA}"
+  fi
+}
+## . END deb-get functions }
+
+## BEGIN _echoKeyListFn {
+_echoKeyListFn () {
+  IFS=$'\n';
+  echo "${_exeLookupList[*]}" |cut -f1 -d'|';
+}
+## . END _echoKeyListFn }
+
+## BEGIN _echoInstallPromptMsgFn {
+_echoInstallPromptMsgFn () {
+  declare _app_id _pkg_name _descr_str _prompt_msg _report_str;
+
+  _app_id="${1:-}";
+  _pkg_name="${2:-}";
+  _descr_str="${3:-Package}";
+  _prompt_msg='';
+
+  # If available in repo, prompt to install directly
+  # TODO 2022-05-05 TEPID msm: Verify package comes from desired upstream repo
+  _readPkgRepoInfoFn "${_pkg_name}";
+
+  if _cm2ChkPkgFn "${_pkg_name}"; then
+    echo -e "\n|${_descr_str}| is available ";
+    echo -e "but it is not installed."
+    echo -e "\nInstall and start now?\n";
+    return 0;
+  elif [ "${METHOD:-}" = 'snap' ]; then
+    echo -e "\n|${_descr_str}| is available ";
+    echo -e "only as a snap but is not installed.";
+    echo -e "\nInstall and start now?\n";
+    return 0;
+  fi
+
+  # Read repo info for pkg_name, bail if info not found
+  if [ -n "${ERROR_STR:-}" ]; then
+    echo -e "\n${_descr_str}\n has no install candidate.\n";
+    echo -e "REASON: ${ERROR_STR:-}\n";
+    return 1;
+  fi
+
+  case "${METHOD:-}" in
+    apt)  _report_str="  APT: ${APT_REPO_URL:-}";;
+    ppa)  _report_str="  PPA: ${PPA:-}";;
+    website) _report_str="  WEB: ${URL:-}";;
+    *) echo -e "ABORT: Method |${METHOD:-}| is not supported.\n";
+       return 1;;
+  esac;
+
+  echo -e "\n${_descr_str} is available."
+  echo -e "Shall we install this repo now?";
+  echo -e "\n${_report_str}\n\n   ";
+
+  if [ -n "${EULA:-}" ]; then
+    echo -e "\nOnly press OK if you agree with \nthe following EULA:";
+    echo -e "${EULA:-}\n";
+  fi
+}
+## . END _echoInstallPromptMsgFn }
+
+## BEGIN _getPkgInfoStrFn {
+ # Purpose: This is ONLY used for debugging when _doPkgAudit is set to 'y'.
+ #
+_getPkgInfoStrFn () {
+  declare _sniff_str _found_pkg_name _expect_pkg_name \
+    _exe_str _found_list _msg_str;
+
+  _sniff_str="${1:-}";
+  _expect_pkg_name="${2:-}";
+
+  _cm2EchoFn "Progress ... ${_sniff_str}";
+
+  _exe_str="$(readlink -f "$(command -v "${_sniff_str}")")";
+  if [ -z "${_exe_str}" ]; then
+    echo "Cannot find cmd_str |${_sniff_str}|. Please install to audit.";
+    return 1;
+  fi
+
+  read -r -d '' -a _found_list < <(
+    dpkg-query -S "${_exe_str}" | awk -F: '{print $1}' | sort -u
+  );
+  if [ "${#_found_list[@]}" -eq 0 ]; then
+    echo "ERROR: Trouble finding installed package for ${_exe_str}";
+    return 1;
+  fi
+
+  _msg_str='';
+  for _found_pkg_name in "${_found_list[@]}"; do
+    if [ "${_found_pkg_name}" = "${_expect_pkg_name}" ]; then
+      _msg_str='';
+      break;
+    else
+      _msg_str+="\n  WARN: Found package appears incorrect:";
+      _msg_str+=" |${_found_pkg_name}| NOT |${_expect_pkg_name}|";
+    fi
+  done
+
+  if [ "${#_found_list[@]}" -gt 1 ]; then
+    _msg_str+="\n  WARN: multiple packages found: |${_found_list[*]}|";
+  fi
+
+  echo -e "${_msg_str}";
+}
+## . END _getPkgInfoStrFn }
+
+## BEGIN _installPkgFn {
+# Purpose: Install requested package
+_installPkgFn () {
+  declare _pkg_name;
+  _pkg_name="${1:-}";
+
+  # Install if already found in repo
+  if _cm2ChkPkgFn "${_pkg_name}"; then
+    apt-get install -q -y "${_pkg_name}";
+    return;
+  fi
+
+  # Read repo info for pkg_name
+  _readPkgRepoInfoFn "${_pkg_name}";
+  if [ -n "${ERROR_STR:-}" ]; then
+    echo -e "${ERROR_STR:-}";
+    exit 1;
+  fi
+
+  # Dispatch
+  case "${METHOD:-}" in
+    direct|github|website) install_deb "${URL:-}";;
+    apt) install_apt;;
+    ppa) install_ppa;;
+    snap) snap install "${SNAP_PKG_NAME:-}";;
+    *) echo -e "Unexpected method |${METHOD:-}|";
+      exit 1;;
+  esac;
+}
+## . END _installPkgFn }
+
+_promptFn () {
+  _cm2PromptUserFn "$*" "${_baseName}" 'p';
+}
+
+## BEGIN _runAppHandlerFn {
+# Summary  : _runAppHandlerFn <app_id> <label>
+# Example  : _runAppHandlerFn 'dropbox' 'Dropbox: Sync to ...'
+# Purpose  : Run the custom handler according to its app_id.
+# Arguments: _app_id    : App identifier key
+#            _descr_str : App description
+#
+_runAppHandlerFn () {
+  declare _app_id _descr_str _prompt_msg _exe_str;
+  _app_id="${1:-}";
+  _descr_str="${2:-}";
+  _prompt_msg='';
+
+  _cm2EchoFn "Running handler for app_id |${_app_id}|";
+
+  case "${_app_id}" in
+    intellij|pycharm|webstorm)
+      _prompt_msg+='Please use JetBrains Toolbox found <br>';
+      _prompt_msg+='in the system tray to launch <br>';
+      _prompt_msg+="|${_descr_str}|";
+      _exe_str="$(command -v 'jetbrains-toolbox')";
+      if [ -n "${_exe_str}" ]; then
+        "${_exe_str}"; # ... and continue
+      fi
+      ;;
+
+    jetbrains-toolbox)
+      _prompt_msg+='Click on the JetBrains Toolbox <br>';
+      _prompt_msg+='found in the system tray. <br>';
+      _exe_str="$(command -v 'jetbrains-toolbox')";
+      if [ -n "${_exe_str}" ]; then
+        "${_exe_str}"; # ... and continue
+      fi
+      ;;
+    *) true;;
+  esac
+
+  if [ -n "${_prompt_msg}" ]; then
+    _promptFn "${_prompt_msg}";
+  fi
+  exit 0; # Always exit and do NOT return
+}
+## . END _runAppHandlerFn }
+
+## BEGIN _runAppFn {
+# Summary  : _runAppFn <app_id>;
+# Example  : _runAppFn 'apt-rollback';
+# Purpose  : Run an app provided by app_id. If the app cannot be found
+#   in the lookup list, the user is notified and this script exits.
+#
+#   If the app is found in the list but not available, the routine calls
+#   pkexec <this-file> -i <pkg_id> to install the package, and possibly
+#   the required repo as well. On successful completion, the app is then
+#   run as the user.
+# Arguments: app_id - App identifier key
+#
+_runAppFn () {
+  declare _arg_app_id _found_list _prompt_msg _pkg_name   \
+    _line_str _bit_list _app_id _full_cmd_str _sniff_str  \
+    _descr_str _cmd_str _do_handler _arg_list _report_str \
+    _sniff_exe _app_exe _install_prompt_msg  _ans_str     \
+    _exit_str;
+
+  _arg_app_id="${1:-}";
+  _found_list=();
+  if [ "${_doPkgAudit}" = 'y' ]; then
+    _found_list+=('|app_id|cmd_str|sniff_str|pkg_str|descr_str');
+  elif [ -z "${_arg_app_id}" ]; then
+    _prompt_msg='ABORT: No app_id provided';
+    _promptFn "${_prompt_msg}";
+    exit 1;
+  fi
+
+  _pkg_name='';
+  for _line_str in "${_exeLookupList[@]}"; do
+    # Process a match
+    if [ "${_doPkgAudit}" = 'y' ] \
+      || grep -qE "^${_arg_app_id}\|" <<< "${_line_str}"; then
+
+      # Split fields
+      IFS='|' read -ra _bit_list <<< "$_line_str";
+      _app_id="${_bit_list[0]}";
+      _full_cmd_str="${_bit_list[1]}";
+      _sniff_str="${_bit_list[2]}";
+      _pkg_name="${_bit_list[3]}";
+      _descr_str="${_bit_list[4]}";
+
+      # Split _cmd_str, _arg_list from _full_cmd_str
+      IFS=';' read -ra _arg_list <<< "${_full_cmd_str}";
+      _cmd_str="${_arg_list[0]}";
+
+      # Calc cmd_str, _do_handler, _sniff_str
+      if echo "${_cmd_str}" |grep -qE '^!'; then
+        _do_handler='y';
+        _cmd_str="${_cmd_str/#\!/}"; # Scrub '!'
+      else
+        _do_handler='n';
+      fi
+      if [ -z "${_sniff_str}" ]; then _sniff_str="${_cmd_str}"; fi
+
+      # Shift _arg_list to remove _cmd_str
+      _arg_list=("${_arg_list[@]:1}");
+
+      if [ "${_doPkgAudit}" = 'n' ]; then
+        break;
+      else
+        _report_str="|${_app_id}|${_full_cmd_str}|${_sniff_str}"
+        _report_str+="|${_pkg_name}|${_descr_str}";
+        if [ "${_do_handler}" = 'y' ]; then
+          _report_str+='|Special handler expected';
+        fi
+        _report_str+="|$(_getPkgInfoStrFn "${_sniff_str}" "${_pkg_name}")";
+        _found_list+=("${_report_str}");
+      fi
+    fi
+  done;
+
+  # Exit on completion of audit
+  if [ "${_doPkgAudit}" = 'y' ]; then
+    echo -e "$(printf '%s\n' "${_found_list[@]}")";
+    exit 0;
+  fi
+
+  # Exit if app id is not in table
+  if [ -z "${_pkg_name}" ]; then
+    _prompt_msg="Sorry, |${_arg_app_id}| is not supported";
+    _promptFn "${_prompt_msg}";
+    exit 1;
+  fi
+
+  ## Begin sniff-and-run loop {
+  for _idx in {0..1}; do
+    # Set up _app_exe and _sniff_exe
+    _app_exe="$(command -v "${_cmd_str}")";
+    if [ "${_sniff_str}" = "${_cmd_str}" ]; then
+      _sniff_exe="${_app_exe}";
+    else
+      _sniff_exe="$(command -v "${_sniff_str}")";
+    fi
+
+    # Try to install package using pkexec (may install repository too)
+    if [ ! -x "${_sniff_exe}" ] && [ "${_idx}" = '0' ]; then
+      if _install_prompt_msg="$(
+        _echoInstallPromptMsgFn "${_app_id}" "${_pkg_name}" "${_descr_str}"
+        )"; then
+        _ans_str="$(
+          _cm2PromptUserFn "${_install_prompt_msg:-}" 'Install package' 'a'
+        )";
+        if [ "${_ans_str}" = 'y' ]; then
+          if _exit_str="$(_cm2RunLongCmdFn "Installing ${_pkg_name}" \
+              "${_binName}" '-i' "${_pkg_name}")"; then continue;
+          else
+            _prompt_msg="Trouble installing ${_descr_str}";
+            if [ -n "${_exit_str}" ]; then
+              _prompt_msg+=":<br>${_exit_str}";
+            fi
+            _promptFn "${_prompt_msg}";
+            exit 1;
+          fi
+        else
+          _prompt_msg="Installation cancelled on user request";
+          _promptFn "${_prompt_msg}";
+          exit 1;
+        fi
+      else
+        _promptFn "${_install_prompt_msg}";
+        exit 1;
+      fi
+    fi
+    break; # exit loop, always
+  done
+  ## End sniff-and-run loop }
+
+  # Run app handler if provided
+  if [ "${_do_handler}" = 'y' ]; then
+    _runAppHandlerFn "${_app_id}" "${_descr_str}";
+    exit 0;
+  # Execute command and arguments if possible
+  elif [ -x "${_app_exe}" ]; then
+    exec "${_app_exe}" "${_arg_list[@]}" &
+    exit 0;
+  fi
+
+  # Notify user of non-executable, non-empty _app_exe
+  _prompt_msg="Sorry, |${_app_exe}| is not executable.";
+  _promptFn "${_prompt_msg}";
+  exit 1;
+}
+## . END _runAppFn }
+
+## BEGIN _mainFn {
+_mainFn () {
+  declare _arg0_str _arg_app_id;
+  _arg0_str="${1:-}";
+
+  _doPkgAudit='n';
+  if [ "${_arg0_str}" = '-a' ]; then
+    _doPkgAudit='y';
+    _runAppFn;
+    exit; # Exit with return code
+  fi
+
+  # Handle package and repo install with reentrant call
+  if [ "${_arg0_str}" = '-i' ]; then
+    shift;
+    _installPkgFn "$@";
+    exit;
+
+  # Handle request to echo key list
+  elif [ "${_arg0_str}" = '-l' ]; then
+    _echoKeyListFn;
+    exit;
+
+  # Handle app_id and args directly
+  elif [ "${_arg0_str}" = '-k' ]; then
+    shift;
+    _arg_app_id="${1:-}";
+
+  # Handle link file. Bail if not readable.
+  else
+    # Ensure link file is readable
+    if ! [ -r "${_arg0_str}" ]; then
+      _cm2WarnStrFn "Abort: Link file |${_arg0_str}| cannot be read";
+      exit 1;
+    fi
+
+    # Read id from link file and then remove it.
+    read -r _arg_app_id < "${_arg0_str}" || exit 1;
+    "${_cm2RmExe}" "${_arg0_str}" || true;
+  fi
+
+  if [ -z "${_arg_app_id}" ]; then
+    1>&2 echo 'Missing required argument';
+    exit 1;
+  fi
+
+  _runAppFn "${_arg_app_id}";
+}
+## END _mainFn }
+
+## BEGIN Set global vars {
+_rootDir='';
+
+_etcAptDir="${_rootDir}/etc/apt";
+_pkgNameList=();
+## . END Set global vars }
+
+## BEGIN run main if script is not sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(readlink -f "$0")"        || exit 1;
+  _binDir="$(dirname "${_binName}")"    || exit 1;
+  _baseDir="$(dirname "${_binDir}")"    || exit 1;
+  _baseName="$(basename "${_binName}")" || exit 1;
+  _importCommonFn;
+  _mainFn "$@";
+fi
+## . END Run main if script is not sourced }

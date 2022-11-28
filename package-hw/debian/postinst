@@ -1,0 +1,271 @@
+#!/bin/bash
+set -e;
+
+# TODO: Consider moving this to bin/kfocus-hw-config
+# See common.2.source for latest mappings.
+#
+_echoStderrFn () { 1>&2 echo -e "$*"; }
+_cm2EscapeRxCharsFn () {
+  # shellcheck disable=SC2016
+  printf '%s' "${1:-}" | sed 's/[.[\*^$()+?{|]/\\&/g';
+}
+
+# hw_config_code 'default' handles models m2g3, m2g2, m2g1, m1g1
+#
+_handle_defaultFn () {
+    # target |  source | do_file_backup
+  _symlinkTable+=(
+    '/etc/default/console-setup|'
+    '/etc/default/grub.d/kfocus.cfg|/usr/lib/kfocus/conf/dflt-etc_default_grub.d_kfocus.cfg'
+    '/etc/initramfs-tools/conf.d/kfocus.conf|'
+    '/etc/modprobe.d/kfocus.conf|/usr/lib/kfocus/conf/m2g4-dflt_etc_modprobe.d_kfocus.conf'
+    # Load tuxedo-keyboard
+    '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
+    # xhci enable/disable on sleep
+    '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
+    '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
+    '/usr/share/kfocus/kf5-settings/kcmfonts|'
+    '/etc/tlp.d/kfocus.conf|'
+  );
+}
+# hw_config_code 'generic' handles model xeg1
+#
+_handle_genericFn () {
+  _symlinkTable+=(
+    '/etc/default/console-setup|'
+    '/etc/default/grub.d/kfocus.cfg|'
+    '/etc/initramfs-tools/conf.d/kfocus.conf|'
+    '/etc/modprobe.d/kfocus.conf|'
+    # Load tuxedo-keyboard
+    '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
+    '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
+    '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
+    '/usr/share/kfocus/kf5-settings/kcmfonts|'
+    '/etc/tlp.d/kfocus.conf|'
+  );
+}
+# hw_config_code 'm2g4' handles model m2g4
+#
+_handle_m2g4Fn () {
+  if [ -x "/usr/bin/deb-systemd-helper" ]; then
+    deb-systemd-helper mask \
+      systemd-backlight@backlight:nvidia_0.service >/dev/null
+  fi
+
+  _symlinkTable+=(
+    # Bigger tty fonts
+    '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
+    # Boot parameters
+    '/etc/default/grub.d/kfocus.cfg|/usr/lib/kfocus/conf/m2g4-etc_default_grub.d_kfocus.cfg'
+    '/etc/initramfs-tools/conf.d/kfocus.conf|'
+    # Sound, nv power
+    '/etc/modprobe.d/kfocus.conf|/usr/lib/kfocus/conf/m2g4-dflt_etc_modprobe.d_kfocus.conf'
+    # Load tuxedo-keyboard
+    '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
+    # xhci enable/disable on sleep
+    '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
+    # Trackpad config
+    '/usr/share/X11/xorg.conf.d/80-kfocus.conf|/usr/lib/kfocus/conf/m2g4-usr_share_X11_xorg.conf.d_80-kfocus.conf'
+    # Default DPI Scaling
+    '/usr/share/kfocus/kf5-settings/kcmfonts|/usr/lib/kfocus/conf/m2g4-usr_share_kfocus_kf5-settings_kcmfonts'
+    # Remove old TLP config
+    '/etc/tlp.d/kfocus.conf|'
+  );
+}
+# hw_config_code 'nxg1' handles models nxg1 and nxg2
+#
+_handle_nxg1Fn () {
+  _symlinkTable+=(
+    '/etc/default/console-setup|'
+    # Add param to prevent intel flicker
+    '/etc/default/grub.d/kfocus.cfg|/usr/lib/kfocus/conf/nxg1-etc_default_grub.d_kfocus.cfg'
+    # Minimize initrd on NX to accommodate GPU libs
+    '/etc/initramfs-tools/conf.d/kfocus.conf|/usr/lib/kfocus/conf/nxg1-etc_initramfs-tools_conf.d_kfocus.conf'
+    # no sound-pop
+    '/etc/modprobe.d/kfocus.conf|/usr/lib/kfocus/conf/nxg1-etc_modprobe.d_kfocus.conf'
+    '/etc/modules-load.d/kfocus.conf|'
+    '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
+    '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
+    '/usr/share/kfocus/kf5-settings/kcmfonts|'
+    '/etc/tlp.d/kfocus.conf|'
+  );
+}
+# hw_config_code 'other' handles unrecognized models
+#
+_handle_otherFn () {
+  _symlinkTable+=(
+    '/etc/default/console-setup|'
+    '/etc/default/grub.d/kfocus.cfg|'
+    '/etc/initramfs-tools/conf.d/kfocus.conf|'
+    # no sound-pop
+    '/etc/modprobe.d/kfocus.conf|/usr/lib/kfocus/conf/nxg1-etc_modprobe.d_kfocus.conf'
+    '/etc/modules-load.d/kfocus.conf|'
+    '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
+    '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
+    '/usr/share/kfocus/kf5-settings/kcmfonts|'
+    '/etc/tlp.d/kfocus.conf|'
+  );
+}
+
+_cleanupGrubFileFn () {
+  declare _grub_file _grub_line _esc1_rx _str _esc2_rx;
+
+  _grub_file='/etc/default/grub';
+  _grub_line="$(
+    grep -E '^\s*GRUB_CMDLINE_LINUX_DEFAULT="' ${_grub_file}| tail -n1
+  )";
+
+  if [ -z "${_grub_line}" ]; then
+    _echoStderrFn "WARN: grub line from file ${_grub_file} not found";
+    return;
+  fi
+
+  _esc1_rx="$(_cm2EscapeRxCharsFn "${_grub_line}")";
+  for _str in 'modprobe.blacklist=nouveau' 'modprobe.blacklist=ucsi_acpi' \
+    'tpm_tis.interrupts=0' 'acpi_backlight=vendor' 'acpi_os=linux' \
+    'acpi_osi=linux'; do
+    # shellcheck disable=SC2001
+    _grub_line="$(sed "s/\s\+${_str}//" <<< "${_grub_line}")";
+  done;
+  _esc2_rx="$(_cm2EscapeRxCharsFn "${_grub_line}")";
+
+  if [ "${_esc1_rx}" = "${_esc2_rx}" ]; then return; fi
+
+  sed -iE "s/^${_esc1_rx}/\n# KFOCUS-SAVE. See grub.d\/kfocus.cfg for params\n# ${_esc1_rx}\n${_esc2_rx}\n/g" "${_grub_file}" || true;
+}
+
+_setupSymlinkTableFn () {
+  declare _msg _do_rm_link _link_list;
+  if [ "${#_symlinkTable[@]}" = '0' ]; then
+    _echoStderrFn "WARN: No symlinks specified";
+  fi
+
+  for _line in "${_symlinkTable[@]}"; do
+    IFS='|' read -r -a _link_list <<< "${_line}";
+    _msg='';
+    _do_rm_link='y';
+
+    # Backup regular file if directed
+    if [ -f "${_link_list[0]}" ] && [ ! -h "${_link_list[0]}" ]; then
+      if [ -n "${_link_list[2]:-}" ]; then
+        mv "${_link_list[0]}" "${_link_list[0]}.kfocus.$(date +%Y%m%d)";
+        _do_rm_link='n';
+      fi
+    fi
+
+    # Remove old link or file
+    if [ "${_do_rm_link}" = 'y' ]; then
+      if rm -f "${_link_list[0]}"; then
+        _msg='Removed ';
+      else
+        _msg='WARN: Could not remove ';
+      fi
+      _msg+="symlink target ${_link_list[0]}";
+      _echoStderrFn "${_msg}";
+    fi
+
+    # Do not symlink if empty
+    if [ -z "${_link_list[1]}" ]; then continue; fi
+
+    if [ -e "${_link_list[1]}" ]; then
+      if ln -s "${_link_list[1]}" "${_link_list[0]}"; then
+        _msg='Created ';
+      else
+        _msg='WARN: Could not create ';
+      fi
+      _msg+="symlink target ${_link_list[0]}";
+    else
+      _msg="WARN: Symlink source ${_link_list[1]} not found";
+    fi
+    _echoStderrFn "${_msg}";
+  done
+}
+
+_setupBootFn () {
+  declare _cmd_table _line _cmd_list;
+  _cmd_table=(
+    '/usr/sbin/depmod'
+    '/usr/sbin/update-initramfs -u'
+    '/usr/sbin/update-grub'
+  );
+
+  for _line in "${_cmd_table[@]}"; do
+    IFS=' ' read -r -a _cmd_list <<< "${_line}";
+    if [ -x "${_cmd_list[0]}" ]; then
+      "${_cmd_list[@]}" || _echoStderrFn "Could not exec ${_cmd_list[*]}";
+    fi
+  done
+}
+
+_configFn () {
+  declare _config_code_dir _config_code_file _old_config_code _lib_file \
+    _config_code _fn_name;
+
+  # Get old config code
+  _config_code_dir='/var/lib/kfocus';
+  _config_code_file="${_config_code_dir}/hw_config_code";
+
+  if [ -f "${_config_code_file}" ]; then
+    _old_config_code="$(cat "${_config_code_file}")";
+  else
+    _old_config_code='';
+  fi
+
+  # Import common and determine config_code from model matrix
+  _lib_file="/usr/lib/kfocus/lib/common.2.source";
+  _config_code='';
+  if [ -r "${_lib_file}" ]; then
+    # shellcheck disable=1091,1090
+    source "${_lib_file}";
+    if [ "$(type -t _cm2EchoModelStrFn)" = 'function' ]; then
+      _config_code="$(_cm2EchoModelStrFn 'config_code')";
+    fi
+  fi
+  if [ -z "${_config_code:-}" ]; then _config_code='generic'; fi
+
+  # If old config code is blank, perform one-time grub cleanup
+  if [ -z "${_old_config_code}" ] || [ "${_config_code}" = 'm2g4' ];
+    then _cleanupGrubFileFn;
+  fi
+
+  # Determine and call per-config-code function
+  _fn_name="_handle_${_config_code}Fn";
+  if [ "$(type -t "${_fn_name}")" != 'function' ]; then
+    _echoStderrFn "WARN: function ${_fn_name} not found";
+    _fn_name='_handle_genericFn';
+    _config_code='generic';
+  fi
+  _echoStderrFn "Hardware config code is |${_config_code}|";
+  if ! "${_fn_name}"; then
+    _echoStderrFn "WARN: function ${_fn_name} shows an error";
+  fi
+
+  # Inject links for 2357, 2377
+  _symlinkTable+=(
+    # workaround for slack
+    '/usr/local/bin/xdg-open|/usr/lib/kfocus/conf/usr_local_bin_xdg-open|y'
+  );
+
+  # Set up symlinks
+  _setupSymlinkTableFn;
+
+  # Execute commands to set up boot
+  _setupBootFn;
+
+  # Save config_code value to readable file
+  mkdir -p "${_config_code_dir}";
+  echo "${_config_code}" > "${_config_code_file}" || true;
+}
+
+# target|source|do_safe_backup
+_symlinkTable=();
+case "${1:-}" in
+  configure|upgrade) _configFn;;
+  abort-upgrade|abort-remove|abort-deconfigure) true;;
+  *) echo "postinst called with unhandled argument '$1'">&2
+    exit 0
+  ;;
+esac
+#DEBHELPER#
+
+exit 0;

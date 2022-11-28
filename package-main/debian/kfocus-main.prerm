@@ -1,0 +1,8 @@
+#!/bin/bash
+set -e
+
+if [ -e /etc/bash_completion.d/kfocus-bashcompletion ]; then
+  /usr/bin/rm /etc/bash_completion.d/kfocus-bashcompletion;
+fi
+
+#DEBHELPER#

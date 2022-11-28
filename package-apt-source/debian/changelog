@@ -1,0 +1,227 @@
+kfocus-apt-source (22.04.2) jammy; urgency=medium
+
+  * Install Nvidia pinning (#2254)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Tue, 24 May 2022 11:10:34 -0700
+
+kfocus-apt-source (22.04.1) jammy; urgency=medium
+
+  * Welcome to Jammy Jellyfish
+
+ -- Erich Eickmeyer <eeickmeyer@ubuntu.com>  Mon, 14 Mar 2022 11:27:56 -0700
+
+kfocus-001-apt-source (20.04.35) focal; urgency=medium
+
+  * Update pinning for bad kernel 1020 (#1829)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Thu, 20 Jan 2022 14:15:35 -0800
+
+kfocus-001-apt-source (20.04.34) focal; urgency=medium
+
+  * Fix for erroneous pinning, add kernel sources to pinning (#1829)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Wed, 12 Jan 2022 16:14:29 -0800
+
+kfocus-001-apt-source (20.04.33) focal; urgency=medium
+
+  * Update pinning to avoid installing 5.14.0-1018 kernel (#1829)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Mon, 10 Jan 2022 12:18:30 -0800
+
+kfocus-001-apt-source (20.04.32) focal; urgency=medium
+
+  * Blacklist kernel versions incompatible with bluetooth (#1829)
+    - M2 and XE laptops affected
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Wed, 05 Jan 2022 13:47:24 -0800
+
+kfocus-001-apt-source (20.04.31) focal; urgency=medium
+
+  * Nvidia pinning made recommended package (#1639) 
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Mon, 22 Nov 2021 16:09:35 -0800
+
+kfocus-001-apt-source (20.04.30) focal; urgency=medium
+
+  * Move nvidia pinning to nvidia package (#1620) 
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Mon, 15 Nov 2021 11:57:31 -0800
+
+kfocus-001-apt-source (20.04.29) focal; urgency=medium
+
+  * Update pinning for Nvidia 470 Drivers (#1605)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Thu, 11 Nov 2021 14:01:17 -0800
+
+kfocus-001-apt-source (20.04.28.1) focal; urgency=medium
+
+  * Version bump for previous repo error
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Mon, 08 Nov 2021 11:21:45 -0800
+
+kfocus-001-apt-source (20.04.27) focal; urgency=medium
+
+  * Update recommended list (#1585)
+  * Ensure required list is most up-to-date (#1585)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Thu, 04 Nov 2021 13:46:30 -0700
+
+kfocus-001-apt-source (20.04.26) focal; urgency=medium
+
+  * Update methodology of retrieving Google Cloud SDK key (#1539)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Tue, 26 Oct 2021 13:22:18 -0700
+
+kfocus-001-apt-source (20.04.25) focal; urgency=medium
+
+  * Actually update Google Cloud key (#1539) 
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Tue, 26 Oct 2021 11:22:51 -0700
+
+kfocus-001-apt-source (20.04.24) focal; urgency=medium
+
+  * Update Google Cloud key (#1539)
+  * Blacklist cuda drivers 495.* (#1532)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Mon, 25 Oct 2021 11:29:24 -0700
+
+kfocus-001-apt-source (20.04.23) focal; urgency=medium
+
+  * Reenabled backintime PPA (#1503) 
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Wed, 20 Oct 2021 12:17:31 -0700
+
+kfocus-001-apt-source (20.04.22) focal; urgency=medium
+
+  * Fix package versions so cuda-drivers-470 can be installed (#1477) 
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Sat, 16 Oct 2021 08:35:46 -0700
+
+kfocus-001-apt-source (20.04.21) focal; urgency=medium
+
+  * Add official Kubuntu Focus PPA (#1351)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Tue, 05 Oct 2021 12:25:58 -0700
+
+kfocus-001-apt-source (20.04.20) focal; urgency=medium
+
+  * Hotfix for new keys (#1424)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Thu, 30 Sep 2021 12:16:07 -0700
+
+kfocus-001-apt-source (20.04.19) focal; urgency=medium
+
+  * Hotfix for move from http to https for cuda repo (#1302) 
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Mon, 30 Aug 2021 13:09:59 -0700
+
+kfocus-001-apt-source (20.04.18) focal; urgency=medium
+
+  * Update trusted keys for expired Skype key (#1039)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Tue, 22 Jun 2021 13:55:35 -0700
+
+kfocus-001-apt-source (20.04.17) focal; urgency=medium
+
+  * Update pinning for nvidia-settings and nvidia-modprobe (#900)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Mon, 17 May 2021 09:33:00 -0700
+
+kfocus-001-apt-source (20.04.16) focal; urgency=medium
+
+  * Fix for expired Kubernetes key (#673)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Thu, 01 Apr 2021 14:27:11 -0700
+
+kfocus-001-apt-source (20.04.15) focal; urgency=medium
+
+  * Explicitly remove kfocus repo from sources.list (119.4)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Wed, 17 Feb 2021 15:45:08 -0800
+
+kfocus-001-apt-source (20.04.14) focal; urgency=medium
+
+  * Fix for removal of main source during iso creation
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Mon, 15 Feb 2021 16:29:24 -0800
+
+kfocus-001-apt-source (20.04.13) focal; urgency=medium
+
+  * Switch package name
+  * Bump standards, compat
+  * Update copyright year
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Thu, 14 Jan 2021 12:42:54 -0800
+
+Old changelog:
+kfocus-001-repo (20.04.12) focal; urgency=medium
+
+  * Update apt on installation finish
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Mon, 11 Jan 2021 14:48:26 -0800
+
+kfocus-001-repo (20.04.11) focal; urgency=medium
+
+  * No-change rebuild
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Fri, 08 Jan 2021 20:07:33 -0800
+
+kfocus-001-repo (20.04.10) focal; urgency=medium
+
+  * Move virtualbox to its own repo file
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Fri, 08 Jan 2021 20:06:24 -0800
+
+kfocus-001-repo (20.04.9) focal; urgency=medium
+
+  * Fix virtualbox repo keys
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Fri, 08 Jan 2021 19:32:35 -0800
+
+kfocus-001-repo (20.04.8) focal; urgency=medium
+
+  * Add virtualbox repository
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Fri, 08 Jan 2021 18:39:16 -0800
+
+kfocus-001-repo (20.04.7) focal; urgency=medium
+
+  * Fix for missing Google Chrome repository
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Mon, 28 Dec 2020 16:43:11 -0800
+
+kfocus-001-repo (20.04.6) focal; urgency=medium
+
+  * Begin transition from /opt to /usr/lib
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Mon, 14 Dec 2020 14:16:12 -0800
+
+kfocus-001-repo (20.04.5) focal; urgency=medium
+
+  * Hotfix for vscode dedupe (VS Code 1.52.1)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Wed, 16 Dec 2020 16:21:21 -0800
+
+kfocus-001-repo (20.04.4) focal; urgency=medium
+
+  * Hotfix for vscode repo
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Tue, 15 Dec 2020 08:33:39 -0800
+
+kfocus-001-repo (20.04.3) focal; urgency=medium
+
+  * Add Visual Studio Code repo to recommended list
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Mon, 14 Dec 2020 12:48:20 -0800
+
+kfocus-001-repo (20.04.2) focal; urgency=medium
+
+  * Change repo list out to static file, remove from postinst
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Wed, 09 Dec 2020 16:58:17 -0800
+
+kfocus-001-repo (20.04.1) focal; urgency=medium
+
+  * Debianized
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Tue, 17 Nov 2020 15:21:28 -0800

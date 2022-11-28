@@ -1,0 +1,384 @@
+#!/bin/bash
+#
+# Copyright 2022 MindShare Inc.
+# Written for the Kubuntu Focus by Michael Mikowski
+#
+# Name    : kfocus-btool
+# Purpose : Run-as-root utility to get and set bios tool values
+# License : GPL v2
+# Run By  : User
+# Spec    : 2455,2506
+# Test    : 01010_kfocusBtool
+#
+set -u;
+
+_echoIntFn  () { printf '%d' "${1:-0}" 2>/dev/null; }
+_echoFn     () { 1>&2 echo -e  "${*}"; }
+_nechoFn    () { 1>&2 echo -ne "${*}"; }
+_echoHelpFn () {
+  _echoFn "${_baseName}: Create a BIOS updated USB Disk";
+  _echoFn "  -h | --help: Print this help message.";
+}
+_cleanupFn () {
+  if [ -n "${_tmpFile}" ] && [ -f "${_tmpFile}" ]; then
+    rm -f "${_tmpFile}" || true;
+  fi
+  if [ -n "${_tmpMntDir}" ] && [ -d "${_tmpMntDir}" ]; then
+    umount "${_tmpMntDir}"     || true;
+    sleep 2;
+    rm -rf "${_tmpMntDir}"  || true;
+  fi
+}
+_trapExitFn () {
+  declare _msg;
+  _msg="$(cat << _EOT
+${_baseName}: Did NOT write M2 GEN 4 ${_minVers} to a USB
+device!
+_EOT
+  )";
+  _echoFn "$(_echoWrapFn "${_msg}")";
+  _cleanupFn;
+  # Original exit value is returned to calling routine
+}
+_exitCleanFn () {
+  declare _int;
+  _int="$(_echoIntFn "${1:-0}")";
+  trap '' EXIT;
+  _cleanupFn;
+  exit "${_int}";
+}
+_echoWrapFn () {
+  declare _str _w_int;
+  _str="${1:-}";
+  _w_int="$(_echoIntFn "${2:-64}")";
+
+  fold -w "${_w_int}" -s <<<"$(tr '\n' ' ' <<< "${_str}")";
+}
+_cancelFn () {
+  _echoFn "ABORT ${_baseName}: Cancelled by user";
+  exit 1;
+}
+_testVersFn () {
+  declare _v1 _v2;
+  _v1="${1:-}"; _v2="${2:-}";
+  [ "$_v1" = "$_v2" ] && return 1;
+  [ "$_v1" = "$(echo -e "$_v1\n$_v2" |sort -rV |head -n1)" ];
+}
+_echoDmiDecodeFn () {
+  declare _decode_exe;
+  _decode_exe="$(command -v dmidecode)";
+  if [ -z "${_decode_exe}" ] || [ ! -x "${_decode_exe}" ]; then
+    _echoFn
+    _echoFn 'Please install dmidecode and then rerun.'
+    _echoFn 'sudo apt install dmidecode';
+    _echoFn
+    exit 1;
+  fi
+  dmidecode -s "${1:-}"  || exit 1;
+}
+_echoDiskInfoFn () {
+  echo -n "${_bitList[0]} ";
+  printf '%3.2f GB' "$(
+    bc <<< "scale=2;${_bitList[1]} / 1024"
+  )";
+}
+_promptContinueFn () {
+  declare _default_reply _opt_str _prompt_str _reply;
+
+  _default_reply="${1:-y}";
+  if [ "${_default_reply}" = 'y' ]; then
+    _opt_str='(Y/n)';
+  else
+    _opt_str='(y/N)';
+    _default_reply='n';
+  fi
+  _prompt_str="Do you wish to continue? ${_opt_str} ";
+  _nechoFn "${_prompt_str}";
+  read -r _reply;
+
+  if [[ "${_reply:-$_default_reply}" =~ ^[Yy] ]]; then
+
+    _echoFn "\n${_fullLine}\n";
+  else
+    _cancelFn;
+    exit 1;
+  fi
+}
+_welcomeFn () {
+  declare _hw_code _bios_vers _m2g4_msg _default_reply _msg;
+
+  _bios_vers="$(_echoDmiDecodeFn 'bios-version')";
+  _hw_code="$(_echoDmiDecodeFn 'baseboard-product-name')";
+  _m2g4_msg='';
+  _default_reply='y';
+
+  if [[ "${_hw_code}" =~ ^PD5x_7xPNP ]]; then
+    _m2g4_msg='This system appears to be a Kubuntu Focus M2 GEN 4 laptop. ';
+    if [ "${_bios_vers}" = "${_minVers}" ] ||
+      _testVersFn "${_bios_vers}" "${_minVers}"; then
+      _m2g4_msg+="$(cat << _EOT01
+The BIOS version (${_bios_vers}) is up to date. Proceed only if
+you need to create a USB drive for use on another M2 GEN 4
+system.
+_EOT01
+      )";
+      _default_reply='n';
+    else
+      _m2g4_msg+="$(cat << _EOT02
+The BIOS version (${_bios_vers}) does not appear current. We
+recommend upgrading this system to ${_minVers}. Our tests show
+this update improves system performance and stability.
+_EOT02
+      )";
+    fi
+  else
+    _m2g4_msg+="$(cat << _EOT02A
+This system does NOT appear to be a Kubuntu Focus M2 GEN 4
+laptop. Proceed only if you need to create a USB drive for use
+on another M2 GEN 4 system.
+_EOT02A
+    )";
+    _default_reply='n';
+  fi
+  _m2g4_msg="\n$(_echoWrapFn "${_m2g4_msg}")";
+  _msg="$(cat <<_EOT3
+ _____                      ____  _             _____           _
+|  ___|__   ___ _   _ ___  | __ )(_) ___  ___  |_   _|__   ___ | |
+| |_ / _ \ / __| | | / __| |  _ \| |/ _ \/ __|   | |/ _ \ / _ \| |
+|  _| (_) | (__| |_| \__ \ | |_) | | (_) \__ \   | | (_) | (_) | |
+|_|  \___/ \___|\__,_|___/ |____/|_|\___/|___/   |_|\___/ \___/|_|
+
+This tool creates a BIOS update image on a removable USB
+storage device ("USB Drive"). This update image is useful
+only for Kubuntu Focus M2 GEN 4 laptop systems.
+${_m2g4_msg}
+_EOT3
+  )";
+  _echoFn "${_msg}\n";
+  _promptContinueFn "${_default_reply}";
+
+  _msg="$(cat <<_EOT4
+Please select an 8+ GB  USB Drive -- like the one that comes with a
+Kubuntu Focus -- on which to install the BIOS update. IMPORTANT:
+THIS TOOL WILL REMOVE ALL DATA FROM THIS DRIVE, so back up any data
+you wish to preserve before proceeding.
+
+Insert the USB Drive into this computer and IGNORE ANY OFFERS by
+the OS to 'mount' or 'open' any files or folders on this drive.
+_EOT4
+  )";
+
+  _echoFn "${_msg}\n";
+  _promptContinueFn;
+}
+_downloadBiosFn () {
+  declare _bios_url _tmp_dir;
+  _bios_url='https://kfocus-001.s3.amazonaws.com';
+  _bios_url+='/public/2022-06-14-PD5xPNP07_MIN29.efi.zip';
+  _tmp_dir="$(dirname "$(mktemp -u)")";
+  _tmpFile="${_tmp_dir}/2022-06-14-PD5xPNP07_MIN29.efi.zip"
+
+  if [ -f "${_tmpFile}" ]; then return; fi
+  _nechoFn 'Download BIOS archive...';
+  wget -q "${_bios_url}" -O "${_tmpFile}" || exit;
+  _echoFn $'Done.\n';
+  _promptContinueFn;
+}
+_selectDiskFn () {
+  declare _found_list _mount_str _block_list _dev_file \
+    _byte_int _mib_int _trans_key _match_str _example_str \
+    _msg _line _idx _info_str _reply _pick_idx;
+
+  while true; do # begin scan-block
+    _echoFn "Scan USB Drives...";
+    _found_list=();
+    _mount_str="$(cat /proc/mounts)";
+    read -r -a _block_list< <(find /dev/ -maxdepth 1 -type b -name 'sd[a-z]');
+    for _dev_file in "${_block_list[@]}"; do # begin dev-block
+      _byte_int="$(blockdev --getsize64 "${_dev_file}")";
+      _mib_int=$(( _byte_int / 1048576 ));
+      _trans_key="$(lsblk -ndo tran "${_dev_file}")";
+      if [ "${_trans_key}" != 'usb' ]; then continue; fi # on dev-block
+
+      _echoFn "* Found USB Drive |${_dev_file}|";
+      _match_str="$(
+        grep "^${_dev_file}" <<< "${_mount_str}" | cut -f1 -d' '
+      )";
+
+      if [ "${_mib_int}" = '0.00' ]; then
+        _echoFn 'Device has invalid size (0.00 GB).';
+        continue; # on dev-block
+      fi
+
+      if [ -n "${_match_str}" ]; then
+        _echoFn "Cannot use this device as it is mounted at\n${_match_str}";
+        # shellcheck disable=SC2001
+        _example_str="$(sed 's/^/    sudo umount /' <<< "${_match_str}")";
+        _msg="$(cat <<_EOT5
+If you wish to use this device:
+  a. IN ANOTHER TERMINAL, unmount the partition(s) like so:
+${_example_str}
+  b. If any partition cannot be unmount because it is "busy", close any
+     file manager or terminal that is using the file system and try again.
+  c. Select "rescan" from the options below to proceed.
+_EOT5
+        )";
+        _echoFn "${_msg}";
+        continue; # on dev-block
+      fi
+      _found_list+=( "${_dev_file};${_mib_int}" );
+    done # end dev-block
+    _echoFn "Scan complete.\n";
+
+    _echoFn 'Choose an action';
+    _echoFn '================';
+    _idx=0;
+    for _line in "${_found_list[@]}"; do
+      IFS=';' read -r -a _bitList<<<"${_line}";
+      _info_str="$(_echoDiskInfoFn)";
+      _echoFn "${_idx}. Install BIOS update to ${_info_str}.";
+      (( _idx++ ));
+    done;
+    _echoFn "${_idx}. Rescan USB storage devices.";
+    (( _idx++ ));
+    _echoFn "${_idx}. Exit without changing anything.";
+    _echoFn;
+
+    _nechoFn "Enter action id (${_idx}): ";
+    read -r _reply;
+    _echoFn "\n${_fullLine}\n";
+    _pick_idx="$(_echoIntFn "${_reply:-$_idx}")";
+
+    if (( _pick_idx == _idx )); then _cancelFn; fi
+    if (( _pick_idx == (_idx - 1) )); then continue; fi # on scan-block
+    if (( _pick_idx < 0 || _pick_idx >= _idx )); then
+      _echoFn "Please enter 0 thru ${_idx}. Rescanning...";
+      continue; # on scan-block
+    fi
+    IFS=';' read -r -a _bitList<<<"${_found_list[$_pick_idx]}";
+    _info_str="$(_echoDiskInfoFn)";
+
+    if (( _bitList[1] > 32868 )); then
+      _msg="$( cat << _EOT6
+${_info_str} is larger than 32 GB. Are you sure you want to
+overwrite this?  Type "overwrite" to proceed
+_EOT6
+      )";
+      _nechoFn "${_msg}: ";
+      read -r _reply;
+      _echoFn;
+
+      if [ "${_reply:-}" = 'overwrite' ]; then true; else
+        _cancelFn;
+      fi
+    fi
+    _msg="OVERWRITE USB Drive ${_info_str} with the BIOS update.";
+    _echoFn "${_msg}";
+    _promptContinueFn;
+    break; # Exit scan-block, always
+  done # End scan-block
+}
+_wipeAndInstallFn () {
+  _echoFn "Wipe and install to ${_bitList[*]}";
+  # See https://superuser.com/questions/332252
+  (
+    echo 'o'; # Create DOS partition table
+
+    echo 'n'; # Create new partition
+    echo 'p'; # Create new partition
+    echo "1"; # PartID 1
+    echo;     # Start sector (default)
+    echo;     # End sector (default)
+
+    echo 'a'; # Set bootable flag
+    echo 'c'; # Set DOS compatibility flag
+    echo 'w'; # Set DOS compatibility flag
+  ) | fdisk -walways -Walways "${_bitList[0]}" || exit;
+
+  mkfs.fat "${_bitList[0]}1" || exit;
+  _tmpMntDir="$(mktemp -d -t "${_baseName}.XXXXXX" )"   || exit;
+  mount "${_bitList[0]}1" "${_tmpMntDir}"               || exit;
+  unzip -oP 'password' -d "${_tmpMntDir}" "${_tmpFile}" || exit;
+  if ( cd "${_tmpMntDir}"  || exit 1;
+    mkdir -p  'EFI/Insyde' || exit 1;
+    chmod 775 'EFI/Insyde' || exit 1;
+  ); then true; else exit; fi
+  sync "${_tmpMntDir}" || exit;
+  umount "${_tmpMntDir}" || true;
+  _echoFn "\n${_baseName}: Wrote M2 GEN 4 ${_minVers} BIOS"
+  _echoFn "to USB Device.\n\n";
+}
+_echoNextStepsFn () {
+  declare _msg;
+  _msg="$(cat << _EOT7
+Now that you have prepared the USB Drive, follow these steps to
+update the BIOS. We recommend you print these steps for your
+reference.
+
+* Power off the target M2 GEN 4 laptop you wish to update.
+
+* Plug the power adaptor and the freshly prepared Thumb Drive
+  into the laptop.
+
+* Boot the laptop. Tap F2 to get to the BIOS screen. If you see
+  the disk decrypt screen, the login screen, or the grub menu,
+  you've missed it. Power off and try again.
+
+* Select the top-center 'Boot Manager' option and then select
+  the USB Drive. Press return to boot.
+
+* The system will boot into a text interface with white and
+  colored text on a black background. At the prompt, type
+  'flash' and press return to begin the update process.
+
+* Let the update process complete. This may take up to 5
+  minutes. DO NOT press the power button, DO NOT remove the
+  USB Drive, DO NOT unplug the power! The laptop will reboot
+  by itself.
+
+* Run this tool on the updated system to confirm the BIOS
+  is up-to-date: 'sudo ./${_baseName}'
+_EOT7
+  )";
+  _echoFn "${_msg}\n";
+}
+_mainFn () {
+  declare _arg_str _uid;
+
+  _arg_str="${1:-}";
+  if [[ "${_arg_str}" =~ ^--*[Hh] ]]; then
+    _echoHelpFn; _exitCleanFn;
+  fi
+
+  _uid="$(id -u)";
+  if [ "${_uid}" != '0' ]; then
+    echo "Please run as root: sudo ./${_baseName}";
+    _exitCleanFn 1;
+  fi
+
+  trap _trapExitFn EXIT;
+  _welcomeFn;
+  _downloadBiosFn;
+  _selectDiskFn;
+  _wipeAndInstallFn;
+  _echoNextStepsFn;
+  _exitCleanFn;
+}
+
+## BEGIN Set global vars {
+_bitList=();
+_tmpFile='';
+_tmpMntDir='';
+_minVers='1.07.07MIN29';
+_fullLine="$(printf '=%.0s' {1..64})";
+## . END Set global vars }
+
+## BEGIN Run main if script is not sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname "${_binName}"  )" || exit 101;
+  _baseDir="$(  dirname "${_binDir}"   )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+  _mainFn "$@";
+fi
+## . END Run main if script is not sourced }

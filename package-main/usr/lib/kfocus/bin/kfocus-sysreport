@@ -1,0 +1,239 @@
+#!/bin/bash
+#
+# Copyright 2022 MindShare Inc.
+# Written for the Kubuntu Focus by Michael Mikowski
+#
+# Name   : kfocus-sysreport
+# Purpose: Report system details for debugging
+# License: GPL v2
+# Run By : Users as Root
+# Spec   : 2415
+#
+set -u;
+
+_importCommonFn () {
+  declare _lib_list _is_loaded _lib_file;
+  _lib_list=(
+    "${_baseDir}/lib/common.2.source"
+    '/usr/lib/kfocus/lib/common.2.source'
+  );
+  _is_loaded='n';
+  for _lib_file in "${_lib_list[@]}"; do
+    if [ -r "${_lib_file}" ]; then
+      # shellcheck source=/usr/lib/kfocus/lib/common.2.source
+      if source "${_lib_file}"; then
+        _is_loaded='y';
+        break;
+      fi
+    fi
+  done
+
+  if [ "${_is_loaded}" = 'n' ]; then
+    echo 1>&2 "${_baseName}: ABORT - Cannot source common lib";
+    exit 202;
+  fi
+}
+_findExeFn () {
+  declare _cmd _exe;
+  for _cmd in "$@"; do
+    _exe="$(command -v "$_cmd")";
+    if [ -n "${_exe}" ]; then
+      echo "${_exe}"; return 0;
+    fi
+  done
+  echo '';
+  return 1;
+}
+_checkUserFn () {
+  declare _exe _uid
+  _cm2SetMsgFn 'Check user'
+  if _exe="$(_findExeFn '/usr/bin/id' 'id')"; then
+    _uid="$("${_exe}" -u)";
+    if [ "${_uid}" != 0 ]; then
+      _cm2WarnStrFn "ABORT: Please run this as root.";
+      _cm2WarnStrFn "For example, type 'sudo ${_baseName}' in a terminal.";
+      _cm2ErrFn;
+    fi
+  fi
+}
+_createTmpDirFn () {
+  _cm2SetMsgFn 'Create tempdir';
+  if _tmpDir="$(_cm2MkTmpDirFn)"; then
+    _cm2SucFn; else _cm2ErrFn;
+  fi
+}
+_echoReportFn () {
+  _cm2SetMsgFn 'Report Details';
+  echo "${_timeStamp}";
+  uname -a || true;
+  2>/dev/null apt list --installed || true;
+  echo;
+  echo '/boot contents';
+  ls -al /boot;
+
+  echo;
+  echo 'df -h';
+  df -h;
+  echo;
+
+  _cm2SucFn;
+}
+_echoDkmsStatusFn () {
+  declare _exe;
+  _cm2SetMsgFn 'Report dkms status';
+  _exe=$(_findExeFn '/usr/sbin/dkms' 'dkms');
+  if [ -z "${_exe}" ]; then _cm2WarnFn; return; fi
+  "${_exe}" status
+  _cm2SucFn;
+}
+_echoDmiDecodeFn () {
+  declare _exe;
+  _cm2SetMsgFn 'Report dmidecode';
+  _exe="$(_findExeFn '/usr/sbin/dmidecode' 'dmidecode' )";
+  if [ -z "${_exe}" ]; then _cm2WarnFn; return; fi
+  "${_exe}";
+  _cm2SucFn;
+}
+_echoDiskHealthFn () {
+  declare _idx _exe _disk_list _disk_name;
+  _cm2SetMsgFn 'Report diskinfo';
+  for _idx in 1 2; do
+    if _exe="$(_findExeFn '/usr/sbin/smartctl' 'smartctl' )"; then break; fi
+    if [ "${_idx}" = '1' ]; then
+      apt-get install -y smartmontools || break;
+    fi
+  done
+  if [ -z "${_exe:-}" ]; then _cm2ErrFn; return; fi
+
+  _disk_list=( 'nvme0n1' 'nvme1n1' 'sda' 'sdb' 'sdc' );
+  for _disk_name in "${_disk_list[@]}"; do
+    if [ -b "/dev/${_disk_name}" ]; then
+      echo "FOUND /dev/${_disk_name}:";
+      "${_exe}" -t long -a "/dev/${_disk_name}";
+      echo;
+    fi
+  done
+  _cm2SucFn;
+}
+_echoMemHealthFn () {
+  echo 'Please install and run pcmemtest to check RAM';
+  #
+  # declare _mem_mb_int _str _idx _exe;
+  # _cm2SetMsgFn 'Report memtester';
+  #
+  # _mem_mb_int="$(free -m |grep '^Mem:' |awk '{print $4}')";
+  # (( _mem_mb_int -= 250 ));
+  # if [ "${_mem_mb_int}" -lt 100 ]; then
+  #   _str="Insufficient free RAM |${_mem_mb_int} MB| for memory test";
+  #   _cm2WarnStrFn "${_str}";
+  #   _cm2WarnFn;
+  #   return;
+  # fi
+  #
+  # for _idx in 1 2; do
+  #   if _exe="$(_findExeFn '/usr/sbin/memtester' 'memtester' )"; then break; fi
+  #   if [ "${_idx}" = '1' ]; then
+  #     apt-get install -y memtester || break;
+  #   fi
+  # done
+  #
+  # if [ -z "${_exe:-}" ]; then _cm2ErrFn; return; fi
+  # if "${_exe}" "${_mem_mb_int}" 1; then
+  #   _cm2EchoFn;
+  #   _cm2SucFn;
+  # else
+  #   _cm2EchoFn;
+  #   _cm2WarnFn;
+  # fi
+}
+_copyLogsFn () {
+  _cm2SetMsgFn 'Copy log files';
+  cp -a /var/log/syslog     "${_tmpDir}/" || true;
+  cp -a /var/log/Xorg.0.log "${_tmpDir}/" || true;
+  cp -a /var/log/Xorg.1.log "${_tmpDir}/" || true;
+  _cm2SucFn;
+}
+_createInstallDetailFn () {
+  _cm2SetMsgFn 'Create detailed install report';
+  apt-cache policy $(apt list --installed |awk -F'/' '{print $1}') \
+    > "${_tmpDir}/apt-cache-policy.txt";
+  _cm2SucFn;
+}
+_bundleDirFn () {
+  declare _uname _gname _home_dir _tmp_dir_dir _tmp_dir_name \
+    _solve_name _fq_solve_file _str _is_rm_ok;
+
+  _cm2SetMsgFn 'Create bundle file';
+  _uname="${SUDO_USER:-$USER}";
+  _gname="$(id -gn "${_uname}")";
+  _home_dir="$( getent passwd "${_uname}" | cut -d: -f6 )";
+
+  _tmp_dir_dir="$( dirname   "${_tmpDir}" )";
+  _tmp_dir_name="$( basename "${_tmpDir}" )";
+  _solve_name="kfocus.sysreport.${_timeStamp}.tgz";
+  _fq_solve_file="${_home_dir}/${_solve_name}";
+
+  if 1>/dev/null tar -cvzf "${_fq_solve_file}" \
+    -C "${_tmp_dir_dir}" "${_tmp_dir_name}"; then
+    _str="A report file has been created in your home \n";
+    _str+="directory called ${_solve_name}. The full path is\n";
+    _str+="${_fq_solve_file}\n\n";
+    _str+="Please send this file to support@kfocus.org\n";
+    _cm2SucStrFn "${_str}";
+    if ! chown "${_uname}:${_gname}" "${_fq_solve_file}"; then
+      _cm2WarnStrFn "Could chown ${_fq_solve_file}";
+    fi
+
+    _is_rm_ok='n';
+    if [ -n "${_tmp_dir_dir}" ] && [ -d "${_tmp_dir_dir}" ]; then
+      if cd "${_tmp_dir_dir}"; then
+        if rm -rf "${_tmp_dir_name}"; then
+          _is_rm_ok='y'
+        fi
+      fi
+    fi
+    if [ "${_is_rm_ok}" = 'n' ]; then
+      _cm2WarnStrFn "Trouble deleting ${_tmpDir}";
+    fi
+    _cm2SucFn;
+  else
+    _cm2ErrFn;
+  fi
+}
+_mainFn () {
+  _cm2EchoFn 'Kubuntu Focus System Report';
+  _cm2EchoFn 'This app creates a report for remote analysis.';
+  _cm2EchoFn;
+  _cm2EchoFn 'It should complete in less than a minute.';
+  _cm2EchoFn;
+  _cm2EchoFn 'When finished, you will be guided to send the report.';
+  _cm2EchoFn;
+
+  _checkUserFn;
+  _createTmpDirFn;
+  { _echoReportFn;
+    _echoDkmsStatusFn;
+    _echoDiskHealthFn;
+    _echoDmiDecodeFn;
+    _echoMemHealthFn;
+    _copyLogsFn;
+  } >> "${_tmpDir}/report.txt" 2>&1;
+  _createInstallDetailFn
+  _bundleDirFn;
+}
+
+## BEGIN Declare global variables {
+_tmpDir='';
+_timeStamp="$(date '+%Y%m%d_%H%M%S')";
+## . END Declare global variables }
+
+## BEGIN Run main if script is not sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+  _importCommonFn;
+  _mainFn "$@";
+fi
+## . END Run main if script is not sourced }

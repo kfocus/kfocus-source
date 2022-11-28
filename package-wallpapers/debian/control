@@ -1,0 +1,29 @@
+Source: kfocus-wallpapers
+Section: x11
+Priority: optional
+Maintainer: Kubuntu Focus Developers <support@kfocus.org>
+Build-Depends: debhelper-compat (= 13), intltool
+Standards-Version: 4.6.0
+Homepage: https://launchpad.net/ubuntustudio-default-settings
+Vcs-Git: https://git.launchpad.net/ubuntustudio-default-settings
+Vcs-Browser: https://git.launchpad.net/ubuntustudio-default-settings/tree/
+
+Package:      kfocus-001-wallpapers
+Architecture: all
+Depends:      ${misc:Depends}, ${shlibs:depends},
+              kfocus-wallpapers (>= ${binary:Version})
+Description:  Transitional Dummy Package for kfocus-wallpapers
+ This is a transitional dummy package.
+ It can be safely removed.
+
+Package: kfocus-wallpapers
+Architecture: all
+Pre-Depends: dpkg (>= 1.15.7.2~)
+Depends: ${misc:Depends},
+         kfocus-settings (>> 20.04.4) |
+         ubuntustudio-default-settings (>= 20.10)
+Conflicts: kfocus-001-settings (<= 20.04.4), kfocus-main (<= 20.04.8),
+           kfocus-001-wallpapers (<< ${binary:Version})
+Replaces:  kfocus-001-wallpapers (<< ${binary:Version})
+Description: default wallpapers for the Kubuntu Focus laptop computers
+ This package contains the background wallpapers used by the Kubuntu Focus.

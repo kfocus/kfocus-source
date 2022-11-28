@@ -1,0 +1,38 @@
+Source:            kfocus-cuda-libs
+Section:           metapackages
+Priority:          optional
+Maintainer:        Kubuntu Focus Team <support@kfocus.org>
+Standards-Version: 4.6.0
+Build-Depends:     debhelper-compat (=13)
+
+Package:      kfocus-001-cuda-libs
+Architecture: all
+Depends:      ${misc:Depends}, ${shlibs:depends},
+              kfocus-cuda-libs (>= ${binary:Version})
+Description:  Transitional Dummy Package for kfocus-cuda-libs
+ This is a transitional dummy package.
+ It can be safely removed.
+
+Package:      kfocus-cuda-libs
+Architecture: all
+Pre-Depends:  kfocus-apt-source
+Depends:      ${misc:Depends},
+              kfocus-main,
+              kfocus-nvidia
+Recommends:   cuda-libraries-10-0,
+              cuda-samples-10-0,
+              cuda-toolkit-10-0,
+              cuda-tools-10-0,
+              cuda-libraries-10-1,
+              cuda-samples-10-1,
+              cuda-toolkit-10-1,
+              cuda-tools-10-1,
+              libcudnn7,
+              libcudnn7-dev,
+              libnvinfer6,
+              libnvinfer-dev,
+              libnvinfer-plugin6
+Description:  Nvidia CUDA metapackage for Kubuntu Focus
+ This metapackage installs the Nvidia CUDA libraries
+ for the Kubuntu Focus brand of high-performance laptop
+ computers.

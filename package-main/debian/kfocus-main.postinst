@@ -1,0 +1,329 @@
+#!/bin/bash
+# kfocus-main postinst
+# This must be run as root.
+#
+# set -u is used to exit on uninitialized variables
+# set -e is not used as we do our own error checking
+#
+# set -u; # uncomment to debug
+set -e;
+
+## BEGIN Declare common.2.source symbols {
+#  IMPORT 2022-03-23 EXCERPT from test/test-scripts/common.2.source
+_cm2Arg01="${1:-}";
+
+_cm2BlockMsg='';
+_cm2RmExe='/bin/rm';
+_cm2EchoFn    () { 1>&2 echo -e "$*";  }
+_cm2SetMsgFn  () { _cm2BlockMsg="$*"; _cm2EchoFn "== BEGIN : ${_cm2BlockMsg}"; }
+_cm2SucFn     () { _cm2EchoFn "== . END : OK   ${_cm2BlockMsg}\n\n"; }
+_cm2SucStrFn  () { _cm2EchoFn "ok  : ${*}"; }
+_cm2WarnFn    () { _cm2EchoFn "== . END : WARN Could not ${_cm2BlockMsg}\n\n"; }
+_cm2WarnStrFn () { _cm2EchoFn "warn: ${*}"; }
+## } . END Declare common.2.source symbols
+
+## { BEGIN _assignGlobalVarsFn
+_assignGlobalVarsFn () {
+  _localBinDir="${_rootDir}/usr/bin";
+  _libKfocusDir="${_rootDir}/usr/lib/kfocus";
+  _repoSrcDir="${_rootDir}/etc/apt/sources.list.d";
+
+  _recomListFile="${_repoSrcDir}/kfocus-recommended.list";
+}
+## . END _assignGlobalVarsFn }
+
+
+## BEGIN _mkSrcListStrFn {
+# IMPORTED on 2022-02-23 from test/test-scripts/unit.d/00400_mkSrcListStr
+#
+_mkSrcListStrFn () {
+  declare _etc_apt_dir _nl _repo_src_str;
+
+  _etc_apt_dir="${_rootDir}/etc/apt";
+  _nl=$'\n';
+  _repo_src_str=$(
+    find "${_etc_apt_dir}/sources.list.d" -maxdepth 1 -type f -name '*.list' \
+    | sort | grep -v --regexp '^.* ' \
+    | grep -v 'kfocus-recommended.list'
+  );
+
+  if [ -n "${_repo_src_str}" ]; then
+    _repo_src_str="${_etc_apt_dir}/sources.list${_nl}${_repo_src_str}";
+  else
+    _repo_src_str="${_etc_apt_dir}/sources.list";
+  fi
+  echo -e "${_repo_src_str}";
+}
+## END _mkSrcListStrFn }
+
+## BEGIN _dedupRepoSrcFileFn {
+# IMPORTED on 2022-03-23 from test/test-scripts/unit.d/00300_dedupRepo
+#
+_dedupRepoSrcFileFn() {
+  declare _src_list_str _is_all_ok _match_file _search_str _src_line;
+  _src_list_str=$(_mkSrcListStrFn);
+  _is_all_ok='y';
+
+  _cm2SetMsgFn "Disable duplicate repo listings in ${_recomListFile}";
+  while read -r _src_line; do
+    # shellcheck disable=2001
+    _search_str="$(
+      sed 's/^deb.*http/http/g' <<< "${_src_line}"  \
+        | sed 's/^[[:space:]]*\(.*\)[[:space:]]*$/\1/' \
+        | sed -e 's/[]\/$*.^[]/\\&/g'
+    )";
+
+    while read -r _match_file; do
+      if (grep -q "^deb.* ${_search_str}" "${_match_file}"); then
+        _cm2EchoFn "'${_src_line}' found in '${_match_file}'"
+        if ( sed -i "s?^\\(deb.*${_search_str}.*\\)?# \1?g" \
+          "${_recomListFile}" ); then
+            _cm2SucStrFn "Disable '${_src_line}' in '${_recomListFile}'"
+          else
+            _cm2WarnStrFn "Could not disable '${_src_line}' in '${_recomListFile}'";
+            _is_all_ok='n'
+          fi
+      fi
+    done < <( echo -e "${_src_list_str}" );
+  done < <( grep --regexp='^\s*deb' "${_recomListFile}" );
+
+  if [ "${_is_all_ok}" ]; then
+    _cm2SucFn; return;
+  else
+    _cm2WarnStrFn "Some or all of the disables were unsuccessful";
+    _cm2WarnFn; return;
+  fi
+}
+## . END _dedupRepoSrcFileFn }
+
+## BEGIN _updatePciidsFn {
+# IMPORTED on 2022-02-23 from test/test-scripts/unit.d/00500_updatePciids
+#
+_updatePciidsFn () {
+  declare _share_file _exe_lspci_str _exe_update_str;
+  _share_file="${_rootDir}/usr/share/misc/pci.ids";
+  _exe_lspci_str=$( command -v lspci );
+  _exe_update_str=$( command -v update-pciids );
+
+  _cm2SetMsgFn 'Update pciids';
+
+  # Circumvent bug listed above
+  if ! "${_cm2RmExe}" -f "${_share_file}.old"; then
+    _cm2WarnStrFn "Could not remove ${_share_file}.old";
+  fi
+
+  if [ ! -x "${_exe_lspci_str}" ]; then
+    _cm2WarnStrFn "${_exe_lspci_str} not found";
+    _cm2WarnFn; return 0;
+  fi
+
+  if [ ! -x "${_exe_update_str}" ]; then
+    _cm2WarnStrFn "${_exe_update_str} is not executable";
+    _cm2WarnFn; return 0;
+  fi
+
+  if "${_exe_update_str}"; then
+    _cm2SucStrFn 'Updated pciids';
+    _cm2SucFn; return 0;
+  else
+    _cm2WarnStrFn 'Could not update pciids';
+    _cm2WarnFn; return 0;
+  fi
+}
+## . END _updatePciidsFn }
+
+## BEGIN _applyRootStyleFn {
+_applyRootStyleFn () {
+  declare _exe_rsync_str;
+  _exe_rsync_str=$( command -v 'rsync' );
+  _cm2SetMsgFn 'Apply style for root apps, e.g. partition manager';
+
+  if [ -d "/root/Desktop" ]; then
+    _cm2SucStrFn 'Root style already applied';
+    _cm2SucFn; return 0;
+  fi
+
+  if [ ! -e "${_exe_rsync_str}" ]; then
+    _warnStr "${_exe_rsync_str} not executable";
+    _cm2WarnFn; return 0;
+  fi
+
+  if "${_exe_rsync_str}" -azog --chown='0:0' \
+    "${_libKfocusDir}/skel/" '/root/'; then
+      _cm2SucFn; else _cm2WarnFn;
+  fi
+}
+## . END _applyRootStyleFn }
+
+## BEGIN _cleanupFn {
+#  Purpose: Clean up of various bits
+_cleanUpFn () {
+  declare _firstrun_file _exe_update_deskdb;
+
+  if [ -d "${_libKfocusDir}/skel/.ssh" ]; then
+    _cm2SetMsgFn "Set secure .ssh access rights";
+    if chmod 700 "${_libKfocusDir}/skel/.ssh"; then
+      _cm2SucFn; else _cm2WarnFn; fi
+  fi
+
+  _exe_update_deskdb=$( command -v update-desktop-database );
+  if [ -x "${_exe_update_deskdb}" ]; then
+    _cm2SetMsgFn 'Update desktop database';
+    if "${_exe_update_deskdb}";  then _cm2SucFn; else _cm2WarnFn; fi
+  fi
+
+  _cm2SetMsgFn 'Set up pip-tools';
+  if pip3 install pip-tools; then _cm2SucFn; else _cm2WarnFn; fi
+
+  _firstrun_file='/etc/xdg/autostart/kfocus-firstrun.desktop';
+  if [ -e "${_firstrun_file}" ] || [ -L "${_firstrun_file}" ]; then
+    _cm2SetMsgFn "Remove deprecated ${_firstrun_file}";
+    if "${_cm2RmExe}" -f "${_firstrun_file}"; then
+      _cm2SucFn; else _sm2WarnFn;
+    fi
+  fi
+
+  # See https://askubuntu.com/questions/1018576
+  # This allows boot work faster before network is enabled
+  # 2551 Disabled to prevent breaking network file systems
+  #
+  # _cm2SetMsgFn 'Disable wait for network on boot';
+  # if ( deb-systemd-helper disable NetworkManager-wait-online.service ); then
+  #   _cm2SucFn; else _cm2WarnFn;
+  # fi
+}
+## . END _cleanupFn }
+
+## BEGIN _adviseRebootFn {
+#  IMPORTED on 2022-03-23 from test/test-scripts/unit.d/00100_adviseReboot
+#  Purpose: Advise reboot after install
+#
+# See https://askubuntu.com/questions/993570/
+#   how-to-force-a-system-restart-is-needed-to-complete-the-update-process-message
+_adviseRebootFn () {
+  declare _lib_dir _update_dir _touch_file;
+  _lib_dir="${_rootDir}/var/lib/update-notifier";
+  _update_dir="${_lib_dir}/user.d";
+
+  _touch_file="${_lib_dir}/dpkg-run-stamp";
+  _rbt_file="${_rootDir}/var/run/reboot-required";
+
+  _cm2SetMsgFn 'Advise reboot';
+
+  if touch "${_rbt_file}"; then
+    _cm2SucStrFn "Wrote ${_rbt_file}";
+    _cm2SucFn; return;
+  else
+    _cm2WarnStrFn "Could not write ${_rbt_file}";
+    _cm2WarnFn; return;
+  fi
+
+  if touch "${_touch_file}"; then
+    _cm2SucStrFn "Touched ${_touch_file}";
+    _cm2SucFn; return;
+  else
+    _cm2WarnStrFn "Could not touch ${_touch_file}";
+    _cm2WarnFn; return;
+  fi
+}
+## . END _adviseRebootFn }
+
+## BEGIN _addBashCompletionFn {
+_addBashCompletionFn () {
+  if ! [ -f /etc/bash_completion.d/kfocus-bashcompletion ]; then
+    ln -sf /usr/lib/kfocus/lib/kfocus-bashcompletion \
+      /etc/bash_completion.d/kfocus-bashcompletion
+  fi
+}
+## . END _addBashCompletionFn }
+
+## BEGIN _setupSddmFixFn {
+_setupSddmFixFn () {
+  declare _blk_str _xsetup_file _setup_str;
+
+  _cm2SetMsgFn 'Setup SDDM screen fix';
+  _blk_str='/## BEGIN kfocus addition sddm fix\s*$/I,'
+  _blk_str+='/## . END kfocus addition sddm fix\s*$/Id';
+
+  _xsetup_file="${_rootDir}/usr/share/sddm/scripts/Xsetup";
+
+  while true; do
+    if [ ! -e "${_xsetup_file}" ]; then break; fi
+    if ! grep -qi '^## BEGIN kfocus' "${_xsetup_file}"; then break; fi
+
+    if sed -i "${_blk_str}" "${_xsetup_file}"; then
+      _cm2SucStrFn "Scrubbed ${_xsetup_file}";
+      break;
+    fi
+
+    # Alternate scrubber
+    sed -i '/##\s* \(BEGIN\|. END\) kfocus addition/Id' "${_xsetup_file}";
+    sed -i '/managed by kfocus/Id'                      "${_xsetup_file}";
+    sed -i '/if \[ -x "\${_kfSetupExe}" \];/d'          "${_xsetup_file}";
+    sed -i $'/_kfSetupExe=\'\/usr\/lib\/kfocus/d'       "${_xsetup_file}";
+    break;
+  done
+
+  _setup_str="$(cat << 'EOS'
+## BEGIN KFocus addition sddm fix
+#  PLEASE DO NOT ALTER this section managed by kfocus-main
+_kfSetupExe='/usr/lib/kfocus/bin/kfocus-sddm-setup';
+if [ -x "${_kfSetupExe}" ]; then "${_kfSetupExe}" || true; fi
+## . END KFocus addition sddm fix
+EOS
+)";
+
+  if echo "${_setup_str}" >> "${_xsetup_file}"; then 
+    _cm2SucFn; 
+  else
+    _cm2WarnStrFn "Trouble updating ${_xsetup_file}";
+    _cm2WarnFn;
+  fi
+}
+## . END _setupSddmFixFn }
+
+## BEGIN MAIN {
+#  See https://stackoverflow.com/questions/2683279
+#
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  # set -u; # Development only
+  _rootDir='';
+  _assignGlobalVarsFn;
+  case "${_cm2Arg01}" in
+    abort-upgrade|abort-remove|abort-configure|abort*)
+    ;;
+
+    configure|upgrade)
+      # Enable pre-dm script used to allow for touch pad initialization
+      # on M2 GEN 4
+      deb-systemd-helper enable kfocus-dm.service;
+
+      # Dedup entries in kfocus-recommends.list
+      _dedupRepoSrcFileFn;
+
+      # Download PCI extended data if needed
+      _updatePciidsFn;
+
+      # Apply styling to root apps like partion manager
+      _applyRootStyleFn;
+
+      # Add bash completion
+      _addBashCompletionFn;
+
+      # Add Xsetup for sddm screen fix
+      _setupSddmFixFn;
+
+      # Cleanup misc details
+      _cleanUpFn;
+
+      # Advise reboot
+      _adviseRebootFn;
+
+    ;;
+  esac
+  exit 0;
+fi
+## . END MAIN }
+
+# Tag to allow some debhelper commands to inject relevant code
+#DEBHELPER#

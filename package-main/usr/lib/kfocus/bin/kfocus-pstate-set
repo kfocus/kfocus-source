@@ -1,0 +1,180 @@
+#!/bin/bash
+#
+# Copyright 2021 MindShare Inc.
+# Written for the Kubuntu Focus by
+#
+# - Michael Mikowski
+# - Erich Eickmeyer
+#
+# Name   : kfocus-pstate-set
+# Purpose: Take actions to optimize battery life.
+# License: GPL v2
+# Run by : kfocus-pstate
+# Spec   : 1690, 2558
+# Test   : power-system-check.md
+#
+set -u;
+
+## BEGIN _importCommonFn {
+# Imports: _cm2AssignExeVarsFn _cm2EchoModelStrFn _cm2EchoFn
+# _cm2ErrFn _cm2SetMsgFn _cm2SucFn _cm2SucStrFn _cm2WarnFn _cm2WarnStrFn
+#
+# Run ls-common-symbols.sh to get this list
+#
+_importCommonFn() {
+  declare _lib_file;
+  _lib_file="${_baseDir}/lib/common.2.source";
+  if [ -r "${_lib_file}" ]; then
+    # shellcheck source=../lib/common.2.source
+    source "${_lib_file}" || exit 202;
+  else
+    echo 1>&2 "${_baseName}: ABORT - Cannot source lib |${_lib_file}|";
+    exit 202;
+  fi
+}
+## . END _importCommonFn }
+
+## BEGIN _writeVmWbFile {
+# Purpose  : Set VM writeback centi-secs per PowerTop
+# Arguments: (positional)
+#   1 = _arg_csec_str   writeback value in centisecs (1500 is good default)
+#   2 = _arg_file       writeback file path
+#
+_writeVmWbFile() {
+  declare _arg_csec_str _arg_file _wb_sec_str;
+
+  _cm2SetMsgFn 'Set VM writeback per PowerTop'
+  _arg_csec_str="${1:-}";
+  _arg_file="${2:-}";
+
+  if [ -z "${_arg_file}" ] || [ -z "${_arg_csec_str}" ]; then
+    _cm2WarnStrFn 'ABORT: Missing writeback arguments';
+    _cm2WarnFn;
+    return 1;
+  fi
+
+  if [ ! -f "${_arg_file}" ]; then
+    _cm2WarnStrFn "ABORT: Cannot find writeback file |${_arg_file}|";
+    _cm2WarnFn;
+    return 1;
+  fi
+
+  _wb_sec_str="$(cat "${_arg_file}")"
+  if [ "${_wb_sec_str}" = "${_arg_csec_str}" ]; then
+    _cm2SucStrFn "Writeback value |${_arg_csec_str}| already set";
+    _cm2SucFn;
+  elif (echo "${_arg_csec_str}" | tee 1>/dev/null "${_arg_file}"); then
+    _cm2SucFn;
+  else
+    _cm2WarnFn;
+  fi
+}
+## . END _writeVmWbFile }
+
+## BEGIN _disableNvidiaDevicesFn {
+# Purpose  : Disable (power-off) Nvidia devices if not using them
+# Arguments: (positional)
+#   1 = _arg_gfx_mode_str     nvidia|intel|on-demand|unknown
+#   2 = _arg_nvidia_list_str  list of pci devices found using
+#                             `lscpi -m |grep -i nvidia`
+#   3 = _arg_dev_root_dir     root path to devices.
+#                             Usually /sys/bus/pci/devices unless testing
+#
+_disableNvidiaDevicesFn() {
+  declare _arg_gfx_mode_str _arg_nvidia_list_str _arg_dev_root_dir \
+    _dev_id _dev_file;
+
+  _cm2SetMsgFn 'Power-off NV devices if not in use'
+  _arg_gfx_mode_str="${1:-}"
+  _arg_nvidia_list_str="${2:-}"
+  _arg_dev_root_dir="${3:-/sys/bus/pci/devices}"
+
+  if [ -z "${_arg_gfx_mode_str}" ] || [ -z "${_arg_nvidia_list_str}" ] ||
+    [ -z "${_arg_dev_root_dir}" ]; then
+    _cm2WarnStrFn 'ABORT: Missing arguments.';
+    _cm2WarnFn;
+    return 1;
+  fi
+
+  if [ "${_arg_gfx_mode_str}" != 'intel' ]; then
+    _cm2EchoFn 'Nvidia GPU in use.'
+    _cm2SucFn;
+    return 0;
+  fi
+
+  # Disable devices from highest number to lowest.
+  # This disabled the GPU device last and avoids a system lock
+  #
+  if [ "${_nvidia_list_str}" != '' ]; then
+    echo -n "${_nvidia_list_str}" | awk '{print $1}' |sort -rn \
+      | while read -r _dev_id; do
+      if [ "${_dev_id}" != '' ]; then
+        _dev_file="${_arg_dev_root_dir}/0000:${_dev_id}/remove";
+        if [ -f "${_dev_file}" ]; then
+          echo 1 >"${_dev_file}";
+        fi
+      fi
+    done
+  fi
+  _cm2SucFn;
+}
+## . END _disableNvidiaDevicesFn }
+
+## BEGIN _mainFn {
+_mainFn() {
+  declare _arg_str _uid_int _vm_wb_file _lspci_exe_str _prime_exe_str \
+    _gfx_mode_str _is_nvidia_system;
+
+  _arg_str="${1:-}" # Prevents unset errors
+  if [ -z "${_arg_str}" ]; then
+    echo 1>&2 'ABORT: Argument required.';
+  fi
+
+  _cm2SetMsgFn 'Ensure script is run as root'
+  _uid_int="$(id -u)" || exit 105
+  if [ "${_uid_int}" != '0' ]; then _cm2ErrFn; else _cm2SucFn; fi
+
+  _vm_wb_file='/proc/sys/vm/dirty_writeback_centisecs';
+  _cm2EchoFn "== BEGIN Dispatch per argument ${_arg_str}";
+  case "${_arg_str}" in
+    # Set VM writeback per PowerTop
+    # TODO: Determined preferred number for time on ac
+    writeback-ac)
+      _writeVmWbFile 1500 "${_vm_wb_file}";;
+    writeback-battery)
+      _writeVmWbFile 1500 "${_vm_wb_file}";;
+    # Disable nvidia devices
+    disable-nvidia)
+      if ! _cm2AssignExeVarsFn '_lspci_exe_str|lspci' \
+        '_prime_exe_str|prime-select'; then
+        _cm2WarnStrFn 'ABORT: Required commands not found.';
+        return 1;
+      fi
+
+      _gfx_mode_str="$("$_prime_exe_str" query)";
+      _nvidia_list_str="$("${_lspci_exe_str}" -m | grep -i 'nvidia')";
+      _is_nvidia_system="$(_cm2EchoModelStrFn 'is_nv_sys')";
+
+      if [ "${_is_nvidia_system}" = 'y' ]; then
+        _disableNvidiaDevicesFn "${_gfx_mode_str}" "${_nvidia_list_str}";
+      fi
+      ;;
+    *) _cm2EchoFn "Unsupported argument |${_arg_str}|.";;
+  esac
+  _cm2EchoFn "== . END Dispatch per argument ${_arg_str}";
+}
+## . END _mainFn }
+
+## BEGIN Set global vars {
+## . END Set global vars }
+
+## BEGIN Run main if script is not sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname "${_binName}"  )" || exit 101;
+  _baseDir="$(  dirname "${_binDir}"   )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+  _importCommonFn;
+  _mainFn "$@";
+fi
+## . END Run main if script is not sourced }

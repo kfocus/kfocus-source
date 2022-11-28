@@ -1,0 +1,107 @@
+#!/bin/bash
+#
+# Copyright 2021 MindShareManagement Inc.
+# Written for the Kubuntu Focus by
+#
+# - Michael Mikowski
+# - Erich Eickmeyer
+#
+# Name   : arrayPath.source
+# Purpose: Common array and path routines
+# License: GPL v2
+# Example: source arrayPath.source
+# Run By : Scripts that source this file
+# Package: kfocus-main
+#
+# Exports:
+#   _ap2EchoListIdxValFn : Echo value of list element provided index
+#   _ap2EchoListAllFn    : Echo all elements of array separated by line breaks
+#   _ap2JoinListFn       : Echo array joined by delimiter (single char only)
+#   _ap2AddPathFn        : Add a string to a path if not already there and Echo
+#
+# Can be used with set -e and -u
+#
+
+## BEGIN _ap2EchoListIdxValFn
+#  Purpose: Echo value of list element provided index
+#  Summary: _ap2EchoListIdxValFn <index> <array elements>
+#  Example: _ap2EchoListIdxValFn 5 "${_list[@]}";
+#  Returns: 0
+#  Output : Prints String to STDERR
+#  Throws : None
+#
+_ap2EchoListIdxValFn () {
+  declare _idx _list;
+  _idx="${1:-0}" && shift;
+  _list=( "$@" );
+
+  if [ "${_idx}" -ge "${#_list[@]}" ]; then
+    echo '';
+    return 0;
+  fi
+  echo "${_list[$_idx]}";
+}
+## . END _ap2EchoListIdxValFn
+
+## BEGIN _ap2EchoListAllFn
+#  Purpose: Echo all elements of array separated by line breaks
+#  Summary: _ap2EchoListAllFn <array elements>
+#  Example: _ap2EchoListAllFn "${_list[@]}";
+#  Returns: 0
+#  Output : Prints String to STDOUT
+#
+_ap2EchoListAllFn () {
+  declare _list;
+  _list=( "$@" );
+  printf '%s\n' "${_list[@]}";
+}
+## . END _ap2EchoListAllFn
+
+## BEGIN _ap2JoinListFn
+#  Purpose: Echo array joined by delimiter (single char only)
+#  Summary: _ap2JoinListFn <delimiter_char> <array elements>
+#  Example: _ap2JoinListFn ':' "${_list[@]}";
+#  Returns: 0
+#  Output : Prints String to STDOUT
+#
+_ap2JoinListFn () {
+  local IFS;
+  IFS="$1" && shift;
+  echo "${*}";
+}
+## . END _ap2JoinListFn
+
+## BEGIN _ap2AddPathFn
+#  Purpose: Add a string to a path if not already there
+#  Summary: _ap2AddPathFn <path_str> <path array>
+#  Example: _ap2AddPathFn "${PATH}" "/usr/local/bing"
+#  Returns: 0
+#  Output : Adds path if needed and prints to STDOUT
+#
+_ap2AddPathFn () {
+  declare _path_str _add_str _path_list _bit_str;
+
+  _path_str="$1" && shift;
+  _add_list=( "${@}" );
+
+  local IFS=':';
+  read -r -a _path_list <<< "${_path_str}";
+
+  for _add_str in "${_add_list[@]}"; do
+    for _bit_str in "${_path_list[@]}"; do
+      if [ "${_bit_str}" = "${_add_str}" ]; then
+        1>&2 echo -e "${_add_str} already in path. No change";
+        continue 2;
+      fi
+    done
+    if [ -z "${_path_list[*]}" ]; then
+      _path_list=( "${_add_str}" );
+    else
+      _path_list=( "${_path_list[@]}" "${_add_str}" );
+    fi
+  done
+
+  _ap2JoinListFn ':' "${_path_list[@]}";
+}
+## . END _ap2AddPathFn
+

@@ -1,0 +1,28 @@
+#!/bin/bash
+# kfocus-apt-source prerm
+# This must be run as root.
+#
+# set -u is used to exist on uninitialized variables
+# set -e is not used as we do our own error checking
+#
+set -u;
+
+[ $# -gt 0 ] && _cmd="${1}" || _cmd='';
+[ $# -gt 1 ] && _arg="${2}" || _arg='';
+
+## BEGIN MAIN {
+if [ "${_arg}" = "in-favour" ]; then
+  # Treat conflict remove as an upgrade
+  _cmd="upgrade";
+fi
+
+# Do not clean-up just for an upgrade
+if [ "${_cmd}" = "upgrade" ] ; then
+  exit 0
+fi
+
+exit 0;
+## . END MAIN }
+
+# Tag to allow some debhelper commands to inject relevant code
+#DEBHELPER#

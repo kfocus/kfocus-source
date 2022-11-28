@@ -1,0 +1,119 @@
+#!/bin/bash
+#
+# Copyright 2020-2022 MindShare Inc.
+# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
+#
+# Name    : kfocus-pick-gcc-set
+# Purpose : Run-as-root utility to symlink gcc version and tools
+# License : GPL v2
+# Run By  : Users
+# Spec    : 615
+#
+set -u;
+
+## BEGIN _setSymLinkFn {
+_setSymLinkFn() {
+  declare _mode_str _src_exe_str _tgt_vers_str;
+
+  [ "$#" -ge 1 ] && _mode_str="${1}"     || return 1;
+  [ "$#" -ge 2 ] && _src_exe_str="${2}"  || return 1;
+  [ "$#" -ge 3 ] && _tgt_vers_str="${3}" || return 1;
+
+  ## TODO 2022-01-12 consider these links
+  # x86_64-linux-gnu-gcov-dump -> gcov-dump-9
+  # x86_64-linux-gnu-gcc-ar -> gcc-ar-9
+  # x86_64-linux-gnu-gcov -> gcov-9
+  # x86_64-linux-gnu-gcc-nm -> gcc-nm-9
+  # x86_64-linux-gnu-gcov-tool -> gcov-tool-9
+  # x86_64-linux-gnu-gcc -> gcc-9
+  # x86_64-linux-gnu-g++ -> g++-9
+  # x86_64-linux-gnu-gcc-ranlib -> gcc-ranlib-9
+
+  if [ -e "${_src_exe_str}-${_tgt_vers_str}" ]; then
+    if [ "${_mode_str}" = '_set' ]; then
+      if ln -sf "${_src_exe_str}-${_tgt_vers_str}" "${_src_exe_str}"; then
+        echo "${_src_exe_str}-${_tgt_vers_str} is now the default";
+        return 0;
+      else
+        echo "Could not link to ${_src_exe_str}-${_tgt_vers_str}";
+        return 1;
+      fi
+    fi
+  else
+    if [ "${_mode_str}" = '_check' ]; then
+      # gccbug is only used in versions < 8 and is considered optional
+      if [ "${_src_exe_str}" != 'gccbug' ]; then return 1; fi
+    elif [ "${_mode_str}" = '_set' ]; then
+      echo "${_src_exe_str}-${_tgt_vers_str} not found";
+      if [ "${_src_exe_str}" != 'gccbug' ]; then return 1; fi
+    fi
+  fi
+}
+## . END _setSymLinkFn }
+
+## BEGIN MAIN {
+_uidInt="$(id -u)" || exit 1;
+cd '/usr/bin'      || exit 1;
+
+# Get target executable version
+[ "$#" -eq 1 ] && _tgtVersStr="${1}" || exit 1;
+
+# Only run as root
+[ "${_uidInt}" = "0" ] || exit 1;
+
+_toolList=(
+  'gcc' 'cpp' 'g++' 'gcov' 'gcc-ar' 'gcc-nm'
+  'gcc-ranlib' 'gccbug' 'gcov-dump' 'gcov-tool'
+);
+_areAllFound='y';
+_areAllLinked='y';
+_checkStr='';
+_linkStr='';
+
+## Begin Loop through two stages {
+for _phaseIdx in {1..2}; do
+  ## Begin Loop through tool list {
+  for _srcExeStr in "${_toolList[@]}"; do
+
+    # In phase one, we only check for links. No changes are made.
+    if [ "${_phaseIdx}" = '1' ]; then
+      _outStr=$(_setSymLinkFn '_check' "${_srcExeStr}" "${_tgtVersStr}");
+      # shellcheck disable=2181 # Check exit code directly...
+      if [ "$?" != '0' ]; then _areAllFound='n'; fi
+
+      if [ -n "${_outStr}" ]; then
+        _checkStr="${_checkStr}${_outStr}";
+      fi
+
+    # In phase two, we set the symlinks. This will occur only if
+    # all the expected links are found.
+    elif [ "${_phaseIdx}" = '2' ]; then
+      _outStr=$(_setSymLinkFn '_set' "${_srcExeStr}" "${_tgtVersStr}");
+      # shellcheck disable=2181 # Check exit code directly...
+      if [ "$?" != '0' ]; then _areAllLinked='n'; fi
+
+      if [ -n "${_outStr}" ]; then
+        _linkStr="${_checkStr}${_outStr}";
+      fi
+    fi
+  done
+  ## . End Loop through tool list }
+
+  # This will always exit on phase 1 if there is an issue.
+  # Accordingly, no links are ever set in this case.
+  if [ "${_areAllFound}" = 'n' ]; then
+    echo 'Not all link targets found. Aborting';
+    exit 1;
+  fi
+done
+## . End Loop through two stages }
+
+# Use abnormal exit id if not all links could be processed.
+#   Notice the condition where not all links are found is
+#   processed above in phase 1 of the phaseIdx loop.
+#
+if [ "${_areAllLinked}" = 'n' ]; then
+  echo "${_linkStr}";
+  exit 2;
+fi
+## . END MAIN }

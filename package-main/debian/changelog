@@ -1,0 +1,952 @@
+kfocus-main (22.04.32) jammy; urgency=medium
+
+  * kfocus-sysreport check shows pkg source (#2956)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Tue, 22 Nov 2022 14:42:54 -0800
+
+kfocus-main (22.04.31) jammy; urgency=medium
+
+  * Update focusrx to update kfocus-nvidia if available (#2928)
+  * Fix diskinfo routine in sysreport (#2950)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Tue, 01 Nov 2022 14:17:11 -0700
+
+kfocus-main (22.04.30) jammy; urgency=medium
+
+  * Fix kfocus-extra wallpaper installation option (#2924)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Mon, 31 Oct 2022 13:44:02 -0700
+
+kfocus-main (22.04.29) jammy; urgency=medium
+
+  * Revert previous release (#2914)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Wed, 26 Oct 2022 16:59:21 -0700
+
+kfocus-main (22.04.28) jammy; urgency=medium
+
+  * Removed jetbrains-toolbox from default install (#2914)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Wed, 26 Oct 2022 13:26:45 -0700
+
+kfocus-main (22.04.27) jammy; urgency=medium
+
+  * Create configs for NXG2 (#2893)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Mon, 17 Oct 2022 14:19:15 -0700
+
+kfocus-main (22.04.26) jammy; urgency=medium
+
+  * Fix welcome wizard blocking (#2885)
+  * Fix kfocus-mime support of curated app links (#2525)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Wed, 05 Oct 2022 12:35:03 -0700
+
+kfocus-main (22.04.25) jammy; urgency=medium
+
+  * Split tools off into separate source package (#2877)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Tue, 27 Sep 2022 12:06:17 -0700
+
+kfocus-main (22.04.24) jammy; urgency=medium
+
+  * Update kfocus-conda to use cuda 11 (#1294)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Mon, 19 Sep 2022 11:31:21 -0700
+
+kfocus-main (22.04.23) jammy; urgency=medium
+
+  * Update sysreport tool for better memory test (#2801)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Wed, 07 Sep 2022 13:30:59 -0700
+
+kfocus-main (22.04.22) jammy; urgency=medium
+
+  * Change to 22.04a version of kernel metapackage (#2783)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Thu, 01 Sep 2022 14:17:04 -0700
+
+kfocus-main (22.04.21) jammy; urgency=medium
+
+  * Reverse dialog behavior of pstate wrt disable gpu (#2387)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Thu, 25 Aug 2022 14:33:49 -0700
+
+kfocus-main (22.04.20) jammy; urgency=medium
+
+  * FocusRx fixes for DNS ping, skip unnecessary reinstalls
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Fri, 12 Aug 2022 12:17:08 -0700
+
+kfocus-main (22.04.19) jammy; urgency=medium
+
+  * Remove virtualbox from default install
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Tue, 09 Aug 2022 13:42:28 -0700
+
+kfocus-main (22.04.18) jammy; urgency=medium
+
+  * Create separate tool metapackage for NX (#2664)
+  * Create separate tool metapackage for XE (#2664)
+  * Refine hardware configuration subsystem (#2682)
+  * Move fan control to separate tool (#2617)
+  * Various packaging changes to accommodate NX
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Mon, 25 Jul 2022 14:54:53 -0700
+
+kfocus-main (22.04.17) jammy; urgency=medium
+
+  * Fix for broken video sync tool (#2659)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Fri, 22 Jul 2022 11:46:06 -0700
+
+kfocus-main (22.04.16) jammy; urgency=medium
+
+  * Fix keyboard color chooser for M1 (#2657)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Thu, 21 Jul 2022 06:47:50 -0700
+
+kfocus-main (22.04.15) jammy; urgency=medium
+
+  * Determine escalation rights in tools (#2566)
+  * Update first run wizard (#2488)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Mon, 18 Jul 2022 13:39:47 -0700
+
+kfocus-main (22.04.14) jammy; urgency=medium
+
+  * Reenable NetworkManger-wait-online.service (#2551)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Wed, 06 Jul 2022 14:10:43 -0700
+
+kfocus-main (22.04.13) jammy; urgency=medium
+
+  * Fix XHCI USB toggle on sleep (#2482)
+  * Update power USB subsystem (#2482)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Tue, 28 Jun 2022 16:25:27 -0700
+
+kfocus-main (22.04.12) jammy; urgency=medium
+
+  * Prompt user to upgrade m2g4 bios if needed (#2506)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Tue, 28 Jun 2022 14:08:31 -0700
+
+kfocus-main (22.04.11) jammy; urgency=medium
+
+  * Update font DPI defaults (#2484)
+  * Update BIOS update tool for non-m2g4 systems (#2455)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Wed, 22 Jun 2022 15:02:04 -0700
+
+kfocus-main (22.04.10) jammy; urgency=medium
+
+  * Release BIOS update tool (#2455)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Tue, 21 Jun 2022 11:22:36 -0700
+
+kfocus-main (22.04.9) jammy; urgency=medium
+
+  * Fix for broken model sniffer (#2447)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Fri, 17 Jun 2022 16:21:12 -0700
+
+kfocus-main (22.04.8) jammy; urgency=medium
+
+  * Add symlinks for new executables
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Fri, 17 Jun 2022 15:07:53 -0700
+
+kfocus-main (22.04.7) jammy; urgency=medium
+
+  * Increase highlight contrast for kfocus-power (#2419)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Fri, 17 Jun 2022 14:29:58 -0700
+
+kfocus-main (22.04.6) jammy; urgency=medium
+
+  * Add apps to kfocus-mime (#2416)
+  * Create Post-Install Tool (#2428)
+  * Disable fan curve for select power profiles (#2419)
+  * Create kfocus-sysreport (#2415)
+  * Fix sleep-resume issue (#2429) 
+  * Adjust SDDM to avoid inset login (#2430)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Mon, 13 Jun 2022 12:40:10 -0700
+
+kfocus-main (22.04.5) jammy; urgency=medium
+
+  * Set VT Fonts (#2377)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Mon, 06 Jun 2022 12:55:46 -0700
+
+kfocus-main (22.04.4) jammy; urgency=medium
+
+  * Move modprobe.d confs to hw-model source package (#2257)
+  * Update power scripts (#1958)
+  * Fix web launcher to launch correct (#2298)
+  * Rollback unnecessary fixes (#2305)
+  * Update kfocus-power for 12th-gen CPU (#2123)
+  * Add hints for power management (#1958)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Tue, 24 May 2022 12:08:20 -0700
+
+kfocus-main (22.04.3) jammy; urgency=medium
+
+  * 2176 Service pause 1s before dm init to allow touchpad init
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Wed, 18 May 2022 11:30:13 -0700
+
+kfocus-main (22.04.2) jammy; urgency=medium
+
+  * Fix feedback in package-check script
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Mon, 16 May 2022 13:05:14 -0700
+
+kfocus-main (22.04.1) jammy; urgency=medium
+
+  * Welcome to Jammy Jellyfish
+
+ -- Erich Eickmeyer <eeickmeyer@ubuntu.com>  Fri, 11 Mar 2022 14:16:21 -0800
+
+kfocus-001-main (20.04.106) focal; urgency=medium
+
+  * Update kernel cleaner to use size-based calculations (#620)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Thu, 03 Feb 2022 14:03:22 -0800
+
+kfocus-001-main (20.04.105) focal; urgency=medium
+
+  * Actually prevent kernel cleaner from removing running kernel (#1914)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Mon, 31 Jan 2022 12:58:35 -0800
+
+kfocus-001-main (20.04.104) focal; urgency=medium
+
+  * Prevent kernel cleaner from removing running kernel (#1914)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Mon, 31 Jan 2022 12:48:44 -0800
+
+kfocus-001-main (20.04.103) focal; urgency=medium
+
+  * Update tools with web page references (#1799)
+  * FocusRx no longer runs if in live ISO environment (#1902) 
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Fri, 21 Jan 2022 14:07:46 -0800
+
+kfocus-001-main (20.04.102) focal; urgency=medium
+
+  * Update fix-kernel-vers to remove 1020 kernel (#1829)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Thu, 20 Jan 2022 14:16:45 -0800
+
+kfocus-001-main (20.04.101) focal; urgency=medium
+
+  * Add update-initramfs and dkms autoinstall to kernel fix (#1829)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Fri, 14 Jan 2022 14:50:01 -0800
+
+kfocus-001-main (20.04.100) focal; urgency=medium
+
+  * Update kernel clean to use new kfocus kernel meta (#1872)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Fri, 14 Jan 2022 11:17:41 -0800
+
+kfocus-001-main (20.04.99) focal; urgency=medium
+
+  * Change to linux-oem-20.04d-kfocus kernel meta (#1835)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Mon, 10 Jan 2022 14:48:44 -0800
+
+kfocus-001-main (20.04.98) focal; urgency=medium
+
+  * Update kernel-fix-vers tool for 1018 kernel (#1829)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Mon, 10 Jan 2022 12:41:03 -0800
+
+kfocus-001-main (20.04.97.3) focal; urgency=medium
+
+  * Fix for packaging error (repeating symlinks)
+  * Actually include kernel rollback script (#1829)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Fri, 07 Jan 2022 18:36:46 -0800
+
+kfocus-001-main (20.04.97) focal; urgency=medium
+
+  * Fix package error
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Fri, 07 Jan 2022 17:08:17 -0800
+
+kfocus-001-main (20.04.96) focal; urgency=medium
+
+  * Include kernel rollback script (#1829)
+  * Update qwe bookmarks tool (#1823)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Fri, 07 Jan 2022 14:47:37 -0800
+
+kfocus-001-main (20.04.95) focal; urgency=medium
+
+  * Actually fix race condition with power and gpu profiles (#1821)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Tue, 28 Dec 2021 17:38:45 -0800
+
+kfocus-001-main (20.04.94) focal; urgency=medium
+
+  * Make power scripts self-installable (#1819)
+  * Fix race condition with power and gpu profiles (#1821)
+  * Advise reboot using system reboot notification (#1820) 
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Fri, 24 Dec 2021 08:23:15 -0800
+
+kfocus-001-main (20.04.93) focal; urgency=medium
+
+  * Switch to scalable icons (#1805) 
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Tue, 21 Dec 2021 12:01:37 -0800
+
+kfocus-001-main (20.04.92) focal; urgency=medium
+
+  * Hotfix for conflicting files
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Mon, 20 Dec 2021 16:32:50 -0800
+
+kfocus-001-main (20.04.91) focal; urgency=medium
+
+  * Hotfix for installability issue
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Mon, 20 Dec 2021 16:21:45 -0800
+
+kfocus-001-main (20.04.90) focal; urgency=medium
+
+  * Hotfix for missing new menu icon (#1802)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Mon, 20 Dec 2021 14:45:37 -0800
+
+kfocus-001-main (20.04.89) focal; urgency=medium
+
+  * Update tools icons to be distinctive (#1802)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Mon, 20 Dec 2021 13:49:07 -0800
+
+kfocus-001-main (20.04.88) focal; urgency=medium
+
+  * Add advanced power management to power settings (#1782)
+  * Remove obsolete kfocus-001-turbo-* (#1782) 
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Thu, 16 Dec 2021 11:54:36 -0800
+
+kfocus-001-main (20.04.87) focal; urgency=medium
+
+  * Give user option to power-down GPU (#1690)
+  * Remind user to reboot if GPU off on Nvidia (#1690)
+  * Fix kfocus-power-set to adjust all cores (#1756) 
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Tue, 30 Nov 2021 14:05:22 -0800
+
+kfocus-001-main (20.04.86) focal; urgency=medium
+
+  * Fix QWE bug and usability quirks (#1679)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Mon, 29 Nov 2021 14:20:36 -0800
+
+kfocus-001-main (20.04.85) focal; urgency=medium
+
+  * Fix kfocus mimetype handler (#1646)
+  * Move kfocus bug to common subpackage (#1651)
+  * Update kfocus-001 to install pavucontrol-qt, not pavucontrol (#1647)
+  * Reintroduce xserver-xorg-input-synaptics (#1645)
+  * Reintroduce pavucontrol-qt to kfocus-meta (#1647)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Mon, 22 Nov 2021 09:29:40 -0800
+
+kfocus-001-main (20.04.84) focal; urgency=medium
+
+  * Move common sources to common subpackage (#1631) 
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Wed, 17 Nov 2021 09:51:25 -0800
+
+kfocus-001-main (20.04.83) focal; urgency=medium
+
+  * Add missing polkit file (#1594) 
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Mon, 15 Nov 2021 12:35:01 -0800
+
+kfocus-001-main (20.04.82) focal; urgency=medium
+
+  * UX improvements for FocusRX and tools (#1594)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Thu, 11 Nov 2021 14:02:02 -0800
+
+kfocus-001-main (20.04.81) focal; urgency=medium
+
+  * Update kfocus-001 to install docker-ce, not docker (#1598)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Mon, 08 Nov 2021 13:18:51 -0800
+
+kfocus-001-main (20.04.80) focal; urgency=medium
+
+  * Fix for missing binaries (#1596)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Sun, 07 Nov 2021 15:25:36 -0800
+
+kfocus-001-main (20.04.79) focal; urgency=medium
+
+  * Split kfocus-001-main into subpackages (#1526)
+  * Update FocusRx to guide user to update 470 drivers (#1565)
+  * Add drop file mechanism for future FocusRx updates (#1565)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Wed, 01 Nov 2021 11:16:30 -0700
+
+kfocus-001-main (20.04.78) focal; urgency=medium
+
+  * Update/enhance power optimizations (#1456)
+  * Update mime handler (#1484)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Wed, 13 Oct 2021 12:56:40 -0700
+ 
+kfocus-001-main (20.04.77) focal; urgency=medium
+
+  * Update to 5.14 OEM kernel (#1450) 
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Fri, 08 Oct 2021 13:42:03 -0700
+
+kfocus-001-main (20.04.76) focal; urgency=medium
+
+  * Update FocusRx to use Nvidia 470 drivers (#1368)
+  * Fix FocusRx removing Nvidia check on XE (#1129)
+  * Simplify deduplicate run check (#1129)
+  * Fix LVFS warning in Discover (#1343)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Thu, 23 Sep 2021 12:10:37 -0700
+
+kfocus-001-main (20.04.75) focal; urgency=medium
+
+  * Move startup to systemwide instead of skel (#1314)
+  * Move skel to kfocus-001-settings (#1314)
+
+ -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Thu, 16 Sep 2021 13:34:46 -0700
+
+kfocus-001-main (20.04.74) focal; urgency=medium
+
+  * Hotfix for kernel cleaner (#1322)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Wed, 15 Sep 2021 16:29:12 -0700
+
+kfocus-001-main (20.04.73) focal; urgency=medium
+
+  * No-change rebuild for libc6 issue
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Fri, 10 Sep 2021 08:26:33 -0700
+
+kfocus-001-main (20.04.72) focal; urgency=medium
+
+  * Hotfix for kernel cleaner (#1322)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Tue, 07 Sep 2021 15:01:53 -0700
+
+kfocus-001-main (20.04.71) focal; urgency=medium
+
+  * Hotfix for XE recognition
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Sat, 28 Aug 2021 14:05:24 -0700
+
+kfocus-001-main (20.04.70) focal; urgency=medium
+
+  * Update to new oem kernel (#1285)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Wed, 25 Aug 2021 16:41:34 -0700
+
+kfocus-001-main (20.04.69) focal; urgency=medium
+
+  * Centrallize hardware sniffing (#1244)
+  * Fix instantaneous application of KB color changer params (#1240) 
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Tue, 24 Aug 2021 16:21:19 -0700
+
+kfocus-001-main (20.04.68) focal; urgency=medium
+
+  * Update banner in quick help widget to match other panels (#1228) 
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Wed, 18 Aug 2021 12:31:56 -0700
+
+kfocus-001-main (20.04.67) focal; urgency=medium
+
+  * Update Desktop Quick Help Widget with branding (#1046)
+  * Add sudo before prime-select command in FocusRX (#1129)
+  * Remove aliases to trash/rm for new users (#1146)
+  * Remove indicator-cpufreq from recommends for eventual replacement (#1178)
+  * Fix XE hardware sniffing (#689)
+  * Remove error-prone ksysguard config (#1125) 
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Thu, 29 Jul 2021 13:16:11 -0700
+
+kfocus-001-main (20.04.66) focal; urgency=medium
+
+  * Change widget to disambiguate XE/M-series keyboard shortcuts (#688)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Thu, 15 Jul 2021 12:15:27 -0700
+
+kfocus-001-main (20.04.65) focal; urgency=medium
+
+  * Remove mate-optimus (#1067)
+    - Replaced with plasma-optimus in kfocus-001-nvidia
+  * Give info for users of XE model for non-applicable tools (#689)  
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Thu, 08 Jul 2021 14:45:12 -0700
+
+kfocus-001-main (20.04.64) focal; urgency=medium
+
+  * kb-color - Replace brigtness slider with combobox (#1094)
+  * kb-color - Add logic in case keyboard config is missing (#1094) 
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Thu, 08 Jul 2021 13:06:58 -0700
+
+kfocus-001-main (20.04.63) focal; urgency=medium
+
+  * Demote mate-optimus from depends to recommends (#1067)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Mon, 28 Jun 2021 20:39:28 -0700
+
+kfocus-001-main (20.04.62) focal; urgency=medium
+
+  * Update FocusRx for new nvidia-modprobe (#1075)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Mon, 28 Jun 2021 17:43:20 -0700
+
+kfocus-001-main (20.04.61) focal; urgency=medium
+
+  * Update desktop help widget (#1045)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Wed, 23 Jun 2021 13:49:50 -0700
+
+kfocus-001-main (20.04.60) focal; urgency=medium
+
+  * Fix some spelling errors
+  * Add Visual Studio Code and JetBrains Toolbox for (#993)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Thu, 10 Jun 2021 16:57:31 -0700
+
+kfocus-001-main (20.04.59) focal; urgency=medium
+
+  * Fix partial install completion bug (#972)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Tue, 08 Jun 2021 14:53:39 -0700
+
+kfocus-001-main (20.04.58) focal; urgency=medium
+
+  * Hot fix for wrong gcc version switcher icon (#972)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Mon, 07 Jun 2021 17:49:39 -0700
+
+kfocus-001-main (20.04.57) focal; urgency=medium
+
+  * Replace wajig references in FocusRx (#985)
+  * Create GCC Version Switcher GUI (#972)
+  * Add default fixes from Chrome for Brave (#988)
+  * Audit Welcome Wizard Presentation (#986) 
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Mon, 07 Jun 2021 16:38:17 -0700
+
+kfocus-001-main (20.04.56) focal; urgency=medium
+
+  * Added new apps to guided solutions (381)
+  * Fix Google Chrome skel for mimetype handler and theme
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Thu, 03 Jun 2021 13:08:45 -0700
+
+kfocus-001-main (20.04.55) focal; urgency=medium
+
+  * Add winff-qt to recommends (#936)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Tue, 01 Jun 2021 15:51:47 -0700
+
+kfocus-001-main (20.04.54) focal; urgency=medium
+
+  * Replace guvcview with webcamoid (#959)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Fri, 28 May 2021 16:13:30 -0700
+
+kfocus-001-main (20.04.53) focal; urgency=medium
+
+  * Update mime handler, resolves security issue (#951)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Fri, 28 May 2021 15:24:55 -0700
+
+kfocus-001-main (20.04.52) focal; urgency=medium
+
+  * Update icon for Focus Video Sync (#931)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Tue, 25 May 2021 13:44:13 -0700
+
+kfocus-001-main (20.04.51) focal; urgency=medium
+
+  * New Tool: Focus Video Sync (#931)
+    - actually create link this time
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Thu, 20 May 2021 16:34:49 -0700
+
+kfocus-001-main (20.04.50) focal; urgency=medium
+
+  * New Tool: Focus Video Sync (#931)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Thu, 20 May 2021 16:25:59 -0700
+
+kfocus-001-main (20.04.49) focal; urgency=medium
+
+  * Fixes for fixup_run and kfocus-001-conda (#919)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Tue, 18 May 2021 12:36:46 -0700
+
+kfocus-001-main (20.04.48) focal; urgency=medium
+
+  * Switch to OEM kernel (#881)
+  * Update scripts (#901)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Fri, 14 May 2021 12:22:10 -0700
+
+kfocus-001-main (20.04.47) focal; urgency=medium
+
+  * Remove redundant xorg.conf check
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Tue, 11 May 2021 14:27:03 -0700
+
+kfocus-001-main (20.04.46) focal; urgency=medium
+
+  * Give FocusRX a CLI mode (#888)
+  * Fix bad link for focusrx
+  * Fix deep learning for Nvidia RTX 30-series hardware (#526)
+  * Add PRIME Synchronization (#858)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Mon, 10 May 2021 15:14:40 -0700
+
+kfocus-001-main (20.04.45) focal; urgency=medium
+
+  * Add check for xorg.conf file (#743)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Tue, 04 May 2021 15:58:37 -0700
+
+kfocus-001-main (20.04.44) focal; urgency=medium
+
+  * Add default GPU accelleration configuration for Brave (#710)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Tue, 27 Apr 2021 14:01:22 -0700
+
+kfocus-001-main (20.04.43) focal; urgency=medium
+
+  * Harmonize tool styling (#707)
+  * Remove .desktop icon links from skel (#621)
+    - Also remove intrusive Desktop folder icon update
+  * Remove obsolete lintian overrides 
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Thu, 15 Apr 2021 14:55:11 -0700
+
+kfocus-001-main (20.04.42) focal; urgency=medium
+
+  * Add 64x64 application icons (#697)
+  * The answer to life, the universe, and everything 
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Tue, 13 Apr 2021 13:28:01 -0700
+
+kfocus-001-main (20.04.41) focal; urgency=medium
+
+  * Add icons from pixmaps to hicolor (#697)
+  * Add otherwise missing icons to gui controls (#697)
+  * Fix Kernel Cleaner aesthetics (#696)  
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Mon, 12 Apr 2021 15:27:44 -0700
+
+kfocus-001-main (20.04.40) focal; urgency=medium
+
+  * Simplify Chrome defaults (#582)
+  * Update FocusRX to remove CUDA lib check (#633)
+  * Improve keyboard color chooser aesthetics (#686)
+  * Audit Welcome Wizard for icons and grammar (#683)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Wed, 07 Apr 2021 17:20:25 -0700
+
+kfocus-001-main (20.04.39) focal; urgency=medium
+
+  * Add Welcome Guide back to desktop (#645)
+  * Give menu icons custom icons (#645)
+  * Add help icon to menu (#645)
+  * Add manpages (#628)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Thu, 25 Mar 2021 15:59:46 -0700
+
+kfocus-001-main (20.04.38) focal; urgency=medium
+
+  * Add HTML to Kernel Cleaner (#634)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Wed, 24 Mar 2021 14:43:47 -0700
+
+kfocus-001-main (20.04.37) focal; urgency=medium
+
+  * Hotfix for keyboard color changer malfunctions (#615)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Sat, 20 Mar 2021 11:21:39 -0700
+
+kfocus-001-main (20.04.36) focal; urgency=medium
+
+  * Create directory in main package for update notifier (#613)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Fri, 19 Mar 2021 21:20:26 -0700
+
+kfocus-001-main (20.04.35) focal; urgency=medium
+
+  * Replace all Desktop icons with Help icon (#576)
+  * Add keyboard color changer (#575)
+  * debian: cleanup
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Wed, 17 Mar 2021 17:00:46 -0700
+
+kfocus-001-main (20.04.34) focal; urgency=medium
+
+  * Add return-to-continue on Conda script exits (#605)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Wed, 17 Mar 2021 16:54:25 -0700
+
+kfocus-001-main (20.04.33) focal; urgency=medium
+
+  * Block Deep Learning Suite for RTX 30 Series (#598)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Tue, 16 Mar 2021 16:38:08 -0700
+
+kfocus-001-main (20.04.32) focal; urgency=medium
+
+  * Hotfix for function typo in extra
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Mon, 15 Mar 2021 19:49:54 -0700
+
+kfocus-001-main (20.04.31) focal; urgency=medium
+
+  * Improve welcome wizard aesthetics (#583)
+  * Add avatar change question to welcome wizard (#219)
+  * Move restricted package installation to extra (#592)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Fri, 12 Mar 2021 15:01:02 -0800
+
+kfocus-001-main (20.04.30) focal; urgency=medium
+
+  * Fix kfocus-001-extra CUDA lib request (#564)
+  * Add power profile utility (#206)
+  * Update QWE with improved capabilities (#434)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Wed, 10 Mar 2021 15:44:36 -0800
+
+kfocus-001-main (20.04.29) focal; urgency=medium
+
+  * Move nvidia suspend/resume fixes to kfocus-001-nvidia (#497)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Fri, 05 Mar 2021 13:36:03 -0800
+
+kfocus-001-main (20.04.28) focal; urgency=medium
+
+  * Sub-menu audit fixes (#493)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Thu, 04 Mar 2021 21:03:45 -0800
+
+kfocus-001-main (20.04.27) focal; urgency=medium
+
+  * Move Nvidia drivers to metapackage (#181)
+  * Move system icons to custom submenu (#195)
+  * Add encryption passphrase change prompt to firstrun wizard (#162)
+  * Expose Kfocus capabilities via custom submenu (#203)
+  * Warn on no network in Welcome Wizard (#209)
+  * Welcome Wizard: prompt to install kfocus-001-rest (#165)
+  * Fix desktop file issues (#217)
+  * kfocus-001-conda now checks for Nvidia GPU (#201)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Tue, 23 Feb 2021 16:31:30 -0800
+
+kfocus-001-main (20.04.26) focal; urgency=medium
+
+  * Hotfix for Conda usability from menu (#196)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Mon, 22 Feb 2021 15:10:20 -0800
+
+kfocus-001-main (20.04.25) focal; urgency=medium
+
+  * Add QWE CLI Bookmarks (# 112)
+  * Add copyright and licensing to scripts
+  * Make Welcome Wizard ineffective in live session (# 183)
+  * Keep dGPU Kdialog for power usage from showing if not on
+    Nvidia GPU (# 182)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Thu, 18 Feb 2021 12:13:01 -0800
+
+kfocus-001-main (20.04.24) focal; urgency=medium
+
+  * Add revised fixup_run.sh, FocusRx force option (# 173)
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Wed, 17 Feb 2021 16:29:34 -0800
+
+kfocus-001-main (20.04.23) focal; urgency=medium
+
+  * Actually add first run wizard
+  * First run wizard can now be run from application menu
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Tue, 16 Feb 2021 14:58:32 -0800
+
+kfocus-001-main (20.04.22) focal; urgency=medium
+
+  * Move cuda install to kfocus-001-cuda-libs
+  * Add install prompt to kfocus-001-conda for cuda install
+  * Add cuda install to kfocus-001-extra
+  * FocusRX: Only run CUDA/AI check if cuda libraries are installed
+  * Add wizard for first run for new user
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Fri, 05 Feb 2021 11:47:48 -0800
+
+kfocus-001-main (20.04.21) focal; urgency=medium
+
+  * Fix for plasma crash on first run + lighter touch
+    on desktop widget fix
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Tue, 09 Feb 2021 16:13:56 -0800
+
+kfocus-001-main (20.04.20) focal; urgency=medium
+
+  * Use proper deb-systemd-helper to enable systemd stuffs
+  * Remove /opt/kfocus-001
+  * Move jetbrains-toolbox install to actual package
+  * Update copyright year
+  * Add handbrake back to recommends
+  * Add fixup_check.sh for overfilled /boot directories
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Mon, 18 Jan 2021 20:39:04 -0800
+
+kfocus-001-main (20.04.19) focal; urgency=medium
+
+  * Fix for layout creation race condition
+    - Re-does layout 10s after first login
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Sun, 17 Jan 2021 19:27:51 -0800
+
+kfocus-001-main (20.04.18) focal; urgency=medium
+
+  * Include apt-rollback
+  * Make kfocus-001-repo Pre-Depends
+  * Fix suspend issue with jebrains-toolbox
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Wed, 13 Jan 2021 13:50:18 -0800
+
+kfocus-001-main (20.04.17) focal; urgency=medium
+
+  * Remove virtualbox conflicts/replaces
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Fri, 08 Jan 2021 19:52:52 -0800
+
+kfocus-001-main (20.04.16) focal; urgency=medium
+
+  * Fix for conflicts/replaces 
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Fri, 08 Jan 2021 19:42:31 -0800
+
+kfocus-001-main (20.04.15) focal; urgency=medium
+
+  * Change to Oracle Virtualbox upstream package
+  * Update FocusRX for Nvidia 460 driver
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Fri, 08 Jan 2021 19:08:18 -0800
+
+kfocus-001-main (20.04.14) focal; urgency=medium
+
+  * Update to support Nvidia 460 Driver
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Fri, 08 Jan 2021 15:40:51 -0800
+
+kfocus-001-main (20.04.13) focal; urgency=medium
+
+  * Fix for Nvidia graphical glitches in Plasma
+  * Removed nfs-common from default install
+  * No longer diable rpcbind
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Mon, 28 Dec 2020 16:49:15 -0800
+
+kfocus-001-main (20.04.12) focal; urgency=medium
+
+  * No-Change Rebuild
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Mon, 28 Dec 2020 13:10:14 -0800
+
+kfocus-001-main (20.04.11) focal; urgency=medium
+
+  * Remove reboot notification upon reboot
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Mon, 28 Dec 2020 09:59:03 -0800
+
+kfocus-001-main (20.04.10) focal; urgency=medium
+
+  * Fix for bad path for power settings
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Sat, 26 Dec 2020 17:14:50 -0800
+
+kfocus-001-main (20.04.9) focal; urgency=medium
+
+  * Move wallpapers to kfocus-001-settings
+  * Remove skel files replaced by kf5-settings defaults in kfocus-001-settings
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Mon, 21 Dec 2020 12:59:38 -0800
+
+kfocus-001-main (20.04.8) focal; urgency=medium
+
+  * Move from /opt to /usr/lib
+  * Reenable kwallet by default
+  * Replace cronjobs with systemd service, sddm Xsetup
+  * Fix paths in adduser, deluser scripts
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Mon, 14 Dec 2020 14:16:55 -0800
+
+kfocus-001-main (20.04.7) focal; urgency=medium
+
+  * Minimal fix to use TensorFlow 2.3; 2.4 will come in future update
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Mon, 14 Dec 2020 19:32:58 -0800
+
+kfocus-001-main (20.04.6) focal; urgency=medium
+
+  * Hotfix for Jetbrains failure to install
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Mon, 14 Dec 2020 12:14:40 -0800
+
+kfocus-001-main (20.04.5) focal; urgency=medium
+
+  * Fix for backintime package name conflict
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Sun, 13 Dec 2020 17:55:41 -0800
+
+kfocus-001-main (20.04.4) focal; urgency=medium
+
+  * Hotfix for backintime package name
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Sun, 13 Dec 2020 17:44:15 -0800
+
+kfocus-001-main (20.04.3) focal; urgency=medium
+
+  * Hotfix for jetbrains failure to install
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Sat, 12 Dec 2020 17:11:55 -0800
+
+kfocus-001-main (20.04.2) focal; urgency=medium
+
+  * Moved jetbrains installation to kfocus-001-extra
+  * Added mate-optimus for fast intel/NVidia switching with power control
+  * Removed redshift and plasma-applet-redshift
+    - Redundant in Plasma 5.18
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Wed, 09 Dec 2020 13:43:37 -0800
+
+kfocus-001-main (20.04.1) focal; urgency=medium
+
+  * Post-Install: Enhance valid user directory detection.
+  * kfocus-001 mime handler:
+    - Add kate, kleopatra, minecraft-launcher, obs.
+    - Add more helpful error messages.
+  * skel/GIMP/2.10/gimprc: Ungroup tools in Gimp by default.
+  * package-main/debian/control: added kleopatra and obs-studio to Recommends
+  * package-main/build.sh Made C build script location independent.
+  * package-main/debian/postinst, package-main/debian/kfocus-001-main.links
+    Replaced symlinks on desktop launchers with copies of files.
+  * Removed kubuntu-restricted-extras from recommends
+
+ -- Kubuntu Focus Support <support@kfocus.org>  Thu, 03 Dec 2020 14:24:44 -0800

@@ -1,0 +1,323 @@
+#!/bin/bash
+#
+# Copyright 2020-2022 MindShare Inc.
+# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
+#
+# Name   : kfocus-pstate
+# Purpose: Test GPU in use and warn user if battery life can be improved
+# License: GPL v2
+# Run by : Power manager on switch to battery
+# Spec   : 1690, 2558
+# Test   : power-system-check.md
+#
+set -u;
+
+_echoHelpFn () {
+  cat 1>&2 <<_EOW00
+
+Usage: ${_baseName} [-h|-s <key>]
+   -h: This help message
+   -s: Specify power state AC | Battery | LowBattery
+
+_EOW00
+}
+
+## BEGIN _importCommonFn {
+# Imports: _cm2AssignExeVarsFn _cm2EchoModelStrFn _cm2ErrFn
+# _cm2KdiagExe _cm2SetMsgFn _cm2SucFn _cm2SucStrFn _cm2WarnFn
+# _cm2WarnStrFn
+#
+# Run ls-common-symbols.sh to get this list
+#
+_importCommonFn () {
+  declare _lib_file;
+  _lib_file="${_baseDir}/lib/common.2.source";
+  if [ -r "${_lib_file}" ]; then
+    # shellcheck source=../lib/common.2.source
+    source "${_lib_file}" || exit 202;
+  else
+    echo 1>&2 "${_baseName}: ABORT - Cannot source lib |${_lib_file}|";
+    exit 202;
+  fi
+}
+## . END _importCommonFn }
+
+_trapExitFn () {
+  1>&2 echo "${_baseName} was interrupted";
+  rm "${_lockFile}" || true;
+}
+
+_chkSetFlockFn () {
+  exec 211>"${_lockFile}" || exit 1;
+  if ! flock -n -e 211; then
+    1>&2 echo "Cannot get lock on ${_lockFile}";
+    exit 1;
+  fi
+  # Trap unexpected exits to clean up lock file
+  trap _trapExitFn EXIT;
+}
+
+# Remove lock file on exit
+# Use before common.2.source is imported.
+_exitEarlyFn () {
+  1>&2 echo 'An unexpected error has occurred';
+  exit 1;
+}
+
+_exitCleanFn () {
+  trap '' EXIT;
+  rm "${_lockFile}" || true;
+  exit 0;
+}
+
+## BEGIN _mainFn {
+_mainFn () {
+## Begin Initialize {
+  declare _warn_dgpu_msg _ask_disable_msg _ask_reboot_msg \
+    _assign_exe_list _pstate_arg_str _opt_str _is_on_ac _pid_str \
+    _prime_exe _gfx_mode_str _nvidia_list_str;
+
+  _warn_dgpu_msg=$(
+    cat <<_HERE
+<html>
+  <style>
+    table{width:100%;margin:0}
+    td{padding:4px 16px 4px 0;}
+    .prompt{text-align:center;padding:16px 0 8px 0;font-weight:800}
+  </style>
+  <h3 style="color:#1d99f3;text-align:center">GPU Power Warning</h3>
+  <table align="center">
+  <tr><td>The system is using the discrete GPU on battery power.<br>
+    To increase battery life up to 75%, follow these steps:
+  </td></tr>
+  <tr><td>
+    <ol style="margin:16px 32px;">
+      <li>Click the Nvidia Icon in the system tray</li>
+      <li>Click 'Switch to: Intel (Power Saving)'</li>
+      <li>When prompted, click 'Log Out' and enter password.</li>
+    </ol>
+  </tr></td>
+  <tr><td>To use the discrete GPU again:
+    <ol style="margin:16px 32px;">
+      <li>Click on the Intel icon in the system tray</li>
+      <li>Select 'Switch to: NVIDIA (Performance Mode)'</li>
+      <li>When prompted, click 'Log Out' and enter password.</li>
+    </ol>
+  </tr></td>
+  </table>
+</html>
+_HERE
+  );
+
+  _ask_disable_msg=$(
+    cat <<_HERE2
+<html>
+  <style>
+    table{width:100%;margin:0}
+    td{padding:4px 16px 4px 0;}
+    .prompt{text-align:center;padding16px 0 8px 0;font-weight:800}
+  </style>
+  <h3 style="color:#1d99f3;text-align:center">GPU Power Warning</h3>
+  <table align="center">
+  <tr><td>The system is using the integrated GPU, but the discrete GPU is<br>
+    still powered-on.
+  </td></tr>
+  <tr><td>Would you like to power-down the discrete GPU to gain an<br>
+    additional 1-2 hours of battery life?
+  </td></tr>
+  <tr><td><b>NOTE:</b> To use the discrete GPU again, a system reboot will<br>
+    be required if you choose to power-down the dGPU.
+  </td></tr>
+  </table>
+</html>
+_HERE2
+  );
+
+  _ask_reboot_msg=$(
+    cat <<_HERE3
+<html>
+  <style>
+    table{width:100%;margin:0}
+    td{padding:4px 16px 4px 0;}
+    .prompt{text-align:center;padding16px 0 8px 0;font-weight:800}
+  </style>
+  <h3 style="color:#1d99f3;text-align:center">Discrete GPU Power Off</h3>
+  <table align="center">
+  <tr><td>Despite being set to use the discrete GPU, the system is<br>
+  only using the integrated GPU. In order to use the discrete<br>
+  GPU, the system must reboot.
+  </td></tr>
+  <tr><td>Do you wish to reboot now?
+  </td></tr>
+  </table>
+</html>
+_HERE3
+  );
+
+  # Set flock or exit on dup run
+  _chkSetFlockFn;
+  ## . End Initialize }
+
+  # Exit if missing kdialog (provided by common.2.source)
+  if ! [ -x "${_cm2KdiagExe}" ]; then
+    _cm2WarnStrFn 'ABORT: kdialog executable missing.';
+    _cm2ErrFn;
+  fi
+
+  ## Begin Assign other values after common import {
+  declare _lspci_exe _upower_exe _pstate_set_exe _power_set_exe;
+
+  _assign_exe_list=(
+    '_lspci_exe|lspci'
+    '_upower_exe|upower'
+    "_pstate_set_exe|${_binDir}/kfocus-pstate-set"
+    "_power_set_exe|${_binDir}/kfocus-power-set"
+  );
+
+  if ! _cm2AssignExeVarsFn "${_assign_exe_list[@]}"; then
+    _cm2WarnStrFn 'Abort: Required commands not found.';
+    _exitEarlyFn;
+  fi
+
+  # Check for power /battery, not mouse or kbd batteries
+  if ! grep -q '/battery' < <("${_upower_exe}" -e); then
+    _cm2EchoFn 'Exit: System does not appear to have battery.';
+    _exitCleanFn;
+  fi
+
+  ## Begin Process options {
+  _pstate_arg_str='';
+  while getopts 'hs:' _opt_str; do
+    case "${_opt_str}" in
+      h) _echoHelpFn; exit;;
+      s) _pstate_arg_str="${OPTARG:-}"; shift;;
+      *) 1>&2 echo -e "\nInvalid option: -${_opt_str} \n";
+        _echoHelpFn; exit 1;;
+    esac
+  done
+  ## . End Process options }
+
+  _is_on_ac='';
+  case "${_pstate_arg_str}" in
+    AC)         _is_on_ac='y';;
+    Battery)    _is_on_ac='n';;
+    LowBattery) _is_on_ac='n';;
+    *) true;;
+  esac
+
+  if [ -z "${_is_on_ac}" ]; then
+    # 1821 Pause to allow upower system to correctly read AC status
+    # PowerDevil automatically runs this now.
+    _pid_str="$(ps -o args= $PPID)"; # TODO: Use ptree
+    _cm2WarnStrFn "Called without arguments from: ${_pid_str}";
+
+    # Pause to let udev catch up
+    sleep 2;
+    _is_on_ac="$(
+      ( "${_upower_exe}" -i '/org/freedesktop/UPower/devices/line_power_AC' \
+       | grep '^\s*online:' | awk '{print $2}' | cut -c1 ) || echo 'n'
+    )";
+  fi
+
+  # Set Powersave on battery
+  if [ "${_is_on_ac}" = 'n' ]; then
+    _cm2SetMsgFn 'Set CPU governor to powersave and disable turbo on battery';
+    if pkexec "${_power_set_exe}" 'Low'; then
+      _cm2SucFn;
+    else
+      _cm2WarnFn;
+    fi
+    _cm2SetMsgFn 'Set writeback for battery use';
+    if pkexec "${_pstate_set_exe}" 'writeback-battery'; then
+      _cm2SucFn;
+    else
+      _cm2WarnFn;
+    fi
+  # Set normal on AC
+  else
+    _cm2SetMsgFn 'Set CPU governor to powersave and enable turbo on AC';
+    if pkexec "${_power_set_exe}" 'Normal'; then
+      _cm2SucFn;
+    else
+      _cm2WarnFn;
+    fi
+    _cm2SetMsgFn 'Set writeback for AC use'
+    if pkexec "${_pstate_set_exe}" 'writeback-ac'; then
+      _cm2SucFn
+    else
+      _cm2WarnFn
+    fi
+  fi
+  ## . End Assign other values after common import }
+
+  # Try to sniff gpu in use
+  _gfx_mode_str='intel'
+  if _cm2AssignExeVarsFn '_prime_exe|prime-select'; then
+    _gfx_mode_str="$("$_prime_exe" query)";
+  else
+    _cm2WarnStrFn 'Please install nvidia-prime for maximum capability';
+  fi
+  _nvidia_list_str="$("${_lspci_exe}" -m | grep -i 'nvidia')";
+
+  # Handle nvidia modes
+  if [ "${_gfx_mode_str}" = 'nvidia' ] || [ "${_gfx_mode_str}" = 'on-demand' ]; then
+    if [ -z "${_nvidia_list_str}" ]; then
+      _cm2SetMsgFn 'Warn user if using iGPU when dGPU requested';
+      if "${_cm2KdiagExe}" --warningyesno "${_ask_reboot_msg}"; then
+        qdbus org.kde.Shutdown /Shutdown logoutAndReboot;
+      fi
+      _cm2SucFn;
+    else
+      _cm2SetMsgFn 'Warn user if using dGPU on battery'
+      if [ "${_is_on_ac}" = 'n' ]; then
+        "${_cm2KdiagExe}" --msgbox "${_warn_dgpu_msg}" &
+        _cm2SucFn;
+      else
+        _cm2SucStrFn 'Using AC Power, no action needed';
+        _cm2SucFn;
+      fi
+    fi
+  fi
+
+  # Handle intel mode
+  if [ "${_gfx_mode_str}" = 'intel' ]; then
+    if [ "${_is_on_ac}" = 'n' ]; then
+      _cm2SetMsgFn 'Give user option to disable dGPU when on battery';
+      if [ "${_nvidia_list_str}" != '' ]; then
+        if "${_cm2KdiagExe}" --yesno "${_ask_disable_msg}"; then
+          if pkexec "${_pstate_set_exe}" 'disable-nvidia'; then
+            echo 'Discrete GPU disable successfully.' || true;
+            _cm2SucFn;
+          else
+            "${_cm2KdiagExe}" \
+              --error 'GPU was not disabled due to an error.' || true;
+            _cm2ErrFn;
+          fi
+        else
+          "${_cm2KdiagExe}" \
+            --msgbox 'Discrete GPU not disabled as requested.' || true;
+          _cm2SucFn;
+        fi
+      else
+        echo 'dGPU already off or nonexistent';
+        _cm2SucFn;
+      fi
+    fi
+  fi
+}
+## . END _mainFn }
+
+## BEGIN Run main if script is not sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(readlink -f "$0")"        || exit 101;
+  _binDir="$(dirname "${_binName}")"    || exit 101;
+  _baseDir="$(dirname "${_binDir}")"    || exit 101;
+  _baseName="$(basename "${_binName}")" || exit 101;
+  _lockFile="/tmp/${_baseName}.lock"
+  _importCommonFn;
+  _mainFn "$@";
+fi
+## . END Run main if script is not sourced }
+
+# Exit cleanly
+_exitCleanFn;

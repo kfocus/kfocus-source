@@ -1,0 +1,7 @@
+#!/bin/bash
+
+for i in *.md; do
+    _manfile=$(basename "${i}" .md)
+    pandoc "${i}" -s -t man > "${_manfile}"
+done
+

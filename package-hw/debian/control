@@ -1,0 +1,18 @@
+Source: kfocus-hw
+Section: misc
+Priority: optional
+Maintainer: Kubuntu Focus Support <support@kfocus.org>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.0
+Homepage: https://kfocus.org
+Rules-Requires-Root: no
+
+Package: kfocus-hw
+Architecture: all
+Pre-Depends: kfocus-common (>= 22.04.9)
+Depends: ${shlibs:Depends}, ${misc:Depends},
+         kfocus-main (>> 22.04.3)
+Conflicts: kfocus-main (<< 22.04.3),
+Description: Kubuntu Focus Hardware Configuration
+ This package configures Kubuntu Focus hardware
+

@@ -1,0 +1,122 @@
+#!/bin/bash
+#
+# Copyright 2019-2022 MindShare Inc.
+# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
+#
+# Name    : kfocus-fan-set
+# Purpose : Run-as-root utility to set fan profile
+# License : GPL v2
+# Run By  : kfocus-fan
+# Spec    : 2617
+# Test    : 00710
+#
+set -u;
+
+_optionTable=(
+  # _label;_do_tccd
+  'Linear;Best Performance;n'
+  'Soft;Quieter but Warmer;y'
+);
+
+_printIntFn () { printf '%.0f' "$*"; }
+_stderrFn () { 1>&2 echo -e "$*"; }
+
+_setFanControlFn () {
+  declare _do_fan_control;
+  _do_fan_control="${1:-y}";
+
+  if [ "${_do_fan_control}" = 'y' ]; then
+    if ! 1>/dev/null systemctl is-active tccd; then
+      systemctl unmask tccd       || true;
+      systemctl enable tccd       || true;
+      systemctl start  tccd       || true;
+      systemctl unmask tccd-sleep || true;
+    fi
+  else
+    if 1>/dev/null systemctl is-active tccd; then
+      systemctl disable tccd       || true;
+      systemctl stop    tccd       || true;
+      systemctl mask    tccd-sleep || true;
+    fi
+  fi
+}
+
+_setModeFn () {
+  declare _pick_key _match_line _mode_list _opt_line _loop_key _bit_list;
+
+  _pick_key="$(cut -d' ' -f1 <<< "${1:-}")";
+  _match_line='';
+  _mode_list=();
+
+  for _opt_line in "${_optionTable[@]}"; do
+    _loop_key="$(cut -d';' -f1 <<< "${_opt_line}")";
+    if [ "${_pick_key}" = "${_loop_key}" ]; then
+      _match_line="${_opt_line}";
+      break;
+    fi
+    _mode_list+=("${_loop_key}");
+  done
+
+  if [ -z "${_match_line}" ]; then
+    _stderrFn "ABORT: Mode |${_pick_key}| not supported.";
+    ( IFS='|'; _stderrFn "  ${_mode_list[*]}" );
+    return 1;
+  fi
+
+  IFS=';' read -r -a _bit_list <<< "${_match_line}";
+  _setFanControlFn "${_bit_list[2]}";
+}
+
+_printOptionsFn () {
+  declare _opt_line _bit_list;
+  for _opt_line in "${_optionTable[@]}"; do
+    IFS=';' read -r -a _bit_list <<< "${_opt_line}";
+    echo "${_bit_list[0]} ( ${_bit_list[1]} )";
+  done
+}
+
+_readModeFn () {
+  declare _is_tccd_active _opt_line _bit_list;
+
+  # TODO: Add other profiles here
+  if 1>/dev/null systemctl is-active tccd; then
+    _is_tccd_active='y';
+  else
+    _is_tccd_active='n';
+  fi
+
+  for _opt_line in "${_optionTable[@]}"; do
+    IFS=';' read -r -a _bit_list <<< "${_opt_line}";
+    if [ "${_bit_list[2]:-}" = "${_is_tccd_active}" ]; then
+      echo "${_bit_list[0]} ( ${_bit_list[1]} )";
+      return 0;
+    fi
+  done;
+
+  echo "Custom ( enabled: ${_is_tccd_active} )";
+}
+
+_mainFn () {
+  declare _arg_str;
+  _arg_str="${1:-}";
+  case "${_arg_str}" in
+    '-p') _printOptionsFn;;
+    '-r') _readModeFn;;
+      '') _stderrFn 'Argument or flag required'; exit 1;;
+       *) _setModeFn "${_arg_str}";
+  esac
+}
+
+## BEGIN Set global vars {
+_rootDir='';
+## . END Set global vars }
+
+## BEGIN Run main if script is not sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(readlink -f "$0")"        || exit 101;
+  _binDir="$(dirname "${_binName}")"    || exit 101;
+  _baseDir="$(dirname "${_binDir}")"    || exit 101;
+  _baseName="$(basename "${_binName}")" || exit 101;
+  _mainFn "$@";
+fi
+## . END Run main if script is not sourced }

@@ -1,0 +1,94 @@
+#!/bin/bash
+#
+# kfocus-sddm-setup
+# Copyright 2022 MindShare Inc.
+# Written for the Kubuntu Focus by Michael Mikowski
+#
+# Name    : kfocus-sddm-setup
+# Purpose : Utility to organize sddm screens and avoid inset
+# License : GPL v2
+# Run By  : /usr/share/sddm/scripts/Xsetup
+# Spec    : 2430
+#
+set -u;
+
+_logLineFn () {
+  declare _elapsed_int;
+  _elapsed_int="$(date +%s%3N)";
+  (( _elapsed_int -= _startTimeInt ));
+  IFS=$'\n';
+  _debugList+=( "$(printf '[%05d] %s\n' "${_elapsed_int}" "$*")" );
+}
+_calcDisplaySetListFn () {
+  declare _bit_list _raw_str _raw_list _x_int _line _solve_line;
+  _raw_str="$(xrandr --listmonitors)";
+  _logLineFn 'Pre-adjust xrandr monitor output:' "${_raw_str}";
+  IFS=$'\n' read -r -d '' -a _raw_list < <(
+    grep -vi '^\s*monitors.*[0-9]\+' <<<"${_raw_str}" |
+      sed 's/^\s*[0-9]\+\s*:\s*+[*]*//g' |
+      sed -E 's|/[0-9]+[x+]| |g' |
+      sed 's|+| |g';
+  );
+  _x_int=0;
+  for _line in "${_raw_list[@]}"; do
+    IFS=' ' read -r -a _bit_list <<< "${_line}";
+    # Only change display if x offset does not match calculated
+    if [ "${_x_int}" != "${_bit_list[3]}" ]; then
+      _solve_line="${_bit_list[0]}|${_bit_list[1]}|${_bit_list[2]}";
+      _displaySetList+=( "${_solve_line}|${_x_int}|0" );
+    fi
+    (( _x_int += _bit_list[1] ));
+  done
+  _logLineFn 'SetList created:' "${_displaySetList[@]}";
+}
+
+_setupDisplaysFn () {
+  declare _idx _display_line _bit_list _cmd_list;
+  if [ "${_userId}" != '0' ]; then
+    _logLineFn "Run as non-root |${_userId}|. Skip display set";
+    return;
+  fi
+  _idx=0;
+  for _display_line in "${_displaySetList[@]}"; do
+    IFS='|' read -r -a _bit_list <<< "${_display_line}";
+    _cmd_list=( 'xrandr' '--output' "${_bit_list[0]}"
+      '--mode' "${_bit_list[1]}x${_bit_list[2]}"
+      '--pos' "${_bit_list[3]}x${_bit_list[4]}"
+    );
+    if [ "${_idx}"    = '0' ]; then _cmd_list+=('--primary'); fi
+    if [ "${_userId}" = '0' ]; then "${_cmd_list[@]}"; fi
+    (( _idx++ ))
+  done
+  _logLineFn 'SetList applied';
+  _logLineFn 'Post-adjust xrandr monitor output:' "$(xrandr --listmonitors)"
+}
+
+_mainFn () {
+  _logLineFn 'BEGIN report';
+  _calcDisplaySetListFn;
+  _setupDisplaysFn;
+  echo '=====';
+  echo "${_debugList[*]}";
+  echo '=====';
+  echo;
+  _logLineFn '. END report';
+}
+
+## BEGIN Global Variables {
+_debugList=();
+_displaySetList=();
+_startTimeInt="$(date +%s%3N)";
+
+_userId="$(id -u)";
+_debugFile="/tmp/debug-sddm-setup-${_userId}.txt";
+## . END Global Variables }
+
+## BEGIN Run main if script is not sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+  _mainFn "$@";
+fi
+## . END Run main if script is not sourced }
