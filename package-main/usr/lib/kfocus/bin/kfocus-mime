@@ -1,7 +1,11 @@
 #!/bin/bash
 #
 # Copyright 2020-2022 MindShare Inc.
-# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
+# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer,
+# with some code and configurations courtesy of deb-get found at
+# https://github.com/wimpysworld/deb-get. We plan to further contribute
+# and share code with this project, and may make it the back-end
+# of a future revision.
 #
 # Name   : kfocus-mime
 # Purpose: Launch app for link with x-schema-handler/kfocus-mime
@@ -75,6 +79,7 @@ _exeLookupList=(
   'libreoffice-draw|libreoffice;--draw||libreoffice-draw|LibreOffice Drawing: Create Vector and Raster Images'
   'libreoffice-impress|libreoffice;--impress||libreoffice-impress|LibreOffice Impress: Create and Edit Presentations'
   'libreoffice-writer|libreoffice;--writer||libreoffice-writer|LibreOffice Writer: Word Processor'
+  'lutris|lutris||lutris|Lutris: Play Games With Wine'
   'meld|meld||meld|Meld: Visual Difference and Merge Tool'
   'minecraft-launcher|minecraft-launcher||minecraft-launcher|Minecraft: Launch Minecraft'
   'nvidia-settings|nvidia-settings||nvidia-settings|Nvidia Settings: Configure Nvidia GPUs'
@@ -215,11 +220,12 @@ function deb_kubectl() {
   WEBSITE="https://kubernetes.io"
 }
 # 2911 2022-11-01 Disable Lutris as PPA has been disabled
-# function deb_lutris() {
-#   PPA="ppa:lutris-team/lutris"
-#   PRETTY_NAME="Lutris"
-#   WEBSITE="https://lutris.net/"
-# }
+# .... 2022-12-08 Reinstate Lutris as PPA is restored
+function deb_lutris() {
+  PPA="ppa:lutris-team/lutris"
+  PRETTY_NAME="Lutris"
+  WEBSITE="https://lutris.net/"
+}
 
 # NodeJS is preinstalled. This implementation does not quite work.
 # function deb_nodejs() {
