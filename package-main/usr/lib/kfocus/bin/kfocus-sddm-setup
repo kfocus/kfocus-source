@@ -20,18 +20,18 @@ _logLineFn () {
   _debugList+=( "$(printf '[%05d] %s\n' "${_elapsed_int}" "$*")" );
 }
 _calcDisplaySetListFn () {
-  declare _bit_list _raw_str _raw_list _x_int _line _solve_line;
+  declare _bit_list _raw_str _x_int _displays _display _solve_line;
   _raw_str="$(xrandr --listmonitors)";
   _logLineFn 'Pre-adjust xrandr monitor output:' "${_raw_str}";
-  IFS=$'\n' read -r -d '' -a _raw_list < <(
-    grep -vi '^\s*monitors.*[0-9]\+' <<<"${_raw_str}" |
-      sed 's/^\s*[0-9]\+\s*:\s*+[*]*//g' |
-      sed -E 's|/[0-9]+[x+]| |g' |
-      sed 's|+| |g';
-  );
+  _displays=();
+  while read line; do
+    if [[ "$line" =~ ([a-zA-Z]+[0-9]+)\ ([[:digit:]]+)/[[:digit:]]+x([[:digit:]]+)/[[:digit:]]+.([[:digit:]]+).([[:digit:]]+) ]]; then
+      _displays+=( "${BASH_REMATCH[*]:1}" );
+    fi
+  done <<<"${_raw_str}";
   _x_int=0;
-  for _line in "${_raw_list[@]}"; do
-    IFS=' ' read -r -a _bit_list <<< "${_line}";
+  for _display in "${_displays[@]}"; do
+    read -a _bit_list <<< "$_display";
     # Only change display if x offset does not match calculated
     if [ "${_x_int}" != "${_bit_list[3]}" ]; then
       _solve_line="${_bit_list[0]}|${_bit_list[1]}|${_bit_list[2]}";
