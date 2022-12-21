@@ -42,10 +42,13 @@ _calcDisplaySetListFn () {
   _logLineFn 'SetList created:' "${_displaySetList[@]}";
 }
 
+_logConfirmFn () {
+  _logLineFn 'Post-adjust xrandr monitor output:' "$(xrandr --listmonitors)";
+}
 _setupDisplaysFn () {
   declare _idx _display_line _bit_list _cmd_list;
   if [ "${_userId}" != '0' ]; then
-    _logLineFn "Run as non-root |${_userId}|. Skip display set";
+    _logLineFn "Run as non-root |${_userId}|. Skip display set.";
     return;
   fi
   _idx=0;
@@ -55,32 +58,32 @@ _setupDisplaysFn () {
       '--mode' "${_bit_list[1]}x${_bit_list[2]}"
       '--pos' "${_bit_list[3]}x${_bit_list[4]}"
     );
+    # TODO: Verify why we set a primary display on first changed display
+    #   If a primary display is already applied, this may not be desirable.
     if [ "${_idx}"    = '0' ]; then _cmd_list+=('--primary'); fi
     if [ "${_userId}" = '0' ]; then "${_cmd_list[@]}"; fi
-    (( _idx++ ))
+    (( _idx++ ));
   done
-  _logLineFn 'SetList applied';
-  _logLineFn 'Post-adjust xrandr monitor output:' "$(xrandr --listmonitors)"
+  _logLineFn 'SetList applied:';
+  _logConfirmFn;
 }
 
 _mainFn () {
-  _logLineFn 'BEGIN report';
   _calcDisplaySetListFn;
   _setupDisplaysFn;
+  echo 'BEGIN report';
   echo '=====';
   echo "${_debugList[*]}";
   echo '=====';
-  echo;
-  _logLineFn '. END report';
+  echo '. END report';
 }
 
 ## BEGIN Global Variables {
 _debugList=();
 _displaySetList=();
 _startTimeInt="$(date +%s%3N)";
-
 _userId="$(id -u)";
-_debugFile="/tmp/debug-sddm-setup-${_userId}.txt";
+# _debugFile="/tmp/debug-sddm-setup-${_userId}.txt";
 ## . END Global Variables }
 
 ## BEGIN Run main if script is not sourced {

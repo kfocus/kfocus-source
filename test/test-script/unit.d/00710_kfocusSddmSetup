@@ -1,0 +1,188 @@
+#!/bin/bash
+#
+# Test for default kfocus-fan on mocked hardware
+#
+# set -u is set in _runUnitTests (the test harness)
+#
+
+## BEGIN _assertDataTable
+_assertDataTable=(
+'Monitors-1.0|Adjust none|Monitors: 1
+ 0: +*HDMI-0 3840/600x2160/340+0+0  HDMI-0'
+'Monitors-1.1|Adjust DP-0|Monitors: 1
+ 1: +DP-0 3840/600x2160/340+3840+0  DP-0'
+'Monitors-2.0|Adjust none|Monitors: 2
+ 0: +HDMI-0 3840/600x2160/340+0+0  HDMI-0
+ 1: +*DP-0 3840/600x2160/340+3840+0  DP-0'
+'Monitors-2.1|Adjust DP-2|Monitors: 2
+ 0: +HDMI-0 3840/600x2160/340+0+0  HDMI-0
+ 1: +*DP-2 3840/600x2160/340+1024+0  DP-2'
+'Monitors-2.2|Adjust ALL 2|Monitors: 2
+ 0: +*eDP-1-1 1920/344x1080/194+3840+0  eDP-1-1
+ 1: +HDMI-0 3840/600x2160/340+0+0  HDMI-0'
+'Monitors-3.0|Adjust none|Monitors: 3
+ 0: +DP-0 3840/600x2160/340+0+0  DP-0
+ 1: +*DP-2 3840/600x2160/340+3840+0  DP-2
+ 2: +HDMI-0 3840/600x2160/340+7680+0  HDMI-0'
+'Monitors-3.1|Adjust ALL 3|Monitors: 3
+ 0: +DP-0 3840/600x2160/340+3840+0  DP-0
+ 1: +*DP-2 3840/600x2160/340+7680+0  DP-2
+ 2: +HDMI-0 3840/600x2160/340+11520+0  HDMI-0'
+'Monitors-3.2|Adjust DP-0 + eDP-1-1|Monitors: 3
+ 0: +HDMI-0 3840/600x2160/340+0+0  HDMI-0
+ 1: +DP-0 3840/600x2160/340+1024+0  DP-0
+ 2: +*eDP-1-1 1920/344x1080/194+11520+1080  eDP-1-1'
+'Monitors-3.3|Adjust DP-0|Monitors: 3
+ 0: +HDMI-0 3840/600x2160/340+0+0  HDMI-0
+ 1: +*DP-0 3840/600x2160/340+1024+0  DP-0
+ 2: +*DP-2 3840/600x2160/340+7680+0  DP-2'
+'Monitors-4.0|Adjust none|Monitors: 4
+ 0: +*HDMI-0 3840/600x2160/340+0+0  HDMI-0
+ 1: +DP-0 3840/600x2160/340+3840+0  DP-0
+ 2: +DP-2 3840/600x2160/340+7680+0  DP-2
+ 3: +eDP-1-1 1920/344x1080/194+11520+1080  eDP-1-1'
+'Monitors-4.1|Adjust ALL 4|Monitors: 4
+ 0: +eDP-1-1 1920/344x1080/194+11520+1080  eDP-1-1
+ 1: +DP-2 3840/600x2160/340+3840+0  DP-2
+ 2: +*DP-0 3840/600x2160/340+7680+0  DP-0
+ 3: +HDMI-0 3840/600x2160/340+0+0  HDMI-0'
+'Monitors-4.3|Adjust DP-0 + DP-2|Monitors: 4
+ 0: +HDMI-0 3840/600x2160/340+0+0  HDMI-0
+ 1: +DP-0 3840/600x2160/340+7680+0  DP-0
+ 2: +DP-2 3840/600x2160/340+3840+0  DP-2
+ 3: +*eDP-1-1 1920/344x1080/194+11520+1080  eDP-1-1'
+'Monitors-4.4|Adjust HDMI-0 + eDP-1-1|Monitors: 4
+ 0: +HDMI-0 3840/600x2160/340+1024+0  HDMI-0
+ 1: +DP-0 3840/600x2160/340+3840+0  DP-0
+ 2: +DP-2 3840/600x2160/340+7680+0  DP-2
+ 3: +*eDP-1-1 1920/344x1080/194+9600+1080  eDP-1-1'
+'Monitors-4.5|Adjust ALL 4|Monitors: 4
+ 0: +eDP-1-1 1920/344x1080/194+11520+1080  eDP-1-1
+ 1: +DP-0 3840/600x2160/340+7680+0  DP-0
+ 2: +DP-2 3840/600x2160/340+3840+0  DP-2
+ 3: +HDMI-0 3840/600x2160/340+0+0  HDMI-0'
+);
+## . END _assertDataTable }
+
+## BEGIN _overwriteWithMocksFn {
+# Purpose: Overwrite functions from sourced script before running tests
+_overwriteWithMocksFn () {
+  # shellcheck disable=SC2154
+  _exeFile="${_t00TopDir}";
+  _exeFile+='/package-main/usr/lib/kfocus/bin/kfocus-sddm-setup';
+
+  # shellcheck disable=SC1090,SC2154
+  source "${_exeFile}" || exit 1;
+
+  # Reset globals
+  _userId=0;
+
+  # Mock functions
+  xrandr () {
+    if [ "$1" = '--listmonitors' ]; then
+      echo "${_bitList[2]}";
+    else
+      ( IFS=' '; echo "  RUN: xrandr $*"; );
+    fi
+  }
+  _logConfirmFn () { true; }
+}
+## . END _overwriteWithMocksFn }
+
+## BEGIN _unsetMocksFn {
+# Purpose : Unset mocked functions and other globals to prevent
+#   pollution of namespaces. Mocked functions from commons.2.source are not
+#   reset here; instead they are re-source after every test in runUnitTests
+#   (the test harness). See more notes in 00900.
+_unsetMocksFn () {
+  unset xrandr;
+}
+## . END _unsetMockan }
+
+## BEGIN Set global vars {
+_exeFile='';
+## . END Set global vars }
+
+## BEGIN _runTestFn {
+# This MUST be called '_runTestFn' for use by the _runUnitTests
+_runTestFn () {
+  declare _fail_count _assert_count _assert_idx _assert_line \
+    _file_name _expect_file _run_file _msg _check_str;
+
+  # Use function from _runUnitTests: clear out run dir and check expect dir
+  if ! _t00ClearRunDirFn;    then return 1; fi
+  if ! _t00CheckExpectDirFn; then return 1; fi
+
+  # WE DO NOT NEED TO IMPORT COMMON FOR sourced scripts, as the common lib
+  # is already imported by the _runUnitTests
+  # _importCommonFn;
+
+  ## Begin Iterate through asserts {
+  _fail_count=0;
+  _assert_count="${#_assertDataTable[@]}";
+  (( _assert_count++ ));
+  _assert_idx=1;
+
+  for _assert_line in "${_assertDataTable[@]}"; do
+    # Split fields from assert list
+    IFS='|' read -r -d '' -a _bitList <<<"${_assert_line}";
+
+    # Reset global vars from tested code
+    _overwriteWithMocksFn;
+
+    # Calculate expect and run files
+    # bashsupport disable=BP2001
+    _file_name="$( printf '%02d_%s.txt' "${_assert_idx}" "${_bitList[0]}" )";
+
+    # shellcheck disable=SC2154
+    _expect_file="${_t00ExpectDir}/${_file_name}";
+    # shellcheck disable=SC2154
+    _run_file="${_t00RunDir}/${_file_name}";
+
+    # Start file with description
+    _msg="${_bitList[0]} | ${_bitList[1]}.";
+    echo "${_msg}" > "${_run_file}";
+    _cm2EchoFn "BEGIN Assert ${_assert_idx} of ${_assert_count}: ${_msg}";
+
+    # Run _mainFn and capture modified output
+    export OPTIND=1;
+    _mainFn | sed 's/^\[[0-9]\+\]/[------]/g' >> "${_run_file}";
+
+    ## Begin Check diff {
+    if [ ! -f "${_expect_file}" ]; then touch "${_expect_file}"; fi
+    _check_str="$(diff -r --brief "${_expect_file}" "${_run_file}" )";
+
+    if [ -z "${_check_str}" ]; then
+      _cm2EchoFn ". OK   Assert ${_assert_idx}\n";
+    else
+      _cm2EchoFn 'Please compare expected to run file';
+      meld "${_expect_file}" "${_run_file}";
+      _cm2EchoFn ". FAIL Assert ${_assert_idx}\n";
+      (( _fail_count++ ));
+    fi
+    ## . End Check diff }
+
+    (( _assert_idx++ ));
+  done
+  ## End Iterate through asserts }
+
+  ## Run shellcheck on script
+  _cm2EchoFn "BEGIN Assert ${_assert_idx} of ${_assert_count}: shellcheck -x";
+  if shellcheck -x "${_exeFile}"; then
+    _cm2EchoFn ". OK   Assert ${_assert_idx}\n";
+  else
+    _cm2EchoFn "Shellcheck fails on ${_exeFile}";
+    _cm2EchoFn ". FAIL Assert ${_assert_idx}\n";
+    (( _fail_count++ ));
+  fi
+
+  if [ "${_fail_count}" -gt 0 ]; then
+    _cm2EchoFn "FAIL: ${_fail_count} of ${_assert_count} asserts failed.";
+  else
+    _cm2EchoFn 'OK  : Results match expected';
+  fi
+
+  _unsetMocksFn;
+  return "${_fail_count}";
+}
+## . END _runTestFn }

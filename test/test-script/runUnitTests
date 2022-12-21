@@ -1,0 +1,163 @@
+#! /bin/bash
+set -u;
+
+# See https://stackoverflow.com/questions/2683279
+#   Run if not sourced
+# if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+#   _assignGlobalVarsFn;
+#   _runTestFn;
+# fi
+
+# Test-harness: Clear and recreate run directory
+_t00ClearRunDirFn () {
+  if [ -d "${_t00RunDir}" ]; then
+    if ! "${_t00rmExe}" -rf "${_t00RunDir}"; then
+      _cm2EchoFn 'FAIL: Could not clear run dir';
+      return 1;
+    fi
+  fi
+
+  if ! mkdir -p "${_t00RunDir}"; then
+    _cm2EchoFn "FAIL: cannot create ${_t00RunDir}";
+    return 1;
+  fi
+}
+
+# Test-harness: Clear and copy init into run directory
+_t00CopyInitDirFn () {
+  if [ -d "${_t00RunDir}" ]; then
+    if ! "${_t00rmExe}" -rf "${_t00RunDir}"; then
+      _cm2EchoFn 'FAIL: Could not clear run dir';
+      return 1;
+    fi
+  fi
+
+  if [ ! -d "${_t00InitDir}" ]; then
+    _cm2EchoFn "FAIL: Missing init dir ${_t00InitDir}";
+    return 1;
+  fi
+
+  if ! cp -a "${_t00InitDir}" "${_t00RunDir}"; then
+    _cm2EchoFn "FAIL: Could not copy init dir ${_t00InitDir}";
+    return 1;
+  fi
+}
+
+# Test-harness: Check expect directory
+_t00CheckExpectDirFn () {
+  mkdir -p "${_t00ExpectDir}";
+  if [ ! -d "${_t00ExpectDir}" ]; then
+    _cm2EchoFn "FAIL: Missing expect dir ${_t00ExpectDir}";
+    return 1;
+  fi
+}
+
+## BEGIN _t00RunTestScriptsFn {
+_t00RunTestScriptsFn () {
+  declare _return_int _filter_str _fail_list _unit_count \
+    _unit_list _unit_file _unit_basename;
+
+  # Set default return value
+  _return_int=0;
+
+  # Build escaped filter string
+  [ "$#" -gt 0 ] && _filter_str="$1" || _filter_str='';
+  _filter_str="$(_cm2EscapeRxCharsFn "${_filter_str}")";
+
+  # Create unit test list of sorted files
+  cd "${_t00BinDir}/unit.d" || exit 201;
+  read -r -d '' -a _unit_list < <( 
+    find ./ -maxdepth 1 -mindepth 1 | grep -E "^./${_filter_str}" | sort
+  );
+
+  # Export bindir for unit tests
+  export _t00BinDir;
+
+  ## Begin Iterate over unit files {
+  _fail_list=();
+  _unit_count=0;
+  for _unit_file in "${_unit_list[@]}"; do
+    _unit_basename="$( basename "${_unit_file}" )" || exit 1;
+
+    # Export dirs for use by test script
+    _t00ExpectDir="${_t00DataDir}/expect/${_unit_basename}";
+    _t00InitDir="${_t00DataDir}/initial/${_unit_basename}";
+    _t00RunDir="${_t00DataDir}/run/${_unit_basename}";
+    # bashsupport disable=BP2001
+    _t00TopDir="$(dirname "${_t00BaseDir}")";
+    export _t00ExpectDir _t00InitDir _t00RunDir _t00TopDir;
+
+    # Source the file, clearing _runTestFn var first
+    unset _runTestFn;
+
+    # shellcheck disable=SC1090
+    source "${_unit_file}";
+
+    if [ "$(type -t _runTestFn)" = 'function' ]; then
+        _cm2EchoFn "=====> BEGIN : ${_unit_basename}";
+      if _runTestFn; then
+        _cm2EchoFn "<===== PASS  : ${_unit_basename}\n";
+      else
+        _cm2EchoFn "<===== FAIL  : ${_unit_basename}\n";
+        _fail_list+=( "$_unit_basename" );
+      fi
+    else
+      _cm2EchoFn "<===== FAIL  : ${_unit_basename}: NO _runTestFn exported\n";
+      _fail_list+=( "$_unit_basename" );
+    fi
+    (( _unit_count++ ));
+
+    # Reimport common.2.source to overwrite any mocks
+    # shellcheck disable=SC1090
+    source "${_t00BinDir}/common.2.source";
+  done;
+  ## End Iterate over unit files }
+
+  # Summarize results and return results
+  if [ "${_filter_str}" = '' ]; then
+    _cm2EchoFn $'\nAll unit tests run...';
+  else
+    _cm2EchoFn "\nIMPORTANT: Selected tests match |^./${_filter_str}|";
+  fi
+
+  if [ "${#_fail_list[@]}" -gt 0 ]; then
+    _cm2EchoFn "====== FAIL! ${#_fail_list[@]} of ${_unit_count} tests failed:";
+    ( IFS=$'\n'; _cm2EchoFn "${_fail_list[*]}" );
+    _return_int=1;
+  else
+    _cm2EchoFn "====== SUCCESS - all ${_unit_count} tests passed.";
+  fi
+  _cm2EchoFn;
+
+  return "${_return_int}";
+}
+
+## BEGIN _t00MainFn {
+_t00MainFn () {
+  declare _t00BinName;
+
+  ## Begin Env Setup {
+  # Import common
+  # USES _cm2EchoFn; sourced unit tests also rely on this import
+  #
+  # shellcheck source=./common.2.source
+  source "${_t00BinDir}/common.2.source";
+  ## . End Env Setup }
+
+  mkdir -p "${_t00DataDir}" \
+    || (_cm2EchoFn "Could not create ${_t00DataDir}"; exit 1);
+
+  # Pass optional filter string
+  _t00RunTestScriptsFn "${1:-}";
+}
+## . END _t00MainFn }
+
+export -f _t00ClearRunDirFn _t00CopyInitDirFn _t00CheckExpectDirFn;
+
+_t00BinName="$(readlink -f "$0")" || exit 101;
+_t00BinDir="$(dirname "${_t00BinName}")" || exit 101;
+_t00BaseDir="$(dirname "${_t00BinDir}")" || exit 101;
+_t00DataDir="${_t00BaseDir}/test-data";
+_t00rmExe='/bin/rm';
+
+_t00MainFn "$@";

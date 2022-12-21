@@ -1,0 +1,21 @@
+Monitors-4.5 | Adjust ALL 4.
+  RUN: xrandr --output eDP-1-1 --mode 1920x1080 --pos 0x0 --primary
+  RUN: xrandr --output DP-0 --mode 3840x2160 --pos 1920x0
+  RUN: xrandr --output DP-2 --mode 3840x2160 --pos 5760x0
+  RUN: xrandr --output HDMI-0 --mode 3840x2160 --pos 9600x0
+BEGIN report
+=====
+[------] Pre-adjust xrandr monitor output:
+Monitors: 4
+ 0: +eDP-1-1 1920/344x1080/194+11520+1080  eDP-1-1
+ 1: +DP-0 3840/600x2160/340+7680+0  DP-0
+ 2: +DP-2 3840/600x2160/340+3840+0  DP-2
+ 3: +HDMI-0 3840/600x2160/340+0+0  HDMI-0
+[------] SetList created:
+eDP-1-1|1920|1080|0|0
+DP-0|3840|2160|1920|0
+DP-2|3840|2160|5760|0
+HDMI-0|3840|2160|9600|0
+[------] SetList applied:
+=====
+. END report
