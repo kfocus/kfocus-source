@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# kfocus-sddm-setup
 # Copyright 2022 MindShare Inc.
 # Written for the Kubuntu Focus by Michael Mikowski
+#   - Oded Arbel contributed the BASH_REMATCH method
 #
 # Name    : kfocus-sddm-setup
 # Purpose : Utility to organize sddm screens and avoid inset
@@ -19,27 +19,22 @@ _logLineFn () {
   IFS=$'\n';
   _debugList+=( "$(printf '[%05d] %s\n' "${_elapsed_int}" "$*")" );
 }
+
 _calcDisplaySetListFn () {
-  declare _bit_list _raw_str _raw_list _x_int _line _solve_line;
+  declare _raw_str _x_int _line _solve_line;
   _raw_str="$(xrandr --listmonitors)";
   _logLineFn 'Pre-adjust xrandr monitor output:' "${_raw_str}";
-  IFS=$'\n' read -r -d '' -a _raw_list < <(
-    grep -vi '^\s*monitors.*[0-9]\+' <<<"${_raw_str}" |
-      sed 's/^\s*[0-9]\+\s*:\s*+[*]*//g' |
-      sed -E 's|/[0-9]+[x+]| |g' |
-      sed 's|+| |g';
-  );
   _x_int=0;
-  for _line in "${_raw_list[@]}"; do
-    IFS=' ' read -r -a _bit_list <<< "${_line}";
-    # Only change display if x offset does not match calculated
-    if [ "${_x_int}" != "${_bit_list[3]}" ]; then
-      _solve_line="${_bit_list[0]}|${_bit_list[1]}|${_bit_list[2]}";
-      _displaySetList+=( "${_solve_line}|${_x_int}|0" );
+  while read -r _line; do
+    if [[ "${_line}" =~ ^\ +[0-9]+:\ \+\**([^\ ]+)\ ([0-9]+)/[0-9]+x([0-9]+)/[0-9]+\+([0-9]+)\+ ]]; then
+      if [ "${_x_int}" != "${BASH_REMATCH[4]}" ]; then
+        _solve_line="$(IFS='|'; echo "${BASH_REMATCH[*]:1:3}")";
+        _displaySetList+=( "${_solve_line}|${_x_int}|0" );
+      fi
+      (( _x_int += BASH_REMATCH[2] ));
     fi
-    (( _x_int += _bit_list[1] ));
-  done
-  _logLineFn 'SetList created:' "${_displaySetList[@]}";
+  done <<<"${_raw_str}";
+  _logLineFn 'SetList created:' "${_displaySetList[*]}";
 }
 
 _logConfirmFn () {
@@ -48,9 +43,10 @@ _logConfirmFn () {
 _setupDisplaysFn () {
   declare _idx _display_line _bit_list _cmd_list;
   if [ "${_userId}" != '0' ]; then
-    _logLineFn "Run as non-root |${_userId}|. Skip display set.";
+    _logLineFn "Run as non-root |${_userId}|. Displays not adjusted.";
     return;
   fi
+
   _idx=0;
   for _display_line in "${_displaySetList[@]}"; do
     IFS='|' read -r -a _bit_list <<< "${_display_line}";
@@ -58,12 +54,12 @@ _setupDisplaysFn () {
       '--mode' "${_bit_list[1]}x${_bit_list[2]}"
       '--pos' "${_bit_list[3]}x${_bit_list[4]}"
     );
-    # TODO: Verify why we set a primary display on first changed display
-    #   If a primary display is already applied, this may not be desirable.
-    if [ "${_idx}"    = '0' ]; then _cmd_list+=('--primary'); fi
-    if [ "${_userId}" = '0' ]; then "${_cmd_list[@]}"; fi
+    # TODO: Verify: Disable setting primary display to avoid conflicts
+    # if [ "${_idx}"  = '0' ]; then _cmd_list+=('--primary'); fi
+    "${_cmd_list[@]}";
     (( _idx++ ));
   done
+
   _logLineFn 'SetList applied:';
   _logConfirmFn;
 }
