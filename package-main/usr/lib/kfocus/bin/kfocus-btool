@@ -16,24 +16,23 @@ _echoIntFn  () { printf '%d' "${1:-0}" 2>/dev/null; }
 _echoFn     () { 1>&2 echo -e  "${*}"; }
 _nechoFn    () { 1>&2 echo -ne "${*}"; }
 _echoHelpFn () {
-  _echoFn "${_baseName}: Create a BIOS updated USB Disk";
+  _echoFn "${_baseName}: Create a BIOS upgrade USB Disk";
   _echoFn "  -h | --help: Print this help message.";
 }
 _cleanupFn () {
   if [ -n "${_tmpFile}" ] && [ -f "${_tmpFile}" ]; then
-    rm -f "${_tmpFile}" || true;
+    2>/dev/null rm -f "${_tmpFile}" || true;
   fi
   if [ -n "${_tmpMntDir}" ] && [ -d "${_tmpMntDir}" ]; then
-    umount "${_tmpMntDir}"     || true;
+    2>/dev/null umount "${_tmpMntDir}" || true;
     sleep 2;
-    rm -rf "${_tmpMntDir}"  || true;
+    2>/dev/null rm -rf "${_tmpMntDir}" || true;
   fi
 }
 _trapExitFn () {
   declare _msg;
   _msg="$(cat << _EOT
-${_baseName}: Did NOT write M2 GEN 4 ${_minVers} to a USB
-device!
+${_baseName}: Did NOT write M2 GEN 4 ${_installVers} to a USB device!
 _EOT
   )";
   _echoFn "$(_echoWrapFn "${_msg}")";
@@ -64,6 +63,7 @@ _testVersFn () {
   [ "$_v1" = "$_v2" ] && return 1;
   [ "$_v1" = "$(echo -e "$_v1\n$_v2" |sort -rV |head -n1)" ];
 }
+
 _echoDmiDecodeFn () {
   declare _decode_exe;
   _decode_exe="$(command -v dmidecode)";
@@ -76,12 +76,14 @@ _echoDmiDecodeFn () {
   fi
   dmidecode -s "${1:-}"  || exit 1;
 }
+
 _echoDiskInfoFn () {
   echo -n "${_bitList[0]} ";
   printf '%3.2f GB' "$(
     bc <<< "scale=2;${_bitList[1]} / 1024"
   )";
 }
+
 _promptContinueFn () {
   declare _default_reply _opt_str _prompt_str _reply;
 
@@ -104,6 +106,7 @@ _promptContinueFn () {
     exit 1;
   fi
 }
+
 _welcomeFn () {
   declare _hw_code _bios_vers _m2g4_msg _default_reply _msg;
 
@@ -116,26 +119,34 @@ _welcomeFn () {
     _m2g4_msg='This system appears to be a Kubuntu Focus M2 GEN 4 laptop. ';
     if [ "${_bios_vers}" = "${_minVers}" ] ||
       _testVersFn "${_bios_vers}" "${_minVers}"; then
-      _m2g4_msg+="$(cat << _EOT01
-The BIOS version (${_bios_vers}) is up to date. Proceed only if
-you need to create a USB drive for use on another M2 GEN 4
-system.
+      if  _testVersFn "${_installVers}" "${_bios_vers}"; then
+        _m2g4_msg+="$(cat << _EOT00
+The BIOS version (${_bios_vers}) exceeds the minimum recommended
+(${_minVers}). However, you may proceed to upgrade to the latest
+available BIOS version (${_installVers}).
+_EOT00
+        )";
+      else
+        _m2g4_msg+="$(cat << _EOT01
+The BIOS version (${_bios_vers}) is up to date. Proceed only if you need
+to create a USB drive for use on another M2 GEN 4 system.
 _EOT01
-      )";
-      _default_reply='n';
+        )";
+        _default_reply='n';
+      fi
     else
       _m2g4_msg+="$(cat << _EOT02
-The BIOS version (${_bios_vers}) does not appear current. We
-recommend upgrading this system to ${_minVers}. Our tests show
-this update improves system performance and stability.
+The BIOS version (${_bios_vers}) does not appear current. We recommend
+upgrading this system to ${_installVers}. Our tests show this upgrade
+improves system performance and stability.
 _EOT02
       )";
     fi
   else
     _m2g4_msg+="$(cat << _EOT02A
-This system does NOT appear to be a Kubuntu Focus M2 GEN 4
-laptop. Proceed only if you need to create a USB drive for use
-on another M2 GEN 4 system.
+This system does NOT appear to be a Kubuntu Focus M2 GEN 4 laptop.
+Proceed only if you need to create a USB drive for use on an M2 GEN 4
+system.
 _EOT02A
     )";
     _default_reply='n';
@@ -148,9 +159,9 @@ _EOT02A
 |  _| (_) | (__| |_| \__ \ | |_) | | (_) \__ \   | | (_) | (_) | |
 |_|  \___/ \___|\__,_|___/ |____/|_|\___/|___/   |_|\___/ \___/|_|
 
-This tool creates a BIOS update image on a removable USB
-storage device ("USB Drive"). This update image is useful
-only for Kubuntu Focus M2 GEN 4 laptop systems.
+Use this tool to install a BIOS upgrade on a removable USB storage
+device ("USB Drive"). This upgrade is useful only for Kubuntu Focus M2
+GEN 4 laptop systems. The BIOS version to install is ${_installVers}.
 ${_m2g4_msg}
 _EOT3
   )";
@@ -159,24 +170,27 @@ _EOT3
 
   _msg="$(cat <<_EOT4
 Please select an 8+ GB  USB Drive -- like the one that comes with a
-Kubuntu Focus -- on which to install the BIOS update. IMPORTANT:
-THIS TOOL WILL REMOVE ALL DATA FROM THIS DRIVE, so back up any data
-you wish to preserve before proceeding.
+Kubuntu Focus -- on which to install the BIOS upgrade. IMPORTANT: THIS
+TOOL WILL REMOVE ALL DATA FROM THE USB DRIVE. As a precaution, make sure
+you back up and data from the USB and system drives before proceeding.
 
-Insert the USB Drive into this computer and IGNORE ANY OFFERS by
-the OS to 'mount' or 'open' any files or folders on this drive.
+Insert the USB Drive into this computer and IGNORE ANY OFFERS by the OS
+to 'mount' or 'open' any files or folders on this drive.
 _EOT4
   )";
 
   _echoFn "${_msg}\n";
   _promptContinueFn;
 }
+
 _downloadBiosFn () {
-  declare _bios_url _tmp_dir;
+  declare _file_name _bios_url _tmp_dir;
+  # Prior BIOS file is 2022-06-14-PD5xPNP07_MIN29.efi.zip
+  _file_name='2022-12-08_m2g4-PD5xPNP12_MIN29.efi.zip';
   _bios_url='https://kfocus-001.s3.amazonaws.com';
-  _bios_url+='/public/2022-06-14-PD5xPNP07_MIN29.efi.zip';
+  _bios_url+="/public/${_file_name}";
   _tmp_dir="$(dirname "$(mktemp -u)")";
-  _tmpFile="${_tmp_dir}/2022-06-14-PD5xPNP07_MIN29.efi.zip"
+  _tmpFile="${_tmp_dir}/${_file_name}"
 
   if [ -f "${_tmpFile}" ]; then return; fi
   _nechoFn 'Download BIOS archive...';
@@ -184,6 +198,7 @@ _downloadBiosFn () {
   _echoFn $'Done.\n';
   _promptContinueFn;
 }
+
 _selectDiskFn () {
   declare _found_list _mount_str _block_list _dev_file \
     _byte_int _mib_int _trans_key _match_str _example_str \
@@ -218,8 +233,9 @@ _selectDiskFn () {
 If you wish to use this device:
   a. IN ANOTHER TERMINAL, unmount the partition(s) like so:
 ${_example_str}
-  b. If any partition cannot be unmount because it is "busy", close any
-     file manager or terminal that is using the file system and try again.
+  b. If any partition cannot be unmounted because it is "busy", close
+    any file manager or terminal that is using the file system and try
+    again.
   c. Select "rescan" from the options below to proceed.
 _EOT5
         )";
@@ -236,7 +252,7 @@ _EOT5
     for _line in "${_found_list[@]}"; do
       IFS=';' read -r -a _bitList<<<"${_line}";
       _info_str="$(_echoDiskInfoFn)";
-      _echoFn "${_idx}. Install BIOS update to ${_info_str}.";
+      _echoFn "${_idx}. Install BIOS upgrade to ${_info_str}.";
       (( _idx++ ));
     done;
     _echoFn "${_idx}. Rescan USB storage devices.";
@@ -260,8 +276,8 @@ _EOT5
 
     if (( _bitList[1] > 32868 )); then
       _msg="$( cat << _EOT6
-${_info_str} is larger than 32 GB. Are you sure you want to
-overwrite this?  Type "overwrite" to proceed
+${_info_str} is larger than 32 GB. Are you sure you want to overwrite?
+Please enter "overwrite" to confirm.
 _EOT6
       )";
       _nechoFn "${_msg}: ";
@@ -272,12 +288,13 @@ _EOT6
         _cancelFn;
       fi
     fi
-    _msg="OVERWRITE USB Drive ${_info_str} with the BIOS update.";
+    _msg="OVERWRITE USB Drive ${_info_str} with the BIOS upgrade.";
     _echoFn "${_msg}";
     _promptContinueFn;
     break; # Exit scan-block, always
   done # End scan-block
 }
+
 _wipeAndInstallFn () {
   _echoFn "Wipe and install to ${_bitList[*]}";
   # See https://superuser.com/questions/332252
@@ -305,38 +322,36 @@ _wipeAndInstallFn () {
   ); then true; else exit; fi
   sync "${_tmpMntDir}" || exit;
   umount "${_tmpMntDir}" || true;
-  _echoFn "\n${_baseName}: Wrote M2 GEN 4 ${_minVers} BIOS"
+  _echoFn "\n${_baseName}: Wrote M2 GEN 4 ${_installVers} BIOS"
   _echoFn "to USB Device.\n\n";
 }
 _echoNextStepsFn () {
   declare _msg;
   _msg="$(cat << _EOT7
-Now that you have prepared the USB Drive, follow these steps to
-update the BIOS. We recommend you print these steps for your
-reference.
+Now that you have prepared the USB Drive, follow these steps to upgrade
+the BIOS. We recommend you print these steps for your reference.
 
-* Power off the target M2 GEN 4 laptop you wish to update.
+* Power off the target M2 GEN 4 laptop you wish to upgrade.
 
 * Plug the power adaptor and the freshly prepared Thumb Drive
   into the laptop.
 
 * Boot the laptop. Tap F2 to get to the BIOS screen. If you see
-  the disk decrypt screen, the login screen, or the grub menu,
-  you've missed it. Power off and try again.
+  the disk decrypt screen, the login screen, or the grub menu, you've
+  missed it. Power off and try again.
 
 * Select the top-center 'Boot Manager' option and then select
   the USB Drive. Press return to boot.
 
 * The system will boot into a text interface with white and
-  colored text on a black background. At the prompt, type
-  'flash' and press return to begin the update process.
+  colored text on a black background. At the prompt, type 'flash' and
+  press return to begin the upgrade process.
 
-* Let the update process complete. This may take up to 5
-  minutes. DO NOT press the power button, DO NOT remove the
-  USB Drive, DO NOT unplug the power! The laptop will reboot
-  by itself.
+* Let the upgrade process complete. This may take up to 5
+  minutes. DO NOT press the power button, DO NOT remove the USB Drive,
+  DO NOT unplug the power! The laptop will reboot by itself.
 
-* Run this tool on the updated system to confirm the BIOS
+* Run this tool on the upgrade system to confirm the BIOS
   is up-to-date: 'sudo ./${_baseName}'
 _EOT7
   )";
@@ -370,6 +385,7 @@ _bitList=();
 _tmpFile='';
 _tmpMntDir='';
 _minVers='1.07.07MIN29';
+_installVers='1.07.12MIN29';
 _fullLine="$(printf '=%.0s' {1..64})";
 ## . END Set global vars }
 
