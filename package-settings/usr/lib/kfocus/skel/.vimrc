@@ -1,9 +1,18 @@
-" ====[ /.vimrc and ~/.config/nvim/init.vim ]==========================
-" By Michael S. Mikowski, Damian Conway
-" ====[ See https://github.com/neovim/neovim/wiki ]====================
-" ====[ FAQ#where-should-i-put-my-config-vimrc    ]====================
+" ====[ KFocus Default VIM Configuration ~/.vimrc ]===================
+" Assembled by Michael Mikowski <mmikowski@kfocus.org>
+"   and Damian Conway, with settings provided in the example vimrc
+"   provided by Bram Moolenaar <bram@vim.org>.
 
-" TODO: See default .vimrc from vim-nox package
+" To try with neovim, copy to or symlink per the 'Where should I put
+"   my config (vimrc)?' section in the neovim FAQ at
+"   https://github.com/neovim/neovim/wiki/FAQ
+
+" The matchit plugin makes the % command work better, but it is not backwards
+" compatible. The ! means the package won't be loaded right away but when
+" plugins are loaded during initialization.
+if has('syntax') && has('eval')
+  packadd! matchit
+endif
 
 " ====[ Backup and undo ]=============================================
 " See https://stackoverflow.com/questions/743150
@@ -218,7 +227,6 @@ set thesaurus+=/usr/local/share/thesaurus/mthesaur.txt
 " =====[ Markdown Enhancements for Embedded Code Syntax ] ==============
 " https://vimtricks.com/p/highlight-syntax-inside-markdown/
 " See :r !ls /usr/share/vim/vim82/syntax/
-"
 let g:markdown_fenced_languages = ['bash','css','erb=eruby','javascript','js=javascript','json','html','node=javascript','perl','php=perl','python','ruby','sass','xml','vim']
 
 " ====[ Use this to size comment lines ]===============================
