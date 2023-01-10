@@ -42,44 +42,43 @@ contributions will transfer copyright to MindShare Inc.
 We recommend you use a file like `package-main/usr/lib/kfocus/bin/kfocus-fan`
 as a guideline.
 
-## Spacing
+### Spacing
 - Indent lines two spaces per level. Do not use tabs.
 - Prefer to terminate all commands with semicolons to avoid confusion.
 - Limit line width to 80 characters.
 - Break lines with `\` and use a continuation indent of 2 characters.
-- Code in paragraph. Place an empty line after each paragraph.
+- Code in paragraphs. Place an empty line after each paragraph.
 - Place an empty line before and after each function.
 - Remove any trailing spaces.
-- No more than 2 consecutive blank lines are allowed.
+- Do not use more than 2 consecutive blank lines between sections.
 
-### Variable names
-Use `ALL_UPPER_CASE` for exported global variables. Package (file-scope)
-variables are `camelCase`. Function-scope variables variables are
-`snake_case`. Do not mix declaration and assignment. Current convention is to
-prefix all package- and function-scope variables with an underscore to avoid
-poluting the global namespace.
+### Variable Declaration and Assignment
+Declare all function-scope variables at the top of a function using a single
+`declare` statement. Do not combine declaration and assignment. Instead, assign
+an initial value to a variable as needed before first use.
 
-Use duck typing to avoid confusion. The instead of using `line` for a text
-line, and `lines` as an array of lines, use `_line` and `_line_list`. Suffixes
-for strings include `_str`, `_line`, `_name` etc. The suffix for arrays should
-be `_list`, or for more complex lists,  `_table`. Indicate booleans with an
-obvious prefix such as `_do_exit` or `_has_string` or `_is_broken`.
+Use `ALL_UPPER_CASE` names for exported global variables. Use `camelCase` for
+package (file-scope) variables. Use `snake_case` for function-scope (local)
+variables. Prefix package- and function-scope variables with an underscore to
+avoid conflicting with other variables in the bash environment.
 
-Functions are usually file-scoped and therefor should use the form
-`_<verb><Noun>Fn`, with the `Fn` prefix identifying the variable as a
-function. Declare functions without the use of the `function` keyword as shown
-below.
-
-```bash
-_importCommonFn () { ... }
-```
+Use duck typing to avoid confusion. Instead of using `line` for a text line
+and `lines` as an array of lines, use `_line` and `_line_list`. Use obvious
+suffixes for strings such as `_str`, `_line`, or `_name`.  Use the `_list`
+suffix for simple arrays and `_table` for delimited lists. Use an `_int`, `_idx`,
+or `_count` suffix to indicate an integer. Use the `_num` suffix to indicate
+a number. Prefix booleans with sensibly such as `_do_exit`, `_has_string`,
+or `_is_empty`.
 
 ### Function Declarations
-Document all functions as illustrate below. Notice the matched braches makes
-it easy to bounce back and forth to the documentation.
+Please use the template below for function declarations. Function are usually
+package-scoped, and therefore should usually be name like `_<verb><Noun>Fn`,
+with the `Fn` suffix identifying the variable as a function. The matched
+braces make it easy to quickly move the cursor to the beginning or end of
+the function with many editors.
 
 ```bash
-## BEGIN _echoPkgStrFn {
+## BEGIN _verbNounFn {
 # Summary   : <function use definition>
 # Purpose   : <describe what this does>
 # Example   : <show example calls>
@@ -88,17 +87,15 @@ it easy to bounce back and forth to the documentation.
 # Outputs   : <list stderr, stdout>
 # Returns   : <specify return values or none>
 #
-_echoPkgStrFn () {
+_verbNounFn () {
   # Put code here
 }
-# . END _echoPkgStrFn }
+# . END _verbNounFn }
 ```
 
-Use `declare` to create function-scope variables at the top of the function.
-
-### Other Comments
-Write and comment your code in paragraphs. Avoid comments per line or at end
-of the line except in rare instances where the results are clearer. Try to
+### Comments
+Write and comment your code in paragraphs. Avoid comments per line or at the
+end of lines except in rare instances where the results are clearer. Try to
 avoid noise and have the code speak for itself. Comments should be verb-noun.
 
 ```bash
@@ -111,17 +108,17 @@ if [ "${_user_id}" != '0' ]; then
 fi
 
 # BAD - too noisy
-_user_id="$(id -u)"; # get user id
-if [ "${_user_id}" != '0' ]; then       # check if root
-  _cm2WarnStr 'User is not root. Exit'; # if so, exit.
+_user_id="$(id -u)"; # user id get
+if [ "${_user_id}" != '0' ]; then       # root check
+  _cm2WarnStr 'User is not root. Exit'; # exit if not root
   return 1; # non-zero return
 fi # close if statement
 ```
 
 ## Structure
-Most shell apps should have the following structure to faclitate test
+Most shell apps should have the following structure to facilitate test
 development and provide consistency. Notice `set -u;` is used here. DO NOT use
-`set -e`, instead trap errors.
+`set -e`; trap errors instead.
 
 ```bash
 # <HEADER>
@@ -154,6 +151,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 fi
 ## . END Run main if script is not sourced }
 ```
+
+When in doubt, terminate commands with a semicolon.
 
 ## Common Routines
 We have created common routines found in `lib/common.2.source`. Please use
