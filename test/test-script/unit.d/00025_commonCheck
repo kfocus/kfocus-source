@@ -1,0 +1,661 @@
+#!/bin/bash
+# Docs last updated 2023-01-08
+#
+# Common symbols and functions for kfocus bash scripts
+# Can be used with scripts that use set -u and set -e
+#
+# STRINGS
+#   _cm2KdiagExe     : Kdialog command string; '' if not found
+#   _cm2IsTty        : 'y' or 'n' if tty session
+#
+#   _cm2HtmBeginStr  : <html><body>
+#   _cm2HtmEndStr    : </body></html>
+#   _cm2HtmH3Str     : <h3 ...>
+#   _cm2HtmPStr      : <p ...>
+#
+#   _cm2Arg01 (arg1)  : First  argument
+#   _cm2Arg02 (arg2)  : Second argument
+#   _cm2BlockMsg      : Message for _cm2ErrFn, _cm2SucFn, and _cm2WarnFn
+#   _cm2RmExe         : Explicit /bin/rm path
+#
+# KEY
+# <key>[-][A] <methodName> : <description>
+#   key            = key for test
+#   [_]            = if present, see key below for additional docs
+#   [A]            = if present, see test below
+#   <methodName>   = Name of method
+#   <description>  = Short description of method
+#
+# METHODS
+#   00   _cm2EchoFn      : Echo -e input string to STDERR
+#   01   _cm2NechoFn     : Echo -ne input string to STDERR
+#   02   _cm2EchoIntFn   : Convert and echo integer
+#   03   _cm2SetMsgFn    : Set _cm2BlockMsg variable
+#                        : stderr "== BEGIN : $_cm2BlockMsg"
+#   04_  _cm2ErrFn       : stderr "== . END : FAIL $_cm2BlockMsg"
+#   05_  _cm2SucFn       : stderr "== . END : OK   $_cm2BlockMsg"
+#   06_  _cm2WarnFn      : stderr "== . END : WARN Could not $_cm2BlockMsg"
+#   07   _cm2SucStrFn    : stderr "ok  : $input_str"
+#   08   _cm2WarnStrFn   : stderr "warn: $input_str"
+#
+#   09   _cm2MkTmpFileFn : Make a tmp file
+#   0a   _cm2MkTmpDirFn  : Make a tmp directory
+#   0b_A _cm2EchoStackFn : Echo -e call stack
+#
+#   0c   _cm2TrapExitFn      : Use as |trap _cm2TrapExitFn            EXIT; |
+#   0d   _cm2TrapErrorFn     : Use as |trap '_cm2TrapErrorFn $LINENO' ERR;  |
+#   0e   _cm2TrapInterruptFn : Use as |trap _cm2TrapInterruptFn     SIGINT; |
+#   0f_  _cm2GetEscExeFn     : Get escalation command
+#                           ('sudo|pkexec' or fail if not possible)
+#   0g_  _cm2AskExitFn       : _cm2AskExitFn 0 'Press return to finish'
+#   0h_  _cm2InterruptFn     : Use as 'trap _cm2InterruptFn SIGINT SIGTERM'
+#                         : (DEPRECATED)
+#
+#   0i_  _cm2ReadPromptYnFn      : CLI prompt for Yes or No with default
+#   0j_  _cm2RunLongCmdFn        : Run sudo command with spinner
+#   0r_A _cm2EchoInstalledVersFn : Echo installed version of package
+#   0s_  _cm2AssignExeVarsFn     : Assign exe vars to qualified, tested paths
+#   0t_  _cm2StripTagsFn         : Remove HTML tags from string
+#   0v_A _cm2PromptUserFn        : Prompt user through GUI or term as available
+#   0w_  _cm2EscapeRxCharsFn     : Escape regex chars for use in grep -E '...'
+#   0x_A _cm2TestVersFn          : Compare version strings w/dots or dashes
+#
+
+# See CONTRIBUTING.md, Header Section for function doc template
+# 04_
+## BEGIN _cm2ErrFn {
+# Summary   : _cm2ErrFn;
+# Purpose   : END block message ($_cm2BlockMsg) with FAIL notice
+# Example   : _cm2ErrFn;
+# Arguments : none
+# Globals   : Package symbol _cm2BlockMsg
+# Outputs   : Prints block end message to STDERR
+# Returns   : none
+## . END _cm2ErrFn }
+
+# 05_
+## BEGIN _cm2SucFn {
+# Summary   : _cm2SucFn;
+# Purpose   : END block message ($_cm2BlockMsg) with OK notice
+# All other details are identical to _cm2ErrFn
+## . END _cm2SucFn }
+
+# 06_
+## BEGIN _cm2WarnFn {
+# Summary   : _cm2WarnFn;
+# Purpose   : END block message ($_cm2BlockMsg) with warning notice
+#           : All other details are identical to _cm2ErrFn
+## . END _cm2WarnFn }
+
+# 0b_A
+## BEGIN _cm2EchoStackFn {
+# Summary   : _cm2EchoStackFn;
+# Purpose   : Echo call stack to STDERR in revers array order
+#           :   https://unix.stackexchange.com/questions/412868
+# Example   : _cm2EchoStackFn;
+# Arguments : none
+# Globals   : none
+# Outputs   : Prints stack to STDERR
+# Returns   : none
+# . END _cm2EchoStackFn }
+_audit_cm2EchoStackFn () {
+  declare _asset_fn_str _expect_str _solve_str;
+
+  _asset_fn_str='_cm2EchoStackFn';
+  _expect_str='main 163:_t00MainFn 151:_t00RunTestScriptsFn '
+  _expect_str+='98:_runTestFn 525:';
+  _solve_str="$("${_asset_fn_str}" 2>&1)";
+
+  # Strip numbers
+  _expect_str="$( tr 0-9 x <<< "${_expect_str}" )";
+  _solve_str="$(  tr 0-9 x <<< "${_solve_str}"  )";
+
+  printf '  %-40s\n' "Assert for ${_asset_fn_str}";
+  if [ "${_solve_str}" = "${_expect_str}" ]; then
+    _cm2EchoFn "  ok   : Solved matches expected";
+    return 0;
+  else
+    _cm2EchoFn "  fail : Solved |${_solve_str}|
+      !~ expect |${_expect_str}|";
+    return 1;
+  fi
+}
+
+# 0f_
+# BEGIN _cm2GetEscExeFn {
+# Summary   : _cm2GetEscExeFn
+# Purpose   : Get escalation exe string like 'sudo' or 'pkexec'.
+#           :   This is based on XDG_SESSION_TYPE which is use to
+#           :   set _cm2IsTty. If this is 'y' and we don't have
+#           :   sudo rights, return 1. The 'sudo' string is still
+#           :   returned as a precaution.
+# Example   : _escExe="$(_cm2GetEscExeFn)" || exit;
+# Arguments : none
+# Globals   : Package symbols _cm2IsTty, _cm2PromptUserFn
+# Outputs   : 'sudo' or 'pkexec' to STDOUT
+#           : User prompt in tty mode uses STDERR
+# Returns   : 0 on success. 1 if requesting sudo but user has no sudo rights
+## . END _cm2GetEscExeFn }
+
+# 0g_
+## BEGIN _cm2AskExitFn {
+# Summary   : _cm2AskExitFn <exit_int> <exit_prompt>
+# Purpose   : Provide standard means to request exit with value.
+# Example   : _cm2AskExitFn 0 'Process complete. Press return to exit.';
+# Arguments : $1 = exit integer. $2 = exit_prompt or '' for default.
+# Globals   : Package symbols _cm2NechoFn, _cm2EchoFn
+# Outputs   : Prompt is presented in STDERR, input is STDIN
+# Returns   : 'exit' with provided integer
+## . END _cm2AskExitFn }
+
+# 0h_
+## BEGIN _cm2InterruptFn {
+# Summary   : _cm2InterruptFn; # DEPRECATED
+# Purpose   : Provides an option to quit script
+# Example   : _cm2InterruptFn;
+# Arguments : none
+# Globals   : Package symbols _cm2EchoFn, _cm2ReadPromptYnFn
+# Outputs   : Prompts to STDERR, input is STDIN
+# Returns   : 'exit 98' if exit is approved by user
+## . END _cm2InterruptFn }
+
+# 0i_
+## BEGIN _cm2ReadPromptYnFn {
+# Summary   : _cm2ReadPromptYnFn <_prompt_str> <default_ans_str(y/n)>
+# Purpose   : Prompt a user to answer yes or no with default preference
+# Example   : _ans_str="$( _cm2ReadPromptYnFn 'Shall we proceed' 'y' )";
+# Arguments : $1 = _prompt_str $2 = _default_answer_str
+# Globals   : none
+# Outputs   : Prompt is STDERR. Response is STDOUT.
+# Returns   : none
+## . END _cm2ReadPromptYnFn }
+
+# 0j_
+## BEGIN _cm2RunLongCmdFn {
+# Summary   : _cm2RunLongCmdFn <_prompt_msg> <_command> [ <arg1>, ... ]
+# Purpose   : Run command as sudo with spinner in GUI or TTY
+# Example   : _cm2RunLongCmdFn 'Install packages' 'apt' 'install' "${list[@]}";
+# Arguments : $1 = _prompt_msg, $2 = _command, $3... command arguments
+# Globals   : Package symbols _cm2IsTty, _cm2RmExe, _cm2MkTmpFileFn
+# Outputs   : Prompt to STDERR or GUI. Command STDOUT is echoed to STDOUT
+# Returns   : Command return value
+## . END _cm2RunLongCmdFn }
+
+# 0k_
+## BEGIN _cm2CalcModelCodeFn {
+# Summary   : _cm2CalcModelCode [ <_do_quiet_flag> ];
+# Purpose   : Set _cm2ModelCode if needed
+# Example   : _cm2CalcModelCode y;
+# Arguments : $1 = _do_quiet_flag
+# Globals   : Package symbols _cm2ModelCode, _cm2ModelCodeFile
+# Outputs   : Echo _cm2ModelCode to STDOUT unless _do_quiet_flag provided
+# Returns   : none
+## . END _cm2CalcModelCodeFn }
+
+# 0l_
+## BEGIN _cm2CalcModelLineFn {
+# Summary   : _cm2CalcModelLineFn [ <_do_quiet_flag> ];
+# Purpose   : Set _cm2ModelLine if needed
+# Example   : _cm2CalcModelLineFn 'y'
+# Arguments : $1 = _do_quiet_flag
+# Globals   : Package symbols _cm2ModelLine, _cm2ModelCode, _cm2ModelTable
+# Outputs   : Echo _cm2ModelLine to STDOUT unless _do_quiet_flag provided
+# Returns   : none
+## . END _cm2CalcModelLineFn }
+
+# 0m_
+## BEGIN _cm2MakeModelHeadListFn {
+# Summary   : _cm2MakeModelHeadListFn
+# Purpose   : Creates list column titles from model table header
+# Example   : _cm2MakeModelHeadListFn
+# Arguments : none
+# Globals   : Package symbols _cm2ModelTable _cm2ModelHeadList
+# Outputs   : <list stderr, stdout>
+# Returns   : <specify return values or none>
+## . END _cm2MakeModelHeadListFn }
+
+# 0n_A
+## BEGIN _cm2EchoModelStrFn {
+# Summary   : _cm2EchoModelStrFn <_search_key>
+# Purpose   : Return the ${_search_key} value for host system model
+# Example   : _cm2EchoModelStrFn 'is_nv_sys'
+# Arguments : $1 = field_key
+#           : See header in _cm2ModelTable for list of fields.
+# Globals   : Package symbols _cm2ModelHeadList, _cm2ModelLine,
+#           :   _cm2MakeModelHeadListFn, _cm2CalcModelLineFn,
+#           :   _cm2WarnStrFn
+# Outputs   : Echos requested column to STDOUT (or blank if missing)
+#           : Echos errors to STDERR
+# Returns   : none
+## . END _cm2EchoModelStrFn }
+#
+## BEGIN _audit_cm2EchoModelStrFn {
+_audit_cm2EchoModelStrFn () {
+  # bashsupport disable=BP2001
+  declare _restore_file _assert_table _assert_count _assert_idx _fail_count \
+    _loop_line _did_assert_fail _bit_list _name_str _expect_str;
+
+  _restore_file="${_cm2ModelCodeFile:-}";
+  _assert_table=(
+    'PD5x_7xPNP_PNN_PNT|m2g4|y|m2g4'
+    'PC5x_7xHP_HR_HS|m2g3|y|default'
+    'PC5|m2g2|y|default'
+    'PCX0DX|m2g1|y|default'
+    'P95_96_97Ex,Rx|m1g1|y|default'
+    'NV4XMB,ME,MZ|xeg1|n|generic'
+    'PD 5x_ 7xPNP_ PNN_ PNT\n|m2g4|y|m2g4'
+    'NV4XMB, ME, MZ\n|xeg1|n|generic'
+    'NUC11PAHi7|nxg1|n|nxg1'
+    'NUC11PAHi5|nxg1|n|nxg1'
+    'nuc11pah i5|nxg1|n|nxg1'
+  );
+
+  # Mock dmi file
+  # shellcheck disable=SC2154
+  _cm2ModelCodeFile="${_t00RunDir}/model_file";
+  mkdir -p "${_t00RunDir}";
+  _assert_count="${#_assert_table[@]}";
+  _assert_idx=0;
+  _fail_count=0;
+
+  for _loop_line in "${_assert_table[@]}"; do
+    _did_assert_fail='n';
+
+    # Read information
+    IFS='|' read -r -a _bit_list <<< "${_loop_line}";
+
+   # Mock model change
+    _cm2ModelCode='';
+    _cm2ModelLine='';
+    _name_str="${_bit_list[0]}";
+    echo "${_name_str}" > "${_cm2ModelCodeFile}";
+
+    # Compare
+    {  printf '  %-40s' "Assert for ${_name_str} ";
+       printf '%02i / %02i \n' "${_assert_idx}" "${_assert_count}"
+    } >&2
+
+    _col_idx=1;
+    for _col_key in code is_nv_sys config_code; do
+      _expect_str="${_bit_list[${_col_idx}]}";
+      if [ "${_expect_str}" = "$(_cm2EchoModelStrFn ${_col_key})" ]; then
+        _cm2EchoFn "  ok   : Col key ${_col_key} matches |${_expect_str}|";
+      else
+        _cm2EchoFn "  fail : Col key ${_col_key} nomatch |${_expect_str}|";
+        _did_assert_fail='y';
+      fi
+      (( _col_idx++ ));
+    done
+
+    if [ "${_bit_list[1]}" = "$(_cm2CalcModelCodeFn)" ]; then
+      _cm2EchoFn "  ok   : Code matches |${_expect_str}|";
+    else
+      _cm2EchoFn "  fail : Code nomatch |${_expect_str}|";
+      _did_assert_fail='y';
+    fi
+
+    if [ "${_did_assert_fail}" = 'y' ]; then
+      (( _fail_count++ ));
+    fi
+    (( _assert_idx++ ));
+  done;
+
+  _cm2ModelCodeFile="${_restore_file}";
+  return "${_fail_count}";
+}
+## . END _audit_cm2EchoModelStrFn }
+
+# 0o_
+## BEGIN _cm2ChkDupRunFn {
+# Summary   : _cm2ChkDupRunFn [ <_basename>]; # DEPRECATED, use lock file
+# Purpose   : Check if another process is running the script
+#           :   https://stackoverflow.com/questions/16807876
+# Example   : _dupStr="$(_cm2ChkDupRunFn)";
+# Arguments : $1 = basename (optional)
+# Globals   : $0
+# Outputs   : Echo to STDOUT pid of offending processes or blank string
+# Returns   : none
+# WARNING   : Only use this if exe name is unique. Otherwise, false
+#   positives can occur. If you must absolutely ensure there is no dup
+#   process, create a lock file (see flock in kfocus-pstate).
+## . END _cm2ChkDupRunFn }
+
+# 0p_A
+## BEGIN _cm2ChkInstalledPkgFn {
+# Summary   : _cm2ChkInstalledPkgFn <_pkg_name>;
+# Purpose   : Quickly check if a package is installed
+# Example   : _cm2ChkInstalledPkgFn kfocus-nvidia;
+# Arguments : $1 = _pkg_name
+# Globals   : none
+# Outputs   : none
+# Returns   : 0 = package installed; >0 = not installed
+## . END _cm2ChkInstalledPkgFn }
+#
+## BEGIN _audit_cm2ChkInstalledPkgFn {
+_audit_cm2ChkInstalledPkgFn () {
+  declare _ret_int _skip_count _loop_pkg_name ;
+  _ret_int=0;
+  _skip_count=0;
+  for _loop_pkg_name in $(apt list --installed |grep -v Listing |sed 's|/.*$||g'); do
+    (( _skip_count++ ));
+    if [ "${_skip_count}" -lt 25 ]; then
+      # _cm2EchoFn "${_skip_count} SKIPPING ${_loop_pkg_name}";
+      continue;
+    fi
+    # _cm2EchoFn "Processing ${_loop_pkg_name}";
+    _skip_count=0;
+    printf '  %-40s' "Assert for ${_loop_pkg_name}";
+    if _cm2ChkInstalledPkgFn "${_loop_pkg_name}"; then
+      _cm2EchoFn "  ok   : Found pkg";
+    else
+      _cm2EchoFn "  fail : Not found";
+      _ret_int=1;
+    fi
+  done
+
+  for _loop_pkg_name in fake-package-name to-not-be-found; do
+    printf '  %-40s' "Assert for ${_loop_pkg_name}";
+    if _cm2ChkInstalledPkgFn "${_loop_pkg_name}"; then
+      _cm2EchoFn "  fail : found";
+      _ret_int=1;
+    else
+      _cm2EchoFn "  ok   : Not found";
+    fi
+  done
+
+  return "${_ret_int}";
+}
+## . END _audit_cm2ChkInstalledPkgFn }
+
+# 0q_A
+## BEGIN _cm2ChkPkgFn {
+# Summary   : _cm2ChkPkgFn <_pkg_str>;
+# Purpose   : Quickly check if a package matching _pkg_str is available
+# Example   : _cm2ChkPkgFn kfocus-nvidia;
+# Arguments : $1 = _pkg_str
+# Globals   : Requires apt-cache command
+# Outputs   : none
+# Returns   : 0 = package available; >0 = not available
+## . END _cm2ChkPkgFn }
+#
+# 0r_A
+## BEGIN _cm2EchoInstalledVersFn {
+# Summary   : _cm2EchoInstalledVersFn <_pkg_name>
+# Purpose   : Echo installed version of package
+# Example   : _cm2EchoInstalledVersFn kfocus-settings
+# Arguments : $1 = _pkg_name
+# Globals   : Requires dpkg-query command
+# Outputs   : Echos version string or blank to STDOUT
+# Returns   : none
+## . END _cm2EchoInstalledVersFn }
+#
+## BEGIN _audit_cm2ChkPkgFn {
+_audit_cm2ChkPkgFn () {
+  declare _assert_table _ret_int _loop_line _bit_list _chk_int _chk_str;
+  _assert_table=(
+    'kfocus-main|0'
+    'fake-package-name|1'
+    'konsole|0'
+    'konsole-|1|Partials should not be supported'
+    'linux-image|1|There should be no package only called linux-image'
+  );
+  _ret_int=0;
+
+  for _loop_line in "${_assert_table[@]}"; do
+    IFS='|' read -r -a _bit_list <<< "${_loop_line}";
+    printf '  %-40s' "Assert for ${_bit_list[0]}";
+
+    _cm2ChkPkgFn "${_bit_list[0]}";
+    _chk_int="$?";
+
+    if [ "${_chk_int}" = "${_bit_list[1]}" ]; then
+      _cm2EchoFn "  ok   : pkg find match";
+    else
+      _cm2EchoFn "    fail : ${_chk_int} != ${_bit_list[1]}";
+      _ret_int=1;
+    fi
+
+    _chk_str="$(_cm2EchoInstalledVersFn "${_bit_list[0]}")";
+    printf '  %-40s' "Assert ${_bit_list[0]} v${_chk_str}";
+
+    _chk_int=0;
+    if [ -z "${_chk_str}" ]; then _chk_int=1; fi
+    if [ "${_chk_int}" = "${_bit_list[1]}" ]; then
+      _cm2EchoFn "  ok   : pkg version find match";
+    else
+      _cm2EchoFn "    fail : ${_chk_int} != ${_bit_list[1]} |${_chk_str}|";
+      _ret_int=1;
+    fi
+  done
+  return "${_ret_int}";
+}
+## . END _audit_cm2ChkPkgFn }
+
+# 0s_
+## BEGIN _cm2AssignExeVarsFn {
+# Summary   : _cm2AssignExeVarsFn '<name>|<command>' ...
+# Purpose   : Find system executables using 'command -v <command>',
+#           : ensure they are executable, and assign to provided var name
+# Example   : declare _lscpiExe _printfExe;
+#           : _cm2AssignExeVarsFn '_lspciExe|lspci' '_printfExe|printf';
+# Arguments : One delimited string per variable
+# Globals   : Package symbols _cm2WarnStrFn
+# Outputs   : Echos warnings and errors to STDERR
+# Returns   : 0 if all exes are found and set; 1 otherwise.
+## . END _cm2AssignExeVarsFn }
+
+# 0t_
+## BEGIN _cm2StripTagsFn {
+# Summary   : _cm2StripTagsFn <_arg_string> <_do_strip_last>
+# Purpose   : Modify an HTML message for use in the terminal:
+#   * Remove leading spaces
+#   * Remove any <head>...</head> or <style>...<style> components
+#   * Remove any <tag> or </tag> (but retain content)
+#   * Convert HTML entities &lt; and &gt; to < and >.
+#   * Remove leading and trailing new lines
+#   * Remove last line of text IF _do_strip_last is set AND the string
+#     is more than one line. This is so text like 'Press OK to continue'
+#     can be removed and replaced with 'Press <return> to continue'.
+#     This is used with the 'p' option in cm2PromptUserFn.
+# Example   : _cm2StripTagsFn "${_prompt_html}";
+# Arguments : $1 = _prompt_html
+# Globals   : none
+# Outputs   : Echos stripped string to STDOUT
+# Returns   : none
+## . END _cm2StripTagsFn }
+
+# 0v_A
+## BEGIN _cm2PromptUserFn {
+# Summary   : _cm2PromptUserFn [ -i <_icon_key> ] \
+#           :   <_msg> <_win_title> <_query_type>;
+# Purpose   : Present a prompt to the user using a kdialog box if available,
+#           : OR via STDERR if in a terminal.
+# Arguments : $1 = Message string, $2 = Full Window Title, $3 = Query type
+#           :   'a' yesno prompt; default answer is 'y'
+#           :   'w' warningyesno prompt; default and is 'y'
+#           :   'p' Simple message box, prompt for return in terminal mode
+#           :   '*' Simple message box prompt, no pause in terminal mode
+#           : -i option for _icon_key
+# Globals   : Package symbols _cm2IsTty , _cm2KdiagExe,
+#           :   _cm2StripTagsFn, _cm2EchoFn
+# Outputs   : In terminal mode, echos prompts to STDERR.
+#           :   In GUI mode, opens a kdialog.
+#           :   Echos answer to STDOUT for 'a' or 'w' prompts.
+# Returns   : none
+## . END _cm2PromptUserFn }
+#
+_audit_cm2PromptUserFn () {
+  declare _assert_table _exit_int _is_tty_save _is_tty _loop_line \
+    _bit_list _type_str _prompt_str _ans_str;
+
+  _assert_table=( 'a|y' 'a|n' 'w|y' 'w|n' 'p|' );
+  _exit_int=0;
+  # shellcheck disable=SC2154
+  _is_tty_save="${_cm2IsTty}";
+
+  for _is_tty in n y; do
+    _cm2SetIsTtyFn "${_is_tty}";
+    if [ "${_is_tty}" = 'n' ]; then
+      printf '  %-72s\n\n' 'Please answer in GUI'
+    else
+      printf '  %-72s\n\n' 'Please answer in terminal'
+    fi
+
+    for _loop_line in "${_assert_table[@]}"; do
+      IFS='|' read -r -a _bit_list <<< "${_loop_line}";
+      case "${_bit_list[0]}" in
+        a) _type_str='YesNo';;
+        w) _type_str='Warn';;
+        p) _type_str='Msg';
+           [ "${_is_tty}" = 'y' ] && _type_str+=' (prompt)';;
+        *) _type_str='Msg';;
+      esac
+
+      if [ "${_is_tty}" = 'y' ]; then
+        _prompt_str="Confirm ${_type_str}. <br>";
+      else
+        _prompt_str="Confirm query and title ${_type_str}. <br>";
+      fi
+      if [ -n "${_bit_list[1]:-}" ]; then
+        if [ "${_bit_list[1]}" = 'y' ]; then
+          _prompt_str+="Choose YES if good<br>";
+        else
+          _prompt_str+="Choose NO  if good<br>";
+        fi
+      fi
+      if [ "${_is_tty}" = 'n' ]; then
+        printf '  %-72s\n' "Assert $(_cm2StripTagsFn "${_prompt_str}")";
+      fi
+      _ans_str="$(
+        _cm2PromptUserFn "${_prompt_str}" "${_type_str}" "${_bit_list[0]}"
+      )";
+      if [ "${_ans_str}" = "${_bit_list[1]:-}" ]; then
+        _cm2EchoFn '  ok   : pass';
+      else
+        _cm2EchoFn '  fail : not as expected';
+      fi
+    done
+  done
+  _cm2SetIsTtyFn "${_is_tty_save}";
+}
+
+# 0w_
+## BEGIN _cm2EscapeRxCharsFn {
+# Summary   : _cm2EscapeRxCharsFn <_str>
+# Purpose   : Escape regex special chars for use in grep -E '...'
+#           :   https://unix.stackexchange.com/questions/20804
+# Example   : _cm2EscapeRxCharsFn '[Escape\ Me]$';
+# Arguments : $1 = _str
+# Globals   : none
+# Outputs   : Echo modified string to STDOUT
+# Returns   : none
+## . END _cm2EscapeRxCharsFn }
+
+# 0x_A
+## BEGIN _cm2TestVersFn {
+# Summary   : _cm2TestVersFn <_v1> <_v2>
+# Purpose   : Compare two version numbers.
+#           :   https://stackoverflow.com/questions/4041210
+#           :   https://stackoverflow.com/a/37939589/135116
+# Example   : _cm2TestVersFn '1.2.10' '1.2.3' # true
+# Arguments : $1 = _v1, $2 = _v2
+# Globals   : none
+# Outputs   : none
+# Returns   : 0 if version 1 is greater than version 2; 1 otherwise.
+## . END _cm2TestVersFn }
+#
+# Scrub beginning and trailing whitespace
+# Works like sed 's/^\s\+//' <<< "$*" | sed 's/\s\+//';
+_echoScrubStrFn () { xargs <<< "$*"; }
+_echoFormatFn   () { printf '  %-4s : %-14s %-2s %-14s ' "$@"; }
+#
+## BEGIN _audit_cm2TestVersFn {
+_audit_cm2TestVersFn () {
+  declare _check_list _loop_line _assert_count _assert_idx _fail_count \
+    _bit_list _v1_str _v2_str _chk_str _tell_str _op_str;
+
+  _check_list=(
+   '     2.5.10 |      2.5.10 |  false'
+   '     2.5.6  |      2.5.10 |  false'
+   '     1.5.11 |      2.5.10 |  false'
+   '     2.5.11 |      2.5.10 |  true'
+   '     3.4.8  |      2.5.10 |  true'
+   '   1.2.1-10 |    1.2.1-3  |  true'
+   '   1.2.1-3  |    1.2.1-10 |  false'
+   '     0.1.1  |     0.11.1  |  false'
+   '    0.11.1  |      0.1.2  |  true'
+   '     1.0.0  |      1.1.1  |  false'
+   '     1.9.0  |     1.89.0  |  false'
+   '    1.90.0  |     1.89.0  |  true'
+   '    1.90.0  |     1.89.2  |  true'
+   ' 89-89.1.1  |  90-90.1.1  |  false'
+   ' 90-90.1.1  |  89-90.1.3  |  true'
+   '01-01-01.02 |    1-1-1.1  |  true'
+   '01.01.01.02 |    1.1.1.1  |  true'
+   '   1.5.1.1  | 01.06.01.02 |  false'
+   '01.06.01.02 |    1.5.1.1  |  true'
+   '01-04-01.02 |    1.5.1.1  |  false'
+   '   1-4-1.2  |    1.5-1-1  |  false'
+   '01-04-01-02 |    1-4-1-1  |  true'
+  );
+
+  _assert_count="${#_check_list[@]}";
+  _assert_idx=1;
+  _fail_count=0;
+  for _loop_line in "${_check_list[@]}"; do
+    IFS='|' read -r -a _bit_list <<< "${_loop_line}";
+    _v1_str="$( _echoScrubStrFn "${_bit_list[0]}")";
+    _v2_str="$( _echoScrubStrFn "${_bit_list[1]}")";
+    _chk_str="$(_echoScrubStrFn "${_bit_list[2]}")";
+
+    if [ "${_chk_str}" = 'true' ]; then
+      _op_str='>';
+      if _cm2TestVersFn "${_v1_str}" "${_v2_str}"; then
+        _tell_str='ok'; else _tell_str='fail';
+      fi
+    else
+      _op_str='<=';
+      if _cm2TestVersFn "${_v1_str}" "${_v2_str}"; then
+        _tell_str='fail'; else _tell_str='ok';
+      fi
+    fi
+    {  _echoFormatFn "${_tell_str}" "${_v1_str}" "${_op_str}" "${_v2_str}";
+       printf '%02i / %02i \n' "${_assert_idx}" "${_assert_count}";
+    } >&2
+
+    if [ "${_tell_str}" = 'fail' ]; then (( _fail_count++ )); fi
+    (( _assert_idx++ ));
+  done
+
+  if [ "${_fail_count}" -gt 0 ]; then
+    _cm2EchoFn "  ${_fail_count} of ${_assert_count} asserts failed.";
+  fi
+  return "${_fail_count}";
+}
+
+_runTestFn () {
+  declare _ret_int _audit_fn_list _loop_idx _loop_fn_str;
+
+  _ret_int=0;
+  _audit_fn_list=(
+    '_audit_cm2EchoStackFn'
+    '_audit_cm2EchoModelStrFn'
+    '_audit_cm2ChkInstalledPkgFn'
+    '_audit_cm2ChkPkgFn'            # Also checks cm2ChkInstalledVersFn
+    '_audit_cm2PromptUserFn'
+    '_audit_cm2TestVersFn'
+  );
+
+  _loop_idx=1;
+  for _loop_fn_str in "${_audit_fn_list[@]}"; do
+    _cm2EchoFn "${_loop_idx}. RUN  ${_loop_fn_str}";
+    if "${_loop_fn_str}"; then
+      _cm2EchoFn "${_loop_idx}. PASS ${_loop_fn_str}";
+    else
+      _cm2EchoFn "${_loop_idx}. FAIL ${_loop_fn_str}";
+      _ret_int=1;
+    fi
+    (( _loop_idx++ ));
+  done
+  return "${_ret_int}";
+}
