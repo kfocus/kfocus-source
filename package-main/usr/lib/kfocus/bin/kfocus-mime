@@ -112,11 +112,6 @@ _exeLookupList=(
   'pycharm|!pycharm|jetbrains-toolbox|jetbrains-toolbox|PyCharm: JetBrains Python IDE'
   'webstorm|!webstorm|jetbrains-toolbox|jetbrains-toolbox|WebStorm: JetBrains Web IDE'
 
-  # 2022-11-01 2911 Disable Lutris as PPA has been disabled
-  # 'lutris|lutris||lutris|Lutris: Play Games With Wine'
-  # 2022-11-01 2911 MSTeams is deprecated 2022-12-01
-  # 'msteams|teams||teams|MS Teams: Video Conference'
-
   # These are experimental and WIP
   # 'nodejs16|konsole;-e man node|node|nodejs|NodeJS: Javascript + TCP Server'
   # 'nvidia-cuda|!|!|nvidia-cuda|Nvidia CUDA libs'
@@ -184,9 +179,10 @@ function deb_docker-ce() {
   WEBSITE="https://www.docker.com/"
 }
 function deb_dropbox() {
-  ARCHS_SUPPORTED="amd64 i386"
-  URL="https://linux.dropbox.com/packages/ubuntu/$(curl -s "https://linux.dropbox.com/packages/ubuntu/" | grep "${HOST_ARCH}.deb" | sed -e 's/<[^>]*>//g' | grep -v nautilus | cut -d' ' -f1 | tail -n1)"
-  VERSION_PUBLISHED="$(echo "${URL}" | cut -d'_' -f2)"
+  # Extracted 2023-01-06 from deb-get main
+  APT_KEY_URL="https://linux.dropbox.com/fedora/rpm-public-key.asc"
+  APT_LIST_NAME="dropbox"
+  APT_REPO_URL="deb [arch=amd64] http://linux.dropbox.com/ubuntu disco main"
   PRETTY_NAME="Dropbox"
   WEBSITE="https://www.dropbox.com/"
 }
@@ -219,14 +215,11 @@ function deb_kubectl() {
   PRETTY_NAME="Kubernetes"
   WEBSITE="https://kubernetes.io"
 }
-# 2911 2022-11-01 Disable Lutris as PPA has been disabled
-# .... 2022-12-08 Reinstate Lutris as PPA is restored
 function deb_lutris() {
   PPA="ppa:lutris-team/lutris"
   PRETTY_NAME="Lutris"
   WEBSITE="https://lutris.net/"
 }
-
 # NodeJS is preinstalled. This implementation does not quite work.
 # function deb_nodejs() {
 #   GPG_KEY_URL="https://deb.nodesource.com/gpgkey/nodesource.gpg.key"
@@ -268,13 +261,6 @@ function deb_sublime-text() {
   APT_REPO_URL="deb https://download.sublimetext.com/ apt/stable/"
   PRETTY_NAME="Sublime Text"
   WEBSITE="https://www.sublimetext.com/"
-}
-function deb_teams() {
-  APT_KEY_URL="https://packages.microsoft.com/keys/microsoft.asc"
-  APT_LIST_NAME="teams"
-  APT_REPO_URL="deb [arch=amd64] https://packages.microsoft.com/repos/ms-teams stable main"
-  PRETTY_NAME="Microsoft Teams"
-  WEBSITE="https://www.microsoft.com/microsoft-teams/group-chat-software"
 }
 function deb_minecraft-launcher() {
   URL=$(unroll_url "https://launcher.mojang.com/download/Minecraft.deb")
