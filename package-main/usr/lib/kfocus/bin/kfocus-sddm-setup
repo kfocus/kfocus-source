@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2022 MindShare Inc.
+# Copyright 2022-2023 MindShare Inc.
 # Written for the Kubuntu Focus by Michael Mikowski
 #   - Oded Arbel contributed the BASH_REMATCH method
 #
@@ -54,7 +54,8 @@ _setupDisplaysFn () {
       '--mode' "${_bit_list[1]}x${_bit_list[2]}"
       '--pos' "${_bit_list[3]}x${_bit_list[4]}"
     );
-    # TODO: Verify: Disable setting primary display to avoid conflicts
+
+    # Disable setting primary display to avoid conflicts
     # if [ "${_idx}"  = '0' ]; then _cmd_list+=('--primary'); fi
     "${_cmd_list[@]}";
     (( _idx++ ));

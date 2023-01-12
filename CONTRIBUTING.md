@@ -64,7 +64,7 @@ avoid conflicting with other variables in the bash environment.
 
 Use duck typing to avoid confusion. Instead of using `line` for a text line
 and `lines` as an array of lines, use `_line` and `_line_list`. Use obvious
-suffixes for strings such as `_str`, `_line`, or `_name`.  Use the `_list`
+suffixes for strings such as `_str`, `_line`, or `_name`. Use the `_list`
 suffix for simple arrays and `_table` for delimited lists. Use an `_int`, `_idx`,
 or `_count` suffix to indicate an integer. Use the `_num` suffix to indicate
 a number. Prefix booleans with sensibly such as `_do_exit`, `_has_string`,

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2022 MindShare Inc.
+# Copyright 2022-2023 MindShare Inc.
 # Written for the Kubuntu Focus by Michael Mikowski
 #
 # Name    : kfocus-btool
@@ -352,7 +352,7 @@ the BIOS. We recommend you print these steps for your reference.
   DO NOT unplug the power! The laptop will reboot by itself.
 
 * Run this tool on the upgrade system to confirm the BIOS
-  is up-to-date: 'sudo ./${_baseName}'
+  is up-to-date: 'sudo ${_binName}'
 _EOT7
   )";
   _echoFn "${_msg}\n";
