@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2020-2022 MindShare Inc.
+# Copyright 2020-2023 MindShare Inc.
 # Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
 #
 # Name    : kfocus-firstrun
@@ -31,13 +31,13 @@ _importCommonFn () {
 ## . END _importCommonFn }
 
 _printHelpFn() {
-  cat 1>&2 <<_EOT_1
+  cat 1>&2 <<_EOT01
 
 Usage: ${_baseName} [-f] [-h]
    -f: Force run even if run before
    -h: This help message
 
-_EOT_1
+_EOT01
 }
 
 _xtermInstallExtraFn() {
@@ -72,7 +72,7 @@ _checkCryptFn() {
   if [ "${#_cryptList[@]}" -gt 0 ]; then
     if [ "${#_cryptList[@]}" -gt 1 ]; then
       _str="$(
-        cat <<_EOT_2
+        cat <<_EOT02
 Change Disk Passphrase?
 _xtermRunPhrFn
 ${_cm2HtmPStr}<b>Do you want to change the passphrases on the
@@ -81,11 +81,11 @@ default passphrases. If they are found, you will be encouraged to change them
 immediately. Remember to save your passphrases in a safe place as your disks
 cannot be decrypted or used without them!</p>
 ${_cm2HtmPStr}<b>Change disk passphrases now?</b><br></p>
-_EOT_2
+_EOT02
       )";
     else
       _str="$(
-        cat <<_EOT_3
+        cat <<_EOT03
 Change Disk Passphrase?
 _xtermRunPhrFn
 ${_cm2HtmPStr}<b>Do you want to change the passphrase on the
@@ -94,7 +94,7 @@ If it is found, you will be encouraged to change it immediately. Remember
 to save your passphrase in a safe place as your disk cannot be decrypted or
 used without it!</p>
 ${_cm2HtmPStr}<b>Change disk passphrase now?</b><br></p>
-_EOT_3
+_EOT03
       )";
     fi
   fi
@@ -110,11 +110,11 @@ _runWizardFn() {
   _who_str=$(whoami)
   if [ "${_who_str}" = 'kubuntu' ]; then
     _disable_str="$(
-      cat <<_EOT_4
+      cat <<_EOT04
 <p style="margin-right:32px;color:#f7941d"><b>This step cannot be run in a
 live session</b> due to storage limits. Please install to disk to enable this
 option.</p>
-_EOT_4
+_EOT04
     )";
   else
     _disable_str=''
@@ -134,11 +134,11 @@ _EOT_4
   fi
   _descr_list=();
   _str="$(
-    cat <<_EOT_5
+    cat <<_EOT05
 Welcome to the Kubuntu Focus
 
-${_cm2HtmPStr}Doc: <a style="color:#1d99f3"
-  href="https://kfocus.org/wf/tools#wizard">https://kfocus.org/wf/tools#wizard</a></p>
+${_cm2HtmPStr}Doc: <a href="https://kfocus.org/wf/tools#wizard"
+  >https://kfocus.org/wf/tools#wizard</a></p>
 ${_cm2HtmPStr}<b>This Welcome Wizard helps you get started as
 quickly as possible.</b> We have included many tools we feel most developers
 should consider. However, this is not an endorsement of any product and the
@@ -150,6 +150,7 @@ run this wizard later using Start Menu &gt; Kubuntu Focus &gt; Welcome Wizard.</
     <ul style="margin-left:16px">
 ${_bullet_phr_html}${_bullet_inet_html}
       <li>Install Extra Software</li>
+      <li>Explore File Backup</li>
       <li>Start the Password Manager</li>
       <li>Connect to Email</li>
     </ul>
@@ -164,7 +165,7 @@ ${_bullet_phr_html}${_bullet_inet_html}
 </table>
 
 ${_cm2HtmPStr}<b>Click OK to continue</b>.<br></p></html>
-_EOT_5
+_EOT05
   )";
   _descr_list+=("${_str}");
 
@@ -174,7 +175,7 @@ _EOT_5
 
   if [ -n "${_bullet_inet_html}" ]; then
     _str="$(
-      cat <<_EOT_6
+      cat <<_EOT06
 Connect to the Internet?
 
 ${_cm2HtmPStr}<b>This computer does not appear connected to the
@@ -183,13 +184,13 @@ internet</b>. Please ensure the network is active by clicking on the
 Once connected, open a browser and confirm you can reach a public website.</p>
 
 ${_cm2HtmPStr}<b>Click OK to continue</b>.<br></p>
-_EOT_6
+_EOT06
     )";
     _descr_list+=("${_str}");
   fi
 
   _str="$(
-    cat <<_EOT12
+    cat <<_EOT07
 Install Extra Software
 _xtermInstallExtraFn
 ${_cm2HtmPStr}<b>We recommend you install extra software</b> to extend the
@@ -199,12 +200,30 @@ Microsoft Fonts, and a few others. You may always revisit this
 later using Start Menu &gt; Kubuntu Focus Tools &gt; Extra Software...</p>
 
 ${_cm2HtmPStr}<b>Install extra software now?</b><br></p>
-_EOT12
+_EOT07
   )";
   _descr_list+=("${_str}");
 
   _str="$(
-    cat <<_EOT10
+    cat <<_EOT08
+Explore File Backup?
+kfocus-mime -k backintime
+${_cm2HtmPStr}<b>BackInTime takes snapshots of your home directory</b>. We
+configure it to give you a good starting point, but you should review the
+settings to ensure it captures all files you want to back up. By default, it
+ignores cloud drives and software repos which store data elsewhere. It stores
+data to your home disk by default. While this is helpful to protect against
+mistakes, it does not protect against disk failure any you may want to change
+this. You can find more information at <a
+href="https://kfocus.org/wf/backup">https://kfocus.org/wf/backup</a>.</p>
+
+${_cm2HtmPStr}<b>Start BackInTime now?</b><br></p>
+_EOT08
+  )";
+  _descr_list+=("${_str}");
+
+  _str="$(
+    cat <<_EOT09
 Start the Password Manager?
 ${_binDir}/kfocus-mime -k keepassxc
 ${_cm2HtmPStr}<b>KeePassXC, provides encrypted password management</b>. It is
@@ -216,7 +235,7 @@ KeePassXC has started, look in the system tray</b> and click on the KeePass
 key icon for options.</p>
 
 ${_cm2HtmPStr}<b>Start the password manager now?</b><br></p>
-_EOT10
+_EOT09
   )";
   _descr_list+=("${_str}");
 
@@ -239,7 +258,7 @@ _EOT10
   _descr_list+=("${_str}");
 
   _str="$(
-    cat <<_EOT_8
+    cat <<_EOT11
 Connect to Dropbox Cloud Drive?
 ${_binDir}/kfocus-mime -k dropbox
 ${_cm2HtmPStr}<b>Dropbox synchronizes cloud storage to a local folder.</b> It
@@ -250,12 +269,12 @@ by installing it from the Curated Apps webpage. <b>Once Dropbox has started,
 look in the system tray</b> and click on the Dropbox box icon for options.</p>
 
 ${_cm2HtmPStr}<b>Connect to Dropbox cloud drive now?</b><br></p>
-_EOT_8
+_EOT11
   )";
   _descr_list+=("${_str}");
 
   _str="$(
-    cat <<_EOT_9
+    cat <<_EOT12
 Connect Insync to Cloud Drives?
 ${_binDir}/kfocus-mime -k insync
 ${_cm2HtmPStr}<b>Insync synchronizes cloud drives to local folders</b>. This
@@ -266,14 +285,14 @@ by installing it from the Curated Apps webpage. <b>Once Insync has started,
 look in the system tray</b> and click on the Insync icon for options.</p>
 
 ${_cm2HtmPStr}<b>Connect Insync to cloud drives now?</b><br></p>
-_EOT_9
+_EOT12
   )";
   _descr_list+=("${_str}");
 
   _str="$(
-    cat <<_EOT11
+    cat <<_EOT13
 Start JetBrains Toolbox?
-kfocus-mime -k jetbrains-toolbox
+${_binDir}/kfocus-mime -k jetbrains-toolbox
 ${_cm2HtmPStr}<b>Manage IDEs with JetBrains Toolbox.</b> You
 may use this tool to install, run, update, and remove most of the JetBrains
 products. This is commercial software. Many of the IDEs have a free-to-use
@@ -284,12 +303,12 @@ to appear</b>, and in some cases will only show as a purple box in the
 system tray that you may click to access.</p>
 
 ${_cm2HtmPStr}<b>Start JetBrains Toolbox now?</b><br></p>
-_EOT11
+_EOT13
   )";
   _descr_list+=("${_str}");
 
   _str="$(
-    cat <<_EOT_7
+    cat <<_EOT14
 Change Your Avatar?
 kcmshell5 kcm_users &
 ${_cm2HtmPStr}<b>Your avatar is the image shown on the sign-in
@@ -300,12 +319,12 @@ PNG image with the dimensions of 494 x 494 pixels</b> so it will appear
 on the sign-in screen.</p>
 
 ${_cm2HtmPStr}<b>Change your avatar now?</b><br></p>
-_EOT_7
+_EOT14
   )";
   _descr_list+=("${_str}");
 
   _str="$(
-    cat <<_EOT14
+    cat <<_EOT15
 Explore Curated Apps?
 ${_binDir}/kfocus-web-launcher https://kfocus.org/wf/apps.html &
 ${_cm2HtmPStr}<b>Please take a few minutes to explore the
@@ -316,7 +335,7 @@ by visiting the Kubuntu Focus website and navigating to Solutions &gt; Curated
 Apps.</p>
 
 ${_cm2HtmPStr}<b>Explore Curated Apps now?</b><br></p>
-_EOT14
+_EOT15
   )";
   _descr_list+=("${_str}");
 
