@@ -5,15 +5,14 @@ Maintainer: Ubuntu Kernel Team <kernel-team@lists.ubuntu.com>
 Standards-Version: 3.9.8
 Build-Depends: dpkg (>= 1.13.19), debhelper (>= 11), gawk, kmod
 Build-Depends-Arch:
- linux-oem-5.17-headers-5.17.0-1020,
- linux-headers-5.17.0-1020-oem,
- linux-modules-5.17.0-1020-oem,
+ linux-oem-5.17-headers-5.17.0-1026,
+ linux-headers-5.17.0-1026-oem,
+ linux-modules-5.17.0-1026-oem,
 Vcs-Git: git://git.launchpad.net/~ubuntu-kernel/ubuntu/+source/linux-meta-oem/+git/jammyoem-5.17
 
 Package: linux-headers-oem-22.04-kfocus
 Architecture: amd64
 Section: kernel
-Provides: ${variant:provides-headers}
 Replaces: linux-headers-oem${variant-suffix}
 Conflicts: linux-headers-oem${variant-suffix}
 Depends: ${misc:Depends}, linux-headers-${kernel-abi-version}-oem
@@ -24,9 +23,9 @@ Description: OEM Linux kernel headers
 Package: linux-image-oem-22.04-kfocus
 Architecture: amd64
 Section: kernel
-Provides: ${variant:provides-image} ${dkms:zfs-modules} ${dkms:wireguard-linux-compat-modules}
+Provides: ${dkms:v4l2loopback-modules} ${dkms:zfs-modules} ${dkms:virtualbox-guest-modules} ${dkms:wireguard-linux-compat-modules}
 Replaces: linux-image-oem-22.04
-Conflicts: linux-image-oem-22.04
+Conflicts: linux-image-oem-22.04, linux-modules-nvidia-515-oem-22.04 (<< 5.17.0-1021.22)
 Depends: ${misc:Depends}, linux-image-${kernel-abi-version}-oem, linux-firmware, intel-microcode [amd64], amd64-microcode [amd64]
 Recommends: thermald [amd64]
 Description: OEM Linux kernel image
@@ -47,7 +46,7 @@ Description: OEM Linux kernel tools
 Package: linux-oem-22.04-kfocus
 Architecture: amd64
 Section: kernel
-Provides:  kernel-testing--linux-oem-5.17-kfocus--full--oem, kernel-testing--linux-oem-5.17-kfocus--full--preferred, ${variant:provides}
+Provides: kernel-testing--linux-oem-5.17-kfocus--full--oem, kernel-testing--linux-oem-5.17-kfocus--full--preferred,
 Replaces: linux-oem-22.04
 Conflicts: linux-oem-22.04
 Depends: ${misc:Depends}, linux-image-oem-22.04-kfocus (= ${binary:Version}), linux-headers-oem-22.04-kfocus (= ${binary:Version})
@@ -58,7 +57,6 @@ Description: Complete OEM Linux kernel and headers
 Package: linux-headers-oem-22.04a-kfocus
 Architecture: amd64
 Section: kernel
-Provides: ${variant:provides-headers}
 Replaces: linux-headers-oem${variant-suffix}
 Conflicts: linux-headers-oem${variant-suffix}
 Depends: ${misc:Depends}, linux-headers-${kernel-abi-version}-oem
@@ -69,9 +67,9 @@ Description: OEM Linux kernel headers
 Package: linux-image-oem-22.04a-kfocus
 Architecture: amd64
 Section: kernel
-Provides: ${variant:provides-image} ${dkms:zfs-modules} ${dkms:wireguard-linux-compat-modules}
+Provides: ${dkms:v4l2loopback-modules} ${dkms:zfs-modules} ${dkms:virtualbox-guest-modules} ${dkms:wireguard-linux-compat-modules}
 Replaces: linux-image-oem-22.04a
-Conflicts: linux-image-oem-22.04a
+Conflicts: linux-image-oem-22.04a, linux-modules-nvidia-515-oem-22.04a (<< 5.17.0-1021.22)
 Depends: ${misc:Depends}, linux-image-${kernel-abi-version}-oem, linux-firmware, intel-microcode [amd64], amd64-microcode [amd64]
 Recommends: thermald [amd64]
 Description: OEM Linux kernel image
@@ -92,7 +90,7 @@ Description: OEM Linux kernel tools
 Package: linux-oem-22.04a-kfocus
 Architecture: amd64
 Section: kernel
-Provides:    ${variant:provides}
+Provides:  
 Replaces: linux-oem-22.04a
 Conflicts: linux-oem-22.04a
 Depends: ${misc:Depends}, linux-image-oem-22.04a-kfocus (= ${binary:Version}), linux-headers-oem-22.04a-kfocus (= ${binary:Version})
