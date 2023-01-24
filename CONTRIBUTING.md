@@ -3,23 +3,23 @@
 ## Use the Correct Base Branch
 All development changes go into a default branch labeled `JJ-{YYYY}-{MM}`
 which is merged and tested prior to release. Please use this as the base
-branch for any Pull Request (PR).
+branch for any Pull Requests (PR).
 
 ## Quality Checks
-- Ensure all code passes `shellcheck -x`. One may use shellcheck comments to
-  ensure certain exceptions may allow to pass.
-- If you have access to IntellJ and BashSupportPro, please ensure it passes
-  there as well.
-- Changes should have automated tests to ensure correctness, and updates here
-  are greatly appreciated. See `test/README.md` for details on how to use or
-  write.
+- Ensure all code passes `shellcheck -x`. Use shellcheck comments to
+  allow approved exceptions to pass like so:: `# shellcheck disable=SC2091`
+  eode analysis as well.
+- Changes should have automated tests to ensure correctness. See
+  `test/README.md` for details on how to write and use tests.
 
 ## Code Standard
-Please use the [Google Shell Style Guide][_0090] with the following refinements.
+Please use the [Google Shell Style Guide][_0090] with the following
+refinements:
 
 ### Header
 When creating a new file, use the following as a header. Notice, any
-contributions will transfer copyright to MindShare Inc.
+contributions will transfer copyright to MindShare Inc, and GPLv2 is the
+required license.
 
 ```bash
 #!/bin/bash
@@ -67,15 +67,15 @@ and `lines` as an array of lines, use `_line` and `_line_list`. Use obvious
 suffixes for strings such as `_str`, `_line`, or `_name`. Use the `_list`
 suffix for simple arrays and `_table` for delimited lists. Use an `_int`, `_idx`,
 or `_count` suffix to indicate an integer. Use the `_num` suffix to indicate
-a number. Prefix booleans with sensibly such as `_do_exit`, `_has_string`,
-or `_is_empty`.
+a number. Use a prefix to indicate booleans using a form of 'do', 'is', or
+'has'. For example, you might use `_do_exit`, `_has_string`, or `_is_empty`.
 
 ### Function Declarations
-Please use the template below for function declarations. Function are usually
-package-scoped, and therefore should usually be name like `_<verb><Noun>Fn`,
-with the `Fn` suffix identifying the variable as a function. The matched
+Please use the template below for function declarations. Functions are usually
+package-scoped, and therefore should be usually name like `_<verb><Noun>Fn`,
+with the `Fn` suffix identifying the symbol as a function. The matched
 braces make it easy to quickly move the cursor to the beginning or end of
-the function with many editors.
+the function with many editors:
 
 ```bash
 ## BEGIN _verbNounFn {
@@ -88,18 +88,21 @@ the function with many editors.
 # Returns   : <specify return values or none>
 #
 _verbNounFn () {
+  true;
   # Put code here
 }
 # . END _verbNounFn }
 ```
 
 ### Comments
-Write and comment your code in paragraphs. Avoid comments per line or at the
+Write and annotate your code in paragraphs. Avoid comments per line or at the
 end of lines except in rare instances where the results are clearer. Try to
-avoid noise and have the code speak for itself. Comments should be verb-noun.
+avoid noise and have the code speak for itself. Comments should have verb-noun
+construction with the first letter capitalized. Do not use a period unless
+multiple sentences are used:
 
 ```bash
-# GOOD - one comment
+# GOOD: Use a single comment for the block using noun-verb construction
 # Skip user if not root
 _user_id="$(id -u)";
 if [ "${_user_id}" != '0' ]; then
@@ -107,7 +110,7 @@ if [ "${_user_id}" != '0' ]; then
   return 1;
 fi
 
-# BAD - too noisy
+# BAD: Too noisy, inconsistent sentence construction
 _user_id="$(id -u)"; # user id get
 if [ "${_user_id}" != '0' ]; then       # root check
   _cm2WarnStr 'User is not root. Exit'; # exit if not root
@@ -118,7 +121,7 @@ fi # close if statement
 ## Structure
 Most shell apps should have the following structure to facilitate test
 development and provide consistency. Notice `set -u;` is used here. DO NOT use
-`set -e`; trap errors instead.
+`set -e`; test or trap errors instead.
 
 ```bash
 # <HEADER>
@@ -136,6 +139,7 @@ _mainFn () { ... } # <= This is the main function
 ## . END _mainFn }
 
 ## BEGIN set global vars {
+declare _userId _binName _binDir _baseName _baseDir;
 _userId="$(id -u)"; # <= Add global vars that will load for tests
 ## . END set global vars }
 
