@@ -1,0 +1,82 @@
+#!/bin/bash
+#
+## BEGIN _checkNvidiaPinFn {
+#  Purpose: Check versions and pins for Nvidia
+#  Used by: package-apt-source for Nvidia package
+#           See ticket 1605
+#
+# set -u is set in test harness
+#
+_checkNvidiaPinFn () {
+  declare _pkg_list _pkg_name _policy_str _mark_idx _candi_str;
+
+  # Create package inspection list
+  IFS=$'\n' read -r -d '' -a _pkg_list < <(
+    apt-cache depends nvidia-driver-525 \
+    | awk '/Depends|Recommends/ {print $2}' \
+    | sed 's/[<>]//g' \
+    | cat - <(echo $'cuda-drivers-525\ncuda-drivers\nnvidia-driver-525') \
+    | cat - <(echo $'nvidia-modprobe\nnvidia-settings\nlibxnvctrl0') \
+    | sort -u
+  );
+
+  # Show all package version
+  dpkg-query -W "${_pkg_list[@]}" > "${_t00RunDir}/package-versions";
+
+  # Empty accumulator files
+  true > "${_t00RunDir}/package-policies";
+  true > "${_t00RunDir}/package-candidates";
+
+  # Show all policies applied
+  for _pkg_name in "${_pkg_list[@]}"; do
+    _policy_str="$(apt-cache policy "${_pkg_name}")";
+
+    # This replaces sed '/^\s*\*\*\*/q'; we wanted
+    # to show 7 lines after the matching ***
+    _mark_idx="$(
+      echo "${_policy_str}" \
+      | grep -m 1 -n '^\s*\*\*\*\s' \
+      | cut -f1 -d':'
+    )";
+    _mark_idx="$(printf '%i' "${_mark_idx}")";
+    if [ "${_mark_idx}" -lt 5 ]; then
+      _mark_idx=5;
+    fi
+    (( _mark_idx+=7 ));
+
+    # Output to package-policies
+    echo "${_policy_str}" | head -n"${_mark_idx}" \
+      >> "${_t00RunDir}/package-policies";
+
+    # Output short-form package-candidates
+    _candi_str="$(echo "${_policy_str}" | grep 'Candidate')";
+    echo "${_pkg_name} ${_candi_str}" \
+      >> "${_t00RunDir}/package-candidates";
+  done
+}
+## . END _checkNvidiaPinn }
+
+## BEGIN _runTestFn {
+_runTestFn () {
+  declare _check_str _return_int;
+
+  _return_int=0;
+
+  # Use function from test harness: clear out run dir and check expect dir
+  if ! _t00ClearRunDirFn;    then return 1; fi
+  if ! _t00CheckExpectDirFn; then return 1; fi
+
+  _checkNvidiaPinFn;
+
+  _check_str="$( diff -r --brief "${_t00ExpectDir}" "${_t00RunDir}" )";
+
+  if [ -n "${_check_str}" ]; then
+    _cm2EchoFn "fail: ${_check_str}";
+    meld "${_t00ExpectDir}" "${_t00RunDir}";
+    _return_int=1;
+  else
+    _cm2EchoFn 'ok  : Results match expected';
+  fi
+  return "${_return_int}";
+}
+## . END _runTestFn }
