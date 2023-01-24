@@ -21,13 +21,16 @@ _cm2WarnFn    () { _cm2EchoFn "== . END : WARN Could not ${_cm2BlockMsg}\n\n"; }
 _cm2WarnStrFn () { _cm2EchoFn "warn: ${*}"; }
 ## } . END Declare common.2.source symbols
 
-## BEGIN create repo files {
-_saveSrcFilesFn () {
-  declare _repo_dir _recommendedSrc _requiredSrc _kfocus_dir
-  _repo_dir="/etc/apt/sources.list.d";
-  _pref_dir="/etc/apt/preferences.d";
+## BEGIN _installReposFn {
+_installReposFn () {
+  declare _repo_dir _pref_dir _kfocus_dir _pin_str \
+    _ppa_table _line _bit_list _bit_file _bit_min_date _bit_ppa_str \
+    _bit_ppa_name _fq_bit_file _file_mtime _file_mdate _src_dir _top_msg;
+
+  _repo_dir='/etc/apt/sources.list.d';
+  _pref_dir='/etc/apt/preferences.d';
   _kfocus_dir='/usr/lib/kfocus';
-  _packagePinning=$(cat << EOF3
+  _pin_str=$(cat << EOF3
 #x WARNING! THIS IS A MACHINE GENERATED FILE.
 #x DO NOT EDIT AS CHANGES WILL BE OVERWRITTEN BY FUTURE UPDATES.
 #x LAST UPDATE 2022-05-10 FOR JAMMY
@@ -41,322 +44,213 @@ Pin: origin "deb.tuxedocomputers.com"
 Pin-Priority: -1
 EOF3
   );
+
+  ##
   if [ -e "${_repo_dir}/kfocus-recommended.list" ]; then
-    "${_cm2RmExe}" "${_repo_dir}/kfocus-recommended.list";
+    _cm2SetMsgFn 'Remove deprecated kfocus-recommended.list';
+    if "${_cm2RmExe}" "${_repo_dir}/kfocus-recommended.list"; then
+      _cm2SucFn; else _cm2WarnFn;
+    fi
   fi
-  _cm2SetMsgFn "Create/overwrite package pinning";
-  if echo "${_packagePinning}" > \
-  "${_pref_dir}"/kfocus-package-pinning; then
-    _cm2SucFn;
+
+  ##
+  _cm2SetMsgFn 'Create or overwrite package pinning';
+  if echo "${_pin_str}" > "${_pref_dir}"/kfocus-package-pinning; then
+    _cm2SucFn; else _cm2WarnFn;
+  fi
+
+  ##
+  _cm2SetMsgFn 'Create or overwrite repo list files';
+  _src_dir="${_kfocus_dir}/sources.list.d";
+
+  if [ -d "${_src_dir}" ]; then
+    if mv "${_src_dir}/"* "${_repo_dir}"; then
+      _cm2SucFn;
+    else
+      _cm2WarnStrFn "Could not move files from ${_src_dir}";
+      _cm2WarnFn;
+    fi
   else
+    _cm2WarnStrFn "Source dir |${_src_dir}| not available"
     _cm2WarnFn;
   fi
-  ## BEGIN COPY REPO LISTS {
-  declare _return_int _kfocus_dir;
-  _cm2SetMsgFn "Create/overwrite repo list files";
-  if mv "${_kfocus_dir}/sources.list.d/"* "${_repo_dir}"; then
-    _cm2SucFn;
-  else
-    _cm2WarnFn;
-  fi 
-  if "${_cm2RmExe}" -r "${_kfocus_dir}/sources.list.d/"; then _cm2SucFn; else _errFn; fi
-  ## _ END COPY REPO LISTS }
-  ## BEGIN ADD PPAs {
-  if ! [ -e /etc/apt/sources.list.d/bit-team-ubuntu-stable-jammy.list ]; then
-    _cm2SetMsgFn "Add Back In Time PPA"
-    if add-apt-repository -ny ppa:bit-team/stable; then
-      _cm2SucFn;
-    else
-      _cm2WarnFn;
-    fi
-  fi
-  if ! [ -e /etc/apt/sources.list.d/phoerious-ubuntu-keepassxc-jammy.list ]; then
-    _cm2SetMsgFn "Add KeepassXC PPA"
-    if add-apt-repository -ny ppa:phoerious/keepassxc; then
-      _cm2SucFn;
-    else
-      _cm2WarnFn;
-    fi
-  fi
-  if ! [ -e /etc/apt/sources.list.d/kubuntu-ppa-ubuntu-backports-jammy.list ]; then
-    _cm2SetMsgFn "Add Kubuntu Backports"
-    if add-apt-repository -ny ppa:kubuntu-ppa/backports; then
-      _cm2SucFn;
-    else
-      _cm2WarnFn;
-    fi
-  fi
-  if ! [ -e /etc/apt/sources.list.d/ubuntustudio-ppa-ubuntu-backports-jammy.list ]; then
-    _cm2SetMsgFn "Add Ubuntu Studio Backports"
-    if add-apt-repository -ny ppa:ubuntustudio-ppa/backports; then
-      _cm2SucFn;
-    else
-      _cm2WarnFn;
-    fi
-  fi
-}
-## . END create repo files }
+  "${_cm2RmExe}" -rf "${_kfocus_dir}/sources.list.d" || true;
 
-## BEGIN Assign global variables {
-_assignGlobalVarsFn () {
-  # shellcheck source=/etc/lsb-release
-  if source "${_rootDir}/etc/lsb-release"; then
-    _cm2SucStrFn "Read ${_rootDir}/etc/lsb-release";
-  else
-    _cm2WarnStrFn "Could not read ${_rootDir}/etc/lsb-release";
-  fi
-
-  _distCodeName="${DISTRIB_CODENAME:=bionic}";
-  _distVrsName="${DISTRIB_RELEASE:=18.04}";
-  _repoSrcDir="${_rootDir}/etc/apt/sources.list.d";
-
-  #_recomListFile="${_repoSrcDir}/kfocus-recommended.list";
-}
-## . END Assign global variables }
-
-## BEGIN _subDistNamesFn {
-# Purpose: Substitute distro names in string
-_subDistFn () {
-  echo "$*" \
-    | sed "s/<cname>/${_distCodeName}/g" \
-    | sed "s/<vname>/${_distVrsName}/g";
-}
-## . END Substitute distro names }
-
-## BEGIN _mkSrcListStrFn {
-# IMPORTED on 2022-02-23 from test/test-scripts/unit.d/00400_mkSrcListStr
-#
-_mkSrcListStrFn () {
-  declare _etc_apt_dir _nl _repo_src_str;
-
-  _etc_apt_dir="${_rootDir}/etc/apt";
-  _nl=$'\n';
-  _repo_src_str=$(
-    find "${_etc_apt_dir}/sources.list.d" -maxdepth 1 -type f -name '*.list' \
-    | sort | grep -v --regexp '^.* ' \
-    | grep -v 'kfocus-recommended.list'
+  ##
+  _top_msg='Add recommended 3rd-party repos';
+  _cm2SetMsgFn "${_top_msg}";
+  _ppa_table=(
+    'bit-team-ubuntu-stable-jammy.list|2022-04-02|ppa:bit-team/stable|BackInTime'
+    'phoerious-ubuntu-keepassxc-jammy.list|2022-04-02|ppa:phoerious/keepassxc|KeePassXC'
+    'kubuntu-ppa-ubuntu-backports-jammy.list|2022-04-02|ppa:kubuntu-ppa/backports|Kubuntu Backports'
+    'ubuntustudio-ppa-ubuntu-backports-jammy.list|2022-04-02|ppa:ubuntustudio-ppa/backports|Ubuntu Studio Backports'
   );
 
-  if [ -n "${_repo_src_str}" ]; then
-    _repo_src_str="${_etc_apt_dir}/sources.list${_nl}${_repo_src_str}";
-  else
-    _repo_src_str="${_etc_apt_dir}/sources.list";
-  fi
-  echo -e "${_repo_src_str}";
+  for _line in "${_ppa_table[@]}"; do
+    IFS='|' read -r -a _bit_list <<< "${_line}";
+    _bit_file="${_bit_list[0]}";
+    _bit_min_date="${_bit_list[1]}";
+    _bit_ppa_str="${_bit_list[2]}";
+    _bit_ppa_name="${_bit_list[3]}";
+
+    _fq_bit_file="${_repo_dir}/${_bit_file}";
+    if [ -e "${_fq_bit_file}" ]; then
+      _file_mtime="$(stat --printf='%Y' "${_fq_bit_file}")";
+    else
+      _file_mtime=0;
+    fi
+    _file_mdate="$(printf '%(%F)T' "${_file_mtime}")";
+    if [ "${_bit_min_date}" \> "${_file_mdate}" ]; then
+      if [ "${_file_mtime}" = 0 ]; then
+        _cm2SetMsgFn "Add ${_bit_ppa_name} PPA";
+      else
+        _cm2SetMsgFn "Update ${_bit_ppa_name} PPA";
+        _cm2EchoFn "${_bit_min_date} > ${_file_mdate}";
+      fi
+      if add-apt-repository -ny "${_bit_ppa_str}"; then
+        _cm2SucFn; else _cm2WarnFn;
+      fi
+    fi
+  done
+  _cm2BlockMsg="${_top_msg}";
+  _cm2SucFn;
+
+  ## Add recommended 3rd-party repos (old style)
+  # if ! [ -e /etc/apt/sources.list.d/bit-team-ubuntu-stable-jammy.list ]; then
+  #  _cm2SetMsgFn 'Add Back In Time PPA';
+  #  if add-apt-repository -ny ppa:bit-team/stable; then
+  #    _cm2SucFn; else _cm2WarnFn;
+  #  fi
+  # fi
+  # if ! [ -e /etc/apt/sources.list.d/phoerious-ubuntu-keepassxc-jammy.list ]; then
+  #  _cm2SetMsgFn 'Add KeepassXC PPA';
+  #  if add-apt-repository -ny ppa:phoerious/keepassxc; then
+  #    _cm2SucFn; else _cm2WarnFn;
+  #  fi
+  # fi
+  # if ! [ -e /etc/apt/sources.list.d/kubuntu-ppa-ubuntu-backports-jammy.list ]; then
+  #   _cm2SetMsgFn 'Add Kubuntu Backports';
+  #   if add-apt-repository -ny ppa:kubuntu-ppa/backports; then
+  #    _cm2SucFn; else _cm2WarnFn;
+  #   fi
+  # fi
+  # if ! [ -e /etc/apt/sources.list.d/ubuntustudio-ppa-ubuntu-backports-jammy.list ]; then
+  #  _cm2SetMsgFn 'Add Ubuntu Studio Backports';
+  #  if add-apt-repository -ny ppa:ubuntustudio-ppa/backports; then
+  #    _cm2SucFn; else _cm2WarnFn;
+  #  fi
+  # fi
 }
-## END _mkSrcListStrFn }
-
-## BEGIN _chkRepoSrcFn {
-# IMPORTED 2022-03-23 from test/test-script/unit.d/00200_chkRepoSrc
-#
-#_chkRepoSrcFn () {
-#  declare _repo_src_str _act_str _prefix _src_list_str \
-#    _search_str _replace_str _tgt_list_str _is_first _return_int;
-#  _repo_src_str="${1:-XXX__not__XXX}";
-#  _act_str="${2:-list}";
-#  _prefix="${3:-^#*\s*deb }";
-#
-#  # See https://stackoverflow.com/questions/40752
-#  _search_str=$( sed -e 's/[]\/$*.^[]/\\&/g' <<< "${_repo_src_str}" );
-#  _replace_str=$( sed -e 's/[\/&]/\\&/g' <<< "${_repo_src_str}" )
-#
-#  _src_list_str=$(_mkSrcListStrFn);
-#
-#  _tgt_list_str="$(
-#    # shellcheck disable=SC2086
-#    grep -l --regexp="${_prefix}${_search_str}" ${_src_list_str}
-#  )";
-#
-#  if [ -z "${_tgt_list_str}" ]; then
-#    if [ "${_act_str}" = 'enable' ]; then
-#      echo "deb ${_repo_src_str}" >> "${_recomListFile}";
-#      _cm2SucStrFn "Appended ${_repo_src_str} to ${_recomListFile}";
-#    fi
-#    return 0;
-#  fi
-#
-#  _return_int=1;
-#  case "${_act_str}" in
-#    list)
-#      echo "${_tgt_list_str}";
-#      _return_int=0;
-#    ;;
-#    disable)
-#      _is_first='y';
-#      for _file in ${_tgt_list_str}; do
-#        if [ "${_is_first}" = 'y' ]; then
-#          if (
-#           sed -i "s/^deb ${_search_str}/# deb ${_replace_str}/g" "${_file}"
-#          ); then
-#            _cm2SucStrFn "Disable ${_repo_src_str} in ${_file}";
-#            _is_first='n';
-#            _return_int=0;
-#          else
-#            _cm2WarnStrFn "Could not disable ${_repo_src_str} in ${_file}";
-#          fi
-#        else
-#          if ( sed -i "/^#*\s*deb ${_search_str}/d" "${_file}" ); then
-#            _cm2SucStrFn "Remove extra '${_repo_src_str}' in '${_file}'";
-#          else
-#            _cm2WarnStrFn "Could not remove extra '${_repo_src_str}' in '${_file}'";
-#          fi
-#        fi
-#      done
-#    ;;
-#    enable)
-#      _is_first='y';
-#      for _file in ${_tgt_list_str}; do
-#        if [ "${_is_first}" = 'y' ]; then
-#          if (grep -q "^deb ${_search_str}" "${_file}"); then
-#            _cm2SucStrFn "Already enabled '${_repo_src_str}' in '${_file}'";
-#            _is_first='n';
-#            _return_int=0;
-#          else
-#            if (
-#              sed -i "s/^# deb ${_search_str}/deb ${_replace_str}/g" "${_file}"
-#            ); then
-#              _cm2SucStrFn "Enable '${_repo_src_str}' in '${_file}'";
-#              _is_first='n';
-#              _return_int=0;
-#            else
-#              _cm2WarnStrFn "Could not Enable '${_repo_src_str}' in '${_file}'";
-#            fi
-#          fi
-#        else
-#          if ( sed -i "/^#*\s*deb ${_search_str}/d" "${_file}" ); then
-#            _cm2SucStrFn "Remove extra '${_repo_src_str}' in '${_file}'";
-#          else
-#            _cm2WarnStrFn "Could not remove extra '${_repo_src_str}' in '${_file}'";
-#          fi
-#        fi
-#      done
-#    ;;
-#  esac
-#  return ${_return_int};
-#}
-## . END _chkRepoSrcFn }
-
-## BEGIN _dedupRepoSrcFileFn {
-# IMPORTED on 2022-03-23 from test/test-scripts/unit.d/00300_dedupRepo
-#
-#_dedupRepoSrcFileFn() {
-#  declare _src_list_str _is_all_ok _match_file _search_str _src_line;
-#  _src_list_str=$(_mkSrcListStrFn);
-#  _is_all_ok='y';
-#
-#  _cm2SetMsgFn "Disable duplicate repo listings in ${_recomListFile}";
-#  while read -r _src_line; do
-#    # shellcheck disable=2001
-#    _search_str="$(
-#      sed 's/^deb.*http/http/g' <<< "${_src_line}"  \
-#        | sed 's/^[[:space:]]*\(.*\)[[:space:]]*$/\1/' \
-#        | sed -e 's/[]\/$*.^[]/\\&/g'
-#    )";
-#
-#    while read -r _match_file; do
-#      if (grep -q "^deb.* ${_search_str}" "${_match_file}"); then
-#        _cm2EchoFn "'${_src_line}' found in '${_match_file}'"
-#        if ( sed -i "s?^\\(deb.*${_search_str}.*\\)?# \1?g" \
-#          "${_recomListFile}" ); then
-#            _cm2SucStrFn "Disable '${_src_line}' in '${_recomListFile}'"
-#          else
-#            _cm2WarnStrFn "Could not disable '${_src_line}' in '${_recomListFile}'";
-#            _is_all_ok='n'
-#          fi
-#      fi
-#    done < <( echo -e "${_src_list_str}" );
-#  done < <( grep --regexp='^\s*deb' "${_recomListFile}" );
-#
-#  if [ "${_is_all_ok}" ]; then
-#    _cm2SucFn; return;
-#  else
-#    _cm2WarnStrFn "Some or all of the disables were unsuccessful";
-#    _cm2WarnFn; return;
-#  fi
-#}
-## . END _dedupRepoSrcFileFn }
+## . END _installReposFn }
 
 ## BEGIN _addTrustedKeysFn {
 # Purpose: Add trusted keys
-_addTrustedKeysFn () {
-  declare _return_int _kfocus_dir;
-  _return_int=0;
-  _kfocus_dir='/usr/lib/kfocus';
-
-  _cm2SetMsgFn 'Update trusted repo keys';
-  declare _key;
-  pushd "${_kfocus_dir}/trusted-keys.d" || _cm2WarnFn;
+# Deprecated: dearmor keys (convert asc to gpg)
 #    for _key in *; do
 #      gpg --dearmor "${_key}"
 #    done
-    if mv ./*.asc /etc/apt/trusted.gpg.d; then
-      _cm2SucFn;
-    else
-      _cm2WarnStrFn "Could not install gpg keys";
+# Deprecated: use apt-key
+#    if apt-key add "${_kfocus_dir}/trusted-keys"; then
+#      _cm2SucFn; else _cm2WarnFn && return;
+#    fi
+#
+_addTrustedKeysFn () {
+  declare _return_int _kfocus_dir _key_dir _block_idx;
+  _return_int=1;
+  _kfocus_dir='/usr/lib/kfocus';
+  _key_dir="${_kfocus_dir}/trusted-keys.d";
+
+  _cm2SetMsgFn 'Add trusted repo keys';
+  ## Begin Short-circuit block
+  # shellcheck disable=SC2043
+  for _block_idx in 1; do
+    if [ ! -d "${_kfocus_dir}/trusted-keys.d" ]; then
+      _cm2WarnStrFn 'Trusted key dir not found';
+      break;
     fi
-  popd || _cm2WarnFn;
-  #if apt-key add "${_kfocus_dir}/trusted-keys"; then
-  #  _cm2SucFn; else _cm2WarnFn; _return_int=1;
-  #fi
 
-  if ! "${_cm2RmExe}" -rf "${_kfocus_dir}/trusted-keys.d"; then
-    _cm2WarnStrFn "Could not remove ${_kfocus_dir}/trusted-keys.d";
+    if ! pushd "${_key_dir}"; then
+      _cm2WarnStrFn 'Could not cd to source dir';
+      break;
+    fi
+
+    if ! mv ./*.asc /etc/apt/trusted.gpg.d; then
+      _cm2WarnStrFn 'Could not install gpg keys';
+      break;
+    fi
+
+    _return_int=0;
+    popd || true;
+
+    if ! "${_cm2RmExe}" -rf "${_kfocus_dir}/trusted-keys.d"; then
+      _cm2WarnStrFn "Could not remove ${_kfocus_dir}/trusted-keys.d";
+    fi
+  done
+  ## . End Short-circuit block
+
+  if [ "${_return_int}" = 0 ]; then
+    _cm2SucFn; else _cm2WarnFn;
   fi
-
-  return ${_return_int}
+  return "${_return_int}";
 }
 ## . END _addTrustedKeysFn }
 
-## BEGIN _addGoogleCloudSDKKey Fn {
-_addGoogleCloudSDKKey () {
-  if [ ! -e /usr/share/keyrings/cloud.google.gpg ]; then
-    wget -O- https://packages.cloud.google.com/apt/doc/apt-key.gpg.asc | \
-    gpg --dearmor > /usr/share/keyrings/cloud.google.gpg
-  fi
-}
-## . END _addGoogleCloudSDKKey Fn }
+## BEGIN _addGcloudSdkKeyFn {
+_addGcloudSdkKeyFn () {
+  declare _key_dir _key_table _bit_list _bit_file _bit_min_date \
+    _bit_key_url _bit_key_name _fq_key_file _file_mtime _file_mdate;
 
-## BEGIN _aptUpdateFn {
-# _aptUpdateFn () {
-#   _cm2SetMsgFn 'Update Apt Database'
-#   if apt-get update; then _cm2SucFn; else _cm2WarnFn; fi
-# }
-## . END _aptUpdateFn }
+  _key_dir='/usr/share/keyrings';
+  _key_table=(
+    'cloud.google.gpg|2023-01-05|https://packages.cloud.google.com/apt/doc/apt-key.gpg|Google Cloud SDK'
+  );
+  for _line in "${_key_table[@]}"; do
+    IFS='|' read -r -d ' ' -a _bit_list <<< "${_line}";
+    _bit_file="${_bit_list[0]}";
+    _bit_min_date="${_bit_list[1]}";
+    _bit_key_url="${_bit_list[2]}";
+    _bit_key_name="${_bit_list[3]}";
+
+    _fq_key_file="${_key_dir}/${_bit_file}";
+    if [ -e "${_fq_key_file}" ]; then
+      _file_mtime="$(stat --printf='%Y' "${_fq_key_file}")";
+    else
+      _file_mtime=0;
+    fi
+    _file_mdate="$(printf '%(%F)T' "${_file_mtime}")";
+    if [ "${_bit_min_date}" \> "${_file_mdate}" ]; then
+      if [ "${_file_mtime}" = '0' ]; then
+        _cm2SetMsgFn "Add ${_bit_key_name} key file.";
+      else
+        _cm2SetMsgFn "Update ${_bit_key_name} key file.";
+        _cm2EchoFn "${_bit_min_date} > ${_file_mdate}";
+      fi
+      if wget -O- "${_bit_key_url}" > "${_fq_key_file}"; then
+        _cm2SucFn; else _cm2WarnFn;
+      fi;
+    fi
+  done
+}
+## . END _addGcloudSdkKeyFn }
 
 ## BEGIN MAIN {
 #  See https://stackoverflow.com/questions/2683279
 #
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-  # set -u; # Development only
-  _rootDir='';
-  _assignGlobalVarsFn;
   case "${_cm2Arg01}" in
     abort-upgrade|abort-remove|abort-configure|abort*)
+      true;
     ;;
 
-    configure|upgrade) # The order of steps is critial. Do not change.
-
-      # Obsolete in Jammy
-      # _rmPinningFileFn; # Removes obsolete nvidia pinning file
-      # _disableOldRepoSrcFn; # Disable obsolete sources.list.d files
-      # _blacklistKernelVersionFn; # Add pinning to blacklist incompatible kernel versions
-      #
-      # TODO 2022-03-23 msm WARM: Is update still desirable here?
-      # _aptUpdateFn;         # All done, update with what we installed
-      #
-      # _cm2EchoFn;
-      # _cm2EchoFn 'IMPORTANT: Package sources have been updated.'
-      # _cm2EchoFn 'Please run the following before proceeding:';
-      # _cm2EchoFn '  sudo apt dist-upgrade';
-      # _cm2EchoFn;
-      #
-      _saveSrcFilesFn; # Add sources files
-      # _dedupRepoSrcFileFn;  # Remove duplicate repo source entries from above
-      _addTrustedKeysFn;    # Add trusted keys for repos
-      _addGoogleCloudSDKKey; 
+    configure|upgrade)
+       # Install recommended 3rd-party repos
+      _installReposFn;
+      # Add trusted keys for repos
+      _addTrustedKeysFn;
+      # Add Google Cloud SDK keys
+      _addGcloudSdkKeyFn;
     ;;
   esac
-
   exit 0;
 fi
 ## . END MAIN }
