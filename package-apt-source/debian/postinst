@@ -92,8 +92,12 @@ EOF3
     _bit_min_date="${_bit_list[1]}";
     _bit_ppa_str="${_bit_list[2]}";
     _bit_ppa_name="${_bit_list[3]}";
-
     _fq_bit_file="${_repo_dir}/${_bit_file}";
+
+    # Print debug
+    # _cm2EchoFn '_bit_file|_bit_min_date|_bit_ppa_str|_bit_ppa_name|_fq_bit_file';
+    # _cm2EchoFn "${_bit_file}|${_bit_min_date}|${_bit_ppa_str}|${_bit_ppa_name}|${_fq_bit_file}";
+
     if [ -e "${_fq_bit_file}" ]; then
       _file_mtime="$(stat --printf='%Y' "${_fq_bit_file}")";
     else
@@ -104,8 +108,9 @@ EOF3
       if [ "${_file_mtime}" = 0 ]; then
         _cm2SetMsgFn "Add ${_bit_ppa_name} PPA";
       else
-        _cm2SetMsgFn "Update ${_bit_ppa_name} PPA";
-        _cm2EchoFn "${_bit_min_date} > ${_file_mdate}";
+        _cm2SetMsgFn "Updating ${_bit_ppa_name} PPA per date check:";
+        _cm2EchoFn "File |${_fq_bit_file}| modification date |${_file_mdate}|";
+        _cm2EchoFn "  is before minimum allowed date |${_bit_min_date}|.";
       fi
       if add-apt-repository -ny "${_bit_ppa_str}"; then
         _cm2SucFn; else _cm2WarnFn;
@@ -114,32 +119,6 @@ EOF3
   done
   _cm2BlockMsg="${_top_msg}";
   _cm2SucFn;
-
-  ## Add recommended 3rd-party repos (old style)
-  # if ! [ -e /etc/apt/sources.list.d/bit-team-ubuntu-stable-jammy.list ]; then
-  #  _cm2SetMsgFn 'Add Back In Time PPA';
-  #  if add-apt-repository -ny ppa:bit-team/stable; then
-  #    _cm2SucFn; else _cm2WarnFn;
-  #  fi
-  # fi
-  # if ! [ -e /etc/apt/sources.list.d/phoerious-ubuntu-keepassxc-jammy.list ]; then
-  #  _cm2SetMsgFn 'Add KeepassXC PPA';
-  #  if add-apt-repository -ny ppa:phoerious/keepassxc; then
-  #    _cm2SucFn; else _cm2WarnFn;
-  #  fi
-  # fi
-  # if ! [ -e /etc/apt/sources.list.d/kubuntu-ppa-ubuntu-backports-jammy.list ]; then
-  #   _cm2SetMsgFn 'Add Kubuntu Backports';
-  #   if add-apt-repository -ny ppa:kubuntu-ppa/backports; then
-  #    _cm2SucFn; else _cm2WarnFn;
-  #   fi
-  # fi
-  # if ! [ -e /etc/apt/sources.list.d/ubuntustudio-ppa-ubuntu-backports-jammy.list ]; then
-  #  _cm2SetMsgFn 'Add Ubuntu Studio Backports';
-  #  if add-apt-repository -ny ppa:ubuntustudio-ppa/backports; then
-  #    _cm2SucFn; else _cm2WarnFn;
-  #  fi
-  # fi
 }
 ## . END _installReposFn }
 
@@ -205,13 +184,17 @@ _addGcloudSdkKeyFn () {
     'cloud.google.gpg|2023-01-05|https://packages.cloud.google.com/apt/doc/apt-key.gpg|Google Cloud SDK'
   );
   for _line in "${_key_table[@]}"; do
-    IFS='|' read -r -d ' ' -a _bit_list <<< "${_line}";
+    IFS='|' read -r -a _bit_list <<< "${_line}";
     _bit_file="${_bit_list[0]}";
     _bit_min_date="${_bit_list[1]}";
     _bit_key_url="${_bit_list[2]}";
     _bit_key_name="${_bit_list[3]}";
-
     _fq_key_file="${_key_dir}/${_bit_file}";
+
+    # Print debug
+    # _cm2EchoFn '_bit_file|_bit_min_date|_bit_key_url|_bit_key_name|_fq_key_file';
+    # _cm2EchoFn "${_bit_file}|${_bit_min_date}|${_bit_key_url}|${_bit_key_name}|${_fq_key_file}";
+
     if [ -e "${_fq_key_file}" ]; then
       _file_mtime="$(stat --printf='%Y' "${_fq_key_file}")";
     else
