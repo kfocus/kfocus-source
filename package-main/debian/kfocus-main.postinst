@@ -1,11 +1,7 @@
 #!/bin/bash
 # kfocus-main postinst
-# This must be run as root.
+# This must be run as root. Use set -u to debug.
 #
-# set -u is used to exit on uninitialized variables
-# set -e is not used as we do our own error checking
-#
-# set -u; # uncomment to debug
 set -e;
 
 ## BEGIN Declare common.2.source symbols {
@@ -24,14 +20,13 @@ _cm2WarnStrFn () { _cm2EchoFn "warn: ${*}"; }
 
 ## { BEGIN _assignGlobalVarsFn
 _assignGlobalVarsFn () {
-  _localBinDir="${_rootDir}/usr/bin";
-  _libKfocusDir="${_rootDir}/usr/lib/kfocus";
-  _repoSrcDir="${_rootDir}/etc/apt/sources.list.d";
+  declare _repo_src_dir;
+  _repo_src_dir="${_rootDir}/etc/apt/sources.list.d";
 
-  _recomListFile="${_repoSrcDir}/kfocus-recommended.list";
+  _libKfocusDir="${_rootDir}/usr/lib/kfocus";
+  _recomListFile="${_repo_src_dir}/kfocus-recommended.list";
 }
 ## . END _assignGlobalVarsFn }
-
 
 ## BEGIN _mkSrcListStrFn {
 # IMPORTED on 2022-02-23 from test/test-scripts/unit.d/00400_mkSrcListStr
@@ -61,6 +56,10 @@ _mkSrcListStrFn () {
 #
 _dedupRepoSrcFileFn() {
   declare _src_list_str _is_all_ok _match_file _search_str _src_line;
+
+  # Skip processing if file does not exist
+  if [ ! -f "${_recomListFile}" ]; then return; fi
+
   _src_list_str=$(_mkSrcListStrFn);
   _is_all_ok='y';
 
@@ -179,7 +178,7 @@ _cleanUpFn () {
   if [ -e "${_firstrun_file}" ] || [ -L "${_firstrun_file}" ]; then
     _cm2SetMsgFn "Remove deprecated ${_firstrun_file}";
     if "${_cm2RmExe}" -f "${_firstrun_file}"; then
-      _cm2SucFn; else _sm2WarnFn;
+      _cm2SucFn; else _cm2WarnFn;
     fi
   fi
 
@@ -198,33 +197,33 @@ _cleanUpFn () {
 #  IMPORTED on 2022-03-23 from test/test-scripts/unit.d/00100_adviseReboot
 #  Purpose: Advise reboot after install
 #
-# See https://askubuntu.com/questions/993570/
-#   how-to-force-a-system-restart-is-needed-to-complete-the-update-process-message
+# See https://askubuntu.com/questions/993570
+#
 _adviseRebootFn () {
-  declare _lib_dir _update_dir _touch_file;
-  _lib_dir="${_rootDir}/var/lib/update-notifier";
-  _update_dir="${_lib_dir}/user.d";
+  declare _reboot_file;
 
-  _touch_file="${_lib_dir}/dpkg-run-stamp";
-  _rbt_file="${_rootDir}/var/run/reboot-required";
-
+  _reboot_file="${_rootDir}/var/run/reboot-required";
   _cm2SetMsgFn 'Advise reboot';
 
-  if touch "${_rbt_file}"; then
-    _cm2SucStrFn "Wrote ${_rbt_file}";
-    _cm2SucFn; return;
+  if touch "${_reboot_file}"; then
+    _cm2SucStrFn "Wrote ${_reboot_file}";
+    _cm2SucFn;
   else
-    _cm2WarnStrFn "Could not write ${_rbt_file}";
-    _cm2WarnFn; return;
+    _cm2WarnStrFn "Could not write ${_reboot_file}";
+    _cm2WarnFn;
   fi
 
-  if touch "${_touch_file}"; then
-    _cm2SucStrFn "Touched ${_touch_file}";
-    _cm2SucFn; return;
-  else
-    _cm2WarnStrFn "Could not touch ${_touch_file}";
-    _cm2WarnFn; return;
-  fi
+  # This is deprecated
+  # _lib_dir="${_rootDir}/var/lib/update-notifier";
+  # _update_dir="${_lib_dir}/user.d";
+  # _touch_file="${_lib_dir}/dpkg-run-stamp";
+  # if touch "${_touch_file}"; then
+  #   _cm2SucStrFn "Touched ${_touch_file}";
+  #   _cm2SucFn; return;
+  # else
+  #   _cm2WarnStrFn "Could not touch ${_touch_file}";
+  #   _cm2WarnFn; return;
+  # fi
 }
 ## . END _adviseRebootFn }
 
@@ -247,6 +246,7 @@ _setupSddmFixFn () {
 
   _xsetup_file="${_rootDir}/usr/share/sddm/scripts/Xsetup";
 
+  ## Begin Short circuit block {
   while true; do
     if [ ! -e "${_xsetup_file}" ]; then break; fi
     if ! grep -qi '^## BEGIN kfocus' "${_xsetup_file}"; then break; fi
@@ -263,6 +263,15 @@ _setupSddmFixFn () {
     sed -i $'/_kfSetupExe=\'\/usr\/lib\/kfocus/d'       "${_xsetup_file}";
     break;
   done
+  ## . End Short circuit block }
+
+  # 3153 Skip adding call if we find a signature of
+  # the sddm workaround per 2988.
+  if grep -qi '\Wxrandr\W.*--listmonitors' "${_xsetup_file}"; then
+    _cm2EchoFn 'Embedded SDDM fix signature found';
+    _cm2SucFn;
+    return;
+  fi
 
   _setup_str="$(cat << 'EOS'
 ## BEGIN KFocus addition sddm fix
@@ -273,8 +282,8 @@ if [ -x "${_kfSetupExe}" ]; then "${_kfSetupExe}" || true; fi
 EOS
 )";
 
-  if echo "${_setup_str}" >> "${_xsetup_file}"; then 
-    _cm2SucFn; 
+  if echo "${_setup_str}" >> "${_xsetup_file}"; then
+    _cm2SucFn;
   else
     _cm2WarnStrFn "Trouble updating ${_xsetup_file}";
     _cm2WarnFn;
@@ -283,8 +292,6 @@ EOS
 ## . END _setupSddmFixFn }
 
 ## BEGIN MAIN {
-#  See https://stackoverflow.com/questions/2683279
-#
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   # set -u; # Development only
   _rootDir='';
@@ -294,7 +301,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     ;;
 
     configure|upgrade)
-      # Enable pre-dm script used to allow for touch pad initialization
+      # Enable pre-dm script used to allow for touchpad initialization
       # on M2 GEN 4
       deb-systemd-helper enable kfocus-dm.service;
 
@@ -304,7 +311,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
       # Download PCI extended data if needed
       _updatePciidsFn;
 
-      # Apply styling to root apps like partion manager
+      # Apply styling to root apps like partition manager
       _applyRootStyleFn;
 
       # Add bash completion

@@ -26,14 +26,15 @@ _importCommonFn() {
   fi
 }
 
-_updateAptFn () {
-  _cm2SetMsgFn 'Update and upgrade all existing packages';
-  if apt-get update; then _cm2SucFn; else _cm2WarnFn; fi
-
-  # 3153 Disabled 'yes | apt-get full-upgrade -y'. If there is a config
-  #   conflict, this can overwrite user files. If we remove 'yes', it
-  #   instead stalls the upgrade as it awaits user tty input that never
-  #   comes.
+_updatePkgsFn () {
+  _cm2SetMsgFn 'Update and upgrade kfocus packages';
+  if apt-get update; then
+    if yes 2>/dev/null | apt-get install --only-upgrade 'kfocus*'; then
+      _cm2SucFn;
+      return;
+    fi
+  fi
+  _cm2WarnFn;
 }
 
 _reconfigHwPkgFn () {
@@ -167,7 +168,7 @@ _fixHwConfigFn () {
   if [ -z "${_reason_str}" ]; then return 0; fi
 
   IFS='|' read -r -a _reason_list <<< "${_reason_str}";
-  _updateAptFn;
+  _updatePkgsFn;
   for _loop_line in "${_reason_list[@]}"; do
     IFS=';' read -r -a _bit_list <<< "${_loop_line}";
     case "${_bit_list[0]}" in
