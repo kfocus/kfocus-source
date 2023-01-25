@@ -29,7 +29,9 @@ _importCommonFn() {
 _updatePkgsFn () {
   _cm2SetMsgFn 'Update and upgrade kfocus packages';
   if apt-get update; then
-    if yes 2>/dev/null | apt-get install --only-upgrade 'kfocus*'; then
+    if yes 2>/dev/null \
+      | apt-get install -y --only-upgrade 'kfocus*';
+    then
       _cm2SucFn;
       return;
     fi
