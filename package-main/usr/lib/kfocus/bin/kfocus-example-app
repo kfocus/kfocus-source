@@ -1,0 +1,127 @@
+#!/bin/bash
+#
+# Copyright 2019-2023 MindShare Inc.
+#
+# Written for the Kubuntu Focus by M. Mikowski
+#   Use this file as a template in conjunction with the guidance
+#   found in CONTRIBUTING.md.
+#
+# Name     : kfocus-example-app
+# Summary  : kfocus-example-app [<argN>] [-[i|j|k] <str>] [-x]
+# Purpose  : Illustrates usage and best practice
+# Example  : kfocus-example-app 'myArg' -i 'op1' -k 'op2' -x;
+# License  : GPLv2
+# Run By   : Developers only
+# Spec     : 2956
+#
+set -u;
+
+## BEGIN _importCommonFn {
+# Summary   : _importCommonFn
+# Purpose   : Load common routines, prefer relative dir
+# Example   : _importCommonFn;
+# Arguments : none
+# Globals   : Package vars _baseDir _baseName
+# Outputs   : none
+# Returns   : none
+#
+_importCommonFn () {
+  declare _lib_list _is_loaded _lib_file;
+  _lib_list=(
+    "${_baseDir}/lib/common.2.source"
+    '/usr/lib/kfocus/lib/common.2.source'
+  );
+  _is_loaded='n';
+  for _lib_file in "${_lib_list[@]}"; do
+    if [ -r "${_lib_file}" ]; then
+      # shellcheck source=/usr/lib/kfocus/lib/common.2.source
+      if source "${_lib_file}"; then
+        _is_loaded='y';
+        break;
+      fi
+    fi
+  done
+
+  if [ "${_is_loaded}" = 'n' ]; then
+    echo 1>&2 "${_baseName}: ABORT - Cannot source common lib";
+    exit 202;
+  fi
+}
+## . END _importCommonFn }
+
+## BEGIN _incCountFn {
+# Summary   : _incCountFn
+# Purpose   : Useless example function
+# Example   : _incCountFn;
+# Arguments : none
+# Globals   : none
+# Outputs   : Prints 0 through 2 to stderr
+# Returns   : none
+#
+_incCountFn () {
+  declare _count_idx;
+  for (( _count_idx = 0; _count_idx < 10; _count_idx++ )); do
+    _cm2EchoFn "${_count_idx}";
+    if [[ "${_count_idx}" == 2 ]]; then return; fi
+  done
+}
+## . END _incCountFn }
+
+## BEGIN _mainFn {
+# Summary   : _mainFn [args-and-options]
+# Purpose   : Main function for package
+# Example   : _mainFn 'myArg' -i 'op1' -k 'op2' -x;
+# Arguments : Any arbitrary positional arguments.
+#             Switches -i|j|k take a string value.
+#             Switch -x takes no string.
+# Globals   : OPTIND is reset to local for arg processing
+# Outputs   : Prints diagnostics to stderr
+# Returns   : none
+#
+_mainFn () {
+  declare _opt_str;
+  local OPTIND=1;
+  while getopts ':i:j:k:x' _opt_str; do
+    case "${_opt_str}" in
+      i|j|k) _cm2EchoFn "Option found ${_opt_str} value ${OPTARG}";;
+      x) _cm2EchoFn "Option found ${_opt_str}";;
+      *) _cm2EchoFn "Option ${_opt_str} not supported";;
+    esac
+  done
+  shift $((OPTIND-1));
+
+  _cm2EchoFn "Left overs are |$*|";
+}
+## . END _mainFn }
+
+## BEGIN set global vars {
+# <= Declare package vars
+declare _userId _binName _binDir _baseName _baseDir;
+
+# <= Set values that will load for tests
+_userId="$(id -u)";
+## . END set global vars }
+
+## BEGIN Run main if script is not sourced {
+# <= This is only run if not sourced.
+# <= When sourced by a test unit, these values must be set elsewhere.
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+  _importCommonFn;
+  _mainFn "$@";
+
+  # Example calls
+  # _cm2EchoFn "TEST _mainFn -i 'opt1' -j 'opt2' -k 'opt3'";
+  # _mainFn -i 'optI' -j 'optJ' -k 'optK';
+  #
+  # _cm2EchoFn "TEST _mainFn  -k 'optK' 'arg1' ";
+  # _mainFn -k 'optK' 'arg1';
+  #
+  # _cm2EchoFn "TEST _mainFn  -j 'optJ' -k 'optK' -x 'arg1' 'arg2'";
+  # _mainFn  -x -j 'optJ' -k 'optK' 'arg1' 'arg2';
+fi
+## . END Run main if script is not sourced }
+

@@ -7,7 +7,7 @@ branch for any Pull Requests (PR).
 
 ## Quality Checks
 - Ensure all code passes `shellcheck -x`. Use shellcheck comments to
-  allow approved exceptions to pass like so:: `# shellcheck disable=SC2091`
+  allow approved exceptions to pass like so: `# shellcheck disable=SC2091`
   eode analysis as well.
 - Changes should have automated tests to ensure correctness. See
   `test/README.md` for details on how to write and use tests.
@@ -120,8 +120,10 @@ fi # close if statement
 
 ## Structure
 Most shell apps should have the following structure to facilitate test
-development and provide consistency. Notice `set -u;` is used here. DO NOT use
-`set -e`; test or trap errors instead.
+development and provide consistency. We use `set -u;` to throw errors on
+undefined variables. We DO NOT use `set -e` to exit on errors however.
+Test or trap errors instead. See `kfocus-example-app` as a more complete
+example.
 
 ```bash
 # <HEADER>
@@ -139,12 +141,16 @@ _mainFn () { ... } # <= This is the main function
 ## . END _mainFn }
 
 ## BEGIN set global vars {
+# <= Declare package vars
 declare _userId _binName _binDir _baseName _baseDir;
-_userId="$(id -u)"; # <= Add global vars that will load for tests
+
+# <= Set values that will load for tests
+_userId="$(id -u)";
 ## . END set global vars }
 
 ## BEGIN Run main if script is not sourced {
-# <= This is only run if not sourced, like when running tests
+# <= This is only run if not sourced.
+# <= When sourced by a test unit, these values must be set elsewhere.
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binName="$(  readlink -f "$0"       )" || exit 101;
   _binDir="$(   dirname  "${_binName}" )" || exit 101;
