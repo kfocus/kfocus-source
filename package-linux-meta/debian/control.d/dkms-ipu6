@@ -1,0 +1,10 @@
+
+Package: linux-modules-ipu6-oem${variant:suffix}
+Architecture: amd64
+Section: kernel
+Provides: ${dkms:ipu6-modules}
+Depends:
+ ${misc:Depends},
+ linux-modules-ipu6-${kernel-abi-version}-oem,
+Description: Extra drivers for ipu6 for the oem flavour
+ Install extra signed ipu6 modules compatible with the oem flavour.

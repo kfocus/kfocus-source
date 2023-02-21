@@ -5,9 +5,9 @@ Maintainer: Ubuntu Kernel Team <kernel-team@lists.ubuntu.com>
 Standards-Version: 3.9.8
 Build-Depends: dpkg (>= 1.13.19), debhelper (>= 11), gawk, kmod
 Build-Depends-Arch:
- linux-oem-5.17-headers-5.17.0-1026,
- linux-headers-5.17.0-1026-oem,
- linux-modules-5.17.0-1026-oem,
+ linux-oem-5.17-headers-5.17.0-1027,
+ linux-headers-5.17.0-1027-oem,
+ linux-modules-5.17.0-1027-oem,
 Vcs-Git: git://git.launchpad.net/~ubuntu-kernel/ubuntu/+source/linux-meta-oem/+git/jammyoem-5.17
 
 Package: linux-headers-oem-22.04-kfocus
@@ -97,6 +97,50 @@ Depends: ${misc:Depends}, linux-image-oem-22.04a-kfocus (= ${binary:Version}), l
 Description: Complete OEM Linux kernel and headers
  This package will always depend on the latest complete OEM Linux kernel
  and headers.
+
+
+Package: linux-modules-ipu6-oem-22.04
+Architecture: amd64
+Section: kernel
+Provides: ${dkms:ipu6-modules}
+Depends:
+ ${misc:Depends},
+ linux-modules-ipu6-${kernel-abi-version}-oem,
+Description: Extra drivers for ipu6 for the oem flavour
+ Install extra signed ipu6 modules compatible with the oem flavour.
+
+
+Package: linux-modules-ipu6-oem-22.04a
+Architecture: amd64
+Section: kernel
+Provides: ${dkms:ipu6-modules}
+Depends:
+ ${misc:Depends},
+ linux-modules-ipu6-${kernel-abi-version}-oem,
+Description: Extra drivers for ipu6 for the oem flavour
+ Install extra signed ipu6 modules compatible with the oem flavour.
+
+
+Package: linux-modules-ivsc-oem-22.04
+Architecture: amd64
+Section: kernel
+Provides: ${dkms:ivsc-modules}
+Depends:
+ ${misc:Depends},
+ linux-modules-ivsc-${kernel-abi-version}-oem,
+Description: Extra drivers for ivsc for the oem flavour
+ Install extra signed ivsc modules compatible with the oem flavour.
+
+
+Package: linux-modules-ivsc-oem-22.04a
+Architecture: amd64
+Section: kernel
+Provides: ${dkms:ivsc-modules}
+Depends:
+ ${misc:Depends},
+ linux-modules-ivsc-${kernel-abi-version}-oem,
+Description: Extra drivers for ivsc for the oem flavour
+ Install extra signed ivsc modules compatible with the oem flavour.
 
 
 Package: linux-modules-iwlwifi-oem-22.04
