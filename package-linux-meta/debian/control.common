@@ -5,7 +5,7 @@ Maintainer: Ubuntu Kernel Team <kernel-team@lists.ubuntu.com>
 Standards-Version: 3.9.8
 Build-Depends: dpkg (>= 1.13.19), debhelper (>= 11), gawk, kmod
 Build-Depends-Arch:
- linux-oem-5.17-headers-@KERNEL_ABI_VERSION@,
- linux-headers-@KERNEL_ABI_VERSION@-oem,
- linux-modules-@KERNEL_ABI_VERSION@-oem,
-Vcs-Git: git://git.launchpad.net/~ubuntu-kernel/ubuntu/+source/linux-meta-oem/+git/@SERIES@oem-5.17
+ linux-hwe-5.19-headers-@KERNEL_ABI_VERSION@,
+ linux-headers-@KERNEL_ABI_VERSION@-generic,
+ linux-modules-@KERNEL_ABI_VERSION@-generic,
+Vcs-Git: git://git.launchpad.net/~ubuntu-kernel/ubuntu/+source/linux-meta/+git/@SERIES@

@@ -1,166 +1,190 @@
-Source: linux-meta-oem-5.17-kfocus
+Source: linux-meta-hwe-5.19-kfocus
 Section: devel
 Priority: optional
 Maintainer: Ubuntu Kernel Team <kernel-team@lists.ubuntu.com>
 Standards-Version: 3.9.8
 Build-Depends: dpkg (>= 1.13.19), debhelper (>= 11), gawk, kmod
 Build-Depends-Arch:
- linux-oem-5.17-headers-5.17.0-1027,
- linux-headers-5.17.0-1027-oem,
- linux-modules-5.17.0-1027-oem,
-Vcs-Git: git://git.launchpad.net/~ubuntu-kernel/ubuntu/+source/linux-meta-oem/+git/jammyoem-5.17
+ linux-hwe-5.19-headers-5.19.0-32,
+ linux-headers-5.19.0-32-generic,
+ linux-modules-5.19.0-32-generic,
+Vcs-Git: git://git.launchpad.net/~ubuntu-kernel/ubuntu/+source/linux-meta/+git/jammy
 
-Package: linux-headers-oem-22.04-kfocus
-Architecture: amd64
+Package: linux-headers-generic-hwe-22.04-kfocus
+Architecture: amd64 armhf arm64 powerpc ppc64el s390x
 Section: kernel
-Replaces: linux-headers-oem${variant-suffix}
-Conflicts: linux-headers-oem${variant-suffix}
-Depends: ${misc:Depends}, linux-headers-${kernel-abi-version}-oem
-Description: OEM Linux kernel headers
- This package will always depend on the latest OEM kernel headers
+Replaces: linux-headers-generic-hwe-22.04, linux-headers-oem-22.04a-kfocus
+Conflicts: linux-headers-generic-hwe-22.04, linux-headers-oem-22.04a-kfocus
+Depends: ${misc:Depends}, linux-headers-${kernel-abi-version}-generic
+Description: Generic Linux kernel headers
+ This package will always depend on the latest generic kernel headers
  available.
 
-Package: linux-image-oem-22.04-kfocus
-Architecture: amd64
+Package: linux-image-generic-hwe-22.04-kfocus
+Architecture: amd64 armhf arm64 powerpc ppc64el s390x
 Section: kernel
 Provides: ${dkms:v4l2loopback-modules} ${dkms:zfs-modules} ${dkms:virtualbox-guest-modules} ${dkms:wireguard-linux-compat-modules}
-Replaces: linux-image-oem-22.04
-Conflicts: linux-image-oem-22.04, linux-modules-nvidia-515-oem-22.04 (<< 5.17.0-1021.22)
-Depends: ${misc:Depends}, linux-image-${kernel-abi-version}-oem, linux-firmware, intel-microcode [amd64], amd64-microcode [amd64]
+Replaces: linux-image-generic-hwe-22.04, linux-image-oem-22.04a-kfocus
+Conflicts: linux-image-generic-hwe-22.04, linux-image-oem-22.04a-kfocus
+Depends: ${misc:Depends}, linux-image-${kernel-abi-version}-generic, linux-modules-extra-${kernel-abi-version}-generic [amd64 arm64 powerpc ppc64el s390x], linux-firmware [amd64 armhf arm64 ppc64el], intel-microcode [amd64], amd64-microcode [amd64]
 Recommends: thermald [amd64]
-Description: OEM Linux kernel image
- This package will always depend on the latest OEM kernel image
+Description: Generic Linux kernel image
+ This package will always depend on the latest generic kernel image
  available.
 
-Package: linux-tools-oem-22.04-kfocus
-Architecture: amd64
+Package: linux-tools-generic-hwe-22.04-kfocus
+Architecture: amd64 armhf arm64 powerpc ppc64el s390x
 Section: kernel
 Provides: linux-tools
-Replaces: linux-tools-oem-22.04
-Conflicts: linux-tools-oem-22.04
-Depends: ${misc:Depends}, linux-tools-${kernel-abi-version}-oem
-Description: OEM Linux kernel tools
- This package will always depend on the latest OEM kernel tools
+Replaces: linux-tools-generic-hwe-22.04, linux-tools-oem-22.04a-kfocus
+Conflicts: linux-tools-generic-hwe-22.04, linux-tools-oem-22.04a-kfocus
+Depends: ${misc:Depends}, linux-tools-${kernel-abi-version}-generic
+Description: Generic Linux kernel tools
+ This package will always depend on the latest generic kernel tools
  available.
 
-Package: linux-oem-22.04-kfocus
+Package: linux-cloud-tools-generic-hwe-22.04-kfocus
 Architecture: amd64
 Section: kernel
-Provides: kernel-testing--linux-oem-5.17-kfocus--full--oem, kernel-testing--linux-oem-5.17-kfocus--full--preferred,
-Replaces: linux-oem-22.04
-Conflicts: linux-oem-22.04
-Depends: ${misc:Depends}, linux-image-oem-22.04-kfocus (= ${binary:Version}), linux-headers-oem-22.04-kfocus (= ${binary:Version})
-Description: Complete OEM Linux kernel and headers
- This package will always depend on the latest complete OEM Linux kernel
+Provides: linux-cloud-tools
+Replaces: linux-cloud-tools-generic-hwe-22.04
+Conflicts: linux-cloud-tools-generic-hwe-22.04
+Depends: ${misc:Depends}, linux-cloud-tools-${kernel-abi-version}-generic
+Description: Generic Linux kernel cloud tools
+ This package will always depend on the latest generic kernel cloud tools
+ available.
+
+Package: linux-generic-hwe-22.04-kfocus
+Architecture: amd64 armhf arm64 powerpc ppc64el s390x
+Section: kernel
+Provides: kernel-testing--linux-hwe-5.19-kfocus--full--generic, kernel-testing--linux-hwe-5.19-kfocus--full--preferred,
+Replaces: linux-generic-hwe-22.04, linux-oem-22.04a-kfocus
+Conflicts: linux-generic-hwe-22.04, linux-oem-22.04a-kfocus
+Depends: ${misc:Depends}, linux-image-generic-hwe-22.04-kfocus (= ${binary:Version}), linux-headers-generic-hwe-22.04-kfocus (= ${binary:Version})
+Description: Complete Generic Linux kernel and headers
+ This package will always depend on the latest complete generic Linux kernel
  and headers.
 
-Package: linux-headers-oem-22.04a-kfocus
-Architecture: amd64
+
+Package: linux-headers-generic-hwe-22.04-edge-kfocus
+Architecture: amd64 armhf arm64 powerpc ppc64el s390x
 Section: kernel
-Replaces: linux-headers-oem${variant-suffix}
-Conflicts: linux-headers-oem${variant-suffix}
-Depends: ${misc:Depends}, linux-headers-${kernel-abi-version}-oem
-Description: OEM Linux kernel headers
- This package will always depend on the latest OEM kernel headers
+Replaces: linux-headers-generic-hwe-22.04-edge, linux-headers-oem-22.04a-kfocus
+Conflicts: linux-headers-generic-hwe-22.04-edge, linux-headers-oem-22.04a-kfocus
+Depends: ${misc:Depends}, linux-headers-${kernel-abi-version}-generic
+Description: Generic Linux kernel headers
+ This package will always depend on the latest generic kernel headers
  available.
 
-Package: linux-image-oem-22.04a-kfocus
-Architecture: amd64
+Package: linux-image-generic-hwe-22.04-edge-kfocus
+Architecture: amd64 armhf arm64 powerpc ppc64el s390x
 Section: kernel
 Provides: ${dkms:v4l2loopback-modules} ${dkms:zfs-modules} ${dkms:virtualbox-guest-modules} ${dkms:wireguard-linux-compat-modules}
-Replaces: linux-image-oem-22.04a
-Conflicts: linux-image-oem-22.04a, linux-modules-nvidia-515-oem-22.04a (<< 5.17.0-1021.22)
-Depends: ${misc:Depends}, linux-image-${kernel-abi-version}-oem, linux-firmware, intel-microcode [amd64], amd64-microcode [amd64]
+Replaces: linux-image-generic-hwe-22.04-edge, linux-image-oem-22.04a-kfocus
+Conflicts: linux-image-generic-hwe-22.04-edge, linux-image-oem-22.04a-kfocus
+Depends: ${misc:Depends}, linux-image-${kernel-abi-version}-generic, linux-modules-extra-${kernel-abi-version}-generic [amd64 arm64 powerpc ppc64el s390x], linux-firmware [amd64 armhf arm64 ppc64el], intel-microcode [amd64], amd64-microcode [amd64]
 Recommends: thermald [amd64]
-Description: OEM Linux kernel image
- This package will always depend on the latest OEM kernel image
+Description: Generic Linux kernel image
+ This package will always depend on the latest generic kernel image
  available.
 
-Package: linux-tools-oem-22.04a-kfocus
-Architecture: amd64
+Package: linux-tools-generic-hwe-22.04-edge-kfocus
+Architecture: amd64 armhf arm64 powerpc ppc64el s390x
 Section: kernel
 Provides: linux-tools
-Replaces: linux-tools-oem-22.04a
-Conflicts: linux-tools-oem-22.04a
-Depends: ${misc:Depends}, linux-tools-${kernel-abi-version}-oem
-Description: OEM Linux kernel tools
- This package will always depend on the latest OEM kernel tools
+Replaces: linux-tools-generic-hwe-22.04-edge, linux-tools-oem-22.04a-kfocus
+Conflicts: linux-tools-generic-hwe-22.04-edge, linux-tools-oem-22.04a-kfocus
+Depends: ${misc:Depends}, linux-tools-${kernel-abi-version}-generic
+Description: Generic Linux kernel tools
+ This package will always depend on the latest generic kernel tools
  available.
 
-Package: linux-oem-22.04a-kfocus
+Package: linux-cloud-tools-generic-hwe-22.04-edge-kfocus
 Architecture: amd64
+Section: kernel
+Provides: linux-cloud-tools
+Replaces: linux-cloud-tools-generic-hwe-22.04-edge
+Conflicts: linux-cloud-tools-generic-hwe-22.04-edge
+Depends: ${misc:Depends}, linux-cloud-tools-${kernel-abi-version}-generic
+Description: Generic Linux kernel cloud tools
+ This package will always depend on the latest generic kernel cloud tools
+ available.
+
+Package: linux-generic-hwe-22.04-edge-kfocus
+Architecture: amd64 armhf arm64 powerpc ppc64el s390x
 Section: kernel
 Provides:  
-Replaces: linux-oem-22.04a
-Conflicts: linux-oem-22.04a
-Depends: ${misc:Depends}, linux-image-oem-22.04a-kfocus (= ${binary:Version}), linux-headers-oem-22.04a-kfocus (= ${binary:Version})
-Description: Complete OEM Linux kernel and headers
- This package will always depend on the latest complete OEM Linux kernel
+Replaces: linux-generic-hwe-22.04-edge, linux-oem-22.04a-kfocus
+Conflicts: linux-generic-hwe-22.04-edge, linux-oem-22.04a-kfocus
+Depends: ${misc:Depends}, linux-image-generic-hwe-22.04-edge-kfocus (= ${binary:Version}), linux-headers-generic-hwe-22.04-edge-kfocus (= ${binary:Version})
+Description: Complete Generic Linux kernel and headers
+ This package will always depend on the latest complete generic Linux kernel
  and headers.
 
 
-Package: linux-modules-ipu6-oem-22.04
+
+Package: linux-modules-ipu6-generic-hwe-22.04
 Architecture: amd64
 Section: kernel
 Provides: ${dkms:ipu6-modules}
 Depends:
  ${misc:Depends},
- linux-modules-ipu6-${kernel-abi-version}-oem,
-Description: Extra drivers for ipu6 for the oem flavour
- Install extra signed ipu6 modules compatible with the oem flavour.
+ linux-modules-ipu6-${kernel-abi-version}-generic,
+Description: Extra drivers for ipu6 for the generic flavour
+ Install extra signed ipu6 modules compatible with the generic flavour.
 
 
-Package: linux-modules-ipu6-oem-22.04a
+Package: linux-modules-ipu6-generic-hwe-22.04-edge
 Architecture: amd64
 Section: kernel
 Provides: ${dkms:ipu6-modules}
 Depends:
  ${misc:Depends},
- linux-modules-ipu6-${kernel-abi-version}-oem,
-Description: Extra drivers for ipu6 for the oem flavour
- Install extra signed ipu6 modules compatible with the oem flavour.
+ linux-modules-ipu6-${kernel-abi-version}-generic,
+Description: Extra drivers for ipu6 for the generic flavour
+ Install extra signed ipu6 modules compatible with the generic flavour.
 
 
-Package: linux-modules-ivsc-oem-22.04
+Package: linux-modules-ivsc-generic-hwe-22.04
 Architecture: amd64
 Section: kernel
 Provides: ${dkms:ivsc-modules}
 Depends:
  ${misc:Depends},
- linux-modules-ivsc-${kernel-abi-version}-oem,
-Description: Extra drivers for ivsc for the oem flavour
- Install extra signed ivsc modules compatible with the oem flavour.
+ linux-modules-ivsc-${kernel-abi-version}-generic,
+Description: Extra drivers for ivsc for the generic flavour
+ Install extra signed ivsc modules compatible with the generic flavour.
 
 
-Package: linux-modules-ivsc-oem-22.04a
+Package: linux-modules-ivsc-generic-hwe-22.04-edge
 Architecture: amd64
 Section: kernel
 Provides: ${dkms:ivsc-modules}
 Depends:
  ${misc:Depends},
- linux-modules-ivsc-${kernel-abi-version}-oem,
-Description: Extra drivers for ivsc for the oem flavour
- Install extra signed ivsc modules compatible with the oem flavour.
+ linux-modules-ivsc-${kernel-abi-version}-generic,
+Description: Extra drivers for ivsc for the generic flavour
+ Install extra signed ivsc modules compatible with the generic flavour.
 
 
-Package: linux-modules-iwlwifi-oem-22.04
+Package: linux-modules-iwlwifi-generic-hwe-22.04
 Architecture: amd64
 Section: kernel
 Provides: ${dkms:iwlwifi-modules}
 Depends:
  ${misc:Depends},
- linux-modules-iwlwifi-${kernel-abi-version}-oem,
-Description: Extra drivers for iwlwifi for the oem flavour
- Install extra signed iwlwifi modules compatible with the oem flavour.
+ linux-modules-iwlwifi-${kernel-abi-version}-generic,
+Description: Extra drivers for iwlwifi for the generic flavour
+ Install extra signed iwlwifi modules compatible with the generic flavour.
 
 
-Package: linux-modules-iwlwifi-oem-22.04a
+Package: linux-modules-iwlwifi-generic-hwe-22.04-edge
 Architecture: amd64
 Section: kernel
 Provides: ${dkms:iwlwifi-modules}
 Depends:
  ${misc:Depends},
- linux-modules-iwlwifi-${kernel-abi-version}-oem,
-Description: Extra drivers for iwlwifi for the oem flavour
- Install extra signed iwlwifi modules compatible with the oem flavour.
+ linux-modules-iwlwifi-${kernel-abi-version}-generic,
+Description: Extra drivers for iwlwifi for the generic flavour
+ Install extra signed iwlwifi modules compatible with the generic flavour.
 

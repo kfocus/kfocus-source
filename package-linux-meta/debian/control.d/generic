@@ -1,0 +1,55 @@
+Package: linux-headers-generic${variant:suffix}-kfocus
+Architecture: amd64 armhf arm64 powerpc ppc64el s390x
+Section: kernel
+Replaces: linux-headers-generic${variant:suffix}, linux-headers-oem-22.04a-kfocus
+Conflicts: linux-headers-generic${variant:suffix}, linux-headers-oem-22.04a-kfocus
+Depends: ${misc:Depends}, linux-headers-${kernel-abi-version}-generic
+Description: Generic Linux kernel headers
+ This package will always depend on the latest generic kernel headers
+ available.
+
+Package: linux-image-generic${variant:suffix}-kfocus
+Architecture: amd64 armhf arm64 powerpc ppc64el s390x
+Section: kernel
+Provides: ${dkms:v4l2loopback-modules} ${dkms:zfs-modules} ${dkms:virtualbox-guest-modules} ${dkms:wireguard-linux-compat-modules}
+Replaces: linux-image-generic${variant:suffix}, linux-image-oem-22.04a-kfocus
+Conflicts: linux-image-generic${variant:suffix}, linux-image-oem-22.04a-kfocus
+Depends: ${misc:Depends}, linux-image-${kernel-abi-version}-generic, linux-modules-extra-${kernel-abi-version}-generic [amd64 arm64 powerpc ppc64el s390x], linux-firmware [amd64 armhf arm64 ppc64el], intel-microcode [amd64], amd64-microcode [amd64]
+Recommends: thermald [amd64]
+Description: Generic Linux kernel image
+ This package will always depend on the latest generic kernel image
+ available.
+
+Package: linux-tools-generic${variant:suffix}-kfocus
+Architecture: amd64 armhf arm64 powerpc ppc64el s390x
+Section: kernel
+Provides: linux-tools
+Replaces: linux-tools-generic${variant:suffix}, linux-tools-oem-22.04a-kfocus
+Conflicts: linux-tools-generic${variant:suffix}, linux-tools-oem-22.04a-kfocus
+Depends: ${misc:Depends}, linux-tools-${kernel-abi-version}-generic
+Description: Generic Linux kernel tools
+ This package will always depend on the latest generic kernel tools
+ available.
+
+Package: linux-cloud-tools-generic${variant:suffix}-kfocus
+Architecture: amd64
+Section: kernel
+Provides: linux-cloud-tools
+Replaces: linux-cloud-tools-generic${variant:suffix}
+Conflicts: linux-cloud-tools-generic${variant:suffix}
+Depends: ${misc:Depends}, linux-cloud-tools-${kernel-abi-version}-generic
+Description: Generic Linux kernel cloud tools
+ This package will always depend on the latest generic kernel cloud tools
+ available.
+
+Package: linux-generic${variant:suffix}-kfocus
+Architecture: amd64 armhf arm64 powerpc ppc64el s390x
+Section: kernel
+Provides: ${test:provides-full-generic} ${test:provides-full-preferred}
+Replaces: linux-generic${variant:suffix}, linux-oem-22.04a-kfocus
+Conflicts: linux-generic${variant:suffix}, linux-oem-22.04a-kfocus
+Depends: ${misc:Depends}, linux-image-generic${variant:suffix}-kfocus (= ${binary:Version}), linux-headers-generic${variant:suffix}-kfocus (= ${binary:Version})
+Description: Complete Generic Linux kernel and headers
+ This package will always depend on the latest complete generic Linux kernel
+ and headers.
+

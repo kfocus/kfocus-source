@@ -1,10 +1,10 @@
 
-Package: linux-modules-ivsc-oem${variant:suffix}
+Package: linux-modules-ivsc-generic${variant:suffix}
 Architecture: amd64
 Section: kernel
 Provides: ${dkms:ivsc-modules}
 Depends:
  ${misc:Depends},
- linux-modules-ivsc-${kernel-abi-version}-oem,
-Description: Extra drivers for ivsc for the oem flavour
- Install extra signed ivsc modules compatible with the oem flavour.
+ linux-modules-ivsc-${kernel-abi-version}-generic,
+Description: Extra drivers for ivsc for the generic flavour
+ Install extra signed ivsc modules compatible with the generic flavour.
