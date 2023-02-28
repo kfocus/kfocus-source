@@ -185,6 +185,7 @@ _cm2CalcModelCodeFn () {
     PCX0DX*)          _code='m2g1';;
     P95_96_97Ex,Rx*)  _code='m1g1';;
     NV4XMB,ME,MZ*)    _code='xeg1';;
+    NV4xPZ*)          _code='xeg2';;
     NUC11PAHi*)       _code='nxg1';;
     NUC12WSHi*)       _code='nxg2';;
     other|*)          _code='other';;
@@ -468,6 +469,7 @@ _cm2ModelTable=(
   'm2g1|default|M2 GEN 1|y|y'
   'm1g1|default|M1|y|y'
   'xeg1|generic|XE GEN 1|n|n'
+  'xeg2|xeg2|XE GEN 2|n|n'
   'nxg1|nxg1|NX GEN 1|n|n'
   'nxg2|nxg1|NX GEN 2|n|n'
   'other|other|other|n|n'
