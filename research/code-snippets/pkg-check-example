@@ -1,0 +1,32 @@
+#!/bin/bash
+
+_pkgListStr="$(apt list)";
+_checkPkgExistsFn () {
+  declare _pkg_str;
+
+  _pkg_str="${1:-}";
+  if grep "${_pkg_str}" <<< "${_pkgListStr}"; then
+    echo "Expected ${_pkg_str} exists";
+    echo;
+    return 0;
+  else
+    echo "ERROR! NOT FOUND! ${_pkg_str}";
+    echo;
+    return 1;
+  fi
+}
+
+echo 'Package:';
+_checkPkgExistsFn 'linux-headers-oem-22.04-kfocus';
+echo 'Depends:';
+_checkPkgExistsFn 'linux-headers-generic-hwe-22.04-kfocus';
+
+echo 'Package:'; _checkPkgExistsFn 'linux-image-oem-22.04-kfocus';
+echo 'Depends:'; _checkPkgExistsFn 'linux-image-generic-hwe-22.04-kfocus';
+
+echo 'Package:'; _checkPkgExistsFn 'linux-tools-oem-22.04-kfocus';
+echo 'Depends:'; _checkPkgExistsFn 'linux-tools-generic-hwe-22.04-kfocus';
+
+echo 'Package:'; _checkPkgExistsFn 'linux-oem-22.04-kfocus';
+echo 'Depends:'; _checkPkgExistsFn 'linux-generic-hwe-22.04-kfocus';
+

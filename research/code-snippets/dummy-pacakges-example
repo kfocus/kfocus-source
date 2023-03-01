@@ -1,0 +1,35 @@
+# This is an example of dummy packages that can be created to transition to
+#   new packages. This file could (but wasn't) be dropped in the 
+#   debian/control.d/transitions to create packages that would migrate users
+#   to a new default kernel package. To do this, one cannot have the packages
+#   conflict and replace, as has been done in the past. In the future, this is
+#   probably the preferred technique instead.
+#
+Package: linux-headers-oem-22.04a-kfocus
+Architecture: amd64
+Section: oldlibs
+Depends:  linux-headers-generic-hwe-22.04-kfocus
+Description: Generic Linux kernel headers (dummy transitional package)
+ Transitional package for kfocus.
+
+Package: linux-image-oem-22.04a-kfocus
+Architecture: amd64
+Section: oldlibs
+Depends: linux-image-generic-hwe-22.04-kfocus
+Description: Generic Linux kernel image (dummy transitional package)
+ Transitional package for kfocus.
+
+Package: linux-tools-oem-22.04a-kfocus
+Architecture: amd64
+Section: oldlibs
+Depends: linux-tools-generic-hwe-22.04-kfocus
+Description: Generic Linux kernel tools (dummy transitional package)
+ Transitional package for kfocus.
+
+Package: linux-oem-22.04a-kfocus
+Architecture: amd64
+Section: oldlibs
+Depends: linux-generic-hwe-22.04-kfocus
+Description: Complete generic Linux kernel and headers (dummy transitional package)
+ Transitional package for kfocus.
+
