@@ -9,13 +9,13 @@
 # Run By  : Users
 # Spec    : 744
 #
-set -u;
+set -u
 
 ## BEGIN _printHelpFn {
 # Purpose  : Prints help to STDERR
 #
-_printHelpFn () {
-  1>&2 cat <<_EOT
+_printHelpFn() {
+  cat 1>&2 <<_EOT
 
 Usage: ${_baseName} [-f] [-h]
    -f: Force run even if run before
@@ -28,47 +28,48 @@ _EOT
 ## BEGIN _importCommonFn {
 # Run ls-common-symbols.sh to list in-use symbols
 #
-_importCommonFn () {
-  declare _lib_file;
-  _lib_file="${_baseDir}/lib/common.2.source";
+_importCommonFn() {
+  declare _lib_file
+  _lib_file="${_baseDir}/lib/common.2.source"
   if [ -r "${_lib_file}" ]; then
     # shellcheck source=../lib/common.2.source
-    source "${_lib_file}" || exit 201;
+    source "${_lib_file}" || exit 201
   else
-    1>&2 echo "${_baseName}: ABORT - Cannot source lib |${_lib_file}|";
-    exit 201;
+    echo 1>&2 "${_baseName}: ABORT - Cannot source lib |${_lib_file}|"
+    exit 201
   fi
 }
 ## . END _importCommonFn }
 
 ## BEGIN _runXtermCmdFn {
- # Purpose:
- #   Run and return script in xterm
-_runXtermCmdFn () {
-  declare _cmd_str _tmp_file _exit_int;
+# Purpose:
+#   Run and return script in xterm
+_runXtermCmdFn() {
+  declare _cmd_str _tmp_file _exit_int
 
-  _tmp_file="$(_cm2MkTmpFileFn)";
+  _tmp_file="$(_cm2MkTmpFileFn)"
   if [ ! -w "${_tmp_file}" ]; then return 230; fi
 
-  _cmd_str="$*;"' echo "$?" > '"${_tmp_file}";
+  _cmd_str="$*;"' echo "$?" > '"${_tmp_file}"
   xterm -fa 'Monospace' -fs 12 -b 24 \
     -geometry 90x32 -T 'FocusRx' \
     -xrm 'xterm*iconHint: /usr/share/pixmaps/kfocus-bug-rx' \
-    -e "${_cmd_str}";
+    -e "${_cmd_str}"
 
-  _exit_int="$(cat "${_tmp_file}")";
+  _exit_int="$(cat "${_tmp_file}")"
 
   # Not worth the disruption...
   # "${_escExe}" "${_cm2RmExe}" "${_tmp_file}" || true;
-  return "${_exit_int:-1}";
+  return "${_exit_int:-1}"
 }
 ## . END _runXtermCmdFn }
 
 ## BEGIN _confirmInternetFn {
-_confirmInternetFn () {
-  declare _prompt_msg _title;
+_confirmInternetFn() {
+  declare _prompt_msg _title
 
-  _prompt_msg="$(cat << _EOH01
+  _prompt_msg="$(
+    cat <<_EOH01
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}Please Connect to Internet</h3>
 ${_cm2HtmPStr}FocusRx has detected that this system needs to be <br>
@@ -78,18 +79,19 @@ ${_cm2HtmPStr} Please click on the <b>Networks</b> icon in the System Tray <br>
 to connect, then click <b>OK</b>.<br></p>
 ${_cm2HtmEndStr}
 _EOH01
-  )";
+  )"
 
-  _title='Connect to Internet';
-  for (( _count = 2; _count <= 4; _count++ )); do
-    ping -W 2 -c 1 "${_pingHost1Str}" && return;
-    ping -W 2 -c 1 "${_pingHost2Str}" && return;
+  _title='Connect to Internet'
+  for ((_count = 2; _count <= 4; _count++)); do
+    ping -W 2 -c 1 "${_pingHost1Str}" && return
+    ping -W 2 -c 1 "${_pingHost2Str}" && return
 
-    _cm2PromptUserFn "${_prompt_msg}" "${_title}";
+    _cm2PromptUserFn "${_prompt_msg}" "${_title}"
 
     if [ "${_count}" = 4 ]; then break; fi
-    _title="Retry ${_count}";
-    _prompt_msg="$(cat << _EOH02
+    _title="Retry ${_count}"
+    _prompt_msg="$(
+      cat <<_EOH02
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}Try Connecting Again</h3>
 ${_cm2HtmPStr}This system still does not appear connected to the <br>
@@ -99,10 +101,11 @@ ${_cm2HtmPStr}Please click on the <b>Networks</b> icon in the System Tray <br>
 to try again, and then click <b>OK</b>.<br></p>
 ${_cm2HtmEndStr}
 _EOH02
-   )";
+    )"
   done
 
-  _prompt_msg="$(cat << _EOH03
+  _prompt_msg="$(
+    cat <<_EOH03
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}Could Not Connect to Internet</h3>
 ${_cm2HtmPStr}While this system should be configured for the hardware, <br>
@@ -114,11 +117,11 @@ ${_cm2HtmPStr}Until this configuration is complete, hardware support, <br>
 and therefore system stability, may be limited.<br></p>
 ${_cm2HtmEndStr}
 _EOH03
-  )";
+  )"
 
-  _title='Cannot Connect';
-  _cm2PromptUserFn "${_prompt_msg}" "${_title}";
-  return 1;
+  _title='Cannot Connect'
+  _cm2PromptUserFn "${_prompt_msg}" "${_title}"
+  return 1
 }
 ## . END _confirmInternetFn }
 
@@ -126,19 +129,20 @@ _EOH03
 # _cm2PromptUserFn \
 #   'Restart the system for hardware mods to take effect' "${_baseName}" 'p';
 #
-_chkHwConfigFn () {
-  declare _win_title _reason_str _prompt_msg _ans_str _output_str;
+_chkHwConfigFn() {
+  declare _win_title _reason_str _prompt_msg _ans_str _output_str
 
-  _win_title='Configure for Hardware';
+  _win_title='Configure for Hardware'
   # Check if reconfig is required
-  _reason_str="$("${_escExe}" "${_focusRxSetExe}" 'chk-hw-config')";
+  _reason_str="$("${_escExe}" "${_focusRxSetExe}" 'chk-hw-config')"
   if [ -z "${_reason_str}" ]; then
     # Always skip if not in force mode
     if [ "${_doForce}" = 'n' ]; then
-      return 0;
+      return 0
     # Provide user *option* to reconfig in force mode
     else
-      _prompt_msg="$(cat << _EOH04
+      _prompt_msg="$(
+        cat <<_EOH04
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}SKIP ${_win_title}?</h3>
 ${_cm2HtmPStr}<b>The hardware signature already matches expected.</b><br>
@@ -148,12 +152,12 @@ time and is usually not needed.</p>
 ${_cm2HtmPStr}<b>SKIP reconfigure to hardware?</b><br></p>
 ${_cm2HtmEndStr}
 _EOH04
-      )";
+      )"
       _ans_str="$(
         _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}" 'a'
-      )";
+      )"
       if [ "${_ans_str}" = 'n' ]; then
-        _reason_str="$("${_escExe}" "${_focusRxSetExe}" 'force-hw-config')";
+        _reason_str="$("${_escExe}" "${_focusRxSetExe}" 'force-hw-config')"
       fi
     fi
   fi
@@ -161,13 +165,14 @@ _EOH04
 
   # Bail if internet connection appears hopeless
   if ! _confirmInternetFn; then return; fi
-  _prompt_msg="${_win_title}: This only needs to be done once";
-  _reason_str="$(tr ' ' '_' <<< "${_reason_str}")";
+  _prompt_msg="${_win_title}: This only needs to be done once"
+  _reason_str="$(tr ' ' '_' <<<"${_reason_str}")"
   if _output_str="$(
     _cm2RunLongCmdFn "${_prompt_msg}" "${_focusRxSetExe}" \
       'fix-hw-config' "${_reason_str}"
   )"; then
-    _prompt_msg="$(cat << _EOH05
+    _prompt_msg="$(
+      cat <<_EOH05
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}Reboot Now?</h3>
 ${_cm2HtmPStr}Configuration for the hardware is complete.</p>
@@ -175,27 +180,29 @@ ${_cm2HtmPStr}<b>Click Yes to reboot now </b> to ensure optimal<br>
 hardware support and stability.<br></p>
 ${_cm2HtmEndStr}
 _EOH05
-    )";
-    _ans_str="$(_cm2PromptUserFn \
-      "${_prompt_msg}" "${_rootTitle}: Reboot Now" 'w'
-    )";
+    )"
+    _ans_str="$(
+      _cm2PromptUserFn \
+        "${_prompt_msg}" "${_rootTitle}: Reboot Now" 'w'
+    )"
     if [ "${_ans_str}" = 'y' ]; then reboot; fi
   else
-    _cm2PromptUserFn "Trouble with hardware config:\n ${_output_str}";
+    _cm2PromptUserFn "Trouble with hardware config:\n ${_output_str}"
   fi
 }
 ## . END _chkHwConfigFn }
 
 ## BEGIN _announceStartFn {
- # Purpose:
- #   Announce the purpose of FocusRx and what it does when forced
-_announceStartFn () {
-  declare _win_title _prompt_msg _ans_str;
+# Purpose:
+#   Announce the purpose of FocusRx and what it does when forced
+_announceStartFn() {
+  declare _win_title _prompt_msg _ans_str
 
   if [ "${_doForce}" = 'n' ]; then return; fi
 
-  _win_title='System Diagnostics';
-  _prompt_msg="$( cat <<_EOW01
+  _win_title='System Diagnostics'
+  _prompt_msg="$(
+    cat <<_EOW01
 ${_cm2HtmBeginStr}${_cm2HtmH3Str}SYSTEM DIAGNOSTICS</h3>
 <p>Doc: <a style="color:#1d99f3"
   href="https://kfocus.org/wf/tools#focusrx"
@@ -206,54 +213,55 @@ checks that can identify and fix many common system<br>
 issues.</p>
 
 ${_cm2HtmPStr}These checks are generally safe; however, we recommend<br>
-you backup your data before <i>any</i> system maintenance.<br>
+you back up your data before <i>any</i> system maintenance.<br>
 You may always return to this utility later using <code>Start<br>
 Menu &gt; Kubuntu Focus &gt; FocusRx</code>.</p>
 
 ${_cm2HtmPStr}<b>Continue with FocusRx System Diagnostics?</b><br></p>
 ${_cm2HtmEndStr}
 _EOW01
-  )";
+  )"
 
   _ans_str="$(
     _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}" 'a'
-  )";
+  )"
 
   if [ "${_ans_str}" = 'n' ]; then exit 0; fi
 }
 ## . END _announceStartFn }
 
 ## BEGIN _chkUpdateBiosFn {
-_chkUpdateBiosFn () {
+_chkUpdateBiosFn() {
   declare _drop_file _view_count _win_title _cmd_list _check_msg \
-    _ask_msg _do_run_btool;
+    _ask_msg _do_run_btool
 
-  _cm2SetMsgFn 'Check BIOS version, run-tool if needed';
-  _win_title='BIOS Update';
+  _cm2SetMsgFn 'Check BIOS version, run-tool if needed'
+  _win_title='BIOS Update'
 
-  _drop_file="${HOME}/.config/kfocus-bios-count";
-  _view_count=0;
+  _drop_file="${HOME}/.config/kfocus-bios-count"
+  _view_count=0
   if [ -f "${_drop_file}" ]; then
-    _view_count="$(_cm2EchoIntFn "$(cat "${_drop_file}")")";
+    _view_count="$(_cm2EchoIntFn "$(cat "${_drop_file}")")"
   fi
 
   if [ "${_doForce}" = 'y' ]; then
-    _view_count=0;
-  elif (( _view_count > 5 )); then
-    _cm2SucStrFn 'View count limit reached.';
-    _cm2SucFn;
-    return 0;
+    _view_count=0
+  elif ((_view_count > 5)); then
+    _cm2SucStrFn 'View count limit reached.'
+    _cm2SucFn
+    return 0
   fi
-  _cmd_list=("${_escExe}" "${_focusRxSetExe}" 'chk-bios');
+  _cmd_list=("${_escExe}" "${_focusRxSetExe}" 'chk-bios')
 
   # Skip if check succeeds (no bios update available)
   if _check_msg="$("${_cmd_list[@]}")"; then
-    _cm2SucStrFn "${_check_msg}";
-    _cm2SucFn;
-    return 0;
+    _cm2SucStrFn "${_check_msg}"
+    _cm2SucFn
+    return 0
   fi
 
-  _ask_msg="$(cat <<_EOT01
+  _ask_msg="$(
+    cat <<_EOT01
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}Update the BIOS</h3>
 
@@ -265,30 +273,32 @@ about 10 minutes and an empty, 8+ GB USB drive.</p>
 
 ${_cm2HtmPStr}<b>Run the BIOS-update wizard now?</b></p>${_cm2HtmEndStr}
 _EOT01
-  )";
+  )"
 
   _do_run_btool="$(
     _cm2PromptUserFn "${_ask_msg}" "${_rootTitle}: ${_win_title}" 'a'
   )"
 
-  (( _view_count++ ));
-  echo "${_view_count}" > "${_drop_file}" || true;
+  ((_view_count++))
+  echo "${_view_count}" >"${_drop_file}" || true
 
   if [ "${_do_run_btool}" = 'n' ]; then
-    _cm2SucStrFn "${_check_msg}";
-    _cm2SucStrFn 'Skipped on user request';
-    _cm2SucFn;
-    return 0;
- fi
-
-  _cmd_list=();
-  if [ "${_cm2IsTty}" = 'n' ]; then
-    _cmd_list+=( '_runXtermCmdFn' );
+    _cm2SucStrFn "${_check_msg}"
+    _cm2SucStrFn 'Skipped on user request'
+    _cm2SucFn
+    return 0
   fi
 
-  _cmd_list+=( "${_escExe}" "${_focusRxBtoolExe}" );
+  _cmd_list=()
+  if [ "${_cm2IsTty}" = 'n' ]; then
+    _cmd_list+=('_runXtermCmdFn')
+  fi
+
+  _cmd_list+=("${_escExe}" "${_focusRxBtoolExe}")
   if "${_cmd_list[@]}"; then
-    _cm2SucFn; else _cm2WarnFn;
+    _cm2SucFn
+  else
+    _cm2WarnFn
   fi
 }
 ## . END _chkUpdateBiosFn }
@@ -298,17 +308,18 @@ _EOT01
 # Offer to delete xorg.conf file.
 # User may opt out of future warnings.
 #
-_chkXorgConfigFn () {
+_chkXorgConfigFn() {
   declare _win_title _xorg_file _drop_file _explain_str \
-    _warn_str _confirm_str _do_remove_file _cmd_list  \
-    _do_show_again _prompt_msg;
+    _warn_str _confirm_str _do_remove_file _cmd_list \
+    _do_show_again _prompt_msg
 
   _cm2SetMsgFn 'Check for xorg.conf'
-  _drop_file="${HOME}/.config/kfocus-no-xorg-warn";
-  _xorg_file='/etc/X11/xorg.conf';
-  _win_title='xorg.conf FILE';
+  _drop_file="${HOME}/.config/kfocus-no-xorg-warn"
+  _xorg_file='/etc/X11/xorg.conf'
+  _win_title='xorg.conf FILE'
 
-  _explain_str="$(cat <<_EOW02
+  _explain_str="$(
+    cat <<_EOW02
 ${_cm2HtmPStr}While an <code>xorg.conf</code> file may be beneficial in some<br>
 cases, it is almost never desirable on a laptop because it<br>
 can disable the primary display panel. Instead, one should<br>
@@ -316,9 +327,10 @@ rely on System Settings &gt; Displays to manipulate displays.<br>
 Advanced users may add files to the drop directory,<br>
 <code>/usr/share/X11/xorg.conf.d</code>.</p>
 _EOW02
-  )";
+  )"
 
-  _warn_str="$(cat <<_EOW03
+  _warn_str="$(
+    cat <<_EOW03
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}xorg.conf FILE FOUND</h3>
 
@@ -329,9 +341,10 @@ ${_explain_str}
 ${_cm2HtmPStr}<b>Delete xorg.conf file NOW?</b></p>
 ${_cm2HtmEndStr}
 _EOW03
-  )";
+  )"
 
-  _confirm_str="$(cat <<_EOW04
+  _confirm_str="$(
+    cat <<_EOW04
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}X11 CONFIG OK</h3>
 
@@ -342,10 +355,10 @@ ${_explain_str}
 
 ${_cm2HtmPStr}<b>Click OK to continue.</b></p>${_cm2HtmEndStr}
 _EOW04
-  )";
+  )"
 
   if [ "${_doForce}" = 'y' ]; then
-    "${_cm2RmExe}" -f "${_drop_file}";
+    "${_cm2RmExe}" -f "${_drop_file}"
   fi
 
   if [ -f "${_xorg_file}" ]; then
@@ -353,22 +366,23 @@ _EOW04
     if ! [ -f "${_drop_file}" ]; then
       _do_remove_file="$(
         _cm2PromptUserFn "${_warn_str}" "${_rootTitle}: ${_win_title}" 'a'
-      )";
+      )"
 
       if [ "${_do_remove_file}" = 'y' ]; then
-        _cmd_list=( "${_escExe}" );
-        _cmd_list+=( "${_cm2RmExe}" "${_xorg_file}" );
-        "${_cmd_list[@]}";
+        _cmd_list=("${_escExe}")
+        _cmd_list+=("${_cm2RmExe}" "${_xorg_file}")
+        "${_cmd_list[@]}"
 
         case "$?" in
-          0   ) _prompt_msg='xorg.conf has been deleted'  ;;
-          127 ) _prompt_msg='xorg.conf deletion was cancelled' ;;
-          *   ) _prompt_msg='xorg.conf was NOT deleted'   ;;
+        0) _prompt_msg='xorg.conf has been deleted' ;;
+        127) _prompt_msg='xorg.conf deletion was cancelled' ;;
+        *) _prompt_msg='xorg.conf was NOT deleted' ;;
         esac
-        _win_title='xorg.conf';
-        _cm2PromptUserFn "FocusRx: ${_prompt_msg}" "${_rootTitle}: ${_win_title}";
+        _win_title='xorg.conf'
+        _cm2PromptUserFn "FocusRx: ${_prompt_msg}" "${_rootTitle}: ${_win_title}"
       else
-        _prompt_msg="$( cat <<_EOW05
+        _prompt_msg="$(
+          cat <<_EOW05
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}SHOW PROMPT AGAIN?</h3>
 
@@ -376,45 +390,45 @@ ${_cm2HtmPStr}The xorg.conf file was NOT deleted. Would you like<br>
 to show this warning again in the future?<br></p>
 ${_cm2HtmEndStr}
 _EOW05
-        )";
-        _win_title='Show Prompt?';
+        )"
+        _win_title='Show Prompt?'
         _do_show_again="$(
           _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}" 'a'
-        )";
+        )"
         if [ "${_do_show_again}" = 'y' ]; then
-          "${_cm2RmExe}" -f "${_drop_file}";
+          "${_cm2RmExe}" -f "${_drop_file}"
         else
-          touch "${_drop_file}";
+          touch "${_drop_file}"
         fi
       fi
     else
-      _cm2EchoFn 'User previously opted-out of warning';
+      _cm2EchoFn 'User previously opted-out of warning'
     fi
   else
     if [ "${_doForce}" = 'y' ]; then
-      _win_title='X11 Config';
-      _cm2PromptUserFn "${_confirm_str}" "${_rootTitle}: ${_win_title}" 'p';
+      _win_title='X11 Config'
+      _cm2PromptUserFn "${_confirm_str}" "${_rootTitle}: ${_win_title}" 'p'
     fi
   fi
-  _cm2SucFn;
+  _cm2SucFn
 }
 ## . END _chkXorgConfigFn }
 
 ## BEGIN _runKernelCleanFn {
-_runKernelCleanFn () {
-  declare _cmd_list;
-  _cm2SetMsgFn 'Run Kernel Cleaner';
+_runKernelCleanFn() {
+  declare _cmd_list
+  _cm2SetMsgFn 'Run Kernel Cleaner'
   if [ -e "${_focusRxKcleanExe}" ]; then
-    _cmd_list=( "${_focusRxKcleanExe}" );
+    _cmd_list=("${_focusRxKcleanExe}")
     if [ "${_doForce}" = 'y' ]; then
-      _cmd_list+=( '-f' );
+      _cmd_list+=('-f')
     fi
     if "${_cmd_list[@]}"; then
-      _cm2SucFn;
-      return 0;
+      _cm2SucFn
+      return 0
     fi
   fi
-  _cm2WarnFn;
+  _cm2WarnFn
 }
 ## . END _runKernelCleanFn }
 
@@ -438,51 +452,51 @@ _runKernelCleanFn () {
 # Arguments : none
 # Returns   : none
 #
-_runDropScriptsFn () {
+_runDropScriptsFn() {
   declare _last_exe_vers _script_list _loop_file _loop_check_str _bit_list \
     _inr_list _loop_vers_str _loop_name _loop_ext _loop_arg_list \
-    _prompt_msg _ans_str _cmd_list _exit_int _do_reboot;
+    _prompt_msg _ans_str _cmd_list _exit_int _do_reboot
 
-  _cm2SetMsgFn 'Run Drop Scripts';
+  _cm2SetMsgFn 'Run Drop Scripts'
   if ! cd "${_focusRxDropDir}"; then
-    _cm2WarnStrFn 'Could not cd to drop directory. Drop-scripts skipped.';
-    _cm2WarnFn;
-    return 1;
+    _cm2WarnStrFn 'Could not cd to drop directory. Drop-scripts skipped.'
+    _cm2WarnFn
+    return 1
   fi
 
   # Build list of scripts
   # See https://www.baeldung.com/linux/reading-output-into-array
   IFS=$'\n' read -r -d '' -a _script_list < <(
-   find ./ -mindepth 1 -maxdepth 1 -type f \
-     | grep -P '^./(\d+[.-]){3}\d_[^_]+.(sh|source)$' \
-     | sort -V;
-    printf '\0';
-  );
+    find ./ -mindepth 1 -maxdepth 1 -type f |
+      grep -P '^./(\d+[.-]){3}\d_[^_]+.(sh|source)$' |
+      sort -V
+    printf '\0'
+  )
 
   ## Begin: Consider each script {
-  _do_reboot='n';
-  _last_exe_vers='';
+  _do_reboot='n'
+  _last_exe_vers=''
   for _loop_file in "${_script_list[@]}"; do
     # Extract version number and name
     # shellcheck disable=SC2001
-    IFS='_' read -r -a _bit_list <<<"${_loop_file}";
+    IFS='_' read -r -a _bit_list <<<"${_loop_file}"
     # Strip leading period
-    _loop_vers_str="${_bit_list[0]/#\.\/}";
-    IFS='.' read -r -a _inr_list <<<"${_bit_list[1]}";
-    _loop_name="${_inr_list[0]}";
+    _loop_vers_str="${_bit_list[0]/#\.\//}"
+    IFS='.' read -r -a _inr_list <<<"${_bit_list[1]}"
+    _loop_name="${_inr_list[0]}"
     _loop_ext="${_inr_list[1]}"
 
     # Skip if not executable
     if [ "${_loop_ext}" = 'sh' ]; then
       if [ ! -x "${_loop_file}" ]; then
-        _cm2WarnStrFn "Script ${_loop_name} not executable. Skipping.";
-        continue;
+        _cm2WarnStrFn "Script ${_loop_name} not executable. Skipping."
+        continue
       fi
       # Skip if check returns an empty string
-      _loop_check_str="$("${_loop_file}" -c )";
+      _loop_check_str="$("${_loop_file}" -c)"
       if [ -z "${_loop_check_str}" ]; then
-        _cm2SucStrFn "Script ${_loop_name} has nothing to do. Skipping.";
-        continue;
+        _cm2SucStrFn "Script ${_loop_name} has nothing to do. Skipping."
+        continue
       fi
     fi
 
@@ -490,13 +504,13 @@ _runDropScriptsFn () {
     if _cm2TestVersFn "${_loop_vers_str}" "${_sysVersStr}"; then
       # Always run source and let version number and doForce propagate
       if [ "${_loop_ext}" = 'source' ]; then
-        _cm2SucStrFn "Running fixup source ${_loop_name}";
+        _cm2SucStrFn "Running fixup source ${_loop_name}"
 
       elif [ "${_loop_ext}" = 'sh' ]; then
-        _prompt_msg="Running fixup script ${_loop_name}";
-        _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_loop_name}" 'p';
+        _prompt_msg="Running fixup script ${_loop_name}"
+        _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_loop_name}" 'p'
       else
-        _cm2WarnStrFn "Skip unsupported file type: ${_loop_file}";
+        _cm2WarnStrFn "Skip unsupported file type: ${_loop_file}"
       fi
 
     # Semver of script is older that system version: offer to run if doForce
@@ -509,7 +523,8 @@ _runDropScriptsFn () {
           _ans_str='n'
         # Prompt for runnable script
         else
-          _prompt_msg="$(cat <<_EOW07
+          _prompt_msg="$(
+            cat <<_EOW07
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}SKIP Running ${_loop_name}?</h3>
 ${_loop_check_str}
@@ -520,68 +535,70 @@ run it again, but it can take time and is usually not required.</p>
 ${_cm2HtmPStr}<b>SKIP running ${_loop_name}?</b><br></p>
 ${_cm2HtmEndStr}
 _EOW07
-          )";
+          )"
           _ans_str="$(
             _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_loop_name}" 'a'
-           )";
+          )"
         fi
 
         # User has agreed to skip, so continue
         if [ "${_ans_str}" = 'y' ]; then
-          _cm2EchoFn "Skipping previously run ${_loop_name}";
-          continue;
+          _cm2EchoFn "Skipping previously run ${_loop_name}"
+          continue
         fi
 
       # Since force flag is NOT set, quietly skip this script
       else
-        _cm2EchoFn "Skipping previously run ${_loop_name}";
-        continue;
+        _cm2EchoFn "Skipping previously run ${_loop_name}"
+        continue
       fi
     fi
 
     # Execute the full command we built
-    _loop_arg_list=( "${_sysVersStr}" "${_loop_vers_str}" );
+    _loop_arg_list=("${_sysVersStr}" "${_loop_vers_str}")
     if [ "${_loop_ext}" = 'source' ]; then
       unset _runDropMainFn # unset any previous reference
-      # shellcheck disable=SC1090
-      source "${_loop_file}";
+      # shellcheck disable=SC1090 source=kfocus-focusrx.d/1.2.1-3_package-check.sh
+      source "${_loop_file}"
+      # shellcheck disable=SC2317 # This is reachable because it is redefined in source
       if [[ $(type -t _runDropMainFn) == 'function' ]]; then
-        _runDropMainFn "${_loop_arg_list[@]}";
+        _runDropMainFn "${_loop_arg_list[@]}"
       fi
     elif [ "${_cm2IsTty}" = 'n' ]; then
-      _runXtermCmdFn "${_escExe}" "${_loop_file}" "${_loop_arg_list[@]}";
+      _runXtermCmdFn "${_escExe}" "${_loop_file}" "${_loop_arg_list[@]}"
     else
-      "${_loop_file}" "${_loop_arg_list[@]}";
+      "${_loop_file}" "${_loop_arg_list[@]}"
     fi
-    _exit_int="$?";
+    _exit_int="$?"
 
-    _last_exe_vers="${_loop_vers_str}";
+    _last_exe_vers="${_loop_vers_str}"
     case "${_exit_int}" in
-      99) _do_reboot='y';;
-      98) _cm2PromptUserFn "User cancelled ${_loop_name}" "${_rootTitle}: Cancel";;
-      0) true;;
-      *) _cm2PromptUserFn \
-        "Non-zero exit status (${_exit_int} for ${_loop_file}" \
-         "${_rootTitle}: Cancel";;
+    99) _do_reboot='y' ;;
+    98) _cm2PromptUserFn "User cancelled ${_loop_name}" "${_rootTitle}: Cancel" ;;
+    0) true ;;
+    *) _cm2PromptUserFn \
+      "Non-zero exit status (${_exit_int} for ${_loop_file}" \
+      "${_rootTitle}: Cancel" ;;
     esac
-  done;
+  done
   ## . End: Consider each script }
 
   ## Begin: Update version string {
-  if [ -n "${_last_exe_vers}" ] \
-    && _cm2TestVersFn "${_last_exe_vers}" "${_sysVersStr}"; then
-    _cmd_list=( "${_escExe}" );
-    _cmd_list+=( "${_focusRxVersExe}" '-s' "${_last_exe_vers}" );
+  if [ -n "${_last_exe_vers}" ] &&
+    _cm2TestVersFn "${_last_exe_vers}" "${_sysVersStr}"; then
+    _cmd_list=("${_escExe}")
+    _cmd_list+=("${_focusRxVersExe}" '-s' "${_last_exe_vers}")
 
     if ! "${_cmd_list[@]}"; then
-      _cm2WarnStrFn "Trouble saving state ${_cmd_list[*]} >$?<";
+      _cm2WarnStrFn "Trouble saving state ${_cmd_list[*]} >$?<"
     fi
   fi
   ## . End: Update version string }
 
   ## Begin: Handle reboot if recommended {
   if [ ${_do_reboot} = 'y' ]; then
-    _prompt_msg="$(cat <<_EOW08
+    _prompt_msg="$(
+      cat <<_EOW08
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}REBOOT RECOMMENDED</h3>
 
@@ -591,37 +608,38 @@ Continue <b>WITHOUT</b> rebooting?<br></p>
 
 ${_cm2HtmEndStr}
 _EOW08
-    )";
+    )"
     _ans_str="$(
       _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: SKIP Reboot?" 'a'
-    )";
+    )"
     if [ "${_ans_str}" = 'n' ]; then
-      "${_escExe}" systemctl reboot;
+      "${_escExe}" systemctl reboot
     fi
   ## . End: Handle reboot if recommended }
 
   ## Begin: Handle non-reboot condition {
   else
-    _cm2SucStrFn 'The system is up-to-date. No reboot required.';
-    _cm2EchoFn;
+    _cm2SucStrFn 'The system is up-to-date. No reboot required.'
+    _cm2EchoFn
   fi
   ## . End: handle non-reboot condition }
-  _cm2SucFn;
+  _cm2SucFn
 }
 ## . END _runDropScriptsFn }
 
 ## BEGIN _cleanupZoomFn {
-_cleanupZoomFn () {
+_cleanupZoomFn() {
   declare _cmd_str _zoom_vers_str _zoom_min_str \
-    _win_title _request_str _ans_str;
+    _win_title _request_str _ans_str
 
-  _zoom_vers_str="$(_cm2EchoInstalledVersFn zoom)";
+  _zoom_vers_str="$(_cm2EchoInstalledVersFn zoom)"
   if [ -z "${_zoom_vers_str}" ]; then return; fi
 
-  _zoom_min_str='5.10.6.3194';
+  _zoom_min_str='5.10.6.3194'
   if _cm2TestVersFn "${_zoom_min_str}" "${_zoom_vers_str}"; then
-    _win_title='Upgrade Zoom?';
-    _request_str="$( cat <<_EOW01
+    _win_title='Upgrade Zoom?'
+    _request_str="$(
+      cat <<_EOW01
 ${_cm2HtmBeginStr}${_cm2HtmH3Str}UPGRADE ZOOM</h3>
 ${_cm2HtmPStr}You have an older version of Zoom installed<br>
 (${_zoom_vers_str}). We suggest you purge and reinstall.</p>
@@ -629,84 +647,155 @@ ${_cm2HtmPStr}You have an older version of Zoom installed<br>
 ${_cm2HtmPStr}<b>Continue and reinstall?</b><br></p>
 ${_cm2HtmEndStr}
 _EOW01
-    )";
+    )"
     _ans_str="$(
       _cm2PromptUserFn "${_request_str}" "${_rootTitle}: ${_win_title}" 'a'
-    )";
+    )"
     if [ "${_ans_str}" = 'y' ]; then
       if "${_cmd_str}" apt-get purge -y zoom; then
-        kfocus-mime -k zoom;
+        kfocus-mime -k zoom
       else
-        _cm2PromptUserFn 'Trouble purging Zoom';
-        return;
+        _cm2PromptUserFn 'Trouble purging Zoom'
+        return
       fi
     fi
   fi
 
-  _zoom_vers_str="$(_cm2EchoInstalledVersFn zoom)";
-  if [ -n "${_zoom_vers_str}" ] \
-    && _cm2TestVersFn "${_zoom_vers_str}" "${_zoom_min_str}" \
-    && [ -x /usr/local/bin/zoom ]; then
+  _zoom_vers_str="$(_cm2EchoInstalledVersFn zoom)"
+  if [ -n "${_zoom_vers_str}" ] &&
+    _cm2TestVersFn "${_zoom_vers_str}" "${_zoom_min_str}" &&
+    [ -x /usr/local/bin/zoom ]; then
     "${_cmd_str}" "${_cm2RmExe}" -f /usr/local/bin/zoom \
       /usr/local/share/applications/zoom.desktop \
-     /usr/local/share/applications/Zoom.desktop;
+      /usr/local/share/applications/Zoom.desktop
   fi
 }
 ## . END _cleanupZoomFn }
 
 ## BEGIN _announceEndFn {
- # Purpose:
- #   Announce the conclusion of a FocusRx run when forced
-_announceEndFn () {
-  declare _win_title _prompt_msg _ans_str;
+# Purpose:
+#   Announce the conclusion of a FocusRx run when forced
+_announceEndFn() {
+  declare _win_title _prompt_msg _ans_str
 
   if [ "${_doForce}" = 'n' ]; then return; fi
 
-  _win_title='Guided Maintenance ';
-  _prompt_msg="$( cat <<_EOW01
+  _win_title='Guided Maintenance '
+  _prompt_msg="$(
+    cat <<_EOW01
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}SYSTEM DIAGNOSTICS FINISHED</h3>
 
 ${_cm2HtmPStr}All diagnostics are complete.</p>
 ${_cm2HtmEndStr}
 _EOW01
-  )";
+  )"
 
   _ans_str="$(
     _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}"
-  )";
+  )"
 }
 ## . END _announceEndFn }
 
+## BEGIN _chkKernelPkgFn {
+_chkKernelPkgFn() {
+  declare _win_title _kernel_pkg_name _installed_kernel_vers \
+    _install_manifest _cmd_list _prompt_msg _ans_str _exit_str
+
+  # Assign initial vars and announce
+  _win_title='Check Kernel Packages'
+  _kernel_pkg_name='linux-oem-22.04a-kfocus'
+  _installed_kernel_vers="$(_cm2EchoInstalledVersFn "${_kernel_pkg_name}")"
+  _cm2SetMsgFn "${_win_title}"
+
+  # Skip upgrade if package is not installed
+  if [ -z "${_installed_kernel_vers}" ]; then
+    _cm2SucStrFn "${_kernel_pkg_name} is not installed. Skipped."
+    _cm2SucFn
+    return
+  fi
+
+  # Define desired metapackages
+  _install_manifest=(
+    linux-generic-hwe-22.04-kfocus
+    linux-headers-generic-hwe-22.04-kfocus
+    linux-image-generic-hwe-22.04-kfocus
+    linux-tools-generic-hwe-22.04-kfocus
+  )
+
+  _prompt_msg="$(
+    cat <<_EOW06B
+${_cm2HtmBeginStr}
+${_cm2HtmH3Str}${_win_title}?</h3>
+
+${_cm2HtmPStr}The Nvidia drivers metapackage needs to be upgraded.<br>
+You may be prompted to provide your password.</p>
+
+${_cm2HtmPStr}Notice, this may take a few minutes. You will be alerted when<br>
+the process is finished.</p>
+
+${_cm2HtmPStr}<b>Upgrade now?</b></p>
+_EOW06B
+  )"
+
+  # Confirm user intent
+  _ans_str="$(
+    _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}" 'a'
+  )"
+
+  if [ "${_ans_str}" = 'n' ]; then
+    _cm2PromptUserFn 'Upgrade Kernel cancelled on user request' \
+      "${_rootTitle}: ${_win_title}" 'p'
+    return 0
+  fi
+
+  # Install kernel packages
+  _cmd_list=('apt-get' 'install' '--reinstall' '-y' "${_install_manifest[@]}")
+  if _exit_str="$(
+    _cm2RunLongCmdFn "${_rootTitle}: ${_win_title}" \
+      "${_cmd_list[@]}"
+  )"; then
+    _prompt_msg='Upgrade is complete. Reboot to use the latest kernel.'
+    _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}" 'p'
+    _cm2SucFn
+  else
+    _cm2PromptUserFn "WARNING: Trouble installing ${_kernel_pkg_name}" \
+      "${_rootTitle}: ${_win_title}" 'p'
+    _cm2WarnFn
+  fi
+}
+## . END _chkKernelPkgFn }
+
 ## BEGIN _chkNvidiaPkgFn {
-_chkNvidiaPkgFn () {
+_chkNvidiaPkgFn() {
   declare _win_title _nv_pkg_name _pin_pkg_name _installed_nv_vers \
-    _installed_pin_vers _cmd_list _prompt_msg _ans_str _exit_str;
+    _installed_pin_vers _cmd_list _prompt_msg _ans_str _exit_str
 
-  _cm2SetMsgFn 'Check Nvidia Drivers';
+  _cm2SetMsgFn 'Check Nvidia Drivers'
 
-  _win_title='Upgrade Nvidia Drivers';
-  _nv_pkg_name='kfocus-nvidia';
-  _pin_pkg_name='kfocus-nvidia-pinning';
+  _win_title='Upgrade Nvidia Drivers'
+  _nv_pkg_name='kfocus-nvidia'
+  _pin_pkg_name='kfocus-nvidia-pinning'
 
-  _installed_nv_vers="$(_cm2EchoInstalledVersFn "${_nv_pkg_name}")";
-  _installed_pin_vers="$(_cm2EchoInstalledVersFn "${_pin_pkg_name}")";
+  _installed_nv_vers="$(_cm2EchoInstalledVersFn "${_nv_pkg_name}")"
+  _installed_pin_vers="$(_cm2EchoInstalledVersFn "${_pin_pkg_name}")"
 
   # Skip upgrade if package is not installed
   if [ -z "${_installed_nv_vers}" ]; then
-    _cm2SucStrFn "${_nv_pkg_name} is not installed. Skipped.";
-    _cm2SucFn;
-    return;
+    _cm2SucStrFn "${_nv_pkg_name} is not installed. Skipped."
+    _cm2SucFn
+    return
   fi
 
   # Skip if later version found
   if _cm2TestVersFn "${_installed_nv_vers}" '22.04.5'; then
-    _cm2SucStrFn "${_nv_pkg_name} upgrade not required. Skipped.";
-    _cm2SucFn;
-    return;
+    _cm2SucStrFn "${_nv_pkg_name} upgrade not required. Skipped."
+    _cm2SucFn
+    return
   fi
 
-  _prompt_msg="$(cat <<_EOW06
+  _prompt_msg="$(
+    cat <<_EOW06
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}${_win_title}?</h3>
 
@@ -716,87 +805,95 @@ You may be prompted to provide your password.</p>
 ${_cm2HtmPStr}Notice, this may take a few minutes. You will be alerted when<br>
 the process is finished, and will be prompted to reboot.</p>
 
-${_cm2HtmPStr}<b>Upgrade now?</b>${_cm2HtmPStr}
+${_cm2HtmPStr}<b>Upgrade now?</b></p>
 ${_cm2HtmEndStr}
 _EOW06
-  )";
+  )"
   _ans_str="$(
     _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}" 'a'
-  )";
+  )"
 
   if [ "${_ans_str}" = 'n' ]; then
     _cm2PromptUserFn 'Upgrade Nvidia drivers cancelled on user request' \
-    "${_rootTitle}: ${_win_title}" 'p';
-    return 0;
+      "${_rootTitle}: ${_win_title}" 'p'
+    return 0
   fi
 
   # Upgrade pin package if needed first
   if _cm2TestVersFn "${_installed_pin_vers}" '22.04.5'; then
-    _cm2SucStrFn "Nvidia pinning package update not needed";
+    _cm2SucStrFn "Nvidia pinning package update not needed"
   else
-    _cmd_list=( 'apt-get' 'install' '--reinstall' '-y' "${_pin_pkg_name}" );
-    if _exit_str="$(_cm2RunLongCmdFn "${_rootTitle}: Upgrade Nvidia Pinning" \
-      "${_cmd_list[@]}"
+    _cmd_list=('apt-get' 'install' '--reinstall' '-y' "${_pin_pkg_name}")
+    if _exit_str="$(
+      _cm2RunLongCmdFn "${_rootTitle}: Upgrade Nvidia Pinning" \
+        "${_cmd_list[@]}"
     )"; then
-      _prompt_msg='Pin upgrade is complete.';
-      _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}" 'p';
+      _prompt_msg='Pin upgrade is complete.'
+      _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}" 'p'
     else
       _cm2PromptUserFn "WARNING: Trouble installing ${_pin_pkg_name}" \
-        "${_rootTitle}: Upgrade Nvidia Pinning" 'p';
-      _cm2WarnFn;
-      return 1;
+        "${_rootTitle}: Upgrade Nvidia Pinning" 'p'
+      _cm2WarnFn
+      return 1
     fi
   fi
 
   # Upgrade nv package
-  _cmd_list=( 'apt-get' 'install' '--reinstall' '-y' "${_nv_pkg_name}" );
-  if _exit_str="$(_cm2RunLongCmdFn "${_rootTitle}: Upgrade Nvidia Drivers" \
-    "${_cmd_list[@]}"
+  _cmd_list=('apt-get' 'install' '--reinstall' '-y' "${_nv_pkg_name}")
+  if _exit_str="$(
+    _cm2RunLongCmdFn "${_rootTitle}: Upgrade Nvidia Drivers" \
+      "${_cmd_list[@]}"
   )"; then
-    _prompt_msg='Upgrade is complete. Reboot to use the drivers.';
-    _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}" 'p';
-    _cm2SucFn;
+    _prompt_msg='Upgrade is complete. Reboot to use the drivers.'
+    _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}" 'p'
+    _cm2SucFn
   else
     _cm2PromptUserFn "WARNING: Trouble installing ${_nv_pkg_name}" \
-      "${_rootTitle}: ${_win_title}" 'p';
-    _cm2WarnFn;
+      "${_rootTitle}: ${_win_title}" 'p'
+    _cm2WarnFn
   fi
 }
 ## . END _chkNvidiaPkgFn }
 
 ## BEGIN _mainFn {
-_mainFn () {
-  declare _who_str _opt_str;
+_mainFn() {
+  declare _who_str _opt_str
 
   # 1902 Bail if run as user 'kubuntu' which implies liveCD
-  _who_str="$(whoami)";
+  _who_str="$(whoami)"
   if [ "${_who_str}" = 'kubuntu' ]; then return 0; fi
 
   ## Begin Process options {
-  _doForce='n';
+  _doForce='n'
   while getopts ':fh' _opt_str; do
     case "${_opt_str}" in
-    f) _doForce='y';;
-    h) _printHelpFn; exit 0;;
-    *) _cm2EchoFn "\nInvalid option: -${OPTARG} \n";
-      _printHelpFn;
-      exit 1;;
+    f) _doForce='y' ;;
+    h)
+      _printHelpFn
+      exit 0
+      ;;
+    *)
+      _cm2EchoFn "\nInvalid option: -${OPTARG} \n"
+      _printHelpFn
+      exit 1
+      ;;
     esac
   done
   ## . End Process options }
 
   ## Begin Run focusrx steps {
-  _cm2EchoFn "== BEGIN :      ${_rootTitle}\n";
-  _announceStartFn;
-  _chkUpdateBiosFn;
-  _chkHwConfigFn;
-  _chkNvidiaPkgFn;
-  _chkXorgConfigFn;
-  _runKernelCleanFn;
-  _runDropScriptsFn;
-  _cleanupZoomFn;
-  _announceEndFn;
-  _cm2EchoFn "\n== . END : OK   ${_rootTitle}\n\n";
+  _cm2EchoFn "== BEGIN :      ${_rootTitle}\n"
+  _announceStartFn
+  _chkUpdateBiosFn
+  _chkHwConfigFn
+  _chkKernelPkgFn
+  _chkNvidiaPkgFn
+  _chkXorgConfigFn
+  _runKernelCleanFn
+  _runDropScriptsFn
+  _cleanupZoomFn
+  _announceEndFn
+  _cm2EchoFn "\n== . END : OK   ${_rootTitle}\n\n"
   ## . End Run focusrx steps }
 }
 ## . END _mainFn }
@@ -805,48 +902,48 @@ _mainFn () {
 # Purpose: Daisy-chain kfocus-firstrun
 #   IFF launched from /etc/xdg/autostart/kfocus-focusrx.desktop.
 #
-_chkWelcomeFn () {
+_chkWelcomeFn() {
   if [ "${_parentCmdStr}" = 'plasma_session' ]; then
-    "${_firstRunExe}";
+    "${_firstRunExe}"
   fi
 }
 ## . END _chkWelcomeFn }
 
 ## BEGIN Assign global variables {
 declare _focusRxBtoolExe _focusRxKcleanExe _focusRxSetExe \
-  _focusRxVersExe _firstRunExe;
-  _parentCmdStr="$(ps -o comm= $PPID)";
-  _pingHost1Str='8.8.8.8';
-  _pingHost2Str='1.1.1.1';
+  _focusRxVersExe _firstRunExe
+_parentCmdStr="$(ps -o comm= $PPID)"
+_pingHost1Str='8.8.8.8'
+_pingHost2Str='1.1.1.1'
 ## . END Assign global variables }
 
 ## BEGIN Run main if script is not sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-  _binName="$(  readlink -f "$0"       )" || exit 101;
-  _binDir="$(   dirname  "${_binName}" )" || exit 101;
-  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
-  _baseName="$( basename "${_binName}" )" || exit 101;
-  _importCommonFn;
+  _binName="$(readlink -f "$0")" || exit 101
+  _binDir="$(dirname "${_binName}")" || exit 101
+  _baseDir="$(dirname "${_binDir}")" || exit 101
+  _baseName="$(basename "${_binName}")" || exit 101
+  _importCommonFn
 
   # Get escalation exe
-  _escExe="$(_cm2GetEscExeFn)" || exit;
-  _rootTitle='FocusRx';
+  _escExe="$(_cm2GetEscExeFn)" || exit
+  _rootTitle='FocusRx'
 
-  _focusRxDropDir="${_binDir}/kfocus-focusrx.d";
+  _focusRxDropDir="${_binDir}/kfocus-focusrx.d"
   _assignList=(
     "_focusRxBtoolExe|${_binDir}/kfocus-btool"
     "_focusRxKcleanExe|${_binDir}/kfocus-kclean"
     "_focusRxSetExe|${_binDir}/kfocus-focusrx-set"
     "_focusRxVersExe|${_binDir}/kfocus-rx-version"
     "_firstRunExe|${_binDir}/kfocus-firstrun"
-  );
+  )
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
-    _cm2WarnStrFn 'Could not assign variables';
-    exit 1;
+    _cm2WarnStrFn 'Could not assign variables'
+    exit 1
   fi
 
-  _sysVersStr="$("${_focusRxVersExe}" -r)" || exit;
-  _mainFn "$@";
-  _chkWelcomeFn;
+  _sysVersStr="$("${_focusRxVersExe}" -r)" || exit
+  _mainFn "$@"
+  _chkWelcomeFn
 fi
 ## . END Run main if script is not sourced }
