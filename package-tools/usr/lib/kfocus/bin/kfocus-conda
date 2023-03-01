@@ -634,6 +634,9 @@ if ! _installEnvFn; then
 fi
 
 conda deactivate;
+
+# See https://stackoverflow.com/questions/54429210
+# Disable block in bashrc if this does not work
 conda config --set auto_activate_base false;
 
 1>&2 cat << _EOL0X

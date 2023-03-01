@@ -9,6 +9,7 @@
 # Original concept and code
 #   https://github.com/olafurw/olafurw-home/blob/master/tools/qwe.sh
 # Inspiration: https://superuser.com/questions/416881
+# Also https://stackoverflow.com/questions/7374534
 #
 # Please add a line to .bashrc to provide this function:
 #   source /path/to/qwe.source
@@ -539,3 +540,4 @@ _qweBasename='qwe';
 touch "${_qweDataFile}";
 complete -o nospace -F _qweCompReplyFn qwe;
 ## . END Prepare autocomplete }
+
