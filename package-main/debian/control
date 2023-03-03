@@ -30,11 +30,11 @@ Depends:      ${misc:Depends}, ${shlibs:Depends},
               python3-pip,
               rsync (>= 3.1.2),
               zenity
-Recommends:   kfocus-tools-other,
-              bup,
+Recommends:   bup,
               backintime-qt,
               kfocus-meta,
               kfocus-power-scripts,
+              kfocus-tools-other | kfocus-tools | kfocus-tools-nxg1
               linux-generic-hwe-22.04-kfocus,
               linux-tools-generic-hwe-22.04-kfocus,
               pcmemtest,

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2020-2022 MindShare Inc.
+# Copyright 2020-2023 MindShare Inc.
 # Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
 #
 # Name   : kfocus-reset-effects
@@ -10,92 +10,181 @@
 # Spec   : 2169
 #
 set -u;
-echo '
-RESET KUBUNTU FOCUS DESKTOP UX DEFAULTS
-This app resets keyboard shortcuts and desktop
-effects to the Kubuntu Focus defaults. Please close
-System Settings before proceeding.
-';
-read -rp 'Shall we continue? (y/N) ' _reply;
-echo;
 
-if [[ "${_reply:-n}" =~ ^[Nn] ]]; then
-  echo 'Reset CANCELLED on user request';
-  exit 0;
-fi
+## BEGIN _importCommonFn {
+# Summary   : _importCommonFn
+# Purpose   : Load common routines, prefer relative dir
+# Example   : _importCommonFn;
+# Arguments : none
+# Globals   : Package vars _baseDir _baseName
+# Outputs   : none
+# Returns   : none
+#
+_importCommonFn () {
+  declare _lib_list _is_loaded _lib_file;
+  _lib_list=(
+    "${_baseDir}/lib/common.2.source"
+    '/usr/lib/kfocus/lib/common.2.source'
+  );
+  _is_loaded='n';
+  for _lib_file in "${_lib_list[@]}"; do
+    if [ -r "${_lib_file}" ]; then
+      # shellcheck source=../lib/common.2.source
+      if source "${_lib_file}"; then
+        _is_loaded='y';
+        break;
+      fi
+    fi
+  done
 
-keyList=(
-  'kw|Desktops|Name_1|one'
-  'kw|Desktops|Name_2|two'
-  'kw|Desktops|Name_3|three'
-  'kw|Desktops|Name_4|four'
-  'kw|Desktops|Number|4'
-  'kw|Desktops|Rows|4'
-  'kw|Effect-CoverSwitch|TabBox|true'
-  'kw|Effect-CoverSwitch|TabBoxAlternative|false'
-  'kw|Effect-DesktopGrid|BorderActivate|9'
-  'kw|Effect-DesktopGrid|CustomLayoutRows|4'
-  'kw|Effect-DesktopGrid|DesktopNameAlignment|36'
-  'kw|Effect-DesktopGrid|LayoutMode|1'
-  'kw|Effect-DesktopGrid|PresentWindows|false'
-  'kw|Effect-DesktopGrid|ShowAddRemove|false'
-  'kw|Effect-Wobbly|Drag|85'
-  'kw|Effect-Wobbly|Stiffness|10'
-  'kw|Effect-Wobbly|WobblynessLevel|1'
-  'kw|Effect-kwin4_effect_translucency|MoveResize|80'
-  'kw|Plugins|kwin4_effect_translucencyEnabled|true'
-  'kw|Plugins|mouseclickEnabled|true'
-  'kw|Plugins|trackmouseEnabled|true'
-  'kw|Plugins|wobblywindowsEnabled|true'
-  'kw|Compositing|OpenGLIsUnsafe|false'
-  'gk|kwin|Switch to Previous Desktop|Meta+Ctrl+Up,,Switch to Previous Desktop'
-  'gk|kwin|Switch to Next Desktop|Meta+Ctrl+Down,,Switch to Next Desktop'
-  'gk|kwin|Window Fullscreen|Meta+F,,Make Window Fullscreen'
-  'kf|General|forceFontDPI|96'
-  'kf|General|forceFontDPI|136|m2g4'
-);
+  if [ "${_is_loaded}" = 'n' ]; then
+    echo 1>&2 "${_baseName}: ABORT - Cannot source common lib";
+    exit 202;
+  fi
+}
+## . END _importCommonFn }
 
-_hwCode='';
-_hwCodeFile='/var/lib/kfocus/hw_config_code';
-if [ -f "${_hwCodeFile}" ]; then
-  _hwCode="$(cat "${_hwCodeFile}")";
-fi
+## BEGIN _mainFn {
+_mainFn () {
+  declare _prompt_msg _hw_code _line_list _line _bit_list _key \
+    _log_list _name_file _config_file _opt_list _reply_str;
 
-for _line in "${keyList[@]}"; do
-  IFS='|' read -r -a _bit_list < <( echo -n "${_line}" );
-  if [ -n "${_bit_list[4]:-}" ]; then
-    if grep -q "${_hwCode}" <<< "${_bit_list[4]:-}"; then
-      echo "APPLY hw config: ${_line}";
-    else
-      echo "SKIP hw config: ${_line}";
+  _prompt_msg="$(cat <<_EOH01
+${_cm2HtmBeginStr}
+<h3 style="color:#f7941d">RESET KFOCUS DESKTOP UX</h3>
+
+${_cm2HtmPStr}This app resets keyboard shortcuts and desktop<br>
+effects to Kubuntu Focus defaults. Please close <br>
+<b>System Settings</b> before proceeding.</p>
+${_cm2HtmEndStr}
+_EOH01
+  )";
+  _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}";
+
+  _hw_code="$(_cm2EchoModelStrFn 'config_code')";
+  _line_list=(
+    'kw|Desktops|Name_1|one'
+    'kw|Desktops|Name_2|two'
+    'kw|Desktops|Name_3|three'
+    'kw|Desktops|Name_4|four'
+    'kw|Desktops|Number|4'
+    'kw|Desktops|Rows|4'
+    'kw|Effect-CoverSwitch|TabBox|true'
+    'kw|Effect-CoverSwitch|TabBoxAlternative|false'
+    'kw|Effect-DesktopGrid|BorderActivate|9'
+    'kw|Effect-DesktopGrid|CustomLayoutRows|4'
+    'kw|Effect-DesktopGrid|DesktopNameAlignment|36'
+    'kw|Effect-DesktopGrid|LayoutMode|1'
+    'kw|Effect-DesktopGrid|PresentWindows|false'
+    'kw|Effect-DesktopGrid|ShowAddRemove|false'
+    'kw|Effect-Wobbly|Drag|85'
+    'kw|Effect-Wobbly|Stiffness|10'
+    'kw|Effect-Wobbly|WobblynessLevel|1'
+    'kw|Effect-kwin4_effect_translucency|MoveResize|80'
+    'kw|Plugins|kwin4_effect_translucencyEnabled|true'
+    'kw|Plugins|mouseclickEnabled|true'
+    'kw|Plugins|trackmouseEnabled|true'
+    'kw|Plugins|wobblywindowsEnabled|true'
+    'kw|Compositing|OpenGLIsUnsafe|false'
+    'gk|kwin|Switch to Previous Desktop|Meta+Ctrl+Up,,Switch to Previous Desktop'
+    'gk|kwin|Switch to Next Desktop|Meta+Ctrl+Down,,Switch to Next Desktop'
+    'gk|kwin|Window Fullscreen|Meta+F,,Make Window Fullscreen'
+    # Clear value first
+    'kg|KScreen|ScaleFactor|1.5|'
+    'kg|KScreen|ScaleFactor|1.5|m2g4'
+    'kf|General|forceFontDPI|'
+  );
+  _log_list=();
+  for _line in "${_line_list[@]}"; do
+    IFS='|' read -r -a _bit_list <<< "${_line}";
+    _key="${_bit_list[0]:-}";
+
+    _name_file="${_fileMap[$_key]}";
+    if [ -z "${_name_file}" ]; then
+      _log_list+=( "WARN: Config key |${_key}| is not supported" );
       continue;
     fi
-  else
-    echo "Apply ${_line}";
+
+    _config_file="${_configDir}/${_name_file}";
+    if [ ! -f "${_config_file}" ]; then
+      _log_list+=( "WARN: Config file |${_config_file}| not found" );
+      continue;
+    fi
+
+    if [ -n "${_bit_list[4]:-}" ]; then
+      if grep -q "${_hw_code}" <<< "${_bit_list[4]:-}"; then
+        _log_list+=( "Apply hw config: ${_line}" );
+      else
+        _log_list+=( "SKIP hw config: ${_line}" );
+        continue;
+      fi
+    else
+      _log_list+=( "Apply ${_line}" );
+    fi
+
+    _opt_list=(
+      '--file' "${_config_file}" '--group'
+      "${_bit_list[1]}" '--key' "${_bit_list[2]}"
+    );
+
+    if [ -n "${_bit_list[3]:-}" ]; then
+      _opt_list+=("${_bit_list[3]}");
+    else
+      _opt_list+=('--delete');
+    fi
+
+    "${_kwriteconfig5Exe}" "${_opt_list[@]}";
+  done
+
+  ( IFS=$'\n'; _cm2EchoFn "DEBUG: ${_log_list[*]}"; )
+
+  _config_file="${_configDir}/powermanagementprofilesrc";
+
+  if [ -f "${_config_file}" ]; then
+    _prompt_msg='Reset power management to default';
+    _reply_str="$(_cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}" 'a')";
+    if [ "${_reply_str}" = 'y' ]; then
+      rm "${_config_file}" || true;
+    fi
   fi
 
-  case "${_bit_list[0]}" in
-    gk) _configFile="$HOME/.config/kglobalshortcutsrc";;
-    kf) _configFile="$HOME/.config/kcmfonts";;
-    kw) _configFile="$HOME/.config/kwinrc";;
-    *) 2>&1 echo "WARN: Config key |${_bit_list[0]}| not supported";
-       continue;;
-  esac
+  _prompt_msg="$(cat <<_EOH02
+${_cm2HtmBeginStr}
+<h3 style="color:#f7941d">RESET KFOCUS UX COMPLETE</h3>
+${_cm2HtmPStr}Please <b>IMMEDIATELY</b> log out and back in<br>
+to ensure all defaults are applied.</p>
+${_cm2HtmEndStr}
+_EOH02
+  )";
+  _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}";
+}
+## . END _mainFn }
 
-  kwriteconfig5 --file "${_configFile}" --group "${_bit_list[1]}" \
-    --key "${_bit_list[2]}" "${_bit_list[3]}";
-done
+## BEGIN Declare and assign global vars {
+declare _rootTitle _assignList _kwriteconfig5Exe _configDir;
+declare -A _fileMap=(
+  ['gk']=kglobalshortcutsrc ['kf']=kcmfonts ['kw']=kwinrc ['kg']=kdeglobals
+);
+_rootTitle="Kubuntu Focus Reset Effects";
+_configDir="$HOME/.config";
+## . END Declare and assign global vars }
 
-_configFile="$HOME/.config/powermanagementprofilesrc";
-if [ -f "${_configFile}" ]; then
-  echo;
-  read -rp 'Reset power management to default? (Y/n) ' _reply;
-  if [[ "${_reply:-y}" =~ ^[Yy] ]]; then
-    rm "${_configFile}" || true;
+## BEGIN Run main if script is not sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+
+  _importCommonFn;
+
+  _assignList=(
+    "_kwriteconfig5Exe|kwriteconfig5"
+  );
+  if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
+    _cm2WarnStrFn 'Could not assign variables';
+    exit 1;
   fi
+  _mainFn "$@";
 fi
-
-echo 'Reset performed on user request
-IMPORTANT: Please IMMEDIATELY log out and back in
-for the changes to take effect
-';
+## . END Run main if script is not sourced }

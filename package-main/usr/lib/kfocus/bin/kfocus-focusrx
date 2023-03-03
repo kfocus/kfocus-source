@@ -882,13 +882,13 @@ _chkWelcomeFn () {
 }
 ## . END _chkWelcomeFn }
 
-## BEGIN Assign global variables {
+## BEGIN Declare and assign global vars {
 declare _focusRxBtoolExe _focusRxKcleanExe _focusRxSetExe \
   _focusRxVersExe _firstRunExe;
   _parentCmdStr="$(ps -o comm= $PPID)";
   _pingHost1Str='8.8.8.8';
   _pingHost2Str='1.1.1.1';
-## . END Assign global variables }
+## . END Declare and assign global vars }
 
 ## BEGIN Run main if script is not sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
