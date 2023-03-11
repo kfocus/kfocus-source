@@ -196,9 +196,16 @@ function deb_google-chrome-stable() {
 }
 function deb_insync-dolphin() {
   ARCHS_SUPPORTED="amd64"
-  APT_KEY_URL="$(curl -s https://www.insynchq.com/downloads | grep gpgkey | cut -d'=' -f2)"
+  APT_KEY_ID='ACCAF35C'
+  # See https://www.insynchq.com/downloads/linux#apt
+  #   sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys ACCAF35C
+  #   If the previous command did not work, use this instead:
+  #   sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys ACCAF35C
+  #   GPG_KEY_ID="A684470CACCAF35C" # upstream from deb-get
   APT_LIST_NAME="insync"
   APT_REPO_URL="deb http://apt.insync.io/ubuntu ${UBUNTU_CODENAME} non-free contrib"
+  PRETTY_NAME="Insync"
+  WEBSITE="https://www.insynchq.com/"
   PRETTY_NAME="Insync"
   WEBSITE="https://www.insynchq.com/"
 }
@@ -326,7 +333,9 @@ function _readPkgRepoInfoFn () {
   fi
 
   APT_KEY_URL='';
+  GPG_KEY_ID='';
   GPG_KEY_URL='';
+  APT_KEY_ID='';
   APT_LIST_NAME='';
   APT_REPO_URL='';
   PPA='';
@@ -361,21 +370,28 @@ function update_apt() {
   apt-get -q -y update
 }
 function install_apt() {
-  if [ -n "${APT_KEY_URL}" ]; then
-    wget -q "${APT_KEY_URL}" -O \
-      "/etc/apt/trusted.gpg.d/${APT_LIST_NAME}.asc"
-  fi
-
-  if [ -n "${GPG_KEY_URL}" ]; then
+  if [ -n "${GPG_KEY_ID}" ] || [ -n "${GPG_KEY_URL}" ]; then
     if [ ! -d /usr/share/keyrings ]; then
       mkdir -p /usr/share/keyrings 2>/dev/null
     fi
+  fi
+
+  if [ -n "${APT_KEY_ID}" ]; then
+    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys "${APT_KEY_ID}";
+  elif [ -n "${GPG_KEY_ID}" ]; then
+    gpg --no-default-keyring --keyring \
+      "/usr/share/keyrings/${APT_LIST_NAME}-archive-keyring.gpg" \
+      --keyserver keyserver.ubuntu.com --recv "${GPG_KEY_ID}";
+  elif [ -n "${GPG_KEY_URL}" ]; then
     wget -q "${GPG_KEY_URL}" -O \
-      "/usr/share/keyrings/${APT_LIST_NAME}-archive-keyring.gpg"
+      "/usr/share/keyrings/${APT_LIST_NAME}-archive-keyring.gpg";
+  elif [ -n "${APT_KEY_URL}" ]; then
+    wget -q "${APT_KEY_URL}" -O \
+      "/etc/apt/trusted.gpg.d/${APT_LIST_NAME}.asc";
   fi
 
   ## TODO: https://superuser.com/questions/1641291
-  echo -e "${APT_REPO_URL}" > "/etc/apt/sources.list.d/${APT_LIST_NAME}.list"
+  echo -e "${APT_REPO_URL}" > "/etc/apt/sources.list.d/${APT_LIST_NAME}.list";
   update_apt
 
   if ! _cm2ChkInstalledPkgFn "${APP}"; then
@@ -790,7 +806,7 @@ _mainFn () {
 
     # Read id from link file and then remove it.
     read -r _arg_app_id < "${_arg0_str}" || exit 1;
-    "${_cm2RmExe}" "${_arg0_str}" || true;
+    rm "${_arg0_str}" || true;
   fi
 
   if [ -z "${_arg_app_id}" ]; then
