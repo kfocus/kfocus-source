@@ -72,8 +72,8 @@ function setLayoutFn () {
   screen_w_num = screen_w_px / gridUnit;
   screen_h_num = screen_h_px / gridUnit;
 
-  scale_key = ( screen_w_px > 2565 ) ? 'large'
-    : (screen_w_px > 2500 ) ? 'medium' : 'small';
+  scale_key = ( screen_w_px >= 3200 && screen_h_px >= 1800 ) ? 'large'
+    : (screen_w_px >= 2560 && screen_h_px >= 1440 ) ? 'medium' : 'small';
   scale_map = scaleMatrix[ scale_key ];
 
   icon_pad_int  = scale_map.icon_pad_int;
@@ -113,6 +113,8 @@ function setLayoutFn () {
   //   + 'icon_table       : '
   //   + JSON.stringify(icon_table, null, 2 ) + '\n'
   // );
+  // (A) https://api.kde.org/frameworks/plasma-framework/html/
+  //       classPlasma_1_1Types.html#ab2b1c1767f3f432a0928dc7ca6b3f29e
 
   layout_matrix = {
     "desktops": [
@@ -121,7 +123,8 @@ function setLayoutFn () {
           {
             "config": {
               "/": {
-                "PreloadWeight": "0"
+                "PreloadWeight": "0",
+                "UserBackgroundHints": "NoBackground" // (A)
               },
               "/ConfigDialog": {
                 "DialogHeight": 20 * gridUnit,
