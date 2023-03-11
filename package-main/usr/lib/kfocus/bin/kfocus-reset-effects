@@ -103,14 +103,18 @@ _EOH01
 
     _name_file="${_fileMap[$_key]}";
     if [ -z "${_name_file}" ]; then
-      _log_list+=( "WARN: Config key |${_key}| is not supported" );
+      _log_list+=( "WARN: Config key |${_key}| is not supported." );
       continue;
     fi
 
     _config_file="${_configDir}/${_name_file}";
     if [ ! -f "${_config_file}" ]; then
-      _log_list+=( "WARN: Config file |${_config_file}| not found" );
-      continue;
+      if touch "${_config_file}"; then
+        _log_list+=( "NOTICE: Created config file |${_config_file}|." );
+      else
+        _log_list+=( "ERROR: Could not create config file |${_config_file}|." );
+        continue;
+      fi
     fi
 
     if [ -n "${_bit_list[4]:-}" ]; then
