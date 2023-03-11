@@ -63,36 +63,38 @@ _EOH01
 
   _hw_code="$(_cm2EchoModelStrFn 'config_code')";
   _line_list=(
-    'kw|Desktops|Name_1|one'
-    'kw|Desktops|Name_2|two'
-    'kw|Desktops|Name_3|three'
-    'kw|Desktops|Name_4|four'
-    'kw|Desktops|Number|4'
-    'kw|Desktops|Rows|4'
-    'kw|Effect-CoverSwitch|TabBox|true'
-    'kw|Effect-CoverSwitch|TabBoxAlternative|false'
-    'kw|Effect-DesktopGrid|BorderActivate|9'
-    'kw|Effect-DesktopGrid|CustomLayoutRows|4'
-    'kw|Effect-DesktopGrid|DesktopNameAlignment|36'
-    'kw|Effect-DesktopGrid|LayoutMode|1'
-    'kw|Effect-DesktopGrid|PresentWindows|false'
-    'kw|Effect-DesktopGrid|ShowAddRemove|false'
-    'kw|Effect-Wobbly|Drag|85'
-    'kw|Effect-Wobbly|Stiffness|10'
-    'kw|Effect-Wobbly|WobblynessLevel|1'
-    'kw|Effect-kwin4_effect_translucency|MoveResize|80'
-    'kw|Plugins|kwin4_effect_translucencyEnabled|true'
-    'kw|Plugins|mouseclickEnabled|true'
-    'kw|Plugins|trackmouseEnabled|true'
-    'kw|Plugins|wobblywindowsEnabled|true'
-    'kw|Compositing|OpenGLIsUnsafe|false'
-    'gk|kwin|Switch to Previous Desktop|Meta+Ctrl+Up,,Switch to Previous Desktop'
-    'gk|kwin|Switch to Next Desktop|Meta+Ctrl+Down,,Switch to Next Desktop'
-    'gk|kwin|Window Fullscreen|Meta+F,,Make Window Fullscreen'
+    'kwin|Desktops|Name_1|one'
+    'kwin|Desktops|Name_2|two'
+    'kwin|Desktops|Name_3|three'
+    'kwin|Desktops|Name_4|four'
+    'kwin|Desktops|Number|4'
+    'kwin|Desktops|Rows|4'
+    'kwin|Effect-CoverSwitch|TabBox|true'
+    'kwin|Effect-CoverSwitch|TabBoxAlternative|false'
+    'kwin|Effect-DesktopGrid|BorderActivate|9'
+    'kwin|Effect-DesktopGrid|CustomLayoutRows|4'
+    'kwin|Effect-DesktopGrid|DesktopNameAlignment|36'
+    'kwin|Effect-DesktopGrid|LayoutMode|1'
+    'kwin|Effect-DesktopGrid|PresentWindows|false'
+    'kwin|Effect-DesktopGrid|ShowAddRemove|false'
+    'kwin|Effect-Wobbly|Drag|85'
+    'kwin|Effect-Wobbly|Stiffness|10'
+    'kwin|Effect-Wobbly|WobblynessLevel|1'
+    'kwin|Effect-kwin4_effect_translucency|MoveResize|80'
+    'kwin|Plugins|kwin4_effect_translucencyEnabled|true'
+    'kwin|Plugins|mouseclickEnabled|true'
+    'kwin|Plugins|trackmouseEnabled|true'
+    'kwin|Plugins|wobblywindowsEnabled|true'
+    'kwin|Compositing|OpenGLIsUnsafe|false'
+    'kwin|NightColor|Active|false'
+    'scut|kwin|Switch to Previous Desktop|Meta+Ctrl+Up,,Switch to Previous Desktop'
+    'scut|kwin|Switch to Next Desktop|Meta+Ctrl+Down,,Switch to Next Desktop'
+    'scut|kwin|Window Fullscreen|Meta+F,,Make Window Fullscreen'
     # Clear value first
-    'kg|KScreen|ScaleFactor|1.5|'
-    'kg|KScreen|ScaleFactor|1.5|m2g4'
-    'kf|General|forceFontDPI|'
+    'glob|KScreen|ScaleFactor|1.5|'
+    'glob|KScreen|ScaleFactor|1.5|m2g4'
+    # Clear old scaling setting
+    'font|General|forceFontDPI|'
   );
   _log_list=();
   for _line in "${_line_list[@]}"; do
@@ -113,9 +115,9 @@ _EOH01
 
     if [ -n "${_bit_list[4]:-}" ]; then
       if grep -q "${_hw_code}" <<< "${_bit_list[4]:-}"; then
-        _log_list+=( "Apply hw config: ${_line}" );
+        _log_list+=( "Apply ${_line} for model ${_bit_list[4]:-}" );
       else
-        _log_list+=( "SKIP hw config: ${_line}" );
+        _log_list+=( "SKIP  ${_line} for model ${_bit_list[4]:-}" );
         continue;
       fi
     else
@@ -136,7 +138,7 @@ _EOH01
     "${_kwriteconfig5Exe}" "${_opt_list[@]}";
   done
 
-  ( IFS=$'\n'; _cm2EchoFn "DEBUG: ${_log_list[*]}"; )
+  ( IFS=$'\n'; _cm2EchoFn "Reset values:\n${_log_list[*]}"; )
 
   _config_file="${_configDir}/powermanagementprofilesrc";
 
@@ -163,9 +165,12 @@ _EOH02
 ## BEGIN Declare and assign global vars {
 declare _rootTitle _assignList _kwriteconfig5Exe _configDir;
 declare -A _fileMap=(
-  ['gk']=kglobalshortcutsrc ['kf']=kcmfonts ['kw']=kwinrc ['kg']=kdeglobals
+  ['scut']=kglobalshortcutsrc
+  ['font']=kcmfonts
+  ['glob']=kdeglobals
+  ['kwin']=kwinrc
 );
-_rootTitle="Kubuntu Focus Reset Effects";
+_rootTitle='Kubuntu Focus Reset Effects';
 _configDir="$HOME/.config";
 ## . END Declare and assign global vars }
 
@@ -179,7 +184,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _importCommonFn;
 
   _assignList=(
-    "_kwriteconfig5Exe|kwriteconfig5"
+    '_kwriteconfig5Exe|kwriteconfig5'
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2WarnStrFn 'Could not assign variables';
