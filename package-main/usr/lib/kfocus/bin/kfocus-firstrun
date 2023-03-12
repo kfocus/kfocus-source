@@ -195,9 +195,9 @@ Install Extra Software
 _xtermInstallExtraFn
 ${_cm2HtmPStr}<b>We recommend you install extra software</b> to extend the
 capabilities of your system. Some software packages will require a license
-agreement. This step can enable features like features like DVD support,
-Microsoft Fonts, and a few others. You may always revisit this
-later using Start Menu &gt; Kubuntu Focus Tools &gt; Extra Software...</p>
+agreement. This step can enable features like DVD support, Microsoft Fonts,
+ and a few others. You may always revisit this later using Start Menu &gt;
+Kubuntu Focus Tools &gt; Extra Software...</p>
 
 ${_cm2HtmPStr}<b>Install extra software now?</b><br></p>
 _EOT07
@@ -264,7 +264,7 @@ ${_binDir}/kfocus-mime -k dropbox
 ${_cm2HtmPStr}<b>Dropbox synchronizes cloud storage to a local folder.</b> It
 is usually faster and less invasive than other commercial cloud drives. A free
 plan provides a modest amount of storage without charge, and you may elect to
-purchase additional storage if you wish. You may alway install Dropbox later
+purchase additional storage if you wish. You may always install Dropbox later
 by installing it from the Curated Apps webpage. <b>Once Dropbox has started,
 look in the system tray</b> and click on the Dropbox box icon for options.</p>
 
@@ -280,7 +280,7 @@ ${_binDir}/kfocus-mime -k insync
 ${_cm2HtmPStr}<b>Insync synchronizes cloud drives to local folders</b>. This
 includes any number of Google Drive or Microsoft OneDrive accounts. Insync is
 commercial software that offers a free trial without obligation. We have found
-it reliable, convenient, and inexpensive. You may alway install Insync later
+it reliable, convenient, and inexpensive. You may always install Insync later
 by installing it from the Curated Apps webpage. <b>Once Insync has started,
 look in the system tray</b> and click on the Insync icon for options.</p>
 
@@ -464,7 +464,7 @@ _mainFn () {
 
   # Exit if tty-only
   if [ "${_cm2IsTty}" = 'y' ]; then
-    _cm2SetMsgFn 'Welcome wizard is designed for GUI';
+    _cm2SetMsgFn 'The Welcome Wizard is designed for GUI';
     _cm2ErrFn;
   fi
 
@@ -492,7 +492,7 @@ _mainFn () {
   done
   ## . End Process Options }
 
-  # Run Welcome Wizard if no dropfile
+  # Run Welcome Wizard if no drop file
   if [ -f "${_dropWizardFile}" ]; then
     _cm2WarnStrFn 'User has directed to not run again. Use -f to override.';
   else
