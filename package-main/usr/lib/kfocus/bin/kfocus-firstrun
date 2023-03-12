@@ -501,13 +501,13 @@ _mainFn () {
 }
 ## . END _mainFn }
 
-## BEGIN Set global vars {
-# See SC2207
-mapfile -t _cryptList \
-  < <(blkid | grep 'TYPE="crypto_LUKS"' | awk -F: '{print $1}');
-_dropWidgetFile="${HOME}/.config/kfocus-firstrun-widget";
+## BEGIN Declare global vars {
+declare _cryptList _binName _baseName _binDir _baseDir \
+  _appIcon _escExe _assignList _setExe;
+
+_setExe='';
 _dropWizardFile="${HOME}/.config/kfocus-firstrun-wizard";
-## . End set global vars }
+## . End Declare global vars }
 
 ## Begin Run main if script is not sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
@@ -521,6 +521,16 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _importCommonFn;
   _escExe="$(_cm2GetEscExeFn)" || exit;
 
+  _assignList=( "_setExe|${_binDir}/kfocus-firstrun-set" );
+  if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
+    _cm2WarnStrFn 'Could not assign variables';
+    exit 1;
+  fi
+
+  # See SC2207
+  mapfile -t _cryptList < <(
+    grep 'TYPE="crypto_LUKS"' <<<"$("${_setExe}" 'echo-blkid')" | cut -f1 -d':'
+  );
   _mainFn "$@";
 fi
 ## . End Run main if script is not sourced }
