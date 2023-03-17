@@ -170,8 +170,9 @@ Kirigami.ApplicationWindow {
             id: profilesModel
             property string selectedProfile
             property var validIndexes: []
-            property var gridColors: ['transparent', 'red', 'orange', 'yellow', 'green', 'blue', 'purple',
-                                      'red', 'orange', 'yellow', 'green', 'blue', 'purple'].reverse()
+            property var gridColors: ['transparent', '#F63114', '#F7941E',
+            '#E4A714', '#8EB519', '#33cc33', '#39ceba', '#3caae4', '#007dc6',
+            '#006091'].reverse()
             onSelectedProfileChanged: profilesChecker.connectSource('pkexec /usr/lib/kfocus/bin/kfocus-power-set ' + selectedProfile)
         }
 
