@@ -44,7 +44,31 @@ _handle_genericFn () {
     '/etc/tlp.d/kfocus.conf|'
   );
 }
-# hw_config_code 'm2g4' handles model m2g4
+# hw_config_code 'xeg2' handles model xeg2.wip
+#
+_handle_xeg2Fn () {
+  _symlinkTable+=(
+    # Normal tty fonts
+    '/etc/default/console-setup|'
+    # Boot parameters
+    '/etc/default/grub.d/kfocus.cfg|/usr/lib/kfocus/conf/m2g4-etc_default_grub.d_kfocus.cfg'
+    # Initramfs config
+    '/etc/initramfs-tools/conf.d/kfocus.conf|'
+    # Sound, nv power
+    '/etc/modprobe.d/kfocus.conf|'
+    # Load tuxedo-keyboard
+    '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
+    # xhci enable/disable on sleep
+    '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
+    # Trackpad config
+    '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
+    # Default DPI Scaling
+    '/usr/share/kfocus/kf5-settings/kcmfonts|'
+    # Remove old TLP config
+    '/etc/tlp.d/kfocus.conf|'
+  );
+}
+# hw_config_code 'm2g4' handles models m2g4, m2g5.wip
 #
 _handle_m2g4Fn () {
   if [ -x "/usr/bin/deb-systemd-helper" ]; then
@@ -57,6 +81,7 @@ _handle_m2g4Fn () {
     '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
     # Boot parameters
     '/etc/default/grub.d/kfocus.cfg|/usr/lib/kfocus/conf/m2g4-etc_default_grub.d_kfocus.cfg'
+    # Initramfs config
     '/etc/initramfs-tools/conf.d/kfocus.conf|'
     # Sound, nv power
     '/etc/modprobe.d/kfocus.conf|/usr/lib/kfocus/conf/m2g4-dflt_etc_modprobe.d_kfocus.conf'

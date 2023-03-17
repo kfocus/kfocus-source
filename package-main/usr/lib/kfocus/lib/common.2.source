@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2019-2022 MindShare Inc.
+# Copyright 2019-2023 MindShare Inc.
 # Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
 #
 # Name   : common.2.source
@@ -179,6 +179,7 @@ _cm2CalcModelCodeFn () {
 
   shopt -s nocasematch;
   case "${_dmi_name}" in
+    PD5x_7xSNC_*)     _code='m2g5';;
     PD5x_7xPNP_*)     _code='m2g4';;
     PC5x_7xHP_HR_HS*) _code='m2g3';;
     PC5*)             _code='m2g2';;
@@ -463,6 +464,7 @@ _cm2ModelLine='';
 _cm2ModelHeadList=();
 _cm2ModelTable=(
   'code|config_code|label|is_nv_sys|has_kb_led'
+  'm2g5|m2g4|M2 GEN 5|y|y'
   'm2g4|m2g4|M2 GEN 4|y|y'
   'm2g3|default|M2 GEN 3|y|y'
   'm2g2|default|M2 GEN 2|y|y'
