@@ -211,7 +211,7 @@ Kirigami.ApplicationWindow {
             engine: "executable"
             connectedSources: []
             onNewData: {
-                if (data["stdout"].trim() !== '') {
+                if (data["stdout"].trim() !== '' && data["stdout"].trim().substring(0, 6).toLowerCase() != "custom") {
                     profilesModel.selectedProfile = data["stdout"].trim()
                 }
                 disconnectSource(sourceName)
