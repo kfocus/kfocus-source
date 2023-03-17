@@ -8,7 +8,7 @@ Kirigami.ApplicationWindow {
     id: root
 
     title: "Kubuntu Focus Power Tool"
-    width: 500
+    width: 550
     height: 700
     minimumWidth: 400
     minimumHeight: 600
@@ -42,7 +42,13 @@ Kirigami.ApplicationWindow {
             Controls.Slider {
                 id: fanSlider
                 visible: fanProfilesModel.fanAvailable
-                onValueChanged: fanProfilesChecker.connectSource('python3 ./test.py setfanprofile ' + fanProfilesModel.profileNames[value])
+                onValueChanged: {
+                    fanTimer.triggeredOnStart = false
+                    fanTimer.stop()
+                    fanProfilesChecker.connectSource('pkexec /usr/lib/kfocus/bin/kfocus-fan-set ' + fanProfilesModel.profileNames[value])
+                    fanDescription.text = "<i>Description:</i> " + fanProfilesModel.profileDescriptions[fanSlider.value]
+                    fanTimer.start()
+                }
                 to: fanProfilesModel.count - 1
                 stepSize: 1
                 Layout.fillWidth: true
@@ -66,6 +72,7 @@ Kirigami.ApplicationWindow {
             }
 
             Controls.Label {
+                id: fanDescription
                 visible: fanSlider.visible
                 text: "<i>Description:</i> " + fanProfilesModel.profileDescriptions[fanSlider.value]
                 Layout.bottomMargin: PlasmaCore.Units.smallSpacing * 7
@@ -130,7 +137,10 @@ Kirigami.ApplicationWindow {
                             visible: firstElement
                             checked: profilesModel.selectedProfile == elementName
                             onCheckedChanged: {
+                                powerTimer.triggeredOnStart = false
+                                powerTimer.stop()
                                 if (checked) profilesModel.selectedProfile = elementName;
+                                powerTimer.start()
                             }
                             anchors.verticalCenter: parent.verticalCenter
                             anchors.left: parent.left
@@ -162,13 +172,13 @@ Kirigami.ApplicationWindow {
             property var validIndexes: []
             property var gridColors: ['transparent', 'red', 'orange', 'yellow', 'green', 'blue', 'purple',
                                       'red', 'orange', 'yellow', 'green', 'blue', 'purple'].reverse()
-            onSelectedProfileChanged: profilesChecker.connectSource('python3 ./test.py setprofile ' + selectedProfile)
+            onSelectedProfileChanged: profilesChecker.connectSource('pkexec /usr/lib/kfocus/bin/kfocus-power-set ' + selectedProfile)
         }
 
         // Loads and parse the available profiles
         PlasmaCore.DataSource {
             engine: "executable"
-            connectedSources: ['python3 ./test.py profiles'] // Replace this with the command to read the table of profiles
+            connectedSources: ['echo "Profile;GHz;Governor;;LEDs"; /usr/lib/kfocus/bin/kfocus-power-set -p']
             onNewData: {
                 let stdout = data["stdout"]
                 stdout.split('\n').forEach(function (line, index) {
@@ -208,11 +218,12 @@ Kirigami.ApplicationWindow {
         }
         // This checkes the current profile every 5 seconds
         Timer {
+            id: powerTimer
             interval: 5000
             triggeredOnStart: true
             running: true
             repeat: true
-            onTriggered: profilesChecker.connectSource('python3 ./test.py currentprofile')
+            onTriggered: profilesChecker.connectSource('/usr/lib/kfocus/bin/kfocus-power-set -r')
         }
 
         ListModel {
@@ -225,7 +236,7 @@ Kirigami.ApplicationWindow {
         // Loads and parse the available fan profiles
         PlasmaCore.DataSource {
             engine: "executable"
-            connectedSources: ['python3 ./test.py fanprofiles']
+            connectedSources: ['/usr/lib/kfocus/bin/kfocus-fan-set -p | tac']
             onNewData: {
                 data["stdout"].split('\n').forEach(function (line) {
                     if (line === '') return;
@@ -247,8 +258,8 @@ Kirigami.ApplicationWindow {
             connectedSources: []
             onNewData: {
                 if (data["stdout"].trim() !== '') {
-                    fanSlider.value = 1
                     fanSlider.value = fanProfilesModel.profileNames.indexOf(data["stdout"].trim())
+                    fanDescription.text = "<i>Description:</i> " + fanProfilesModel.profileDescriptions[fanSlider.value]
                 }
                 disconnectSource(sourceName)
             }
@@ -258,7 +269,9 @@ Kirigami.ApplicationWindow {
             interval: 5000
             triggeredOnStart: true
             repeat: true
-            onTriggered: fanProfilesChecker.connectSource('python3 ./test.py currentfanprofile')
+            onTriggered: {
+                fanProfilesChecker.connectSource('/usr/lib/kfocus/bin/kfocus-fan-set -r | cut -d\' \' -f1')
+            }
         }
     }
 
