@@ -54,21 +54,33 @@ _t00CheckExpectDirFn () {
 
 ## BEGIN _t00RunTestScriptsFn {
 _t00RunTestScriptsFn () {
-  declare _return_int _filter_str _fail_list _unit_count \
-    _unit_list _unit_file _unit_basename;
+  declare _arg_list _return_int _util_list _filter_list _unit_file \
+    _filter_str _fail_list _unit_count _unit_list  _unit_basename;
 
-  # Set default return value
+  _arg_list=("$@");
   _return_int=0;
 
-  # Build escaped filter string
-  [ "$#" -gt 0 ] && _filter_str="$1" || _filter_str='';
-  _filter_str="$(_cm2EscapeRxCharsFn "${_filter_str}")";
-
-  # Create unit test list of sorted files
+  # Create unit file list
   cd "${_t00BinDir}/unit.d" || exit 201;
-  read -r -d '' -a _unit_list < <( 
-    find ./ -maxdepth 1 -mindepth 1 | grep -E "^./${_filter_str}" | sort
+  if [ "${#_arg_list[@]}" = 0 ]; then
+    _arg_list=('');
+  fi
+
+  read -r -d '' -a _unit_list < <(
+    find ./ -maxdepth 1 -mindepth 1 | sort
   );
+
+  # Filter unit list with arguments
+  _filter_list=();
+  for _unit_file in "${_unit_list[@]}"; do
+    for _filter_str in "${_arg_list[@]}"; do
+      _filter_str="$(_cm2EscapeRxCharsFn "${_filter_str}")";
+      if grep -E "^./${_filter_str}" <<< "${_unit_file}"; then
+        _filter_list+=("${_unit_file}");
+        break;
+      fi
+    done
+  done
 
   # Export bindir for unit tests
   export _t00BinDir;
@@ -76,7 +88,7 @@ _t00RunTestScriptsFn () {
   ## Begin Iterate over unit files {
   _fail_list=();
   _unit_count=0;
-  for _unit_file in "${_unit_list[@]}"; do
+  for _unit_file in "${_filter_list[@]}"; do
     _unit_basename="$( basename "${_unit_file}" )" || exit 1;
 
     # Export dirs for use by test script
@@ -114,10 +126,10 @@ _t00RunTestScriptsFn () {
   ## End Iterate over unit files }
 
   # Summarize results and return results
-  if [ "${_filter_str}" = '' ]; then
+  if [ "${_filter_list[*]}" = "${_unit_list[*]}" ]; then
     _cm2EchoFn $'\nAll unit tests run...';
   else
-    _cm2EchoFn "\nIMPORTANT: Selected tests match |^./${_filter_str}|";
+    _cm2EchoFn "\nIMPORTANT: Selected tests match ^|${_filter_list[*]}|";
   fi
 
   if [ "${#_fail_list[@]}" -gt 0 ]; then
@@ -148,7 +160,7 @@ _t00MainFn () {
     || (_cm2EchoFn "Could not create ${_t00DataDir}"; exit 1);
 
   # Pass optional filter string
-  _t00RunTestScriptsFn "${1:-}";
+  _t00RunTestScriptsFn "$@";
 }
 ## . END _t00MainFn }
 
