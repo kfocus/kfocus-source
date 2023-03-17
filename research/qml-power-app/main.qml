@@ -10,8 +10,8 @@ Kirigami.ApplicationWindow {
     title: "Kubuntu Focus Power Tool"
     width: 550
     height: 700
-    minimumWidth: 400
-    minimumHeight: 600
+    minimumWidth: 550
+    minimumHeight: 700
 
     pageStack.initialPage: Kirigami.Page {
 
