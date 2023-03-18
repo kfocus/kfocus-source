@@ -162,6 +162,17 @@ _cm2RunLongCmdFn () {
   return "${_exit_int}";
 }
 
+_cm2CatStripEchoFn () {
+  declare _cat_file;
+  _cat_file="${1:-}";
+  if [ -z "${_file_str}" ]; then
+    echo '';
+    return 0;
+  fi
+
+  tr -d '\n' < "${_cat_file}" | sed 's/ //gm';
+}
+
 _cm2CalcModelCodeFn () {
   declare _do_quiet _dmi_name _code;
   [ -n "${1:-}" ] && _do_quiet='y';
@@ -171,14 +182,21 @@ _cm2CalcModelCodeFn () {
     return;
   fi
 
-  if [ -f "${_cm2ModelCodeFile}" ]; then
-    _dmi_name="$(tr -d '\n' < "${_cm2ModelCodeFile}" | sed 's/ //gm' )";
+  if [ -f "${_cm2DmiProductNameFile}" ]; then
+    _dmi_name="$(_cm2CatStripEchoFn "${_cm2DmiProductNameFile}")";
+
+    # Use ${var,,} syntax to convert to lowercase
+    if [[ "${_dmi_name,,}" =~ ^iridium.*$ ]]; then
+      # Ex: LCS14-12i5
+      _dmi_name="$(_cm2CatStripEchoFn "${_cm2DmiProductSkuFile}")";
+    fi
   else
     _dmi_name='other';
   fi
 
   shopt -s nocasematch;
   case "${_dmi_name}" in
+    LCS14-12i*)       _code='ir14g1';;
     PD5x_7xSNC_*)     _code='m2g5';;
     PD5x_7xPNP_*)     _code='m2g4';;
     PC5x_7xHP_HR_HS*) _code='m2g3';;
@@ -464,6 +482,7 @@ _cm2ModelLine='';
 _cm2ModelHeadList=();
 _cm2ModelTable=(
   'code|config_code|label|is_nv_sys|has_kb_led'
+  'ir14g1|ir14g1|Ir14 GEN 1|n|n'
   'm2g5|m2g4|M2 GEN 5|y|y'
   'm2g4|m2g4|M2 GEN 4|y|y'
   'm2g3|default|M2 GEN 3|y|y'
@@ -490,7 +509,8 @@ if [ -z "${_cm2KdiagExe}" ]; then
 fi
 
 # Set shared strings
-_cm2ModelCodeFile='/sys/devices/virtual/dmi/id/product_name';
+_cm2DmiProductNameFile='/sys/devices/virtual/dmi/id/product_name';
+_cm2DmiProductSkuFile='/sys/devices/virtual/dmi/id/product_sku';
 _cm2BlockMsg='';
 _cm2RmExe='/bin/rm';
 _cm2HtmBeginStr='<html><body>';
