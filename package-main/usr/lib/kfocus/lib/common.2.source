@@ -482,7 +482,7 @@ _cm2ModelLine='';
 _cm2ModelHeadList=();
 _cm2ModelTable=(
   'code|config_code|label|is_nv_sys|has_kb_led'
-  'ir14g1|ir14g1|Ir14 GEN 1|n|n'
+  'ir14g1|nxg1|Ir14 GEN 1|n|n'
   'm2g5|m2g4|M2 GEN 5|y|y'
   'm2g4|m2g4|M2 GEN 4|y|y'
   'm2g3|default|M2 GEN 3|y|y'
@@ -509,30 +509,29 @@ if [ -z "${_cm2KdiagExe}" ]; then
 fi
 
 # Set shared strings
-_cm2DmiProductNameFile='/sys/devices/virtual/dmi/id/product_name';
-_cm2DmiProductSkuFile='/sys/devices/virtual/dmi/id/product_sku';
-_cm2BlockMsg='';
-_cm2RmExe='/bin/rm';
-_cm2HtmBeginStr='<html><body>';
-_cm2HtmEndStr='</body></html>';
+_cm2DmiProductNameFile='/sys/devices/virtual/dmi/id/product_name'
+_cm2DmiProductSkuFile='/sys/devices/virtual/dmi/id/product_sku'
+_cm2BlockMsg=''
+_cm2RmExe='/bin/rm'
+_cm2HtmBeginStr='<html><body>'
+_cm2HtmEndStr='</body></html>'
 # shellcheck disable=SC2089
-_cm2HtmH3Str='<h3 style="color:#f7941d">FocusRx: ';
+_cm2HtmH3Str='<h3 style="color:#f7941d">FocusRx: '
 # shellcheck disable=SC2089
-_cm2HtmPStr='<p style="margin-right:32px">';
+_cm2HtmPStr='<p style="margin-right:32px">'
 
 # Export String
 # shellcheck disable=2090 # Disable complaining about html vars
 export _cm2Arg01 _cm2Arg02 _cm2BlockMsg _cm2HtmBeginStr _cm2HtmEndStr \
-  _cm2HtmH3Str _cm2HtmPStr _cm2IsTty _cm2KdiagExe _cm2ModelCode _cm2RmExe;
+  _cm2HtmH3Str _cm2HtmPStr _cm2IsTty _cm2KdiagExe _cm2ModelCode _cm2RmExe
 
 # Export Functions
-export -f _cm2AskExitFn _cm2AssignExeVarsFn _cm2ChkDupRunFn _cm2ChkPkgFn  \
-  _cm2ChkInstalledPkgFn _cm2EchoInstalledVersFn _cm2EchoFn _cm2EchoIntFn  \
-  _cm2EchoModelStrFn _cm2EchoStackFn _cm2ErrStrFn _cm2ErrFn               \
-  _cm2EscapeRxCharsFn _cm2CalcModelCodeFn _cm2CalcModelLineFn             \
-  _cm2GetEscExeFn _cm2InterruptFn _cm2MkTmpFileFn _cm2MkTmpDirFn          \
-  _cm2NechoFn _cm2PromptUserFn  _cm2ReadPromptYnFn _cm2RunLongCmdFn       \
-  _cm2SetMsgFn _cm2StripTagsFn _cm2SucFn _cm2SucStrFn _cm2TestVersFn      \
-  _cm2TrapErrorFn _cm2TrapExitFn _cm2TrapInterruptFn _cm2WarnFn           \
-  _cm2WarnStrFn _cm2SetIsTtyFn;
+export -f _cm2AskExitFn _cm2AssignExeVarsFn _cm2CatStripEchoFn               \
+  _cm2ChkDupRunFn _cm2ChkPkgFn _cm2ChkInstalledPkgFn _cm2EchoInstalledVersFn \
+  _cm2EchoFn _cm2EchoIntFn _cm2EchoModelStrFn _cm2EchoStackFn _cm2ErrStrFn   \
+  _cm2ErrFn _cm2EscapeRxCharsFn _cm2CalcModelCodeFn _cm2CalcModelLineFn      \
+  _cm2GetEscExeFn _cm2InterruptFn _cm2MkTmpFileFn _cm2MkTmpDirFn _cm2NechoFn \
+  _cm2PromptUserFn _cm2ReadPromptYnFn _cm2RunLongCmdFn _cm2SetMsgFn          \
+  _cm2StripTagsFn _cm2SucFn _cm2SucStrFn _cm2TestVersFn _cm2TrapErrorFn      \
+  _cm2TrapExitFn _cm2TrapInterruptFn _cm2WarnFn _cm2WarnStrFn _cm2SetIsTtyFn ;
 ## . END Execute on source }

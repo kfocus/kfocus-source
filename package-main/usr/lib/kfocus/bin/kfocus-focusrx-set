@@ -143,7 +143,7 @@ _chkHwConfigFn () {
     _msg+="Package ${_tool_pkg_name} needs to be installed.";
     _reason_list+=( "${_msg}" );
   elif [ "${_do_force}" = 'y' ]; then
-    _msg="install-hw-tools;${_tool_pkg_name};";
+    _msg="install-hw-tools;${_tool_pkg_name};"
     _msg+="Package ${_tool_pkg_name} forced reinstall.";
     _reason_list+=( "${_msg}" );
   fi
