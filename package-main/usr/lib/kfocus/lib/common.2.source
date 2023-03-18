@@ -165,7 +165,7 @@ _cm2RunLongCmdFn () {
 _cm2CatStripEchoFn () {
   declare _cat_file;
   _cat_file="${1:-}";
-  if [ -z "${_file_str}" ]; then
+  if [ -z "${_cat_file}" ]; then
     echo '';
     return 0;
   fi
