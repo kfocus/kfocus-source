@@ -509,21 +509,21 @@ if [ -z "${_cm2KdiagExe}" ]; then
 fi
 
 # Set shared strings
-_cm2DmiProductNameFile='/sys/devices/virtual/dmi/id/product_name'
-_cm2DmiProductSkuFile='/sys/devices/virtual/dmi/id/product_sku'
-_cm2BlockMsg=''
-_cm2RmExe='/bin/rm'
-_cm2HtmBeginStr='<html><body>'
-_cm2HtmEndStr='</body></html>'
+_cm2DmiProductNameFile='/sys/devices/virtual/dmi/id/product_name';
+_cm2DmiProductSkuFile='/sys/devices/virtual/dmi/id/product_sku';
+_cm2BlockMsg='';
+_cm2RmExe='/bin/rm';
+_cm2HtmBeginStr='<html><body>';
+_cm2HtmEndStr='</body></html>';
 # shellcheck disable=SC2089
-_cm2HtmH3Str='<h3 style="color:#f7941d">FocusRx: '
+_cm2HtmH3Str='<h3 style="color:#f7941d">FocusRx: ';
 # shellcheck disable=SC2089
-_cm2HtmPStr='<p style="margin-right:32px">'
+_cm2HtmPStr='<p style="margin-right:32px">';
 
 # Export String
 # shellcheck disable=2090 # Disable complaining about html vars
 export _cm2Arg01 _cm2Arg02 _cm2BlockMsg _cm2HtmBeginStr _cm2HtmEndStr \
-  _cm2HtmH3Str _cm2HtmPStr _cm2IsTty _cm2KdiagExe _cm2ModelCode _cm2RmExe
+  _cm2HtmH3Str _cm2HtmPStr _cm2IsTty _cm2KdiagExe _cm2ModelCode _cm2RmExe;
 
 # Export Functions
 export -f _cm2AskExitFn _cm2AssignExeVarsFn _cm2CatStripEchoFn               \
