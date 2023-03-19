@@ -161,7 +161,9 @@ _scanFn () {
 
     if [ "${_mode_key}" = 'print' ] || [ "${_mode_key}" = 'read' ]; then
       if [ "${_set_max_int}" -gt "${_prior_max_int}" ]; then
-        _solve_line="${_label};${_set_max_int};${_gov_key};";
+        _solve_line="${_label};"
+        _solve_line+="${_set_max_int:0:1}.${_set_max_int:1:2} GHz;"
+        _solve_line+="${_gov_key};";
         if [ "${_noturbo_int}" = '1' ]; then
           _solve_line+="No;";
         else
