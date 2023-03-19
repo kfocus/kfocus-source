@@ -164,7 +164,11 @@ _scanFn () {
         _solve_line="${_label};${_set_max_int};${_gov_key};";
         _solve_line+="${_noturbo_int};";
         if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
-          _solve_line+="${_kbdled_int};";
+          if [ "${_kbdled_int}" = '1' ]; then
+            _solve_line+="On;";
+          else
+            _solve_line+="Off;";
+          fi
         fi
         _prior_max_int="${_set_max_int}"
       fi
