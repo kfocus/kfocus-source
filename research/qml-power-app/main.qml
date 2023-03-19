@@ -179,7 +179,7 @@ Kirigami.ApplicationWindow {
         // Loads and parse the available profiles
         PlasmaCore.DataSource {
             engine: "executable"
-            connectedSources: ['echo "Profile;GHz;Governor;;LEDs"; /usr/lib/kfocus/bin/kfocus-power-set -p']
+            connectedSources: ['/usr/lib/kfocus/bin/kfocus-power-set -p']
             onNewData: {
                 let stdout = data["stdout"]
                 stdout.split('\n').forEach(function (line, index) {
