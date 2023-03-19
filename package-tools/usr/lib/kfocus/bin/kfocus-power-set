@@ -12,8 +12,10 @@
 #
 set -u;
 
+_optionHeader='Profile;Frequency;Governor;Turbo;LEDs'
+
 _optionTable=(
-  # _label;_power_idx;up_ratio;down_ratio;gov_key;noturbo_int;kbdled_int
+  # _label;up_ratio;down_ratio;gov_key;noturbo_int;kbdled_int
   'High;1;X;performance;0;1'
   'Normal;1;X;powersave;0;1'
   'Studio;0;X;performance;1;1'
@@ -22,6 +24,24 @@ _optionTable=(
   'Frugal;X;.666666666;powersave;1;0'
   'Minimal;X;.5;powersave;1;0'
 );
+
+## BEGIN _importCommonFn {
+# Imports: _cm2EchoModelStrFn _cm2KdiagExe _cm2WarnStrFn
+#
+# Run ls-common-symbols.sh to get this list
+#
+_importCommonFn () {
+  declare _lib_file;
+  _lib_file="${_baseDir}/lib/common.2.source";
+  if [ -r "${_lib_file}" ]; then
+    # shellcheck source=../lib/common.2.source
+    source "${_lib_file}" || exit 202;
+  else
+    echo 1>&2 "${_baseName}: ABORT - Cannot source lib |${_lib_file}|";
+    exit 202;
+  fi  
+}
+## . END _importCommonFn }
 
 _printIntFn () { printf '%.0f' "$*"; }
 _stderrFn () { 1>&2 echo -e "$*"; }
@@ -105,7 +125,7 @@ _scanFn () {
   _kbdled_int="${_bit_list[5]}";
 
   case "${_mode_key}" in
-    print|read) true;;
+    print|read|readInternal) true;;
     set)
       _setNoTurboFn "${_noturbo_int}";
       _setKeyboardFn "${_kbdled_int}";
@@ -139,10 +159,28 @@ _scanFn () {
     );
     _set_max_int="$(_printMaxIntFn "${_param_list[@]}")";
 
-    if [ "${_mode_key}" = 'print' ] || [ "${_mode_key}" = 'read' ]; then
+    if [ "${_mode_key}" = 'print' ] || [ "${_mode_key}" = 'read' ] || \
+      [ "${_mode_key}" = 'readInternal' ]; then
       if [ "${_set_max_int}" -gt "${_prior_max_int}" ]; then
-        _solve_line="${_label};${_set_max_int};${_gov_key};";
-        _solve_line+="${_noturbo_int};${_kbdled_int};";
+        _solve_line="${_label};"
+        if [ "${_mode_key}" = 'readInternal' ]; then
+          _solve_line+="${_set_max_int};${_gov_key};${_noturbo_int};${_kbdled_int};";
+        else
+          _solve_line+="${_set_max_int:0:1}.${_set_max_int:1:2} GHz;"
+          _solve_line+="${_gov_key};";
+          if [ "${_noturbo_int}" = '1' ]; then
+            _solve_line+="No;";
+          else
+            _solve_line+="Yes;";
+          fi
+          if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
+            if [ "${_kbdled_int}" = '1' ]; then
+              _solve_line+="On;";
+            else
+              _solve_line+="Off;";
+            fi
+          fi
+        fi
         _prior_max_int="${_set_max_int}"
       fi
     else
@@ -161,7 +199,8 @@ _scanFn () {
     fi
   done
 
-  if [ "${_mode_key}" = 'print' ] || [ "${_mode_key}" = 'read' ]; then
+  if [ "${_mode_key}" = 'print' ] || [ "${_mode_key}" = 'read' ] || \
+    [ "${_mode_key}" = 'readInternal' ]; then
     echo "${_solve_line}";
   fi
 }
@@ -192,7 +231,23 @@ _setModeFn () {
 }
 
 _printOptionsFn () {
-  declare _opt_line;
+  declare _opt_line _header_line _bit_list _label _frequency _governor \
+  _turbo _leds;
+
+  IFS=';' read -r -a _bit_list <<< "${_optionHeader}";
+  _label="${_bit_list[0]}";
+  _frequency="${_bit_list[1]}";
+  _governor="${_bit_list[2]}";
+  _turbo="${_bit_list[3]}";
+  _leds="${_bit_list[4]}";
+
+  _header_line="${_label};${_frequency};${_governor};${_turbo};";
+  if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
+    _header_line+="${_leds};";
+  fi
+
+  echo "${_header_line}";
+
   for _opt_line in "${_optionTable[@]}"; do
     _scanFn "${_opt_line}" 'print';
   done
@@ -230,7 +285,7 @@ _readModeFn () {
   if [ -z "${_search_line:-}" ]; then return 1; fi
 
   for _opt_line in "${_optionTable[@]}"; do
-    _read_line="$(_scanFn "${_opt_line}" 'read')";
+    _read_line="$(_scanFn "${_opt_line}" 'readInternal')";
     IFS=';' read -r -d '' -a _bit_list < <(echo -n "${_read_line}");
     if [ "${_bit_list[*]:1:3}" = "${_search_line}" ]; then
       echo "${_bit_list[0]}";
@@ -279,6 +334,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binDir="$(dirname "${_binName}")"    || exit 101;
   _baseDir="$(dirname "${_binDir}")"    || exit 101;
   _baseName="$(basename "${_binName}")" || exit 101;
+  _importCommonFn;
   _mainFn "$@";
 fi
 ## . END Run main if script is not sourced }
