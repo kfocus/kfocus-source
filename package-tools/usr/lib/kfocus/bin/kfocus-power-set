@@ -12,6 +12,8 @@
 #
 set -u;
 
+_optionHeader='Profile;Frequency;Governor;Turbo;LEDs'
+
 _optionTable=(
   # _label;up_ratio;down_ratio;gov_key;noturbo_int;kbdled_int
   'High;1;X;performance;0;1'
@@ -213,7 +215,23 @@ _setModeFn () {
 }
 
 _printOptionsFn () {
-  declare _opt_line;
+  declare _opt_line _header_line _bit_list _label _frequency _governor \
+  _turbo _leds;
+
+  IFS=';' read -r -a _bit_list <<< "${_optionHeader}";
+  _label="${_bit_list[0]}";
+  _frequency="${_bit_list[1]}";
+  _governor="${_bit_list[2]}";
+  _turbo="${_bit_list[3]}";
+  _leds="${_bit_list[4]}";
+
+  _header_line="${_label};${_frequency};${_governor};${_turbo};";
+  if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
+    _header_line+="${_leds};";
+  fi
+
+  echo "${_header_line}";
+
   for _opt_line in "${_optionTable[@]}"; do
     _scanFn "${_opt_line}" 'print';
   done
