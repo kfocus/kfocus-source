@@ -23,6 +23,24 @@ _optionTable=(
   'Minimal;X;.5;powersave;1;0'
 );
 
+## BEGIN _importCommonFn {
+# Imports: _cm2EchoModelStrFn _cm2KdiagExe _cm2WarnStrFn
+#
+# Run ls-common-symbols.sh to get this list
+#
+_importCommonFn () {
+  declare _lib_file;
+  _lib_file="${_baseDir}/lib/common.2.source";
+  if [ -r "${_lib_file}" ]; then
+    # shellcheck source=../lib/common.2.source
+    source "${_lib_file}" || exit 202;
+  else
+    echo 1>&2 "${_baseName}: ABORT - Cannot source lib |${_lib_file}|";
+    exit 202;
+  fi  
+}
+## . END _importCommonFn }
+
 _printIntFn () { printf '%.0f' "$*"; }
 _stderrFn () { 1>&2 echo -e "$*"; }
 _printMaxIntFn () {
@@ -142,7 +160,10 @@ _scanFn () {
     if [ "${_mode_key}" = 'print' ] || [ "${_mode_key}" = 'read' ]; then
       if [ "${_set_max_int}" -gt "${_prior_max_int}" ]; then
         _solve_line="${_label};${_set_max_int};${_gov_key};";
-        _solve_line+="${_noturbo_int};${_kbdled_int};";
+        _solve_line+="${_noturbo_int};";
+        if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
+          _solve_line+="${_kbdled_int};";
+        fi
         _prior_max_int="${_set_max_int}"
       fi
     else
@@ -279,6 +300,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binDir="$(dirname "${_binName}")"    || exit 101;
   _baseDir="$(dirname "${_binDir}")"    || exit 101;
   _baseName="$(basename "${_binName}")" || exit 101;
+  _importCommonFn;
   _mainFn "$@";
 fi
 ## . END Run main if script is not sourced }
