@@ -161,19 +161,24 @@ _scanFn () {
 
     if [ "${_mode_key}" = 'print' ] || [ "${_mode_key}" = 'read' ]; then
       if [ "${_set_max_int}" -gt "${_prior_max_int}" ]; then
-        _solve_line="${_label};"
-        _solve_line+="${_set_max_int:0:1}.${_set_max_int:1:2} GHz;"
-        _solve_line+="${_gov_key};";
-        if [ "${_noturbo_int}" = '1' ]; then
-          _solve_line+="No;";
+        if [ "${_mode_key}" = 'read' ]; then
+          _solve_line="${_label};${_set_max_int};${_gov_key};${_noturbo_int};";
+          _solve_line+="${_kbdled_int};";
         else
-          _solve_line+="Yes;";
-        fi
-        if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
-          if [ "${_kbdled_int}" = '1' ]; then
-            _solve_line+="On;";
-          else
-            _solve_line+="Off;";
+          _solve_line="${_label};";
+          _solve_line+="${_set_max_int:0:1}.${_set_max_int:1:2} GHz;";
+          _solve_line+="${_gov_key};";
+          if [ "${_noturbo_int}" = '1' ]; then
+            _solve_line+="No;";
+         else
+            _solve_line+="Yes;";
+         fi
+          if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
+            if [ "${_kbdled_int}" = '1' ]; then
+              _solve_line+="On;";
+            else
+              _solve_line+="Off;";
+            fi
           fi
         fi
         _prior_max_int="${_set_max_int}"
