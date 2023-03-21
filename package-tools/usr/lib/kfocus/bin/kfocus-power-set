@@ -230,8 +230,10 @@ _setModeFn () {
 }
 
 _printOptionsFn () {
-  declare _opt_line _header_line _bit_list _label _frequency _governor \
-  _turbo _leds;
+  declare _print_mode _opt_line _header_line _bit_list _label _frequency \
+  _governor _turbo _leds;
+
+  _print_mode="${1:-}"
 
   IFS=';' read -r -a _bit_list <<< "${_optionHeader}";
   _label="${_bit_list[0]}";
@@ -240,15 +242,20 @@ _printOptionsFn () {
   _turbo="${_bit_list[3]}";
   _leds="${_bit_list[4]}";
 
-  _header_line="${_label};${_frequency};${_governor};${_turbo};";
-  if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
-    _header_line+="${_leds};";
+  if [ "${_print_mode}" = 'x' ]; then
+    _header_line="${_label};${_frequency};${_governor};${_turbo};";
+    if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
+      _header_line+="${_leds};";
+    fi
+    echo "${_header_line}";
   fi
 
-  echo "${_header_line}";
-
   for _opt_line in "${_optionTable[@]}"; do
-    _scanFn "${_opt_line}" 'print';
+    if [ "${_print_mode}" = 'x' ]; then
+      _scanFn "${_opt_line}" 'print';
+    else
+      _scanFn "${_opt_line}" 'read';
+    fi
   done
 }
 ## . END _printOptionsFn }
@@ -303,7 +310,8 @@ _mainFn () {
   declare _arg_str;
   _arg_str="${1:-}";
   case "${_arg_str}" in
-    '-p') _printOptionsFn;;
+    '-p') _printOptionsFn 'p';;
+    '-x') _printOptionsFn 'x';;
     '-r') _readModeFn;;
       '') _stderrFn 'Argument or flag required'; exit 1;;
        *) _setModeFn "${_arg_str}";
