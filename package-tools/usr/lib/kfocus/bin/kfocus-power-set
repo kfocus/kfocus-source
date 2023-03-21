@@ -125,7 +125,7 @@ _scanFn () {
   _kbdled_int="${_bit_list[5]}";
 
   case "${_mode_key}" in
-    print|read|readInternal) true;;
+    print|read) true;;
     set)
       _setNoTurboFn "${_noturbo_int}";
       _setKeyboardFn "${_kbdled_int}";
@@ -159,26 +159,21 @@ _scanFn () {
     );
     _set_max_int="$(_printMaxIntFn "${_param_list[@]}")";
 
-    if [ "${_mode_key}" = 'print' ] || [ "${_mode_key}" = 'read' ] || \
-      [ "${_mode_key}" = 'readInternal' ]; then
+    if [ "${_mode_key}" = 'print' ] || [ "${_mode_key}" = 'read' ]; then
       if [ "${_set_max_int}" -gt "${_prior_max_int}" ]; then
         _solve_line="${_label};"
-        if [ "${_mode_key}" = 'readInternal' ]; then
-          _solve_line+="${_set_max_int};${_gov_key};${_noturbo_int};${_kbdled_int};";
+        _solve_line+="${_set_max_int:0:1}.${_set_max_int:1:2} GHz;"
+        _solve_line+="${_gov_key};";
+        if [ "${_noturbo_int}" = '1' ]; then
+          _solve_line+="No;";
         else
-          _solve_line+="${_set_max_int:0:1}.${_set_max_int:1:2} GHz;"
-          _solve_line+="${_gov_key};";
-          if [ "${_noturbo_int}" = '1' ]; then
-            _solve_line+="No;";
+          _solve_line+="Yes;";
+        fi
+        if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
+          if [ "${_kbdled_int}" = '1' ]; then
+            _solve_line+="On;";
           else
-            _solve_line+="Yes;";
-          fi
-          if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
-            if [ "${_kbdled_int}" = '1' ]; then
-              _solve_line+="On;";
-            else
-              _solve_line+="Off;";
-            fi
+            _solve_line+="Off;";
           fi
         fi
         _prior_max_int="${_set_max_int}"
@@ -199,8 +194,7 @@ _scanFn () {
     fi
   done
 
-  if [ "${_mode_key}" = 'print' ] || [ "${_mode_key}" = 'read' ] || \
-    [ "${_mode_key}" = 'readInternal' ]; then
+  if [ "${_mode_key}" = 'print' ] || [ "${_mode_key}" = 'read' ]; then
     echo "${_solve_line}";
   fi
 }
@@ -285,7 +279,7 @@ _readModeFn () {
   if [ -z "${_search_line:-}" ]; then return 1; fi
 
   for _opt_line in "${_optionTable[@]}"; do
-    _read_line="$(_scanFn "${_opt_line}" 'readInternal')";
+    _read_line="$(_scanFn "${_opt_line}" 'read')";
     IFS=';' read -r -d '' -a _bit_list < <(echo -n "${_read_line}");
     if [ "${_bit_list[*]:1:3}" = "${_search_line}" ]; then
       echo "${_bit_list[0]}";
