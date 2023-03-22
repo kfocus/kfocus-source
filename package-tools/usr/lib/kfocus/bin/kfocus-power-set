@@ -125,7 +125,7 @@ _scanFn () {
   _kbdled_int="${_bit_list[5]}";
 
   case "${_mode_key}" in
-    print|read|readInternal) true;;
+    print|read) true;;
     set)
       _setNoTurboFn "${_noturbo_int}";
       _setKeyboardFn "${_kbdled_int}";
@@ -159,14 +159,14 @@ _scanFn () {
     );
     _set_max_int="$(_printMaxIntFn "${_param_list[@]}")";
 
-    if [ "${_mode_key}" = 'print' ] || [ "${_mode_key}" = 'read' ] || \
-      [ "${_mode_key}" = 'readInternal' ]; then
+    if [ "${_mode_key}" = 'print' ] || [ "${_mode_key}" = 'read' ]; then
       if [ "${_set_max_int}" -gt "${_prior_max_int}" ]; then
-        _solve_line="${_label};"
-        if [ "${_mode_key}" = 'readInternal' ]; then
-          _solve_line+="${_set_max_int};${_gov_key};${_noturbo_int};${_kbdled_int};";
+        if [ "${_mode_key}" = 'read' ]; then
+          _solve_line="${_label};${_set_max_int};${_gov_key};${_noturbo_int};";
+          _solve_line+="${_kbdled_int};";
         else
-          _solve_line+="${_set_max_int:0:1}.${_set_max_int:1:2} GHz;"
+          _solve_line="${_label};";
+          _solve_line+="${_set_max_int:0:1}.${_set_max_int:1:2} GHz;";
           _solve_line+="${_gov_key};";
           if [ "${_noturbo_int}" = '1' ]; then
             _solve_line+="No;";
@@ -199,8 +199,7 @@ _scanFn () {
     fi
   done
 
-  if [ "${_mode_key}" = 'print' ] || [ "${_mode_key}" = 'read' ] || \
-    [ "${_mode_key}" = 'readInternal' ]; then
+  if [ "${_mode_key}" = 'print' ] || [ "${_mode_key}" = 'read' ]; then
     echo "${_solve_line}";
   fi
 }
@@ -231,8 +230,10 @@ _setModeFn () {
 }
 
 _printOptionsFn () {
-  declare _opt_line _header_line _bit_list _label _frequency _governor \
-  _turbo _leds;
+  declare _print_mode _opt_line _header_line _bit_list _label _frequency \
+  _governor _turbo _leds;
+
+  _print_mode="${1:-}"
 
   IFS=';' read -r -a _bit_list <<< "${_optionHeader}";
   _label="${_bit_list[0]}";
@@ -241,15 +242,20 @@ _printOptionsFn () {
   _turbo="${_bit_list[3]}";
   _leds="${_bit_list[4]}";
 
-  _header_line="${_label};${_frequency};${_governor};${_turbo};";
-  if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
-    _header_line+="${_leds};";
+  if [ "${_print_mode}" = 'x' ]; then
+    _header_line="${_label};${_frequency};${_governor};${_turbo};";
+    if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
+      _header_line+="${_leds};";
+    fi
+    echo "${_header_line}";
   fi
 
-  echo "${_header_line}";
-
   for _opt_line in "${_optionTable[@]}"; do
-    _scanFn "${_opt_line}" 'print';
+    if [ "${_print_mode}" = 'x' ]; then
+      _scanFn "${_opt_line}" 'print';
+    else
+      _scanFn "${_opt_line}" 'read';
+    fi
   done
 }
 ## . END _printOptionsFn }
@@ -285,7 +291,7 @@ _readModeFn () {
   if [ -z "${_search_line:-}" ]; then return 1; fi
 
   for _opt_line in "${_optionTable[@]}"; do
-    _read_line="$(_scanFn "${_opt_line}" 'readInternal')";
+    _read_line="$(_scanFn "${_opt_line}" 'read')";
     IFS=';' read -r -d '' -a _bit_list < <(echo -n "${_read_line}");
     if [ "${_bit_list[*]:1:3}" = "${_search_line}" ]; then
       echo "${_bit_list[0]}";
@@ -304,7 +310,8 @@ _mainFn () {
   declare _arg_str;
   _arg_str="${1:-}";
   case "${_arg_str}" in
-    '-p') _printOptionsFn;;
+    '-p') _printOptionsFn 'p';;
+    '-x') _printOptionsFn 'x';;
     '-r') _readModeFn;;
       '') _stderrFn 'Argument or flag required'; exit 1;;
        *) _setModeFn "${_arg_str}";
