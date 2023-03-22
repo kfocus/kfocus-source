@@ -10,6 +10,31 @@ _cm2EscapeRxCharsFn () {
   printf '%s' "${1:-}" | sed 's/[.[\*^$()+?{|]/\\&/g';
 }
 
+# Sets global scale factor in XDG_CONFIG_DIRS
+# See kfocus-reset-effects for general config-setting logic
+#
+_setScaleFactorFn () {
+  declare _factor_str _kwrite_exe _config_file _opt_list;
+
+  _factor_str="${1:-}";
+  _kwrite_exe="$(command -v kwriteconfig5)";
+  _config_file='/usr/share/kfocus/kf5-settings/kdeglobals';
+  if [ ! -f "${_config_file}" ]; then
+    touch "${_config_file}" || return;
+  fi
+  if [ -n "${_kwrite_exe}" ]; then
+    _opt_list=( '--file' "${_config_file}" '--group' 'KScreen'
+      '--key' 'ScaleFactor'
+    );
+    if [ -n "${_factor_str}" ]; then
+      _opt_list+=( "${_factor_str}" );
+    else
+      _opt_list+=( '--delete' );
+    fi
+    "${_kwrite_exe}" "${_opt_list[@]}" || true;
+  fi
+}
+
 # hw_config_code 'default' handles models m2g3, m2g2, m2g1, m1g1
 #
 _handle_defaultFn () {
@@ -19,7 +44,7 @@ _handle_defaultFn () {
     '/etc/default/grub.d/kfocus.cfg|/usr/lib/kfocus/conf/dflt-etc_default_grub.d_kfocus.cfg'
     '/etc/initramfs-tools/conf.d/kfocus.conf|'
     '/etc/modprobe.d/kfocus.conf|/usr/lib/kfocus/conf/m2g4-dflt_etc_modprobe.d_kfocus.conf'
-    # Load tuxedo-keyboard
+    # Load keyboard
     '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
     # xhci enable/disable on sleep
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
@@ -27,6 +52,7 @@ _handle_defaultFn () {
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
     '/etc/tlp.d/kfocus.conf|'
   );
+  _setScaleFactorFn '';
 }
 # hw_config_code 'generic' handles model xeg1
 #
@@ -36,15 +62,15 @@ _handle_genericFn () {
     '/etc/default/grub.d/kfocus.cfg|'
     '/etc/initramfs-tools/conf.d/kfocus.conf|'
     '/etc/modprobe.d/kfocus.conf|'
-    # Load tuxedo-keyboard
     '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
     '/etc/tlp.d/kfocus.conf|'
   );
+  _setScaleFactorFn '';
 }
-# hw_config_code 'xeg2' handles model xeg2.wip
+# hw_config_code 'xeg2' handles model xeg2
 #
 _handle_xeg2Fn () {
   _symlinkTable+=(
@@ -56,7 +82,7 @@ _handle_xeg2Fn () {
     '/etc/initramfs-tools/conf.d/kfocus.conf|'
     # Sound, nv power
     '/etc/modprobe.d/kfocus.conf|'
-    # Load tuxedo-keyboard
+    # Load keyboard
     '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
     # xhci enable/disable on sleep
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
@@ -67,10 +93,13 @@ _handle_xeg2Fn () {
     # Remove old TLP config
     '/etc/tlp.d/kfocus.conf|'
   );
+  _setScaleFactorFn '';
 }
-# hw_config_code 'm2g4' handles models m2g4, m2g5.wip
+
+# hw_config_code 'm2g4' handles models m2g4
 #
 _handle_m2g4Fn () {
+
   if [ -x "/usr/bin/deb-systemd-helper" ]; then
     deb-systemd-helper mask \
       systemd-backlight@backlight:nvidia_0.service >/dev/null
@@ -85,17 +114,18 @@ _handle_m2g4Fn () {
     '/etc/initramfs-tools/conf.d/kfocus.conf|'
     # Sound, nv power
     '/etc/modprobe.d/kfocus.conf|/usr/lib/kfocus/conf/m2g4-dflt_etc_modprobe.d_kfocus.conf'
-    # Load tuxedo-keyboard
+    # Load keyboard
     '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
     # xhci enable/disable on sleep
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
     # Trackpad config
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|/usr/lib/kfocus/conf/m2g4-usr_share_X11_xorg.conf.d_80-kfocus.conf'
     # Default DPI Scaling
-    '/usr/share/kfocus/kf5-settings/kcmfonts|/usr/lib/kfocus/conf/m2g4-usr_share_kfocus_kf5-settings_kcmfonts'
+    '/usr/share/kfocus/kf5-settings/kcmfonts|'
     # Remove old TLP config
     '/etc/tlp.d/kfocus.conf|'
   );
+  _setScaleFactorFn '1.5';
 }
 # hw_config_code 'nxg1' handles models nxg1 and nxg2
 #
@@ -114,6 +144,7 @@ _handle_nxg1Fn () {
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
     '/etc/tlp.d/kfocus.conf|'
   );
+  _setScaleFactorFn '';
 }
 # hw_config_code 'other' handles unrecognized models
 #
@@ -130,6 +161,7 @@ _handle_otherFn () {
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
     '/etc/tlp.d/kfocus.conf|'
   );
+  _setScaleFactorFn '';
 }
 
 _cleanupGrubFileFn () {
@@ -249,9 +281,7 @@ _configFn () {
   if [ -z "${_config_code:-}" ]; then _config_code='generic'; fi
 
   # If old config code is blank, perform one-time grub cleanup
-  if [ -z "${_old_config_code}" ] || [ "${_config_code}" = 'm2g4' ];
-    then _cleanupGrubFileFn;
-  fi
+  if [ -z "${_old_config_code}" ]; then _cleanupGrubFileFn; fi
 
   # Determine and call per-config-code function
   _fn_name="_handle_${_config_code}Fn";

@@ -53,8 +53,10 @@ _checkUserFn () {
       _cm2WarnStrFn "ABORT: Please run this as root.";
       _cm2WarnStrFn "For example, type 'sudo ${_baseName}' in a terminal.";
       _cm2ErrFn;
+      return;
     fi
   fi
+  _cm2SucFn;
 }
 _createTmpDirFn () {
   _cm2SetMsgFn 'Create tempdir';
@@ -154,9 +156,12 @@ _copyLogsFn () {
   _cm2SucFn;
 }
 _createInstallDetailFn () {
-  _cm2SetMsgFn 'Create detailed install report';
-  apt-cache policy $(apt list --installed |awk -F'/' '{print $1}') \
+  _cm2SetMsgFn 'Create detailed installation report';
+  # shellcheck disable=SC2046
+  apt-cache policy $(2>/dev/null apt list --installed |awk -F'/' '{print $1}') \
     > "${_tmpDir}/apt-cache-policy.txt";
+  cp -a /etc/apt/sources.list "${_tmpDir}/"   || true;
+  cp -a /etc/apt/sources.list.d "${_tmpDir}/" || true;
   _cm2SucFn;
 }
 _bundleDirFn () {
@@ -178,7 +183,7 @@ _bundleDirFn () {
     _str="A report file has been created in your home \n";
     _str+="directory called ${_solve_name}. The full path is\n";
     _str+="${_fq_solve_file}\n\n";
-    _str+="Please send this file to support@kfocus.org\n";
+    _str+="Please send this file to support@kfocus.org";
     _cm2SucStrFn "${_str}";
     if ! chown "${_uname}:${_gname}" "${_fq_solve_file}"; then
       _cm2WarnStrFn "Could chown ${_fq_solve_file}";
