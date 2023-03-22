@@ -211,6 +211,40 @@ _testLoopFn () {
 }
 ## . END _testLoopFn }
 
+## BEGIN _testApiFn {
+_testApiFn () {
+  declare _pick_list _api_mode_ _model_code _cpu_name _field_list \
+    _expect_file _run_file _expect_str _run_str
+
+  _pick_list=( "$@" );
+  _api_mode="${_pick_list[0]}";
+  _pick_list=("${_pick_list[@]:1}"); # Remove the API mode argument
+  _model_code="$(_cm2EchoModelStrFn 'code')";
+  _cpu_name="$(_echoCpuModelNameFn)";
+  _field_list=( "${_model_code}" "${_cpu_name}" "api_str_${_api_mode}" );
+
+  _expect_file="$(
+    printf '%s/%s_%s_%s.txt' "${_t00ExpectDir}" "${_field_list[@]}"
+  )";
+  _run_file="$(
+    printf '%s/%s_%s_%s.txt' "${_t00RunDir}" "${_field_list[@]}"
+  )";
+  if [ ! -f "${_expect_file}" ]; then touch "${_expect_file}"; fi
+  if [ ! -f "${_run_file}"    ]; then touch "${_run_file}";    fi
+  _expect_str="$(cat "${_expect_file}")";
+  _run_str="$(IFS=$'\n'; echo "${_pick_list[*]}")";
+  echo "${_run_str}" > "${_run_file}";
+  if [ "${_expect_str}" = "${_run_str}" ]; then
+    _cm2EchoFn "OK  Test testApi -${_api_mode}\n\n";
+    return 0;
+  else
+    _cm2EchoFn ". FAIL Test testApi -${_api_mode}\n\n";
+    meld "${_expect_file}" "${_run_file}";
+    return 1;
+  fi
+}
+## . END _testApiFn }
+
 ## BEGIN _runTestFn {
 _runTestFn () {
   declare _power_exe _current_mode_str _pick_str _pick_list _fail_count \
@@ -225,13 +259,25 @@ _runTestFn () {
   _power_exe+='bin/kfocus-power-set';
   _current_mode_str="$("${_power_exe}" -r)";
 
-  _cm2EchoFn "TEST SUITE 1: kfocus-power-set -p parsing and execution\n";
-  
+  _cm2EchoFn "TEST SUITE 1: kfocus-power-set -p API check\n";
+
   _pick_str="$("${_power_exe}" -p)";
   IFS=$'\n' read -r -d '' -a _pick_list <<<"${_pick_str}";
 
-  _testLoopFn "${_pick_list[@]}"
-  _fail_count="$?"
+  _testApiFn 'p' "${_pick_list[@]}";
+  _fail_count="$?";
+  _test_count="1";
+
+  if [ "${_fail_count}" -gt 0 ]; then
+    _cm2EchoFn "fail: ${_fail_count} of ${_test_count} tests failed.";
+  else
+    _cm2EchoFn 'ok  : Results match expected';
+  fi
+
+  _cm2EchoFn "TEST SUITE 2: kfocus-power-set -p parsing and execution\n";
+
+  _testLoopFn "${_pick_list[@]}";
+  _fail_count="$?";
   _test_count="$(echo "${#_pick_list[@]}*2"|bc)";
   
   if [ "${_fail_count}" -gt 0 ]; then
@@ -240,15 +286,28 @@ _runTestFn () {
     _cm2EchoFn 'ok  : Results match expected';
   fi
 
-  _cm2EchoFn "TEST SUITE 2: kfocus-power-set -x parsing and execution\n";
+  _cm2EchoFn "TEST SUITE 3: kfocus-power-set -x API check\n"
 
   _pick_str="$("${_power_exe}" -x)";
   IFS=$'\n' read -r -d '' -a _pick_list <<<"${_pick_str}";
-  _pick_list=("${_pick_list[@]:1}") # Remove the header
+ 
+  _testApiFn 'x' "${_pick_list[@]}";
+  _fail_count="$?";
+  _test_count="1";
 
-  _testLoopFn "${_pick_list[@]}"
-   _fail_count="$?"
-  _test_count="$(echo "${#_pick_list[@]}*2"|bc)"
+  if [ "${_fail_count}" -gt 0 ]; then
+    _cm2EchoFn "fail: ${_fail_count} of ${_test_count} tests failed.";
+  else
+    _cm2EchoFn 'ok  : Results match expected';
+  fi
+
+  _cm2EchoFn "TEST SUITE 4: kfocus-power-set -x parsing and execution\n";
+
+  _pick_list=("${_pick_list[@]:1}"); # Remove the header
+
+  _testLoopFn "${_pick_list[@]}";
+  _fail_count="$?";
+  _test_count="$(echo "${#_pick_list[@]}*2"|bc)";
 
   if [ "${_fail_count}" -gt 0 ]; then
     _cm2EchoFn "fail: ${_fail_count} of ${_test_count} tests failed.";
