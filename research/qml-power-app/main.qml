@@ -45,7 +45,7 @@ Kirigami.ApplicationWindow {
                 onValueChanged: {
                     fanTimer.triggeredOnStart = false
                     fanTimer.stop()
-                    fanProfilesChecker.connectSource('pkexec /usr/lib/kfocus/bin/kfocus-fan-set ' + fanProfilesModel.profileNames[value])
+                    fanProfilesChecker.connectSource('pkexec ' + binDir + '/kfocus-fan-set ' + fanProfilesModel.profileNames[value])
                     fanDescription.text = "<i>Description:</i> " + fanProfilesModel.profileDescriptions[fanSlider.value]
                     fanTimer.start()
                 }
@@ -173,13 +173,14 @@ Kirigami.ApplicationWindow {
             property var gridColors: ['transparent', '#F63114', '#F7941E',
             '#E4A714', '#8EB519', '#33cc33', '#39ceba', '#3caae4', '#007dc6',
             '#006091'].reverse()
-            onSelectedProfileChanged: profilesChecker.connectSource('pkexec /usr/lib/kfocus/bin/kfocus-power-set ' + selectedProfile)
+            onSelectedProfileChanged: profilesChecker.connectSource('pkexec '
+            + binDir + '/kfocus-power-set ' + selectedProfile)
         }
 
         // Loads and parse the available profiles
         PlasmaCore.DataSource {
             engine: "executable"
-            connectedSources: ['/usr/lib/kfocus/bin/kfocus-power-set -x']
+            connectedSources: [ binDir + '/kfocus-power-set -x']
             onNewData: {
                 let stdout = data["stdout"]
                 stdout.split('\n').forEach(function (line, index) {
@@ -224,7 +225,7 @@ Kirigami.ApplicationWindow {
             triggeredOnStart: true
             running: true
             repeat: true
-            onTriggered: profilesChecker.connectSource('/usr/lib/kfocus/bin/kfocus-power-set -r')
+            onTriggered: profilesChecker.connectSource(binDir + '/kfocus-power-set -r')
         }
 
         ListModel {
@@ -237,7 +238,7 @@ Kirigami.ApplicationWindow {
         // Loads and parse the available fan profiles
         PlasmaCore.DataSource {
             engine: "executable"
-            connectedSources: ['/usr/lib/kfocus/bin/kfocus-fan-set -p | tac']
+            connectedSources: [binDir + '/kfocus-fan-set -p | tac']
             onNewData: {
                 data["stdout"].split('\n').forEach(function (line) {
                     if (line === '') return;
@@ -271,11 +272,10 @@ Kirigami.ApplicationWindow {
             triggeredOnStart: true
             repeat: true
             onTriggered: {
-                fanProfilesChecker.connectSource('/usr/lib/kfocus/bin/kfocus-fan-set -r | cut -d\' \' -f1')
+                fanProfilesChecker.connectSource(binDir + '/kfocus-fan-set -r | cut -d\' \' -f1')
             }
         }
     }
-
     // Managing Plasma Profiles
     PlasmaCore.DataSource {
         id: pmSource
@@ -317,5 +317,7 @@ Kirigami.ApplicationWindow {
         })
     }
     readonly property var profiles: ['power-saver', 'balanced', 'performance']
+    // '/usr/lib/kfocus/bin'
+    readonly property var binDir: '../../package-tools/usr/lib/kfocus/bin'
     readonly property int activeProfileIndex: root.profiles.indexOf(root.activeProfile)
 }
