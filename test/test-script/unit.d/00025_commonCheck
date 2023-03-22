@@ -107,8 +107,8 @@ _audit_cm2EchoStackFn () {
   _solve_str="$("${_asset_fn_str}" 2>&1)";
 
   # Strip numbers
-  _expect_str="$( tr 0-9 x <<< "${_expect_str}" )";
-  _solve_str="$(  tr 0-9 x <<< "${_solve_str}"  )";
+  _expect_str="$( sed 's/[0-9]\+/xxx/g' <<< "${_expect_str}" )";
+  _solve_str="$(  sed 's/[0-9]\+/xxx/g' <<< "${_solve_str}"  )";
 
   printf '  %-40s\n' "Assert for ${_asset_fn_str}";
   if [ "${_solve_str}" = "${_expect_str}" ]; then
@@ -187,7 +187,7 @@ _audit_cm2EchoStackFn () {
 # Purpose   : Set _cm2ModelCode if needed
 # Example   : _cm2CalcModelCode y;
 # Arguments : $1 = _do_quiet_flag
-# Globals   : Package symbols _cm2ModelCode, _cm2ModelCodeFile
+# Globals   : Package symbols _cm2ModelCode, _cm2DmiProductNameFile, _cm2DmiProductSkuFile
 # Outputs   : Echo _cm2ModelCode to STDOUT unless _do_quiet_flag provided
 # Returns   : none
 ## . END _cm2CalcModelCodeFn }
@@ -233,9 +233,9 @@ _audit_cm2EchoStackFn () {
 _audit_cm2EchoModelStrFn () {
   # bashsupport disable=BP2001
   declare _restore_file _assert_table _assert_count _assert_idx _fail_count \
-    _loop_line _did_assert_fail _bit_list _name_str _expect_str;
+    _loop_line _did_assert_fail _bit_list _name_str _expect_str _found_str;
 
-  _restore_file="${_cm2ModelCodeFile:-}";
+  _restore_file="${_cm2DmiProductNameFile:-}";
   _assert_table=(
     'PD5x_7xPNP_PNN_PNT|m2g4|y|m2g4'
     'PC5x_7xHP_HR_HS|m2g3|y|default'
@@ -252,7 +252,8 @@ _audit_cm2EchoModelStrFn () {
 
   # Mock dmi file
   # shellcheck disable=SC2154
-  _cm2ModelCodeFile="${_t00RunDir}/model_file";
+  _cm2DmiProductNameFile="${_t00RunDir}/model_file";
+  # TODO: ADD _cm2DmiProductSkuFile='/sys/devices/virtual/dmi/id/product_sku';
   mkdir -p "${_t00RunDir}";
   _assert_count="${#_assert_table[@]}";
   _assert_idx=0;
@@ -268,7 +269,7 @@ _audit_cm2EchoModelStrFn () {
     _cm2ModelCode='';
     _cm2ModelLine='';
     _name_str="${_bit_list[0]}";
-    echo "${_name_str}" > "${_cm2ModelCodeFile}";
+    echo "${_name_str}" > "${_cm2DmiProductNameFile}";
 
     # Compare
     {  printf '  %-40s' "Assert for ${_name_str} ";
@@ -278,10 +279,12 @@ _audit_cm2EchoModelStrFn () {
     _col_idx=1;
     for _col_key in code is_nv_sys config_code; do
       _expect_str="${_bit_list[${_col_idx}]}";
-      if [ "${_expect_str}" = "$(_cm2EchoModelStrFn ${_col_key})" ]; then
+      _found_str="$(_cm2EchoModelStrFn ${_col_key})";
+      if [ "${_expect_str}" = "${_found_str}"  ]; then
         _cm2EchoFn "  ok   : Col key ${_col_key} matches |${_expect_str}|";
       else
         _cm2EchoFn "  fail : Col key ${_col_key} nomatch |${_expect_str}|";
+        _cm2EchoFn "    Found string is |${_found_str}|";
         _did_assert_fail='y';
       fi
       (( _col_idx++ ));
@@ -299,8 +302,7 @@ _audit_cm2EchoModelStrFn () {
     fi
     (( _assert_idx++ ));
   done;
-
-  _cm2ModelCodeFile="${_restore_file}";
+  _cm2DmiProductNameFile="${_restore_file}";
   return "${_fail_count}";
 }
 ## . END _audit_cm2EchoModelStrFn }
