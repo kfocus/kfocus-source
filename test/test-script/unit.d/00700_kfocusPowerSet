@@ -137,25 +137,20 @@ _echoCpuModelNameFn () {
   echo "${_cpu_name}";
 }
 
-## BEGIN _runTestFn {
-_runTestFn () {
-  declare _cr _cpu_name _power_exe _current_mode_str _pick_str _pick_list \
-    _model_code _test_count _test_idx _fail_count _mode_str _descr_str \
-    _expect_str _check_str _run_str _expect_file _run_file;
-
-  # Use function from _runUnitTests: clear out run dir and check expect dir
-  if ! _t00ClearRunDirFn;    then return 1; fi
-  if ! _t00CheckExpectDirFn; then return 1; fi
+## BEGIN _testLoopFn {
+_testLoopFn () {
+  declare _cr _cpu_name _pick_list _pick_str _power_exe _model_code \
+    _test_count _test_idx _fail_count _mode_str _expect_file _run_file \
+    _descr_str _expect_str _run_str _check_str
 
   _cr=$'\n';
   _cpu_name="$(_echoCpuModelNameFn)";
 
+  _pick_list=( "$@" )
+
   # shellcheck disable=SC1090,SC2154
   _power_exe="${_t00TopDir}/package-tools/usr/lib/kfocus/";
   _power_exe+='bin/kfocus-power-set';
-  _current_mode_str="$("${_power_exe}" -r)";
-  _pick_str="$("${_power_exe}" -p)";
-  IFS=$'\n' read -r -d '' -a _pick_list <<<"${_pick_str}";
 
   _model_code="$(_cm2EchoModelStrFn 'code')";
   _test_count="$(echo "${#_pick_list[@]}*2"|bc)";
@@ -212,6 +207,33 @@ _runTestFn () {
     fi
   done
 
+  return "${_fail_count}";
+}
+## . END _testLoopFn }
+
+## BEGIN _runTestFn {
+_runTestFn () {
+  declare _power_exe _current_mode_str _pick_str _pick_list _fail_count \
+    _test_count;
+
+  # Use function from _runUnitTests: clear out run dir and check expect dir
+  if ! _t00ClearRunDirFn;    then return 1; fi
+  if ! _t00CheckExpectDirFn; then return 1; fi
+  
+  # shellcheck disable=SC1090,SC2154
+  _power_exe="${_t00TopDir}/package-tools/usr/lib/kfocus/";
+  _power_exe+='bin/kfocus-power-set';
+  _current_mode_str="$("${_power_exe}" -r)";
+
+  _cm2EchoFn "TEST SUITE 1: kfocus-power-set -p parsing and execution\n";
+  
+  _pick_str="$("${_power_exe}" -p)";
+  IFS=$'\n' read -r -d '' -a _pick_list <<<"${_pick_str}";
+
+  _testLoopFn "${_pick_list[@]}"
+  _fail_count="$?"
+  _test_count="$(echo "${#_pick_list[@]}*2"|bc)";
+  
   if [ "${_fail_count}" -gt 0 ]; then
     _cm2EchoFn "fail: ${_fail_count} of ${_test_count} tests failed.";
   else
