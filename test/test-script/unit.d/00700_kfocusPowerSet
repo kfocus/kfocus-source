@@ -240,6 +240,22 @@ _runTestFn () {
     _cm2EchoFn 'ok  : Results match expected';
   fi
 
+  _cm2EchoFn "TEST SUITE 2: kfocus-power-set -x parsing and execution\n";
+
+  _pick_str="$("${_power_exe}" -x)";
+  IFS=$'\n' read -r -d '' -a _pick_list <<<"${_pick_str}";
+  _pick_list=("${_pick_list[@]:1}") # Remove the header
+
+  _testLoopFn "${_pick_list[@]}"
+   _fail_count="$?"
+  _test_count="$(echo "${#_pick_list[@]}*2"|bc)"
+
+  if [ "${_fail_count}" -gt 0 ]; then
+    _cm2EchoFn "fail: ${_fail_count} of ${_test_count} tests failed.";
+  else
+    _cm2EchoFn 'ok  : Results match expected';
+  fi;
+
   if [ "${_current_mode_str:0:6}" = 'Custom' ]; then
     _current_mode_str='Normal';
     _cm2EchoFn "Warn: Switch from Custom to Normal Mode";
