@@ -170,9 +170,9 @@ _scanFn () {
           _solve_line+="${_gov_key};";
           if [ "${_noturbo_int}" = '1' ]; then
             _solve_line+="No;";
-         else
+          else
             _solve_line+="Yes;";
-         fi
+          fi
           if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
             if [ "${_kbdled_int}" = '1' ]; then
               _solve_line+="On;";
