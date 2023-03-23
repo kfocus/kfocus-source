@@ -18,8 +18,17 @@ _optionTable=(
   'Soft;Quieter but Warmer;y'
 );
 
-_printIntFn () { printf '%.0f' "$*"; }
-_stderrFn () { 1>&2 echo -e "$*"; }
+_importCommonFn () {
+  declare _lib_file;
+  _lib_file="${_baseDir}/lib/common.2.source";
+  if [ -r "${_lib_file}" ]; then
+    # shellcheck source=../lib/common.2.source
+    source "${_lib_file}" || exit 202;
+  else
+    echo 1>&2 "${_baseName}: ABORT - Cannot source lib |${_lib_file}|";
+    exit 202;
+  fi
+}
 
 _setFanControlFn () {
   declare _do_fan_control;
@@ -58,8 +67,8 @@ _setModeFn () {
   done
 
   if [ -z "${_match_line}" ]; then
-    _stderrFn "ABORT: Mode |${_pick_key}| not supported.";
-    ( IFS='|'; _stderrFn "  ${_mode_list[*]}" );
+    _cm2EchoFn "ABORT: Mode |${_pick_key}| not supported.";
+    ( IFS='|'; _cm2EchoFn "  ${_mode_list[*]}" );
     return 1;
   fi
 
@@ -67,8 +76,79 @@ _setModeFn () {
   _setFanControlFn "${_bit_list[2]}";
 }
 
+_chkReportFanSupportFn () {
+  declare _model_label _model_code _model_msg \
+  _is_kpf_installed _kpf_msg _title;
+
+  _model_label="$(_cm2EchoModelStrFn 'label')";
+  _model_code="$(_cm2EchoModelStrFn 'code')";
+
+  if _cm2ChkInstalledPkgFn 'kfocus-power-fan'; then
+    _is_kpf_installed='y';
+    _kpf_msg=' <br><br>IMPORTANT: The kfocus-power-fan package <br>
+is unexpectedly installed. Please uninstall it as it is <br>
+not useful for this system.';
+  else
+    _is_kpf_installed='n';
+    _kpf_msg='';
+  fi
+
+  case "${_model_code}" in
+    m1*|m2*|xe*)
+      if [ "${_is_kpf_installed}" = 'y' ]; then return 0; fi
+      _model_msg="$(cat <<_EOH01
+This <b>Kubuntu Focus ${_model_label}</b> system is capable <br>
+of fan controls. However, the required software does not <br>
+appear available. Please install <code>kfocus-power-fan</code>.
+_EOH01
+      )";;
+
+    nxg1*) _title='Fan Control in BIOS';
+      _model_msg="$(cat <<_EOH02
+This <b>Kubuntu Focus ${_model_label}</b> system has <br>
+comprehensive fan controls available in the BIOS. To adjust <br>
+the settings, press <code>F2</code> on boot and select <br>
+<code>Cooling</code>. We recommend starting with <code>Fan <br>
+Control &gt; Balanced</code>.${_kpf_msg}
+_EOH02
+      )";;
+
+    nxg2*) _title='Fan Control in BIOS';
+      _model_msg="$(cat <<_EOH02
+This <b>Kubuntu Focus ${_model_label}</b> system has <br>
+comprehensive fan controls available in the BIOS. To adjust <br>
+the settings, press <code>F2</code> on boot and select <br>
+<code>Power, Performance and Cooling</code>. We recommend <br>
+starting with <code>Fan Control &gt; Balanced</code>.${_kpf_msg}
+_EOH02
+      )";;
+
+   *) _title='Other Fan Control';
+      _model_msg="$(cat <<_EOH03
+This <b>${_model_label}</b> system is not supported by Kubuntu <br>
+Focus fan controls. However, you may be able to control the <br>
+fans using the BIOS or a third-party apps. On many systems, <br>
+one can access the BIOS by pressing <code>F2</code>,
+<code>Delete</code> or <br> <code>Escape</code> during boot.${_kpf_msg}
+_EOH03
+      )";;
+  esac
+
+  echo "title:${_title}|message:${_cm2HtmPStr}${_model_msg}</p>"
+  return 1;
+}
+
 _printOptionsFn () {
-  declare _opt_line _bit_list;
+  declare _arg_str _opt_line _bit_list;
+
+  # -x mode prints alternate messages if fan control not found
+  _arg_str="${1:-}";
+  if [ "${_arg_str}" = 'x' ]; then
+    if ! _chkReportFanSupportFn; then
+      return 0;
+    fi
+  fi
+
   for _opt_line in "${_optionTable[@]}"; do
     IFS=';' read -r -a _bit_list <<< "${_opt_line}";
     echo "${_bit_list[0]} ( ${_bit_list[1]} )";
@@ -101,8 +181,9 @@ _mainFn () {
   _arg_str="${1:-}";
   case "${_arg_str}" in
     '-p') _printOptionsFn;;
+    '-x') _printOptionsFn 'x';;
     '-r') _readModeFn;;
-      '') _stderrFn 'Argument or flag required'; exit 1;;
+      '') _cm2EchoFn 'Argument or flag required'; exit 1;;
        *) _setModeFn "${_arg_str}";
   esac
 }
@@ -117,6 +198,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binDir="$(dirname "${_binName}")"    || exit 101;
   _baseDir="$(dirname "${_binDir}")"    || exit 101;
   _baseName="$(basename "${_binName}")" || exit 101;
+  _importCommonFn;
   _mainFn "$@";
 fi
 ## . END Run main if script is not sourced }

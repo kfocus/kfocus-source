@@ -54,8 +54,8 @@ not useful for this system.';
 
   case "${_model_code}" in
     m1*|m2*|xe*)
-    if [ "${_is_kpf_installed}" = 'y' ]; then return 0; fi
-    _title='Install Fan Control Backend?';
+      if [ "${_is_kpf_installed}" = 'y' ]; then return 0; fi
+      _title='Install Fan Control Backend?';
       _prompt_key='a';
       _model_msg="$(cat <<_EOH01
 This <b>Kubuntu Focus ${_model_label}</b> system is capable <br>
