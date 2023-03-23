@@ -238,7 +238,7 @@ Kirigami.ApplicationWindow {
         // Loads and parse the available fan profiles
         PlasmaCore.DataSource {
             engine: "executable"
-            connectedSources: [binDir + '/kfocus-fan-set -p | tac']
+            connectedSources: [binDir + '/kfocus-fan-set -p']
             onNewData: {
                 data["stdout"].split('\n').forEach(function (line) {
                     if (line === '') return;
