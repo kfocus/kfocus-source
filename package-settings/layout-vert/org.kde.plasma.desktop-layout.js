@@ -221,13 +221,13 @@ function setLayoutFn () {
             "pressToMoveHelp": "false",
             "showToolbox": "false",
             "sortMode": "-1"
-          },
-          "/Wallpaper/org.kde.image/General": {
-            "FillMode": "2",
-            "Image": "Next"
           }
+          // "/Wallpaper/org.kde.image/General": {
+          //   "FillMode": "2",
+          //   "Image": "Next"
+          // }
         },
-        "wallpaperPlugin": "org.kde.image"
+        // "wallpaperPlugin": "org.kde.image"
       }
     ],
     "serializationFormatVersion": "1"
@@ -238,6 +238,10 @@ function setLayoutFn () {
   loadTemplate("org.focusvert.desktop.defaultPanel");
 }
 setLayoutFn();
+var desktopsArray = desktopsForActivity(currentActivity());
+for( var j = 0; j < desktopsArray.length; j++) {
+    desktopsArray[j].wallpaperPlugin = 'org.kde.image';
+}
 
 // (1) See QRectF https://develop.kde.org/docs/extend/plasma/scripting/api/#screen-geometry
 // (2) Scale ratio is 1.5 for HDPI 4k screens. This should reduce to 1 for a
