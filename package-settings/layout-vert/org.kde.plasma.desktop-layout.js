@@ -239,6 +239,18 @@ function setLayoutFn () {
 }
 setLayoutFn();
 
+// Add the following for to trigger getting the wallpaper updated.
+var desktopsArray = desktopsForActivity(currentActivity());
+for ( var j = 0; j < desktopsArray.length; j++ ) {
+  var desktop = desktopsArray[j];
+  desktop.wallpaperPlugin = 'org.kde.image';
+  // The following in testing actually prevented updating...
+  // See https://develop.kde.org/docs/plasma/scripting/api/#screen-geometry
+  // desktop.currentConfigGroup = [ 'Wallpaper', 'org.kde.image', 'General' ];
+  // desktop.writeConfig( 'Image', 'Next' );
+  // desktop.writeConfig( 'FillMode', '2' );
+}
+
 // (1) See QRectF https://develop.kde.org/docs/extend/plasma/scripting/api/#screen-geometry
 // (2) Scale ratio is 1.5 for HDPI 4k screens. This should reduce to 1 for a
 //     1080p screen at 96dpi.
