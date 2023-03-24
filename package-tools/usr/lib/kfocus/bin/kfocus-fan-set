@@ -14,8 +14,8 @@ set -u;
 
 _optionTable=(
   # _label;_do_tccd
-  'Linear;Best Performance;n'
   'Soft;Quieter but Warmer;y'
+  'Linear;Best Performance;n'
 );
 
 _importCommonFn () {
@@ -85,9 +85,9 @@ _chkReportFanSupportFn () {
 
   if _cm2ChkInstalledPkgFn 'kfocus-power-fan'; then
     _is_kpf_installed='y';
-    _kpf_msg=' <br><br>IMPORTANT: The kfocus-power-fan package <br>
-is unexpectedly installed. Please uninstall it as it is <br>
-not useful for this system.';
+    _kpf_msg=' <br><br>IMPORTANT: The kfocus-power-fan package
+ is unexpectedly installed. Please uninstall it as it is
+ not useful for this system.';
   else
     _is_kpf_installed='n';
     _kpf_msg='';
@@ -98,42 +98,42 @@ not useful for this system.';
       if [ "${_is_kpf_installed}" = 'y' ]; then return 0; fi
       _title='Fan Control Software Missing';
       _model_msg="$(cat <<_EOH01
-This <b>Kubuntu Focus ${_model_label}</b> system is capable <br>
-of fan controls. However, the required software does not <br>
-appear available. Please install <code>kfocus-power-fan</code>.
+This <b>Kubuntu Focus ${_model_label}</b> system is capable
+ of fan controls. However, the required software does not
+ appear available. Please install <code>kfocus-power-fan</code>.
 _EOH01
       )";;
 
     nxg1*)
       _title='Fan Control in BIOS';
       _model_msg="$(cat <<_EOH02
-This <b>Kubuntu Focus ${_model_label}</b> system has <br>
-comprehensive fan controls available in the BIOS. To adjust <br>
-the settings, press <code>F2</code> on boot and select <br>
-<code>Cooling</code>. We recommend starting with <code>Fan <br>
-Control &gt; Balanced</code>.${_kpf_msg}
+This <b>Kubuntu Focus ${_model_label}</b> system has
+ comprehensive fan controls available in the BIOS. To adjust
+ the settings, press <code>F2</code> on boot and select
+ <code>Cooling</code>. We recommend starting with <code>Fan
+ Control &gt; Balanced</code>.${_kpf_msg}
 _EOH02
       )";;
 
     nxg2*)
       _title='Fan Control in BIOS';
       _model_msg="$(cat <<_EOH02
-This <b>Kubuntu Focus ${_model_label}</b> system has <br>
-comprehensive fan controls available in the BIOS. To adjust <br>
-the settings, press <code>F2</code> on boot and select <br>
-<code>Power, Performance and Cooling</code>. We recommend <br>
-starting with <code>Fan Control &gt; Balanced</code>.${_kpf_msg}
+This <b>Kubuntu Focus ${_model_label}</b> system has
+ comprehensive fan controls available in the BIOS. To adjust
+ the settings, press <code>F2</code> on boot and select
+ <code>Power, Performance and Cooling</code>. We recommend
+ starting with <code>Fan Control &gt; Balanced</code>.${_kpf_msg}
 _EOH02
       )";;
 
    *)
      _title='Other Fan Control';
      _model_msg="$(cat <<_EOH03
-This <b>${_model_label}</b> system is not supported by Kubuntu <br>
-Focus fan controls. However, you may be able to control the <br>
-fans using the BIOS or a third-party apps. On many systems, <br>
-one can access the BIOS by pressing <code>F2</code>,
-<code>Delete</code> or <br> <code>Escape</code> during boot.${_kpf_msg}
+This <b>${_model_label}</b> system is not supported by Kubuntu
+ Focus fan controls. However, you may be able to control the
+ fans using the BIOS or a third-party apps. On many systems,
+ one can access the BIOS by pressing <code>F2</code>,
+ <code>Delete</code> or <br> <code>Escape</code> during boot.${_kpf_msg}
 _EOH03
       )";;
   esac
