@@ -35,7 +35,7 @@ Kirigami.ApplicationWindow {
             Kirigami.InlineMessage {
                 id: inlineMessage
                 Layout.fillWidth: true
-                text: "This NX GEN 1 Has Fan controls in the BIOS. Open the BIOS using F2 during boot and select Performance and Cooling > Fan Control."
+                text: "Cannot control fan"
                 visible:  !fanSlider.visible
             }
 
@@ -238,16 +238,34 @@ Kirigami.ApplicationWindow {
         // Loads and parse the available fan profiles
         PlasmaCore.DataSource {
             engine: "executable"
-            connectedSources: [binDir + '/kfocus-fan-set -p']
+            connectedSources: [binDir + '/kfocus-fan-set -x']
             onNewData: {
+                let fanMissingMsg = false
+                let buildStr = ""
                 data["stdout"].split('\n').forEach(function (line) {
                     if (line === '') return;
-                    let [name, description] = line.split('(')
-                    fanProfilesModel.append({'name': name.trim()})
-                    fanProfilesModel.profileNames.push(name.trim())
-                    fanProfilesModel.profileDescriptions.push(description.replace(")", "").trim())
-                    fanProfilesModel.fanAvailable = true
+                    if (line.substring(0, 5) == "title") {
+                        fanMissingMsg = true;
+                        let lineParts = line.split('|');
+                        let titleMsg = lineParts[0].split(':')[1];
+                        let bodyMsg = lineParts[1].split(':')[1];
+                        buildStr += "<b>" + titleMsg + "</b>\n\n";
+                        buildStr += bodyMsg;
+                    }
+                    if (fanMissingMsg) {
+                        buildStr += line
+                    } else {
+                        let [name, description] = line.split('(')
+                        fanProfilesModel.append({'name': name.trim()})
+                        fanProfilesModel.profileNames.push(name.trim())
+                        fanProfilesModel.profileDescriptions.push(description.replace(")", "").trim())
+                        fanProfilesModel.fanAvailable = true
+                    }
                 })
+                if (fanMissingMsg) {
+                    inlineMessage.text = buildStr
+                    fanSlider.visible = false
+                }
                 fanTimer.running = true
                 disconnectSource(sourceName)
             }
