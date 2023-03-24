@@ -5,37 +5,21 @@
 # set -u is set in _runUnitTests (the test harness)
 #
 
-## BEGIN _assertDataTable
-_assertDataTable=(
-  # 'code|config_code|label|is_nv_sys|has_kb_led'
-  'm2g4|m2g4|M2 GEN 4|y|y'
-  'm2g3|default|M2 GEN 3|y|y'
-  'm2g2|default|M2 GEN 2|y|y'
-  'm2g1|default|M2 GEN 1|y|y'
-  'm1g1|default|M1|y|y'
-  'xeg1|generic|XE GEN 1|n|n'
-  'nxg1|nxg1|NX GEN 1|n|n'
-  'nxg2|nxg1|NX GEN 2|n|n'
-  'other|other|other|n|n'
-);
-## . END _assertDataTable }
-
 ## BEGIN _overwriteWithMocksFn {
-# Purpose: Overwrite functions from sourced script before running tests
+# Purpose: Overwrite functions from sourced script before running assertions
 _overwriteWithMocksFn () {
   # bashsupport disable=BP2001
-  declare _exe_file _bin_dir;
+  declare _exe_file;
   _exe_file="${_t00TopDir}";
-  _exe_file+='/package-tools/usr/lib/kfocus/bin/kfocus-fan';
+  _exe_file+='/package-tools/usr/lib/kfocus/bin/kfocus-fan-set';
   # shellcheck disable=SC1090,SC2154
   source "${_exe_file}" || exit 1;
-
-  _bin_dir="$( dirname "${_exe_file}" )" || exit 101;
-  _fanSetExe="${_bin_dir}/kfocus-fan-set";
 
   # Set environment vars
   export XDG_SESSION_TYPE='tty';
 
+  ## BEGIN Mock
+   # This uses _bitList[0,2] to mock return string
   _cm2EchoModelStrFn () {
     declare _arg_str="${1:-}";
     case "${_arg_str}" in
@@ -45,18 +29,16 @@ _overwriteWithMocksFn () {
          return 1;
     esac
   }
+  ## . END Mock
+
+  ## BEGIN Mock
+   # This uses _bitList[5] to mock return value
   _cm2ChkInstalledPkgFn () {
     if [ "${_bitList[5]}" = 'installed' ]; then
       return 0; else return 1;
     fi
   }
-  _cm2RunLongCmdFn () {
-    echo "${*}" >> "${_runFile}";
-  }
-  _cm2PromptUserFn () {
-    echo "${*}" >> "${_runFile}";
-    echo 'n';
-  }
+  ## . END Mock
 }
 ## . END _overwriteWithMocksFn }
 
@@ -65,16 +47,13 @@ _overwriteWithMocksFn () {
 #   pollution of namespaces. Mocked functions from commons.2.source are not
 #   reset here; instead they are re-source after every test in runUnitTests
 #   (the test harness). See more notes in 00900.
-_unsetMocksFn () {
-  # 1. _fanSetExe
-  unset _fanSetExe _mainFn;
-}
+_unsetMocksFn () { true; }
 ## . END _unsetMocksFn }
 
 ## BEGIN _runTestFn {
 # This MUST be called '_runTestFn' for use by the _runUnitTests
 _runTestFn () {
-  declare _fail_count _assert_count _assert_idx _assert_line \
+  declare _fail_count _assert_table _assert_count _assert_idx _assert_line \
     _inner_str _tag_str _file _expect_file _msg _check_str;
 
   # Use function from _runUnitTests: clear out run dir and check expect dir
@@ -88,15 +67,19 @@ _runTestFn () {
   # Overwrite functions with mocks
   _overwriteWithMocksFn;
 
-  ## Begin Iterate through tests {
-  _fail_count=0;
-  _assert_count=$(("${#_assertDataTable[@]}" * 2));
-  _assert_idx=1;
-  for _assert_line in "${_assertDataTable[@]}"; do
-    for _inner_str in 'installed' 'NOT INSTALLED'; do
-      _cm2EchoFn "BEGIN Test ${_assert_idx} of ${_assert_count}:";
+  # Shift off header from _cm2ModelTable to create _assert_table.
+  # This will grow with model support.
+  _assert_table=("${_cm2ModelTable[@]:1}");
 
-      # Extract _dataList, _ansList, and reset _testAnsIdx
+  ## Begin Iterate through assertions {
+  _fail_count=0;
+  _assert_count=$(("${#_assert_table[@]}" * 2));
+  _assert_idx=1;
+  for _assert_line in "${_assert_table[@]}"; do
+    for _inner_str in 'installed' 'NOT INSTALLED'; do
+      _cm2EchoFn "BEGIN Assert ${_assert_idx} of ${_assert_count}:";
+
+      # Extract _bitList used by Mocks above
       IFS='|' read -r -d '' -a _bitList < <(echo -n "${_assert_line}");
       _bitList[5]="${_inner_str}";
 
@@ -108,8 +91,7 @@ _runTestFn () {
 
       # Calculate expect and run files
       # bashsupport disable=BP2001
-      _file="$( printf '%02d_%s_%s.txt' "${_assert_idx}" \
-        "${_bitList[0]}" "${_tag_str}" )";
+      _file="$( printf '%s_%s.txt' "${_bitList[0]}" "${_tag_str}" )";
 
       _expect_file="${_t00ExpectDir}/${_file}";
       _runFile="${_t00RunDir}/${_file}";
@@ -119,9 +101,9 @@ _runTestFn () {
       _msg+="kfocus-power-fan is ${_bitList[5]} |";
       echo "${_msg}" > "${_runFile}";
 
-      # Run _chkReportFanSupportFn using bitList as input
+      # Run _printOptionsFn 'x' from kfocus-fan-set to get full output
       export OPTIND=1;
-      _chkReportFanSupportFn;
+      _printOptionsFn 'x' >> "${_runFile}";
 
       ## Begin Check diffs {
       if [ ! -f "${_expect_file}" ]; then touch "${_expect_file}"; fi
