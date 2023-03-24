@@ -245,7 +245,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
       _addTrustedKeysFn;
       # Add Google Cloud SDK keys
       _addGcloudSdkKeyFn;
-      # Clean obsolte repos
+      # Clean obsolete repos
       _rmObsoleteReposFn;
     ;;
   esac
