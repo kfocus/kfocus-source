@@ -96,6 +96,7 @@ not useful for this system.';
   case "${_model_code}" in
     m1*|m2*|xe*)
       if [ "${_is_kpf_installed}" = 'y' ]; then return 0; fi
+      _title='Fan Control Software Missing';
       _model_msg="$(cat <<_EOH01
 This <b>Kubuntu Focus ${_model_label}</b> system is capable <br>
 of fan controls. However, the required software does not <br>
@@ -103,7 +104,8 @@ appear available. Please install <code>kfocus-power-fan</code>.
 _EOH01
       )";;
 
-    nxg1*) _title='Fan Control in BIOS';
+    nxg1*)
+      _title='Fan Control in BIOS';
       _model_msg="$(cat <<_EOH02
 This <b>Kubuntu Focus ${_model_label}</b> system has <br>
 comprehensive fan controls available in the BIOS. To adjust <br>
@@ -113,7 +115,8 @@ Control &gt; Balanced</code>.${_kpf_msg}
 _EOH02
       )";;
 
-    nxg2*) _title='Fan Control in BIOS';
+    nxg2*)
+      _title='Fan Control in BIOS';
       _model_msg="$(cat <<_EOH02
 This <b>Kubuntu Focus ${_model_label}</b> system has <br>
 comprehensive fan controls available in the BIOS. To adjust <br>
@@ -123,8 +126,9 @@ starting with <code>Fan Control &gt; Balanced</code>.${_kpf_msg}
 _EOH02
       )";;
 
-   *) _title='Other Fan Control';
-      _model_msg="$(cat <<_EOH03
+   *)
+     _title='Other Fan Control';
+     _model_msg="$(cat <<_EOH03
 This <b>${_model_label}</b> system is not supported by Kubuntu <br>
 Focus fan controls. However, you may be able to control the <br>
 fans using the BIOS or a third-party apps. On many systems, <br>

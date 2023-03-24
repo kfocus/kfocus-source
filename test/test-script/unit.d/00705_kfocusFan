@@ -1,0 +1,153 @@
+#!/bin/bash
+#
+# Test for default kfocus-fan on mocked hardware
+#
+# set -u is set in _runUnitTests (the test harness)
+#
+
+## BEGIN _assertDataTable
+_assertDataTable=(
+  # 'code|config_code|label|is_nv_sys|has_kb_led'
+  'm2g4|m2g4|M2 GEN 4|y|y'
+  'm2g3|default|M2 GEN 3|y|y'
+  'm2g2|default|M2 GEN 2|y|y'
+  'm2g1|default|M2 GEN 1|y|y'
+  'm1g1|default|M1|y|y'
+  'xeg1|generic|XE GEN 1|n|n'
+  'nxg1|nxg1|NX GEN 1|n|n'
+  'nxg2|nxg1|NX GEN 2|n|n'
+  'other|other|other|n|n'
+);
+## . END _assertDataTable }
+
+## BEGIN _overwriteWithMocksFn {
+# Purpose: Overwrite functions from sourced script before running tests
+_overwriteWithMocksFn () {
+  # bashsupport disable=BP2001
+  declare _exe_file _bin_dir;
+  _exe_file="${_t00TopDir}";
+  _exe_file+='/package-tools/usr/lib/kfocus/bin/kfocus-fan';
+  # shellcheck disable=SC1090,SC2154
+  source "${_exe_file}" || exit 1;
+
+  _bin_dir="$( dirname "${_exe_file}" )" || exit 101;
+  _fanSetExe="${_bin_dir}/kfocus-fan-set";
+
+  # Set environment vars
+  export XDG_SESSION_TYPE='tty';
+
+  _cm2EchoModelStrFn () {
+    declare _arg_str="${1:-}";
+    case "${_arg_str}" in
+      code)  echo "${_bitList[0]}";;
+      label) echo "${_bitList[2]}";;
+      *) _cm2EchoFn 'Unknown directive';
+         return 1;
+    esac
+  }
+  _cm2ChkInstalledPkgFn () {
+    if [ "${_bitList[5]}" = 'installed' ]; then
+      return 0; else return 1;
+    fi
+  }
+  _cm2RunLongCmdFn () {
+    echo "${*}" >> "${_runFile}";
+  }
+  _cm2PromptUserFn () {
+    echo "${*}" >> "${_runFile}";
+    echo 'n';
+  }
+}
+## . END _overwriteWithMocksFn }
+
+## BEGIN _unsetMocksFn {
+# Purpose : Unset mocked functions and other globals to prevent
+#   pollution of namespaces. Mocked functions from commons.2.source are not
+#   reset here; instead they are re-source after every test in runUnitTests
+#   (the test harness). See more notes in 00900.
+_unsetMocksFn () {
+  # 1. _fanSetExe
+  unset _fanSetExe _mainFn;
+}
+## . END _unsetMocksFn }
+
+## BEGIN _runTestFn {
+# This MUST be called '_runTestFn' for use by the _runUnitTests
+_runTestFn () {
+  declare _fail_count _assert_count _assert_idx _assert_line \
+    _inner_str _tag_str _file _expect_file _msg _check_str;
+
+  # Use function from _runUnitTests: clear out run dir and check expect dir
+  if ! _t00ClearRunDirFn;    then return 1; fi
+  if ! _t00CheckExpectDirFn; then return 1; fi
+
+  # WE DO NOT NEED TO IMPORT COMMON FOR sourced scripts, as the common lib
+  # is already imported by the _runUnitTests
+  # _importCommonFn;
+
+  # Overwrite functions with mocks
+  _overwriteWithMocksFn;
+
+  ## Begin Iterate through tests {
+  _fail_count=0;
+  _assert_count=$(("${#_assertDataTable[@]}" * 2));
+  _assert_idx=1;
+  for _assert_line in "${_assertDataTable[@]}"; do
+    for _inner_str in 'installed' 'NOT INSTALLED'; do
+      _cm2EchoFn "BEGIN Test ${_assert_idx} of ${_assert_count}:";
+
+      # Extract _dataList, _ansList, and reset _testAnsIdx
+      IFS='|' read -r -d '' -a _bitList < <(echo -n "${_assert_line}");
+      _bitList[5]="${_inner_str}";
+
+      if [ "${_inner_str}" = 'installed' ]; then
+        _tag_str='with-power-fan';
+      else
+        _tag_str='no-power-fan';
+      fi
+
+      # Calculate expect and run files
+      # bashsupport disable=BP2001
+      _file="$( printf '%02d_%s_%s.txt' "${_assert_idx}" \
+        "${_bitList[0]}" "${_tag_str}" )";
+
+      _expect_file="${_t00ExpectDir}/${_file}";
+      _runFile="${_t00RunDir}/${_file}";
+
+      # Start file with description
+      _msg="kfocus-fan | model ${_bitList[0]} | ";
+      _msg+="kfocus-power-fan is ${_bitList[5]} |";
+      echo "${_msg}" > "${_runFile}";
+
+      # Run _chkReportFanSupportFn using bitList as input
+      export OPTIND=1;
+      _chkReportFanSupportFn;
+
+      ## Begin Check diffs {
+      if [ ! -f "${_expect_file}" ]; then touch "${_expect_file}"; fi
+      _check_str="$(diff -r --brief "${_expect_file}" "${_runFile}" )";
+      if [ -z "${_check_str}" ]; then
+        _cm2EchoFn ". OK   test ${_assert_idx}\n\n";
+      else
+        _cm2EchoFn 'Please compare expected to run file';
+        meld "${_expect_file}" "${_runFile}";
+        _cm2EchoFn ". FAIL test ${_assert_idx}\n\n";
+        (( _fail_count++ ));
+      fi
+      ## . End Check diffs }
+      (( _assert_idx++ ));
+    done
+  done
+  ## End Iterate through tests }
+
+  if [ "${_fail_count}" -gt 0 ]; then
+    _cm2EchoFn "FAIL: ${_fail_count} of ${_assert_count} tests failed.";
+  else
+    _cm2EchoFn 'OK  : Results match expected';
+  fi
+
+  _unsetMocksFn;
+
+  return "${_fail_count}";
+}
+## . END _runTestFn }
