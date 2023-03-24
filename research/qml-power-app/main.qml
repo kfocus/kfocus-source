@@ -28,6 +28,7 @@ Kirigami.ApplicationWindow {
             spacing: PlasmaCore.Units.mediumSpacing
 
             Kirigami.Heading {
+                id: fanControlHeading
                 text: "Fan Curve"
                 level: 1
             }
@@ -249,7 +250,7 @@ Kirigami.ApplicationWindow {
                         let lineParts = line.split('|');
                         let titleMsg = lineParts[0].split(':')[1];
                         let bodyMsg = lineParts[1].split(':')[1];
-                        buildStr += "<b>" + titleMsg + "</b>\n\n";
+                        fanControlHeading.text = titleMsg
                         buildStr += bodyMsg;
                     }
                     if (fanMissingMsg) {
