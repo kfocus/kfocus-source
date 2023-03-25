@@ -6,7 +6,7 @@
 # Name    : kfocus-fan-set
 # Purpose : Run-as-root utility to set fan profile
 # License : GPL v2
-# Run By  : kfocus-fan
+# Run By  : kfocus-power
 # Spec    : 2617
 # Test    : 00710
 #
@@ -14,8 +14,8 @@ set -u;
 
 _optionTable=(
   # _label;_do_tccd
-  'Soft;Quieter but Warmer;y'
-  'Linear;Best Performance;n'
+  'Soft|Quieter but Warmer|y'
+  'Linear|Best Performance|n'
 );
 
 _importCommonFn () {
@@ -72,7 +72,7 @@ _setModeFn () {
     return 1;
   fi
 
-  IFS=';' read -r -a _bit_list <<< "${_match_line}";
+  IFS='|' read -r -a _bit_list <<< "${_match_line}";
   _setFanControlFn "${_bit_list[2]}";
 }
 
@@ -93,48 +93,52 @@ _chkReportFanSupportFn () {
     _kpf_msg='';
   fi
 
+  _title="Fan Profile (${_model_label})";
   case "${_model_code}" in
     m1*|m2*|xe*)
       if [ "${_is_kpf_installed}" = 'y' ]; then return 0; fi
-      _title='Fan Control Software Missing';
       _model_msg="$(cat <<_EOH01
-This <b>Kubuntu Focus ${_model_label}</b> system is capable
- of fan controls. However, the required software does not
- appear available. Please install <code>kfocus-power-fan</code>.
+<b>Custom fan profiles are available.</b><br>
+ Please install <code>kfocus-power-fan</code> and then rerun
+ this app to see the controls.
 _EOH01
       )";;
 
-    nxg1*)
-      _title='Fan Control in BIOS';
+    ir14*)
       _model_msg="$(cat <<_EOH02
-This <b>Kubuntu Focus ${_model_label}</b> system has
- comprehensive fan controls available in the BIOS. To adjust
- the settings, press <code>F2</code> on boot and select
- <code>Cooling</code>. We recommend starting with <code>Fan
- Control &gt; Balanced</code>.${_kpf_msg}
+<b>Fan profiles are found in the BIOS</b><br>
+ To access, press <code>F2</code> during boot. Select <code>BIOS &gt;
+ Advanced &gt; Operating Mode &gt; Balanced</code> for default operation.
+  ${_kpf_msg}
 _EOH02
+      )";;
+
+    nxg1*)
+      _model_msg="$(cat <<_EOH03
+<b>Fan profiles are found in the BIOS</b><br>
+ To access, press <code>F2</code> during boot. Select <code>BIOS &gt; Cooling
+  &gt; Fan Control &gt; Balanced</code> for default operation.
+ ${_kpf_msg}
+_EOH03
       )";;
 
     nxg2*)
-      _title='Fan Control in BIOS';
-      _model_msg="$(cat <<_EOH02
-This <b>Kubuntu Focus ${_model_label}</b> system has
- comprehensive fan controls available in the BIOS. To adjust
- the settings, press <code>F2</code> on boot and select
- <code>Power, Performance and Cooling</code>. We recommend
- starting with <code>Fan Control &gt; Balanced</code>.${_kpf_msg}
-_EOH02
+      _model_msg="$(cat <<_EOH04
+<b>Fan profiles are found in the BIOS</b><br>
+ To access, press <code>F2</code> during boot. Select <code>BIOS &gt;
+ Power, Performance, and Cooling &gt; Fan Control &gt; Balanced</code>
+ for default operation.
+ ${_kpf_msg}
+_EOH04
       )";;
 
    *)
-     _title='Other Fan Control';
-     _model_msg="$(cat <<_EOH03
-This <b>${_model_label}</b> system is not supported by Kubuntu
- Focus fan controls. However, you may be able to control the
- fans using the BIOS or a third-party apps. On many systems,
- one can access the BIOS by pressing <code>F2</code>,
- <code>Delete</code> or <br> <code>Escape</code> during boot.${_kpf_msg}
-_EOH03
+     _model_msg="$(cat <<_EOH05
+<b>Kubuntu Focus does not have a profile for this device.</b><br>
+ You may be able to adjust the fans in the BIOS, which
+ can usually be accessed by pressing F2, Delete, or ESC during boot.
+ ${_kpf_msg}
+_EOH05
       )";;
   esac
 
@@ -154,7 +158,7 @@ _printOptionsFn () {
   fi
 
   for _opt_line in "${_optionTable[@]}"; do
-    IFS=';' read -r -a _bit_list <<< "${_opt_line}";
+    IFS='|' read -r -a _bit_list <<< "${_opt_line}";
     echo "${_bit_list[0]} ( ${_bit_list[1]} )";
   done
 }
@@ -170,7 +174,7 @@ _readModeFn () {
   fi
 
   for _opt_line in "${_optionTable[@]}"; do
-    IFS=';' read -r -a _bit_list <<< "${_opt_line}";
+    IFS='|' read -r -a _bit_list <<< "${_opt_line}";
     if [ "${_bit_list[2]:-}" = "${_is_tccd_active}" ]; then
       echo "${_bit_list[0]} ( ${_bit_list[1]} )";
       return 0;
