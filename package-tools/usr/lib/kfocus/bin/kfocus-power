@@ -11,7 +11,7 @@
 # Purpose : GUI to select power profile
 # License : GPL v2
 # Run By  : Users
-# Spec    : 729, 2558
+# Spec    : 729, 2558, 3050
 #
 set -u;
 
@@ -56,7 +56,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   _importCommonFn;
   _assignList=(
-    "_qmlLibFile|${_baseDir}/qml/kfocus-power.qml|FILE"
+    "_qmlLibFile|${_baseDir}/qml/kfocus-power.qml|filero"
     "_qmlSceneExe|qmlscene"
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
