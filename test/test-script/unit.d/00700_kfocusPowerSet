@@ -21,64 +21,6 @@
 #   printf '%.0f' "$*";
 # }
 
-# Example kfocus-power-set -p
-# High;5100000;performance;0;1
-# Normal;5100000;powersave;0;1
-# Medium;3700000;powersave;0;1
-# Studio;2300000;performance;1;1
-# Low;2300000;powersave;1;0
-# Frugal;1799900;powersave;1;0
-# Stingy;1550000;powersave;1;0
-# _makeExpectStrFn () {
-#   declare _str _pick_str _model_str _line_str \
-#     _bit_list _hw_min_int _hw_base_int _hw_max_int \
-#     _scale_max_int _gov_str _noturbo_int _keyboard_int \
-#     _core_count _core_idx;
-#
-#   _str='';
-#   _pick_str="${1:-}";
-#   _model_str="$(grep -i 'model name' /proc/cpuinfo |uniq \
-#     |awk -F':' '{print $2}')";
-#
-#   for _line_str in "${_cpuTable[@]}"; do
-#     IFS=';' read -r -a _bit_list <<< "${_line_str}";
-#     if ! echo "${_model_str}" | grep -qi "${_bit_list[0]}"; then
-#       continue;
-#     fi
-#     _hw_min_int="${_bit_list[1]}000";
-#     _hw_base_int="${_bit_list[2]}000";
-#     _hw_max_int="${_bit_list[3]}000";
-#     break;
-#   done
-#
-#   IFS=';' read -r -d '' -a _bit_list <<<"${_pick_str}";
-#   _scale_max_int="${_bit_list[1]}";
-#   _gov_str="${_bit_list[2]}";
-#   _noturbo_int="${_bit_list[3]}";
-#   _keyboard_int="${_bit_list[4]}";
-#
-#   _core_count="$(nproc)";
-#   _str='';
-#   for (( _core_idx=0; _core_idx < "${_core_count}"; _core_idx++ )); do
-#     _str+="CORE ${_core_idx}";
-#     _str+="\n  Governor  : ${_gov_str}";
-#     _str+="\n  Base Freq : ${_hw_base_int}";
-#     _str+="\n  Min  Freq : ${_hw_min_int}";
-#     _str+="\n  Max  Freq : ${_hw_max_int}";
-#     _str+="\n  SMin Freq : ${_hw_min_int}";
-#     _str+="\n  SMax Freq : ${_scale_max_int}";
-#     _str+="\n";
-#   done
-#
-#   _str+="\n  NoTurboInt: ${_noturbo_int}";
-#   if [ -r /sys/devices/platform/tuxedo_keyboard/state ]; then
-#     _str+="\n KbdState   : ${_keyboard_int}";
-#   fi
-#   _str+="\n";
-#
-#   echo -e "${_str}";
-# }
-
 _makeRunStrFn () {
   declare _core_root_dir _noturbo_file _kbd_state_file \
     _core_count _str _core_idx _core_loop_dir;
@@ -137,34 +79,36 @@ _echoCpuModelNameFn () {
   echo "${_cpu_name}";
 }
 
-## BEGIN _testLoopFn {
-_testLoopFn () {
+## BEGIN _runAssertsFn {
+_runAssertsFn () {
   declare _cr _cpu_name _pick_list _pick_str _power_exe _model_code \
-    _test_count _test_idx _fail_count _mode_str _expect_file _run_file \
-    _descr_str _expect_str _run_str _check_str
+    _assert_count _assert_idx _fail_count _mode_str _expect_file _run_file \
+    _descr_str _expect_str _run_str _check_str _count_str;
 
   _cr=$'\n';
   _cpu_name="$(_echoCpuModelNameFn)";
 
-  _pick_list=( "$@" )
+  _pick_list=( "$@" );
 
   # shellcheck disable=SC1090,SC2154
   _power_exe="${_t00TopDir}/package-tools/usr/lib/kfocus/";
   _power_exe+='bin/kfocus-power-set';
 
   _model_code="$(_cm2EchoModelStrFn 'code')";
-  _test_count="$(echo "${#_pick_list[@]}*2"|bc)";
-  _test_idx=0;
+  _assert_count="$(echo "${#_pick_list[@]}*2"|bc)";
+  _assert_idx=0;
   _fail_count=0;
   for _pick_str in "${_pick_list[@]}"; do
-    ((_test_idx++));
+    ((_assert_idx++));
     _mode_str="$(echo "${_pick_str}" |cut -f1 -d';')";
 
     # Calculate expect and run files
+    # shellcheck disable=SC2154
     _expect_file="$(
       printf '%s/%s_%s_%s.txt' "${_t00ExpectDir}" \
         "${_model_code}" "${_cpu_name}" "${_mode_str}"
     )";
+    # shellcheck disable=SC2154
     _run_file="$(
       printf '%s/%s_%s_%s.txt' "${_t00RunDir}" \
         "${_model_code}" "${_cpu_name}" "${_mode_str}"
@@ -172,44 +116,45 @@ _testLoopFn () {
     if [ ! -f "${_expect_file}" ]; then touch "${_expect_file}"; fi
     if [ ! -f "${_run_file}"    ]; then touch "${_run_file}";    fi
 
-    # Start file with description
-    _descr_str="BEGIN Test ${_test_idx} of ${_test_count}:${_cr}";
-    _descr_str+="  >>> kfocus-power-set ${_mode_str}";
-    _cm2EchoFn "${_descr_str}";
-
     sudo "${_power_exe}" "${_mode_str}";
     _expect_str="$(cat "${_expect_file}")";
     sleep 1;
 
-    _run_str="${_descr_str}${_cr}";
-    _run_str+="$(_makeRunStrFn)";
+    # shellcheck disable=SC2154
+    _count_str="$(_t00MakeCountStrFn "${_assert_idx}" "${_assert_count}")";
+    _descr_str="Assert kfocus-power-set ${_mode_str}";
+    _run_str="BEGIN ${_descr_str}${_cr}";
+    _run_str+="$(_makeRunStrFn)${_cr}";
+    _run_str+="END   ${_descr_str}";
     echo "${_run_str}" > "${_run_file}";
 
+    _descr_str="${_count_str} kfocus-power-set ${_mode_str}";
     if [ "${_expect_str}" = "${_run_str}" ]; then
-      _cm2EchoFn "OK  Test ${_test_idx}\n\n";
+      _cm2EchoFn "  ok  : ${_descr_str}";
     else
       ((_fail_count++));
-      _cm2EchoFn ". FAIL Test ${_test_idx}\n\n";
+      _cm2EchoFn "  fail: ${_descr_str}";
       meld "${_expect_file}" "${_run_file}";
     fi
 
     _check_str="$("${_power_exe}" -r)";
-    ((_test_idx++));
-    _cm2EchoFn "BEGIN Test ${_test_idx} of ${_test_count}:";
-    _cm2EchoFn "  >>> kfocus-power-set -r matches ${_mode_str}";
+    ((_assert_idx++));
+    # shellcheck disable=SC2154
+    _count_str="$(_t00MakeCountStrFn "${_assert_idx}" "${_assert_count}")";
+    _descr_str="${_count_str} kfocus-power-set -r ${_mode_str}";
     if [ "${_check_str}" = "${_mode_str}" ]; then
-      _cm2EchoFn "OK  Test ${_test_idx}\n\n";
+      _cm2EchoFn "  ok  : ${_descr_str}";
     else
       ((_fail_count++));
       _cm2EchoFn "  _check_str : ${_check_str}";
       _cm2EchoFn "  _mode_str  : ${_mode_str}";
-      _cm2EchoFn ". FAIL Test ${_test_idx}\n\n";
+      _cm2EchoFn "  fail: ${_descr_str}";
     fi
   done
 
   return "${_fail_count}";
 }
-## . END _testLoopFn }
+## . END _runAssertsFn }
 
 ## BEGIN _testApiFn {
 _testApiFn () {
@@ -235,10 +180,10 @@ _testApiFn () {
   _run_str="$(IFS=$'\n'; echo "${_pick_list[*]}")";
   echo "${_run_str}" > "${_run_file}";
   if [ "${_expect_str}" = "${_run_str}" ]; then
-    _cm2EchoFn "OK  Test testApi -${_api_mode}\n\n";
+    _cm2EchoFn "  ok  : Check switch -${_api_mode}\n\n";
     return 0;
   else
-    _cm2EchoFn ". FAIL Test testApi -${_api_mode}\n\n";
+    _cm2EchoFn "  fail: Check switch -${_api_mode}\n\n";
     meld "${_expect_file}" "${_run_file}";
     return 1;
   fi
@@ -248,7 +193,7 @@ _testApiFn () {
 ## BEGIN _runTestFn {
 _runTestFn () {
   declare _power_exe _current_mode_str _pick_str _pick_list _fail_count \
-    _test_count _total_fail_count;
+    _assert_count _total_fail_count;
 
   # Use function from _runUnitTests: clear out run dir and check expect dir
   if ! _t00ClearRunDirFn;    then return 1; fi
@@ -260,7 +205,7 @@ _runTestFn () {
   _current_mode_str="$("${_power_exe}" -r)";
   _total_fail_count=0
 
-  _cm2EchoFn "TEST SUITE 1: kfocus-power-set -p API check\n";
+  _cm2EchoFn "ASSERT SUITE 1: kfocus-power-set -p API check\n";
 
   _pick_str="$("${_power_exe}" -p)";
   IFS=$'\n' read -r -d '' -a _pick_list <<<"${_pick_str}";
@@ -268,28 +213,28 @@ _runTestFn () {
   _testApiFn 'p' "${_pick_list[@]}";
   _fail_count="$?";
   _total_fail_count=$((_total_fail_count+_fail_count))
-  _test_count="1";
+  _assert_count="1";
 
   if [ "${_fail_count}" -gt 0 ]; then
-    _cm2EchoFn "fail: ${_fail_count} of ${_test_count} tests failed.";
+    _cm2EchoFn "fail: ${_fail_count} of ${_assert_count} tests failed.";
   else
     _cm2EchoFn 'ok  : Results match expected';
   fi
 
-  _cm2EchoFn "TEST SUITE 2: kfocus-power-set -p parsing and execution\n";
+  _cm2EchoFn "ASSERT SUITE 2: kfocus-power-set -p parsing and execution\n";
 
-  _testLoopFn "${_pick_list[@]}";
+  _runAssertsFn "${_pick_list[@]}";
   _fail_count="$?";
   _total_fail_count=$((_total_fail_count+_fail_count))
-  _test_count="$(echo "${#_pick_list[@]}*2"|bc)";
+  _assert_count="$(echo "${#_pick_list[@]}*2"|bc)";
   
   if [ "${_fail_count}" -gt 0 ]; then
-    _cm2EchoFn "fail: ${_fail_count} of ${_test_count} tests failed.";
+    _cm2EchoFn "fail: ${_fail_count} of ${_assert_count} tests failed.";
   else
     _cm2EchoFn 'ok  : Results match expected';
   fi
 
-  _cm2EchoFn "TEST SUITE 3: kfocus-power-set -x API check\n"
+  _cm2EchoFn "ASSERT SUITE 3: kfocus-power-set -x API check\n"
 
   _pick_str="$("${_power_exe}" -x)";
   IFS=$'\n' read -r -d '' -a _pick_list <<<"${_pick_str}";
@@ -297,25 +242,25 @@ _runTestFn () {
   _testApiFn 'x' "${_pick_list[@]}";
   _fail_count="$?";
   _total_fail_count=$((_total_fail_count+_fail_count))
-  _test_count="1";
+  _assert_count="1";
 
   if [ "${_fail_count}" -gt 0 ]; then
-    _cm2EchoFn "fail: ${_fail_count} of ${_test_count} tests failed.";
+    _cm2EchoFn "fail: ${_fail_count} of ${_assert_count} tests failed.";
   else
     _cm2EchoFn 'ok  : Results match expected';
   fi
 
-  _cm2EchoFn "TEST SUITE 4: kfocus-power-set -x parsing and execution\n";
+  _cm2EchoFn "ASSERT SUITE 4: kfocus-power-set -x parsing and execution\n";
 
   _pick_list=("${_pick_list[@]:1}"); # Remove the header
 
-  _testLoopFn "${_pick_list[@]}";
+  _runAssertsFn "${_pick_list[@]}";
   _fail_count="$?";
   _total_fail_count=$((_total_fail_count+_fail_count))
-  _test_count="$(echo "${#_pick_list[@]}*2"|bc)";
+  _assert_count="$(echo "${#_pick_list[@]}*2"|bc)";
 
   if [ "${_fail_count}" -gt 0 ]; then
-    _cm2EchoFn "fail: ${_fail_count} of ${_test_count} tests failed.";
+    _cm2EchoFn "fail: ${_fail_count} of ${_assert_count} tests failed.";
   else
     _cm2EchoFn 'ok  : Results match expected';
   fi;

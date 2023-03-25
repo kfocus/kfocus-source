@@ -8,6 +8,10 @@ set -u;
 #   _runTestFn;
 # fi
 
+# Test-harness: Format count string
+_t00MakeCountStrFn () {
+  printf '%02d / %02d' "${1:-0}" "${2:-0}";
+}
 # Test-harness: Clear and recreate run directory
 _t00ClearRunDirFn () {
   if [ -d "${_t00RunDir}" ]; then

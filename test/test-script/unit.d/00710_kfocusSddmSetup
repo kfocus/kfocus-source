@@ -65,7 +65,7 @@ _assertDataTable=(
 ## . END _assertDataTable }
 
 ## BEGIN _overwriteWithMocksFn {
-# Purpose: Overwrite functions from sourced script before running tests
+# Purpose: Overwrite functions from sourced script before running asserts
 _overwriteWithMocksFn () {
   # shellcheck disable=SC2154
   _exeFile="${_t00TopDir}";
@@ -107,7 +107,7 @@ _exeFile='';
 # This MUST be called '_runTestFn' for use by the _runUnitTests
 _runTestFn () {
   declare _fail_count _assert_count _assert_idx _assert_line \
-    _file_name _expect_file _run_file _msg _check_str;
+    _file_name _expect_file _run_file _msg _check_str _count_str;
 
   # Use function from _runUnitTests: clear out run dir and check expect dir
   if ! _t00ClearRunDirFn;    then return 1; fi
@@ -140,9 +140,11 @@ _runTestFn () {
     _run_file="${_t00RunDir}/${_file_name}";
 
     # Start file with description
-    _msg="${_bitList[0]} | ${_bitList[1]}.";
+    _msg="${_bitList[0]} | ${_bitList[1]}";
     echo "${_msg}" > "${_run_file}";
-    _cm2EchoFn "BEGIN Assert ${_assert_idx} of ${_assert_count}: ${_msg}";
+
+    # shellcheck disable=SC2154
+    _count_str="$(_t00MakeCountStrFn "${_assert_idx}" "${_assert_count}")";
 
     # Run _mainFn and capture modified output
     export OPTIND=1;
@@ -153,11 +155,11 @@ _runTestFn () {
     _check_str="$(diff -r --brief "${_expect_file}" "${_run_file}" )";
 
     if [ -z "${_check_str}" ]; then
-      _cm2EchoFn ". OK   Assert ${_assert_idx}\n";
+      _cm2EchoFn "  ok  : ${_count_str} ${_msg}";
     else
-      _cm2EchoFn 'Please compare expected to run file';
+      _cm2EchoFn "  fail: ${_count_str} ${_msg}";
+      _cm2EchoFn '  Please compare expected to run file:';
       meld "${_expect_file}" "${_run_file}";
-      _cm2EchoFn ". FAIL Assert ${_assert_idx}\n";
       (( _fail_count++ ));
     fi
     ## . End Check diff }
@@ -167,12 +169,13 @@ _runTestFn () {
   ## End Iterate through asserts }
 
   ## Run shellcheck on script
-  _cm2EchoFn "BEGIN Assert ${_assert_idx} of ${_assert_count}: shellcheck -x";
+  # shellcheck disable=SC2154
+  _count_str="$(_t00MakeCountStrFn "${_assert_idx}" "${_assert_count}")";
+  _msg="Shellcheck -x of $(basename "${_exeFile}")";
   if shellcheck -x "${_exeFile}"; then
-    _cm2EchoFn ". OK   Assert ${_assert_idx}\n";
+    _cm2EchoFn "  ok  : ${_count_str} ${_msg}";
   else
-    _cm2EchoFn "Shellcheck fails on ${_exeFile}";
-    _cm2EchoFn ". FAIL Assert ${_assert_idx}\n";
+    _cm2EchoFn "  fail: ${_count_str} ${_msg}";
     (( _fail_count++ ));
   fi
 

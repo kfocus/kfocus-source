@@ -8,31 +8,34 @@
 ## BEGIN _overwriteWithMocksFn {
 # Purpose: Overwrite functions from sourced script before running assertions
 _overwriteWithMocksFn () {
-  # bashsupport disable=BP2001
   declare _exe_file;
+  # shellcheck disable=SC2154
   _exe_file="${_t00TopDir}";
   _exe_file+='/package-tools/usr/lib/kfocus/bin/kfocus-fan-set';
-  # shellcheck disable=SC1090,SC2154
+  # shellcheck disable=SC1090
   source "${_exe_file}" || exit 1;
 
   # Set environment vars
+  # bashsupport disable=BP2001
   export XDG_SESSION_TYPE='tty';
 
   ## BEGIN Mock
-   # This uses _bitList[0,2] to mock return string
+  # This uses _bitList[0,2] to mock return string
+  # shellcheck disable=SC2317
   _cm2EchoModelStrFn () {
     declare _arg_str="${1:-}";
     case "${_arg_str}" in
       code)  echo "${_bitList[0]}";;
       label) echo "${_bitList[2]}";;
-      *) _cm2EchoFn 'Unknown directive';
-         return 1;
+    *) _cm2EchoFn 'Unknown directive';
+      return 1;
+      ;;
     esac
-  }
-  ## . END Mock
+  }  ## . END Mock
 
   ## BEGIN Mock
    # This uses _bitList[5] to mock return value
+  # shellcheck disable=SC2317
   _cm2ChkInstalledPkgFn () {
     if [ "${_bitList[5]}" = 'installed' ]; then
       return 0; else return 1;
@@ -45,8 +48,8 @@ _overwriteWithMocksFn () {
 ## BEGIN _unsetMocksFn {
 # Purpose : Unset mocked functions and other globals to prevent
 #   pollution of namespaces. Mocked functions from commons.2.source are not
-#   reset here; instead they are re-source after every test in runUnitTests
-#   (the test harness). See more notes in 00900.
+#   reset here; instead they are re-source after every test in runUnitTests.
+#   See more notes in 00900.
 _unsetMocksFn () { true; }
 ## . END _unsetMocksFn }
 
@@ -54,14 +57,14 @@ _unsetMocksFn () { true; }
 # This MUST be called '_runTestFn' for use by the _runUnitTests
 _runTestFn () {
   declare _fail_count _assert_table _assert_count _assert_idx _assert_line \
-    _inner_str _tag_str _file _expect_file _msg _check_str;
+    _inner_str _tag_str _file _expect_file _msg _check_str _count_str;
 
   # Use function from _runUnitTests: clear out run dir and check expect dir
   if ! _t00ClearRunDirFn;    then return 1; fi
   if ! _t00CheckExpectDirFn; then return 1; fi
 
   # WE DO NOT NEED TO IMPORT COMMON FOR sourced scripts, as the common lib
-  # is already imported by the _runUnitTests
+  #   is already imported by _runUnitTests.
   # _importCommonFn;
 
   # Overwrite functions with mocks
@@ -77,8 +80,6 @@ _runTestFn () {
   _assert_idx=1;
   for _assert_line in "${_assert_table[@]}"; do
     for _inner_str in 'installed' 'NOT INSTALLED'; do
-      _cm2EchoFn "BEGIN Assert ${_assert_idx} of ${_assert_count}:";
-
       # Extract _bitList used by Mocks above
       IFS='|' read -r -d '' -a _bitList < <(echo -n "${_assert_line}");
       _bitList[5]="${_inner_str}";
@@ -93,7 +94,9 @@ _runTestFn () {
       # bashsupport disable=BP2001
       _file="$( printf '%s_%s.txt' "${_bitList[0]}" "${_tag_str}" )";
 
+      # shellcheck disable=SC2154
       _expect_file="${_t00ExpectDir}/${_file}";
+      # shellcheck disable=SC2154
       _runFile="${_t00RunDir}/${_file}";
 
       # Start file with description
@@ -106,24 +109,27 @@ _runTestFn () {
       _printOptionsFn 'x' >> "${_runFile}";
 
       ## Begin Check diffs {
+      # shellcheck disable=SC2154
+      _count_str="$(_t00MakeCountStrFn "${_assert_idx}" "${_assert_count}")";
       if [ ! -f "${_expect_file}" ]; then touch "${_expect_file}"; fi
       _check_str="$(diff -r --brief "${_expect_file}" "${_runFile}" )";
       if [ -z "${_check_str}" ]; then
-        _cm2EchoFn ". OK   test ${_assert_idx}\n\n";
+
+        _cm2EchoFn "  ok  : ${_count_str} ${_msg}";
       else
-        _cm2EchoFn 'Please compare expected to run file';
+        _cm2EchoFn "  fail: ${_count_str} ${_msg}";
+        _cm2EchoFn '    Please compare expected to run file';
         meld "${_expect_file}" "${_runFile}";
-        _cm2EchoFn ". FAIL test ${_assert_idx}\n\n";
         (( _fail_count++ ));
       fi
       ## . End Check diffs }
       (( _assert_idx++ ));
     done
   done
-  ## End Iterate through tests }
+  ## End Iterate through assertions }
 
   if [ "${_fail_count}" -gt 0 ]; then
-    _cm2EchoFn "FAIL: ${_fail_count} of ${_assert_count} tests failed.";
+    _cm2EchoFn "FAIL: ${_fail_count} of ${_assert_count} asserts failed.";
   else
     _cm2EchoFn 'OK  : Results match expected';
   fi
