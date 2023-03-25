@@ -324,7 +324,7 @@ _cm2EchoInstalledVersFn () {
 
 _cm2AssignExeVarsFn () {
   declare _var_list _line_str _bit_list _var_name \
-    _cmd_name _mod_str _cmd_exe _return_int;
+    _cmd_name _type _cmd_exe _return_int;
 
   _var_list=("$@");
   _return_int=0;
@@ -339,26 +339,42 @@ _cm2AssignExeVarsFn () {
     fi
     _var_name="${_bit_list[0]}";
     _cmd_name="${_bit_list[1]}";
-    _mod_str="${_bit_list[2]:-}";
+    _type="${_bit_list[2]:-}";
 
     # Handle file assignment
-    if [ "$_mod_str" = 'FILE' ]; then
-      if [ -e "${_cmd_name}" ]; then
-        _cmd_exe="${_cmd_name}";
-      else
-        _cm2WarnStrFn "FILE |${_cmd_name}| not found";
-        _return_int=1;
-        continue;
-      fi
-    # Handle executable assignment
-    else
-      _cmd_exe="$( command -v "${_cmd_name}" )";
-      if [ -z "${_cmd_exe}" ] || [ ! -x "${_cmd_exe}" ]; then
-        _cm2WarnStrFn "Command |${_cmd_name}| NOT EXECUTABLE as |${_cmd_exe}|";
-        _return_int=1;
-        continue;
-      fi
-    fi
+    case "${_type}" in
+      '' )
+        _cmd_exe="$( command -v "${_cmd_name}" )";
+        if [ -z "${_cmd_exe}" ] || [ ! -x "${_cmd_exe}" ]; then
+          _cm2WarnStrFn "Command |${_cmd_name}| NOT EXECUTABLE as |${_cmd_exe}|";
+          _return_int=1;
+          continue;
+        fi
+        ;;
+      'filero' )
+        if [ -r "${_cmd_name}" ]; then
+          _cmd_exe="${_cmd_name}";
+        else
+          _cm2WarnStrFn "File |${_cmd_name}| not readable";
+          _return_int=1;
+          continue;
+        fi
+        ;;
+      'filerw' )
+        if [ -r "${_cmd_name}" ] && [ -w "${_cmd_name}" ]; then
+          _cmd_exe="${_cmd_name}";
+        else
+          _cm2WarnStrFn "File |${_cmd_name}| not read-writable";
+          _return_int=1;
+          continue;
+        fi
+        ;;
+        * )
+          _cm2WarnStrFn "Assignment type |$_type| not supported"
+          _return_int=1;
+          continue;
+          ;;
+      esac
 
     # Assign to variable
     printf -v "${_var_name}" '%s' "${_cmd_exe}";
