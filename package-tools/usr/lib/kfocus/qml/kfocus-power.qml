@@ -167,9 +167,12 @@ Kirigami.ApplicationWindow {
             id: profilesModel
             property string selectedProfile
             property var validIndexes: []
+            // Longer List:
+            //  property var gridColors: ['transparent', '#F63114', '#F7941E',
+            //  '#E4A714', '#8EB519', '#33cc33', '#39ceba', '#3caae4', '#007dc6',
+            //  '#006091'].reverse()
             property var gridColors: ['transparent', '#F63114', '#F7941E',
-            '#E4A714', '#8EB519', '#33cc33', '#39ceba', '#3caae4', '#007dc6',
-            '#006091'].reverse()
+            '#33cc33', '#3caae4', '#006091'].reverse()
             onSelectedProfileChanged: profilesChecker.connectSource('pkexec '
             + binDir + '/kfocus-power-set ' + selectedProfile)
         }
@@ -246,7 +249,7 @@ Kirigami.ApplicationWindow {
                         let lineParts = line.split('|');
                         let titleMsg = lineParts[0].split(':')[1];
                         let bodyMsg = lineParts[1].split(':')[1];
-                        fanControlHeading.text = titleMsg
+                        fanControlHeading.text = titleMsg;
                         buildStr += bodyMsg;
                     }
                     if (fanMissingMsg) {
