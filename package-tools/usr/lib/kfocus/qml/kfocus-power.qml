@@ -6,7 +6,6 @@ import org.kde.plasma.core 2.1 as PlasmaCore
 
 Kirigami.ApplicationWindow {
     id: root
-
     title: "Kubuntu Focus Power Tool"
     width: 550
     height: 700
@@ -14,10 +13,7 @@ Kirigami.ApplicationWindow {
     minimumHeight: 700
 
     pageStack.initialPage: Kirigami.Page {
-
-
-        title: "Power Management Options"
-
+        title: "KFocus Power and Fan"
         ColumnLayout {
             id: layout
             anchors {
@@ -28,60 +24,8 @@ Kirigami.ApplicationWindow {
             spacing: PlasmaCore.Units.mediumSpacing
 
             Kirigami.Heading {
-                id: fanControlHeading
-                text: "Fan Curve"
-                level: 1
-            }
-
-            Kirigami.InlineMessage {
-                id: inlineMessage
-                Layout.fillWidth: true
-                text: "Cannot control fan"
-                visible:  !fanSlider.visible
-            }
-
-            Controls.Slider {
-                id: fanSlider
-                visible: fanProfilesModel.fanAvailable
-                onValueChanged: {
-                    fanTimer.triggeredOnStart = false
-                    fanTimer.stop()
-                    fanProfilesChecker.connectSource('pkexec ' + binDir + '/kfocus-fan-set ' + fanProfilesModel.profileNames[value])
-                    fanDescription.text = "<i>Description:</i> " + fanProfilesModel.profileDescriptions[fanSlider.value]
-                    fanTimer.start()
-                }
-                to: fanProfilesModel.count - 1
-                stepSize: 1
-                Layout.fillWidth: true
-            }
-
-            RowLayout {
-                id: fanLabels
-                visible: fanSlider.visible
-                spacing: 0
-                Layout.fillWidth: true
-
-                Repeater {
-                    model: fanProfilesModel
-                    delegate: Controls.Label {
-                        text: name
-                        Layout.preferredWidth: layout.width / (fanProfilesModel.count)
-                        horizontalAlignment: index == 0 ? Text.AlignLeft : (
-                            index == fanProfilesModel.count - 1 ? Text.AlignRight : Text.AlignHCenter)
-                    }
-                }
-            }
-
-            Controls.Label {
-                id: fanDescription
-                visible: fanSlider.visible
-                text: "<i>Description:</i> " + fanProfilesModel.profileDescriptions[fanSlider.value]
-                Layout.bottomMargin: PlasmaCore.Units.smallSpacing * 7
-            }
-
-            Kirigami.Heading {
                 visible: plasmaProfilesSlider.visible
-                text: "Power Profiles"
+                text: 'Power Profile'
                 level: 1
             }
 
@@ -99,7 +43,6 @@ Kirigami.ApplicationWindow {
 
             RowLayout {
                 spacing: 0
-                Layout.bottomMargin: PlasmaCore.Units.smallSpacing * 7
                 Layout.fillWidth: true
 
                 Controls.Label{
@@ -113,10 +56,12 @@ Kirigami.ApplicationWindow {
                 Controls.Label{
                     text: "Performance ⚡"
                 }
+                Layout.bottomMargin: PlasmaCore.Units.largeSpacing
             }
 
             Kirigami.Heading {
-                text: plasmaProfilesSlider.visible ? "SPLINE Tuning" : "Power Profile"
+                // text: plasmaProfilesSlider.visible ? "Fine Tuning" : "Power Profile"
+                text: 'Frequency Profile'
                 level: 1
             }
 
@@ -161,12 +106,63 @@ Kirigami.ApplicationWindow {
                         }
                     }
                 }
+                Layout.bottomMargin: PlasmaCore.Units.largeSpacing
+            }
+
+            Kirigami.Heading {
+                id: fanControlHeading
+                text: "Fan Profile"
+                level: 1
+            }
+
+            Kirigami.InlineMessage {
+                id: inlineMessage
+                Layout.fillWidth: true
+                text: "Fan Profile not Found"
+                visible:  !fanSlider.visible
+            }
+
+            Controls.Slider {
+                id: fanSlider
+                visible: fanProfilesModel.fanAvailable
+                onValueChanged: {
+                    fanTimer.triggeredOnStart = false
+                    fanTimer.stop()
+                    fanProfilesChecker.connectSource('pkexec ' + binDir + '/kfocus-fan-set ' + fanProfilesModel.profileNames[value])
+                    fanDescription.text = "<i>Description:</i> " + fanProfilesModel.profileDescriptions[fanSlider.value]
+                    fanTimer.start()
+                }
+                to: fanProfilesModel.count - 1
+                stepSize: 1
+                Layout.fillWidth: true
+            }
+
+            RowLayout {
+                id: fanLabels
+                visible: fanSlider.visible
+                spacing: 0
+                Layout.fillWidth: true
+
+                Repeater {
+                    model: fanProfilesModel
+                    delegate: Controls.Label {
+                        text: name
+                        Layout.preferredWidth: layout.width / (fanProfilesModel.count)
+                        horizontalAlignment: index == 0 ? Text.AlignLeft : (
+                            index == fanProfilesModel.count - 1 ? Text.AlignRight : Text.AlignHCenter)
+                    }
+                }
+            }
+
+            Controls.Label {
+                id: fanDescription
+                visible: fanSlider.visible
+                text: "<i>Description:</i> " + fanProfilesModel.profileDescriptions[fanSlider.value]
+                Layout.bottomMargin: PlasmaCore.Units.largeSpacing
             }
 
         }
-
         // --- LOGIC ---
-
         ListModel {
             id: profilesModel
             property string selectedProfile
@@ -336,7 +332,8 @@ Kirigami.ApplicationWindow {
         })
     }
     readonly property var profiles: ['power-saver', 'balanced', 'performance']
-    // '/usr/lib/kfocus/bin'
-    readonly property var binDir: '../../package-tools/usr/lib/kfocus/bin'
+    // Requires qmlscene ./kfocus.qml "${pathToBin}" to set binDir for
+    //   kfocus-fan-set and kfocus-power-set
+    readonly property var binDir: Qt.application.arguments[1] || '/usr/lib/kfocus/bin'
     readonly property int activeProfileIndex: root.profiles.indexOf(root.activeProfile)
 }
