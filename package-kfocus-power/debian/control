@@ -1,16 +1,18 @@
-Source:            kfocus-power-bin
-Section:           admin
-Priority:          optional
-Maintainer:        Kubuntu Focus Team <support@kfocus.org>
-Standards-Version: 4.6.0
-Build-Depends:     debhelper-compat (=13),
-                   qtdeclarative5-dev,
-                   qtbase5-dev,
-                   qtquickcontrols2-5-dev
+Source:              kfocus-power-bin
+Section:             admin
+Priority:            optional
+Maintainer:          Kubuntu Focus Team <support@kfocus.org>
+Standards-Version:   4.6.0
+Build-Depends:       debhelper-compat (=13),
+                     qtdeclarative5-dev,
+                     qtbase5-dev,
+                     qtquickcontrols2-5-dev
+Rules-Requires-Root: no
 
 Package:      kfocus-power-bin
 Architecture: amd64
 Depends:      ${misc:Depends},
+              ${shlibs:Depends},
               kfocus-common,
               cpufrequtils,
               hicolor-icon-theme,
