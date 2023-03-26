@@ -30,20 +30,20 @@ _installReposFn () {
   _repo_dir='/etc/apt/sources.list.d';
   _pref_dir='/etc/apt/preferences.d';
   _kfocus_dir='/usr/lib/kfocus';
-  _pin_str=$(cat << EOF3
-#x WARNING! THIS IS A MACHINE GENERATED FILE.
-#x DO NOT EDIT AS CHANGES WILL BE OVERWRITTEN BY FUTURE UPDATES.
-#x LAST UPDATE 2022-05-10 FOR JAMMY
-
-Package: tuxedo-keyboard
-Pin: origin "deb.tuxedocomputers.com"
-Pin-Priority: 500
-
-Package: *
-Pin: origin "deb.tuxedocomputers.com"
-Pin-Priority: -1
-EOF3
-  );
+#  _pin_str=$(cat << EOF3
+##x WARNING! THIS IS A MACHINE GENERATED FILE.
+##x DO NOT EDIT AS CHANGES WILL BE OVERWRITTEN BY FUTURE UPDATES.
+##x LAST UPDATE 2022-05-10 FOR JAMMY
+#
+#Package: tuxedo-keyboard
+#Pin: origin "deb.tuxedocomputers.com"
+#Pin-Priority: 500
+#
+#Package: *
+#Pin: origin "deb.tuxedocomputers.com"
+#Pin-Priority: -1
+#EOF3
+#  );
 
   ##
   if [ -e "${_repo_dir}/kfocus-recommended.list" ]; then
@@ -54,10 +54,10 @@ EOF3
   fi
 
   ##
-  _cm2SetMsgFn 'Create or overwrite package pinning';
-  if echo "${_pin_str}" > "${_pref_dir}"/kfocus-package-pinning; then
-    _cm2SucFn; else _cm2WarnFn;
-  fi
+#  _cm2SetMsgFn 'Create or overwrite package pinning';
+#  if echo "${_pin_str}" > "${_pref_dir}"/kfocus-package-pinning; then
+#    _cm2SucFn; else _cm2WarnFn;
+#  fi
 
   ##
   _cm2SetMsgFn 'Create or overwrite repo list files';
@@ -216,6 +216,19 @@ _addGcloudSdkKeyFn () {
 }
 ## . END _addGcloudSdkKeyFn }
 
+## BEGIN _rmObsoleteReposFn {
+
+_rmObsoleteReposFn () {
+  if [ -e /etc/apt/sources.list.d/tuxedocomputers.list ]; then
+    _cm2RmExe /etc/apt/sources.list.d/tuxedocomputers.list
+  fi
+  if [ -e /etc/apt/preferences.d/kfocus-package-pinning ]; then
+    _cm2RmExe /etc/apt/preferences.d/kfocus-package-pinning
+  fi
+}
+
+## . END _rmObsoleteReposFn }
+
 ## BEGIN MAIN {
 #  See https://stackoverflow.com/questions/2683279
 #
@@ -232,6 +245,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
       _addTrustedKeysFn;
       # Add Google Cloud SDK keys
       _addGcloudSdkKeyFn;
+      # Clean obsolete repos
+      _rmObsoleteReposFn;
     ;;
   esac
   exit 0;

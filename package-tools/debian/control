@@ -9,7 +9,7 @@ Package:      kfocus-tools
 Architecture: all
 Depends:      ${misc:Depends},
               kfocus-power-fan,
-              tuxedo-keyboard
+              kfocus-keyboard
 Recommends:   kfocus-conda,
               kfocus-fan,
               kfocus-kb-color,
@@ -31,7 +31,7 @@ Recommends:   kfocus-conda,
               kfocus-power,
               kfocus-vidsync
 Breaks:       kfocus-power-fan,
-              tuxedo-keyboard,
+              kfocus-keyboard,
               kfocus-tools-other,
               kfocus-tools
 Description:  Kubuntu Focus Tools - NX Metapackage
@@ -48,7 +48,7 @@ Recommends:   kfocus-conda,
               kfocus-power,
               kfocus-vidsync
 Breaks:       kfocus-power-fan,
-              tuxedo-keyboard,
+              kfocus-keyboard,
               kfocus-tools-nxg1,
               kfocus-tools
 Description:  Kubuntu Focus Tools - Other Metapackage
@@ -62,7 +62,7 @@ Depends:      ${misc:Depends},
               hicolor-icon-theme,
               kdialog,
               policykit-1
-Suggests:     tuxedo-keyboard
+Suggests:     kfocus-keyboard
 Description:  Keyboard Color Chooser for Kubuntu Focus M1/M2
  With the Kubuntu Focus M1 and M2 laptops, you can customize
  the color of the RGB backlit keyboard with this utility. Settings
