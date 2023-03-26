@@ -8,9 +8,9 @@ Kirigami.ApplicationWindow {
     id: root
     title: "Kubuntu Focus Power Tool"
     width: 550
-    height: 700
+    height: 590
     minimumWidth: 550
-    minimumHeight: 700
+    minimumHeight: 590
 
     pageStack.initialPage: Kirigami.Page {
         title: "KFocus Power and Fan"
@@ -246,6 +246,7 @@ Kirigami.ApplicationWindow {
                     if (line === '') return;
                     if (line.substring(0, 5) == "title") {
                         fanMissingMsg = true;
+                        root.height = 665
                         let lineParts = line.split('|');
                         let titleMsg = lineParts[0].split(':')[1];
                         let bodyMsg = lineParts[1].split(':')[1];
