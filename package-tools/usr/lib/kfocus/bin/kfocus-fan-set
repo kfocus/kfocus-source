@@ -61,7 +61,7 @@ _setModeFn () {
   _mode_list=();
 
   for _opt_line in "${_optionTable[@]}"; do
-    _loop_key="$(cut -d';' -f1 <<< "${_opt_line}")";
+    _loop_key="$(cut -d'|' -f1 <<< "${_opt_line}")";
     if [ "${_pick_key}" = "${_loop_key}" ]; then
       _match_line="${_opt_line}";
       break;

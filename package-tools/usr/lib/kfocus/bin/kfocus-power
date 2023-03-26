@@ -35,8 +35,8 @@ _importCommonFn () {
 
 ## BEGIN _mainFn {
 _mainFn () {
-  _cm2SetMsgFn 'Run QML Scene App';
-  if "${_qmlSceneExe}" "${_binDir}" "${_qmlLibFile}"; then
+  _cm2SetMsgFn 'Run kfocus-power-bin App';
+  if "${_kfocusPowerBinExe}"; then
     _cm2SucFn; else _cm2ErrFn;
   fi
 }
@@ -56,8 +56,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   _importCommonFn;
   _assignList=(
-    "_qmlLibFile|${_baseDir}/qml/kfocus-power.qml|filero"
-    "_qmlSceneExe|qmlscene"
+    "_kfocusPowerBinExe|${_binDir}/kfocus-power-bin"
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2WarnStrFn 'ABORT: Required commands not found';
