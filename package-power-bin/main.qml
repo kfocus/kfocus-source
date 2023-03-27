@@ -7,10 +7,10 @@ import org.kde.plasma.core 2.1 as PlasmaCore
 Kirigami.ApplicationWindow {
     id: root
     title: "Kubuntu Focus Power Tool"
-    width: 550
-    height: 590
-    minimumWidth: 550
-    minimumHeight: 590
+    width: 560
+    height: 650
+    minimumWidth: 560
+    minimumHeight: 650
 
     pageStack.initialPage: Kirigami.Page {
         title: "KFocus Power and Fan"
