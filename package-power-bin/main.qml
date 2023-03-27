@@ -42,6 +42,7 @@ Kirigami.ApplicationWindow {
             }
 
             RowLayout {
+                visible: plasmaProfilesSlider.visible
                 spacing: 0
                 Layout.fillWidth: true
 
