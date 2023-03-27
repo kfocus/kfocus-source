@@ -2,10 +2,6 @@ var panel = new Panel
 var panelScreen = panel.screen
 var freeEdges = {"top": true, "bottom": true, "left": true, "right": true}
 
-panel.height = gridUnit * 3
-panel.length = gridUnit * 999
-
-// Begin Favor Left and then right edge
 for (i = 0; i < panelIds.length; ++i) {
     var tmpPanel = panelById(panelIds[i])
     if (tmpPanel.screen == panelScreen) {
@@ -18,8 +14,8 @@ for (i = 0; i < panelIds.length; ++i) {
 
 if (freeEdges["left"] == true) {
     panel.location = "left";
-} else if (freeEdges["right"] == true) {
-    panel.location = "right";
+} else if (freeEdges["left"] == true) {
+    panel.location = "left";
 } else if (freeEdges["bottom"] == true) {
     panel.location = "bottom";
 } else if (freeEdges["top"] == true) {
@@ -29,48 +25,8 @@ if (freeEdges["left"] == true) {
     panel.location = "left";
 }
 
-var kickoff = panel.addWidget("org.kde.plasma.kickoff")
-kickoff.currentConfigGroup = ["Shortcuts"]
-kickoff.writeConfig("global", "Alt+F1")
-
-kickoff.currentConfigGroup = ["Configuration/General"]
-kickoff.writeConfig("showAppsByName", "true")
-kickoff.currentConfigGroup = ["Configuration/ConfigDialog"]
-kickoff.writeConfig("DialogHeight", 720)
-kickoff.writeConfig("DialogHeight", 960)
-
-var digitalclock = panel.addWidget("org.kde.plasma.digitalclock")
-digitalclock.currentConfigGroup = ["Configuration/General"]
-digitalclock.writeConfig("showDate", "true")
-digitalclock.writeConfig("dateFormat", "isoDate")
-
-// This needs to be set as not 'flexible'. Disabled for now.
-// Setting immutability does not work.
-// var spacer = panel.addWidget("org.kde.plasma.panelspacer")
-// spacer.writeConfig("length", "2")
-// spacer.writeConfig("immutability", "1")
-
-//panel.addWidget("org.kde.plasma.showActivityManager")
-var pager = panel.addWidget("org.kde.plasma.pager")
-pager.writeConfig("displayedText", "1")
-
-//panel.addWidget("org.kde.plasma.icontasks")
-var taskmanager = panel.addWidget("org.kde.plasma.icontasks")
-var launcherlist = ["applications:systemsettings.desktop",
-                    "applications:org.kde.discover.desktop",
-                    "applications:org.kde.konsole.desktop",
-                    "applications:org.kde.dolphin.desktop",
-                    "applications:google-chrome.desktop",
-                    "applications:firefox_firefox.desktop"]
-taskmanager.writeConfig("launchers", launcherlist)
-
-var backupicon = panel.addWidget("org.kde.plasma.icon")
-backupicon.currentConfigGroup = ["Configuration/General"]
-//backupicon.writeConfig("localPath", "/usr/share/kservices5/kcm_kup.desktop")
-//backupicon.writeConfig("url", "file:///usr/share/kservices5/kcm_kup.desktop")
-backupicon.writeConfig("localPath", "/usr/share/applications/backintime-qt.desktop")
-backupicon.writeConfig("url", "file:///usr/share/applications/backintime-qt.desktop")
-
+panel.height = gridUnit * 3
+panel.length = gridUnit * 999
 /* Next up is determining whether to add the Input Method Panel
  * widget to the panel or not. This is done based on whether
  * the system locale's language id is a member of the following
@@ -114,6 +70,43 @@ if (langIds.indexOf(languageId) != -1) {
     panel.addWidget("org.kde.plasma.kimpanel");
 }
 
-panel.addWidget("org.kde.plasma.systemtray")
-panel.addWidget("org.kde.plasma.showdesktop")
+var systemtray = panel.addWidget("org.kde.plasma.systemtray")
+systemtray.currentConfigGroup = ["Configuration/General"]
+systemtray.writeConfig("shownItems", "org.kde.kupapplet")
+var backupicon = panel.addWidget("org.kde.plasma.icon")
+backupicon.currentConfigGroup = ["Configuration/General"]
+//backupicon.writeConfig("localPath", "/usr/share/kservices5/kcm_kup.desktop")
+//backupicon.writeConfig("url", "file:///usr/share/kservices5/kcm_kup.desktop")
+backupicon.writeConfig("localPath", "/usr/share/applications/backintime-qt.desktop")
+backupicon.writeConfig("url", "file:///usr/share/applications/backintime-qt.desktop")
 
+//panel.addWidget("org.kde.plasma.icontasks")
+var taskmanager = panel.addWidget("org.kde.plasma.icontasks")
+var launcherlist = ["applications:systemsettings.desktop",
+                    "applications:org.kde.discover.desktop",
+                    "applications:org.kde.konsole.desktop",
+                    "applications:org.kde.dolphin.desktop",
+                    "applications:google-chrome.desktop",
+                    "applications:firefox_firefox.desktop"]
+taskmanager.writeConfig("launchers", launcherlist)
+
+//panel.addWidget("org.kde.plasma.showActivityManager")
+var pager = panel.addWidget("org.kde.plasma.pager")
+pager.writeConfig("displayedText", "1")
+
+var digitalclock = panel.addWidget("org.kde.plasma.digitalclock")
+digitalclock.currentConfigGroup = ["Configuration/General"]
+digitalclock.writeConfig("showDate", "true")
+digitalclock.writeConfig("dateFormat", "isoDate")
+
+var kickoff = panel.addWidget("org.kde.plasma.kickoff")
+kickoff.currentConfigGroup = ["Shortcuts"]
+kickoff.writeConfig("global", "Alt+F1")
+kickoff.currentConfigGroup = ["Configuration/General"]
+kickoff.writeConfig("showAppsByName", "true")
+kickoff.currentConfigGroup = ["Configuration/ConfigDialog"]
+kickoff.writeConfig("DialogHeight", 720)
+kickoff.writeConfig("DialogHeight", 960)
+
+//var spacer = panel.addWidget("org.kde.plasma.panelspacer")
+//spacer.writeConfig("length", "2")

@@ -221,11 +221,11 @@ function setLayoutFn () {
             "pressToMoveHelp": "false",
             "showToolbox": "false",
             "sortMode": "-1"
+          },
+          "/Wallpaper/org.kde.image/General": {
+            "FillMode": "2",
+            "Image": "Next"
           }
-          // "/Wallpaper/org.kde.image/General": {
-          //   "FillMode": "2",
-          //   "Image": "Next"
-          // }
         },
         "wallpaperPlugin": "org.kde.image"
       }
@@ -238,18 +238,6 @@ function setLayoutFn () {
   loadTemplate("org.kfocus.desktop.defaultPanel");
 }
 setLayoutFn();
-
-// Add the following for to trigger getting the wallpaper updated
-var desktopsArray = desktopsForActivity(currentActivity());
-for ( var j = 0; j < desktopsArray.length; j++ ) {
-  var desktop = desktopsArray[j];
-  desktop.wallpaperPlugin = 'org.kde.image';
-  // The following in testing actually prevented updating...
-  // See https://develop.kde.org/docs/plasma/scripting/api/#screen-geometry
-  // desktop.currentConfigGroup = [ 'Wallpaper', 'org.kde.image', 'General' ];
-  // desktop.writeConfig( 'Image', 'Next' );
-  // desktop.writeConfig( 'FillMode', '2' );
-}
 
 // (1) See QRectF https://develop.kde.org/docs/extend/plasma/scripting/api/#screen-geometry
 // (2) Scale ratio is 1.5 for HDPI 4k screens. This should reduce to 1 for a
