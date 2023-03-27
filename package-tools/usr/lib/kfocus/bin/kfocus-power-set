@@ -167,7 +167,11 @@ _scanFn () {
         else
           _solve_line="${_label};";
           _solve_line+="${_set_max_int:0:1}.${_set_max_int:1:2} GHz;";
-          _solve_line+="${_gov_key};";
+          if [ "${_gov_key}" = 'powersave' ]; then
+            _solve_line+="psave;";
+          else
+            _solve_line+="PERF;";
+          fi
           if [ "${_noturbo_int}" = '1' ]; then
             _solve_line+="No;";
           else

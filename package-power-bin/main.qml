@@ -7,10 +7,10 @@ import org.kde.plasma.core 2.1 as PlasmaCore
 Kirigami.ApplicationWindow {
     id: root
     title: "Kubuntu Focus Power Tool"
-    width: 550
-    height: 590
-    minimumWidth: 550
-    minimumHeight: 590
+    width: 560
+    height: 670
+    minimumWidth: 560
+    minimumHeight: 670
 
     pageStack.initialPage: Kirigami.Page {
         title: "KFocus Power and Fan"
@@ -42,6 +42,7 @@ Kirigami.ApplicationWindow {
             }
 
             RowLayout {
+                visible: plasmaProfilesSlider.visible
                 spacing: 0
                 Layout.fillWidth: true
 
@@ -106,7 +107,11 @@ Kirigami.ApplicationWindow {
                         }
                     }
                 }
-                Layout.bottomMargin: PlasmaCore.Units.largeSpacing
+            }
+
+            Controls.Label {
+              text: "psave = powersave, PERF = performance"
+              Layout.bottomMargin: PlasmaCore.Units.largeSpacing
             }
 
             Kirigami.Heading {
@@ -246,7 +251,7 @@ Kirigami.ApplicationWindow {
                     if (line === '') return;
                     if (line.substring(0, 5) == "title") {
                         fanMissingMsg = true;
-                        root.height = 665
+                        root.height = 700
                         let lineParts = line.split('|');
                         let titleMsg = lineParts[0].split(':')[1];
                         let bodyMsg = lineParts[1].split(':')[1];
