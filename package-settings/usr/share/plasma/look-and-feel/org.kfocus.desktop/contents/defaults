@@ -1,8 +1,12 @@
+# TEST
+[Desktop][org.kde.plasma.desktop]
+Containment=org.kde.plasma.folder
+
 [kdeglobals][KDE]
-widgetStyle=breeze
+widgetStyle=Breeze
 
 [kdeglobals][General]
-ColorScheme=BreezeDark
+ColorScheme=Breeze Dark
 Name=Breeze Dark
 
 [kdeglobals][Icons]
@@ -14,12 +18,19 @@ name=kfocus
 [Wallpaper]
 Image=Next
 
+[kcminputrc][Mouse]
+cursorTheme=Breeze_Snow
+cursorSize=36
+
+[kwinrc][WindowSwitcher]
+LayoutName=org.kde.breeze.desktop
+
+[kwinrc][DesktopSwitcher]
+LayoutName=org.kde.breeze.desktop
+
 [kwinrc][org.kde.kdecoration2]
 library=org.kde.breeze
 
-[kcminputrc][Mouse]
-cursorSize=36
-cursorTheme=Breeze_Snow
+[KSplash]
+Theme=org.kde.Breeze
 
-[Desktop][org.kde.plasma.desktop]
-Containment=org.kde.plasma.folder

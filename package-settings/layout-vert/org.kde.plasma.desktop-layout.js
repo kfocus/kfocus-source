@@ -221,7 +221,7 @@ function setLayoutFn () {
   //   + 'icon_table       : \n'
   //   + JSON.stringify( icon_table, null, 2 ) + '\n\n'
   //   + 'layout matrix    : \n'
-  //   + JSON.stringify( layout_matrix, null, 2 ) + '\n\n';
+  //   + JSON.stringify( layout_matrix, null, 2 ) + '\n\n'
   //   ;
   //
   // (A) https://api.kde.org/frameworks/plasma-framework/html/
