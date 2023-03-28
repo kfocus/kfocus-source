@@ -62,12 +62,15 @@ Kirigami.ApplicationWindow {
 
             Kirigami.Heading {
                 // text: plasmaProfilesSlider.visible ? "Fine Tuning" : "Power Profile"
+                id: powerHeading
+                visible: false
                 text: 'Frequency Profile'
                 level: 1
             }
 
             GridLayout {
                 id: grid
+                visible: false
                 columnSpacing: 0
                 rowSpacing: 3
                 // Number of columns is set by the logic part
@@ -109,7 +112,16 @@ Kirigami.ApplicationWindow {
                 }
             }
 
+            Kirigami.InlineMessage {
+                id: powerError
+                Layout.fillWidth: true
+                text: "Frequency Modes not Found"
+                visible: false
+            }
+
             Controls.Label {
+              id: powerLegend
+              visible: false
               text: "psave = powersave, PERF = performance"
               Layout.bottomMargin: PlasmaCore.Units.largeSpacing
             }
@@ -188,25 +200,49 @@ Kirigami.ApplicationWindow {
             connectedSources: [ binDir + '/kfocus-power-set -x']
             onNewData: {
                 let stdout = data["stdout"]
+                let freqMissingMsg = false
+                let buildStr = ""
                 stdout.split('\n').forEach(function (line, index) {
                     if (line === '') return;
-                    let firstElementName = '';
-                    line.split(';').forEach(function (value, subindex) {
-                        if (index == 0 && value !== '') {
-                            profilesModel.validIndexes.push(subindex)
+                    if (line.substring(0,5) == "title") {
+                        freqMissingMsg = true
+                        let lineParts = line.split('|')
+                        let titleMsg = lineParts[0].substring(6, lineParts[0].length)
+                        let bodyMsg = lineParts[1].substring(8, lineParts[1].length)
+                        powerHeading.text = titleMsg
+                        powerHeading.visible = true
+                        buildStr += bodyMsg
+                    } else {
+                        if (freqMissingMsg) {
+                            buildStr += line
+                            return
                         }
-                        if (subindex == 0) {
-                            firstElementName = value
-                        }
-                        if (profilesModel.validIndexes.includes(subindex)) {
-                            profilesModel.append({'elementName': value, 'bold': index == 0,
-                                'elementColor': subindex == 0 ? profilesModel.gridColors.pop() : 'transparent',
-                                'firstElementName': firstElementName
-                            })
-                        }
-                    })
-                    grid.columns = profilesModel.validIndexes.length
+                        let firstElementName = '';
+                        line.split(';').forEach(function (value, subindex) {
+                            if (index == 0 && value !== '') {
+                                profilesModel.validIndexes.push(subindex)
+                            }
+                            if (subindex == 0) {
+                                firstElementName = value
+                            }
+                            if (profilesModel.validIndexes.includes(subindex)) {
+                               profilesModel.append({'elementName': value, 'bold': index == 0,
+                                    'elementColor': subindex == 0 ? profilesModel.gridColors.pop() : 'transparent',
+                                    'firstElementName': firstElementName
+                                })
+                                // There are items in the table, display them
+                                powerHeading.visible = true
+                                grid.visible = true
+                                powerLegend.visible = true
+                            }
+                        })
+                        grid.columns = profilesModel.validIndexes.length
+                    }
                 })
+                if (buildStr != "") {
+                    powerError.text = buildStr
+                    powerError.visible = true
+                }
                 disconnectSource(sourceName)
             }
         }
@@ -250,13 +286,13 @@ Kirigami.ApplicationWindow {
                 data["stdout"].split('\n').forEach(function (line) {
                     if (line === '') return;
                     if (line.substring(0, 5) == "title") {
-                        fanMissingMsg = true;
+                        fanMissingMsg = true
                         root.height = 700
-                        let lineParts = line.split('|');
-                        let titleMsg = lineParts[0].split(':')[1];
-                        let bodyMsg = lineParts[1].split(':')[1];
-                        fanControlHeading.text = titleMsg;
-                        buildStr += bodyMsg;
+                        let lineParts = line.split('|')
+                        let titleMsg = lineParts[0].split(':')[1]
+                        let bodyMsg = lineParts[1].split(':')[1]
+                        fanControlHeading.text = titleMsg
+                        buildStr += bodyMsg
                     }
                     if (fanMissingMsg) {
                         buildStr += line
