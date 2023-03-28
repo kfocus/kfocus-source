@@ -286,13 +286,13 @@ Kirigami.ApplicationWindow {
                 data["stdout"].split('\n').forEach(function (line) {
                     if (line === '') return;
                     if (line.substring(0, 5) == "title") {
-                        fanMissingMsg = true;
+                        fanMissingMsg = true
                         root.height = 700
-                        let lineParts = line.split('|');
-                        let titleMsg = lineParts[0].split(':')[1];
-                        let bodyMsg = lineParts[1].split(':')[1];
-                        fanControlHeading.text = titleMsg;
-                        buildStr += bodyMsg;
+                        let lineParts = line.split('|')
+                        let titleMsg = lineParts[0].split(':')[1]
+                        let bodyMsg = lineParts[1].split(':')[1]
+                        fanControlHeading.text = titleMsg
+                        buildStr += bodyMsg
                     }
                     if (fanMissingMsg) {
                         buildStr += line
