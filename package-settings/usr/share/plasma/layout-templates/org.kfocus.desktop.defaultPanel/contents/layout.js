@@ -32,13 +32,15 @@ kickoff.currentConfigGroup = ["Shortcuts"]
 kickoff.writeConfig("global", "Alt+F1")
 kickoff.currentConfigGroup = ["Configuration/General"]
 kickoff.writeConfig("showAppsByName", "true")
-kickoff.currentConfigGroup = ["Configuration/ConfigDialog"]
-kickoff.writeConfig("DialogHeight", 720)
-kickoff.writeConfig("DialogHeight", 960)
+
+// 2023-03-27 This is probably no longer desirable
+// kickoff.currentConfigGroup = ["Configuration/ConfigDialog"]
+// kickoff.writeConfig("DialogHeight", 720)
+// kickoff.writeConfig("DialogHeight", 960)
 
 //panel.addWidget("org.kde.plasma.showActivityManager")
 panel.addWidget("org.kde.plasma.pager")
-//panel.addWidget("org.kde.plasma.icontasks")
+
 var taskmanager = panel.addWidget("org.kde.plasma.icontasks")
 var launcherlist = ["applications:systemsettings.desktop",
                     "applications:org.kde.discover.desktop",
@@ -99,9 +101,10 @@ backupicon.writeConfig("localPath", "/usr/share/applications/backintime-qt.deskt
 backupicon.writeConfig("url", "file:///usr/share/applications/backintime-qt.desktop")
 var systemtray = panel.addWidget("org.kde.plasma.systemtray")
 systemtray.currentConfigGroup = ["Configuration/General"]
-systemtray.writeConfig("shownItems", "org.kde.kupapplet")
+// systemtray.writeConfig("shownItems", "org.kde.kupapplet")
 var digitalclock = panel.addWidget("org.kde.plasma.digitalclock")
 digitalclock.currentConfigGroup = ["Configuration/General"]
 digitalclock.writeConfig("showDate", "true")
 digitalclock.writeConfig("dateFormat", "isoDate")
-panel.addWidget("org.kde.plasma.minimizeall")
+panel.addWidget("org.kde.plasma.showdesktop")
+

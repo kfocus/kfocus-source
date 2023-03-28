@@ -1,6 +1,9 @@
-/*globals gridUnit,getApiVersion,screenGeometry,loadTemplate */
+/*globals gridUnit, desktopsForActivity, currentActivity,
+  getApiVersion, screenGeometry, loadTemplate */
 // Add print to eslint globals when needed.
-// Hints native: 1280 x 1988
+
+loadTemplate("org.kfocus.desktop.defaultPanel");
+
 var scaleMatrix = {
   large : {
     icon_table  : [
@@ -43,6 +46,7 @@ var scaleMatrix = {
   }
 },
 
+// kfocus hints widget images are 1280 x 1988
 widgetPathList = [
   '{"path":"file:///usr/share/kfocus-hints//00_badge.png","type":"file"}',
   '{"path":"file:///usr/share/kfocus-hints//01_desktop.png","type":"file"}',
@@ -57,6 +61,17 @@ widgetPathList = [
   '{"path":"file:///usr/share/kfocus-hints//10_vim_02.png","type":"file"}',
   '{"path":"file:///usr/share/kfocus-hints//11_vim_03.png","type":"file"}'
 ];
+
+function tweakWallpapersFn () {
+  var desktop_list, j, desktop_obj;
+
+  desktop_list = desktopsForActivity(currentActivity());
+  for ( j = 0; j < desktop_list.length; j++) {
+    desktop_obj = desktop_list[j];
+    desktop_obj.wallpaperPlugin = 'org.kde.image';
+    desktop_obj.wallpaperMode   = 2;
+  }
+}
 
 function setLayoutFn () {
   var plasma_obj, rect_obj, screen_w_px, screen_h_px, screen_w_num,
@@ -89,32 +104,6 @@ function setLayoutFn () {
   icon_x_num   = widget_x_num - icon_pad_int;
 
   icon_table = scale_map.icon_table;
-
-  // print( ''
-  //   + 'scale_key        : ' + scale_key    + '\n'
-  //   + 'gridUnit         : ' + gridUnit     + '\n'
-  //   + 'screen_w_px      : ' + screen_w_px  + '\n'
-  //   + 'screen_h_px      : ' + screen_h_px  + '\n'
-  //   + '===============\n'
-  //   + 'screen_w_num     : ' + screen_w_num + '\n'
-  //   + 'screen_h_num     : ' + screen_h_num + '\n'
-  //   + '===============\n'
-  //   + 'widget_w_px      : ' + widget_w_px  + '\n'
-  //   + 'widget_h_px      : ' + widget_h_px  + '\n'
-  //   + '===============\n'
-  //   + 'pad_h_int        : ' + pad_h_int    + '\n'
-  //   + 'pad_w_int        : ' + pad_w_int    + '\n'
-  //   + 'widget_w_num     : ' + widget_w_num + '\n'
-  //   + 'widget_h_num     : ' + widget_h_num + '\n'
-  //   + 'widget_x_num     : ' + widget_x_num + '\n'
-  //   + 'widget_y_num     : ' + widget_y_num + '\n'
-  //   + 'icon_x_num       : ' + icon_x_num   + '\n'
-  //   + '===============\n'
-  //   + 'icon_table       : '
-  //   + JSON.stringify(icon_table, null, 2 ) + '\n'
-  // );
-  // (A) https://api.kde.org/frameworks/plasma-framework/html/
-  //       classPlasma_1_1Types.html#ab2b1c1767f3f432a0928dc7ca6b3f29e
 
   layout_matrix = {
     "desktops": [
@@ -202,46 +191,46 @@ function setLayoutFn () {
             "plugin": "org.kde.plasma.icon",
             "title": "Help"
           }
-        ],
-        "config": {
-          "/": {
-            "formfactor": "0",
-            "immutability": "1",
-            "lastScreen": "0",
-            "wallpaperplugin": "org.kde.image"
-          },
-          "/ConfigDialog": {
-            "DialogHeight": "600",
-            "DialogWidth": "800"
-          },
-          "/Configuration": {
-            "PreloadWeight": "0"
-          },
-          "/General": {
-            "pressToMoveHelp": "false",
-            "showToolbox": "false",
-            "sortMode": "-1"
-          }
-          // "/Wallpaper/org.kde.image/General": {
-          //   "FillMode": "2",
-          //   "Image": "Next"
-          // }
-        },
-        // "wallpaperPlugin": "org.kde.image"
+        ]
       }
     ],
     "serializationFormatVersion": "1"
   };
 
-  // print( JSON.stringify( layout_matrix, null, 2 ) );
+  // Debug:
+  // debug_str = ''
+  //   + 'scale_key        : ' + scale_key    + '\n'
+  //   + 'gridUnit         : ' + gridUnit     + '\n'
+  //   + 'screen_w_px      : ' + screen_w_px  + '\n'
+  //   + 'screen_h_px      : ' + screen_h_px  + '\n'
+  //   + '===============\n'
+  //   + 'screen_w_num     : ' + screen_w_num + '\n'
+  //   + 'screen_h_num     : ' + screen_h_num + '\n'
+  //   + '===============\n'
+  //   + 'widget_w_px      : ' + widget_w_px  + '\n'
+  //   + 'widget_h_px      : ' + widget_h_px  + '\n'
+  //   + '===============\n'
+  //   + 'pad_h_int        : ' + pad_h_int    + '\n'
+  //   + 'pad_w_int        : ' + pad_w_int    + '\n'
+  //   + 'widget_w_num     : ' + widget_w_num + '\n'
+  //   + 'widget_h_num     : ' + widget_h_num + '\n'
+  //   + 'widget_x_num     : ' + widget_x_num + '\n'
+  //   + 'widget_y_num     : ' + widget_y_num + '\n'
+  //   + 'icon_x_num       : ' + icon_x_num   + '\n'
+  //   + '===============\n'
+  //   + 'icon_table       : \n'
+  //   + JSON.stringify( icon_table, null, 2 ) + '\n\n'
+  //   + 'layout matrix    : \n'
+  //   + JSON.stringify( layout_matrix, null, 2 ) + '\n\n';
+  //   ;
+  //
+  // (A) https://api.kde.org/frameworks/plasma-framework/html/
+  //       classPlasma_1_1Types.html#ab2b1c1767f3f432a0928dc7ca6b3f29e
+
   plasma_obj.loadSerializedLayout(layout_matrix);
-  loadTemplate("org.focusvert.desktop.defaultPanel");
+  tweakWallpapersFn();
 }
 setLayoutFn();
-var desktopsArray = desktopsForActivity(currentActivity());
-for( var j = 0; j < desktopsArray.length; j++) {
-    desktopsArray[j].wallpaperPlugin = 'org.kde.image';
-}
 
 // (1) See QRectF https://develop.kde.org/docs/extend/plasma/scripting/api/#screen-geometry
 // (2) Scale ratio is 1.5 for HDPI 4k screens. This should reduce to 1 for a

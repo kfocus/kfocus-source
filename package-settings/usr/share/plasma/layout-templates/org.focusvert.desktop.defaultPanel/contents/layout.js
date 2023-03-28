@@ -28,31 +28,33 @@ if (freeEdges["left"] == true) {
     // There is no free edge, so leave the default value
     panel.location = "left";
 }
+// End Favor Edges
 
 var kickoff = panel.addWidget("org.kde.plasma.kickoff")
 kickoff.currentConfigGroup = ["Shortcuts"]
 kickoff.writeConfig("global", "Alt+F1")
 
 kickoff.currentConfigGroup = ["Configuration/General"]
-kickoff.writeConfig("showAppsByName", "true")
-kickoff.currentConfigGroup = ["Configuration/ConfigDialog"]
-kickoff.writeConfig("DialogHeight", 720)
-kickoff.writeConfig("DialogHeight", 960)
+// 2023-03-27 This is probably no longer desirable
+// kickoff.currentConfigGroup = ["Configuration/ConfigDialog"]
+// kickoff.writeConfig("DialogHeight", 720)
+// kickoff.writeConfig("DialogHeight", 960)
 
 var digitalclock = panel.addWidget("org.kde.plasma.digitalclock")
 digitalclock.currentConfigGroup = ["Configuration/General"]
 digitalclock.writeConfig("showDate", "true")
 digitalclock.writeConfig("dateFormat", "isoDate")
 
-// We need to turn off "flexible" spacer for this to work
+// TODO This needs to be set as not 'flexible'. Disabled for now.
 // var spacer = panel.addWidget("org.kde.plasma.panelspacer")
 // spacer.writeConfig("length", "2")
+// spacer.writeConfig("immutability", "1")
 
-//panel.addWidget("org.kde.plasma.showActivityManager")
+// TODO Restore activity manager here if desired
+// panel.addWidget("org.kde.plasma.showActivityManager")
 var pager = panel.addWidget("org.kde.plasma.pager")
 pager.writeConfig("displayedText", "1")
 
-//panel.addWidget("org.kde.plasma.icontasks")
 var taskmanager = panel.addWidget("org.kde.plasma.icontasks")
 var launcherlist = ["applications:systemsettings.desktop",
                     "applications:org.kde.discover.desktop",
@@ -61,13 +63,6 @@ var launcherlist = ["applications:systemsettings.desktop",
                     "applications:google-chrome.desktop",
                     "applications:firefox_firefox.desktop"]
 taskmanager.writeConfig("launchers", launcherlist)
-
-var backupicon = panel.addWidget("org.kde.plasma.icon")
-backupicon.currentConfigGroup = ["Configuration/General"]
-//backupicon.writeConfig("localPath", "/usr/share/kservices5/kcm_kup.desktop")
-//backupicon.writeConfig("url", "file:///usr/share/kservices5/kcm_kup.desktop")
-backupicon.writeConfig("localPath", "/usr/share/applications/backintime-qt.desktop")
-backupicon.writeConfig("url", "file:///usr/share/applications/backintime-qt.desktop")
 
 /* Next up is determining whether to add the Input Method Panel
  * widget to the panel or not. This is done based on whether
@@ -112,6 +107,14 @@ if (langIds.indexOf(languageId) != -1) {
     panel.addWidget("org.kde.plasma.kimpanel");
 }
 
-panel.addWidget("org.kde.plasma.systemtray")
+var backupicon = panel.addWidget("org.kde.plasma.icon")
+backupicon.currentConfigGroup = ["Configuration/General"]
+//backupicon.writeConfig("localPath", "/usr/share/kservices5/kcm_kup.desktop")
+//backupicon.writeConfig("url", "file:///usr/share/kservices5/kcm_kup.desktop")
+backupicon.writeConfig("localPath", "/usr/share/applications/backintime-qt.desktop")
+backupicon.writeConfig("url", "file:///usr/share/applications/backintime-qt.desktop")
+var systemtray = panel.addWidget("org.kde.plasma.systemtray")
+systemtray.currentConfigGroup = ["Configuration/General"]
+// systemtray.writeConfig("shownItems", "org.kde.kupapplet")
 panel.addWidget("org.kde.plasma.showdesktop")
 
