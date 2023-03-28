@@ -79,6 +79,8 @@ _setNoTurboFn () {
 }
 
 _readNoTurboFn () {
+  declare _noturbo_int;
+
   if [ -f "${_noTurboFile}" ]; then
     _noturbo_int="$(cat "${_noTurboFile}")";
     if [[ "${_noturbo_int}" =~ ^[01]$ ]]; then
