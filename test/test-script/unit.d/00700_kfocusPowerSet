@@ -158,7 +158,7 @@ _runAssertsFn () {
 
 ## BEGIN _testApiFn {
 _testApiFn () {
-  declare _pick_list _api_mode_ _model_code _cpu_name _field_list \
+  declare _pick_list _api_mode _model_code _cpu_name _field_list \
     _expect_file _run_file _expect_str _run_str
 
   _pick_list=( "$@" );
@@ -205,8 +205,8 @@ _runTestFn () {
   _current_mode_str="$("${_power_exe}" -r)";
   _total_fail_count=0
 
-  _cm2EchoFn "ASSERT SUITE 1: kfocus-power-set -p API check\n";
-
+  ##
+  _cm2EchoFn "BEGIN SUITE 1: kfocus-power-set -p API check\n";
   _pick_str="$("${_power_exe}" -p)";
   IFS=$'\n' read -r -d '' -a _pick_list <<<"${_pick_str}";
 
@@ -216,26 +216,26 @@ _runTestFn () {
   _assert_count="1";
 
   if [ "${_fail_count}" -gt 0 ]; then
-    _cm2EchoFn "fail: ${_fail_count} of ${_assert_count} tests failed.";
+    _cm2EchoFn "FAIL SUITE 1: ${_fail_count} / ${_assert_count} failed.\n";
   else
-    _cm2EchoFn 'ok  : Results match expected';
+    _cm2EchoFn 'OK   SUITE 1\n';
   fi
 
-  _cm2EchoFn "ASSERT SUITE 2: kfocus-power-set -p parsing and execution\n";
-
+  ##
+  _cm2EchoFn "BEGIN SUITE 2: kfocus-power-set -p parsing and execution\n";
   _runAssertsFn "${_pick_list[@]}";
   _fail_count="$?";
   _total_fail_count=$((_total_fail_count+_fail_count))
   _assert_count="$(echo "${#_pick_list[@]}*2"|bc)";
   
   if [ "${_fail_count}" -gt 0 ]; then
-    _cm2EchoFn "fail: ${_fail_count} of ${_assert_count} tests failed.";
+    _cm2EchoFn "FAIL SUITE 2: ${_fail_count} / ${_assert_count} failed.\n";
   else
-    _cm2EchoFn 'ok  : Results match expected';
+    _cm2EchoFn 'OK   SUITE 1\n';
   fi
 
-  _cm2EchoFn "ASSERT SUITE 3: kfocus-power-set -x API check\n"
-
+  ##
+  _cm2EchoFn "BEGIN SUITE 3: kfocus-power-set -x API check\n"
   _pick_str="$("${_power_exe}" -x)";
   IFS=$'\n' read -r -d '' -a _pick_list <<<"${_pick_str}";
  
@@ -245,14 +245,14 @@ _runTestFn () {
   _assert_count="1";
 
   if [ "${_fail_count}" -gt 0 ]; then
-    _cm2EchoFn "fail: ${_fail_count} of ${_assert_count} tests failed.";
+    _cm2EchoFn "FAIL SUITE 3: ${_fail_count} / ${_assert_count} failed.\n";
   else
-    _cm2EchoFn 'ok  : Results match expected';
+    _cm2EchoFn 'OK   SUITE 3\n';
   fi
 
-  _cm2EchoFn "ASSERT SUITE 4: kfocus-power-set -x parsing and execution\n";
+  _cm2EchoFn "BEGIN SUITE 4: kfocus-power-set -x parsing and execution\n";
 
-  _pick_list=("${_pick_list[@]:1}"); # Remove the header
+  _pick_list=("${_pick_list[@]:1}"); # Remove header
 
   _runAssertsFn "${_pick_list[@]}";
   _fail_count="$?";
@@ -260,16 +260,16 @@ _runTestFn () {
   _assert_count="$(echo "${#_pick_list[@]}*2"|bc)";
 
   if [ "${_fail_count}" -gt 0 ]; then
-    _cm2EchoFn "fail: ${_fail_count} of ${_assert_count} tests failed.";
+    _cm2EchoFn "FAIL SUITE 4: ${_fail_count} / ${_assert_count} failed.\n";
   else
-    _cm2EchoFn 'ok  : Results match expected';
+    _cm2EchoFn 'OK   SUITE 4\n';
   fi;
 
   if [ "${_current_mode_str:0:6}" = 'Custom' ]; then
     _current_mode_str='Normal';
-    _cm2EchoFn "Warn: Switch from Custom to Normal Mode";
+    _cm2EchoFn "  Warn: Switch from Custom to Normal Mode";
   else
-    _cm2EchoFn "Reverting to initial power mode ${_current_mode_str}";
+    _cm2EchoFn "  Reverting to initial power mode ${_current_mode_str}";
   fi
 
   sudo "${_power_exe}" "${_current_mode_str}";

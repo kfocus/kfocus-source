@@ -39,7 +39,7 @@ _importCommonFn () {
   else
     echo 1>&2 "${_baseName}: ABORT - Cannot source lib |${_lib_file}|";
     exit 202;
-  fi  
+  fi
 }
 ## . END _importCommonFn }
 
@@ -235,9 +235,10 @@ _setModeFn () {
 
 _printOptionsFn () {
   declare _print_mode _opt_line _header_line _bit_list _label _frequency \
-  _governor _turbo _leds;
+  _governor _turbo _leds _out_list _mode_key _out_str _title _model_msg;
 
   _print_mode="${1:-}"
+  _header_line='';
 
   IFS=';' read -r -a _bit_list <<< "${_optionHeader}";
   _label="${_bit_list[0]}";
@@ -245,22 +246,42 @@ _printOptionsFn () {
   _governor="${_bit_list[2]}";
   _turbo="${_bit_list[3]}";
   _leds="${_bit_list[4]}";
+  _out_list=();
 
   if [ "${_print_mode}" = 'x' ]; then
     _header_line="${_label};${_frequency};${_governor};${_turbo};";
     if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
       _header_line+="${_leds};";
     fi
-    echo "${_header_line}";
   fi
 
   for _opt_line in "${_optionTable[@]}"; do
     if [ "${_print_mode}" = 'x' ]; then
-      _scanFn "${_opt_line}" 'print';
-    else
-      _scanFn "${_opt_line}" 'read';
+      _mode_key='print'; else _mode_key='read';
+    fi
+
+    _out_str="$(_scanFn "${_opt_line}" "${_mode_key}" )";
+    if [[ "${_out_str:-}" =~ ^[[:space:]]*$ ]]; then
+      continue; else _out_list+=( "${_out_str}" );
     fi
   done
+
+  ## TODO 2023-03-27 Add per-cpu messages where appropriate
+  if [ "${#_out_list[@]}" = '0' ]; then
+    _title='No CPU Controls';
+    _model_msg="$(cat << EOH
+<b>Kubuntu Focus does not have freq profiles for this CPU</b>.
+ If you would like to add a profile, see kfocus-source on github.
+EOH
+    )";
+    echo "title:${_title}|message:${_cm2HtmPStr}${_model_msg}</p>";
+    exit 1;
+  fi
+
+  if [ -n "${_header_line}" ]; then
+    echo "${_header_line}";
+  fi
+  ( IFS=$'\n'; echo "${_out_list[*]}" );
 }
 ## . END _printOptionsFn }
 
