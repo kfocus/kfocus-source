@@ -89,7 +89,9 @@ Kirigami.ApplicationWindow {
                             onCheckedChanged: {
                                 powerTimer.triggeredOnStart = false
                                 powerTimer.stop()
-                                if (checked) profilesModel.selectedProfile = elementName;
+                                if (checked) {
+                                  profilesModel.selectedProfile = elementName;
+                                }
                                 powerTimer.start()
                             }
                             anchors.verticalCenter: parent.verticalCenter
@@ -117,6 +119,7 @@ Kirigami.ApplicationWindow {
                 Layout.fillWidth: true
                 text: "Frequency Modes not Found"
                 visible: false
+                Layout.bottomMargin: PlasmaCore.Units.largeSpacing
             }
 
             Controls.Label {
@@ -203,7 +206,7 @@ Kirigami.ApplicationWindow {
                 let freqMissingMsg = false
                 let buildStr = ""
                 stdout.split('\n').forEach(function (line, index) {
-                    if (line === '') return;
+                    if (line === '') { return; }
                     if (line.substring(0,5) == "title") {
                         freqMissingMsg = true
                         let lineParts = line.split('|')
@@ -284,7 +287,7 @@ Kirigami.ApplicationWindow {
                 let fanMissingMsg = false
                 let buildStr = ""
                 data["stdout"].split('\n').forEach(function (line) {
-                    if (line === '') return;
+                    if (line === '') { return; }
                     if (line.substring(0, 5) == "title") {
                         fanMissingMsg = true
                         root.height = 700
@@ -362,9 +365,9 @@ Kirigami.ApplicationWindow {
     }
     property string activeProfile: actuallyActiveProfile
     function activateProfile(profile) {
-        if (!profile) return;
-        if (!root.activeProfile) return;
-        if (profile == root.activeProfile) return;
+        if (!profile) { return; }
+        if (!root.activeProfile) { return; }
+        if (profile == root.activeProfile) { return; }
         const service = pmSource.serviceForSource("PowerDevil");
         const op = service.operationDescription("setPowerProfile");
         op.profile = profile;
