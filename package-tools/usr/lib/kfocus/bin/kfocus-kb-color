@@ -187,6 +187,11 @@ EOH
 }
 ## . END MAIN
 
+## BEGIN declare global vars
+declare _binName _binDir _baseDir _baseName \
+  _assignList _colorSetExe;
+## . END declare global vars
+
 ## BEGIN Run main if script is not sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binName="$(  readlink -f "$0"       )" || exit 101;
@@ -195,7 +200,6 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _baseName="$( basename "${_binName}" )" || exit 101;
   _importCommonFn;
 
-  declare _colorSetExe;
   _assignList=( "_colorSetExe|${_binDir}/kfocus-kb-color-set" );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2WarnStrFn 'ABORT: Required commands not found';

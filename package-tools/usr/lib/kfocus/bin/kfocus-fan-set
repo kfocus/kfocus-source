@@ -1,25 +1,37 @@
 #!/bin/bash
 #
 # Copyright 2019-2022 MindShare Inc.
-# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
+# Written for the Kubuntu Focus by
+#   * Michael Mikowski
+#   * Aaron Rainbolt
+#   * Erich Eickmeyer
 #
 # Name    : kfocus-fan-set
 # Purpose : Run-as-root utility to set fan profile
 # License : GPL v2
-# Run By  : kfocus-fan
-# Spec    : 2617
+# Run By  : kfocus-power
+# Spec    : 2617, 3050
 # Test    : 00710
 #
 set -u;
 
 _optionTable=(
   # _label;_do_tccd
-  'Linear;Best Performance;n'
-  'Soft;Quieter but Warmer;y'
+  'Soft|Quieter but Warmer|y'
+  'Linear|Best Performance|n'
 );
 
-_printIntFn () { printf '%.0f' "$*"; }
-_stderrFn () { 1>&2 echo -e "$*"; }
+_importCommonFn () {
+  declare _lib_file;
+  _lib_file="${_baseDir}/lib/common.2.source";
+  if [ -r "${_lib_file}" ]; then
+    # shellcheck source=../lib/common.2.source
+    source "${_lib_file}" || exit 202;
+  else
+    echo 1>&2 "${_baseName}: ABORT - Cannot source lib |${_lib_file}|";
+    exit 202;
+  fi
+}
 
 _setFanControlFn () {
   declare _do_fan_control;
@@ -49,7 +61,7 @@ _setModeFn () {
   _mode_list=();
 
   for _opt_line in "${_optionTable[@]}"; do
-    _loop_key="$(cut -d';' -f1 <<< "${_opt_line}")";
+    _loop_key="$(cut -d'|' -f1 <<< "${_opt_line}")";
     if [ "${_pick_key}" = "${_loop_key}" ]; then
       _match_line="${_opt_line}";
       break;
@@ -58,19 +70,98 @@ _setModeFn () {
   done
 
   if [ -z "${_match_line}" ]; then
-    _stderrFn "ABORT: Mode |${_pick_key}| not supported.";
-    ( IFS='|'; _stderrFn "  ${_mode_list[*]}" );
+    _cm2EchoFn "ABORT: Mode |${_pick_key}| not supported.";
+    ( IFS='|'; _cm2EchoFn "  ${_mode_list[*]}" );
     return 1;
   fi
 
-  IFS=';' read -r -a _bit_list <<< "${_match_line}";
+  IFS='|' read -r -a _bit_list <<< "${_match_line}";
   _setFanControlFn "${_bit_list[2]}";
 }
 
+_chkReportFanSupportFn () {
+  declare _model_label _model_code _model_msg \
+  _is_kpf_installed _kpf_msg _title;
+
+  _model_label="$(_cm2EchoModelStrFn 'label')";
+  _model_code="$(_cm2EchoModelStrFn 'code')";
+
+  if _cm2ChkInstalledPkgFn 'kfocus-power-fan'; then
+    _is_kpf_installed='y';
+    _kpf_msg=' <br><br>IMPORTANT: The kfocus-power-fan package
+ is unexpectedly installed. Please uninstall it as it is
+ not useful for this system.';
+  else
+    _is_kpf_installed='n';
+    _kpf_msg='';
+  fi
+
+  _title="Fan Profile (${_model_label})";
+  case "${_model_code}" in
+    m1*|m2*|xe*)
+      if [ "${_is_kpf_installed}" = 'y' ]; then return 0; fi
+      _model_msg="$(cat <<_EOH01
+<b>Custom fan profiles are available.</b><br>
+ Please install <code>kfocus-power-fan</code> and then rerun
+ this app to see the controls.
+_EOH01
+      )";;
+
+    ir14*)
+      _model_msg="$(cat <<_EOH02
+<b>Fan profiles are found in the BIOS</b><br>
+ To access, press <code>F2</code> during boot. Select <code>BIOS &gt;
+ Advanced &gt; Operating Mode &gt; Balanced</code> for default operation.
+  ${_kpf_msg}
+_EOH02
+      )";;
+
+    nxg1*)
+      _model_msg="$(cat <<_EOH03
+<b>Fan profiles are found in the BIOS</b><br>
+ To access, press <code>F2</code> during boot. Select <code>BIOS &gt; Cooling
+  &gt; Fan Control &gt; Balanced</code> for default operation.
+ ${_kpf_msg}
+_EOH03
+      )";;
+
+    nxg2*)
+      _model_msg="$(cat <<_EOH04
+<b>Fan profiles are found in the BIOS</b><br>
+ To access, press <code>F2</code> during boot. Select <code>BIOS &gt;
+ Power, Performance, and Cooling &gt; Fan Control &gt; Balanced</code>
+ for default operation.
+ ${_kpf_msg}
+_EOH04
+      )";;
+
+   *)
+     _model_msg="$(cat <<_EOH05
+<b>Kubuntu Focus does not have a profile for this device.</b><br>
+ You may be able to adjust the fans in the BIOS, which
+ can usually be accessed by pressing F2, Delete, or ESC during boot.
+ ${_kpf_msg}
+_EOH05
+      )";;
+  esac
+
+  echo "title:${_title}|message:${_cm2HtmPStr}${_model_msg}</p>"
+  return 1;
+}
+
 _printOptionsFn () {
-  declare _opt_line _bit_list;
+  declare _arg_str _opt_line _bit_list;
+
+  # -x mode prints alternate messages if fan control not found
+  _arg_str="${1:-}";
+  if [ "${_arg_str}" = 'x' ]; then
+    if ! _chkReportFanSupportFn; then
+      return 0;
+    fi
+  fi
+
   for _opt_line in "${_optionTable[@]}"; do
-    IFS=';' read -r -a _bit_list <<< "${_opt_line}";
+    IFS='|' read -r -a _bit_list <<< "${_opt_line}";
     echo "${_bit_list[0]} ( ${_bit_list[1]} )";
   done
 }
@@ -86,7 +177,7 @@ _readModeFn () {
   fi
 
   for _opt_line in "${_optionTable[@]}"; do
-    IFS=';' read -r -a _bit_list <<< "${_opt_line}";
+    IFS='|' read -r -a _bit_list <<< "${_opt_line}";
     if [ "${_bit_list[2]:-}" = "${_is_tccd_active}" ]; then
       echo "${_bit_list[0]} ( ${_bit_list[1]} )";
       return 0;
@@ -101,8 +192,9 @@ _mainFn () {
   _arg_str="${1:-}";
   case "${_arg_str}" in
     '-p') _printOptionsFn;;
+    '-x') _printOptionsFn 'x';;
     '-r') _readModeFn;;
-      '') _stderrFn 'Argument or flag required'; exit 1;;
+      '') _cm2EchoFn 'Argument or flag required'; exit 1;;
        *) _setModeFn "${_arg_str}";
   esac
 }
@@ -117,6 +209,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binDir="$(dirname "${_binName}")"    || exit 101;
   _baseDir="$(dirname "${_binDir}")"    || exit 101;
   _baseName="$(basename "${_binName}")" || exit 101;
+  _importCommonFn;
   _mainFn "$@";
 fi
 ## . END Run main if script is not sourced }

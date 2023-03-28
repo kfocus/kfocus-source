@@ -12,16 +12,36 @@
 #
 set -u;
 
+_optionHeader='Profile;Frequency;Governor;Turbo;LEDs'
+
 _optionTable=(
-  # _label;_power_idx;up_ratio;down_ratio;gov_key;noturbo_int;kbdled_int
+  # _label;up_ratio;down_ratio;gov_key;noturbo_int;kbdled_int
   'High;1;X;performance;0;1'
   'Normal;1;X;powersave;0;1'
   'Studio;0;X;performance;1;1'
-  'Medium;.5;X;powersave;0;1'
+  # 'Medium;.5;X;powersave;0;1'
   'Low;X;1;powersave;1;0'
-  'Frugal;X;.666666666;powersave;1;0'
+  # 'Frugal;X;.666666666;powersave;1;0'
   'Minimal;X;.5;powersave;1;0'
 );
+
+## BEGIN _importCommonFn {
+# Imports: _cm2EchoModelStrFn _cm2KdiagExe _cm2WarnStrFn
+#
+# Run ls-common-symbols.sh to get this list
+#
+_importCommonFn () {
+  declare _lib_file;
+  _lib_file="${_baseDir}/lib/common.2.source";
+  if [ -r "${_lib_file}" ]; then
+    # shellcheck source=../lib/common.2.source
+    source "${_lib_file}" || exit 202;
+  else
+    echo 1>&2 "${_baseName}: ABORT - Cannot source lib |${_lib_file}|";
+    exit 202;
+  fi
+}
+## . END _importCommonFn }
 
 _printIntFn () { printf '%.0f' "$*"; }
 _stderrFn () { 1>&2 echo -e "$*"; }
@@ -59,6 +79,8 @@ _setNoTurboFn () {
 }
 
 _readNoTurboFn () {
+  declare _noturbo_int;
+
   if [ -f "${_noTurboFile}" ]; then
     _noturbo_int="$(cat "${_noTurboFile}")";
     if [[ "${_noturbo_int}" =~ ^[01]$ ]]; then
@@ -141,8 +163,30 @@ _scanFn () {
 
     if [ "${_mode_key}" = 'print' ] || [ "${_mode_key}" = 'read' ]; then
       if [ "${_set_max_int}" -gt "${_prior_max_int}" ]; then
-        _solve_line="${_label};${_set_max_int};${_gov_key};";
-        _solve_line+="${_noturbo_int};${_kbdled_int};";
+        if [ "${_mode_key}" = 'read' ]; then
+          _solve_line="${_label};${_set_max_int};${_gov_key};${_noturbo_int};";
+          _solve_line+="${_kbdled_int};";
+        else
+          _solve_line="${_label};";
+          _solve_line+="${_set_max_int:0:1}.${_set_max_int:1:2} GHz;";
+          if [ "${_gov_key}" = 'powersave' ]; then
+            _solve_line+="psave;";
+          else
+            _solve_line+="PERF;";
+          fi
+          if [ "${_noturbo_int}" = '1' ]; then
+            _solve_line+="No;";
+          else
+            _solve_line+="Yes;";
+          fi
+          if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
+            if [ "${_kbdled_int}" = '1' ]; then
+              _solve_line+="On;";
+            else
+              _solve_line+="Off;";
+            fi
+          fi
+        fi
         _prior_max_int="${_set_max_int}"
       fi
     else
@@ -192,10 +236,55 @@ _setModeFn () {
 }
 
 _printOptionsFn () {
-  declare _opt_line;
+  declare _print_mode _opt_line _header_line _bit_list _label _frequency \
+  _governor _turbo _leds _out_list _mode_key _out_str _title _model_msg;
+
+  _print_mode="${1:-}"
+  _header_line='';
+
+  IFS=';' read -r -a _bit_list <<< "${_optionHeader}";
+  _label="${_bit_list[0]}";
+  _frequency="${_bit_list[1]}";
+  _governor="${_bit_list[2]}";
+  _turbo="${_bit_list[3]}";
+  _leds="${_bit_list[4]}";
+  _out_list=();
+
+  if [ "${_print_mode}" = 'x' ]; then
+    _header_line="${_label};${_frequency};${_governor};${_turbo};";
+    if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
+      _header_line+="${_leds};";
+    fi
+  fi
+
   for _opt_line in "${_optionTable[@]}"; do
-    _scanFn "${_opt_line}" 'print';
+    if [ "${_print_mode}" = 'x' ]; then
+      _mode_key='print'; else _mode_key='read';
+    fi
+
+    _out_str="$(_scanFn "${_opt_line}" "${_mode_key}" )";
+    if [[ "${_out_str:-}" =~ ^[[:space:]]*$ ]]; then
+      continue; else _out_list+=( "${_out_str}" );
+    fi
   done
+
+  ## TODO 2023-03-27 Add per-cpu messages where appropriate
+  if [ "${#_out_list[@]}" = '0' ]; then
+    _title='Frequency Profile';
+    _model_msg="$(cat << EOH
+<b>Kubuntu Focus does not have profiles for this CPU</b>.
+ If you would like to add a frequency profile, please contribute
+ to kfocus-source on GitHub.com.
+EOH
+    )";
+    echo "title:${_title}|message:${_cm2HtmPStr}${_model_msg}</p>";
+    exit 1;
+  fi
+
+  if [ -n "${_header_line}" ]; then
+    echo "${_header_line}";
+  fi
+  ( IFS=$'\n'; echo "${_out_list[*]}" );
 }
 ## . END _printOptionsFn }
 
@@ -249,7 +338,8 @@ _mainFn () {
   declare _arg_str;
   _arg_str="${1:-}";
   case "${_arg_str}" in
-    '-p') _printOptionsFn;;
+    '-p') _printOptionsFn 'p';;
+    '-x') _printOptionsFn 'x';;
     '-r') _readModeFn;;
       '') _stderrFn 'Argument or flag required'; exit 1;;
        *) _setModeFn "${_arg_str}";
@@ -279,6 +369,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binDir="$(dirname "${_binName}")"    || exit 101;
   _baseDir="$(dirname "${_binDir}")"    || exit 101;
   _baseName="$(basename "${_binName}")" || exit 101;
+  _importCommonFn;
   _mainFn "$@";
 fi
 ## . END Run main if script is not sourced }

@@ -21,6 +21,7 @@ _checkNvidiaPinFn () {
   );
 
   # Show all package version
+  # shellcheck disable=SC2154
   dpkg-query -W "${_pkg_list[@]}" > "${_t00RunDir}/package-versions";
 
   # Empty accumulator files
@@ -68,14 +69,15 @@ _runTestFn () {
 
   _checkNvidiaPinFn;
 
+  # shellcheck disable=SC2154
   _check_str="$( diff -r --brief "${_t00ExpectDir}" "${_t00RunDir}" )";
 
   if [ -n "${_check_str}" ]; then
-    _cm2EchoFn "fail: ${_check_str}";
+    _cm2EchoFn "FAIL: ${_check_str}";
     meld "${_t00ExpectDir}" "${_t00RunDir}";
     _return_int=1;
   else
-    _cm2EchoFn 'ok  : Results match expected';
+    _cm2EchoFn 'OK  : Results match expected';
   fi
   return "${_return_int}";
 }

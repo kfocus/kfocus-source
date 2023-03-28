@@ -1,0 +1,279 @@
+#!/bin/bash
+#
+#  Purpose: Test kfocus-power-set on multiple devices
+#  Used by: package-tools for Nvidia package
+#           See ticket 1756
+#
+# set -u is set in test harness
+
+#  _cpuTable=(
+#    'i7-12700H;400;2300;4700'
+#    'i7-11800H;800;2300;4600'
+#    'i5-1135G7;400;2400;4200'
+#    'i7-1165G7;400;2800;4700'
+#    'i7-10870H;800;2200;5000'
+#    'i7-10875H;800;2300;5100'
+#    'i7-9750H;800;2600;4500'
+#    'i9-9900K;800;3600;5000'
+#  );
+
+# _printIntFn () {
+#   printf '%.0f' "$*";
+# }
+
+_makeRunStrFn () {
+  declare _core_root_dir _noturbo_file _kbd_state_file \
+    _core_count _str _core_idx _core_loop_dir;
+
+  _core_root_dir='/sys/devices/system/cpu';
+  _noturbo_file="${_core_root_dir}/intel_pstate/no_turbo";
+  _kbd_state_file='/sys/devices/platform/tuxedo_keyboard/state';
+  _core_count="$(nproc)";
+  _str='';
+
+  for (( _core_idx=0; _core_idx < "${_core_count}"; _core_idx++ )); do
+    _core_loop_dir="${_core_root_dir}/cpu${_core_idx}";
+    _str+="CORE ${_core_idx}";
+    _str+="\n  Governor  : ";
+    _str+="$(cat ${_core_loop_dir}/cpufreq/scaling_governor)";
+    _str+="\n  Base Freq : ";
+    _str+="$(cat ${_core_loop_dir}/cpufreq/base_frequency)";
+    _str+="\n  Min  Freq : ";
+    _str+="$(cat ${_core_loop_dir}/cpufreq/cpuinfo_min_freq)";
+    _str+="\n  Max  Freq : ";
+    _str+="$(cat ${_core_loop_dir}/cpufreq/cpuinfo_max_freq)";
+    _str+="\n  SMin Freq : ";
+    _str+="$(cat ${_core_loop_dir}/cpufreq/scaling_min_freq)";
+    _str+="\n  SMax Freq : ";
+    _str+="$(cat ${_core_loop_dir}/cpufreq/scaling_max_freq)";
+    _str+='\n';
+  done
+
+  _str+="\n  NoTurboInt: ";
+  _str+="$(cat ${_noturbo_file})";
+
+  if [ -r "${_kbd_state_file}" ]; then
+    _str+="\n  KbdState  : ";
+    _str+="$(cat "${_kbd_state_file}")";
+  fi
+
+  echo -e "${_str}";
+}
+
+_echoCpuModelNameFn () {
+  declare _model_line _cpu_name;
+
+  _model_line="$(lscpu | grep -Ei '^\s*model name' | cut -f2 -d:)";
+  _cpu_name="$(
+    sed -E 's/^.*\s(i[579]-[^ ]+)(|\s.*)$/\1/' <<< "${_model_line}"
+  )";
+
+  # If cpu_name is the same as model_line or blank,
+  #   the cpu model was NOT successfully extracted.
+  #
+  if [ "${_model_line}" = "${_cpu_name}" ] \
+    || [ -z "${_cpu_name}" ]; then
+    _cpu_name='unknown';
+  fi
+
+  echo "${_cpu_name}";
+}
+
+## BEGIN _runAssertsFn {
+_runAssertsFn () {
+  declare _cr _cpu_name _pick_list _pick_str _power_exe _model_code \
+    _assert_count _assert_idx _fail_count _mode_str _expect_file _run_file \
+    _descr_str _expect_str _run_str _check_str _count_str;
+
+  _cr=$'\n';
+  _cpu_name="$(_echoCpuModelNameFn)";
+
+  _pick_list=( "$@" );
+
+  # shellcheck disable=SC1090,SC2154
+  _power_exe="${_t00TopDir}/package-tools/usr/lib/kfocus/";
+  _power_exe+='bin/kfocus-power-set';
+
+  _model_code="$(_cm2EchoModelStrFn 'code')";
+  _assert_count="$(echo "${#_pick_list[@]}*2"|bc)";
+  _assert_idx=0;
+  _fail_count=0;
+  for _pick_str in "${_pick_list[@]}"; do
+    ((_assert_idx++));
+    _mode_str="$(echo "${_pick_str}" |cut -f1 -d';')";
+
+    # Calculate expect and run files
+    # shellcheck disable=SC2154
+    _expect_file="$(
+      printf '%s/%s_%s_%s.txt' "${_t00ExpectDir}" \
+        "${_model_code}" "${_cpu_name}" "${_mode_str}"
+    )";
+    # shellcheck disable=SC2154
+    _run_file="$(
+      printf '%s/%s_%s_%s.txt' "${_t00RunDir}" \
+        "${_model_code}" "${_cpu_name}" "${_mode_str}"
+    )";
+    if [ ! -f "${_expect_file}" ]; then touch "${_expect_file}"; fi
+    if [ ! -f "${_run_file}"    ]; then touch "${_run_file}";    fi
+
+    sudo "${_power_exe}" "${_mode_str}";
+    _expect_str="$(cat "${_expect_file}")";
+    sleep 1;
+
+    # shellcheck disable=SC2154
+    _count_str="$(_t00MakeCountStrFn "${_assert_idx}" "${_assert_count}")";
+    _descr_str="Assert kfocus-power-set ${_mode_str}";
+    _run_str="BEGIN ${_descr_str}${_cr}";
+    _run_str+="$(_makeRunStrFn)${_cr}";
+    _run_str+="END   ${_descr_str}";
+    echo "${_run_str}" > "${_run_file}";
+
+    _descr_str="${_count_str} kfocus-power-set ${_mode_str}";
+    if [ "${_expect_str}" = "${_run_str}" ]; then
+      _cm2EchoFn "  ok  : ${_descr_str}";
+    else
+      ((_fail_count++));
+      _cm2EchoFn "  fail: ${_descr_str}";
+      meld "${_expect_file}" "${_run_file}";
+    fi
+
+    _check_str="$("${_power_exe}" -r)";
+    ((_assert_idx++));
+    # shellcheck disable=SC2154
+    _count_str="$(_t00MakeCountStrFn "${_assert_idx}" "${_assert_count}")";
+    _descr_str="${_count_str} kfocus-power-set -r ${_mode_str}";
+    if [ "${_check_str}" = "${_mode_str}" ]; then
+      _cm2EchoFn "  ok  : ${_descr_str}";
+    else
+      ((_fail_count++));
+      _cm2EchoFn "  _check_str : ${_check_str}";
+      _cm2EchoFn "  _mode_str  : ${_mode_str}";
+      _cm2EchoFn "  fail: ${_descr_str}";
+    fi
+  done
+
+  return "${_fail_count}";
+}
+## . END _runAssertsFn }
+
+## BEGIN _testApiFn {
+_testApiFn () {
+  declare _pick_list _api_mode _model_code _cpu_name _field_list \
+    _expect_file _run_file _expect_str _run_str
+
+  _pick_list=( "$@" );
+  _api_mode="${_pick_list[0]}";
+  _pick_list=("${_pick_list[@]:1}"); # Remove the API mode argument
+  _model_code="$(_cm2EchoModelStrFn 'code')";
+  _cpu_name="$(_echoCpuModelNameFn)";
+  _field_list=( "${_model_code}" "${_cpu_name}" "api_str_${_api_mode}" );
+
+  _expect_file="$(
+    printf '%s/%s_%s_%s.txt' "${_t00ExpectDir}" "${_field_list[@]}"
+  )";
+  _run_file="$(
+    printf '%s/%s_%s_%s.txt' "${_t00RunDir}" "${_field_list[@]}"
+  )";
+  if [ ! -f "${_expect_file}" ]; then touch "${_expect_file}"; fi
+  if [ ! -f "${_run_file}"    ]; then touch "${_run_file}";    fi
+  _expect_str="$(cat "${_expect_file}")";
+  _run_str="$(IFS=$'\n'; echo "${_pick_list[*]}")";
+  echo "${_run_str}" > "${_run_file}";
+  if [ "${_expect_str}" = "${_run_str}" ]; then
+    _cm2EchoFn "  ok  : Check switch -${_api_mode}\n\n";
+    return 0;
+  else
+    _cm2EchoFn "  fail: Check switch -${_api_mode}\n\n";
+    meld "${_expect_file}" "${_run_file}";
+    return 1;
+  fi
+}
+## . END _testApiFn }
+
+## BEGIN _runTestFn {
+_runTestFn () {
+  declare _power_exe _current_mode_str _pick_str _pick_list _fail_count \
+    _assert_count _total_fail_count;
+
+  # Use function from _runUnitTests: clear out run dir and check expect dir
+  if ! _t00ClearRunDirFn;    then return 1; fi
+  if ! _t00CheckExpectDirFn; then return 1; fi
+  
+  # shellcheck disable=SC1090,SC2154
+  _power_exe="${_t00TopDir}/package-tools/usr/lib/kfocus/";
+  _power_exe+='bin/kfocus-power-set';
+  _current_mode_str="$("${_power_exe}" -r)";
+  _total_fail_count=0
+
+  ##
+  _cm2EchoFn "BEGIN SUITE 1: kfocus-power-set -p API check\n";
+  _pick_str="$("${_power_exe}" -p)";
+  IFS=$'\n' read -r -d '' -a _pick_list <<<"${_pick_str}";
+
+  _testApiFn 'p' "${_pick_list[@]}";
+  _fail_count="$?";
+  _total_fail_count=$((_total_fail_count+_fail_count))
+  _assert_count="1";
+
+  if [ "${_fail_count}" -gt 0 ]; then
+    _cm2EchoFn "FAIL SUITE 1: ${_fail_count} / ${_assert_count} failed.\n";
+  else
+    _cm2EchoFn 'OK   SUITE 1\n';
+  fi
+
+  ##
+  _cm2EchoFn "BEGIN SUITE 2: kfocus-power-set -p parsing and execution\n";
+  _runAssertsFn "${_pick_list[@]}";
+  _fail_count="$?";
+  _total_fail_count=$((_total_fail_count+_fail_count))
+  _assert_count="$(echo "${#_pick_list[@]}*2"|bc)";
+  
+  if [ "${_fail_count}" -gt 0 ]; then
+    _cm2EchoFn "FAIL SUITE 2: ${_fail_count} / ${_assert_count} failed.\n";
+  else
+    _cm2EchoFn 'OK   SUITE 1\n';
+  fi
+
+  ##
+  _cm2EchoFn "BEGIN SUITE 3: kfocus-power-set -x API check\n"
+  _pick_str="$("${_power_exe}" -x)";
+  IFS=$'\n' read -r -d '' -a _pick_list <<<"${_pick_str}";
+ 
+  _testApiFn 'x' "${_pick_list[@]}";
+  _fail_count="$?";
+  _total_fail_count=$((_total_fail_count+_fail_count))
+  _assert_count="1";
+
+  if [ "${_fail_count}" -gt 0 ]; then
+    _cm2EchoFn "FAIL SUITE 3: ${_fail_count} / ${_assert_count} failed.\n";
+  else
+    _cm2EchoFn 'OK   SUITE 3\n';
+  fi
+
+  _cm2EchoFn "BEGIN SUITE 4: kfocus-power-set -x parsing and execution\n";
+
+  _pick_list=("${_pick_list[@]:1}"); # Remove header
+
+  _runAssertsFn "${_pick_list[@]}";
+  _fail_count="$?";
+  _total_fail_count=$((_total_fail_count+_fail_count))
+  _assert_count="$(echo "${#_pick_list[@]}*2"|bc)";
+
+  if [ "${_fail_count}" -gt 0 ]; then
+    _cm2EchoFn "FAIL SUITE 4: ${_fail_count} / ${_assert_count} failed.\n";
+  else
+    _cm2EchoFn 'OK   SUITE 4\n';
+  fi;
+
+  if [ "${_current_mode_str:0:6}" = 'Custom' ]; then
+    _current_mode_str='Normal';
+    _cm2EchoFn "  Warn: Switch from Custom to Normal Mode";
+  else
+    _cm2EchoFn "  Reverting to initial power mode ${_current_mode_str}";
+  fi
+
+  sudo "${_power_exe}" "${_current_mode_str}";
+
+  return "${_total_fail_count}";
+}
+## . END _runTestFn }

@@ -1,6 +1,12 @@
 #!/bin/bash
 # Docs last updated 2023-01-08
-#
+
+## BEGIN Scrub beginning and trailing whitespace
+# Works like sed 's/^\s\+//' <<< "$*" | sed 's/\s\+//';
+_echoScrubStrFn () { xargs <<< "$*"; }
+_echoFormatFn   () { printf '  %-4s : %-14s %-2s %-14s ' "$@"; }
+## . END Scrub beginning and trailing whitespace
+
 # Common symbols and functions for kfocus bash scripts
 # Can be used with scripts that use set -u and set -e
 #
@@ -54,7 +60,7 @@
 #   0i_  _cm2ReadPromptYnFn      : CLI prompt for Yes or No with default
 #   0j_  _cm2RunLongCmdFn        : Run sudo command with spinner
 #   0r_A _cm2EchoInstalledVersFn : Echo installed version of package
-#   0s_  _cm2AssignExeVarsFn     : Assign exe vars to qualified, tested paths
+#   0s_A _cm2AssignExeVarsFn     : Assign exe vars to qualified, tested paths
 #   0t_  _cm2StripTagsFn         : Remove HTML tags from string
 #   0v_A _cm2PromptUserFn        : Prompt user through GUI or term as available
 #   0w_  _cm2EscapeRxCharsFn     : Escape regex chars for use in grep -E '...'
@@ -107,7 +113,9 @@ _audit_cm2EchoStackFn () {
   _solve_str="$("${_asset_fn_str}" 2>&1)";
 
   # Strip numbers
+  # shellcheck disable=SC2001
   _expect_str="$( sed 's/[0-9]\+/xxx/g' <<< "${_expect_str}" )";
+  # shellcheck disable=SC2001
   _solve_str="$(  sed 's/[0-9]\+/xxx/g' <<< "${_solve_str}"  )";
 
   printf '  %-40s\n' "Assert for ${_asset_fn_str}";
@@ -124,8 +132,8 @@ _audit_cm2EchoStackFn () {
 # 0f_
 # BEGIN _cm2GetEscExeFn {
 # Summary   : _cm2GetEscExeFn
-# Purpose   : Get escalation exe string like 'sudo' or 'pkexec'.
-#           :   This is based on XDG_SESSION_TYPE which is use to
+# Purpose   : Get escalation exe string like 'sudo' or 'pkexec'
+#           :   based on XDG_SESSION_TYPE which is used to
 #           :   set _cm2IsTty. If this is 'y' and we don't have
 #           :   sudo rights, return 1. The 'sudo' string is still
 #           :   returned as a precaution.
@@ -435,15 +443,95 @@ _audit_cm2ChkPkgFn () {
 
 # 0s_
 ## BEGIN _cm2AssignExeVarsFn {
-# Summary   : _cm2AssignExeVarsFn '<name>|<command>' ...
-# Purpose   : Find system executables using 'command -v <command>',
-#           : ensure they are executable, and assign to provided var name
+# Summary   : _cm2AssignExeVarsFn '<name>|<command>[|<type>]', ...
+# Purpose   : Assign global variables to file paths
+#   Default : Assign the variable <name> to the path found by 'command -v
+#           : <command>' if that path is found and executable.
+#           : If <type> is specified, assign the variable with different
+#           : requirements.
+#   <type> = filerw : Requires a read-write file
+#   <type> = filero : Requires a readable file
+#           :
+#           :
 # Example   : declare _lscpiExe _printfExe;
 #           : _cm2AssignExeVarsFn '_lspciExe|lspci' '_printfExe|printf';
 # Arguments : One delimited string per variable
 # Globals   : Package symbols _cm2WarnStrFn
 # Outputs   : Echos warnings and errors to STDERR
 # Returns   : 0 if all exes are found and set; 1 otherwise.
+## . END _cm2AssignExeVarsFn
+#
+## BEGIN _audit_cm2AssignExeVarsFn {
+_audit_cm2AssignExeVarsFn () {
+  declare _assert_table _assert_count _assert_idx _fail_count \
+    _loop_line _bit_list _cmd_str _type _expect_str _arg_list \
+    _tell_str _err_str;
+
+  _assert_table=(
+    # command/path     | type   | expect_str
+    'awk               |        | /usr/bin/awk'
+    'tr                |        | /usr/bin/tr'
+    'tr                | filero | '
+    '/usr/bin/tr       | filero | /usr/bin/tr'
+    '/usr/bin/tr       | filerw | '
+    '/etc/lsb-release  | filero | /etc/lsb-release'
+    '/etc/lsb-release  | filerw | '
+    '/etc/lsb-release  | unreal | '
+  );
+
+  _assert_count="${#_assert_table[@]}";
+  _assert_idx=1;
+  _fail_count=0;
+
+  { printf '  %-4s : %-20s %-8s %-20s ' \
+    "Stat" "Command/path" "Type" "Expected Assignment";
+  } >&2;
+  for _loop_line in "${_assert_table[@]}"; do
+    IFS='|' read -r -a _bit_list <<< "${_loop_line}";
+    _cmd_str="$(    _echoScrubStrFn "${_bit_list[0]}" )";
+    _type="$(       _echoScrubStrFn "${_bit_list[1]}" )";
+    _expect_str="$( _echoScrubStrFn "${_bit_list[2]}" )";
+
+    declare _assert01Str _assert02Str;
+    if [ -n "${_type}" ]; then
+      _arg_list=(
+        "_assert01Str|${_cmd_str}|${_type}"
+        "_assert02Str|${_cmd_str}|${_type}"
+      );
+    else
+      _arg_list=(
+        "_assert01Str|${_cmd_str}"
+        "_assert02Str|${_cmd_str}"
+      );
+    fi
+
+    _cm2AssignExeVarsFn "${_arg_list[@]}" 2> /dev/null;
+
+    if [ "${_assert01Str:-}" != "${_assert02Str:-}" ]; then
+      _tell_str='fail';
+    elif [ "${_assert01Str:-}" = "${_expect_str}" ]; then
+      _tell_str='ok'; else _tell_str='fail';
+    fi
+
+    unset _assert01Str _assert02Str;
+
+    { printf '  %-4s : %-20s %-8s %-20s ' \
+         "${_tell_str}" "${_cmd_str}" "${_type}" "${_expect_str}";
+       printf '%02i / %02i \n' "${_assert_idx}" "${_assert_count}";
+    } >&2
+
+    if [ "${_tell_str}" = 'fail' ]; then
+      _cm2EchoFn "    Diagnostics: ${_err_str}";
+      (( _fail_count++ ));
+    fi
+    (( _assert_idx++ ));
+  done
+
+  if [ "${_fail_count}" -gt 0 ]; then
+    _cm2EchoFn "  ${_fail_count} of ${_assert_count} asserts failed.";
+  fi
+  return "${_fail_count}";
+}
 ## . END _cm2AssignExeVarsFn }
 
 # 0t_
@@ -477,11 +565,11 @@ _audit_cm2ChkPkgFn () {
 #           :   'w' warningyesno prompt; default and is 'y'
 #           :   'p' Simple message box, prompt for return in terminal mode
 #           :   '*' Simple message box prompt, no pause in terminal mode
-#           : -i option for _icon_key
+#           : '-i' option for _icon_key
 # Globals   : Package symbols _cm2IsTty , _cm2KdiagExe,
 #           :   _cm2StripTagsFn, _cm2EchoFn
-# Outputs   : In terminal mode, echos prompts to STDERR.
-#           :   In GUI mode, opens a kdialog.
+# Outputs   : In terminal mode, echos prompts to STDERR;
+#           :   In GUI mode, opens a kdialog;
 #           :   Echos answer to STDOUT for 'a' or 'w' prompts.
 # Returns   : none
 ## . END _cm2PromptUserFn }
@@ -566,17 +654,12 @@ _audit_cm2PromptUserFn () {
 # Returns   : 0 if version 1 is greater than version 2; 1 otherwise.
 ## . END _cm2TestVersFn }
 #
-# Scrub beginning and trailing whitespace
-# Works like sed 's/^\s\+//' <<< "$*" | sed 's/\s\+//';
-_echoScrubStrFn () { xargs <<< "$*"; }
-_echoFormatFn   () { printf '  %-4s : %-14s %-2s %-14s ' "$@"; }
-#
 ## BEGIN _audit_cm2TestVersFn {
 _audit_cm2TestVersFn () {
-  declare _check_list _loop_line _assert_count _assert_idx _fail_count \
+  declare _assert_table _loop_line _assert_count _assert_idx _fail_count \
     _bit_list _v1_str _v2_str _chk_str _tell_str _op_str;
 
-  _check_list=(
+  _assert_table=(
    '     2.5.10 |      2.5.10 |  false'
    '     2.5.6  |      2.5.10 |  false'
    '     1.5.11 |      2.5.10 |  false'
@@ -601,10 +684,10 @@ _audit_cm2TestVersFn () {
    '01-04-01-02 |    1-4-1-1  |  true'
   );
 
-  _assert_count="${#_check_list[@]}";
+  _assert_count="${#_assert_table[@]}";
   _assert_idx=1;
   _fail_count=0;
-  for _loop_line in "${_check_list[@]}"; do
+  for _loop_line in "${_assert_table[@]}"; do
     IFS='|' read -r -a _bit_list <<< "${_loop_line}";
     _v1_str="$( _echoScrubStrFn "${_bit_list[0]}")";
     _v2_str="$( _echoScrubStrFn "${_bit_list[1]}")";
@@ -640,6 +723,7 @@ _runTestFn () {
 
   _ret_int=0;
   _audit_fn_list=(
+    '_audit_cm2AssignExeVarsFn'
     '_audit_cm2EchoStackFn'
     '_audit_cm2EchoModelStrFn'
     '_audit_cm2ChkInstalledPkgFn'

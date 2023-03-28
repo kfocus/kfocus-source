@@ -5,7 +5,13 @@ file is governed by the GPLv2. See COPYING for further details. Pull requests
 are welcome!
 
 ## Purpose
-This is the source for the Kubuntu Focus Suite of tools, curated apps, UX preferences, and hardware optimizations that work in harmony with standard Kubuntu 22.04 LTS. It is carefully designed to avoid reinventing the wheel and does not, for example, contain a variation of an entire operating system, or a shell on top of it. Many enhancements that started in this repository have since been contributed and accepted upstream. This adds unique value to an already vibrant and broadly supported ecosystem and community.
+This is the source for the Kubuntu Focus Suite of tools, curated apps, UX
+preferences, and hardware optimizations that work in harmony with standard
+Kubuntu 22.04 LTS. It is carefully designed to avoid reinventing the wheel and
+does not, for example, contain a variation of an entire operating system, or a
+shell on top of it. Many enhancements that started in this repository have
+since been contributed and accepted upstream. This adds unique value to an
+already vibrant and broadly supported ecosystem and community.
 
 ## Branches and Tags
 Any and all development and changes go into a branch labeled `JJ-{YYYY}-{MM}`
@@ -18,7 +24,9 @@ release order:
 ```
 
 ## Build and Distribution
-Packages are built using standard PPA preparation and uploaded to the [Kubuntu Focus PPA repository][_0100]. The following packages are built using unique methods:
+Packages are built using standard PPA preparation and uploaded to the [Kubuntu
+Focus PPA repository][_0100]. The following packages are built using unique
+methods:
 
 `package-linux-meta` contains the metapackage for our latest supported kernel.
 This is merged from the corresponding source package as published by
