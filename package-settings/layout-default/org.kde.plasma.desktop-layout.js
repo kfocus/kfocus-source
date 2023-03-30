@@ -1,6 +1,5 @@
 /*globals gridUnit, desktopsForActivity, currentActivity,
   getApiVersion, screenGeometry, loadTemplate */
-// Add print to eslint globals when needed.
 
 loadTemplate("org.kfocus.desktop.defaultPanel");
 
