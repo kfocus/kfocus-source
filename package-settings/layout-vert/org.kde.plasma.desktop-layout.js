@@ -68,7 +68,7 @@ function tweakWallpapersFn () {
   for ( j = 0; j < desktop_list.length; j++) {
     desktop_obj = desktop_list[j];
     desktop_obj.wallpaperPlugin = 'org.kde.image';
-    desktop_obj.wallpaperMode   = 2;
+    desktop_obj.wallpaperMode   = '2';
   }
 }
 
