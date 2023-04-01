@@ -1,6 +1,6 @@
 /*global Panel gridUnit languageId panelIds panelById screenGeometry*/
 /* Refactored 2023-03-29 to pass eslint */
-var 
+var
   panel_obj,      screen_obj,     edge_map,       idx,
   tmppanel_obj,   max_ratio,      geom_obj,       max_w_int,
   kickoff_obj,    pager_obj,      tmanager_obj,   launcher_list,
@@ -64,13 +64,13 @@ else {
 // . End Vertical Layout
 
 kickoff_obj = panel_obj.addWidget( 'org.kde.plasma.kickoff' );
-kickoff_obj.currentConfigGroup = [ 'Shortcuts' ];
+kickoff_obj.currentConfigGroup = [ 'Configuration/Shortcuts' ];
 kickoff_obj.writeConfig( 'global', 'Alt+F1' );
-kickoff_obj.currentConfigGroup = [ 'General' ];
+kickoff_obj.currentConfigGroup = [ 'Configuration/General' ];
 kickoff_obj.writeConfig( 'showAppsByName', 'true' );
 
 // 2023-03-27 This is probably no longer desirable
-// kickoff.currentConfigGroup = ["ConfigDialog"];
+// kickoff.currentConfigGroup = ["Configuration/ConfigDialog"];
 // kickoff.writeConfig("DialogHeight", 720);
 // kickoff.writeConfig("DialogHeight", 960);
 
@@ -84,7 +84,7 @@ kickoff_obj.writeConfig( 'showAppsByName', 'true' );
 
 pager_obj = panel_obj.addWidget( 'org.kde.plasma.pager' );
 // Vertical gets text in the pager mini-screens
-pager_obj.currentConfigGroup = [ 'General' ];
+pager_obj.currentConfigGroup = [ 'Configuration/General' ];
 if ( panel_obj.formFactor !== 'horizontal' ) {
   pager_obj.writeConfig( 'displayedText', 'Name' );
 }
@@ -146,7 +146,7 @@ if ( lang_id_list.indexOf( languageId ) != -1 ) {
 }
 
 backup_obj = panel_obj.addWidget( 'org.kde.plasma.icon' );
-backup_obj.currentConfigGroup = [ 'General' ];
+backup_obj.currentConfigGroup = [ 'Configuration/General' ];
 backup_obj.writeConfig( 'localPath', '/usr/share/applications/backintime-qt.desktop' );
 backup_obj.writeConfig( 'url', 'file:///usr/share/applications/backintime-qt.desktop' );
 // TODO if we add kup
@@ -154,13 +154,13 @@ backup_obj.writeConfig( 'url', 'file:///usr/share/applications/backintime-qt.des
 // backup_obj.writeConfig( 'url', 'file:///usr/share/kservices5/kcm_kup.desktop' );
 
 systray_obj = panel_obj.addWidget( 'org.kde.plasma.systemtray' );
-systray_obj.currentConfigGroup = [ 'General' ];
+systray_obj.currentConfigGroup = [ 'Configuration/General' ];
 // TODO if we add kup
 // systray_obj.writeConfig( 'shownItems', 'org.kde.kupapplet' );
 
 // Place clock on bottom panel, far-right as is the convention.
 clock_obj = panel_obj.addWidget( 'org.kde.plasma.digitalclock' );
-clock_obj.currentConfigGroup = [ 'General' ];
+clock_obj.currentConfigGroup = [ 'Configuration/General' ];
 clock_obj.writeConfig( 'showDate', 'true' );
 clock_obj.writeConfig( 'dateFormat', 'isoDate' );
 panel_obj.addWidget( 'org.kde.plasma.showdesktop' );

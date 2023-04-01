@@ -68,6 +68,8 @@ function tweakWallpapersFn () {
   for ( j = 0; j < desktop_list.length; j++) {
     desktop_obj = desktop_list[j];
     desktop_obj.wallpaperPlugin = 'org.kde.image';
+    // plasma5 docs says this does nothing, yet it forces the
+    // presentation of wallpapers in the rmb > Configure Desktop... dialog
     desktop_obj.wallpaperMode   = '2';
   }
 }
@@ -190,7 +192,27 @@ function setLayoutFn () {
             "plugin": "org.kde.plasma.icon",
             "title": "Help"
           }
-        ]
+        ],
+        // Keeping this config appears to enhance stability
+        "config": {
+          "/": {
+            "formfactor": "0",
+            "immutability": "1",
+            "lastScreen": "0"
+          },
+          "/ConfigDialog": {
+            "DialogHeight": "600",
+            "DialogWidth": "800"
+          },
+          "/Configuration": {
+            "PreloadWeight": "0"
+          },
+          "/General": {
+            "pressToMoveHelp": "false",
+            "showToolbox": "false",
+            "sortMode": "-1"
+          }
+        }
       }
     ],
     "serializationFormatVersion": "1"
