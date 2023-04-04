@@ -55,7 +55,7 @@ _mainFn () {
   _model_label="$(_cm2EchoModelStrFn 'label')";
   case "${_model_code}" in
     m1g1) true;;
-    m2g1|m2g2|m2g3|m2g4) true;;
+    m2g*) true;;
     xeg*|ir14*)
       if [[ "${_model_code}" =~ ^xeg.*$ ]]; then
         _key_str='Fn + F4'; else _key_str='Fn + F6';
