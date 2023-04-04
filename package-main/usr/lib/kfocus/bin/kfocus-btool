@@ -99,12 +99,7 @@ _promptContinueFn () {
   read -r _reply;
 
   if [[ "${_reply:-$_default_reply}" =~ ^[Yy] ]]; then
-
-    _echoFn "\n${_fullLine}\n";
-  else
-    _cancelFn;
-    exit 1;
-  fi
+    _echoFn "\n${_fullLine}\n"; else _cancelFn; fi
 }
 
 _welcomeFn () {
