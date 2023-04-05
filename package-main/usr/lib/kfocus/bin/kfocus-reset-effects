@@ -49,7 +49,7 @@ _importCommonFn () {
 
 ## BEGIN _mainFn {
 _mainFn () {
-  declare _prompt_msg _hw_code _line_list _line _bit_list _key \
+  declare _prompt_msg _model_key _line_list _line _bit_list _key \
     _log_list _name_file _config_file _opt_list _reply_str;
 
   _prompt_msg="$(cat <<_EOH01
@@ -64,7 +64,7 @@ _EOH01
   )";
   _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}";
 
-  _hw_code="$(_cm2EchoModelStrFn 'config_code')";
+  _model_key="$(_cm2EchoModelStrFn 'code')";
   _line_list=(
     # Desktops
     'kwin|Desktops|Name_1|one'
@@ -145,7 +145,7 @@ _EOH01
     fi
 
     if [ -n "${_bit_list[4]:-}" ]; then
-      if grep -q "${_hw_code}" <<< "${_bit_list[4]:-}"; then
+      if grep -q "${_model_key}" <<< "${_bit_list[4]:-}"; then
         _log_list+=( "Apply ${_line} for model ${_bit_list[4]:-}" );
       else
         _log_list+=( "SKIP  ${_line} for model ${_bit_list[4]:-}" );
