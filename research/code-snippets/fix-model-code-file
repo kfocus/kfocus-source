@@ -1,0 +1,22 @@
+# Purpose: Avoid reconfiguring previously installed systems by setting
+#   hwConfigCodeFile if its creation date is < 2023-04-03
+# This was found to be not necessary, but may be useful elsewhere.
+#
+#  _fixModelCodeFileFn () {
+#    declare _create_time _model_code;
+#    # skip if no config code file found
+#    if ! [ -f "${_hwConfigCodeFile}" ]; then return; fi
+#
+#    # skip if model code file already exists
+#    if [ -f "${_hwModelCodeFile}" ]; then return; fi
+#
+#    # At this point, a config code file is found but no model code file.
+#    # If creation date is early enough, create this file
+#    #
+#    _create_time="$(stat -c '%W' "${_hwConfigCodeFile}")";
+#    if (( "${_create_time}" > 1678403183 )); then return; fi
+#
+#    # Get and set model code
+#    _model_code="$( _cm2EchoModelStrFn 'code')";
+#    echo "${_model_code}" > "${_hwModelCodeFile}" || true;
+#  }
