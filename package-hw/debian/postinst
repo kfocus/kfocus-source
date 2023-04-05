@@ -113,7 +113,7 @@ _handle_xeg2Fn () {
   _setScaleFactorFn '';
 }
 # hw_config_code 'ir14g1' handles model ir14g1.
-# Very similar to nxg2, but no sound-pop fix is omitted.
+# Based on nxg1. Remove sound-pop fix. Add 1.25 scale, console fonts
 # shellcheck disable=SC2317
 #
 _handle_ir14g1Fn () {
@@ -199,7 +199,7 @@ _handle_otherFn () {
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
     '/etc/tlp.d/kfocus.conf|'
-  )
+  );
   _setScaleFactorFn '';
 }
 
@@ -226,7 +226,6 @@ _cleanupGrubFileFn () {
   done
 
   _esc2_rx="$(_cmXEscapeRxCharsFn "${_grub_line}")";
-
   if [ "${_esc1_rx}" = "${_esc2_rx}" ]; then return; fi
 
   sed -iE "s/^${_esc1_rx}/\n# KFOCUS-SAVE. See grub.d\/kfocus.cfg for params\n# ${_esc1_rx}\n${_esc2_rx}\n/g" "${_grub_file}" || true;
@@ -236,7 +235,7 @@ _cleanupGrubFileFn () {
 
 _setupSymlinkTableFn () {
   declare _msg _do_rm_link _link_list;
-  _cmXSetMsgFn 'Setup symlinks';
+  _cmXSetMsgFn 'Set up symlinks';
 
   if [ "${#_symlinkTable[@]}" = '0' ]; then
     _cmXWarnStrFn "No symlinks specified";
@@ -321,7 +320,7 @@ _setupModelHintsFn () {
       rm -f "${_tgt_path}" || continue;
     fi
 
-    _msg="${_src_path} to ${_tgt_path}";
+    _msg="{_tgt_path}";
     if ln -s "${_src_path}" "${_tgt_path}"; then
       _cmXSucStrFn "Linked ${_msg}";
     else
@@ -335,7 +334,7 @@ _setupModelHintsFn () {
 _setupBootFn () {
   declare _cmd_table _line _cmd_list;
 
-  _cmXSetMsgFn 'Setup boot configs';
+  _cmXSetMsgFn 'Set up boot configs';
   _cmd_table=(
     '/usr/sbin/depmod'
     '/usr/sbin/update-initramfs -u'
