@@ -20,7 +20,7 @@ _cmXEscapeRxCharsFn () {
   # shellcheck disable=SC2016
   printf '%s' "${1:-}" | sed 's/[.[\*^$()+?{|]/\\&/g';
 }
-## } . END Declare common.2.source symbols
+## . END Declare common.2.source symbols }
 
 # Set global scale factor in XDG_CONFIG_DIRS
 # See kfocus-reset-effects for general config-setting logic
@@ -124,7 +124,7 @@ _handle_ir14g1Fn () {
     '/etc/default/grub.d/kfocus.cfg|/usr/lib/kfocus/conf/nxg1-etc_default_grub.d_kfocus.cfg'
     # Minimize initrd accommodate GPU libs
     '/etc/initramfs-tools/conf.d/kfocus.conf|/usr/lib/kfocus/conf/nxg1-etc_initramfs-tools_conf.d_kfocus.conf'
-    # no sound-pop fix is omitted
+    # Remove sound-pop fix
     '/etc/modprobe.d/kfocus.conf|'
     '/etc/modules-load.d/kfocus.conf|'
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
@@ -239,8 +239,8 @@ _setupSymlinkTableFn () {
 
   if [ "${#_symlinkTable[@]}" = '0' ]; then
     _cmXWarnStrFn "No symlinks specified";
-    _cmXWarnFn;
-    return;
+    _cmXSucFn;
+    return 0;
   fi
 
   for _line in "${_symlinkTable[@]}"; do
@@ -285,16 +285,16 @@ _setupSymlinkTableFn () {
 }
 
 _setupModelHintsFn () {
-  declare _model_key _hints_dir _unique_dir _model_dir \
+  declare _model_code _hints_dir _unique_dir _model_dir \
     _png_list _src_path _img_file _tgt_path _msg;
 
   _cmXSetMsgFn 'Setup model hints';
 
-  _model_key="${1:-}";
+  _model_code="${1:-default}";
   _hints_dir='/usr/share/kfocus-hints';
 
   _unique_dir="${_hints_dir}/unique";
-  _model_dir="${_unique_dir}/${_model_key}";
+  _model_dir="${_unique_dir}/${_model_code}";
 
   if [ ! -d "${_model_dir}" ]; then
     _cmXWarnStrFn 'Model dir not found. Using default.';
@@ -320,11 +320,11 @@ _setupModelHintsFn () {
       rm -f "${_tgt_path}" || continue;
     fi
 
-    _msg="{_tgt_path}";
+    _msg="symlink target {_tgt_path}";
     if ln -s "${_src_path}" "${_tgt_path}"; then
-      _cmXSucStrFn "Linked ${_msg}";
+      _cmXSucStrFn "Created ${_msg}";
     else
-      _cmXWarnStrFn "Could not link ${_msg}";
+      _cmXWarnStrFn "Could not create ${_msg}";
     fi
   done
 
@@ -353,7 +353,7 @@ _setupBootFn () {
 
 _configFn () {
   declare _config_code_dir _config_code_file _old_config_code _lib_file \
-    _config_code _fn_name _model_key;
+    _config_code _fn_name _model_code;
 
   # Get old config code
   _config_code_dir='/var/lib/kfocus';
@@ -368,27 +368,31 @@ _configFn () {
   # Import common and determine config_code from model matrix
   _lib_file='/usr/lib/kfocus/lib/common.2.source';
   _config_code='';
+  _model_code='';
+
   if [ -r "${_lib_file}" ]; then
     # shellcheck disable=1091,1090 source=/usr/lib/kfocus/lib/common.2.source
     source "${_lib_file}" || true;
     if [ "$(type -t _cm2EchoModelStrFn)" = 'function' ]; then
-      _model_key="$(_cm2EchoModelStrFn 'code')";
+      _model_code="$(_cm2EchoModelStrFn 'code')";
       _config_code="$(_cm2EchoModelStrFn 'config_code')";
     fi
   fi
   if [ -z "${_config_code:-}" ]; then _config_code='other'; fi
+  if [ -z "${_model_code:-}"  ]; then  _model_code='other'; fi
 
   # If old config code is blank, perform one-time grub cleanup
   if [ -z "${_old_config_code}" ]; then _cleanupGrubFileFn; fi
 
   # Determine and call per-config-code function
-  _fn_name="_handle_${_config_code}Fn"
+  _fn_name="_handle_${_config_code}Fn";
   if [ "$(type -t "${_fn_name}")" != 'function' ]; then
     _cmXWarnStrFn "Function |${_fn_name}| not found";
-    _fn_name='_handle_genericFn';
-    _config_code='generic';
+    _fn_name='_handle_otherFn';
+    _config_code='other';
   fi
   _cmXEchoFn "Hardware config code is |${_config_code}|";
+
   if ! "${_fn_name}"; then
     _cmXWarnStrFn "Function |${_fn_name}| returned an error code";
   fi
@@ -403,7 +407,7 @@ _configFn () {
   _setupSymlinkTableFn;
 
   # Link hints per model
-  _setupModelHintsFn "${_model_key}";
+  _setupModelHintsFn "${_model_code}";
 
   # Execute commands to set up boot
   _setupBootFn;
@@ -416,11 +420,10 @@ _configFn () {
 # target|source|do_safe_backup
 _symlinkTable=();
 case "${1:-}" in
-configure | upgrade) _configFn ;;
-abort-upgrade | abort-remove | abort-deconfigure) true ;;
-*)
-  echo "postinst called with unhandled argument '$1'" >&2;
-  exit 0;
+  configure | upgrade) _configFn ;;
+  abort-upgrade | abort-remove | abort-deconfigure) true ;;
+  *) echo "postinst called with unhandled argument '$1'">&2;
+    exit 0;
   ;;
 esac
 #DEBHELPER#
