@@ -40,9 +40,7 @@ _reconfigHwPkgFn () {
   declare _str;
   _cm2SetMsgFn 'Adjust for hardware';
   if _str="$(dpkg-reconfigure kfocus-hw 2>&1)"; then
-
-    _cm2SucFn;
-    else _cm2WarnStrFn "${_str}"; _cm2WarnFn;
+    _cm2SucFn; else _cm2WarnStrFn "${_str}"; _cm2WarnFn;
   fi
   # IMPORTANT: dpkg-configure kfocus-hw runs update-initramfs, update-grub
 }
@@ -64,15 +62,15 @@ _installNvidiaFn () {
   _cm2SetMsgFn 'Install NVIDIA Packages';
   if ! apt-get reinstall -y kfocus-nvidia-pinning; then
     _cm2WarnStrFn 'Could not add nvidia-pinning.';
-    _cm2WarnFn; return;
+    _cm2WarnFn; return 1;
   fi
   if ! apt-get update; then
     _cm2WarnStrFn 'Could not update';
-    _cm2WarnFn; return;
+    _cm2WarnFn; return 1;
   fi
   if apt-get reinstall -y kfocus-nvidia; then
     _cm2WarnStrFn 'Could not install kfocus-nvidia';
-    _cm2WarnFn; return;
+    _cm2WarnFn; return 1;
   fi
   _cm2SucFn;
 }
@@ -84,9 +82,9 @@ _purgePkgFn () {
   _cm2SetMsgFn "Purge package |${_pkg_name}|";
   if [ -z "${_pkg_name}" ]; then _cm2WarnFn; return; fi
 
-  if ! apt-get purge "${_pkg_name}"; then
+  if ! apt-get purge -y "${_pkg_name}"; then
     _cm2WarnStrFn "Could not purge ${_pkg_name}";
-    _cm2WarnFn; return;
+    _cm2WarnFn; return 1;
   fi
   _cm2SucFn;
 }
@@ -97,12 +95,12 @@ _installPkgFn () {
 
   _cm2SetMsgFn "Install package |${_pkg_name}|"
   if [ -z "${_pkg_name}" ]; then
-    _cm2WarnFn; return;
+    _cm2WarnFn; return 1;
   fi
 
-  if ! apt-get install "${_pkg_name}"; then
+  if ! apt-get reinstall -y "${_pkg_name}"; then
     _cm2WarnStrFn "Could not install ${_pkg_name}";
-    _cm2WarnFn; return;
+    _cm2WarnFn; return 1;
   fi
   _cm2SucFn;
 }
@@ -193,21 +191,30 @@ _chkHwConfigFn () {
     _reason_list+=( "${_msg}" );
   fi
 
-  if grep -qE '^ir14' <<< "${_dmi_hw_model_code}"; then
-    if _cm2ChkInstalledPkgFn 'xserver-xorg-input-synaptics'; then
-      _msg='purge-synaptics;;Synaptics driver package needs to be purged.';
-      _reason_list+=( "${_msg}" );
-    fi
-  elif [ "${_do_force}" = 'y' ]; then
-    if ! _cm2ChkInstalledPkgFn 'xserver-xorg-input-synaptics'; then
-      if grep -qE '^m[12]g[1-5]|xe[1-2]' <<< "${_dmi_hw_model_code}"; then
-        _msg='install-synaptics;;Synaptics driver forced re-installation.';
+  # Run lib updates iff hardware reconfig is flagged.
+  #   do_force or mismatched model- or config-codes trigger this.
+  # Thus do_force is NOT guaranteed 'y' for this block.
+  #
+  if [ "${_is_hw_reconfig}" = 'y' ]; then
+    if grep -qE '^ir14' <<< "${_dmi_hw_model_code}"; then
+      if _cm2ChkInstalledPkgFn 'xserver-xorg-input-synaptics'; then
+        _msg='purge-synaptics;;Synaptics driver package needs to be purged.';
         _reason_list+=( "${_msg}" );
       fi
+    elif [ "${_do_force}" = 'y' ]; then
+      if ! _cm2ChkInstalledPkgFn 'xserver-xorg-input-synaptics'; then
+        if grep -qE '^m[12]g[1-5]|xe[1-2]' <<< "${_dmi_hw_model_code}"; then
+          _msg='install-synaptics;;Synaptics driver forced re-installation.';
+          _reason_list+=( "${_msg}" );
+        fi
+      fi
     fi
-  fi
 
-  if [ "${_is_hw_reconfig}" = 'y' ]; then
+    if _cm2ChkInstalledPkgFn 'xserver-xorg-video-intel'; then
+      _msg='purge-intelvideo;;OOD Intel video package needs to be purged.';
+      _reason_list+=( "${_msg}" );
+    fi
+
     _is_nv_system="$(_cm2EchoModelStrFn 'is_nv_sys')";
     if [ "${_is_nv_system}" = 'y' ]; then
       if ! _cm2ChkInstalledPkgFn 'kfocus-nvidia'; then
@@ -220,7 +227,6 @@ _chkHwConfigFn () {
     fi
   fi
 
-  ## TODO: Consider removing xserver-xorg-video-intel here
   ( IFS=$'|'; echo "${_reason_list[*]}"; )
 }
 
@@ -237,13 +243,15 @@ _fixHwConfigFn () {
     case "${_bit_list[0]}" in
       'reconfig-hw'      ) _cmd_list=( '_reconfigHwPkgFn'   );;
       'install-hw-tools' ) _cmd_list=( '_installToolsPkgFn' );
-         _cmd_list+=( "${_bit_list[1]:-}" );;
+        _cmd_list+=( "${_bit_list[1]:-}" );;
       'install-nvidia'   ) _cmd_list=( '_installNvidiaFn'   );;
       'install-synaptics') _cmd_list=( '_installPkgFn'      );
-         _cmd_list+=( 'xserver-xorg-input-synaptics' );;
+        _cmd_list+=( 'xserver-xorg-input-synaptics' );;
+      'purge-intelvideo' ) _cmd_list=( '_purgePkgFn' );
+        _cmd_list+=( 'xserver-xorg-video-intel' );;
       'purge-synaptics'  ) _cmd_list=( '_purgePkgFn'  );
          _cmd_list+=( 'xserver-xorg-input-synaptics' );;
-      *) _cm2EchoFn "Option ${_bit_list[0]} is not supported";
+      *) _cm2WarnStrFn "Option ${_bit_list[0]} is not supported";
         continue;
         ;;
     esac

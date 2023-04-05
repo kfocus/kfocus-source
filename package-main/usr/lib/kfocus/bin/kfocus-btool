@@ -203,7 +203,7 @@ _selectDiskFn () {
     _echoFn "Scan USB Drives...";
     _found_list=();
     _mount_str="$(cat /proc/mounts)";
-    mapfile -n8 -t _block_list < <(
+    mapfile -n16 -t _block_list < <(
       find /dev/ -maxdepth 1 -mindepth 1 -type b -name 'sd[a-z]' | sort
     );
     for _dev_file in "${_block_list[@]}"; do # begin dev-block
