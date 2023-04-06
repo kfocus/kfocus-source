@@ -1,0 +1,93 @@
+#!/bin/bash
+#
+# Test for default web browser handler
+#
+## BEGIN _assertDataTable {
+_assertDataTable=(
+#  Test synopsis;Desktop file name;Args for _mainFn; Expect string
+  'Google Chrome;google-chrome.desktop;;/usr/bin/google-chrome-stable'
+  'Firefox Standard;firefox.desktop;;firefox'
+  'Firefox Snap;firefox_firefox.desktop;;env BAMF_DESKTOP_FILE_HINT=/var/lib/snapd/desktop/applications/firefox_firefox.desktop /snap/bin/firefox'
+  'Brave;brave-browser.desktop;;/usr/bin/brave-browser-stable'
+  'Failed;fake-browser.desktop;;'
+  'Google Chrome;google-chrome.desktop;--incognito https://slashdot.org;/usr/bin/google-chrome-stable --incognito https://slashdot.org'
+  'Firefox Standard;firefox.desktop;--incognito https://slashdot.org;firefox --incognito https://slashdot.org'
+  'Firefox Snap;firefox_firefox.desktop;--incognito https://slashdot.org;env BAMF_DESKTOP_FILE_HINT=/var/lib/snapd/desktop/applications/firefox_firefox.desktop /snap/bin/firefox --incognito https://slashdot.org'
+  'Brave;brave-browser.desktop;--incognito https://slashdot.org;/usr/bin/brave-browser-stable --incognito https://slashdot.org'
+  'Failed;fake-browser.desktop;--incognito https://slashdot.org;brave-browser;'
+);
+## . END _assertDataTable }
+
+## BEGIN _overwriteWithMocksFn {
+# Purpose: Overwrite functions from sourced script before running asserts
+_overwriteWithMocksFn () {
+  _runExecArrayFn () {
+    _runStr="$*";
+  }
+}
+## . END _overwriteWithMocksFn }
+
+## BEGIN _runTestFn {
+_runTestFn () {
+  declare _launch_exe _fail_count _assert_count _assert_idx \
+    _msg_str _assert_data_list _arg_list _do_fail_inc;
+
+  # shellcheck disable=SC2154,SC1090
+  _launch_exe="${_t00TopDir}/package-main/usr/lib/kfocus/";
+  _launch_exe+='bin/kfocus-web-launcher';
+
+  # shellcheck disable=SC1090
+  source "${_launch_exe}" || return 1;
+
+  # Overwrite functions with mocks
+  _overwriteWithMocksFn;
+
+  _fail_count=0;
+  _assert_count="${#_assertDataTable[@]}";
+  _assert_idx=1;
+
+  for _assert_line in "${_assertDataTable[@]}"; do
+    _runStr='';
+    IFS=';' read -r -d '' -a _assert_data_list < <(echo -n "${_assert_line}");
+    _msg_str="  BEGIN Assert ${_assert_data_list[0]} ";
+    _msg_str+="|${_assert_idx}| of |${_assert_count}|";
+    _cm2EchoFn "${_msg_str}";
+
+    # Overwrite imported variable previously found with:
+    #   _desktopFile="$(xdg-settings get default-web-browser)";
+    _desktopFile="${_assert_data_list[1]}";
+    _kdiagExe='';
+    _arg_list=();
+    if [ -n "${_assert_data_list[2]}" ]; then
+      IFS=' ' read -r -d '' -a _arg_list \
+        < <(echo -n "${_assert_data_list[2]}");
+    fi
+
+    # Run in subshell to prevent exit from cancelling run
+    _do_fail_inc="$( _mainFn "${_arg_list[@]}";
+      _cm2EchoFn "  |${_runStr}| ?= |${_assert_data_list[3]:-}|";
+      if [ "${_runStr}" = "${_assert_data_list[3]:-}" ]; then
+        echo 'n';
+      else
+        echo 'y';
+      fi
+    )"; 
+    if [ "${_do_fail_inc}" = 'y' ]; then
+      _cm2EchoFn '  fail: Assert results DO NOT match expected';
+      (( _fail_count++ ));
+    else
+      _cm2EchoFn '  ok  : Assert results match expected';
+    fi
+    _cm2EchoFn "  . END Assert |${_assert_idx}|\n";
+    (( _assert_idx++ ));
+  done
+
+  if [ "${_fail_count}" -gt 0 ]; then
+    _cm2EchoFn "FAIL: ${_fail_count} of ${_assert_count} asserts failed.";
+    return "${_fail_count}";
+  else
+    _cm2EchoFn 'OK  : Results match expected';
+  fi
+}
+## . END _runTestFn }
+
