@@ -1,17 +1,30 @@
 #!/bin/bash
+
 set -e;
 
-# TODO: Consider moving this to bin/kfocus-hw-config
-# See common.2.source for latest mappings.
+## BEGIN Declare common.2.source symbols {
+#  IMPORT 2023-04-04 EXCERPT from common.2.source
+#   Symbols are renamed to avoid conflicts with imported lib.
 #
-_echoStderrFn () { 1>&2 echo -e "$*"; }
-_cm2EscapeRxCharsFn () {
+_cmXBlockMsg='';
+_cmXEchoFn () { echo 1>&2 -e "$*"; }
+_cmXSetMsgFn () {
+  _cmXBlockMsg="$*";
+  _cmXEchoFn "== BEGIN : ${_cmXBlockMsg}";
+}
+_cmXSucFn () { _cmXEchoFn "== . END : OK   ${_cmXBlockMsg}\n\n"; }
+_cmXSucStrFn () { _cmXEchoFn "ok  : ${*}"; }
+_cmXWarnFn () { _cmXEchoFn "== . END : WARN Could not ${_cmXBlockMsg}\n\n"; }
+_cmXWarnStrFn () { _cmXEchoFn "warn: ${*}"; }
+_cmXEscapeRxCharsFn () {
   # shellcheck disable=SC2016
   printf '%s' "${1:-}" | sed 's/[.[\*^$()+?{|]/\\&/g';
 }
+## . END Declare common.2.source symbols }
 
-# Sets global scale factor in XDG_CONFIG_DIRS
+# Set global scale factor in XDG_CONFIG_DIRS
 # See kfocus-reset-effects for general config-setting logic
+# shellcheck disable=SC2317
 #
 _setScaleFactorFn () {
   declare _factor_str _kwrite_exe _config_file _opt_list;
@@ -23,22 +36,24 @@ _setScaleFactorFn () {
     touch "${_config_file}" || return;
   fi
   if [ -n "${_kwrite_exe}" ]; then
-    _opt_list=( '--file' "${_config_file}" '--group' 'KScreen'
+    _opt_list=('--file' "${_config_file}" '--group' 'KScreen'
       '--key' 'ScaleFactor'
     );
+
     if [ -n "${_factor_str}" ]; then
-      _opt_list+=( "${_factor_str}" );
+      _opt_list+=("${_factor_str}");
     else
-      _opt_list+=( '--delete' );
+      _opt_list+=('--delete');
     fi
     "${_kwrite_exe}" "${_opt_list[@]}" || true;
   fi
 }
 
 # hw_config_code 'default' handles models m2g3, m2g2, m2g1, m1g1
+# shellcheck disable=SC2317
 #
 _handle_defaultFn () {
-    # target |  source | do_file_backup
+  # target |  source | do_file_backup
   _symlinkTable+=(
     '/etc/default/console-setup|'
     '/etc/default/grub.d/kfocus.cfg|/usr/lib/kfocus/conf/dflt-etc_default_grub.d_kfocus.cfg'
@@ -55,6 +70,7 @@ _handle_defaultFn () {
   _setScaleFactorFn '';
 }
 # hw_config_code 'generic' handles model xeg1
+# shellcheck disable=SC2317
 #
 _handle_genericFn () {
   _symlinkTable+=(
@@ -71,6 +87,7 @@ _handle_genericFn () {
   _setScaleFactorFn '';
 }
 # hw_config_code 'xeg2' handles model xeg2
+# shellcheck disable=SC2317
 #
 _handle_xeg2Fn () {
   _symlinkTable+=(
@@ -95,16 +112,36 @@ _handle_xeg2Fn () {
   );
   _setScaleFactorFn '';
 }
-
+# hw_config_code 'ir14g1' handles model ir14g1.
+# Based on nxg1. Remove sound-pop fix. Add 1.25 scale, console fonts
+# shellcheck disable=SC2317
+#
+_handle_ir14g1Fn () {
+  _symlinkTable+=(
+    # Bigger tty fonts
+    '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
+    # Add param to prevent intel flicker
+    '/etc/default/grub.d/kfocus.cfg|/usr/lib/kfocus/conf/nxg1-etc_default_grub.d_kfocus.cfg'
+    # Minimize initrd accommodate GPU libs
+    '/etc/initramfs-tools/conf.d/kfocus.conf|/usr/lib/kfocus/conf/nxg1-etc_initramfs-tools_conf.d_kfocus.conf'
+    # Remove sound-pop fix
+    '/etc/modprobe.d/kfocus.conf|'
+    '/etc/modules-load.d/kfocus.conf|'
+    '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
+    '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
+    '/usr/share/kfocus/kf5-settings/kcmfonts|'
+    '/etc/tlp.d/kfocus.conf|'
+  );
+  _setScaleFactorFn '1.25';
+}
 # hw_config_code 'm2g4' handles models m2g4
+# shellcheck disable=SC2317
 #
 _handle_m2g4Fn () {
-
   if [ -x "/usr/bin/deb-systemd-helper" ]; then
     deb-systemd-helper mask \
-      systemd-backlight@backlight:nvidia_0.service >/dev/null
+      systemd-backlight@backlight:nvidia_0.service >/dev/null;
   fi
-
   _symlinkTable+=(
     # Bigger tty fonts
     '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
@@ -128,6 +165,7 @@ _handle_m2g4Fn () {
   _setScaleFactorFn '1.5';
 }
 # hw_config_code 'nxg1' handles models nxg1 and nxg2
+# shellcheck disable=SC2317
 #
 _handle_nxg1Fn () {
   _symlinkTable+=(
@@ -147,6 +185,7 @@ _handle_nxg1Fn () {
   _setScaleFactorFn '';
 }
 # hw_config_code 'other' handles unrecognized models
+# shellcheck disable=SC2317
 #
 _handle_otherFn () {
   _symlinkTable+=(
@@ -166,80 +205,136 @@ _handle_otherFn () {
 
 _cleanupGrubFileFn () {
   declare _grub_file _grub_line _esc1_rx _str _esc2_rx;
+  _cmXSetMsgFn 'Clean up grub file';
 
   _grub_file='/etc/default/grub';
   _grub_line="$(
-    grep -E '^\s*GRUB_CMDLINE_LINUX_DEFAULT="' ${_grub_file}| tail -n1
+    grep -E '^\s*GRUB_CMDLINE_LINUX_DEFAULT="' ${_grub_file} | tail -n1
   )";
 
   if [ -z "${_grub_line}" ]; then
-    _echoStderrFn "WARN: grub line from file ${_grub_file} not found";
+    _cmXWarnStrFn "grub line from file ${_grub_file} not found";
     return;
   fi
 
-  _esc1_rx="$(_cm2EscapeRxCharsFn "${_grub_line}")";
+  _esc1_rx="$(_cmXEscapeRxCharsFn "${_grub_line}")"
   for _str in 'modprobe.blacklist=nouveau' 'modprobe.blacklist=ucsi_acpi' \
     'tpm_tis.interrupts=0' 'acpi_backlight=vendor' 'acpi_os=linux' \
     'acpi_osi=linux'; do
     # shellcheck disable=SC2001
-    _grub_line="$(sed "s/\s\+${_str}//" <<< "${_grub_line}")";
-  done;
-  _esc2_rx="$(_cm2EscapeRxCharsFn "${_grub_line}")";
+    _grub_line="$(sed "s/\s\+${_str}//" <<<"${_grub_line}")";
+  done
 
+  _esc2_rx="$(_cmXEscapeRxCharsFn "${_grub_line}")";
   if [ "${_esc1_rx}" = "${_esc2_rx}" ]; then return; fi
 
   sed -iE "s/^${_esc1_rx}/\n# KFOCUS-SAVE. See grub.d\/kfocus.cfg for params\n# ${_esc1_rx}\n${_esc2_rx}\n/g" "${_grub_file}" || true;
+
+  _cmXSucFn;
 }
 
 _setupSymlinkTableFn () {
   declare _msg _do_rm_link _link_list;
+  _cmXSetMsgFn 'Set up symlinks';
+
   if [ "${#_symlinkTable[@]}" = '0' ]; then
-    _echoStderrFn "WARN: No symlinks specified";
+    _cmXWarnStrFn "No symlinks specified";
+    _cmXSucFn;
+    return 0;
   fi
 
   for _line in "${_symlinkTable[@]}"; do
-    IFS='|' read -r -a _link_list <<< "${_line}";
+    IFS='|' read -r -a _link_list <<<"${_line}";
     _msg='';
     _do_rm_link='y';
 
     # Backup regular file if directed
     if [ -f "${_link_list[0]}" ] && [ ! -h "${_link_list[0]}" ]; then
       if [ -n "${_link_list[2]:-}" ]; then
-        mv "${_link_list[0]}" "${_link_list[0]}.kfocus.$(date +%Y%m%d)";
+        mv "${_link_list[0]}" "${_link_list[0]}.kfocus.$(date +%Y%m%d)" || true;
         _do_rm_link='n';
       fi
     fi
 
     # Remove old link or file
     if [ "${_do_rm_link}" = 'y' ]; then
+      _msg="symlink target ${_link_list[0]}";
       if rm -f "${_link_list[0]}"; then
-        _msg='Removed ';
+        _cmXSucStrFn "Removed ${_msg}";
       else
-        _msg='WARN: Could not remove ';
+        _cmXWarnStrFn "Could not remove ${_msg}";
       fi
-      _msg+="symlink target ${_link_list[0]}";
-      _echoStderrFn "${_msg}";
     fi
 
     # Do not symlink if empty
     if [ -z "${_link_list[1]}" ]; then continue; fi
 
     if [ -e "${_link_list[1]}" ]; then
+      _msg="symlink target ${_link_list[0]}"
       if ln -s "${_link_list[1]}" "${_link_list[0]}"; then
-        _msg='Created ';
+        _cmXSucStrFn "Created ${_msg}";
       else
-        _msg='WARN: Could not create ';
+        _cmXWarnStrFn "Could not create ${_msg}";
       fi
-      _msg+="symlink target ${_link_list[0]}";
     else
-      _msg="WARN: Symlink source ${_link_list[1]} not found";
+      _cmXWarnStrFn "Symlink source ${_link_list[1]} not found";
     fi
-    _echoStderrFn "${_msg}";
   done
+
+  _cmXSucFn;
+}
+
+_setupModelHintsFn () {
+  declare _model_code _hints_dir _unique_dir _model_dir \
+    _png_list _src_path _img_file _tgt_path _msg;
+
+  _cmXSetMsgFn 'Setup model hints';
+
+  _model_code="${1:-default}";
+  _hints_dir='/usr/share/kfocus-hints';
+
+  _unique_dir="${_hints_dir}/unique";
+  _model_dir="${_unique_dir}/${_model_code}";
+
+  if [ ! -d "${_model_dir}" ]; then
+    _cmXWarnStrFn 'Model dir not found. Using default.';
+    _model_dir="${_unique_dir}/default";
+  fi
+
+  if [ ! -d "${_model_dir}" ]; then
+    _cmXWarnStrFn "Unexpected missing dir: ${_model_dir}";
+    _cmXWarnFn;
+    return;
+  fi
+
+  mapfile -n30 -t _png_list < <(
+    find "${_model_dir}" -mindepth 1 -maxdepth 1 -name '*.png' | sort
+  );
+
+  for _src_path in "${_png_list[@]}"; do
+    _img_file="$(basename "${_src_path}")";
+    _tgt_path="${_hints_dir}/${_img_file}";
+    if [ ! -f "${_src_path}" ]; then continue; fi
+
+    if [ -e "${_tgt_path}" ]; then
+      rm -f "${_tgt_path}" || continue;
+    fi
+
+    _msg="symlink target ${_tgt_path}";
+    if ln -s "${_src_path}" "${_tgt_path}"; then
+      _cmXSucStrFn "Created ${_msg}";
+    else
+      _cmXWarnStrFn "Could not create ${_msg}";
+    fi
+  done
+
+  _cmXSucFn;
 }
 
 _setupBootFn () {
   declare _cmd_table _line _cmd_list;
+
+  _cmXSetMsgFn 'Set up boot configs';
   _cmd_table=(
     '/usr/sbin/depmod'
     '/usr/sbin/update-initramfs -u'
@@ -247,16 +342,18 @@ _setupBootFn () {
   );
 
   for _line in "${_cmd_table[@]}"; do
-    IFS=' ' read -r -a _cmd_list <<< "${_line}";
+    IFS=' ' read -r -a _cmd_list <<<"${_line}";
     if [ -x "${_cmd_list[0]}" ]; then
-      "${_cmd_list[@]}" || _echoStderrFn "Could not exec ${_cmd_list[*]}";
+      "${_cmd_list[@]}" || _cmXWarnStrFn "Could not exec ${_cmd_list[*]}"
     fi
   done
+
+  _cmXSucFn;
 }
 
 _configFn () {
   declare _config_code_dir _config_code_file _old_config_code _lib_file \
-    _config_code _fn_name;
+    _config_code _fn_name _model_code;
 
   # Get old config code
   _config_code_dir='/var/lib/kfocus';
@@ -269,16 +366,20 @@ _configFn () {
   fi
 
   # Import common and determine config_code from model matrix
-  _lib_file="/usr/lib/kfocus/lib/common.2.source";
+  _lib_file='/usr/lib/kfocus/lib/common.2.source';
   _config_code='';
+  _model_code='';
+
   if [ -r "${_lib_file}" ]; then
-    # shellcheck disable=1091,1090
-    source "${_lib_file}";
+    # shellcheck disable=1091,1090 source=/usr/lib/kfocus/lib/common.2.source
+    source "${_lib_file}" || true;
     if [ "$(type -t _cm2EchoModelStrFn)" = 'function' ]; then
+      _model_code="$(_cm2EchoModelStrFn 'code')";
       _config_code="$(_cm2EchoModelStrFn 'config_code')";
     fi
   fi
-  if [ -z "${_config_code:-}" ]; then _config_code='generic'; fi
+  if [ -z "${_config_code:-}" ]; then _config_code='other'; fi
+  if [ -z "${_model_code:-}"  ]; then  _model_code='other'; fi
 
   # If old config code is blank, perform one-time grub cleanup
   if [ -z "${_old_config_code}" ]; then _cleanupGrubFileFn; fi
@@ -286,13 +387,14 @@ _configFn () {
   # Determine and call per-config-code function
   _fn_name="_handle_${_config_code}Fn";
   if [ "$(type -t "${_fn_name}")" != 'function' ]; then
-    _echoStderrFn "WARN: function ${_fn_name} not found";
-    _fn_name='_handle_genericFn';
-    _config_code='generic';
+    _cmXWarnStrFn "Function |${_fn_name}| not found";
+    _fn_name='_handle_otherFn';
+    _config_code='other';
   fi
-  _echoStderrFn "Hardware config code is |${_config_code}|";
+  _cmXEchoFn "Hardware config code is |${_config_code}|";
+
   if ! "${_fn_name}"; then
-    _echoStderrFn "WARN: function ${_fn_name} shows an error";
+    _cmXWarnStrFn "Function |${_fn_name}| returned an error code";
   fi
 
   # Inject links for 2357, 2377
@@ -303,6 +405,9 @@ _configFn () {
 
   # Set up symlinks
   _setupSymlinkTableFn;
+
+  # Link hints per model
+  _setupModelHintsFn "${_model_code}";
 
   # Execute commands to set up boot
   _setupBootFn;
@@ -315,10 +420,10 @@ _configFn () {
 # target|source|do_safe_backup
 _symlinkTable=();
 case "${1:-}" in
-  configure|upgrade) _configFn;;
-  abort-upgrade|abort-remove|abort-deconfigure) true;;
-  *) echo "postinst called with unhandled argument '$1'">&2
-    exit 0
+  configure | upgrade) _configFn ;;
+  abort-upgrade | abort-remove | abort-deconfigure) true ;;
+  *) echo "postinst called with unhandled argument '$1'">&2;
+    exit 0;
   ;;
 esac
 #DEBHELPER#

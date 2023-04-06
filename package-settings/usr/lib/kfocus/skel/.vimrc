@@ -60,7 +60,12 @@ map <silent> ;c :set cursorcolumn!<CR>
 set background=dark "When guessing, guess bg is dark (vs light)
 set number
 set modeline
-set termguicolors  "These can be garish
+
+" Only set termcolors for certain terminals. This leaves
+" Virtual Terminals to use available colors
+if $COLORTERM == 'truecolor' || $TERM == 'xterm-256color'
+  set termguicolors
+endif
 
 " ====[ Indentation ]==================================================
 set autoindent      "Retain indentation on next line
@@ -227,6 +232,7 @@ set thesaurus+=/usr/local/share/thesaurus/mthesaur.txt
 " =====[ Markdown Enhancements for Embedded Code Syntax ] ==============
 " https://vimtricks.com/p/highlight-syntax-inside-markdown/
 " See :r !ls /usr/share/vim/vim82/syntax/
+"
 let g:markdown_fenced_languages = ['bash','css','erb=eruby','javascript','js=javascript','json','html','node=javascript','perl','php=perl','python','ruby','sass','xml','vim']
 
 " ====[ Use this to size comment lines ]===============================

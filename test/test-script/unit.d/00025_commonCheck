@@ -243,8 +243,10 @@ _audit_cm2EchoModelStrFn () {
   declare _restore_file _assert_table _assert_count _assert_idx _fail_count \
     _loop_line _did_assert_fail _bit_list _name_str _expect_str _found_str;
 
-  _restore_file="${_cm2DmiProductNameFile:-}";
+  _restore_name_file="${_cm2DmiProductNameFile:-}";
+  _restore_sku_file="${_cm2DmiProductSkuFile:-}";
   _assert_table=(
+    # dmi_code|model_name|is_nvidia|config_code|sku_code
     'PD5x_7xPNP_PNN_PNT|m2g4|y|m2g4'
     'PC5x_7xHP_HR_HS|m2g3|y|default'
     'PC5|m2g2|y|default'
@@ -256,12 +258,14 @@ _audit_cm2EchoModelStrFn () {
     'NUC11PAHi7|nxg1|n|nxg1'
     'NUC11PAHi5|nxg1|n|nxg1'
     'nuc11pah i5|nxg1|n|nxg1'
+    # i1r14g1 also uses sku
+    'iridium|ir14g1|n|ir14g1|LCS14-12i12345'
   );
 
-  # Mock dmi file
+  # Mock dmi files
   # shellcheck disable=SC2154
   _cm2DmiProductNameFile="${_t00RunDir}/model_file";
-  # TODO: ADD _cm2DmiProductSkuFile='/sys/devices/virtual/dmi/id/product_sku';
+  _cm2DmiProductSkuFile="${_t00RunDir}/sku_file";
   mkdir -p "${_t00RunDir}";
   _assert_count="${#_assert_table[@]}";
   _assert_idx=0;
@@ -278,6 +282,7 @@ _audit_cm2EchoModelStrFn () {
     _cm2ModelLine='';
     _name_str="${_bit_list[0]}";
     echo "${_name_str}" > "${_cm2DmiProductNameFile}";
+    echo "${_bit_list[4]:-}" > "${_cm2DmiProductSkuFile}";
 
     # Compare
     {  printf '  %-40s' "Assert for ${_name_str} ";
@@ -310,7 +315,8 @@ _audit_cm2EchoModelStrFn () {
     fi
     (( _assert_idx++ ));
   done;
-  _cm2DmiProductNameFile="${_restore_file}";
+  _cm2DmiProductNameFile="${_restore_name_file}";
+  _cm2DmiProductSkuFile="${_restore_sku_file}";
   return "${_fail_count}";
 }
 ## . END _audit_cm2EchoModelStrFn }

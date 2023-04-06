@@ -14,6 +14,7 @@
 #
 set -u;
 
+# shellcheck disable=SC2317
 _abortFn () { 2>&1 echo; 2>&1 echo 'Ctrl+C exit'; sleep 1; exit 1; }
 
 _exitFn () {
@@ -38,10 +39,12 @@ _EOL01
   fi;
 
   _nv_line=$(lspci |grep -i 'VGA compatible controller' |grep -i 'nvidia' );
-  if echo "${_nv_line}" | grep -q 'RTX 20'; then
+  if grep -q 'RTX 20' <<< "${_nv_line}"; then
     echo 'rtx20'; return 0;
-  elif echo "${_nv_line}" | grep -q 'RTX 30'; then
+  elif grep -q 'RTX 30' <<< "${_nv_line}"; then
     echo 'rtx30'; return 0;
+  elif grep -q 'RTX 40' <<< "${_nv_line}"; then
+    echo 'rtx40'; return 0;
   fi
 
   if [ -n "${_nv_line}" ]; then
@@ -160,7 +163,7 @@ _installEnvFn () {
           _exitFn;
         fi
       else
-        _cm2WarnStrFn 'Nvidia libraries must be installed to continue.';
+        _cm2WarnStrFn 'Nvidia libs must be installed to continue.';
         _exitFn;
       fi
     fi

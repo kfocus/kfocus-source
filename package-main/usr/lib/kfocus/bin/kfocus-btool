@@ -99,12 +99,7 @@ _promptContinueFn () {
   read -r _reply;
 
   if [[ "${_reply:-$_default_reply}" =~ ^[Yy] ]]; then
-
-    _echoFn "\n${_fullLine}\n";
-  else
-    _cancelFn;
-    exit 1;
-  fi
+    _echoFn "\n${_fullLine}\n"; else _cancelFn; fi
 }
 
 _welcomeFn () {
@@ -208,7 +203,9 @@ _selectDiskFn () {
     _echoFn "Scan USB Drives...";
     _found_list=();
     _mount_str="$(cat /proc/mounts)";
-    read -r -a _block_list< <(find /dev/ -maxdepth 1 -type b -name 'sd[a-z]');
+    mapfile -n16 -t _block_list < <(
+      find /dev/ -maxdepth 1 -mindepth 1 -type b -name 'sd[a-z]' | sort
+    );
     for _dev_file in "${_block_list[@]}"; do # begin dev-block
       _byte_int="$(blockdev --getsize64 "${_dev_file}")";
       _mib_int=$(( _byte_int / 1048576 ));
