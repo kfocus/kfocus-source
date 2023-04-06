@@ -160,7 +160,7 @@ _chkHwConfigFn () {
   _file_hw_config_code="$( cat "${_hwConfigCodeFile}" || echo '' )";
   _file_hw_model_code="$(  cat "${_hwModelCodeFile}"  || echo '' )";
 
-  if  [ "${_file_hw_config_code}" != "${_dmi_hw_config_code}" ]; then
+  if [ "${_file_hw_config_code}" != "${_dmi_hw_config_code}" ]; then
     _msg='reconfig-hw;;Hardware signature does not match expected: ';
     _msg+="${_file_hw_config_code} != ${_dmi_hw_config_code}";
     _reason_list+=( "${_msg}" );
@@ -171,10 +171,10 @@ _chkHwConfigFn () {
     _is_hw_reconfig='y';
   fi
 
-  # Consider this a hw reconfig if hw_model_code does not match
-  if [ "${_file_hw_model_code}" != "${_dmi_hw_model_code}"  ]; then
-    _is_hw_reconfig='y';
-  fi
+  # TODO Flag as hw reconfig if hw_model_code does not match
+  # if [ "${_file_hw_model_code}" != "${_dmi_hw_model_code}" ]; then
+  #   _is_hw_reconfig='y';
+  # fi
 
   _tool_pkg_name="kfocus-tools-${_dmi_hw_config_code}";
   if ! _cm2ChkPkgFn "${_tool_pkg_name}"; then
@@ -192,7 +192,7 @@ _chkHwConfigFn () {
   fi
 
   # Run lib updates iff hardware reconfig is flagged.
-  #   do_force or mismatched model- or config-codes trigger this.
+  #   do_force OR mismatched model- or config-codes triggers this.
   # Thus do_force is NOT guaranteed 'y' for this block.
   #
   if [ "${_is_hw_reconfig}" = 'y' ]; then
