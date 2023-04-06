@@ -320,7 +320,7 @@ _setupModelHintsFn () {
       rm -f "${_tgt_path}" || continue;
     fi
 
-    _msg="symlink target {_tgt_path}";
+    _msg="symlink target ${_tgt_path}";
     if ln -s "${_src_path}" "${_tgt_path}"; then
       _cmXSucStrFn "Created ${_msg}";
     else
