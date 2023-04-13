@@ -7,7 +7,7 @@
 # Purpose: Test GPU in use and warn user if battery life can be improved
 # License: GPL v2
 # Run by : Power manager on switch to battery
-# Spec   : 1690, 2558
+# Spec   : 1690, 2558, 3404
 # Test   : power-system-check.md
 #
 set -u;
@@ -42,6 +42,7 @@ _importCommonFn () {
 }
 ## . END _importCommonFn }
 
+# shellcheck disable=SC2317
 _trapExitFn () {
   1>&2 echo "${_baseName} was interrupted";
   rm "${_lockFile}" || true;
@@ -70,12 +71,69 @@ _exitCleanFn () {
   exit 0;
 }
 
+_setPlasmaPowerProfileFn () {
+  declare _is_on_ac _target_key _msg _powerctl_exe _current_key \
+    _mode_list _line _bit_list _search_str _set_key;
+
+  _is_on_ac="${1:-y}";
+
+  _msg='Set preferred mode for ';
+  if [ "${_is_on_ac}" = 'y' ]; then
+    _target_key='balanced';
+    _msg+='AC power';
+  else
+    _target_key='power-saver';
+    _msg+='Battery power';
+  fi
+  _cm2SetMsgFn "${_msg}";
+
+  _powerctl_exe="$(command -v 'powerprofilesctl')";
+
+  if ! [ -x "${_powerctl_exe}" ]; then
+    _cm2WarnStrFn "Required powerctl tool not found. Skipped.";
+    _cm2SucFn;
+    return;
+  fi
+
+  _mode_list=()
+  while read -r _line; do
+    IFS=$' :\n' read -ra _bit_list <<<"${_line}";
+    if [ "${_bit_list[0]}" = '*' ]; then
+      _current_key="${_bit_list[1]}";
+      _bit_list=("${_bit_list[@]:1}");
+    fi
+    _mode_list+=("$(xargs <<<"${_bit_list[0]}")");
+  done < <("${_powerctl_exe}" list | grep -Ev '^\s*$|^\s*Driver')
+
+  _search_str="$(printf '%s\n' "${_mode_list[@]}")";
+  if grep -Fxq "${_target_key}" <<<"${_search_str}"; then
+    _set_key="${_target_key}";
+  else
+    _cm2WarnStrFn "Target profile ${_target_key} not found. Skipped.";
+    _cm2SucFn;
+    return;
+  fi
+
+  if [ "${_set_key}" = "${_current_key}" ]; then
+    _cm2SucStrFn "Set key |${_set_key}| matches current.";
+    _cm2SucFn;
+    return;
+  fi
+
+  if "${_powerctl_exe}" set "${_set_key}"; then
+    _cm2SucStrFn "Set profile to |${_set_key}|.";
+  else
+    _cm2WarnStrFn "Could not set profile |${_set_key}|. Skipped.";
+  fi
+  _cm2SucFn;
+}
+
 ## BEGIN _mainFn {
 _mainFn () {
-## Begin Initialize {
+  ## Begin Initialize {
   declare _warn_dgpu_msg _ask_disable_msg _ask_reboot_msg \
     _assign_exe_list _pstate_arg_str _opt_str _is_on_ac _pid_str \
-    _prime_exe _gfx_mode_str _nvidia_list_str;
+    _prime_exe _gpu_mode_str _nvidia_list_str;
 
   _warn_dgpu_msg=$(
     cat <<_HERE
@@ -178,6 +236,7 @@ _HERE3
     _cm2WarnStrFn 'Abort: Required commands not found.';
     _exitEarlyFn;
   fi
+  ## . End Assign other values after common import }
 
   # Check for power /battery, not mouse or kbd batteries
   if ! grep -q '/battery' < <("${_upower_exe}" -e); then
@@ -197,6 +256,7 @@ _HERE3
   done
   ## . End Process options }
 
+  # Set _is_on_ac flag from commandline argument
   _is_on_ac='';
   case "${_pstate_arg_str}" in
     AC)         _is_on_ac='y';;
@@ -205,6 +265,7 @@ _HERE3
     *) true;;
   esac
 
+  # If _is_on_ac flag NOT set, pause and read from udev
   if [ -z "${_is_on_ac}" ]; then
     # 1821 Pause to allow upower system to correctly read AC status
     # PowerDevil automatically runs this now.
@@ -212,55 +273,49 @@ _HERE3
     _cm2WarnStrFn "Called without arguments from: ${_pid_str}";
 
     # Pause to let udev catch up
-    sleep 2;
+    sleep 3;
     _is_on_ac="$(
       ( "${_upower_exe}" -i '/org/freedesktop/UPower/devices/line_power_AC' \
        | grep '^\s*online:' | awk '{print $2}' | cut -c1 ) || echo 'n'
     )";
+
+    # Set kde power profile if available based on freshly-set _is_on_ac
+    _setPlasmaPowerProfileFn "${_is_on_ac}";
   fi
 
   # Set Powersave on battery
   if [ "${_is_on_ac}" = 'n' ]; then
     _cm2SetMsgFn 'Set CPU governor to powersave and disable turbo on battery';
     if pkexec "${_power_set_exe}" 'Low'; then
-      _cm2SucFn;
-    else
-      _cm2WarnFn;
+      _cm2SucFn; else _cm2WarnFn;
     fi
     _cm2SetMsgFn 'Set writeback for battery use';
     if pkexec "${_pstate_set_exe}" 'writeback-battery'; then
-      _cm2SucFn;
-    else
-      _cm2WarnFn;
+      _cm2SucFn; else _cm2WarnFn;
     fi
   # Set normal on AC
   else
     _cm2SetMsgFn 'Set CPU governor to powersave and enable turbo on AC';
     if pkexec "${_power_set_exe}" 'Normal'; then
-      _cm2SucFn;
-    else
-      _cm2WarnFn;
+      _cm2SucFn; else _cm2WarnFn;
     fi
     _cm2SetMsgFn 'Set writeback for AC use'
     if pkexec "${_pstate_set_exe}" 'writeback-ac'; then
-      _cm2SucFn
-    else
-      _cm2WarnFn
+      _cm2SucFn; else _cm2WarnFn;
     fi
   fi
-  ## . End Assign other values after common import }
 
-  # Try to sniff gpu in use
-  _gfx_mode_str='intel'
+  # Sniff gpu in use
+  _gpu_mode_str='intel'
   if _cm2AssignExeVarsFn '_prime_exe|prime-select'; then
-    _gfx_mode_str="$("$_prime_exe" query)";
+    _gpu_mode_str="$("$_prime_exe" query)";
   else
     _cm2WarnStrFn 'Please install nvidia-prime for maximum capability';
   fi
   _nvidia_list_str="$("${_lspci_exe}" -m | grep -i 'nvidia')";
 
   # Handle nvidia modes
-  if [ "${_gfx_mode_str}" = 'nvidia' ] || [ "${_gfx_mode_str}" = 'on-demand' ]; then
+  if [ "${_gpu_mode_str}" = 'nvidia' ] || [ "${_gpu_mode_str}" = 'on-demand' ]; then
     if [ -z "${_nvidia_list_str}" ]; then
       _cm2SetMsgFn 'Warn user if using iGPU when dGPU requested';
       if "${_cm2KdiagExe}" --warningyesno "${_ask_reboot_msg}"; then
@@ -280,7 +335,7 @@ _HERE3
   fi
 
   # Handle intel mode
-  if [ "${_gfx_mode_str}" = 'intel' ]; then
+  if [ "${_gpu_mode_str}" = 'intel' ]; then
     if [ "${_is_on_ac}" = 'n' ]; then
       _cm2SetMsgFn 'Give user option to disable dGPU when on battery';
       if [ "${_nvidia_list_str}" != '' ]; then
