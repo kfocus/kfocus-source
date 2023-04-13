@@ -5,7 +5,8 @@ QT += quick
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-        main.cpp
+        main.cpp \
+        shellengine.cpp
 
 RESOURCES += qml.qrc
 QT += quickcontrols2
@@ -20,3 +21,11 @@ QML_DESIGNER_IMPORT_PATH =
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /usr/lib/kfocus/bin
 !isEmpty(target.path): INSTALLS += target
+
+# QML/C++ interaction stuff
+CONFIG += qmltypes
+QML_IMPORT_NAME = shellengine
+QML_IMPORT_MAJOR_VERSION = 1
+
+HEADERS += \
+    shellengine.h
