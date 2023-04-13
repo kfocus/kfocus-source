@@ -120,8 +120,8 @@ _handle_ir14g1Fn () {
   _symlinkTable+=(
     # Bigger tty fonts
     '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
-    # Add param to prevent intel flicker
-    '/etc/default/grub.d/kfocus.cfg|/usr/lib/kfocus/conf/nxg1-etc_default_grub.d_kfocus.cfg'
+    # Add params to minimize flicker and logs
+    '/etc/default/grub.d/kfocus.cfg|/usr/lib/kfocus/conf/ir14g1-etc_default_grub.d_kfocus.cfg'
     # Minimize initrd accommodate GPU libs
     '/etc/initramfs-tools/conf.d/kfocus.conf|/usr/lib/kfocus/conf/nxg1-etc_initramfs-tools_conf.d_kfocus.conf'
     # Remove sound-pop fix
