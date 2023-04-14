@@ -286,8 +286,8 @@ Kirigami.ApplicationWindow {
                         fanMissingMsg = true
                         root.height = 700
                         let lineParts = line.split('|')
-                        let titleMsg = lineParts[0].split(':')[1]
-                        let bodyMsg = lineParts[1].split(':')[1]
+                        let titleMsg = lineParts[0].substring(6, lineParts[0].length)
+                        let bodyMsg = lineParts[1].substring(8, lineParts[1].length)
                         fanControlHeading.text = titleMsg
                         buildStr += bodyMsg
                     }
