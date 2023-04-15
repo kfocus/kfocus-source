@@ -22,6 +22,9 @@ idleTime=600000
 scriptCommand=/usr/lib/kfocus/bin/kfocus-pstate -s AC
 scriptPhase=0
 
+[AC][PowerProfile]
+profile=balanced
+
 [Battery]
 icon=battery-060
 
@@ -45,6 +48,9 @@ triggerLidActionWhenExternalMonitorPresent=true
 idleTime=600000
 scriptCommand=/usr/lib/kfocus/bin/kfocus-pstate -s Battery
 scriptPhase=0
+
+[Battery][PowerProfile]
+profile=power-saver
 
 [Battery][SuspendSession]
 idleTime=600000
@@ -74,6 +80,9 @@ triggerLidActionWhenExternalMonitorPresent=true
 idleTime=600000
 scriptCommand=/usr/lib/kfocus/bin/kfocus-pstate -s LowBattery
 scriptPhase=0
+
+[LowBattery][PowerProfile]
+profile=power-saver
 
 [LowBattery][SuspendSession]
 idleTime=300000

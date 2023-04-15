@@ -11,8 +11,10 @@ Package: kfocus-hw
 Architecture: all
 Pre-Depends: kfocus-common (>= 22.04.9)
 Depends: ${shlibs:Depends}, ${misc:Depends},
-         kfocus-main (>> 22.04.3)
-Conflicts: kfocus-main (<< 22.04.3),
+         kfocus-main (>> 22.04.42)
+Conflicts: kfocus-main (<< 22.04.3)
+Replaces: kfocus-main (<< 22.04.42)
+Breaks: kfocus-main (<< 22.04.42)
 Description: Kubuntu Focus Hardware Configuration
  This package configures Kubuntu Focus hardware
 
