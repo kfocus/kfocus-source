@@ -3,6 +3,7 @@ import QtQuick.Controls 2.0 as Controls
 import QtQuick.Layouts 1.2
 import org.kde.kirigami 2.13 as Kirigami
 import org.kde.plasma.core 2.1 as PlasmaCore
+import shellengine 1.0
 
 Kirigami.ApplicationWindow {
     id: root
@@ -148,7 +149,7 @@ Kirigami.ApplicationWindow {
                 onValueChanged: {
                     fanTimer.triggeredOnStart = false
                     fanTimer.stop()
-                    fanProfilesChecker.connectSource('pkexec ' + binDir + '/kfocus-fan-set ' + fanProfilesModel.profileNames[value])
+                    altFanProfilesChecker.exec('pkexec ' + binDir + '/kfocus-fan-set ' + fanProfilesModel.profileNames[value])
                     fanDescription.text = "<i>Description:</i> " + fanProfilesModel.profileDescriptions[fanSlider.value]
                     fanTimer.start()
                 }
@@ -193,16 +194,13 @@ Kirigami.ApplicationWindow {
             //  '#006091'].reverse()
             property var gridColors: ['transparent', '#F63114', '#F7941E',
             '#33cc33', '#3caae4', '#006091'].reverse()
-            onSelectedProfileChanged: profilesChecker.connectSource('pkexec '
-            + binDir + '/kfocus-power-set ' + selectedProfile)
+            onSelectedProfileChanged: altProfilesChecker.exec('pkexec ' + binDir + '/kfocus-power-set ' + selectedProfile)
         }
 
         // Loads and parse the available profiles
-        PlasmaCore.DataSource {
-            engine: "executable"
-            connectedSources: [ binDir + '/kfocus-power-set -x']
-            onNewData: {
-                let stdout = data["stdout"]
+        ShellEngine {
+            commandStr: binDir + '/kfocus-power-set -x'
+            onStdoutChanged: {
                 let freqMissingMsg = false
                 let buildStr = ""
                 stdout.split('\n').forEach(function (line, index) {
@@ -246,22 +244,20 @@ Kirigami.ApplicationWindow {
                     powerError.text = buildStr
                     powerError.visible = true
                 }
-                disconnectSource(sourceName)
             }
         }
 
         // Checks the current profile
-        PlasmaCore.DataSource {
-            id: profilesChecker
-            engine: "executable"
-            connectedSources: []
-            onNewData: {
-                if (data["stdout"].trim() !== '' && data["stdout"].trim().substring(0, 6).toLowerCase() != "custom") {
-                    profilesModel.selectedProfile = data["stdout"].trim()
+        ShellEngine {
+            id: altProfilesChecker
+            onStdoutChanged: {
+                let trimmed_stdout = stdout.trim()
+                if (trimmed_stdout !== '' && trimmed_stdout.substring(0, 6).toLowerCase() != "custom") {
+                    profilesModel.selectedProfile = trimmed_stdout
                 }
-                disconnectSource(sourceName)
             }
         }
+
         // This checkes the current profile every 5 seconds
         Timer {
             id: powerTimer
@@ -269,7 +265,7 @@ Kirigami.ApplicationWindow {
             triggeredOnStart: true
             running: true
             repeat: true
-            onTriggered: profilesChecker.connectSource(binDir + '/kfocus-power-set -r')
+            onTriggered: altProfilesChecker.exec(binDir + '/kfocus-power-set -r')
         }
 
         ListModel {
@@ -280,20 +276,19 @@ Kirigami.ApplicationWindow {
         }
 
         // Loads and parse the available fan profiles
-        PlasmaCore.DataSource {
-            engine: "executable"
-            connectedSources: [binDir + '/kfocus-fan-set -x']
-            onNewData: {
+        ShellEngine {
+            commandStr: binDir + '/kfocus-fan-set -x'
+            onStdoutChanged: {
                 let fanMissingMsg = false
                 let buildStr = ""
-                data["stdout"].split('\n').forEach(function (line) {
+                stdout.split('\n').forEach(function (line) {
                     if (line === '') { return; }
                     if (line.substring(0, 5) == "title") {
                         fanMissingMsg = true
                         root.height = 700
                         let lineParts = line.split('|')
-                        let titleMsg = lineParts[0].split(':')[1]
-                        let bodyMsg = lineParts[1].split(':')[1]
+                        let titleMsg = lineParts[0].substring(6, lineParts[0].length)
+                        let bodyMsg = lineParts[1].substring(8, lineParts[1].length)
                         fanControlHeading.text = titleMsg
                         buildStr += bodyMsg
                     }
@@ -312,30 +307,27 @@ Kirigami.ApplicationWindow {
                     fanSlider.visible = false
                 }
                 fanTimer.running = true
-                disconnectSource(sourceName)
             }
         }
 
-        // Checks the current fan profile
-        PlasmaCore.DataSource {
-            id: fanProfilesChecker
-            engine: "executable"
-            connectedSources: []
-            onNewData: {
-                if (data["stdout"].trim() !== '') {
-                    fanSlider.value = fanProfilesModel.profileNames.indexOf(data["stdout"].trim())
+        ShellEngine {
+            id: altFanProfilesChecker
+            onStdoutChanged: {
+                let trimmed_stdout = stdout.trim()
+                if (trimmed_stdout !== '') {
+                    fanSlider.value = fanProfilesModel.profileNames.indexOf(trimmed_stdout)
                     fanDescription.text = "<i>Description:</i> " + fanProfilesModel.profileDescriptions[fanSlider.value]
                 }
-                disconnectSource(sourceName)
             }
         }
+
         Timer {
             id: fanTimer
             interval: 5000
             triggeredOnStart: true
             repeat: true
             onTriggered: {
-                fanProfilesChecker.connectSource(binDir + '/kfocus-fan-set -r | cut -d\' \' -f1')
+                altFanProfilesChecker.exec(binDir + '/kfocus-fan-set -r | cut -d\' \' -f1')
             }
         }
     }
