@@ -251,8 +251,9 @@ Kirigami.ApplicationWindow {
         ShellEngine {
             id: altProfilesChecker
             onStdoutChanged: {
-                if (stdout.trim() !== '' && stdout.trim().substring(0, 6).toLowerCase() != "custom") {
-                    profilesModel.selectedProfile = stdout.trim()
+                let trimmed_stdout = stdout.trim()
+                if (trimmed_stdout !== '' && trimmed_stdout.substring(0, 6).toLowerCase() != "custom") {
+                    profilesModel.selectedProfile = trimmed_stdout
                 }
             }
         }
@@ -312,8 +313,9 @@ Kirigami.ApplicationWindow {
         ShellEngine {
             id: altFanProfilesChecker
             onStdoutChanged: {
-                if (stdout.trim() !== '') {
-                    fanSlider.value = fanProfilesModel.profileNames.indexOf(stdout.trim())
+                let trimmed_stdout = stdout.trim()
+                if (trimmed_stdout !== '') {
+                    fanSlider.value = fanProfilesModel.profileNames.indexOf(trimmed_stdout)
                     fanDescription.text = "<i>Description:</i> " + fanProfilesModel.profileDescriptions[fanSlider.value]
                 }
             }
