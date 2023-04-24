@@ -109,7 +109,7 @@ _EOH01
 
     ir14*)
       _model_msg="$(cat <<_EOH02
-<b>Fan profiles are found in the BIOS</b><br>
+<b>Select a fan profile in the BIOS</b><br>
  To access, press <code>F2</code> during boot. Select <code>BIOS &gt;
  Advanced &gt; Operating Mode &gt; Balanced</code> for default operation.
   ${_kpf_msg}
@@ -118,7 +118,7 @@ _EOH02
 
     nxg1*)
       _model_msg="$(cat <<_EOH03
-<b>Fan profiles are found in the BIOS</b><br>
+<b>Select a fan profile in the BIOS</b><br>
  To access, press <code>F2</code> during boot. Select <code>BIOS &gt; Cooling
   &gt; Fan Control &gt; Balanced</code> for default operation.
  ${_kpf_msg}
@@ -127,7 +127,7 @@ _EOH03
 
     nxg2*)
       _model_msg="$(cat <<_EOH04
-<b>Fan profiles are found in the BIOS</b><br>
+<b>Select a fan profile in the BIOS</b><br>
  To access, press <code>F2</code> during boot. Select <code>BIOS &gt;
  Power, Performance, and Cooling &gt; Fan Control &gt; Balanced</code>
  for default operation.
@@ -137,7 +137,7 @@ _EOH04
 
    *)
      _model_msg="$(cat <<_EOH05
-<b>Kubuntu Focus does not have a profile for this device.</b><br>
+<b>We do not have a fan profile for this device.</b><br>
  You may be able to adjust the fans in the BIOS, which
  can usually be accessed by pressing F2, Delete, or ESC during boot.
  ${_kpf_msg}

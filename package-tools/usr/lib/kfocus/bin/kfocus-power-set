@@ -272,9 +272,9 @@ _printOptionsFn () {
   if [ "${#_out_list[@]}" = '0' ]; then
     _title='Frequency Profile';
     _model_msg="$(cat << EOH
-<b>Kubuntu Focus does not have profiles for this CPU</b>.
- If you would like to add a frequency profile, please contribute
- to kfocus-source on GitHub.com.
+<b>We do not have a frequncy profile for this CPU</b>.
+ If you would like to contribute a frequency profile, please
+ provide a pull request to kfocus-source on GitHub.com.
 EOH
     )";
     echo "title:${_title}|message:${_cm2HtmPStr}${_model_msg}</p>";
