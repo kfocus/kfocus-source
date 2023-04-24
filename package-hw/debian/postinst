@@ -2,6 +2,9 @@
 
 set -e;
 
+## TODO: /usr/lib/kfocus/conf path
+## TODO: Move to rtested userspace after expect tests written
+
 ## BEGIN Declare common.2.source symbols {
 #  IMPORT 2023-04-04 EXCERPT from common.2.source
 #   Symbols are renamed to avoid conflicts with imported lib.
@@ -128,7 +131,8 @@ _handle_ir14g1Fn () {
     '/etc/modprobe.d/kfocus.conf|'
     '/etc/modules-load.d/kfocus.conf|'
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
-    '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
+    # Select trackpad driver
+    '/usr/share/X11/xorg.conf.d/80-kfocus.conf|/usr/lib/kfocus/conf/ir14g1-usr_share_X11_xorg.conf.d_80-kfocus.conf'
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
     '/etc/tlp.d/kfocus.conf|'
   );
@@ -157,6 +161,36 @@ _handle_m2g4Fn () {
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
     # Trackpad config
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|/usr/lib/kfocus/conf/m2g4-usr_share_X11_xorg.conf.d_80-kfocus.conf'
+    # Default DPI Scaling
+    '/usr/share/kfocus/kf5-settings/kcmfonts|'
+    # Remove old TLP config
+    '/etc/tlp.d/kfocus.conf|'
+  );
+  _setScaleFactorFn '1.5';
+}
+# hw_config_code 'm2g5' handles models m2g5
+# shellcheck disable=SC2317
+#
+_handle_m2g5Fn () {
+  if [ -x "/usr/bin/deb-systemd-helper" ]; then
+    deb-systemd-helper mask \
+      systemd-backlight@backlight:nvidia_0.service >/dev/null;
+  fi
+  _symlinkTable+=(
+    # Bigger tty fonts
+    '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
+    # Boot parameters
+    '/etc/default/grub.d/kfocus.cfg|/usr/lib/kfocus/conf/m2g5-etc_default_grub.d_kfocus.cfg'
+    # Initramfs config
+    '/etc/initramfs-tools/conf.d/kfocus.conf|'
+    # Sound, nv power
+    '/etc/modprobe.d/kfocus.conf|/usr/lib/kfocus/conf/m2g4-dflt_etc_modprobe.d_kfocus.conf'
+    # Load keyboard
+    '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
+    # xhci enable/disable on sleep
+    '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
+    # Select Trackpad config and driver
+    '/usr/share/X11/xorg.conf.d/80-kfocus.conf|/usr/lib/kfocus/conf/m2g5-usr_share_X11_xorg.conf.d_80-kfocus.conf'
     # Default DPI Scaling
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
     # Remove old TLP config
