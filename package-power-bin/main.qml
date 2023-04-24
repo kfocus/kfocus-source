@@ -6,7 +6,7 @@ import org.kde.plasma.core 2.1 as PlasmaCore
 
 Kirigami.ApplicationWindow {
     id: root
-    title: "Kubuntu Focus Power Tool"
+    title: "Kubuntu Focus Power and Fan"
     width: 560
     height: 670
     minimumWidth: 560
