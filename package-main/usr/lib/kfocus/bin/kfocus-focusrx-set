@@ -148,7 +148,7 @@ _chkBiosUpdateFn () {
 _chkHwConfigFn () {
   declare _is_nv_system _do_force _reason_list _dmi_hw_config_code \
     _dmi_hw_model_code _file_hw_config_code _file_hw_model_code \
-    _is_hw_reconfig _msg _tool_pkg_name;
+    _is_hw_reconfig _msg _tool_pkg_suffix _tool_pkg_name;
 
   _do_force='n';
   if [[ "${1:-}" =~ ^[Yy] ]]; then _do_force='y'; fi
@@ -176,9 +176,17 @@ _chkHwConfigFn () {
   #   _is_hw_reconfig='y';
   # fi
 
-  _tool_pkg_name="kfocus-tools-${_dmi_hw_config_code}";
+  _tool_pkg_suffix='';
+
+  # 3424 Adjust tool suffix per config code
+  # kfocus-tools-nxg1, kfocus-tools-other, kfocus-tools
+  case "${_dmi_hw_config_code}" in
+    default|generic|m2g4|m2g5|xeg2) _tool_pkg_suffix='';;
+    nxg1) _tool_pkg_suffix='nxg1';;
+    ir14g1|other|*) _tool_pkg_suffix='other';;
+  esac
   if ! _cm2ChkPkgFn "${_tool_pkg_name}"; then
-    _tool_pkg_name='kfocus-tools';
+    _tool_pkg_name='kfocus-tools-other';
   fi
 
   if ! _cm2ChkInstalledPkgFn "${_tool_pkg_name}"; then
