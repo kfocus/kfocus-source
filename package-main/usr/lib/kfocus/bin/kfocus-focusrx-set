@@ -182,9 +182,10 @@ _chkHwConfigFn () {
   # kfocus-tools-nxg1, kfocus-tools-other, kfocus-tools
   case "${_dmi_hw_config_code}" in
     default|generic|m2g4|m2g5|xeg2) _tool_pkg_suffix='';;
-    nxg1) _tool_pkg_suffix='nxg1';;
-    ir14g1|other|*) _tool_pkg_suffix='other';;
+    nxg1) _tool_pkg_suffix='-nxg1';;
+    ir14g1|other|*) _tool_pkg_suffix='-other';;
   esac
+  _tool_pkg_name="kfocus-tools${_tool_pkg_suffix}";
   if ! _cm2ChkPkgFn "${_tool_pkg_name}"; then
     _tool_pkg_name='kfocus-tools-other';
   fi
