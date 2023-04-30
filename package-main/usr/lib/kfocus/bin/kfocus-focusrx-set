@@ -201,29 +201,10 @@ _chkHwConfigFn () {
   fi
 
   # Run lib updates iff hardware reconfig is flagged.
-  #   do_force OR mismatched model- or config-codes triggers this.
-  # Thus do_force is NOT guaranteed 'y' for this block.
+  #   do_force OR mismatched config-code triggers this.
+  # Thus do_force is NOT guaranteed = 'y' for this block.
   #
   if [ "${_is_hw_reconfig}" = 'y' ]; then
-    if grep -qE '^ir14' <<< "${_dmi_hw_model_code}"; then
-      if _cm2ChkInstalledPkgFn 'xserver-xorg-input-synaptics'; then
-        _msg='purge-synaptics;;Synaptics driver package needs to be purged.';
-        _reason_list+=( "${_msg}" );
-      fi
-    elif [ "${_do_force}" = 'y' ]; then
-      if ! _cm2ChkInstalledPkgFn 'xserver-xorg-input-synaptics'; then
-        if grep -qE '^m[12]g[1-5]|xe[1-2]' <<< "${_dmi_hw_model_code}"; then
-          _msg='install-synaptics;;Synaptics driver forced re-installation.';
-          _reason_list+=( "${_msg}" );
-        fi
-      fi
-    fi
-
-    if _cm2ChkInstalledPkgFn 'xserver-xorg-video-intel'; then
-      _msg='purge-intelvideo;;OOD Intel video package needs to be purged.';
-      _reason_list+=( "${_msg}" );
-    fi
-
     _is_nv_system="$(_cm2EchoModelStrFn 'is_nv_sys')";
     if [ "${_is_nv_system}" = 'y' ]; then
       if ! _cm2ChkInstalledPkgFn 'kfocus-nvidia'; then
@@ -254,12 +235,6 @@ _fixHwConfigFn () {
       'install-hw-tools' ) _cmd_list=( '_installToolsPkgFn' );
         _cmd_list+=( "${_bit_list[1]:-}" );;
       'install-nvidia'   ) _cmd_list=( '_installNvidiaFn'   );;
-      'install-synaptics') _cmd_list=( '_installPkgFn'      );
-        _cmd_list+=( 'xserver-xorg-input-synaptics' );;
-      'purge-intelvideo' ) _cmd_list=( '_purgePkgFn' );
-        _cmd_list+=( 'xserver-xorg-video-intel' );;
-      'purge-synaptics'  ) _cmd_list=( '_purgePkgFn'  );
-         _cmd_list+=( 'xserver-xorg-input-synaptics' );;
       *) _cm2WarnStrFn "Option ${_bit_list[0]} is not supported";
         continue;
         ;;
