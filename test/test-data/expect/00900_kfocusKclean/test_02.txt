@@ -1,0 +1,48 @@
+.002 Installed Kernels are generic-hwe-20.04,
+  oem-20.04d-kfocus, and 5.14.0-1018-oem.
+Running kernel is oem-20.04d-kfocus (5.14.0-1011-oem).
+/boot is mounted with 139M free.
+Results in purge for 5.14.0-1018-oem.
+
+FocusRX: Purge Unused Kernels?
+Doc: https://kfocus.org/wf/tools#kclean
+
+Check forced: limited space.
+The /boot directory has 139M available.
+3 kernel images are installed.
+
+Removing unused kernels prevents the system
+from running out of disk space in /boot.
+
+Packages to Keep
+linux-headers-5.13.0-27-generic
+linux-headers-5.14.0-1011-oem
+linux-image-5.13.0-27-generic
+linux-image-5.14.0-1011-oem
+linux-modules-5.13.0-27-generic
+linux-modules-5.14.0-1011-oem
+linux-modules-extra-5.13.0-27-generic
+linux-oem-5.14-headers-5.14.0-1011
+linux-oem-5.14-tools-5.14.0-1011
+linux-tools-5.13.0-27-generic
+linux-tools-5.14.0-1011-oem
+
+Packages to Remove
+linux-headers-5.14.0-1018-oem
+linux-image-5.14.0-1018-oem
+linux-modules-5.14.0-1018-oem
+linux-oem-5.14-headers-5.14.0-1018
+linux-oem-5.14-tools-5.14.0-1018
+linux-tools-5.14.0-1018-oem
+
+Make sure your files are backed-up.
+
+Do you wish to continue
+y
+
+Purge Package List:
+Purging packages apt-get purge -y linux-headers-5.14.0-1018-oem linux-image-5.14.0-1018-oem linux-modules-5.14.0-1018-oem linux-oem-5.14-headers-5.14.0-1018 linux-oem-5.14-tools-5.14.0-1018 linux-tools-5.14.0-1018-oem
+
+FocusRx: KERNEL CLEANER FINISHED
+
+Press <return> to continue.
