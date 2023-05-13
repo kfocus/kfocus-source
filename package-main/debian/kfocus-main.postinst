@@ -301,9 +301,11 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     ;;
 
     configure|upgrade)
-      # Enable pre-dm script used to allow for touchpad initialization
-      # on M2 GEN 4
-      deb-systemd-helper enable kfocus-dm.service;
+      # Updated systemctl for removed kfocus-dm.service
+      # See https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=717603
+      if deb-systemd-helper was-enabled kfocus-dm.service; then
+        deb-systemd-helper update-state;
+      fi
 
       # Dedup entries in kfocus-recommends.list
       _dedupRepoSrcFileFn;
