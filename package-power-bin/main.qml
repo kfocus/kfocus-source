@@ -194,9 +194,12 @@ Kirigami.ApplicationWindow {
             //  '#006091'].reverse()
             property var gridColors: ['transparent', '#F63114', '#F7941E',
               '#33cc33', '#3caae4', '#006091'].reverse()
-            onSelectedProfileChanged: altProfilesChecker.exec(
-              'pkexec ' + binDir + '/kfocus-power-set ' + selectedProfile
-            )
+            onSelectedProfileChanged: {
+                altProfilesChecker.exec(
+                    'pkexec ' + binDir + '/kfocus-power-set ' + selectedProfile
+                );
+                doSkipNextFreqPoll = true;
+            }
         }
 
         // Loads and parse the available profiles
@@ -249,27 +252,39 @@ Kirigami.ApplicationWindow {
             }
         }
 
-        // Checks the current profile
+        // Refresh the current power profile
         ShellEngine {
             id: altProfilesChecker
             onStdoutChanged: {
-                let trimmed_stdout = stdout.trim()
-                if (trimmed_stdout !== '' && trimmed_stdout.substring(0, 6).toLowerCase() != "custom") {
-                    profilesModel.selectedProfile = trimmed_stdout
+                const chkCustomRegex = /^\s*custom/i
+                const trimmedStdout = stdout.trim();
+                if (trimmedStdout !== ''
+                    && ! chkCustomRegex.test( trimmedStdout )
+                ) {
+                    profilesModel.selectedProfile = trimmedStdout
                 }
             }
         }
 
-        // This checkes the current profile every 5 seconds
+        // This polls Frequency profile every pollingMs
         Timer {
             id: powerTimer
-            interval: 5000
+            interval: pollingMs
             triggeredOnStart: true
             running: true
             repeat: true
-            onTriggered: altProfilesChecker.exec(
-              'pkexec ' + binDir + '/kfocus-power-set -r'
-            )
+            onTriggered: {
+                // Do nothing if the user recently selected a profile
+                // This prevents profiles being jumped back to a prior
+                // value before the set completes.
+                if ( doSkipNextFreqPoll ) {
+                    doSkipNextFreqPoll = false;
+                    return;
+                }
+                altProfilesChecker.exec(
+                  'pkexec ' + binDir + '/kfocus-power-set -r'
+                )
+            }
         }
 
         ListModel {
@@ -283,32 +298,29 @@ Kirigami.ApplicationWindow {
         ShellEngine {
             commandStr: binDir + '/kfocus-fan-set -x'
             onStdoutChanged: {
-                let fanMissingMsg = false
-                let buildStr = ""
-                stdout.split('\n').forEach(function (line) {
-                    if (line === '') { return; }
-                    if (line.substring(0, 5) == "title") {
-                        fanMissingMsg = true
-                        root.height = 700
-                        let lineParts = line.split('|')
-                        let titleMsg = lineParts[0].substring(6, lineParts[0].length)
-                        let bodyMsg = lineParts[1].substring(8, lineParts[1].length)
-                        fanControlHeading.text = titleMsg
-                        buildStr += bodyMsg
-                    }
-                    if (fanMissingMsg) {
-                        buildStr += line
-                    } else {
-                        let [name, description] = line.split('(')
+                const checkRegex = /^\s*title:[^|]+|\s*message:/
+                if ( checkRegex.test( stdout ) ) {
+                    root.height = 700;
+                    const msgList = stdout.split('|')
+                    const titleStr = msgList[0].replace(
+                        /^\s*title:\s*/, '' ).trim()
+                    const msgStr = msgList[1].replace(
+                        /^\s*message:\s*/, '' ).trim()
+
+                    fanControlHeading.text = titleStr
+                    inlineMessage.text = msgStr
+                    fanSlider.visible = false
+                }
+                else {
+                    stdout.split('\n').forEach(function (line) {
+                        if (line === '') { return }
+                        const [name, description] = line.split('(')
                         fanProfilesModel.append({'name': name.trim()})
                         fanProfilesModel.profileNames.push(name.trim())
-                        fanProfilesModel.profileDescriptions.push(description.replace(")", "").trim())
+                        fanProfilesModel.profileDescriptions.push(
+                            description.replace(')', '').trim())
                         fanProfilesModel.fanAvailable = true
-                    }
-                })
-                if (fanMissingMsg) {
-                    inlineMessage.text = buildStr
-                    fanSlider.visible = false
+                    })
                 }
                 fanTimer.running = true
             }
@@ -317,21 +329,24 @@ Kirigami.ApplicationWindow {
         ShellEngine {
             id: altFanProfilesChecker
             onStdoutChanged: {
-                let trimmed_stdout = stdout.trim()
-                if (trimmed_stdout !== '') {
-                    fanSlider.value = fanProfilesModel.profileNames.indexOf(trimmed_stdout)
+                let trimmedStdout = stdout.trim()
+                if (trimmedStdout !== '') {
+                    fanSlider.value = fanProfilesModel.profileNames.indexOf(trimmedStdout)
                     fanDescription.text = "<i>Description:</i> " + fanProfilesModel.profileDescriptions[fanSlider.value]
                 }
             }
         }
 
+        // This polls Fan profile every pollingMs
         Timer {
             id: fanTimer
-            interval: 5000
+            interval: pollingMs
             triggeredOnStart: true
             repeat: true
             onTriggered: {
-                altFanProfilesChecker.exec(binDir + '/kfocus-fan-set -r | cut -d\' \' -f1')
+                altFanProfilesChecker.exec(
+                    binDir + '/kfocus-fan-set -r | cut -d " " -f1'
+                )
             }
         }
     }
@@ -348,11 +363,13 @@ Kirigami.ApplicationWindow {
             disconnectSource(source);
         }
     }
-    // The actuallyActiveProfile is the current profile that's set in power settings;
-    // the activeProfile is usually the same value, however since changes take a bit to apply,
-    // whenever we change the profile we manually set activeProfile to the new value (otherwise the slider
-    // would still be at the old value) and then set it back to follow actuallyActiveProfile as soon
-    // as that one is updated.
+    // The actuallyActiveProfile is the current profile that is set in
+    // power settings; the activeProfile is usually the same value,
+    // however since changes take a bit to apply, whenever we change
+    // the profile we manually set activeProfile to the new value
+    // (otherwise the slider would still be at the old value) and
+    // then set it back to follow actuallyActiveProfile as soon as
+    // that one is updated.
     readonly property string actuallyActiveProfile: pmSource.data["Power Profiles"] ? (pmSource.data["Power Profiles"]["Current Profile"] || "") : ""
     onActuallyActiveProfileChanged: {
         if (root.actuallyActiveProfile === root.activeProfile) {
@@ -380,4 +397,6 @@ Kirigami.ApplicationWindow {
     //   kfocus-fan-set and kfocus-power-set
     readonly property var binDir: Qt.application.arguments[1] || '/usr/lib/kfocus/bin'
     readonly property int activeProfileIndex: root.profiles.indexOf(root.activeProfile)
+    readonly property var pollingMs: 5000
+    property bool doSkipNextFreqPoll: false
 }
