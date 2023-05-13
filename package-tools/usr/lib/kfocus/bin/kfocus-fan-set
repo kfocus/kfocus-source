@@ -88,9 +88,8 @@ _chkReportFanSupportFn () {
 
   if _cm2ChkInstalledPkgFn 'kfocus-power-fan'; then
     _is_kpf_installed='y';
-    _kpf_msg=' <br><br>IMPORTANT: The kfocus-power-fan package
- is unexpectedly installed. Please uninstall it as it is
- not useful for this system.';
+    _kpf_msg='<br><br>The kfocus-power-fan package is installed but
+not used. We recommend you remove it.';
   else
     _is_kpf_installed='n';
     _kpf_msg='';

@@ -289,7 +289,8 @@ _installEnvFn () {
   fi
   unset __conda_setup
 
-  # source "$HOME/.bashrc"
+  # shellcheck disable=SC1090
+  source "$HOME/.bashrc" || true;
   if ( ! command -v 'conda' > /dev/null ); then
     _cm2EchoFn 'Cannot confirm conda command';
     _exitFn;
