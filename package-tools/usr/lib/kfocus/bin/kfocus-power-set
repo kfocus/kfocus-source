@@ -211,7 +211,7 @@ _scanFn () {
         _gov_key="${_psave_key}";
       fi
       if ! "${_cpufreqSetExe}" -c "${_proc_idx}" -g "${_gov_key}"; then
-        _cm2WarnFn "Bad governor set |${_gov_key}| on core |${_prox_idx}|";
+        _cm2WarnStrFn "Bad governor set |${_gov_key}| on core |${_proc_idx}|";
       fi
       if [ -n "${_set_max_int}" ]; then
         if [ "${_set_max_int}" -lt "${_hw_min_int}" ]; then
