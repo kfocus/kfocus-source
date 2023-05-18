@@ -301,11 +301,9 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     ;;
 
     configure|upgrade)
-      # Updated systemctl for removed kfocus-dm.service
-      # See https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=717603
-      if deb-systemd-helper was-enabled kfocus-dm.service; then
-        deb-systemd-helper update-state;
-      fi
+      # Update systemctl for removed kfocus-dm.service
+      deb-systemd-helper purge kfocus-dm.service;
+      deb-systemd-helper unmask kfocus-dm.service;
 
       # Dedup entries in kfocus-recommends.list
       _dedupRepoSrcFileFn;
