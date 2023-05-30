@@ -133,10 +133,12 @@ _handle_ir14g1Fn () {
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
     # Select trackpad driver
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|/usr/lib/kfocus/conf/ir14g1-usr_share_X11_xorg.conf.d_80-kfocus.conf'
-    '/usr/share/kfocus/kf5-settings/kcmfonts|'
+    # Default DPI Scaling, See 3521
+    '/usr/share/kfocus/kf5-settings/kcmfonts|/usr/lib/kfocus/conf/ir14g1-usr_share_kfocus_kf5-settings_kcmfonts'
     '/etc/tlp.d/kfocus.conf|'
   );
-  _setScaleFactorFn '1.25';
+  # See 3521
+  _setScaleFactorFn '';
 }
 # hw_config_code 'm2g4' handles models m2g4
 # shellcheck disable=SC2317
@@ -161,12 +163,13 @@ _handle_m2g4Fn () {
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
     # Trackpad config
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|/usr/lib/kfocus/conf/m2g4-usr_share_X11_xorg.conf.d_80-kfocus.conf'
-    # Default DPI Scaling
-    '/usr/share/kfocus/kf5-settings/kcmfonts|'
+    # Default DPI Scaling, See 3521
+    '/usr/share/kfocus/kf5-settings/kcmfonts|/usr/lib/kfocus/conf/m2g4-usr_share_kfocus_kf5-settings_kcmfonts'
     # Remove old TLP config
     '/etc/tlp.d/kfocus.conf|'
   );
-  _setScaleFactorFn '1.5';
+  # See 3521
+  _setScaleFactorFn '';
 }
 # hw_config_code 'm2g5' handles models m2g5
 # shellcheck disable=SC2317
@@ -191,12 +194,13 @@ _handle_m2g5Fn () {
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
     # Select Trackpad config and driver
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|/usr/lib/kfocus/conf/m2g5-usr_share_X11_xorg.conf.d_80-kfocus.conf'
-    # Default DPI Scaling
-    '/usr/share/kfocus/kf5-settings/kcmfonts|'
+    # Default DPI Scaling, See 3521
+    '/usr/share/kfocus/kf5-settings/kcmfonts|/usr/lib/kfocus/conf/m2g4-usr_share_kfocus_kf5-settings_kcmfonts'
     # Remove old TLP config
     '/etc/tlp.d/kfocus.conf|'
   );
-  _setScaleFactorFn '1.5';
+  # See 3521
+  _setScaleFactorFn '';
 }
 # hw_config_code 'nxg1' handles models nxg1 and nxg2
 # shellcheck disable=SC2317
