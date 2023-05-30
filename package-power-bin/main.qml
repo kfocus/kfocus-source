@@ -49,7 +49,8 @@ Kirigami.ApplicationWindow {
                 Layout.fillWidth: true
 
                 Controls.Label {
-                    text: '🔋 Powersave | ' + scaleRatio.toFixed(3)
+                    // DEBUG + scaleRatio.toFixed(3)
+                    text: '🔋 Powersave'
                 }
 
                 Item {
@@ -57,7 +58,8 @@ Kirigami.ApplicationWindow {
                 }
 
                 Controls.Label {
-                    text: scaleMap.spreadNum.toFixed(3) + ' | Performance ⚡' // DEBUG
+                    // DEBUG + scaleMap.spreadNum.toFixed(3)
+                    text: 'Performance ⚡'
                 }
                 Layout.bottomMargin: PlasmaCore.Units.largeSpacing
             }
