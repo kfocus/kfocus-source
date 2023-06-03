@@ -26,9 +26,9 @@ Pin-Priority: -1
 
 # IMPORTANT! THIS MUST COME BEFORE the cuda* match below,
 #   and PRIORITY MUST BE >= 1001 for this to work.
-# Pin cuda-drivers to use version 530.* because we found sometimes later
+# Pin cuda-drivers to use version 530.30.* because we found sometimes later
 #   version to require newer packages not available in ubuntu repo. This was
-#   last updated on 2022-11-01, and 530.x is the latest cuda-drivers version
+#   last updated on 2023-06-02, and 530.30.02-1 is the latest cuda-drivers version
 #   on that date. The 1001 Priority causes a version to be installed even if
 #   does not come from the target release ('Focal' or 'Jammy') and forces
 #   a downgrade if required.
@@ -36,7 +36,7 @@ Pin-Priority: -1
 #
 Package: cuda-drivers cuda-drivers-530
 Pin: origin "developer.download.nvidia.com"
-Pin: version 530.*
+Pin: version 530.30.*
 Pin-Priority: 1001
 
 # Prefer all cuda* 530 packages from NVIDIA over any Ubuntu packages of the
