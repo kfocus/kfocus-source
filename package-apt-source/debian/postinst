@@ -220,10 +220,10 @@ _addGcloudSdkKeyFn () {
 
 _rmObsoleteReposFn () {
   if [ -e /etc/apt/sources.list.d/tuxedocomputers.list ]; then
-    _cm2RmExe /etc/apt/sources.list.d/tuxedocomputers.list
+    "${_cm2RmExe}" /etc/apt/sources.list.d/tuxedocomputers.list
   fi
   if [ -e /etc/apt/preferences.d/kfocus-package-pinning ]; then
-    _cm2RmExe /etc/apt/preferences.d/kfocus-package-pinning
+    "${_cm2RmExe}" /etc/apt/preferences.d/kfocus-package-pinning
   fi
 }
 
