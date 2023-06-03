@@ -107,8 +107,8 @@ _EOH01
     'kwin|Plugins|mouseclickEnabled|true'
     'kwin|Plugins|trackmouseEnabled|true'
     'kwin|Plugins|wobblywindowsEnabled|true'
-   
-    # Disable nightcolor by default; it can cause flickering on Intel
+
+    # Disable night color by default; it can cause flickering on Intel
     'kwin|Compositing|OpenGLIsUnsafe|false'
     'kwin|NightColor|Active|false'
 
@@ -121,6 +121,7 @@ _EOH01
     #   Clear values first
     'font|General|forceFontDPI|'
     'glob|KScreen|ScaleFactor||'
+
     # See 3521 - Do not set global scale for Plasma 5.24.x
     # This will be useful for 5.27.x where it works much better.
     # 'glob|KScreen|ScaleFactor|1.5|m2g4'

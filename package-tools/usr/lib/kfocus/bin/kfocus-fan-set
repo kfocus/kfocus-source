@@ -89,9 +89,9 @@ _chkReportFanSupportFn () {
   if _cm2ChkInstalledPkgFn 'kfocus-power-fan'; then
     _is_kpf_installed='y';
     _kpf_msg='';
-    # This can be used if we want more detail.
+    # This can be used if we want more detail:
     # <br><br>The kfocus-power-fan package is installed but
-    # not used. We recommend you remove it.';
+    # not used. We recommend you remove it.
   else
     _is_kpf_installed='n';
     _kpf_msg='';

@@ -102,8 +102,8 @@ _disableNvidiaDevicesFn() {
     return 0;
   fi
 
-  # Disable devices from highest number to lowest.
-  # This disabled the GPU device last and avoids a system lock
+  # Disable devices from the highest number to lowest.
+  # This disabled the GPU device last and avoids a system lock.
   #
   if [ "${_nvidia_list_str}" != '' ]; then
     echo -n "${_nvidia_list_str}" | awk '{print $1}' |sort -rn \
