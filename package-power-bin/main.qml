@@ -1,6 +1,7 @@
 import QtQuick 2.6
 import QtQuick.Controls 2.0 as Controls
 import QtQuick.Layouts 1.2
+import QtQuick.Window 2.2
 import org.kde.kirigami 2.13 as Kirigami
 import org.kde.plasma.core 2.1 as PlasmaCore
 import shellengine 1.0
@@ -8,10 +9,10 @@ import shellengine 1.0
 Kirigami.ApplicationWindow {
     id: root
     title: "Kubuntu Focus"
-    width: 560
-    height: 670
-    minimumWidth: 560
-    minimumHeight: 670
+    width:  baseWidth  * scaleRatio
+    height: baseHeight * scaleRatio
+    minimumWidth:  (baseWidth  - 50) * scaleRatio
+    minimumHeight: (baseHeight - 50) * scaleRatio
 
     pageStack.initialPage: Kirigami.Page {
         title: "Power and Fan"
@@ -47,22 +48,25 @@ Kirigami.ApplicationWindow {
                 spacing: 0
                 Layout.fillWidth: true
 
-                Controls.Label{
-                    text: "🔋 Powersave"
+                Controls.Label {
+                    // DEBUG + scaleRatio.toFixed(3)
+                    text: '🔋 Powersave'
                 }
 
                 Item {
                     Layout.fillWidth: true
                 }
 
-                Controls.Label{
-                    text: "Performance ⚡"
+                Controls.Label {
+                    // DEBUG + scaleMap.spreadNum.toFixed(3)
+                    text: 'Performance ⚡'
                 }
                 Layout.bottomMargin: PlasmaCore.Units.largeSpacing
             }
 
             Kirigami.Heading {
-                // text: plasmaProfilesSlider.visible ? "Fine Tuning" : "Power Profile"
+                // text: plasmaProfilesSlider.visible ?
+                //   "Fine Tuning" : "Power Profile"
                 id: powerHeading
                 visible: false
                 text: 'Frequency Profile'
@@ -72,8 +76,8 @@ Kirigami.ApplicationWindow {
             GridLayout {
                 id: grid
                 visible: false
-                columnSpacing: 0
-                rowSpacing: 3
+                columnSpacing: Math.round( scaleRatio )
+                rowSpacing: Math.round( 3 * scaleRatio )
                 // Number of columns is set by the logic part
                 Layout.fillWidth: true
                 Repeater {
@@ -102,7 +106,7 @@ Kirigami.ApplicationWindow {
                         color: selectedRow ? "gray" : elementColor
                         Layout.preferredWidth: (layout.width - Layout.rightMargin * grid.columns) / grid.columns
                         Layout.rightMargin: 2
-                        Layout.preferredHeight: 30
+                        Layout.preferredHeight: 30 * scaleRatio
                         Controls.Label {
                             anchors.top: parent.top
                             anchors.bottom: parent.bottom
@@ -300,7 +304,7 @@ Kirigami.ApplicationWindow {
             onStdoutChanged: {
                 const checkRegex = /^\s*title:[^|]+|\s*message:/
                 if ( checkRegex.test( stdout ) ) {
-                    root.height = 700;
+                    root.height = (baseHeight + 50) * scaleRatio
                     const msgList = stdout.split('|')
                     const titleStr = msgList[0].replace(
                         /^\s*title:\s*/, '' ).trim()
@@ -392,11 +396,32 @@ Kirigami.ApplicationWindow {
             }
         })
     }
+
+    function calcScaleRatioFn () {
+      const densityNum  = Screen.pixelDensity;
+      const baseNum     = 3.78; // 96 DPI
+      const quantNum    = 0.125;
+      let spreadNum     = 0;
+      if ( densityNum > baseNum ) {
+        spreadNum = (densityNum - baseNum) / ( 1.75 * baseNum );
+      }
+      return {
+        spreadNum: spreadNum,
+        scaleRatio: 1 + Math.round(spreadNum / quantNum) * quantNum
+      }
+    }
+
     readonly property var profiles: ['power-saver', 'balanced', 'performance']
     // Requires qmlscene ./kfocus.qml "${pathToBin}" to set binDir for
     //   kfocus-fan-set and kfocus-power-set
     readonly property var binDir: Qt.application.arguments[1] || '/usr/lib/kfocus/bin'
     readonly property int activeProfileIndex: root.profiles.indexOf(root.activeProfile)
-    readonly property var pollingMs: 5000
+    readonly property int pollingMs: 5000
+    readonly property var scaleMap: calcScaleRatioFn()
+    readonly property real scaleRatio: scaleMap.scaleRatio
+
+    readonly property int baseWidth: 460
+    readonly property int baseHeight: 575
     property bool doSkipNextFreqPoll: false
 }
+
