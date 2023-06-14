@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2020-2022 MindShare Inc.
+# Copyright 2020-2023 MindShare Inc.
 # Written for the Kubuntu Focus by:
 #   - Michael Mikowski
 #   - Vishwas Mruthyunjaya
@@ -10,7 +10,7 @@
 # Purpose : Install Anaconda AI environments
 # License : GPL v2
 # Run By  : Users
-# Spec    : 526
+# Spec    : 526, 3452
 #
 set -u;
 
@@ -136,6 +136,31 @@ _setCudaPathsFn () {
   _cm2EchoFn "LD_LIBRARY_PATH : ${_ldLibraryPath}";
 }
 
+_readCondaVersFn () {
+  conda info |grep -i 'conda version' |awk -F: '{print $2}' |sed 's/ //g'
+}
+
+_upgradeCondaFn () {
+  declare _current_vers _conda_expect_dir _conda_back_dir;
+  _current_vers="${1:-}";
+
+  if [ -z "${_current_vers}" ]; then
+    _cm2ErrStrFn 'Empty version string';
+    return 1;
+  fi
+
+  _conda_expect_dir="${HOME}/anaconda3";
+  _conda_back_dir="${_conda_expect_dir}-${_current_vers}";
+
+  if [ -d "${_conda_back_dir}" ]; then
+    _cm2ErrStrFn "Backup directory already exists.";
+    return 1;
+  fi
+
+  conda update --all || return 1;
+  conda install -n base -c default 'conda>=23.5.0' || return 1;
+}
+
 _installEnvFn () {
   declare  _reply_str _conda_installed_exe _conda_oldstyle_vers \
    _conda_installed_vers _conda_expect_dir _conda_expect01_exe \
@@ -198,32 +223,47 @@ _installEnvFn () {
       _cm2EchoFn 'Please reset your environment and rerun to proceed.';
       _exitFn;
     fi
-    _conda_installed_vers="$(
-      conda info |grep -i 'conda version' |awk -F: '{print $2}' |sed 's/ //g'
-    )";
+    _conda_installed_vers="$(_readCondaVersFn)";
+#    _cm2EchoFn "WTF? ${_conda_installed_vers}";
+#    _exitFn;
   fi
 
   # Test Conda version from ${HOME}/anaconda3
-  if [[  "${_conda_installed_vers}" =~ ^23.5.0$|^4.12.0$ ]]; then
-    _cm2EchoFn "Using compatible conda."
-   _cm2EchoFn "  New-style version |${_conda_installed_vers}|.";
+  if  [[ "${_conda_installed_vers}" =~ ^4.12.0$ ]]; then
+    _cm2EchoFn;
+    _cm2EchoFn "Conda can be upgraded from version |${_conda_installed_vers}|";
+    _cm2EchoFn 'to version |23.5.0|. If you decide to upgrade, your original';
+    _cm2EchoFn "data will be copied to |anaconda3-${_conda_installed_vers}|.";
+    _reply_str=$( _cm2ReadPromptYnFn 'Upgrade now' );
 
+    if [ "${_reply_str}" = 'y' ]; then
+      if _upgradeCondaFn "${_conda_installed_vers}"; then
+        _conda_installed_vers="$(_readCondaVersFn)";
+      else
+        _cm2ErrStrFn 'Could not upgrade Conda. Exiting...';
+        _exitFn;
+      fi
+    fi
+  fi
+
+  if [[  "${_conda_installed_vers}" =~ ^23.5.0$|^4.12.0$ ]]; then
+    _cm2EchoFn "Using compatible conda version |${_conda_installed_vers}|.";
   else
     _conda_oldstyle_vers="$(
       conda list anaconda$ |tail -n0 |awk '{print $2}'
     )";
     case "${_conda_oldstyle_vers}" in
-    ''       )
-      _cm2EchoFn 'Conda does not appear installed';;
+    '') _cm2EchoFn 'Conda does not appear installed';;
     '2020.11'|'2020.07')
       _cm2WarnStrFn "Conda version |${_conda_oldstyle_vers}| found in";
-      _cm2WarnStrFn "the current installation in |${_conda_expect_dir}|";
+      _cm2WarnStrFn "the current installation |${_conda_expect_dir}";
       _cm2WarnStrFn 'is an older version. Use kfocus-conda-legacy-v01';
       _cm2WarnStrFn 'to continue using this installation. Exiting...';
       _exitFn;;
-    *)_cm2WarnStrFn "Conda version |${_conda_oldstyle_vers}| found in";
-      _cm2WarnStrFn  "(${_conda_expect_dir}) is not recognized. Please move";
-      _cm2WarnStrFn  "this directory aside before proceeding. Exiting...";
+    *) _cm2WarnStrFn "Conda version |${_conda_oldstyle_vers}| found in";
+      _cm2WarnStrFn "the current installation |${_conda_expect_dir}|";
+      _cm2WarnStrFn  "is not a supported version. Please move this";
+      _cm2WarnStrFn  "directory aside before proceeding. Exiting...";
       _exitFn;;
     esac
   fi
@@ -297,7 +337,7 @@ _installEnvFn () {
   fi
   unset __conda_setup
 
-  # shellcheck disable=SC1090
+  # shellcheck disable=SC1090,SC1091
   source "$HOME/.bashrc" || true;
   if ( ! command -v 'conda' > /dev/null ); then
     _cm2EchoFn 'Cannot confirm conda command';
