@@ -112,6 +112,7 @@ _fixCondaEnvFn () {
 }
 
 _setCudaPathsFn () {
+  # bashsupport disable=BP2001
   declare _cuda_root_dir _append_list _cuda_home_dir;
   _cuda_root_dir='/usr/local/cuda-11.7';
 
@@ -136,9 +137,10 @@ _setCudaPathsFn () {
 }
 
 _installEnvFn () {
-  declare  _reply_str _conda_installed_exe _conda_installed_vers \
-    _conda_expect_dir _conda_expect01_exe _conda_expect02_exe _conda_pkg_str \
-    _conda_repo_url _conda_md5_str _is_new_conda _chk_str __conda_setup;
+  declare  _reply_str _conda_installed_exe _conda_oldstyle_vers \
+   _conda_installed_vers _conda_expect_dir _conda_expect01_exe \
+   _conda_expect02_exe _conda_pkg_str _conda_repo_url \
+   _conda_md5_str _is_new_conda _chk_str __conda_setup;
 
   ## Begin Install GPU Libs
   _cm2SetMsgFn 'Check GPU and install libs if needed';
@@ -181,8 +183,9 @@ _installEnvFn () {
   _conda_expect02_exe="${_conda_expect_dir}/bin/conda";
   _conda_installed_exe="$(command -v conda)";
   _conda_installed_vers='';
-  _conda_md5_str='a01150aff48fcb6fcd6472381652de04';
-  _conda_pkg_str='Anaconda3-2022.05-Linux-x86_64.sh';
+  _conda_oldstyle_vers='';
+  _conda_md5_str='b3332806aa15750d6bc4e604f9110622';
+  _conda_pkg_str='Anaconda3-2023.03-1-Linux-x86_64.sh';
 
   # Report unexpected exe, get installed conda version
   if [ -e "${_conda_installed_exe}" ]; then
@@ -196,29 +199,34 @@ _installEnvFn () {
       _exitFn;
     fi
     _conda_installed_vers="$(
-      conda list anaconda$ |tail -n1 |awk '{print $2}'
+      conda info |grep -i 'conda version' |awk -F: '{print $2}' |sed 's/ //g'
     )";
   fi
 
   # Test Conda version from ${HOME}/anaconda3
-  case "${_conda_installed_vers}" in
-    '2022.05') _cm2EchoFn 'Using compatible conda';;
-    ''       ) _cm2EchoFn 'Conda not yet installed';;
-    '2020.11') _cm2WarnStrFn "The current installation in ${_conda_expect_dir}";
-      _cm2WarnStrFn 'was installed using an older version of kfocus-conda. Use '
-      _cm2WarnStrFn 'kfocus-conda-legacy-v01 if you wish to continue using this '
-      _cm2WarnStrFn 'installation. Exiting...';
+  if [[  "${_conda_installed_vers}" =~ ^23.5.0$|^4.12.0$ ]]; then
+    _cm2EchoFn "Using compatible conda."
+   _cm2EchoFn "  New-style version |${_conda_installed_vers}|.";
+
+  else
+    _conda_oldstyle_vers="$(
+      conda list anaconda$ |tail -n0 |awk '{print $2}'
+    )";
+    case "${_conda_oldstyle_vers}" in
+    ''       )
+      _cm2EchoFn 'Conda does not appear installed';;
+    '2020.11'|'2020.07')
+      _cm2WarnStrFn "Conda version |${_conda_oldstyle_vers}| found in";
+      _cm2WarnStrFn "the current installation in |${_conda_expect_dir}|";
+      _cm2WarnStrFn 'is an older version. Use kfocus-conda-legacy-v01';
+      _cm2WarnStrFn 'to continue using this installation. Exiting...';
       _exitFn;;
-    '2020.07') _cm2WarnStrFn "The current installation in ${_conda_expect_dir}";
-      _cm2WarnStrFn 'was installed using an older version of kfocus-conda. Use '
-      _cm2WarnStrFn 'kfocus-conda-legacy-v01 if you wish to continue using this '
-      _cm2WarnStrFn 'installation. Exiting...';
-      _exitFn;;
-    *)_cm2WarnStrFn "Conda version (${_conda_installed_vers} found in";
+    *)_cm2WarnStrFn "Conda version |${_conda_oldstyle_vers}| found in";
       _cm2WarnStrFn  "(${_conda_expect_dir}) is not recognized. Please move";
-      _cm2WarnStrFn  "this directory aside before proceeding.";
+      _cm2WarnStrFn  "this directory aside before proceeding. Exiting...";
       _exitFn;;
-  esac
+    esac
+  fi
 
   if [ -d "${_conda_expect_dir}" ]; then
     _reply_str=$( _cm2ReadPromptYnFn \
@@ -495,10 +503,11 @@ _escExe="$(_cm2GetEscExeFn)" || exit;
 trap _abortFn SIGINT;
 
 # Check Nvidia Modules and PCI devices
-if ! _nvSeriesStr="$( _getNvSeriesStrFn )"; then
+if ! _nvSeriesStr="$(_getNvSeriesStrFn)"; then
   exit "$?";
 fi
 
+# bashsupport disable=GrazieInspection
 _condaRawStr=$(cat << '_HERE01'
 # >>> conda initialize >>>
 # !! Contents within this block are managed by 'conda init' !!
@@ -587,7 +596,7 @@ https://docs.anaconda.com/
 
 AND
 
-http://docs.nvidia.com/deeplearning/sdk/cudnn-sla/index.html
+https://docs.nvidia.com/deeplearning/sdk/cudnn-sla/index.html
 
 AND
 
