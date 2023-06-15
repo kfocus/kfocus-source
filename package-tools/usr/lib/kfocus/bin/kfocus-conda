@@ -224,8 +224,6 @@ _installEnvFn () {
       _exitFn;
     fi
     _conda_installed_vers="$(_readCondaVersFn)";
-#    _cm2EchoFn "WTF? ${_conda_installed_vers}";
-#    _exitFn;
   fi
 
   # Test Conda version from ${HOME}/anaconda3
