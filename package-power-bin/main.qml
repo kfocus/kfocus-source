@@ -85,12 +85,12 @@ Kirigami.ApplicationWindow {
                     // Each cell of the grid is a rectangle; we have magic properties that are defined in the
                     // logic part, namely elementName, bold, elementColor, firstElementName
                     Rectangle {
-                        property bool firstElement: elementColor != 'transparent'
-                        property bool selectedRow: !firstElement && firstElementName == profilesModel.selectedProfile
+                        property bool firstElement: elementColor !== 'transparent'
+                        property bool selectedRow: !firstElement && firstElementName === profilesModel.selectedProfile
                         Controls.RadioButton {
                             id: radioButton
                             visible: firstElement
-                            checked: profilesModel.selectedProfile == elementName
+                            checked: profilesModel.selectedProfile === elementName
                             onCheckedChanged: {
                                 powerTimer.triggeredOnStart = false
                                 powerTimer.stop()
@@ -173,8 +173,8 @@ Kirigami.ApplicationWindow {
                     delegate: Controls.Label {
                         text: name
                         Layout.preferredWidth: layout.width / (fanProfilesModel.count)
-                        horizontalAlignment: index == 0 ? Text.AlignLeft : (
-                            index == fanProfilesModel.count - 1 ? Text.AlignRight : Text.AlignHCenter)
+                        horizontalAlignment: index === 0 ? Text.AlignLeft : (
+                            index === fanProfilesModel.count - 1 ? Text.AlignRight : Text.AlignHCenter)
                     }
                 }
             }
@@ -214,7 +214,7 @@ Kirigami.ApplicationWindow {
                 let buildStr = ""
                 stdout.split('\n').forEach(function (line, index) {
                     if (line === '') { return; }
-                    if (line.substring(0,5) == "title") {
+                    if (line.substring(0,5) === "title") {
                         freqMissingMsg = true
                         let lineParts = line.split('|')
                         let titleMsg = lineParts[0].substring(6, lineParts[0].length)
@@ -229,15 +229,15 @@ Kirigami.ApplicationWindow {
                         }
                         let firstElementName = '';
                         line.split(';').forEach(function (value, subindex) {
-                            if (index == 0 && value !== '') {
+                            if (index === 0 && value !== '') {
                                 profilesModel.validIndexes.push(subindex)
                             }
-                            if (subindex == 0) {
+                            if (subindex === 0) {
                                 firstElementName = value
                             }
                             if (profilesModel.validIndexes.includes(subindex)) {
-                               profilesModel.append({'elementName': value, 'bold': index == 0,
-                                    'elementColor': subindex == 0 ? profilesModel.gridColors.pop() : 'transparent',
+                               profilesModel.append({'elementName': value, 'bold': index === 0,
+                                    'elementColor': subindex === 0 ? profilesModel.gridColors.pop() : 'transparent',
                                     'firstElementName': firstElementName
                                 })
                                 // There are items in the table, display them
@@ -384,7 +384,7 @@ Kirigami.ApplicationWindow {
     function activateProfile(profile) {
         if (!profile) { return; }
         if (!root.activeProfile) { return; }
-        if (profile == root.activeProfile) { return; }
+        if (profile === root.activeProfile) { return; }
         const service = pmSource.serviceForSource("PowerDevil");
         const op = service.operationDescription("setPowerProfile");
         op.profile = profile;
