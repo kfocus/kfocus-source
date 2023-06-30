@@ -1,0 +1,7 @@
+Validate desktop files
+BEGIN Test 1 of 2:
+  Dir: ./package-main/usr/share/applications
+BEGIN Test 2 of 2:
+  Dir: ./package-tools/usr/share/applications
+./kfocus-pick-gcc.desktop: hint: value "System;Development;X-Kubuntu-Focus;" for key "Categories" in group "Desktop Entry" contains more than one main category; application might appear more than once in the application menu
+./kfocus-power.desktop: warning: value "KFocus Power and Fan" for key "Comment" in group "Desktop Entry" looks the same as that of key "Name"
