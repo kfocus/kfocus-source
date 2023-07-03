@@ -34,7 +34,6 @@ _exeLookupList=(
   'darktable|darktable||darktable||DarkTable: Edit RAW Photos'
   'docker|konsole;-e;man;docker|docker|docker-ce|Docker: Container Engine'
   'dolphin|dolphin||dolphin|Dolphin: Manage Files'
-  'dropbox|dropbox;start;-i|dropbox|dropbox|Dropbox: Sync to Dropbox Cloud Storage'
   'elisa|elisa||elisa|Elisa Music Player'
   'ffmpeg|konsole;-e;man ffmpeg|ffmpeg|ffmpeg|Tools for Transcoding|FFMpeg: Stream and Play Multimedia Files'
   'filezilla|filezilla||filezilla|Filezilla: Transfer Files'
@@ -107,6 +106,7 @@ _exeLookupList=(
   'zoom|zoom||zoom|Zoom: Start and Join Video and Web Conferencing'
 
   # Packages with special handlers
+  'dropbox|!dropbox|dropbox|dropbox|Dropbox: Sync to Dropbox Cloud Storage'
   'jetbrains-toolbox|!jetbrains-toolbox|jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs'
   'intellij|!intellij|jetbrains-toolbox|jetbrains-toolbox|IntelliJ: JetBrains Java IDE'
   'pycharm|!pycharm|jetbrains-toolbox|jetbrains-toolbox|PyCharm: JetBrains Python IDE'
@@ -612,6 +612,16 @@ _runAppHandlerFn () {
         "${_exe_str}"; # ... and continue
       fi
       ;;
+
+    dropbox)
+      _prompt_msg+="|${_app_id}| Click on the Dropbox <br>";
+      _prompt_msg+='found in the system tray. <br>';
+      _exe_str="$(command -v 'dropbox')";
+      if [ -n "${_exe_str}" ]; then
+        "${_exe_str}" start -i; # ... and continue
+      fi
+      ;;
+
     *) true;;
   esac
 
