@@ -12,10 +12,10 @@ _checkNvidiaPinFn () {
 
   # Create package inspection list
   IFS=$'\n' read -r -d '' -a _pkg_list < <(
-    apt-cache depends nvidia-driver-530 \
+    apt-cache depends nvidia-driver-535 \
     | awk '/Depends|Recommends/ {print $2}' \
     | sed 's/[<>]//g' \
-    | cat - <(echo $'cuda-drivers-530\ncuda-drivers\nnvidia-driver-530') \
+    | cat - <(echo $'cuda-drivers-535\ncuda-drivers\nnvidia-driver-535') \
     | cat - <(echo $'nvidia-modprobe\nnvidia-settings\nlibxnvctrl0') \
     | sort -u
   );
