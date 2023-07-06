@@ -786,7 +786,7 @@ ${_cm2HtmH3Str}${_win_title}?</h3>
 
 ${_cm2HtmPStr}The Nvidia driver packages need to be <br>
 upgraded to the latest Focus-tested version <br>
-(nvidia-driver-530). This requires your password <br>
+(nvidia-driver-535). This requires your password <br>
 and can take a few minutes to complete. Please <br>
 allow the upgrade to finish before rebooting.</p>
 
@@ -900,7 +900,7 @@ declare _gfxTgtVersStr _parentCmdStr _pingHost1Str _pingHost2Str \
   _focusRxBtoolExe _focusRxKcleanExe _focusRxSetExe \
   _focusRxVersExe _firstRunExe _sysVersStr;
 
-_gfxTgtVersStr='22.04.8';
+_gfxTgtVersStr='22.04.9';
 _parentCmdStr="$(ps -o comm= $PPID)";
 _pingHost1Str='8.8.8.8';
 _pingHost2Str='1.1.1.1';
