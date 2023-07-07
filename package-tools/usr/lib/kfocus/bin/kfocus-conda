@@ -97,8 +97,8 @@ _fixCondaEnvFn () {
     if [ "${_reply_str}" = 'y' ]; then
       _orig_msg="${_cm2BlockMsg}";
       _cm2SetMsgFn "Deleting ${_env_name}";
-      conda activate base                    || _exitFn;
-      conda env remove --name "${_env_name}" || _exitFn;
+      1>&2 conda activate base                    || _exitFn;
+      1>&2 conda env remove --name "${_env_name}" || _exitFn;
       _cm2SucFn;
       _cm2BlockMsg="${_orig_msg}";
     fi
@@ -412,7 +412,7 @@ _installEnvFn () {
     _cm2EchoFn "Installing TensorFlow for ${_nvSeriesStr}-series GPU";
     conda create -n tensorflow pip python=3.10 || _exitFn;
     conda activate tensorflow                  || _exitFn;
-    pip install -Iv tensorflow                 || _exitFn;
+    pip install -Iv tensorflow==2.12.0         || _exitFn;
     pip install ai-benchmark                   || _exitFn;
     conda activate base                        || _exitFn;
     set -u;
