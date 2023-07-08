@@ -92,22 +92,25 @@ _fixCondaEnvFn () {
   _env_name="$*";
   if ( _chkCondaEnvFn "${_env_name}" ); then
     _reply_str=$( _cm2ReadPromptYnFn \
-      "Delete and reinstall env '${_env_name}'" 'n'
+      "Delete existing env '${_env_name}'" 'n'
     );
     if [ "${_reply_str}" = 'y' ]; then
       _orig_msg="${_cm2BlockMsg}";
-      _cm2SetMsgFn "Deleting ${_env_name}";
-      1>&2 conda activate base                    || _exitFn;
-      1>&2 conda env remove --name "${_env_name}" || _exitFn;
+      _cm2SetMsgFn "Delete ${_env_name}";
+      1>&2 conda activate base                    || _cm2ErrFn;
+      1>&2 conda env remove --name "${_env_name}" || _cm2ErrFn;
       _cm2SucFn;
       _cm2BlockMsg="${_orig_msg}";
     fi
+    _reply_str=$(_cm2ReadPromptYnFn \
+      "Install conda env '${_env_name}' again" 'n'
+    );
     echo "${_reply_str}";
   else
     _reply_str=$( _cm2ReadPromptYnFn \
       "Install conda env '${_env_name}'" 'y'
     );
-    echo "${_reply_str}"
+    echo "${_reply_str}";
   fi
 }
 
