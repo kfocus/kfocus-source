@@ -7,9 +7,14 @@
 #
 ## BEGIN _echoDesktopFileDirsFn {
 # Purpose : Echo directories that contain desktop files for testing
-#           Only package directories are searched.
-#           metadata.desktop and package-main/etc/xdg/autostart are skipped
-#           as they are not in a normal deployed dir
+#   Only package application directories are searched.
+#   3rd-party meta packages should never be included.
+#   Other examples previously excluded:
+#     '^\./package-main/etc/xdg/autostart'
+#     '^\./package-dolphin-plugin-jetbrains'
+#     '^\./package-plasma-runner-jetbrains'
+#     '^\./package-ubiquity-patched' \
+#     '^\./metadata.desktop'
 #
 _echoDesktopFileDirsFn () {
   cd "${_t00TopDir}" || exit 1;
@@ -17,11 +22,7 @@ _echoDesktopFileDirsFn () {
     echo "${_line%/*}";
   done < <(
     find ./ -type f -name '*.desktop' |grep '^\./package' \
-    | grep -v '^package-dolphin-plugin-jetbrains' \
-    | grep -v '^package-plasma-runner-jetbrains' \
-    | grep -v '^package-ubiquity-patched' \
-    | grep -v '^package-main/etc/xdg/autostart$' \
-    | grep -v '^metadata.desktop$' \
+    | grep '/applications/' \
   ) | sort -u
 }
 ## . END _echoDesktopFileDirsFn }
