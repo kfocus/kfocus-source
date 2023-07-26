@@ -27,10 +27,91 @@ _importCommonFn () {
 }
 ## . END _importCommonFn }
 
+## BEGIN _checkDiskPassFn {
+_checkDiskPassFn() {
+  # shellcheck disable=SC2046
+  return $(echo "${_defaultStr}" | "${_escExe}" cryptsetup luksOpen \
+            --test-passphrase "$1" 1>&2 2>/dev/null;)
+}
+## . END _checkDiskPassFn }
+
+## BEGIN _checkDisksForDefaultPassFn {
+# Summary   : _checkDisksForDefaultPassFn diskPart1 [diskPart2...]
+# Purpose   : Checks disk partitions for the default passphrase and reports
+#             the result as a script exit code.
+# Example   : _checkDisksForDefaultPassFn /dev/nvme0n1p3
+# Arguments : One or more device nodes, each of which points to a crypto_LUKS
+#             partition
+# Returns   : An integer representing the number of partitions found that use
+#             the default passphrase. This is returned as a script exit code.
+# Notes     : This function calls "exit", so if you run it, the script *will*
+#             terminate before running anything after it.
+_checkDisksForDefaultPassFn () {
+  declare _bad_disk_count;
+
+  _bad_disk_count=0;
+
+  for i in "$@"; do
+    if blkid "${i}" | grep -q 'TYPE="crypto_LUKS"'; then
+      if _checkDiskPassFn "${i}"; then
+        ((_bad_disk_count++));
+      fi
+    fi
+  done
+
+  exit "${_bad_disk_count}";
+}
+## . END _checkDisksForDefaultPassFn }
+
+## BEGIN _modifyDisksPassFn {
+# Summary   : _modifyDisksPassFn diskPart1 [diskPart2...]
+# Purpose   : Changes a batch of disks that use the same passphrase to use a
+#             new passphrase.
+# Example   : _modifyDisksPassFn /dev/nvme0n1p3 /dev/nvme1n1p1
+# Arguments : One or more device notes, each of which points to a crypto_LUKS
+#             partition. Additionally reads the old passphrase and new
+#             passphrase from stdin.
+# Returns   : A script exit code of 0 if all disks were changed successfully.
+#             A script exit code of 1 if some disks were changed successfully.
+#             A script exit code of 2 if all disks were not changed.
+# Notes     : This function calls "exit", so if you run it, the script *will*
+#             terminate before running anything after it.
+_modifyDisksPassFn() {
+  declare _num_fails _old_pass _new_pass;
+
+  _num_fails=0;
+
+  read -r -s _old_pass
+  read -r -s _new_pass
+
+  for i in "$@"; do
+    if ! { echo "${_old_pass}"; echo "${_new_pass}"; echo "${_new_pass}"; } |
+      "${_escExe}" cryptsetup luksChangeKey "${i}"; then
+      ((_num_fails++))
+    fi
+  done
+
+  if [ "${_num_fails}" -eq 0 ]; then
+    exit 0;
+  elif [ "${_num_fails}" -eq "$#" ]; then
+    exit 2;
+  else
+    exit 1;
+  fi
+}
+## . END _modifyDisksPassFn }
+
 ## BEGIN MAIN {
 _mainFn () {
-  declare _default_str _disk_str _reply_str _prompt_msg;
-  _default_str="$(echo 6b7562756e74750a |xxd -r -p)";
+  declare _disk_str _reply_str _prompt_msg;
+
+  ## Begin Parse mode argument (if it exists) {
+  if [ "$1" = "-c" ]; then
+    _checkDisksForDefaultPassFn "${@:2}";
+  elif [ "$1" = "-m" ]; then
+    _modfyDisksPassFn "${@:2}";
+  fi
+  ## . End Parse mode argument }
 
   ## Begin Disk checks {
   _disk_str="${1:-}";
@@ -51,8 +132,7 @@ _mainFn () {
   ## Begin Check passphrase {
   _cm2EchoFn "Checking passphrase for disk |${_disk_str}|";
   # _cm2EchoFn "Please enter your user password to proceed\n";
-  if echo "${_default_str}" | "${_escExe}" cryptsetup luksOpen \
-    --test-passphrase "${_disk_str}" 1>&2 2>/dev/null; then
+  if _checkDiskPassFn "${_disk_str}"; then
     _reply_str="$( _cm2ReadPromptYnFn \
       "\nDisk |${_disk_str}| is using the default passphrase.
   Would you like to change it now (RECOMMENDED)" 'y'
@@ -88,6 +168,12 @@ _EOH
   _cm2AskExitFn 0;
 }
 # . END MAIN }
+
+## BEGIN set global vars {
+declare _defaultStr
+
+_defaultStr="$(echo 6b7562756e74750a |xxd -r -p)";
+## . END set global vars }
 
 ## BEGIN Run main if script is not sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
