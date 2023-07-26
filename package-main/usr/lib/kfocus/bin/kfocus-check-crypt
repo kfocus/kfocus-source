@@ -161,7 +161,7 @@ _mainFn () {
 # . END MAIN
 
 # BEGIN Declare and set global vars
-declare _defaultStr _escExe _setExe _cryptList;
+declare _defaultStr _escExe _cryptList;
 _defaultStr="$(echo 6b7562756e74750a |xxd -r -p)";
 # . END Declare and set global vars
 
@@ -175,7 +175,6 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   # Get escalation exe
   _escExe="$(_cm2GetEscExeFn)" || exit;
-  _assignList=( "_setExe|${_binDir}/kfocus-firstrun-set" );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2WarnStrFn 'Could not assign variables';
     exit 1;

@@ -563,7 +563,7 @@ Kirigami.ApplicationWindow {
 
     ShellEngine {
         id: cryptDiskListEngine
-        commandStr: bindir + 'kfocus-crypt-setup -q'
+        commandStr: binDir + 'kfocus-crypt-setup -q'
         onAppExited: {
             cryptDiskList = stdout.split('\n').slice(0, -1)
         }
