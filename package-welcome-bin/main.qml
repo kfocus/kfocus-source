@@ -223,6 +223,7 @@ Kirigami.ApplicationWindow {
                 Kirigami.InlineMessage {
                     id: interErrorMessage
                     type: Kirigami.MessageType.Error
+                    Layout.fillWidth: true
                 }
 
                 Controls.Label {
@@ -563,7 +564,7 @@ Kirigami.ApplicationWindow {
 
     ShellEngine {
         id: cryptDiskListEngine
-        commandStr: binDir + 'kfocus-crypt-setup -q'
+        commandStr: binDir + 'kfocus-check-crypt -q'
         onAppExited: {
             cryptDiskList = stdout.split('\n').slice(0, -1)
         }
@@ -616,13 +617,15 @@ Kirigami.ApplicationWindow {
             break
 
         case 'changeCrypt':
-            if (newPassphraseBox.text === oldPassphraseBox.text) {
+            if (newPassphraseBox.text === confirmPassphraseBox.text) {
                 cryptDiskChangeEngine.exec(
                   binDir + 'kfocus-check-crypt -m ' + cryptDiskList.join(' '),
                   'kubuntu\n' + newPassphraseBox.text + '\n')
                 switchPage('diskPassphraseChangeInProgressItem')
             } else {
-                // TODO: error message
+                interErrorMessage.text = "The provided passphrases do not " +
+                        "match. Please try again."
+                interErrorMessage.visible = true
             }
         }
     }
@@ -631,7 +634,7 @@ Kirigami.ApplicationWindow {
      * Global Properties *
      *********************/
 
-    property string binDir: '/home/bill/Github/kfocus-source/package-main/usr/lib/kfocus/bin';
+    property string binDir: '/home/bill/Github/kfocus-source/package-main/usr/lib/kfocus/bin/';
     property string actionName: ''
     property int stepsListLockIndex: 0
     property bool firstRun: true
