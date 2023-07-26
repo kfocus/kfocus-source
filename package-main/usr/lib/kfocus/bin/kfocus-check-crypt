@@ -11,7 +11,7 @@
 #
 set -u;
 
-## BEGIN _importCommonFn {
+## BEGIN _importCommonFn
 # Run ls-common-symbols.sh to list in-use symbols
 #
 _importCommonFn () {
@@ -25,157 +25,147 @@ _importCommonFn () {
     exit 201;
   fi
 }
-## . END _importCommonFn }
+## . END _importCommonFn
 
-## BEGIN _checkDiskPassFn {
-_checkDiskPassFn() {
-  # shellcheck disable=SC2046
-  return $(echo "${_defaultStr}" | "${_escExe}" cryptsetup luksOpen \
-            --test-passphrase "$1" 1>&2 2>/dev/null;)
+# BEGIN _setCryptListFn
+# Summary   : _setCryptListFn
+# Purpose   : Populate _cryptList which contains all disk device
+#             paths that appear to contain a LUKS encrypted filesystem
+# Returns   : 0 if success, non-zero on failure
+_setCryptListFn () {
+  mapfile -t _cryptList < <(
+    grep 'TYPE="crypto_LUKS"' <<<"$(blkid)" \
+    | cut -f1 -d':'
+  );
 }
-## . END _checkDiskPassFn }
+# . END _setCryptListFn
 
-## BEGIN _checkDisksForDefaultPassFn {
-# Summary   : _checkDisksForDefaultPassFn diskPart1 [diskPart2...]
+# BEGIN _checkDiskPassFn
+# Summary   : _checkDiskPassFn diskPart1
+# Purpose   : Checks disk partition for the default passphrase
+# Returns   : 0 if success, non-zero on failure
+#
+_checkDiskPassFn() {
+  declare _disk_str;
+  _disk_str="${1:-}";
+  if [ -z "${_disk_str}" ]; then return 1; fi
+  if ! [ -b "${_disk_str}" ]; then
+    _cm2WarnStrFn "${_baseName}: Ignore ${_disk_str}: not a block device.";
+    return 1;
+  fi
+
+  "${_escExe}" cryptsetup \
+    luksOpen --test-passphrase "${_disk_str}" \
+    <<< "${_defaultStr}" 1>&2 2>/dev/null;
+}
+# . END _checkDiskPassFn
+
+# BEGIN _checkDisksForDefaultPassFn
+# Summary   : _checkDisksForDefaultPassFn
 # Purpose   : Checks disk partitions for the default passphrase and reports
 #             the result as a script exit code.
 # Example   : _checkDisksForDefaultPassFn /dev/nvme0n1p3
 # Arguments : One or more device nodes, each of which points to a crypto_LUKS
 #             partition
+# Stdout    : An IFS delimited list of disk devices that were tried and failed.
+#             A blank string if all disks passed.
 # Returns   : An integer representing the number of partitions found that use
 #             the default passphrase. This is returned as a script exit code.
 # Notes     : This function calls "exit", so if you run it, the script *will*
 #             terminate before running anything after it.
 _checkDisksForDefaultPassFn () {
-  declare _bad_disk_count;
+  declare _fail_list _disk_str;
 
-  _bad_disk_count=0;
+  _setCryptListFn;
+  _fail_list=();
 
-  for i in "$@"; do
-    if blkid "${i}" | grep -q 'TYPE="crypto_LUKS"'; then
-      if _checkDiskPassFn "${i}"; then
-        ((_bad_disk_count++));
+  for _disk_str in "${_cryptList[@]}"; do
+    if blkid "${_disk_str}" | grep -q 'TYPE="crypto_LUKS"'; then
+      if _checkDiskPassFn "${_disk_str}"; then
+        _fail_list+=( "${_disk_str}" );
       fi
     fi
   done
 
-  exit "${_bad_disk_count}";
+  echo "${_fail_list[@]}";
+  return "${#_fail_list[@]}";
 }
-## . END _checkDisksForDefaultPassFn }
+# . END _checkDisksForDefaultPassFn
 
-## BEGIN _modifyDisksPassFn {
+# BEGIN _modifyDisksPassFn
 # Summary   : _modifyDisksPassFn diskPart1 [diskPart2...]
 # Purpose   : Changes a batch of disks that use the same passphrase to use a
 #             new passphrase.
 # Example   : _modifyDisksPassFn /dev/nvme0n1p3 /dev/nvme1n1p1
 # Arguments : One or more device notes, each of which points to a crypto_LUKS
-#             partition. Additionally reads the old passphrase and new
+#             partition. Additionally, reads the old passphrase and new
 #             passphrase from stdin.
-# Returns   : A script exit code of 0 if all disks were changed successfully.
-#             A script exit code of 1 if some disks were changed successfully.
-#             A script exit code of 2 if all disks were not changed.
+# Stdout    : An IFS delimited list of disk devices that were tried and failed.
+#             A blank string if all disks passed.
+# Exit      : 0 or the number of failed disks.
 # Notes     : This function calls "exit", so if you run it, the script *will*
 #             terminate before running anything after it.
 _modifyDisksPassFn() {
-  declare _num_fails _old_pass _new_pass;
+  declare _update_list _fail_list _old_pass _new_pass _disk_str;
 
-  _num_fails=0;
+  _update_list=( "$@" );
+  _fail_list=();
 
-  read -r -s _old_pass
-  read -r -s _new_pass
+  read -r -s _old_pass;
+  read -r -s _new_pass;
 
-  for i in "$@"; do
-    if ! { echo "${_old_pass}"; echo "${_new_pass}"; echo "${_new_pass}"; } |
-      "${_escExe}" cryptsetup luksChangeKey "${i}"; then
-      ((_num_fails++))
+  for _disk_str in "${_update_list[@]}"; do
+    if ! [ -b "${_disk_str}" ]; then
+      _cm2WarnStrFn "${_baseName}: Ignore ${_disk_str}: not a block device.";
+      continue;
+    fi
+
+    if { echo "${_old_pass}"; echo "${_new_pass}"; echo "${_new_pass}"; } \
+     | "${_escExe}" cryptsetup luksChangeKey "${_disk_str}"; then
+       true;
+    else
+      _fail_list+=( "${_disk_str}" );
     fi
   done
 
-  if [ "${_num_fails}" -eq 0 ]; then
-    exit 0;
-  elif [ "${_num_fails}" -eq "$#" ]; then
-    exit 2;
-  else
-    exit 1;
-  fi
+  echo "${_fail_list[@]}";
+  return "${#_fail_list[@]}";
 }
-## . END _modifyDisksPassFn }
+# . END _modifyDisksPassFn
 
-## BEGIN MAIN {
+# BEGIN MAIN
 _mainFn () {
-  declare _disk_str _reply_str _prompt_msg;
+  declare _cmd_str;
 
-  ## Begin Parse mode argument (if it exists) {
-  if [ "$1" = "-c" ]; then
-    _checkDisksForDefaultPassFn "${@:2}";
-  elif [ "$1" = "-m" ]; then
-    _modfyDisksPassFn "${@:2}";
-  fi
-  ## . End Parse mode argument }
+  _cmd_str="${1:-}";
 
-  ## Begin Disk checks {
-  _disk_str="${1:-}";
-  if [ -z "${_disk_str}" ]; then
-    _cm2WarnStrFn "${_baseName}: Invalid disk |${_disk_str}|";
-    _cm2AskExitFn 1;
-  fi
-  if ! [ -b "${_disk_str}" ]; then
-    _cm2WarnStrFn "${_baseName}: Disk |${_disk_str}| not found.";
-    _cm2AskExitFn 1;
-  fi
-  if blkid "${_disk_str}" | grep -vq 'TYPE="crypto_LUKS"'; then
-    _cm2WarnStrFn "${_baseName}: Disk |${_disk_str}| does not look encrypted.";
-    _cm2AskExitFn 1;
-  fi
-  ## . End Disk checks }
-
-  ## Begin Check passphrase {
-  _cm2EchoFn "Checking passphrase for disk |${_disk_str}|";
-  # _cm2EchoFn "Please enter your user password to proceed\n";
-  if _checkDiskPassFn "${_disk_str}"; then
-    _reply_str="$( _cm2ReadPromptYnFn \
-      "\nDisk |${_disk_str}| is using the default passphrase.
-  Would you like to change it now (RECOMMENDED)" 'y'
-    )";
-  elif [ "$?" = '1' ]; then
-    _cm2WarnStrFn "${_baseName}: Incorrect password.";
-    _cm2AskExitFn 1;
-  else
-    _reply_str="$( _cm2ReadPromptYnFn \
-      "\nDisk |${_disk_str}| does not use the default passphrase.
-  Are you sure you still want to change it (NOT recommended)" 'n'
-    )";
-  fi
-  ## . End Check passphrase }
-
-  ## Begin Handle passphrase reply {
-  if [ "${_reply_str}" = 'y' ]; then
-    _prompt_msg="$( cat << _EOH
-Change the passphrase by following the prompts below.
-
-WARNING: DO NOT LOSE YOUR PASSPHRASE!
-You will not be able to access the disk without it.
-
-Press <Control>-C to cancel.\n
-_EOH
-    )";
-    _cm2EchoFn "${_prompt_msg}";
-    "${_escExe}" cryptsetup luksChangeKey "${_disk_str}";
-  else
-    _cm2EchoFn "\nPassphrase has NOT been changed";
-  fi
-  ## . End Handle passphrase reply }
-  _cm2AskExitFn 0;
+  ## Begin Parse mode argument (if it exists)
+  case "${_cmd_str}" in
+    '-c')
+      _checkDisksForDefaultPassFn;
+      return;;
+    '-m')
+      shift;
+      _modifyDisksPassFn "$@";
+      return;;
+    '-q')
+      _setCryptListFn;
+      echo "${_cryptList[@]}";
+      return;;
+    *)
+      _cm2ErrStrFn 'No directive specified';
+      return 1;;
+  esac;
+  ## . End Parse mode argument
 }
-# . END MAIN }
+# . END MAIN
 
-## BEGIN set global vars {
-declare _defaultStr
-
+# BEGIN Declare and set global vars
+declare _defaultStr _escExe _setExe _cryptList;
 _defaultStr="$(echo 6b7562756e74750a |xxd -r -p)";
-## . END set global vars }
+# . END Declare and set global vars
 
-## BEGIN Run main if script is not sourced {
+# BEGIN Run main if script is not sourced
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binName="$(  readlink -f "$0"       )" || exit 101;
   _binDir="$(   dirname  "${_binName}" )" || exit 101;
@@ -185,6 +175,12 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   # Get escalation exe
   _escExe="$(_cm2GetEscExeFn)" || exit;
+  _assignList=( "_setExe|${_binDir}/kfocus-firstrun-set" );
+  if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
+    _cm2WarnStrFn 'Could not assign variables';
+    exit 1;
+  fi
+
   _mainFn "$@";
 fi
-## . END Run main if script is not sourced }
+# . END Run main if script is not sourced

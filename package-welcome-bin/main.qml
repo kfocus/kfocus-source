@@ -7,7 +7,7 @@ import shellengine 1.0
 
 Kirigami.ApplicationWindow {
     id: root
-    title: "Kubuntu Focus Welcome Wizard"
+    title: 'Kubuntu Focus Welcome Wizard'
     width: Kirigami.Units.gridUnit * 38
     height: Kirigami.Units.gridUnit * 25
 
@@ -19,7 +19,7 @@ Kirigami.ApplicationWindow {
      ***************/
 
     Component.onCompleted: {
-        switchPage("introductionItem")
+        switchPage('introductionItem')
     }
 
     /***********
@@ -52,24 +52,24 @@ Kirigami.ApplicationWindow {
         id: stepsModel
 
         ListElement {
-            jsId: "introductionItem"
-            task: "Introduction"
-            taskIcon: "user-home-symbolic"
+            jsId: 'introductionItem'
+            task: 'Introduction'
+            taskIcon: 'user-home-symbolic'
         }
         ListElement {
-            jsId: "diskPassphraseItem"
-            task: "Disk Passphrase"
-            taskIcon: "lock"
+            jsId: 'diskPassphraseItem'
+            task: 'Disk Passphrase'
+            taskIcon: 'lock'
         }
         ListElement {
-            jsId: "extraSoftwareItem"
-            task: "Extra Software"
-            taskIcon: "install"
+            jsId: 'extraSoftwareItem'
+            task: 'Extra Software'
+            taskIcon: 'install'
         }
         ListElement {
-            jsId: "fileBackupItem"
-            task: "File Backup"
-            taskIcon: "backup"
+            jsId: 'fileBackupItem'
+            task: 'File Backup'
+            taskIcon: 'backup'
         }
     }
 
@@ -149,8 +149,8 @@ Kirigami.ApplicationWindow {
                 bottom: parent.bottom
             }
 
-            text: "Previous"
-            icon.name: "arrow-left"
+            text: 'Previous'
+            icon.name: 'arrow-left'
             onClicked: previousPage()
         }
 
@@ -168,8 +168,8 @@ Kirigami.ApplicationWindow {
             Controls.Button {
                 id: skipButton
 
-                text: "Skip"
-                icon.name: "go-next-skip"
+                text: 'Skip'
+                icon.name: 'go-next-skip'
                 onClicked: nextPage()
             }
         }
@@ -220,6 +220,11 @@ Kirigami.ApplicationWindow {
             ColumnLayout {
                 Layout.alignment: Qt.AlignTop
 
+                Kirigami.InlineMessage {
+                    id: interErrorMessage
+                    type: Kirigami.MessageType.Error
+                }
+
                 Controls.Label {
                     id: instructionsText
                     wrapMode: Text.WordWrap
@@ -236,7 +241,7 @@ Kirigami.ApplicationWindow {
                     Layout.bottomMargin: Kirigami.Units.gridUnit
 
                     Controls.Label {
-                        text: "New passphrase"
+                        text: 'New passphrase'
                         Layout.alignment: Qt.AlignRight
                     }
 
@@ -247,14 +252,14 @@ Kirigami.ApplicationWindow {
 
                     Controls.Button {
                         id: newPassphrasePeekButton
-                        icon.name: "password-show-off"
+                        icon.name: 'password-show-off'
                         onClicked: {
-                            if(this.icon.name === "password-show-off") {
-                                this.icon.name = "password-show-on"
+                            if (this.icon.name === 'password-show-off') {
+                                this.icon.name = 'password-show-on'
                                 newPassphraseBox.echoMode = TextInput.Normal
                                 confirmPassphraseBox.echoMode = TextInput.Normal
                             } else {
-                                this.icon.name = "password-show-off"
+                                this.icon.name = 'password-show-off'
                                 newPassphraseBox.echoMode = TextInput.Password
                                 confirmPassphraseBox.echoMode = TextInput.Password
                             }
@@ -262,7 +267,7 @@ Kirigami.ApplicationWindow {
                     }
 
                     Controls.Label {
-                        text: "Confirm new passphrase"
+                        text: 'Confirm new passphrase'
                         Layout.alignment: Qt.AlignRight
                     }
 
@@ -290,7 +295,7 @@ Kirigami.ApplicationWindow {
                     model: interImageList
 
                     Image {
-                        source: "assets/images/" + interImageList[index]
+                        source: 'assets/images/' + interImageList[index]
                         fillMode: Image.PreserveAspectFit
                         Layout.bottomMargin: Kirigami.Units.gridUnit
                         Layout.alignment: Qt.AlignHCenter
@@ -307,8 +312,8 @@ Kirigami.ApplicationWindow {
 
             Controls.Button {
                 id: interSkipButton
-                text: "Skip"
-                icon.name: "go-next-skip"
+                text: 'Skip'
+                icon.name: 'go-next-skip'
                 onClicked: nextPage()
             }
 
@@ -327,121 +332,121 @@ Kirigami.ApplicationWindow {
         pageStack.clear()
 
         switch(pageId) {
-        case "introductionItem":
+        case 'introductionItem':
             initPage([topImage, topHeading, primaryText, actionButton])
 
-            baseTemplatePage.title = "Introduction"
-            topImage.source = "assets/images/focus_lineup.svg"
-            topHeading.text = "Welcome To The Kubuntu Focus!"
-            primaryText.text = "<b>This Welcome Wizard helps you get " +
-                    "started as quickly as possible.</b> We have included " +
-                    "many tools we feel most developers should " +
-                    "consider.<br>" +
-                    "<br>" +
-                    "<b>This is not an endorsement of any product,</b> and " +
-                    "the Focus Team is not compensated in any way for " +
-                    "these suggestions. You may always run this wizard " +
-                    "later using Start Menu > Kubuntu Focus > Welcome Wizard."
-            actionButton.text = "Continue"
-            actionButton.icon.name = "arrow-right"
-            actionName = "nextPage"
+            baseTemplatePage.title = 'Introduction'
+            topImage.source = 'assets/images/focus_lineup.svg'
+            topHeading.text = 'Welcome To The Kubuntu Focus!'
+            primaryText.text = '<b>This Welcome Wizard helps you get ' +
+                    'started as quickly as possible.</b> We have included ' +
+                    'many tools we feel most developers should ' +
+                    'consider.<br>' +
+                    '<br>' +
+                    '<b>This is not an endorsement of any product,</b> and ' +
+                    'the Focus Team is not compensated in any way for ' +
+                    'these suggestions. You may always run this wizard ' +
+                    'later using Start Menu > Kubuntu Focus > Welcome Wizard.'
+            actionButton.text = 'Continue'
+            actionButton.icon.name = 'arrow-right'
+            actionName = 'nextPage'
             regenUI(baseTemplatePage, true)
             break
 
-        case "diskPassphraseItem":
+        case 'diskPassphraseItem':
             initPage([topImage, topHeading, primaryText, actionButton,
                       skipButton, previousButton])
 
             while (cryptDiskList.length === 0) {} // wait for blkid
 
-            baseTemplatePage.title = getCryptDiskText("Disk Passphrase")
-            topImage.source = "assets/images/encrypted_drive.svg"
-            topHeading.text = "Check Disk Encryption Security"
-            primaryText.text = "<b>The wizard has detected " +
-                    getCryptDiskText("1 encrypted disk") +
-                    "</b> on this system. If you bought a system with disk " +
-                    "encryption enabled and you have yet to change the " +
-                    getCryptDiskText("passphrase") +
-                    ", you should do so now. Otherwise, you can skip this " +
-                    "step.<br>" +
-                    "<br>" +
-                    "<b>You may check " +
-                    getCryptDiskText("this disk") +
-                    " for the default password now.</b> As a security " +
-                    "measure, this app will not perform this check until " +
-                    "you enter your valid user password."
-            actionButton.text = "Check Disk Passphrases Now"
-            actionButton.icon.name = "lock"
-            actionName = "checkCrypt"
+            baseTemplatePage.title = getCryptDiskText('Disk Passphrase')
+            topImage.source = 'assets/images/encrypted_drive.svg'
+            topHeading.text = 'Check Disk Encryption Security'
+            primaryText.text = '<b>The wizard has detected ' +
+                    getCryptDiskText('1 encrypted disk') +
+                    '</b> on this system. If you bought a system with disk ' +
+                    'encryption enabled and you have yet to change the ' +
+                    getCryptDiskText('passphrase') +
+                    ', you should do so now. Otherwise, you can skip this ' +
+                    'step.<br>' +
+                    '<br>' +
+                    '<b>You may check ' +
+                    getCryptDiskText('this disk') +
+                    ' for the default password now.</b> As a security ' +
+                    'measure, this app will not perform this check until ' +
+                    'you enter your valid user password.'
+            actionButton.text = 'Check Disk Passphrases Now'
+            actionButton.icon.name = 'lock'
+            actionName = 'checkCrypt'
             regenUI(baseTemplatePage, true)
             break
 
-        case "diskPassphraseCheckerItem":
+        case 'diskPassphraseCheckerItem':
             initPage([topHeading, busyIndicator])
 
-            baseTemplatePage.title = getCryptDiskText("Disk Passphrase")
-            topHeading.text = "Checking Disk Encryption Security...\n" +
-                    "This might take a minute."
+            baseTemplatePage.title = getCryptDiskText('Disk Passphrase')
+            topHeading.text = 'Checking Disk Encryption Security...\n' +
+                    'This might take a minute.'
             regenUI(baseTemplatePage, false)
             break
 
-        case "diskPassphraseChangeInProgressItem":
+        case 'diskPassphraseChangeInProgressItem':
             initPage([topHeading, busyIndicator])
 
-            baseTemplatePage.title = getCryptDiskText("Disk Passphrase")
-            topHeading.text = "Changing Disk Passphrases...\n" +
-                   "This might take a minute."
+            baseTemplatePage.title = getCryptDiskText('Disk Passphrase')
+            topHeading.text = 'Changing Disk Passphrases...\n' +
+                   'This might take a minute.'
             regenUI(baseTemplatePage, false)
             break
 
-        case "diskPassphraseChangeItem":
+        case 'diskPassphraseChangeItem':
             initPage([headerHighlightRect, interTopHeading, instructionsText,
                       interSkipButton, interActionButton, passphraseChangeForm,
                       secondaryInstructionsText])
 
-            headerHighlightRect.color = "#ff9900"
-            interTopHeading.text = "Change Passphrase for " + getCryptDiskText("1 Encrypted Disk")
-            instructionsText.text = "<b>" +
-                    getCryptDiskText("This disk is") +
-                    " using the default passphrase.</b> This is insecure, " +
-                    "and we recommend you use the form below to change " +
-                    getCryptDiskText("it") +
-                    " now."
-            secondaryInstructionsText.text = "<b>Please keep a copy of " +
-                    "your passphrase in a safe place.</b> If this is lost, " +
-                    "there is no recovery except to reformat your disks " +
-                    "and restore from backup.<br>" +
-                    "<br>" +
-                    "<b>For your security, the Kubuntu Focus Team does NOT " +
-                    "install tools</b> that could assist in any recovery."
-            interActionButton.text = "Continue"
-            interActionButton.icon.name = "arrow-right"
+            headerHighlightRect.color = '#ff9900'
+            interTopHeading.text = 'Change Passphrase for ' + getCryptDiskText('1 Encrypted Disk')
+            instructionsText.text = '<b>' +
+                    getCryptDiskText('This disk is') +
+                    ' using the default passphrase.</b> This is insecure, ' +
+                    'and we recommend you use the form below to change ' +
+                    getCryptDiskText('it') +
+                    ' now.'
+            secondaryInstructionsText.text = '<b>Please keep a copy of ' +
+                    'your passphrase in a safe place.</b> If this is lost, ' +
+                    'there is no recovery except to reformat your disks ' +
+                    'and restore from backup.<br>' +
+                    '<br>' +
+                    '<b>For your security, the Kubuntu Focus Team does NOT ' +
+                    'install tools</b> that could assist in any recovery.'
+            interActionButton.text = 'Continue'
+            interActionButton.icon.name = 'arrow-right'
             regenUI(interTemplatePage, false)
-            actionName = "changeCrypt"
+            actionName = 'changeCrypt'
             break
 
-        case "diskPassphraseGoodItem":
+        case 'diskPassphraseGoodItem':
             initPage([headerHighlightRect, interTopHeading, instructionsText,
                       pictureColumn, interActionButton])
 
-            interTemplatePage.title = getCryptDiskText("Disk Passphrase")
-            interImageList = [ "finished.svg" ]
-            headerHighlightRect.color = "#27ae60"
-            interTopHeading.text = "Disk Encryption Passphrases Appear Secure"
-            instructionsText.text = "<b>" +
-                    getCryptDiskText("The encrypted disk uses") +
-                    " a non-default passphrase.</b><br>" +
-                    "<br>" +
-                    "<b>Please keep a copy of your passphrase in a safe " +
-                    "place.</b> If this is lost, there is no recovery " +
-                    "except to reformat your disks and restore from " +
-                    "backup.<br>" +
-                    "<br>" +
-                    "<b>For your security, the Kubuntu Focus Team does NOT " +
-                    "install tools</b> that could assist in any recovery."
-            interActionButton.text = "Continue"
-            interActionButton.icon.name = "arrow-right"
-            actionName = "nextPage"
+            interTemplatePage.title = getCryptDiskText('Disk Passphrase')
+            interImageList = [ 'finished.svg' ]
+            headerHighlightRect.color = '#27ae60'
+            interTopHeading.text = 'Disk Encryption Passphrases Appear Secure'
+            instructionsText.text = '<b>' +
+                    getCryptDiskText('The encrypted disk uses') +
+                    ' a non-default passphrase.</b><br>' +
+                    '<br>' +
+                    '<b>Please keep a copy of your passphrase in a safe ' +
+                    'place.</b> If this is lost, there is no recovery ' +
+                    'except to reformat your disks and restore from ' +
+                    'backup.<br>' +
+                    '<br>' +
+                    '<b>For your security, the Kubuntu Focus Team does NOT ' +
+                    'install tools</b> that could assist in any recovery.'
+            interActionButton.text = 'Continue'
+            interActionButton.icon.name = 'arrow-right'
+            actionName = 'nextPage'
             regenUI(interTemplatePage, false)
             break
         }
@@ -453,7 +458,7 @@ Kirigami.ApplicationWindow {
                                 busyIndicator, headerHighlightRect,
                                 interTopHeading, instructionsText,
                                 interActionButton, passphraseChangeForm,
-                                secondaryInstructionsText]
+                                secondaryInstructionsText, interErrorMessage]
         var i = 0;
 
         for (i = 0;i < allElementsList.length;i++) {
@@ -493,37 +498,37 @@ Kirigami.ApplicationWindow {
     }
 
     function getCryptDiskText(textType) {
-        if(cryptDiskList.length === 1) {
+        if (cryptDiskList.length === 1) {
             return textType
         } else {
             switch(textType) {
-            case "Disk Passphrase":
-                return "Disk Passphrases"
+            case 'Disk Passphrase':
+                return 'Disk Passphrases'
 
-            case "1 encrypted disk":
-                return cryptDiskList.length + " encrypted disks"
+            case '1 encrypted disk':
+                return cryptDiskList.length + ' encrypted disks'
 
-            case "1 Encrypted Disk":
-                return cryptDiskList.length + " Encrypted Disks"
+            case '1 Encrypted Disk':
+                return cryptDiskList.length + ' Encrypted Disks'
 
-            case "passphrase":
-                return "passphrases"
+            case 'passphrase':
+                return 'passphrases'
 
-            case "this disk":
-                return "these disks"
+            case 'this disk':
+                return 'these disks'
 
-            case "The encrypted disk uses":
+            case 'The encrypted disk uses':
                 if (cryptDiskList.length === 2){
-                    return "Both encrypted disks use"
+                    return 'Both encrypted disks use'
                 } else {
-                    return "All encrypted disks use"
+                    return 'All encrypted disks use'
                 }
 
-            case "This disk is":
-                return "These disks are"
+            case 'This disk is':
+                return 'These disks are'
 
-            case "it":
-                return "them"
+            case 'it':
+                return 'them'
             }
         }
 
@@ -551,22 +556,16 @@ Kirigami.ApplicationWindow {
         interval: 2000 // Ping once every 2 seconds, might be too frequent?
         running: true
         repeat: true
-        onTriggered: internetCheckerEngine.exec("ping -c 1 8.8.8.8")
+        onTriggered: internetCheckerEngine.exec('ping -c 1 8.8.8.8')
     }
 
     // Get list of encrypted disks on the system (one time, runs at launch)
 
     ShellEngine {
         id: cryptDiskListEngine
-
-        commandStr: "for i in " +
-                    "$(blkid " +
-                    "| grep 'TYPE=\"crypto_LUKS\"' " +
-                    "| cut -d' ' -f1); " +
-                    "do echo $(echo $i | head -c-2); done"
-
+        commandStr: bindir + 'kfocus-crypt-setup -q'
         onAppExited: {
-            cryptDiskList = stdout.split("\n").slice(0, -1)
+            cryptDiskList = stdout.split('\n').slice(0, -1)
         }
     }
 
@@ -574,13 +573,12 @@ Kirigami.ApplicationWindow {
 
     ShellEngine {
         id: cryptDiskCheckerEngine
-
         onAppExited: {
             defaultPassphraseDisks = exitCode
             if (exitCode > 0) {
-                switchPage("diskPassphraseChangeItem")
+                switchPage('diskPassphraseChangeItem')
             } else {
-                switchPage("diskPassphraseGoodItem")
+                switchPage('diskPassphraseGoodItem')
             }
         }
     }
@@ -589,13 +587,12 @@ Kirigami.ApplicationWindow {
 
     ShellEngine {
         id: cryptDiskChangeEngine
-
         onAppExited: {
             /* TODO: If we get an exit code of 2 here, something has gone
                dreadfully wrong (disk failure?), in which case we really
                should tell the user that something just blew up. An exit code
                of 1 is ignorable. */
-            switchPage("diskPassphraseGoodItem")
+            switchPage('diskPassphraseGoodItem')
         }
     }
 
@@ -604,30 +601,29 @@ Kirigami.ApplicationWindow {
 
     function takeAction() {
         switch(actionName) {
-        case "nextPage":
+        case 'nextPage':
             nextPage()
             break
 
-        case "previousPage":
+        case 'previousPage':
             previousPage()
             break
 
-        case "checkCrypt":
-            cryptDiskCheckerEngine.exec("pkexec " +
-                                         binDir +
-                                        "kfocus-check-crypt -c " +
-                                        cryptDiskList.join(' '))
-            switchPage("diskPassphraseCheckerItem")
+        case 'checkCrypt':
+            cryptDiskCheckerEngine.exec(
+              binDir + 'kfocus-check-crypt -c ' + cryptDiskList.join(' '))
+            switchPage('diskPassphraseCheckerItem')
             break
 
-        case "changeCrypt":
-            cryptDiskChangeEngine.exec("pkexec " +
-                                        binDir +
-                                        "kfocus-check-crypt -m " +
-                                        cryptDiskList.join(' '),
-                                        "kubuntu\n" + newPassphraseBox.text +
-                                        "\n")
-            switchPage("diskPassphraseChangeInProgressItem")
+        case 'changeCrypt':
+            if (newPassphraseBox.text === oldPassphraseBox.text) {
+                cryptDiskChangeEngine.exec(
+                  binDir + 'kfocus-check-crypt -m ' + cryptDiskList.join(' '),
+                  'kubuntu\n' + newPassphraseBox.text + '\n')
+                switchPage('diskPassphraseChangeInProgressItem')
+            } else {
+                // TODO: error message
+            }
         }
     }
 
@@ -635,8 +631,8 @@ Kirigami.ApplicationWindow {
      * Global Properties *
      *********************/
 
-    property string binDir: "/please/change/this/to/your/package-main/usr/lib/kfocus/bin"
-    property string actionName: ""
+    property string binDir: '/home/bill/Github/kfocus-source/package-main/usr/lib/kfocus/bin';
+    property string actionName: ''
     property int stepsListLockIndex: 0
     property bool firstRun: true
     property var interImageList: []
