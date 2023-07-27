@@ -36,6 +36,7 @@ QProcess *ShellEngine::execCore(QString args, QString stdinFeed) {
     if (stdinFeed.length() != 0) {
         proc->write(stdinFeed.toUtf8());
     }
+    proc->closeWriteChannel();
     return proc;
 }
 
