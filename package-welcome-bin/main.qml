@@ -3,7 +3,7 @@ import QtQuick.Controls 2.0 as Controls
 import QtQuick.Layouts 1.2
 import QtQuick.Window 2.2
 import org.kde.kirigami 2.15 as Kirigami
-import shellengine 1.0
+import shellengine 1.1
 
 Kirigami.ApplicationWindow {
     id: root
@@ -358,8 +358,6 @@ Kirigami.ApplicationWindow {
             initPage([topImage, topHeading, primaryText, actionButton,
                       skipButton, previousButton])
 
-            while (cryptDiskList.length === 0) {} // wait for blkid
-
             baseTemplatePage.title = getCryptDiskText('Disk Passphrase')
             topImage.source = 'assets/images/encrypted_drive.svg'
             topHeading.text = 'Check Disk Encryption Security'
@@ -499,7 +497,7 @@ Kirigami.ApplicationWindow {
     }
 
     function getCryptDiskText(textType) {
-        if (cryptDiskList.length === 1) {
+        if (startupData.encryptedDisks.length === 1) {
             return textType
         } else {
             switch(textType) {
@@ -507,10 +505,10 @@ Kirigami.ApplicationWindow {
                 return 'Disk Passphrases'
 
             case '1 encrypted disk':
-                return cryptDiskList.length + ' encrypted disks'
+                return startupData.encryptedDisks.length + ' encrypted disks'
 
             case '1 Encrypted Disk':
-                return cryptDiskList.length + ' Encrypted Disks'
+                return startupData.encryptedDisks.length + ' Encrypted Disks'
 
             case 'passphrase':
                 return 'passphrases'
@@ -519,7 +517,7 @@ Kirigami.ApplicationWindow {
                 return 'these disks'
 
             case 'The encrypted disk uses':
-                if (cryptDiskList.length === 2){
+                if (startupData.encryptedDisks.length === 2){
                     return 'Both encrypted disks use'
                 } else {
                     return 'All encrypted disks use'
@@ -539,35 +537,8 @@ Kirigami.ApplicationWindow {
      * Logic code *
      **************/
 
-    // Poll for Internet access
-
-    ShellEngine {
-        id: internetCheckerEngine
-
-        onAppExited: {
-            if (exitCode === 0) {
-                internetConnected = true
-            } else {
-                internetConnected = false
-            }
-        }
-    }
-
-    Timer {
-        interval: 2000 // Ping once every 2 seconds, might be too frequent?
-        running: true
-        repeat: true
-        onTriggered: internetCheckerEngine.exec('ping -c 1 8.8.8.8')
-    }
-
-    // Get list of encrypted disks on the system (one time, runs at launch)
-
-    ShellEngine {
-        id: cryptDiskListEngine
-        commandStr: binDir + 'kfocus-check-crypt -q'
-        onAppExited: {
-            cryptDiskList = stdout.split('\n').slice(0, -1)
-        }
+    StartupData {
+        id: startupData
     }
 
     // Check all encrypted disks for the default passphrase
@@ -612,14 +583,16 @@ Kirigami.ApplicationWindow {
 
         case 'checkCrypt':
             cryptDiskCheckerEngine.exec(
-              binDir + 'kfocus-check-crypt -c ' + cryptDiskList.join(' '))
+              startupData.binDir + 'kfocus-check-crypt -c ' +
+              startupData.encrptedDisks.join(' '))
             switchPage('diskPassphraseCheckerItem')
             break
 
         case 'changeCrypt':
             if (newPassphraseBox.text === confirmPassphraseBox.text) {
                 cryptDiskChangeEngine.exec(
-                  binDir + 'kfocus-check-crypt -m ' + cryptDiskList.join(' '),
+                  startupData.binDir + 'kfocus-check-crypt -m ' +
+                  startupData.encrptedDisks.join(' '),
                   'kubuntu\n' + newPassphraseBox.text + '\n')
                 switchPage('diskPassphraseChangeInProgressItem')
             } else {
@@ -634,12 +607,9 @@ Kirigami.ApplicationWindow {
      * Global Properties *
      *********************/
 
-    property string binDir: '/home/bill/Github/kfocus-source/package-main/usr/lib/kfocus/bin/';
     property string actionName: ''
     property int stepsListLockIndex: 0
     property bool firstRun: true
     property var interImageList: []
-    property bool internetConnected: false
-    property var cryptDiskList: []
     property int defaultPassphraseDisks: 0
 }

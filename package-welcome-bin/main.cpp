@@ -2,7 +2,11 @@
 #include <QQmlApplicationEngine>
 #include <QQuickStyle>
 #include <QIcon>
+#include <startupdata.h>
+#include <shellengine.h>
 
+QStringList StartupData::m_encryptedDisks = QStringList();
+QString StartupData::m_binDir = "/home/bill/GitHub/kfocus-source/package-main/usr/lib/kfocus/bin/";
 
 int main(int argc, char *argv[])
 {
@@ -14,6 +18,13 @@ int main(int argc, char *argv[])
             QQuickStyle::setStyle(QStringLiteral("org.kde.desktop"));
         }
     app.setWindowIcon(QIcon("/usr/share/icons/hicolor/scalable/apps/kfocus-bug-wizard.svg"));
+
+    StartupData dat;
+    ShellEngine encryptedDiskFinder;
+    encryptedDiskFinder.execSync(dat.binDir() + "kfocus-check-crypt -q");
+    QStringList cryptDisks(encryptedDiskFinder.stdout().split('\n'));
+    cryptDisks.removeLast();
+    dat.setEncryptedDisks(cryptDisks);
 
     QQmlApplicationEngine engine;
     const QUrl url(QStringLiteral("qrc:/main.qml"));

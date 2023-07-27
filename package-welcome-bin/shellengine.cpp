@@ -6,10 +6,27 @@ ShellEngine::ShellEngine()
 }
 
 void ShellEngine::exec(QString args) {
-    this->exec(args, "");
+    exec(args, "");
 }
 
 void ShellEngine::exec(QString args, QString stdinFeed) {
+    QProcess *proc = execCore(args, stdinFeed);
+    connect(proc, SIGNAL(finished(int)), this, SLOT(triggerExited()));
+}
+
+int ShellEngine::execSync(QString args) {
+    return execSync(args, "");
+}
+
+int ShellEngine::execSync(QString args, QString stdinFeed) {
+    QProcess *proc = execCore(args, stdinFeed);
+    proc->waitForFinished();
+    m_stdout = extractStdout(proc);
+    proc->deleteLater();
+    return proc->exitCode();
+}
+
+QProcess *ShellEngine::execCore(QString args, QString stdinFeed) {
     QProcess *proc = new QProcess();
     QStringList argsList;
     argsList.append("-c");
@@ -19,14 +36,18 @@ void ShellEngine::exec(QString args, QString stdinFeed) {
     if (stdinFeed.length() != 0) {
         proc->write(stdinFeed.toUtf8());
     }
-    connect(proc, SIGNAL(finished(int)), this, SLOT(triggerExited()));
+    return proc;
 }
 
 void ShellEngine::triggerExited() {
-    QProcess *process = ((QProcess *)sender());
-    QByteArray result = process->readAllStandardOutput();
-    QString final = QString::fromUtf8(result);
-    m_stdout = final;
+    QProcess *proc = ((QProcess *)sender());
+    m_stdout = extractStdout(proc);
     sender()->deleteLater();
-    emit appExited(process == lastProcess, process->exitCode());
+    emit appExited(proc == lastProcess, proc->exitCode());
+}
+
+QString ShellEngine::extractStdout(QProcess *proc) {
+    QByteArray result = proc->readAllStandardOutput();
+    QString final = QString::fromUtf8(result);
+    return final;
 }

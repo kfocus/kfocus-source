@@ -6,7 +6,8 @@ QT += quick
 
 SOURCES += \
         main.cpp \
-        shellengine.cpp
+        shellengine.cpp \
+        startupdata.cpp
 
 RESOURCES += qml.qrc
 QT += quickcontrols2
@@ -29,4 +30,5 @@ QML_IMPORT_MAJOR_VERSION = 1
 QML_IMPORT_MINOR_VERSION = 1
 
 HEADERS += \
-    shellengine.h
+    shellengine.h \
+    startupdata.h
