@@ -524,7 +524,34 @@ Kirigami.ApplicationWindow {
             actionButton.icon.name = 'arrow-right'
             actionName = 'checkNetwork'
             networkReturnPage = 'extraSoftwareInstallItem'
+            networkReturnAction = 'installExtraSoftware'
             regenUI(baseTemplatePage, true)
+            break
+
+        case 'extraSoftwareInstallItem':
+            initPage([headerHighlightRect, interTopHeading, instructionsText,
+                      interActionButton, pictureColumn])
+
+            interTemplatePage.title = 'Extra Software'
+            headerHighlightRect.color = '#27ae60'
+            interTopHeading.text = 'Proceed with Terminal...'
+            instructionsText.text = '<b>1. You should now see</b> a ' +
+                    'terminal as shown at right with a prompt for ' +
+                    'installation. Please enter your password to ' +
+                    'proceed.<br>' +
+                    '<br>' +
+                    '<b>2. As you follow the steps,</b> you will be ' +
+                    'prompted to accept license terms. If you do not ' +
+                    'agree with the terms for a particular software ' +
+                    'component, you may skip installing it.<br>' +
+                    '<br>' +
+                    '<b>Once you are finished,</b> please return here and ' +
+                    'click "Continue" to proceed to the next step.'
+            interActionButton.text = 'Continue'
+            interActionButton.icon.name = 'arrow-right'
+            interImageList = [ 'extra_software_terminal.svg', 'extra_software_license.svg' ]
+            actionName = 'nextPage'
+            regenUI(interTemplatePage, false)
             break
         }
     }
@@ -535,7 +562,8 @@ Kirigami.ApplicationWindow {
                                 busyIndicator, headerHighlightRect,
                                 interTopHeading, instructionsText,
                                 interActionButton, passphraseChangeForm,
-                                secondaryInstructionsText, interErrorMessage]
+                                secondaryInstructionsText, interErrorMessage,
+                                interSkipButton]
         var i = 0;
 
         for (i = 0;i < allElementsList.length;i++) {
@@ -648,11 +676,20 @@ Kirigami.ApplicationWindow {
 
         onAppExited: {
             if (exitCode === 0) {
+                actionName = networkReturnAction
+                takeAction()
                 switchPage(networkReturnPage)
             } else {
                 switchPage('connectInternetItem')
             }
         }
+    }
+
+    /* Anything that doesn't require a callback on exit is run with this
+       engine */
+
+    ShellEngine {
+        id: exeRun
     }
 
     /* Event handlers for action button onClicked events - we do this since
@@ -676,7 +713,7 @@ Kirigami.ApplicationWindow {
         case 'checkCrypt':
             cryptDiskCheckerEngine.exec(
               startupData.binDir + 'kfocus-check-crypt -c ' +
-              startupData.encrptedDisks.join(' '))
+              startupData.encryptedDisks.join(' '))
             switchPage('diskPassphraseCheckerItem')
             break
 
@@ -684,7 +721,7 @@ Kirigami.ApplicationWindow {
             if (newPassphraseBox.text === confirmPassphraseBox.text) {
                 cryptDiskChangeEngine.exec(
                   startupData.binDir + 'kfocus-check-crypt -m ' +
-                  startupData.encrptedDisks.join(' '),
+                  startupData.encryptedDisks.join(' '),
                   'kubuntu\n' + newPassphraseBox.text + '\n')
                 switchPage('diskPassphraseChangeInProgressItem')
             } else {
@@ -692,6 +729,14 @@ Kirigami.ApplicationWindow {
                         'match. Please try again.'
                 interErrorMessage.visible = true
             }
+            break
+
+        case 'installExtraSoftware':
+            exeRun.exec(
+              'xterm -fa \'Monospace\' -fs 12 -b 28 -geometry 80x24 -T ' +
+              '\'Install Extras\' -xrm \'xterm*iconHint: ' +
+              '/usr/share/pixmaps/kfocus-bug-wizard\' -e pkexec ' +
+              startupData.binDir + 'kfocus-extra')
             break
         }
     }
@@ -702,6 +747,7 @@ Kirigami.ApplicationWindow {
 
     property string actionName: ''
     property string networkReturnPage: ''
+    property string networkReturnAction: ''
     property int stepsListLockIndex: 0
     property bool firstRun: true
     property var interImageList: []
