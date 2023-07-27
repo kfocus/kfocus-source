@@ -19,7 +19,7 @@ Kirigami.ApplicationWindow {
 
     Component.onCompleted: {
         if (startupData.encryptedDisks.length === 0) {
-            removeSidebarItem("diskPassphraseItem")
+            removeSidebarItem('diskPassphraseItem')
         }
 
         switchPage('introductionItem')
@@ -366,6 +366,47 @@ Kirigami.ApplicationWindow {
             regenUI(baseTemplatePage, true)
             break
 
+        case 'internetCheckItem':
+            initPage([topHeading, busyIndicator])
+
+            topHeading.text = "Checking for Internet connectivity..."
+            regenUI(baseTemplatePage, false)
+            break
+
+        case 'connectInternetItem':
+            initPage([headerHighlightRect, interTopHeading, instructionsText,
+                      interSkipButton, interActionButton, pictureColumn])
+
+            headerHighlightRect.color = '#ff9900'
+            interTopHeading.text = 'Please Connect to the Internet'
+            instructionsText.text = '<b>The system is not currently ' +
+                    'connected to the Internet.</b> Please connect to ' +
+                    'complete this step.<br>' +
+                    '<br>' +
+                    '<b>1. Click on the network icon</b> in the system ' +
+                    'tray to see a list of available connections.<br>' +
+                    '<br>' +
+                    '<b>2. Click the "Connect" button</b> on the network ' +
+                    'you wish to connect to.<br>' +
+                    '<br>' +
+                    '<b>3. If necessary, enter your Wi-Fi password</b> and ' +
+                    'press Enter to connect to the network.<br>' +
+                    '<br>' +
+                    '<b>Click on the "Continue" button when finished.</b> ' +
+                    'If the connection is not established, you will be ' +
+                    'returned to this page.<br>' +
+                    '<br>' +
+                    '<b>If you cannot connect, click Skip</b> to move to ' +
+                    'the next step.'
+            interImageList = [ 'network_disconnect.svg',
+                               'network_button_pointer.svg',
+                               'network_connect_dialog.svg']
+            interActionButton.text = 'Continue'
+            interActionButton.icon.name = 'arrow-right'
+            regenUI(interTemplatePage, false)
+            actionName = 'checkNetwork'
+            break
+
         case 'diskPassphraseItem':
             initPage([topImage, topHeading, primaryText, actionButton,
                       skipButton, previousButton])
@@ -459,6 +500,30 @@ Kirigami.ApplicationWindow {
             interActionButton.icon.name = 'arrow-right'
             actionName = 'nextPage'
             regenUI(interTemplatePage, false)
+            break
+
+        case 'extraSoftwareItem':
+            initPage([topImage, topHeading, primaryText, actionButton,
+                      previousButton, actionButton, skipButton])
+
+            baseTemplatePage.title = 'Extra Software'
+            topImage.source = 'assets/images/extra_software.svg'
+            topHeading.text = 'Install MS Fonts, VirtualBox Extensions, ' +
+                    'and More'
+            primaryText.text = '<b>Some software is restricted,</b> ' +
+                    'meaning you have to approve certain agreements before ' +
+                    'you install it. We recommend you at least install the ' +
+                    'MS fonts to assist in compatibility. If you use ' +
+                    'VirtualBox, we also recommend adding the VirtualBox ' +
+                    'Extension Pack.<br>' +
+                    '<br>' +
+                    'You may always revisit this later using <b>Start Menu ' +
+                    '> Kubuntu Focus Tools > Extra Software Installer.</b> '
+            actionButton.text = 'Install Extra Software Now'
+            actionButton.icon.name = 'arrow-right'
+            actionName = 'checkNetwork'
+            networkReturnPage = 'extraSoftwareInstallItem'
+            regenUI(baseTemplatePage, true)
             break
         }
     }
@@ -575,6 +640,20 @@ Kirigami.ApplicationWindow {
         }
     }
 
+    // Used for checking for a network connection
+
+    ShellEngine {
+        id: internetCheckerEngine
+
+        onAppExited: {
+            if (exitCode === 0) {
+                switchPage(networkReturnPage)
+            } else {
+                switchPage('connectInternetItem')
+            }
+        }
+    }
+
     /* Event handlers for action button onClicked events - we do this since
        Controls.Button.onClicked can't be changed from within JS */
 
@@ -586,6 +665,11 @@ Kirigami.ApplicationWindow {
 
         case 'previousPage':
             previousPage()
+            break
+
+        case 'checkNetwork':
+            internetCheckerEngine.exec('ping -c 1 8.8.8.8')
+            switchPage('internetCheckItem')
             break
 
         case 'checkCrypt':
@@ -603,10 +687,11 @@ Kirigami.ApplicationWindow {
                   'kubuntu\n' + newPassphraseBox.text + '\n')
                 switchPage('diskPassphraseChangeInProgressItem')
             } else {
-                interErrorMessage.text = "The provided passphrases do not " +
-                        "match. Please try again."
+                interErrorMessage.text = 'The provided passphrases do not ' +
+                        'match. Please try again.'
                 interErrorMessage.visible = true
             }
+            break
         }
     }
 
@@ -615,6 +700,7 @@ Kirigami.ApplicationWindow {
      *********************/
 
     property string actionName: ''
+    property string networkReturnPage: ''
     property int stepsListLockIndex: 0
     property bool firstRun: true
     property var interImageList: []

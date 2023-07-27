@@ -16,8 +16,8 @@ public:
     ShellEngine();
     Q_INVOKABLE void exec(QString args);
     Q_INVOKABLE void exec(QString args, QString stdinFeed);
-    int execSync(QString args);
-    int execSync(QString args, QString stdinFeed);
+    Q_INVOKABLE int execSync(QString args);
+    Q_INVOKABLE int execSync(QString args, QString stdinFeed);
     QString commandStr() {
         return m_commandStr;
     }
