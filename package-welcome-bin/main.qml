@@ -12,13 +12,16 @@ Kirigami.ApplicationWindow {
     height: Kirigami.Units.gridUnit * 25
 
     pageStack.defaultColumnWidth: Kirigami.Units.gridUnit * 10
-    pageStack.initialPage: [ sidebarPage ]
 
     /***************
      * Constructor *
      ***************/
 
     Component.onCompleted: {
+        if (startupData.encryptedDisks.length === 0) {
+            removeSidebarItem("diskPassphraseItem")
+        }
+
         switchPage('introductionItem')
     }
 
@@ -329,6 +332,15 @@ Kirigami.ApplicationWindow {
      * Page Control Code *
      *********************/
 
+    function removeSidebarItem(jsId) {
+        for (var i = 0;i < stepsModel.count;i++) {
+            if(stepsModel.get(i).jsId === jsId) {
+                stepsModel.remove(i)
+                break
+            }
+        }
+    }
+
     function switchPage(pageId) {
         pageStack.clear()
 
@@ -530,7 +542,6 @@ Kirigami.ApplicationWindow {
                 return 'them'
             }
         }
-
     }
 
     /**************
@@ -560,10 +571,6 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id: cryptDiskChangeEngine
         onAppExited: {
-            /* TODO: If we get an exit code of 2 here, something has gone
-               dreadfully wrong (disk failure?), in which case we really
-               should tell the user that something just blew up. An exit code
-               of 1 is ignorable. */
             switchPage('diskPassphraseGoodItem')
         }
     }
