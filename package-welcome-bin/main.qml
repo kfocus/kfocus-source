@@ -377,6 +377,7 @@ Kirigami.ApplicationWindow {
             initPage([headerHighlightRect, interTopHeading, instructionsText,
                       interSkipButton, interActionButton, pictureColumn])
 
+            interTemplatePage.title = baseTemplatePage.title
             headerHighlightRect.color = '#ff9900'
             interTopHeading.text = 'Please Connect to the Internet'
             instructionsText.text = '<b>The system is not currently ' +
