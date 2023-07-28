@@ -9,7 +9,7 @@ Kirigami.ApplicationWindow {
     id: root
     title: 'Kubuntu Focus Welcome Wizard'
     width: Kirigami.Units.gridUnit * 38
-    height: Kirigami.Units.gridUnit * 25
+    height: Kirigami.Units.gridUnit * 27
 
     pageStack.defaultColumnWidth: Kirigami.Units.gridUnit * 10
 
@@ -117,8 +117,10 @@ Kirigami.ApplicationWindow {
             Image {
                 id: topImage
                 fillMode: Image.PreserveAspectFit
-                height: Kirigami.Units.gridUnit * 5
-                Layout.bottomMargin: Kirigami.Units.gridUnit
+                Layout.preferredHeight: Kirigami.Units.gridUnit * 10
+                Layout.preferredWidth: Kirigami.Units.gridUnit * 25
+                Layout.bottomMargin: Kirigami.Units.gridUnit * 0.2
+                mipmap: true
                 Layout.alignment: Qt.AlignHCenter
             }
 
@@ -301,6 +303,9 @@ Kirigami.ApplicationWindow {
                     Image {
                         source: 'assets/images/' + interImageList[index]
                         fillMode: Image.PreserveAspectFit
+                        Layout.preferredWidth: Kirigami.Units.gridUnit * 10
+                        Layout.preferredHeight: Kirigami.Units.gridUnit * 5
+                        mipmap: true
                         Layout.bottomMargin: Kirigami.Units.gridUnit
                         Layout.alignment: Qt.AlignHCenter
                     }
@@ -349,7 +354,7 @@ Kirigami.ApplicationWindow {
             initPage([topImage, topHeading, primaryText, actionButton])
 
             baseTemplatePage.title = 'Introduction'
-            topImage.source = 'assets/images/focus_lineup.svg'
+            topImage.source = 'assets/images/focus_lineup.png'
             topHeading.text = 'Welcome To The Kubuntu Focus!'
             primaryText.text = '<b>This Welcome Wizard helps you get ' +
                     'started as quickly as possible.</b> We have included ' +
@@ -549,7 +554,7 @@ Kirigami.ApplicationWindow {
                     'click "Continue" to proceed to the next step.'
             interActionButton.text = 'Continue'
             interActionButton.icon.name = 'arrow-right'
-            interImageList = [ 'extra_software_terminal.svg', 'extra_software_license.svg' ]
+            interImageList = [ 'extra_software_terminal.png', 'extra_software_license.svg' ]
             actionName = 'nextPage'
             regenUI(interTemplatePage, false)
             break
