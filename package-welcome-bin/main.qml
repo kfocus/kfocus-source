@@ -292,78 +292,13 @@ Kirigami.ApplicationWindow {
                 topMargin: Kirigami.Units.gridUnit
             }
 
-            ColumnLayout {
+            Controls.Label {
+                id: instructionsText
+                wrapMode: Text.WordWrap
+                onLinkActivated: Qt.openUrlExternally(link)
+                Layout.fillWidth: true
+                Layout.bottomMargin: Kirigami.Units.gridUnit
                 Layout.alignment: Qt.AlignTop
-
-                Kirigami.InlineMessage {
-                    id: interErrorMessage
-                    type: Kirigami.MessageType.Error
-                    Layout.fillWidth: true
-                }
-
-                Controls.Label {
-                    id: instructionsText
-                    wrapMode: Text.WordWrap
-                    onLinkActivated: Qt.openUrlExternally(link)
-                    Layout.fillWidth: true
-                    Layout.bottomMargin: Kirigami.Units.gridUnit
-                }
-
-                GridLayout {
-                    id: passphraseChangeForm
-
-                    columns: 3
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.bottomMargin: Kirigami.Units.gridUnit
-
-                    Controls.Label {
-                        text: 'New passphrase'
-                        Layout.alignment: Qt.AlignRight
-                    }
-
-                    Controls.TextField {
-                        id: newPassphraseBox
-                        echoMode: TextInput.Password
-                    }
-
-                    Controls.Button {
-                        id: newPassphrasePeekButton
-                        icon.name: 'password-show-off'
-                        onClicked: {
-                            if ( this.icon.name === 'password-show-off' ) {
-                                this.icon.name = 'password-show-on';
-                                newPassphraseBox.echoMode
-                                  = TextInput.Normal;
-                                confirmPassphraseBox.echoMode
-                                  = TextInput.Normal;
-                            } else {
-                                this.icon.name = 'password-show-off';
-                                newPassphraseBox.echoMode
-                                  = TextInput.Password;
-                                confirmPassphraseBox.echoMode
-                                  = TextInput.Password;
-                            }
-                        }
-                    }
-
-                    Controls.Label {
-                        text: 'Confirm new passphrase'
-                        Layout.alignment: Qt.AlignRight
-                    }
-
-                    Controls.TextField {
-                        id: confirmPassphraseBox
-                        echoMode: TextInput.Password
-                    }
-                }
-
-                Controls.Label {
-                    id: secondaryText
-                    wrapMode: Text.WordWrap
-                    onLinkActivated: Qt.openUrlExternally(link)
-                    Layout.fillWidth: true
-                    Layout.alignment: Qt.AlignTop
-                }
             }
 
             ColumnLayout {
@@ -426,6 +361,140 @@ Kirigami.ApplicationWindow {
             text: '<b>Once you are finished,</b> please return here and '
                   + 'click "Continue" to proceed to the next step.'
             wrapMode: Text.WordWrap
+        }
+    }
+
+    /**********************************************
+     * Template - Encryption Changer Interstitial *
+     **********************************************/
+
+    Kirigami.Page {
+        id: cryptTemplatePage
+        visible: false // Avoids a graphical glitch, DO NOT SET TO TRUE
+
+        Rectangle {
+            id: cryptHighlightRect
+
+            anchors {
+                left: parent.left
+                right: parent.right
+                top: parent.top
+            }
+
+            radius: 5
+            height: Kirigami.Units.gridUnit * 2
+        }
+
+        Kirigami.Heading {
+            id: cryptTopHeading
+
+            anchors {
+                left: cryptHighlightRect.left
+                right: cryptHighlightRect.right
+                top: cryptHighlightRect.top
+                bottom: cryptHighlightRect.bottom
+                leftMargin: Kirigami.Units.gridUnit * 0.7
+            }
+        }
+
+        ColumnLayout {
+            anchors {
+                top: cryptHighlightRect.bottom
+                right: parent.right
+                left: parent.left
+                topMargin: Kirigami.Units.gridUnit
+            }
+
+            Kirigami.InlineMessage {
+                id: cryptErrorMessage
+                type: Kirigami.MessageType.Error
+                Layout.fillWidth: true
+            }
+
+            Controls.Label {
+                id: cryptInstructionsText
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+                Layout.bottomMargin: Kirigami.Units.gridUnit
+            }
+
+            GridLayout {
+                id: passphraseChangeForm
+
+                columns: 3
+                Layout.alignment: Qt.AlignHCenter
+                Layout.bottomMargin: Kirigami.Units.gridUnit
+
+                Controls.Label {
+                    text: 'New passphrase'
+                    Layout.alignment: Qt.AlignRight
+                }
+
+                Controls.TextField {
+                    id: newPassphraseBox
+                    echoMode: TextInput.Password
+                }
+
+                Controls.Button {
+                    id: newPassphrasePeekButton
+                    icon.name: 'password-show-off'
+                    onClicked: {
+                        if ( this.icon.name === 'password-show-off' ) {
+                            this.icon.name = 'password-show-on';
+                            newPassphraseBox.echoMode
+                              = TextInput.Normal;
+                            confirmPassphraseBox.echoMode
+                              = TextInput.Normal;
+                        } else {
+                            this.icon.name = 'password-show-off';
+                            newPassphraseBox.echoMode
+                              = TextInput.Password;
+                            confirmPassphraseBox.echoMode
+                              = TextInput.Password;
+                        }
+                    }
+                }
+
+                Controls.Label {
+                    text: 'Confirm new passphrase'
+                    Layout.alignment: Qt.AlignRight
+                }
+
+                Controls.TextField {
+                    id: confirmPassphraseBox
+                    echoMode: TextInput.Password
+                }
+            }
+
+            Controls.Label {
+                id: cryptSecondaryText
+                wrapMode: Text.WordWrap
+                onLinkActivated: Qt.openUrlExternally(link)
+                Layout.fillWidth: true
+            }
+        }
+
+        RowLayout {
+            anchors {
+                right: parent.right
+                bottom: parent.bottom
+            }
+
+            Controls.Button {
+                id: cryptSkipButton
+                text: 'Skip'
+                icon.name: 'go-next-skip'
+                onClicked: {
+                    nextPageFn();
+                }
+            }
+
+            Controls.Button {
+                id: cryptActionButton
+                onClicked: {
+                    takeActionFn();
+                }
+            }
         }
     }
 
@@ -561,25 +630,18 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'diskPassphraseChangeItem':
-            initPage([
-              headerHighlightRect, interTopHeading,
-              instructionsText,    interSkipButton,
-              interActionButton,   passphraseChangeForm,
-              secondaryText
-            ]);
-
-            headerHighlightRect.color = '#ff9900';
-            interTopHeading.text
+            cryptHighlightRect.color = '#ff9900';
+            cryptTopHeading.text
               = 'Change Passphrase for '
               + getCryptDiskTextFn('1 Encrypted Disk');
-            instructionsText.text
+            cryptInstructionsText.text
               = '<b>'
               + getCryptDiskTextFn('This disk is')
               + ' using the default passphrase.</b> This is insecure, '
               + 'and we recommend you use the form below to change '
               + getCryptDiskTextFn('it')
               + ' now.';
-            secondaryText.text
+            cryptSecondaryText.text
               = '<b>Please keep a copy of '
               + 'your passphrase in a safe place.</b> If this is lost, '
               + 'there is no recovery except to reformat your disks '
@@ -587,10 +649,10 @@ Kirigami.ApplicationWindow {
               + '<br>'
               + '<b>For your security, the Kubuntu Focus Team does NOT '
               + 'install tools</b> that could assist in any recovery.';
-            interActionButton.text = 'Continue';
-            interActionButton.icon.name = 'arrow-right';
-            regenUiFn(interTemplatePage, false);
+            cryptActionButton.text = 'Continue';
+            cryptActionButton.icon.name = 'arrow-right';
             actionName = 'changeCrypt';
+            regenUiFn(cryptTemplatePage, false);
             break;
 
         case 'diskPassphraseGoodItem':
@@ -746,14 +808,13 @@ Kirigami.ApplicationWindow {
 
     function initPage(visible_elements_list) {
         var all_elements_list = [
-            actionButton,        busyIndicator,
-            headerHighlightRect, instructionsText,
-            interActionButton,   interContinueLabel,
-            interErrorMessage,   interSkipButton,
-            interTopHeading,     passphraseChangeForm,
-            previousButton,      primaryText,
-            secondaryText,       skipButton,
-            topHeading,          topImage
+            actionButton,         busyIndicator,
+            headerHighlightRect,  instructionsText,
+            interActionButton,    interContinueLabel,
+            interSkipButton,      interTopHeading,
+            previousButton,       primaryText,
+            skipButton,           topHeading,
+            topImage
         ];
         var i;
 
