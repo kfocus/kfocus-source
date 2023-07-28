@@ -342,7 +342,7 @@ Kirigami.ApplicationWindow {
                 }
 
                 Controls.Label {
-                    id: secondaryInstructionsText
+                    id: secondaryText
                     wrapMode: Text.WordWrap
                     onLinkActivated: Qt.openUrlExternally(link)
                     Layout.fillWidth: true
@@ -401,8 +401,8 @@ Kirigami.ApplicationWindow {
             }
             width: Kirigami.Units.gridUnit * 15
 
-            text: '<b>Once you are finished,</b> please return here and ' +
-                  'click "Continue" to proceed to the next step.'
+            text: '<b>Once you are finished,</b> please return here and '
+                  + 'click "Continue" to proceed to the next step.'
             wrapMode: Text.WordWrap
         }
     }
@@ -428,15 +428,16 @@ Kirigami.ApplicationWindow {
             frontTemplatePage.title = 'Introduction'
             frontImage.source = 'assets/images/frontpage.webp'
             frontHeading.text = 'Welcome To The Kubuntu Focus!'
-            frontText.text = '<b>This Welcome Wizard helps you get ' +
-                    'started as quickly as possible.</b> We have included ' +
-                    'many tools we feel most developers should ' +
-                    'consider.<br>' +
-                    '<br>' +
-                    '<b>This is not an endorsement of any product,</b> and ' +
-                    'the Focus Team is not compensated in any way for ' +
-                    'these suggestions. You may always run this wizard ' +
-                    'later using Start Menu > Kubuntu Focus > Welcome Wizard.'
+            frontText.text
+              = '<b>This Welcome Wizard helps you get '
+              + 'started as quickly as possible.</b> We have included '
+              + 'many tools we feel most developers should '
+              + 'consider.<br>'
+              + '<br>'
+              + '<b>This is not an endorsement of any product,</b> and '
+              + 'the Focus Team is not compensated in any way for '
+              + 'these suggestions. You may always run this wizard '
+              + 'later using Start Menu > Kubuntu Focus > Welcome Wizard.'
             actionName = 'nextPage'
             regenUI(frontTemplatePage, true)
             break
@@ -455,25 +456,26 @@ Kirigami.ApplicationWindow {
             interTemplatePage.title = baseTemplatePage.title
             headerHighlightRect.color = '#ff9900'
             interTopHeading.text = 'Please Connect to the Internet'
-            instructionsText.text = '<b>The system is not currently ' +
-                    'connected to the Internet.</b> Please connect to ' +
-                    'complete this step.<br>' +
-                    '<br>' +
-                    '<b>1. Click on the network icon</b> in the system ' +
-                    'tray to see a list of available connections.<br>' +
-                    '<br>' +
-                    '<b>2. Click the "Connect" button</b> on the network ' +
-                    'you wish to connect to.<br>' +
-                    '<br>' +
-                    '<b>3. If necessary, enter your Wi-Fi password</b> and ' +
-                    'press Enter to connect to the network.<br>' +
-                    '<br>' +
-                    '<b>Click on the "Continue" button when finished.</b> ' +
-                    'If the connection is not established, you will be ' +
-                    'returned to this page.<br>' +
-                    '<br>' +
-                    '<b>If you cannot connect, click Skip</b> to move to ' +
-                    'the next step.'
+            instructionsText.text
+              = '<b>The system is not currently '
+              + 'connected to the Internet.</b> Please connect to '
+              + 'complete this step.<br>'
+              + '<br>'
+              + '<b>1. Click on the network icon</b> in the system '
+              + 'tray to see a list of available connections.<br>'
+              + '<br>'
+              + '<b>2. Click the "Connect" button</b> on the network '
+              + 'you wish to connect to.<br>'
+              + '<br>'
+              + '<b>3. If necessary, enter your Wi-Fi password</b> and '
+              + 'press Enter to connect to the network.<br>'
+              + '<br>'
+              + '<b>Click on the "Continue" button when finished.</b> '
+              + 'If the connection is not established, you will be '
+              + 'returned to this page.<br>'
+              + '<br>'
+              + '<b>If you cannot connect, click Skip</b> to move to '
+              + 'the next step.'
             interImageList = [ 'network_disconnect.svg',
                                'network_button_pointer.svg',
                                'network_connect_dialog.svg']
@@ -490,19 +492,20 @@ Kirigami.ApplicationWindow {
             baseTemplatePage.title = getCryptDiskText('Disk Passphrase')
             topImage.source = 'assets/images/encrypted_drive.svg'
             topHeading.text = 'Check Disk Encryption Security'
-            primaryText.text = '<b>The wizard has detected ' +
-                    getCryptDiskText('1 encrypted disk') +
-                    '</b> on this system. If you bought a system with disk ' +
-                    'encryption enabled and you have yet to change the ' +
-                    getCryptDiskText('passphrase') +
-                    ', you should do so now. Otherwise, you can skip this ' +
-                    'step.<br>' +
-                    '<br>' +
-                    '<b>You may check ' +
-                    getCryptDiskText('this disk') +
-                    ' for the default password now.</b> As a security ' +
-                    'measure, this app will not perform this check until ' +
-                    'you enter your valid user password.'
+            primaryText.text
+              = '<b>The wizard has detected '
+              + getCryptDiskText('1 encrypted disk')
+              + '</b> on this system. If you bought a system with disk '
+              + 'encryption enabled and you have yet to change the '
+              + getCryptDiskText('passphrase')
+              + ', you should do so now. Otherwise, you can skip this '
+              + 'step.<br>'
+              + '<br>'
+              + '<b>You may check '
+              + getCryptDiskText('this disk')
+              + ' for the default password now.</b> As a security '
+              + 'measure, this app will not perform this check until '
+              + 'you enter your valid user password.'
             actionButton.text = 'Check Disk Passphrases Now'
             actionButton.icon.name = 'lock'
             actionName = 'checkCrypt'
@@ -513,8 +516,8 @@ Kirigami.ApplicationWindow {
             initPage([topHeading, busyIndicator])
 
             baseTemplatePage.title = getCryptDiskText('Disk Passphrase')
-            topHeading.text = 'Checking Disk Encryption Security...\n' +
-                    'This might take a minute.'
+            topHeading.text = 'Checking Disk Encryption Security...\n'
+              + 'This might take a minute.'
             regenUI(baseTemplatePage, false)
             break
 
@@ -522,31 +525,33 @@ Kirigami.ApplicationWindow {
             initPage([topHeading, busyIndicator])
 
             baseTemplatePage.title = getCryptDiskText('Disk Passphrase')
-            topHeading.text = 'Changing Disk Passphrases...\n' +
-                   'This might take a minute.'
+            topHeading.text = 'Changing Disk Passphrases...\n'
+              + 'This might take a minute.'
             regenUI(baseTemplatePage, false)
             break
 
         case 'diskPassphraseChangeItem':
             initPage([headerHighlightRect, interTopHeading, instructionsText,
                       interSkipButton, interActionButton, passphraseChangeForm,
-                      secondaryInstructionsText])
+                      secondaryText])
 
             headerHighlightRect.color = '#ff9900'
             interTopHeading.text = 'Change Passphrase for ' + getCryptDiskText('1 Encrypted Disk')
-            instructionsText.text = '<b>' +
-                    getCryptDiskText('This disk is') +
-                    ' using the default passphrase.</b> This is insecure, ' +
-                    'and we recommend you use the form below to change ' +
-                    getCryptDiskText('it') +
-                    ' now.'
-            secondaryInstructionsText.text = '<b>Please keep a copy of ' +
-                    'your passphrase in a safe place.</b> If this is lost, ' +
-                    'there is no recovery except to reformat your disks ' +
-                    'and restore from backup.<br>' +
-                    '<br>' +
-                    '<b>For your security, the Kubuntu Focus Team does NOT ' +
-                    'install tools</b> that could assist in any recovery.'
+            instructionsText.text
+              = '<b>'
+              + getCryptDiskText('This disk is')
+              + ' using the default passphrase.</b> This is insecure, '
+              + 'and we recommend you use the form below to change '
+              + getCryptDiskText('it')
+              + ' now.'
+            secondaryText.text
+              = '<b>Please keep a copy of '
+              + 'your passphrase in a safe place.</b> If this is lost, '
+              + 'there is no recovery except to reformat your disks '
+              + 'and restore from backup.<br>'
+              + '<br>'
+              + '<b>For your security, the Kubuntu Focus Team does NOT '
+              + 'install tools</b> that could assist in any recovery.'
             interActionButton.text = 'Continue'
             interActionButton.icon.name = 'arrow-right'
             regenUI(interTemplatePage, false)
@@ -561,17 +566,18 @@ Kirigami.ApplicationWindow {
             interImageList = [ 'finished.svg' ]
             headerHighlightRect.color = '#27ae60'
             interTopHeading.text = 'Disk Encryption Passphrases Appear Secure'
-            instructionsText.text = '<b>' +
-                    getCryptDiskText('The encrypted disk uses') +
-                    ' a non-default passphrase.</b><br>' +
-                    '<br>' +
-                    '<b>Please keep a copy of your passphrase in a safe ' +
-                    'place.</b> If this is lost, there is no recovery ' +
-                    'except to reformat your disks and restore from ' +
-                    'backup.<br>' +
-                    '<br>' +
-                    '<b>For your security, the Kubuntu Focus Team does NOT ' +
-                    'install tools</b> that could assist in any recovery.'
+            instructionsText.text
+              = '<b>'
+              + getCryptDiskText('The encrypted disk uses')
+              + ' a non-default passphrase.</b><br>'
+              + '<br>'
+              + '<b>Please keep a copy of your passphrase in a safe '
+              + 'place.</b> If this is lost, there is no recovery '
+              + 'except to reformat your disks and restore from '
+              + 'backup.<br>'
+              + '<br>'
+              + '<b>For your security, the Kubuntu Focus Team does NOT '
+              'install tools</b> that could assist in any recovery.'
             interActionButton.text = 'Continue'
             interActionButton.icon.name = 'arrow-right'
             actionName = 'nextPage'
@@ -584,17 +590,18 @@ Kirigami.ApplicationWindow {
 
             baseTemplatePage.title = 'Extra Software'
             topImage.source = 'assets/images/extra_software.svg'
-            topHeading.text = 'Install MS Fonts, VirtualBox Extensions, ' +
-                    'and More'
-            primaryText.text = '<b>Some software is restricted,</b> ' +
-                    'meaning you have to approve certain agreements before ' +
-                    'you install it. We recommend you at least install the ' +
-                    'MS fonts to assist in compatibility. If you use ' +
-                    'VirtualBox, we also recommend adding the VirtualBox ' +
-                    'Extension Pack.<br>' +
-                    '<br>' +
-                    'You may always revisit this later using <b>Start Menu ' +
-                    '> Kubuntu Focus Tools > Extra Software Installer.</b> '
+            topHeading.text
+              = 'Install MS Fonts, VirtualBox Extensions, and More'
+            primaryText.text
+              = '<b>Some software is restricted,</b> '
+              + 'meaning you have to approve certain agreements before '
+              + 'you install it. We recommend you at least install the '
+              + 'MS fonts to assist in compatibility. If you use '
+              + 'VirtualBox, we also recommend adding the VirtualBox '
+              + 'Extension Pack.<br>'
+              + '<br>'
+              + 'You may always revisit this later using <b>Start Menu '
+              + '> Kubuntu Focus Tools > Extra Software Installer.</b> '
             actionButton.text = 'Install Extra Software Now'
             actionButton.icon.name = 'arrow-right'
             actionName = 'checkNetwork'
@@ -610,15 +617,16 @@ Kirigami.ApplicationWindow {
             interTemplatePage.title = 'Extra Software'
             headerHighlightRect.color = '#27ae60'
             interTopHeading.text = 'Proceed with Terminal...'
-            instructionsText.text = '<b>1. You should now see</b> a ' +
-                    'terminal as shown at right with a prompt for ' +
-                    'installation. Please enter your password to ' +
-                    'proceed.<br>' +
-                    '<br>' +
-                    '<b>2. As you follow the steps,</b> you will be ' +
-                    'prompted to accept license terms. If you do not ' +
-                    'agree with the terms for a particular software ' +
-                    'component, you may skip installing it.'
+            instructionsText.text
+              = '<b>1. You should now see</b> a '
+              + 'terminal as shown at right with a prompt for '
+              + 'installation. Please enter your password to '
+              + 'proceed.<br>'
+              + '<br>'
+              + '<b>2. As you follow the steps,</b> you will be '
+              + 'prompted to accept license terms. If you do not '
+              + 'agree with the terms for a particular software '
+              + 'component, you may skip installing it.'
             interActionButton.text = 'Continue'
             interActionButton.icon.name = 'arrow-right'
             interImageList = [ 'extra_software_terminal.png', 'extra_software_license.svg' ]
@@ -633,15 +641,16 @@ Kirigami.ApplicationWindow {
             baseTemplatePage.title = 'File Backup'
             topImage.source = 'assets/images/file_backup.svg'
             topHeading.text = 'Snapshot and Recover Files'
-            primaryText.text = '<b>BackInTime takes snapshots of your home ' +
-                    'directory</b> so you can recover information that was ' +
-                    'later changed or removed. We\'ve configured it to ' +
-                    'ignore folders where cloud drives and software repos ' +
-                    'are usually located.<br>' +
-                    '<br>' +
-                    '<b>See more in the</b> ' +
-                    '<a href="https://kfocus.org/wf/backup">Backups Guided ' +
-                    'Solution.</a>'
+            primaryText.text
+              = '<b>BackInTime takes snapshots of your home '
+              + 'directory</b> so you can recover information that was '
+              + 'later changed or removed. We\'ve configured it to '
+              + 'ignore folders where cloud drives and software repos '
+              + 'are usually located.<br>'
+              + '<br>'
+              + '<b>See more in the</b> '
+              + '<a href="https://kfocus.org/wf/backup">Backups Guided '
+              + 'Solution.</a>'
             actionButton.text = 'Launch BackInTime Now'
             actionButton.icon.name = 'arrow-right'
             actionName = 'launchBackInTime'
@@ -655,20 +664,21 @@ Kirigami.ApplicationWindow {
             interTemplatePage.title = 'Extra Software'
             headerHighlightRect.color = '#27ae60'
             interTopHeading.text = 'Proceed with BackInTime...'
-            instructionsText.text = '<b>1. If BackInTime is not ' +
-                    'installed,</b> you will be asked to install it, and ' +
-                    'will need to provide your password to do so.<br>' +
-                    '<br>' +
-                    '<b>2. Once installed, the BackInTime app</b> should ' +
-                    'appear as shown.<br>' +
-                    '<br>' +
-                    '<b>3. Take snapshots with the Disk icon.</b> You may ' +
-                    'also browse snapshots on the left (4), select files ' +
-                    'on the right (5), and adjust settings (6).<br>' +
-                    '<br>' +
-                    '<b>See more in the</b> ' +
-                    '<a href="https://kfocus.org/wf/backup">Backups Guided ' +
-                    'Solution.</a>'
+            instructionsText.text
+              = '<b>1. If BackInTime is not '
+              + 'installed,</b> you will be asked to install it, and '
+              + 'will need to provide your password to do so.<br>'
+              + '<br>'
+              + '<b>2. Once installed, the BackInTime app</b> should '
+              + 'appear as shown.<br>'
+              + '<br>'
+              + '<b>3. Take snapshots with the Disk icon.</b> You may '
+              + 'also browse snapshots on the left (4), select files '
+              + 'on the right (5), and adjust settings (6).<br>'
+              + '<br>'
+              + '<b>See more in the</b> '
+              + '<a href="https://kfocus.org/wf/backup">Backups Guided '
+              + 'Solution.</a>'
             interActionButton.text = 'Continue'
             interActionButton.icon.name = 'arrow-right'
             interImageList = [ 'kfocus_mime_backintime.svg',
@@ -680,23 +690,25 @@ Kirigami.ApplicationWindow {
     }
 
     function initPage(visibleElementList) {
-        var allElementsList = [topImage, topHeading, primaryText,
-                                previousButton, actionButton, skipButton,
-                                busyIndicator, headerHighlightRect,
-                                interTopHeading, instructionsText,
-                                interActionButton, passphraseChangeForm,
-                                secondaryInstructionsText, interErrorMessage,
-                                interSkipButton, interContinueLabel]
-        var i = 0;
+        var allElementsList = [
+            actionButton,        busyIndicator,
+            headerHighlightRect, instructionsText,
+            interActionButton,   interContinueLabel,
+            interErrorMessage,   interSkipButton,
+            interTopHeading,     passphraseChangeForm,
+            previousButton,      primaryText,
+            secondaryText,       skipButton,
+            topHeading,          topImage
+        ];
+        var i;
 
-        for (i = 0;i < allElementsList.length;i++) {
-            allElementsList[i].visible = false
+        for ( i = 0; i < allElementsList.length; i++ ) {
+          allElementsList[i].visible = false
         }
-        interImageList = []
 
-
-        for (i = 0;i < visibleElementList.length;i++) {
-            visibleElementList[i].visible = true
+        interImageList = [];
+        for ( i = 0;i < visibleElementList.length;i++ ) {
+          visibleElementList[i].visible = true
         }
     }
 
@@ -848,18 +860,18 @@ Kirigami.ApplicationWindow {
                   'kubuntu\n' + newPassphraseBox.text + '\n')
                 switchPage('diskPassphraseChangeInProgressItem')
             } else {
-                interErrorMessage.text = 'The provided passphrases do not ' +
-                        'match. Please try again.'
+                interErrorMessage.text = 'The provided passphrases do not '
+                  + 'match. Please try again.'
                 interErrorMessage.visible = true
             }
             break
 
         case 'installExtraSoftware':
             exeRun.exec(
-              'xterm -fa \'Monospace\' -fs 12 -b 28 -geometry 80x24 -T ' +
-              '\'Install Extras\' -xrm \'xterm*iconHint: ' +
-              '/usr/share/pixmaps/kfocus-bug-wizard\' -e pkexec ' +
-              startupData.binDir + 'kfocus-extra')
+              'xterm -fa \'Monospace\' -fs 12 -b 28 -geometry 80x24 -T '
+              + '\'Install Extras\' -xrm \'xterm*iconHint: '
+              + '/usr/share/pixmaps/kfocus-bug-wizard\' -e pkexec '
+              + startupData.binDir + 'kfocus-extra')
             break
 
         case 'launchBackInTime':
