@@ -100,6 +100,63 @@ Kirigami.ApplicationWindow {
     }
 
     /***************************
+     * Template - Front Page *
+     ***************************/
+
+    Kirigami.Page {
+        id: frontTemplatePage
+        visible: false // Avoids a graphical glitch, DO NOT SET TO TRUE
+
+        ColumnLayout {
+            anchors {
+                left: parent.left
+                right: parent.right
+                top: parent.top
+            }
+
+            Image {
+                id: frontImage
+                fillMode: Image.PreserveAspectFit
+                Layout.preferredHeight: Kirigami.Units.gridUnit * 10
+                Layout.preferredWidth: Kirigami.Units.gridUnit * 25
+                Layout.bottomMargin: Kirigami.Units.gridUnit * 1
+                Layout.topMargin: Kirigami.Units.gridUnit * 1
+                mipmap: true
+                Layout.alignment: Qt.AlignHCenter
+            }
+
+            Kirigami.Heading {
+                id: frontHeading
+                horizontalAlignment: Text.AlignHCenter
+                Layout.bottomMargin: Kirigami.Units.gridUnit
+                Layout.alignment: Qt.AlignHCenter
+            }
+
+            Controls.Label {
+                id: frontText
+                wrapMode: Text.WordWrap
+                onLinkActivated: Qt.openUrlExternally(link)
+                Layout.fillWidth: true
+                Layout.bottomMargin: Kirigami.Units.gridUnit
+            }
+        }
+
+        RowLayout {
+            anchors {
+                right: parent.right
+                bottom: parent.bottom
+            }
+
+            Controls.Button {
+                id: frontButton
+                text: 'Continue'
+                icon.name: 'arrow-right'
+                onClicked: nextPage()
+            }
+        }
+    }
+
+    /***************************
      * Template - Normal Pages *
      ***************************/
 
@@ -117,9 +174,10 @@ Kirigami.ApplicationWindow {
             Image {
                 id: topImage
                 fillMode: Image.PreserveAspectFit
-                Layout.preferredHeight: Kirigami.Units.gridUnit * 10
-                Layout.preferredWidth: Kirigami.Units.gridUnit * 25
-                Layout.bottomMargin: Kirigami.Units.gridUnit * 0.2
+                Layout.preferredHeight: Kirigami.Units.gridUnit * 6
+                Layout.preferredWidth: Kirigami.Units.gridUnit * 20
+                Layout.bottomMargin: Kirigami.Units.gridUnit * 2
+                Layout.topMargin: Kirigami.Units.gridUnit * 1
                 mipmap: true
                 Layout.alignment: Qt.AlignHCenter
             }
@@ -365,12 +423,12 @@ Kirigami.ApplicationWindow {
 
         switch(pageId) {
         case 'introductionItem':
-            initPage([topImage, topHeading, primaryText, actionButton])
+            initPage([frontImage, topHeading, primaryText, actionButton])
 
-            baseTemplatePage.title = 'Introduction'
-            topImage.source = 'assets/images/frontpage.webp'
-            topHeading.text = 'Welcome To The Kubuntu Focus!'
-            primaryText.text = '<b>This Welcome Wizard helps you get ' +
+            frontTemplatePage.title = 'Introduction'
+            frontImage.source = 'assets/images/frontpage.webp'
+            frontHeading.text = 'Welcome To The Kubuntu Focus!'
+            frontText.text = '<b>This Welcome Wizard helps you get ' +
                     'started as quickly as possible.</b> We have included ' +
                     'many tools we feel most developers should ' +
                     'consider.<br>' +
@@ -379,10 +437,8 @@ Kirigami.ApplicationWindow {
                     'the Focus Team is not compensated in any way for ' +
                     'these suggestions. You may always run this wizard ' +
                     'later using Start Menu > Kubuntu Focus > Welcome Wizard.'
-            actionButton.text = 'Continue'
-            actionButton.icon.name = 'arrow-right'
             actionName = 'nextPage'
-            regenUI(baseTemplatePage, true)
+            regenUI(frontTemplatePage, true)
             break
 
         case 'internetCheckItem':
