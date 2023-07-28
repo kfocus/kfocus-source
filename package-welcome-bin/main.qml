@@ -18,11 +18,11 @@ Kirigami.ApplicationWindow {
      ***************/
 
     Component.onCompleted: {
-        if (startupData.encryptedDisks.length === 0) {
-            removeSidebarItem('diskPassphraseItem')
+        if ( startupData.encryptedDisks.length === 0 ) {
+            removeSidebarItemFn('diskPassphraseItem');
         }
 
-        switchPage('introductionItem')
+        switchPageFn('introductionItem');
     }
 
     /***********
@@ -83,7 +83,9 @@ Kirigami.ApplicationWindow {
             label: task
             icon: taskIcon
             iconSize: Kirigami.Units.gridUnit * 1.5
-            onClicked: switchPage(jsId)
+            onClicked: {
+                switchPageFn(jsId);
+            }
         }
     }
 
@@ -95,7 +97,9 @@ Kirigami.ApplicationWindow {
             icon: taskIcon
             iconSize: Kirigami.Units.gridUnit * 1.5
             fadeContent: true
-            onClicked: disabledStepsList.currentIndex = stepsListLockIndex
+            onClicked: {
+                disabledStepsList.currentIndex = stepsListLockIndex;
+            }
         }
     }
 
@@ -151,7 +155,9 @@ Kirigami.ApplicationWindow {
                 id: frontButton
                 text: 'Continue'
                 icon.name: 'arrow-right'
-                onClicked: nextPage()
+                onClicked: {
+                    nextPageFn();
+                }
             }
         }
     }
@@ -214,7 +220,9 @@ Kirigami.ApplicationWindow {
 
             text: 'Previous'
             icon.name: 'arrow-left'
-            onClicked: previousPage()
+            onClicked: {
+                previousPageFn();
+            }
         }
 
         RowLayout {
@@ -225,7 +233,9 @@ Kirigami.ApplicationWindow {
 
             Controls.Button {
                 id: actionButton
-                onClicked: takeAction()
+                onClicked: {
+                    takeActionFn();
+                }
             }
 
             Controls.Button {
@@ -233,7 +243,9 @@ Kirigami.ApplicationWindow {
 
                 text: 'Skip'
                 icon.name: 'go-next-skip'
-                onClicked: nextPage()
+                onClicked: {
+                    nextPageFn();
+                }
             }
         }
     }
@@ -318,14 +330,18 @@ Kirigami.ApplicationWindow {
                         id: newPassphrasePeekButton
                         icon.name: 'password-show-off'
                         onClicked: {
-                            if (this.icon.name === 'password-show-off') {
-                                this.icon.name = 'password-show-on'
-                                newPassphraseBox.echoMode = TextInput.Normal
-                                confirmPassphraseBox.echoMode = TextInput.Normal
+                            if ( this.icon.name === 'password-show-off' ) {
+                                this.icon.name = 'password-show-on';
+                                newPassphraseBox.echoMode
+                                  = TextInput.Normal;
+                                confirmPassphraseBox.echoMode
+                                  = TextInput.Normal;
                             } else {
-                                this.icon.name = 'password-show-off'
-                                newPassphraseBox.echoMode = TextInput.Password
-                                confirmPassphraseBox.echoMode = TextInput.Password
+                                this.icon.name = 'password-show-off';
+                                newPassphraseBox.echoMode
+                                  = TextInput.Password;
+                                confirmPassphraseBox.echoMode
+                                  = TextInput.Password;
                             }
                         }
                     }
@@ -363,8 +379,10 @@ Kirigami.ApplicationWindow {
                         source: 'assets/images/' + interImageList[index]
                         fillMode: Image.PreserveAspectFit
                         Layout.preferredWidth: Kirigami.Units.gridUnit * 10
-                        Layout.preferredHeight: (this.implicitHeight /
-                          this.implicitWidth) * (Kirigami.Units.gridUnit * 10)
+                        Layout.preferredHeight:
+                          (this.implicitHeight
+                          / this.implicitWidth)
+                          * (Kirigami.Units.gridUnit * 10)
                         Layout.bottomMargin: Kirigami.Units.gridUnit * 0.2
                         mipmap: true
                         Layout.alignment: Qt.AlignHCenter
@@ -383,12 +401,16 @@ Kirigami.ApplicationWindow {
                 id: interSkipButton
                 text: 'Skip'
                 icon.name: 'go-next-skip'
-                onClicked: nextPage()
+                onClicked: {
+                    nextPageFn();
+                }
             }
 
             Controls.Button {
                 id: interActionButton
-                onClicked: takeAction()
+                onClicked: {
+                    takeActionFn();
+                }
             }
         }
 
@@ -411,23 +433,23 @@ Kirigami.ApplicationWindow {
      * Page Control Code *
      *********************/
 
-    function removeSidebarItem(jsId) {
-        for (var i = 0;i < stepsModel.count;i++) {
-            if(stepsModel.get(i).jsId === jsId) {
-                stepsModel.remove(i)
-                break
+    function removeSidebarItemFn(js_id) {
+        for ( var i = 0;i < stepsModel.count;i++ ) {
+            if ( stepsModel.get(i).jsId === js_id ) {
+                stepsModel.remove(i);
+                break;
             }
         }
     }
 
-    function switchPage(pageId) {
-        pageStack.clear()
+    function switchPageFn(page_id) {
+        pageStack.clear();
 
-        switch(pageId) {
+        switch(page_id) {
         case 'introductionItem':
-            frontTemplatePage.title = 'Introduction'
-            frontImage.source = 'assets/images/frontpage.webp'
-            frontHeading.text = 'Welcome To The Kubuntu Focus!'
+            frontTemplatePage.title = 'Introduction';
+            frontImage.source = 'assets/images/frontpage.webp';
+            frontHeading.text = 'Welcome To The Kubuntu Focus!';
             frontText.text
               = '<b>This Welcome Wizard helps you get '
               + 'started as quickly as possible.</b> We have included '
@@ -437,25 +459,28 @@ Kirigami.ApplicationWindow {
               + '<b>This is not an endorsement of any product,</b> and '
               + 'the Focus Team is not compensated in any way for '
               + 'these suggestions. You may always run this wizard '
-              + 'later using Start Menu > Kubuntu Focus > Welcome Wizard.'
-            actionName = 'nextPage'
-            regenUI(frontTemplatePage, true)
-            break
+              + 'later using Start Menu > Kubuntu Focus > Welcome Wizard.';
+            actionName = 'nextPage';
+            regenUiFn(frontTemplatePage, true);
+            break;
 
         case 'internetCheckItem':
-            initPage([topHeading, busyIndicator])
+            initPage([topHeading, busyIndicator]);
 
-            topHeading.text = "Checking for Internet connectivity..."
-            regenUI(baseTemplatePage, false)
-            break
+            topHeading.text = "Checking for Internet connectivity...";
+            regenUiFn(baseTemplatePage, false);
+            break;
 
         case 'connectInternetItem':
-            initPage([headerHighlightRect, interTopHeading, instructionsText,
-                      interSkipButton, interActionButton, pictureColumn])
+            initPage([
+              headerHighlightRect, interTopHeading,
+              instructionsText,    interSkipButton,
+              interActionButton,   pictureColumn
+            ]);
 
-            interTemplatePage.title = baseTemplatePage.title
-            headerHighlightRect.color = '#ff9900'
-            interTopHeading.text = 'Please Connect to the Internet'
+            interTemplatePage.title = baseTemplatePage.title;
+            headerHighlightRect.color = '#ff9900';
+            interTopHeading.text = 'Please Connect to the Internet';
             instructionsText.text
               = '<b>The system is not currently '
               + 'connected to the Internet.</b> Please connect to '
@@ -475,75 +500,85 @@ Kirigami.ApplicationWindow {
               + 'returned to this page.<br>'
               + '<br>'
               + '<b>If you cannot connect, click Skip</b> to move to '
-              + 'the next step.'
-            interImageList = [ 'network_disconnect.svg',
-                               'network_button_pointer.svg',
-                               'network_connect_dialog.svg']
-            interActionButton.text = 'Continue'
-            interActionButton.icon.name = 'arrow-right'
-            regenUI(interTemplatePage, false)
-            actionName = 'checkNetwork'
-            break
+              + 'the next step.';
+            interImageList = [
+              'network_disconnect.svg',
+              'network_button_pointer.svg',
+              'network_connect_dialog.svg'
+            ];
+            interActionButton.text = 'Continue';
+            interActionButton.icon.name = 'arrow-right';
+            regenUiFn(interTemplatePage, false);
+            actionName = 'checkNetwork';
+            break;
 
         case 'diskPassphraseItem':
-            initPage([topImage, topHeading, primaryText, actionButton,
-                      skipButton, previousButton])
+            initPage([
+              topImage,    topHeading,
+              primaryText, actionButton,
+              skipButton,  previousButton
+            ]);
 
-            baseTemplatePage.title = getCryptDiskText('Disk Passphrase')
-            topImage.source = 'assets/images/encrypted_drive.svg'
-            topHeading.text = 'Check Disk Encryption Security'
+            baseTemplatePage.title = getCryptDiskTextFn('Disk Passphrase');
+            topImage.source = 'assets/images/encrypted_drive.svg';
+            topHeading.text = 'Check Disk Encryption Security';
             primaryText.text
               = '<b>The wizard has detected '
-              + getCryptDiskText('1 encrypted disk')
+              + getCryptDiskTextFn('1 encrypted disk')
               + '</b> on this system. If you bought a system with disk '
               + 'encryption enabled and you have yet to change the '
-              + getCryptDiskText('passphrase')
+              + getCryptDiskTextFn('passphrase')
               + ', you should do so now. Otherwise, you can skip this '
               + 'step.<br>'
               + '<br>'
               + '<b>You may check '
-              + getCryptDiskText('this disk')
+              + getCryptDiskTextFn('this disk')
               + ' for the default password now.</b> As a security '
               + 'measure, this app will not perform this check until '
-              + 'you enter your valid user password.'
-            actionButton.text = 'Check Disk Passphrases Now'
-            actionButton.icon.name = 'lock'
-            actionName = 'checkCrypt'
-            regenUI(baseTemplatePage, true)
-            break
+              + 'you enter your valid user password.';
+            actionButton.text = 'Check Disk Passphrases Now';
+            actionButton.icon.name = 'lock';
+            actionName = 'checkCrypt';
+            regenUiFn(baseTemplatePage, true);
+            break;
 
         case 'diskPassphraseCheckerItem':
-            initPage([topHeading, busyIndicator])
+            initPage([topHeading, busyIndicator]);
 
-            baseTemplatePage.title = getCryptDiskText('Disk Passphrase')
+            baseTemplatePage.title = getCryptDiskTextFn('Disk Passphrase');
             topHeading.text = 'Checking Disk Encryption Security...\n'
-              + 'This might take a minute.'
-            regenUI(baseTemplatePage, false)
-            break
+              + 'This might take a minute.';
+            regenUiFn(baseTemplatePage, false);
+            break;
 
         case 'diskPassphraseChangeInProgressItem':
-            initPage([topHeading, busyIndicator])
+            initPage([topHeading, busyIndicator]);
 
-            baseTemplatePage.title = getCryptDiskText('Disk Passphrase')
+            baseTemplatePage.title = getCryptDiskTextFn('Disk Passphrase');
             topHeading.text = 'Changing Disk Passphrases...\n'
-              + 'This might take a minute.'
-            regenUI(baseTemplatePage, false)
-            break
+              + 'This might take a minute.';
+            regenUiFn(baseTemplatePage, false);
+            break;
 
         case 'diskPassphraseChangeItem':
-            initPage([headerHighlightRect, interTopHeading, instructionsText,
-                      interSkipButton, interActionButton, passphraseChangeForm,
-                      secondaryText])
+            initPage([
+              headerHighlightRect, interTopHeading,
+              instructionsText,    interSkipButton,
+              interActionButton,   passphraseChangeForm,
+              secondaryText
+            ]);
 
-            headerHighlightRect.color = '#ff9900'
-            interTopHeading.text = 'Change Passphrase for ' + getCryptDiskText('1 Encrypted Disk')
+            headerHighlightRect.color = '#ff9900';
+            interTopHeading.text
+              = 'Change Passphrase for '
+              + getCryptDiskTextFn('1 Encrypted Disk');
             instructionsText.text
               = '<b>'
-              + getCryptDiskText('This disk is')
+              + getCryptDiskTextFn('This disk is')
               + ' using the default passphrase.</b> This is insecure, '
               + 'and we recommend you use the form below to change '
-              + getCryptDiskText('it')
-              + ' now.'
+              + getCryptDiskTextFn('it')
+              + ' now.';
             secondaryText.text
               = '<b>Please keep a copy of '
               + 'your passphrase in a safe place.</b> If this is lost, '
@@ -551,24 +586,27 @@ Kirigami.ApplicationWindow {
               + 'and restore from backup.<br>'
               + '<br>'
               + '<b>For your security, the Kubuntu Focus Team does NOT '
-              + 'install tools</b> that could assist in any recovery.'
-            interActionButton.text = 'Continue'
-            interActionButton.icon.name = 'arrow-right'
-            regenUI(interTemplatePage, false)
-            actionName = 'changeCrypt'
-            break
+              + 'install tools</b> that could assist in any recovery.';
+            interActionButton.text = 'Continue';
+            interActionButton.icon.name = 'arrow-right';
+            regenUiFn(interTemplatePage, false);
+            actionName = 'changeCrypt';
+            break;
 
         case 'diskPassphraseGoodItem':
-            initPage([headerHighlightRect, interTopHeading, instructionsText,
-                      pictureColumn, interActionButton])
+            initPage([
+              headerHighlightRect, interTopHeading,
+              instructionsText,    pictureColumn,
+              interActionButton
+            ]);
 
-            interTemplatePage.title = getCryptDiskText('Disk Passphrase')
-            interImageList = [ 'finished.svg' ]
-            headerHighlightRect.color = '#27ae60'
-            interTopHeading.text = 'Disk Encryption Passphrases Appear Secure'
+            interTemplatePage.title = getCryptDiskTextFn('Disk Passphrase');
+            interImageList = [ 'finished.svg' ];
+            headerHighlightRect.color = '#27ae60';
+            interTopHeading.text = 'Disk Encryption Passphrases Appear Secure';
             instructionsText.text
               = '<b>'
-              + getCryptDiskText('The encrypted disk uses')
+              + getCryptDiskTextFn('The encrypted disk uses')
               + ' a non-default passphrase.</b><br>'
               + '<br>'
               + '<b>Please keep a copy of your passphrase in a safe '
@@ -577,21 +615,24 @@ Kirigami.ApplicationWindow {
               + 'backup.<br>'
               + '<br>'
               + '<b>For your security, the Kubuntu Focus Team does NOT '
-              'install tools</b> that could assist in any recovery.'
-            interActionButton.text = 'Continue'
-            interActionButton.icon.name = 'arrow-right'
-            actionName = 'nextPage'
-            regenUI(interTemplatePage, false)
-            break
+              + 'install tools</b> that could assist in any recovery.';
+            interActionButton.text = 'Continue';
+            interActionButton.icon.name = 'arrow-right';
+            actionName = 'nextPage';
+            regenUiFn(interTemplatePage, false);
+            break;
 
         case 'extraSoftwareItem':
-            initPage([topImage, topHeading, primaryText, actionButton,
-                      previousButton, skipButton])
+            initPage([
+              topImage,       topHeading,
+              primaryText,    actionButton,
+              previousButton, skipButton
+            ]);
 
-            baseTemplatePage.title = 'Extra Software'
-            topImage.source = 'assets/images/extra_software.svg'
+            baseTemplatePage.title = 'Extra Software';
+            topImage.source = 'assets/images/extra_software.svg';
             topHeading.text
-              = 'Install MS Fonts, VirtualBox Extensions, and More'
+              = 'Install MS Fonts, VirtualBox Extensions, and More';
             primaryText.text
               = '<b>Some software is restricted,</b> '
               + 'meaning you have to approve certain agreements before '
@@ -601,22 +642,25 @@ Kirigami.ApplicationWindow {
               + 'Extension Pack.<br>'
               + '<br>'
               + 'You may always revisit this later using <b>Start Menu '
-              + '> Kubuntu Focus Tools > Extra Software Installer.</b> '
-            actionButton.text = 'Install Extra Software Now'
-            actionButton.icon.name = 'arrow-right'
-            actionName = 'checkNetwork'
-            networkReturnPage = 'extraSoftwareInstallItem'
-            networkReturnAction = 'installExtraSoftware'
-            regenUI(baseTemplatePage, true)
-            break
+              + '> Kubuntu Focus Tools > Extra Software Installer.</b>';
+            actionButton.text = 'Install Extra Software Now';
+            actionButton.icon.name = 'arrow-right';
+            actionName = 'checkNetwork';
+            networkReturnPage = 'extraSoftwareInstallItem';
+            networkReturnAction = 'installExtraSoftware';
+            regenUiFn(baseTemplatePage, true);
+            break;
 
         case 'extraSoftwareInstallItem':
-            initPage([headerHighlightRect, interTopHeading, instructionsText,
-                      interActionButton, pictureColumn, interContinueLabel])
+            initPage([
+              headerHighlightRect, interTopHeading,
+              instructionsText,    interActionButton,
+              pictureColumn,       interContinueLabel
+            ]);
 
-            interTemplatePage.title = 'Extra Software'
-            headerHighlightRect.color = '#27ae60'
-            interTopHeading.text = 'Proceed with Terminal...'
+            interTemplatePage.title = 'Extra Software';
+            headerHighlightRect.color = '#27ae60';
+            interTopHeading.text = 'Proceed with Terminal...';
             instructionsText.text
               = '<b>1. You should now see</b> a '
               + 'terminal as shown at right with a prompt for '
@@ -626,21 +670,27 @@ Kirigami.ApplicationWindow {
               + '<b>2. As you follow the steps,</b> you will be '
               + 'prompted to accept license terms. If you do not '
               + 'agree with the terms for a particular software '
-              + 'component, you may skip installing it.'
-            interActionButton.text = 'Continue'
-            interActionButton.icon.name = 'arrow-right'
-            interImageList = [ 'extra_software_terminal.png', 'extra_software_license.svg' ]
-            actionName = 'nextPage'
-            regenUI(interTemplatePage, false)
-            break
+              + 'component, you may skip installing it.';
+            interActionButton.text = 'Continue';
+            interActionButton.icon.name = 'arrow-right';
+            interImageList = [
+              'extra_software_terminal.png',
+              'extra_software_license.svg'
+            ];
+            actionName = 'nextPage';
+            regenUiFn(interTemplatePage, false);
+            break;
 
         case 'fileBackupItem':
-            initPage([topImage, topHeading, primaryText, actionButton,
-                      previousButton, skipButton])
+            initPage([
+              topImage,       topHeading,
+              primaryText,    actionButton,
+              previousButton, skipButton
+            ]);
 
-            baseTemplatePage.title = 'File Backup'
-            topImage.source = 'assets/images/file_backup.svg'
-            topHeading.text = 'Snapshot and Recover Files'
+            baseTemplatePage.title = 'File Backup';
+            topImage.source = 'assets/images/file_backup.svg';
+            topHeading.text = 'Snapshot and Recover Files';
             primaryText.text
               = '<b>BackInTime takes snapshots of your home '
               + 'directory</b> so you can recover information that was '
@@ -650,20 +700,23 @@ Kirigami.ApplicationWindow {
               + '<br>'
               + '<b>See more in the</b> '
               + '<a href="https://kfocus.org/wf/backup">Backups Guided '
-              + 'Solution.</a>'
-            actionButton.text = 'Launch BackInTime Now'
-            actionButton.icon.name = 'arrow-right'
-            actionName = 'launchBackInTime'
-            regenUI(baseTemplatePage, true)
-            break
+              + 'Solution.</a>';
+            actionButton.text = 'Launch BackInTime Now';
+            actionButton.icon.name = 'arrow-right';
+            actionName = 'launchBackInTime';
+            regenUiFn(baseTemplatePage, true);
+            break;
 
         case 'fileBackupLaunchedItem':
-            initPage([headerHighlightRect, interTopHeading, instructionsText,
-                      interActionButton, pictureColumn, interContinueLabel])
+            initPage([
+              headerHighlightRect, interTopHeading,
+              instructionsText,    interActionButton,
+              pictureColumn,       interContinueLabel
+            ]);
 
-            interTemplatePage.title = 'Extra Software'
-            headerHighlightRect.color = '#27ae60'
-            interTopHeading.text = 'Proceed with BackInTime...'
+            interTemplatePage.title = 'Extra Software';
+            headerHighlightRect.color = '#27ae60';
+            interTopHeading.text = 'Proceed with BackInTime...';
             instructionsText.text
               = '<b>1. If BackInTime is not '
               + 'installed,</b> you will be asked to install it, and '
@@ -678,19 +731,21 @@ Kirigami.ApplicationWindow {
               + '<br>'
               + '<b>See more in the</b> '
               + '<a href="https://kfocus.org/wf/backup">Backups Guided '
-              + 'Solution.</a>'
-            interActionButton.text = 'Continue'
-            interActionButton.icon.name = 'arrow-right'
-            interImageList = [ 'kfocus_mime_backintime.svg',
-                               'backintime_ui.svg' ]
-            actionName = 'nextPage'
-            regenUI(interTemplatePage, false)
-            break
+              + 'Solution.</a>';
+            interActionButton.text = 'Continue';
+            interActionButton.icon.name = 'arrow-right';
+            interImageList = [
+              'kfocus_mime_backintime.svg',
+              'backintime_ui.svg'
+            ];
+            actionName = 'nextPage';
+            regenUiFn(interTemplatePage, false);
+            break;
         }
     }
 
-    function initPage(visibleElementList) {
-        var allElementsList = [
+    function initPage(visible_elements_list) {
+        var all_elements_list = [
             actionButton,        busyIndicator,
             headerHighlightRect, instructionsText,
             interActionButton,   interContinueLabel,
@@ -702,73 +757,73 @@ Kirigami.ApplicationWindow {
         ];
         var i;
 
-        for ( i = 0; i < allElementsList.length; i++ ) {
-          allElementsList[i].visible = false
+        for ( i = 0; i < all_elements_list.length; i++ ) {
+          all_elements_list[i].visible = false;
         }
 
         interImageList = [];
-        for ( i = 0;i < visibleElementList.length;i++ ) {
-          visibleElementList[i].visible = true
+        for ( i = 0;i < visible_elements_list.length;i++ ) {
+          visible_elements_list[i].visible = true;
         }
     }
 
-    function regenUI(currentPage, sidebarEnabled) {
-        if (sidebarEnabled) {
-            pageStack.push(sidebarPage)
+    function regenUiFn(current_page, sidebar_enabled) {
+        if ( sidebar_enabled ) {
+            pageStack.push(sidebarPage);
         } else {
-            disabledStepsList.currentIndex = stepsList.currentIndex
-            stepsListLockIndex = stepsList.currentIndex
-            pageStack.push(disabledSidebarPage)
+            disabledStepsList.currentIndex = stepsList.currentIndex;
+            stepsListLockIndex = stepsList.currentIndex;
+            pageStack.push(disabledSidebarPage);
         }
-        pageStack.push(currentPage)
+        pageStack.push(current_page);
     }
 
-    function getCurrentPageId() {
-        return stepsModel.get(stepsList.currentIndex).jsId
+    function getCurrentPageIdFn() {
+        return stepsModel.get(stepsList.currentIndex).jsId;
     }
 
-    function nextPage() {
-        stepsList.currentIndex++
-        switchPage(getCurrentPageId())
+    function nextPageFn() {
+        stepsList.currentIndex++;
+        switchPageFn(getCurrentPageIdFn());
     }
 
-    function previousPage() {
-        stepsList.currentIndex--
-        switchPage(getCurrentPageId())
+    function previousPageFn() {
+        stepsList.currentIndex--;
+        switchPageFn(getCurrentPageIdFn());
     }
 
-    function getCryptDiskText(textType) {
-        if (startupData.encryptedDisks.length === 1) {
-            return textType
+    function getCryptDiskTextFn(text_type) {
+        if ( startupData.encryptedDisks.length === 1 ) {
+            return text_type;
         } else {
-            switch(textType) {
+            switch(text_type) {
             case 'Disk Passphrase':
-                return 'Disk Passphrases'
+                return 'Disk Passphrases';
 
             case '1 encrypted disk':
-                return startupData.encryptedDisks.length + ' encrypted disks'
+                return startupData.encryptedDisks.length + ' encrypted disks';
 
             case '1 Encrypted Disk':
-                return startupData.encryptedDisks.length + ' Encrypted Disks'
+                return startupData.encryptedDisks.length + ' Encrypted Disks';
 
             case 'passphrase':
-                return 'passphrases'
+                return 'passphrases';
 
             case 'this disk':
-                return 'these disks'
+                return 'these disks';
 
             case 'The encrypted disk uses':
-                if (startupData.encryptedDisks.length === 2){
-                    return 'Both encrypted disks use'
+                if ( startupData.encryptedDisks.length === 2 ) {
+                    return 'Both encrypted disks use';
                 } else {
-                    return 'All encrypted disks use'
+                    return 'All encrypted disks use';
                 }
 
             case 'This disk is':
-                return 'These disks are'
+                return 'These disks are';
 
             case 'it':
-                return 'them'
+                return 'them';
             }
         }
     }
@@ -787,10 +842,10 @@ Kirigami.ApplicationWindow {
         id: cryptDiskCheckerEngine
         onAppExited: {
             defaultPassphraseDisks = exitCode
-            if (exitCode > 0) {
-                switchPage('diskPassphraseChangeItem')
+            if ( exitCode > 0 ) {
+                switchPageFn('diskPassphraseChangeItem');
             } else {
-                switchPage('diskPassphraseGoodItem')
+                switchPageFn('diskPassphraseGoodItem');
             }
         }
     }
@@ -800,7 +855,7 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id: cryptDiskChangeEngine
         onAppExited: {
-            switchPage('diskPassphraseGoodItem')
+            switchPageFn('diskPassphraseGoodItem');
         }
     }
 
@@ -810,12 +865,12 @@ Kirigami.ApplicationWindow {
         id: internetCheckerEngine
 
         onAppExited: {
-            if (exitCode === 0) {
-                actionName = networkReturnAction
-                takeAction()
-                switchPage(networkReturnPage)
+            if ( exitCode === 0 ) {
+                actionName = networkReturnAction;
+                takeActionFn();
+                switchPageFn(networkReturnPage);
             } else {
-                switchPage('connectInternetItem')
+                switchPageFn('connectInternetItem');
             }
         }
     }
@@ -830,53 +885,57 @@ Kirigami.ApplicationWindow {
     /* Event handlers for action button onClicked events - we do this since
        Controls.Button.onClicked can't be changed from within JS */
 
-    function takeAction() {
+    function takeActionFn() {
         switch(actionName) {
         case 'nextPage':
-            nextPage()
-            break
+            nextPageFn();
+            break;
 
         case 'previousPage':
-            previousPage()
-            break
+            previousPageFn();
+            break;
 
         case 'checkNetwork':
-            internetCheckerEngine.exec('ping -c 1 8.8.8.8')
-            switchPage('internetCheckItem')
-            break
+            internetCheckerEngine.exec('ping -c 1 8.8.8.8');
+            switchPageFn('internetCheckItem');
+            break;
 
         case 'checkCrypt':
             cryptDiskCheckerEngine.exec(
               startupData.binDir + 'kfocus-check-crypt -c ' +
-              startupData.encryptedDisks.join(' '))
-            switchPage('diskPassphraseCheckerItem')
-            break
+              startupData.encryptedDisks.join(' '));
+            switchPageFn('diskPassphraseCheckerItem');
+            break;
 
         case 'changeCrypt':
-            if (newPassphraseBox.text === confirmPassphraseBox.text) {
+            if ( newPassphraseBox.text === confirmPassphraseBox.text ) {
                 cryptDiskChangeEngine.exec(
-                  startupData.binDir + 'kfocus-check-crypt -m ' +
-                  startupData.encryptedDisks.join(' '),
-                  'kubuntu\n' + newPassphraseBox.text + '\n')
-                switchPage('diskPassphraseChangeInProgressItem')
+                  startupData.binDir
+                  + 'kfocus-check-crypt -m '
+                  + startupData.encryptedDisks.join(' '),
+                  'kubuntu\n'
+                  + newPassphraseBox.text + '\n');
+                switchPageFn('diskPassphraseChangeInProgressItem');
             } else {
-                interErrorMessage.text = 'The provided passphrases do not '
-                  + 'match. Please try again.'
-                interErrorMessage.visible = true
+                interErrorMessage.text
+                  = 'The provided passphrases do not '
+                  + 'match. Please try again.';
+                interErrorMessage.visible = true;
             }
-            break
+            break;
 
         case 'installExtraSoftware':
             exeRun.exec(
               'xterm -fa \'Monospace\' -fs 12 -b 28 -geometry 80x24 -T '
               + '\'Install Extras\' -xrm \'xterm*iconHint: '
               + '/usr/share/pixmaps/kfocus-bug-wizard\' -e pkexec '
-              + startupData.binDir + 'kfocus-extra')
-            break
+              + startupData.binDir + 'kfocus-extra');
+            break;
 
         case 'launchBackInTime':
-            exeRun.exec('kfocus-mime -k backintime')
-            switchPage('fileBackupLaunchedItem')
+            exeRun.exec('kfocus-mime -k backintime');
+            switchPageFn('fileBackupLaunchedItem');
+            break;
         }
     }
 
