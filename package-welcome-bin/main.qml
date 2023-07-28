@@ -352,6 +352,7 @@ Kirigami.ApplicationWindow {
 
             ColumnLayout {
                 Layout.alignment: Qt.AlignTop
+                Layout.leftMargin: Kirigami.Units.gridUnit * 0.2
 
                 Repeater {
                     id: pictureColumn
@@ -362,9 +363,10 @@ Kirigami.ApplicationWindow {
                         source: 'assets/images/' + interImageList[index]
                         fillMode: Image.PreserveAspectFit
                         Layout.preferredWidth: Kirigami.Units.gridUnit * 10
-                        Layout.preferredHeight: Kirigami.Units.gridUnit * 5
+                        Layout.preferredHeight: (this.implicitHeight /
+                          this.implicitWidth) * (Kirigami.Units.gridUnit * 10)
+                        Layout.bottomMargin: Kirigami.Units.gridUnit * 0.2
                         mipmap: true
-                        Layout.bottomMargin: Kirigami.Units.gridUnit
                         Layout.alignment: Qt.AlignHCenter
                     }
                 }
@@ -578,7 +580,7 @@ Kirigami.ApplicationWindow {
 
         case 'extraSoftwareItem':
             initPage([topImage, topHeading, primaryText, actionButton,
-                      previousButton, actionButton, skipButton])
+                      previousButton, skipButton])
 
             baseTemplatePage.title = 'Extra Software'
             topImage.source = 'assets/images/extra_software.svg'
@@ -620,6 +622,57 @@ Kirigami.ApplicationWindow {
             interActionButton.text = 'Continue'
             interActionButton.icon.name = 'arrow-right'
             interImageList = [ 'extra_software_terminal.png', 'extra_software_license.svg' ]
+            actionName = 'nextPage'
+            regenUI(interTemplatePage, false)
+            break
+
+        case 'fileBackupItem':
+            initPage([topImage, topHeading, primaryText, actionButton,
+                      previousButton, skipButton])
+
+            baseTemplatePage.title = 'File Backup'
+            topImage.source = 'assets/images/file_backup.svg'
+            topHeading.text = 'Snapshot and Recover Files'
+            primaryText.text = '<b>BackInTime takes snapshots of your home ' +
+                    'directory</b> so you can recover information that was ' +
+                    'later changed or removed. We\'ve configured it to ' +
+                    'ignore folders where cloud drives and software repos ' +
+                    'are usually located.<br>' +
+                    '<br>' +
+                    '<b>See more in the</b> ' +
+                    '<a href="https://kfocus.org/wf/backup">Backups Guided ' +
+                    'Solution.</a>'
+            actionButton.text = 'Launch BackInTime Now'
+            actionButton.icon.name = 'arrow-right'
+            actionName = 'launchBackInTime'
+            regenUI(baseTemplatePage, true)
+            break
+
+        case 'fileBackupLaunchedItem':
+            initPage([headerHighlightRect, interTopHeading, instructionsText,
+                      interActionButton, pictureColumn, interContinueLabel])
+
+            interTemplatePage.title = 'Extra Software'
+            headerHighlightRect.color = '#27ae60'
+            interTopHeading.text = 'Proceed with BackInTime...'
+            instructionsText.text = '<b>1. If BackInTime is not ' +
+                    'installed,</b> you will be asked to install it, and ' +
+                    'will need to provide your password to do so.<br>' +
+                    '<br>' +
+                    '<b>2. Once installed, the BackInTime app</b> should ' +
+                    'appear as shown.<br>' +
+                    '<br>' +
+                    '<b>3. Take snapshots with the Disk icon.</b> You may ' +
+                    'also browse snapshots on the left (4), select files ' +
+                    'on the right (5), and adjust settings (6).<br>' +
+                    '<br>' +
+                    '<b>See more in the</b> ' +
+                    '<a href="https://kfocus.org/wf/backup">Backups Guided ' +
+                    'Solution.</a>'
+            interActionButton.text = 'Continue'
+            interActionButton.icon.name = 'arrow-right'
+            interImageList = [ 'kfocus_mime_backintime.svg',
+                               'backintime_ui.svg' ]
             actionName = 'nextPage'
             regenUI(interTemplatePage, false)
             break
@@ -808,6 +861,10 @@ Kirigami.ApplicationWindow {
               '/usr/share/pixmaps/kfocus-bug-wizard\' -e pkexec ' +
               startupData.binDir + 'kfocus-extra')
             break
+
+        case 'launchBackInTime':
+            exeRun.exec('kfocus-mime -k backintime')
+            switchPage('fileBackupLaunchedItem')
         }
     }
 
