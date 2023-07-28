@@ -331,6 +331,20 @@ Kirigami.ApplicationWindow {
                 onClicked: takeAction()
             }
         }
+
+        Controls.Label {
+            id: interContinueLabel
+
+            anchors {
+                left: parent.left
+                bottom: parent.bottom
+            }
+            width: Kirigami.Units.gridUnit * 15
+
+            text: '<b>Once you are finished,</b> please return here and ' +
+                  'click "Continue" to proceed to the next step.'
+            wrapMode: Text.WordWrap
+        }
     }
 
     /*********************
@@ -535,7 +549,7 @@ Kirigami.ApplicationWindow {
 
         case 'extraSoftwareInstallItem':
             initPage([headerHighlightRect, interTopHeading, instructionsText,
-                      interActionButton, pictureColumn])
+                      interActionButton, pictureColumn, interContinueLabel])
 
             interTemplatePage.title = 'Extra Software'
             headerHighlightRect.color = '#27ae60'
@@ -548,10 +562,7 @@ Kirigami.ApplicationWindow {
                     '<b>2. As you follow the steps,</b> you will be ' +
                     'prompted to accept license terms. If you do not ' +
                     'agree with the terms for a particular software ' +
-                    'component, you may skip installing it.<br>' +
-                    '<br>' +
-                    '<b>Once you are finished,</b> please return here and ' +
-                    'click "Continue" to proceed to the next step.'
+                    'component, you may skip installing it.'
             interActionButton.text = 'Continue'
             interActionButton.icon.name = 'arrow-right'
             interImageList = [ 'extra_software_terminal.png', 'extra_software_license.svg' ]
@@ -568,7 +579,7 @@ Kirigami.ApplicationWindow {
                                 interTopHeading, instructionsText,
                                 interActionButton, passphraseChangeForm,
                                 secondaryInstructionsText, interErrorMessage,
-                                interSkipButton]
+                                interSkipButton, interContinueLabel]
         var i = 0;
 
         for (i = 0;i < allElementsList.length;i++) {
