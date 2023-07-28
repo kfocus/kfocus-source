@@ -368,7 +368,7 @@ Kirigami.ApplicationWindow {
             initPage([topImage, topHeading, primaryText, actionButton])
 
             baseTemplatePage.title = 'Introduction'
-            topImage.source = 'assets/images/focus_lineup.png'
+            topImage.source = 'assets/images/frontpage.webp'
             topHeading.text = 'Welcome To The Kubuntu Focus!'
             primaryText.text = '<b>This Welcome Wizard helps you get ' +
                     'started as quickly as possible.</b> We have included ' +
