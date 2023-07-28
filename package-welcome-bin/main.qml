@@ -99,9 +99,9 @@ Kirigami.ApplicationWindow {
         }
     }
 
-    /***************************
+    /*************************
      * Template - Front Page *
-     ***************************/
+     *************************/
 
     Kirigami.Page {
         id: frontTemplatePage
@@ -423,8 +423,6 @@ Kirigami.ApplicationWindow {
 
         switch(pageId) {
         case 'introductionItem':
-            initPage([frontImage, topHeading, primaryText, actionButton])
-
             frontTemplatePage.title = 'Introduction'
             frontImage.source = 'assets/images/frontpage.webp'
             frontHeading.text = 'Welcome To The Kubuntu Focus!'
