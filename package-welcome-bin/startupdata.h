@@ -7,23 +7,23 @@
 class StartupData : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(QStringList encryptedDisks READ encryptedDisks WRITE setEncryptedDisks)
+    Q_PROPERTY(QStringList cryptDiskList READ cryptDiskList WRITE setCryptDiskList)
     Q_PROPERTY(QString binDir READ binDir)
     QML_ELEMENT
 public:
     StartupData();
-    QStringList encryptedDisks() {
-        return m_encryptedDisks;
+    QStringList cryptDiskList() {
+        return m_cryptDiskList;
     }
-    void setEncryptedDisks(QStringList val) {
-        m_encryptedDisks = val;
+    void setCryptDiskList(QStringList val) {
+        m_cryptDiskList = val;
     }
     QString binDir() {
         return m_binDir;
     }
 
 private:
-    static QStringList m_encryptedDisks;
+    static QStringList m_cryptDiskList;
     static QString m_binDir;
 };
 

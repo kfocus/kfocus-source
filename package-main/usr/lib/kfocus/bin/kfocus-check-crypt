@@ -175,10 +175,10 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   # Get escalation exe
   _escExe="$(_cm2GetEscExeFn)" || exit;
-  if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
-    _cm2WarnStrFn 'Could not assign variables';
-    exit 1;
-  fi
+  # if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
+  #   _cm2WarnStrFn 'Could not assign variables';
+  #   exit 1;
+  # fi
 
   _mainFn "$@";
 fi

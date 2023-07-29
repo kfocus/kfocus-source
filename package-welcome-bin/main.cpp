@@ -5,8 +5,8 @@
 #include <startupdata.h>
 #include <shellengine.h>
 
-QStringList StartupData::m_encryptedDisks = QStringList();
-QString StartupData::m_binDir = "/home/bill/GitHub/kfocus-source/package-main/usr/lib/kfocus/bin/";
+QStringList StartupData::m_cryptDiskList = QStringList();
+QString StartupData::m_binDir = "/home/bill/Github/kfocus-source/package-main/usr/lib/kfocus/bin/";
 
 int main(int argc, char *argv[])
 {
@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
     encryptedDiskFinder.execSync(dat.binDir() + "kfocus-check-crypt -q");
     QStringList cryptDisks(encryptedDiskFinder.stdout().split('\n'));
     cryptDisks.removeLast();
-    dat.setEncryptedDisks(cryptDisks);
+    dat.setCryptDiskList(cryptDisks);
 
     QQmlApplicationEngine engine;
     const QUrl url(QStringLiteral("qrc:/main.qml"));
