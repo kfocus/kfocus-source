@@ -1042,14 +1042,14 @@ Kirigami.ApplicationWindow {
 
         case 'checkNetwork':
             internetCheckerEngine.exec('ping -c 1 8.8.8.8');
-            switchPageFn('internetCheckItem');
+            switchPageFn( 'internetCheckItem' );
             break;
 
         case 'checkCrypt':
             cryptDiskCheckerEngine.exec(
-              systemDataMap.binDir + 'kfocus-check-crypt -c ' +
-              systemDataMap.cryptDiskList.join(' '));
-            switchPageFn('diskPassphraseCheckerItem');
+              systemDataMap.binDir + 'kfocus-check-crypt -c '
+              + systemDataMap.cryptDiskList.join( ' ' ) );
+            switchPageFn( 'diskPassphraseCheckerItem' );
             break;
 
         case 'changeCrypt':
@@ -1059,8 +1059,8 @@ Kirigami.ApplicationWindow {
                   + 'kfocus-check-crypt -m '
                   + systemDataMap.cryptDiskList.join(' '),
                   'kubuntu\n'
-                  + newPassphraseBox.text + '\n');
-                switchPageFn('diskPassphraseChangeInProgressItem');
+                  + newPassphraseBox.text + '\n' );
+                switchPageFn( 'diskPassphraseChangeInProgressItem' );
             } else {
                 interErrorMessage.text
                   = 'The provided passphrases do not '
@@ -1074,17 +1074,17 @@ Kirigami.ApplicationWindow {
               'xterm -fa \'Monospace\' -fs 12 -b 28 -geometry 80x24 -T '
               + '\'Install Extras\' -xrm \'xterm*iconHint: '
               + '/usr/share/pixmaps/kfocus-bug-wizard\' -e pkexec '
-              + systemDataMap.binDir + 'kfocus-extra');
+              + systemDataMap.binDir + 'kfocus-extra' );
             break;
 
         case 'launchBackInTime':
-            exeRun.exec('kfocus-mime -k backintime');
-            switchPageFn('fileBackupLaunchedItem');
+            exeRun.exec( systemDataMap.binDir + 'kfocus-mime -k backintime' );
+            switchPageFn( 'fileBackupLaunchedItem' );
             break;
 
         case 'launchKeePassXC':
-            exeRun.exec('kfocus-mime -k keepassxc');
-            switchPageFn('passwordManagerLaunchedItem');
+            exeRun.exec( systemDataMap.binDir + 'kfocus-mime -k keepassxc' );
+            switchPageFn( 'passwordManagerLaunchedItem' );
         }
     }
 
