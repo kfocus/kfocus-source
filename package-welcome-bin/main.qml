@@ -533,13 +533,13 @@ Kirigami.ApplicationWindow {
               + 'these suggestions. You may always run this wizard '
               + 'later using Start Menu > Kubuntu Focus > Welcome Wizard.';
             actionName              = 'nextPage';
-            regenUiFn(frontTemplatePage, true);
+            regenUiFn( frontTemplatePage, true );
             break;
 
         case 'internetCheckItem':
             initPage([topHeading, busyIndicator]);
             topHeading.text = "Checking for Internet connectivity...";
-            regenUiFn(baseTemplatePage, false);
+            regenUiFn( baseTemplatePage, false );
             break;
 
         case 'connectInternetItem':
@@ -579,7 +579,7 @@ Kirigami.ApplicationWindow {
             ];
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
-            regenUiFn(interTemplatePage, false);
+            regenUiFn( interTemplatePage, false );
 
             actionName = 'checkNetwork';
             break;
@@ -611,15 +611,16 @@ Kirigami.ApplicationWindow {
             actionButton.text      = 'Check Disk Passphrases Now';
             actionButton.icon.name = 'lock';
             actionName             = 'checkCrypt';
-            regenUiFn(baseTemplatePage, true);
+            regenUiFn( baseTemplatePage, true );
             break;
 
         case 'diskPassphraseCheckerItem':
             initPage([topHeading, busyIndicator]);
+
             baseTemplatePage.title = getCryptDiskTextFn('Disk Passphrase');
             topHeading.text        = 'Checking Disk Encryption Security...\n'
               + 'This might take a minute.';
-            regenUiFn(baseTemplatePage, false);
+            regenUiFn( baseTemplatePage, false );
             break;
 
         case 'diskPassphraseChangeInProgressItem':
@@ -628,7 +629,7 @@ Kirigami.ApplicationWindow {
             baseTemplatePage.title = getCryptDiskTextFn('Disk Passphrase');
             topHeading.text        = 'Changing Disk Passphrases...\n'
               + 'This might take a minute.';
-            regenUiFn(baseTemplatePage, false);
+            regenUiFn( baseTemplatePage, false );
             break;
 
         case 'diskPassphraseChangeItem':
@@ -654,7 +655,7 @@ Kirigami.ApplicationWindow {
             cryptActionButton.text      = 'Continue';
             cryptActionButton.icon.name = 'arrow-right';
             actionName                  = 'changeCrypt';
-            regenUiFn(cryptTemplatePage, false);
+            regenUiFn( cryptTemplatePage, false );
             break;
 
         case 'diskPassphraseGoodItem':
@@ -670,7 +671,7 @@ Kirigami.ApplicationWindow {
             interTopHeading.text      = 'Disk Encryption Passphrases Appear Secure';
             instructionsText.text
               = '<b>'
-              + getCryptDiskTextFn('The encrypted disk uses')
+              + getCryptDiskTextFn( 'The encrypted disk uses' )
               + ' a non-default passphrase.</b><br>'
               + '<br>'
               + '<b>Please keep a copy of your passphrase in a safe '
@@ -683,7 +684,7 @@ Kirigami.ApplicationWindow {
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
             actionName                  = 'nextPage';
-            regenUiFn(interTemplatePage, false);
+            regenUiFn( interTemplatePage, false) ;
             break;
 
         case 'extraSoftwareItem':
@@ -712,7 +713,7 @@ Kirigami.ApplicationWindow {
             actionName             = 'checkNetwork';
             networkReturnPage      = 'extraSoftwareInstallItem';
             networkReturnAction    = 'installExtraSoftware';
-            regenUiFn(baseTemplatePage, true);
+            regenUiFn( baseTemplatePage, true );
             break;
 
         case 'extraSoftwareInstallItem':
@@ -737,13 +738,12 @@ Kirigami.ApplicationWindow {
               + 'component, you may skip installing it.';
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
-
             interImageList = [
               'extra_software_terminal.png',
               'extra_software_license.svg'
             ];
             actionName = 'nextPage';
-            regenUiFn(interTemplatePage, false);
+            regenUiFn( interTemplatePage, false );
             break;
 
         case 'fileBackupItem':
@@ -769,7 +769,7 @@ Kirigami.ApplicationWindow {
             actionButton.text      = 'Launch BackInTime Now';
             actionButton.icon.name = 'arrow-right';
             actionName             = 'launchBackInTime';
-            regenUiFn(baseTemplatePage, true);
+            regenUiFn( baseTemplatePage, true );
             break;
 
         case 'fileBackupLaunchedItem':
@@ -804,7 +804,7 @@ Kirigami.ApplicationWindow {
               'backintime_ui.svg'
             ];
             actionName = 'nextPage';
-            regenUiFn(interTemplatePage, false);
+            regenUiFn( interTemplatePage, false );
             break;
 
         case 'passwordManagerItem':
@@ -830,7 +830,7 @@ Kirigami.ApplicationWindow {
             actionButton.text      = 'Launch KeePassXC Now';
             actionButton.icon.name = 'arrow-right';
             actionName             = 'launchKeePassXC';
-            regenUiFn(baseTemplatePage, true);
+            regenUiFn( baseTemplatePage, true );
             break;
 
         case 'passwordManagerLaunchedItem':
@@ -867,7 +867,7 @@ Kirigami.ApplicationWindow {
               'keepassxc_ui.png'
             ];
             actionName = 'nextPage';
-            regenUiFn(interTemplatePage, false);
+            regenUiFn( interTemplatePage, false );
             break;
 
         case 'emailCalendarItem':
@@ -894,7 +894,42 @@ Kirigami.ApplicationWindow {
             actionButton.text      = 'Launch Thunderbird Now';
             actionButton.icon.name = 'arrow-right';
             actionName             = 'launchThunderbird';
-            regenUiFn(baseTemplatePage, true);
+            regenUiFn( baseTemplatePage, true );
+            break;
+
+        case 'emailCalendarLaunchedItem':
+            initPage([
+              headerHighlightRect, interTopHeading,
+              instructionsText,    interActionButton,
+              pictureColumn,       interContinueLabel
+            ]);
+
+            interTemplatePage.title   = 'Email';
+            headerHighlightRect.color = '#27ae60';
+            interTopHeading.text      = 'Proceed with Thunderbird...';
+            instructionsText.text
+            = '<b>1. If Thunderbird is not installed,</b> you will be asked '
+            + 'to install it, and will need to provide your password to do '
+            + 'so.<br>'
+            + '<br>'
+            + '<b>2. Once installed,</b> the Thunderbird app should appear '
+            + 'as shown.<br>'
+            + '<br>'
+            + '<b>3. Connect your email account</b> by entering your name, '
+            + 'email address, and password into the Account Setup screen.<br>'
+            + '<br>'
+            + '<b>See more in the</b> '
+            + '<a href="https://kfocus.org/wf/email.html">Email Guided '
+            + 'Solution.</a> There, you will find how to set up calendars, '
+            + 'contacts, and more.';
+            interActionButton.text      = 'Continue';
+            interActionButton.icon.name = 'arrow-right';
+            interImageList = [
+              'kfocus_mime_thunderbird.svg',
+              'thunderbird_ui.png'
+            ];
+            actionName = 'nextPage';
+            regenUiFn( interTemplatePage, false );
             break;
         }
     }
@@ -987,7 +1022,6 @@ Kirigami.ApplicationWindow {
      **************/
 
     // Check all encrypted disks for the default passphrase
-
     ShellEngine {
         id          : cryptDiskCheckerEngine
         onAppExited : {
@@ -1001,7 +1035,6 @@ Kirigami.ApplicationWindow {
     }
 
     // Changes the passphrase on all encrypted disks that use the default
-
     ShellEngine {
         id          : cryptDiskChangeEngine
         onAppExited : {
@@ -1023,9 +1056,7 @@ Kirigami.ApplicationWindow {
         }
     }
 
-    /* Anything that doesn't require a callback on exit is run with this
-       engine */
-
+    // Used for shell commands that don't require a callback
     ShellEngine { id : exeRun }
 
     // BEGIN takeActionFn
@@ -1085,6 +1116,12 @@ Kirigami.ApplicationWindow {
         case 'launchKeePassXC':
             exeRun.exec( systemDataMap.binDir + 'kfocus-mime -kf keepassxc' );
             switchPageFn( 'passwordManagerLaunchedItem' );
+            break;
+
+        case 'launchThunderbird':
+            exeRun.exec( systemDataMap.binDir + 'kfocus-mime -k thunderbird' );
+            switchPageFn( 'emailCalendarLaunchedItem' );
+            break;
         }
     }
 
