@@ -19,6 +19,8 @@ Kirigami.ApplicationWindow {
     property bool firstRun              : true
     property var interImageList         : []
     property int defaultPassphraseDisks : 0
+    property string pageTitleText       : ""
+    property string pageTitleImage      : ""
 
     //
     // Purpose: Describes steps used in wizard
@@ -121,10 +123,39 @@ Kirigami.ApplicationWindow {
     }
     // . END Define sidebar views
 
+    // Page title renderer
+    Component {
+        id: titleRenderer
+
+        RowLayout {
+            Layout.fillWidth: true
+
+            Kirigami.Heading {
+                id   : titleText
+                text : pageTitleText
+                Layout.leftMargin : Kirigami.Units.gridUnit
+                Layout.fillWidth  : true
+            }
+
+            Image {
+                id     : titleImage
+                source : pageTitleImage
+                mipmap : true
+                Layout.rightMargin: Kirigami.Units.gridUnit
+                Layout.alignment       : Qt.AlignRight + Qt.AlignVCenter
+                Layout.preferredHeight : Kirigami.Units.gridUnit * 1.4
+                Layout.preferredWidth  :
+                    ( this.implicitWidth / this.implicitHeight )
+                    * (Kirigami.Units.gridUnit * 1.4)
+            }
+        }
+    }
+
     // Template - Front Page
     Kirigami.Page {
         id: frontTemplatePage
         visible: false // Avoids a graphical glitch, DO NOT SET TO TRUE
+        titleDelegate: titleRenderer
 
         ColumnLayout {
             anchors {
@@ -179,6 +210,7 @@ Kirigami.ApplicationWindow {
     Kirigami.Page {
         id: baseTemplatePage
         visible: false // Avoids a graphical glitch, DO NOT SET TO TRUE
+        titleDelegate: titleRenderer
 
         ColumnLayout {
             anchors {
@@ -266,6 +298,7 @@ Kirigami.ApplicationWindow {
     Kirigami.Page {
         id      : interTemplatePage
         visible : false // Avoids a graphical glitch, DO NOT SET TO TRUE
+        titleDelegate: titleRenderer
 
         Rectangle {
             id : headerHighlightRect
@@ -377,6 +410,7 @@ Kirigami.ApplicationWindow {
     Kirigami.Page {
         id      : cryptTemplatePage
         visible : false // Avoids a graphical glitch, DO NOT SET TO TRUE
+        titleDelegate: titleRenderer
 
         Rectangle {
             id : cryptHighlightRect
@@ -519,9 +553,9 @@ Kirigami.ApplicationWindow {
 
         switch(page_id) {
         case 'introductionItem':
-            frontTemplatePage.title = 'Introduction';
-            frontImage.source       = 'assets/images/frontpage.webp';
-            frontHeading.text       = 'Welcome To The Kubuntu Focus!';
+            pageTitleText     = 'Introduction';
+            frontImage.source = 'assets/images/frontpage.webp';
+            frontHeading.text = 'Welcome To The Kubuntu Focus!';
             frontText.text
               = '<b>This Welcome Wizard helps you get '
               + 'started as quickly as possible.</b> We have included '
@@ -532,12 +566,13 @@ Kirigami.ApplicationWindow {
               + 'the Focus Team is not compensated in any way for '
               + 'these suggestions. You may always run this wizard '
               + 'later using Start Menu > Kubuntu Focus > Welcome Wizard.';
-            actionName              = 'nextPage';
+            actionName        = 'nextPage';
             regenUiFn( frontTemplatePage, true );
             break;
 
         case 'internetCheckItem':
             initPage([topHeading, busyIndicator]);
+
             topHeading.text = "Checking for Internet connectivity...";
             regenUiFn( baseTemplatePage, false );
             break;
@@ -549,7 +584,8 @@ Kirigami.ApplicationWindow {
               interActionButton,   pictureColumn
             ]);
 
-            interTemplatePage.title   = baseTemplatePage.title;
+            pageTitleImage
+              = 'assets/images/network_disconnect.svg';
             headerHighlightRect.color = '#ff9900';
             interTopHeading.text      = 'Please Connect to the Internet';
             instructionsText.text
@@ -580,7 +616,6 @@ Kirigami.ApplicationWindow {
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
             regenUiFn( interTemplatePage, false );
-
             actionName = 'checkNetwork';
             break;
 
@@ -591,9 +626,9 @@ Kirigami.ApplicationWindow {
               skipButton,  previousButton
             ]);
 
-            baseTemplatePage.title = getCryptDiskTextFn('Disk Passphrase');
-            topImage.source        = 'assets/images/encrypted_drive.svg';
-            topHeading.text        = 'Check Disk Encryption Security';
+            pageTitleText   = getCryptDiskTextFn('Disk Passphrase');
+            topImage.source = 'assets/images/encrypted_drive.svg';
+            topHeading.text = 'Check Disk Encryption Security';
             primaryText.text
               = '<b>The wizard has detected '
               + getCryptDiskTextFn('1 encrypted disk')
@@ -617,8 +652,9 @@ Kirigami.ApplicationWindow {
         case 'diskPassphraseCheckerItem':
             initPage([topHeading, busyIndicator]);
 
-            baseTemplatePage.title = getCryptDiskTextFn('Disk Passphrase');
-            topHeading.text        = 'Checking Disk Encryption Security...\n'
+            pageTitleText   = getCryptDiskTextFn('Disk Passphrase');
+            pageTitleImage  = 'assets/images/encrypted_drive.svg';
+            topHeading.text = 'Checking Disk Encryption Security...\n'
               + 'This might take a minute.';
             regenUiFn( baseTemplatePage, false );
             break;
@@ -626,13 +662,16 @@ Kirigami.ApplicationWindow {
         case 'diskPassphraseChangeInProgressItem':
             initPage([topHeading, busyIndicator]);
 
-            baseTemplatePage.title = getCryptDiskTextFn('Disk Passphrase');
-            topHeading.text        = 'Changing Disk Passphrases...\n'
+            pageTitleText   = getCryptDiskTextFn('Disk Passphrase');
+            pageTitleImage  = 'assets/images/encrypted_drive.svg';
+            topHeading.text = 'Changing Disk Passphrases...\n'
               + 'This might take a minute.';
             regenUiFn( baseTemplatePage, false );
             break;
 
         case 'diskPassphraseChangeItem':
+            pageTitleText            = getCryptDiskTextFn('Disk Passphrase');
+            pageTitleImage           = 'assets/images/encrypted_drive.svg';
             cryptHighlightRect.color = '#ff9900';
             cryptTopHeading.text
               = 'Change Passphrase for '
@@ -665,10 +704,12 @@ Kirigami.ApplicationWindow {
               interActionButton
             ]);
 
-            interTemplatePage.title   = getCryptDiskTextFn('Disk Passphrase');
+            pageTitleText             = getCryptDiskTextFn('Disk Passphrase');
+            pageTitleImage            = 'assets/images/encrypted_drive.svg';
             interImageList            = [ 'finished.svg' ];
             headerHighlightRect.color = '#27ae60';
-            interTopHeading.text      = 'Disk Encryption Passphrases Appear Secure';
+            interTopHeading.text
+              = 'Disk Encryption Passphrases Appear Secure';
             instructionsText.text
               = '<b>'
               + getCryptDiskTextFn( 'The encrypted disk uses' )
@@ -694,8 +735,8 @@ Kirigami.ApplicationWindow {
               previousButton, skipButton
             ]);
 
-            baseTemplatePage.title = 'Extra Software';
-            topImage.source        = 'assets/images/extra_software.svg';
+            pageTitleText   = 'Extra Software';
+            topImage.source = 'assets/images/extra_software.svg';
             topHeading.text
               = 'Install MS Fonts, VirtualBox Extensions, and More';
             primaryText.text
@@ -723,7 +764,8 @@ Kirigami.ApplicationWindow {
               pictureColumn,       interContinueLabel
             ]);
 
-            interTemplatePage.title   = 'Extra Software';
+            pageTitleText             = 'Extra Software';
+            pageTitleImage            = 'assets/images/extra_software.svg';
             headerHighlightRect.color = '#27ae60';
             interTopHeading.text      = 'Proceed with Terminal...';
             instructionsText.text
@@ -753,9 +795,9 @@ Kirigami.ApplicationWindow {
               previousButton, skipButton
             ]);
 
-            baseTemplatePage.title = 'File Backup';
-            topImage.source        = 'assets/images/file_backup.svg';
-            topHeading.text        = 'Snapshot and Recover Files';
+            pageTitleText   = 'File Backup';
+            topImage.source = 'assets/images/file_backup.svg';
+            topHeading.text = 'Snapshot and Recover Files';
             primaryText.text
               = '<b>BackInTime takes snapshots of your home '
               + 'directory</b> so you can recover information that was '
@@ -779,7 +821,8 @@ Kirigami.ApplicationWindow {
               pictureColumn,       interContinueLabel
             ]);
 
-            interTemplatePage.title   = 'File Backup';
+            pageTitleText             = 'File Backup';
+            pageTitleImage            = 'assets/images/file_backup.svg';
             headerHighlightRect.color = '#27ae60';
             interTopHeading.text      = 'Proceed with BackInTime...';
             instructionsText.text
@@ -814,9 +857,9 @@ Kirigami.ApplicationWindow {
               previousButton, skipButton
             ]);
 
-            baseTemplatePage.title = 'Password Manager';
-            topImage.source        = 'assets/images/keepassxc_logo.svg';
-            topHeading.text        = 'Generate, Save, and View Secrets';
+            pageTitleText   = 'Password Manager';
+            topImage.source = 'assets/images/keepassxc_logo.svg';
+            topHeading.text = 'Generate, Save, and View Secrets';
             primaryText.text
               = 'KeePassXC is a powerful password manager and generator '
               + 'that takes the hassle out of staying secure. It saves your'
@@ -840,7 +883,8 @@ Kirigami.ApplicationWindow {
               pictureColumn,       interContinueLabel
             ]);
 
-            interTemplatePage.title   = 'Password Manager';
+            pageTitleText             = 'Password Manager';
+            pageTitleImage            = 'assets/images/keepassxc_logo.svg';
             headerHighlightRect.color = '#27ae60';
             interTopHeading.text      = 'Proceed with KeePassXC...'
             instructionsText.text
@@ -877,9 +921,9 @@ Kirigami.ApplicationWindow {
               previousButton, skipButton
             ]);
 
-            baseTemplatePage.title = 'Email';
-            topImage.source        = 'assets/images/thunderbird_logo.svg';
-            topHeading.text        = 'Manage Emails, Calendar, and Contacts';
+            pageTitleText   = 'Email';
+            topImage.source = 'assets/images/thunderbird_logo.svg';
+            topHeading.text = 'Manage Emails, Calendar, and Contacts';
             primaryText.text
               = 'Thunderbird is a fast, convenient, and powerful email'
               + 'client. It provides privacy and security features not'
@@ -904,7 +948,8 @@ Kirigami.ApplicationWindow {
               pictureColumn,       interContinueLabel
             ]);
 
-            interTemplatePage.title   = 'Email';
+            pageTitleText             = 'Email';
+            pageTitleImage            = 'assets/images/thunderbird_logo.svg'
             headerHighlightRect.color = '#27ae60';
             interTopHeading.text      = 'Proceed with Thunderbird...';
             instructionsText.text
@@ -951,6 +996,7 @@ Kirigami.ApplicationWindow {
         }
 
         interImageList = [];
+        pageTitleImage = '';
         for ( i = 0;i < visible_elements_list.length;i++ ) {
           visible_elements_list[i].visible = true;
         }
