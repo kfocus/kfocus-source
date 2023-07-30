@@ -3,7 +3,6 @@
 
 #include <QObject>
 #include <QProcess>
-#include <QQueue>
 #include <QtQml/qqml.h>
 
 class ShellEngine : public QObject

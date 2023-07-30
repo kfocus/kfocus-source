@@ -4,6 +4,7 @@ import QtQuick.Layouts 1.2
 import QtQuick.Window 2.2
 import org.kde.kirigami 2.15 as Kirigami
 import shellengine 1.1
+import startupdata 1.0
 
 Kirigami.ApplicationWindow {
     id: root
@@ -14,7 +15,7 @@ Kirigami.ApplicationWindow {
     property string actionName          : ''
     property string networkReturnPage   : ''
     property string networkReturnAction : ''
-    property int disabledSidebarIndex  : 0
+    property int disabledSidebarIndex   : 0
     property bool firstRun              : true
     property var interImageList         : []
     property int defaultPassphraseDisks : 0
@@ -114,7 +115,7 @@ Kirigami.ApplicationWindow {
             iconSize    : Kirigami.Units.gridUnit * 1.5
             fadeContent : true
             onClicked   : {
-                disabledStepsList.currentIndex = disabledSidebarIndex;
+                disabledSidebar.currentIndex = disabledSidebarIndex;
             }
         }
     }
@@ -832,6 +833,43 @@ Kirigami.ApplicationWindow {
             regenUiFn(baseTemplatePage, true);
             break;
 
+        case 'passwordManagerLaunchedItem':
+            initPage([
+              headerHighlightRect, interTopHeading,
+              instructionsText,    interActionButton,
+              pictureColumn,       interContinueLabel
+            ]);
+
+            interTemplatePage.title   = 'Password Manager';
+            headerHighlightRect.color = '#27ae60';
+            interTopHeading.text      = 'Proceed with KeePassXC...'
+            instructionsText.text
+              = '<b>1. If KeePassXC is not installed,</b> you will be asked '
+              + 'to install it, and will need to provide your password to do '
+              + 'so.<br>'
+              + '<br>'
+              + '<b>2. Once installed,</b> you may need to click on the icon '
+              + 'in the system tray as shown.<br>'
+              + '<br>'
+              + '<b>3. The main window should then appear.</b> From here, '
+              + 'you can create a new vault to start managing passwords.<br>'
+              + '<br>'
+              + '<b>See more in the</b> '
+              + '<a href="https://kfocus.org/wf/passwords#bkm_keepassxc">'
+              + 'Passwords Guided Solution</a> and the '
+              + '<a href="https://keepassxc.org/docs/">official '
+              + 'documentation.</a>';
+            interActionButton.text      = 'Continue';
+            interActionButton.icon.name = 'arrow-right';
+            interImageList = [
+              'kfocus_mime_keepassxc.svg',
+              'keepassxc_systray.svg',
+              'keepassxc_ui.png'
+            ];
+            actionName = 'nextPage';
+            regenUiFn(interTemplatePage, false);
+            break;
+
         case 'emailCalendarItem':
             initPage([
               topImage,       topHeading,
@@ -1043,6 +1081,10 @@ Kirigami.ApplicationWindow {
             exeRun.exec('kfocus-mime -k backintime');
             switchPageFn('fileBackupLaunchedItem');
             break;
+
+        case 'launchKeePassXC':
+            exeRun.exec('kfocus-mime -k keepassxc');
+            switchPageFn('passwordManagerLaunchedItem');
         }
     }
 

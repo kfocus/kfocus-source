@@ -19,6 +19,9 @@ int main(int argc, char *argv[])
         }
     app.setWindowIcon(QIcon("/usr/share/icons/hicolor/scalable/apps/kfocus-bug-wizard.svg"));
 
+    qmlRegisterType<ShellEngine>("shellengine", 1, 1, "ShellEngine");
+    qmlRegisterType<StartupData>("startupdata", 1, 0, "StartupData");
+
     StartupData dat;
     ShellEngine encryptedDiskFinder;
     encryptedDiskFinder.execSync(dat.binDir() + "kfocus-check-crypt -q");

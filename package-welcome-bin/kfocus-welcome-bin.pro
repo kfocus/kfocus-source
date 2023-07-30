@@ -23,12 +23,6 @@ qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
-# QML/C++ interaction stuff
-CONFIG += qmltypes
-QML_IMPORT_NAME = shellengine
-QML_IMPORT_MAJOR_VERSION = 1
-QML_IMPORT_MINOR_VERSION = 1
-
 HEADERS += \
     shellengine.h \
     startupdata.h
