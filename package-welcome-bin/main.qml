@@ -19,8 +19,8 @@ Kirigami.ApplicationWindow {
     property bool firstRun              : true
     property var interImageList         : []
     property int defaultPassphraseDisks : 0
-    property string pageTitleText       : ""
-    property string pageTitleImage      : ""
+    property string pageTitleText       : ''
+    property string pageTitleImage      : ''
 
     //
     // Purpose: Describes steps used in wizard
@@ -57,6 +57,11 @@ Kirigami.ApplicationWindow {
             jsId     : 'emailCalendarItem'
             task     : 'Email'
             taskIcon : 'gnumeric-link-email'
+        }
+        ListElement {
+            jsId     : 'dropboxItem'
+            task     : 'Dropbox'
+            taskIcon : 'cloudstatus'
         }
     }
 
@@ -953,25 +958,89 @@ Kirigami.ApplicationWindow {
             headerHighlightRect.color = '#27ae60';
             interTopHeading.text      = 'Proceed with Thunderbird...';
             instructionsText.text
-            = '<b>1. If Thunderbird is not installed,</b> you will be asked '
-            + 'to install it, and will need to provide your password to do '
-            + 'so.<br>'
-            + '<br>'
-            + '<b>2. Once installed,</b> the Thunderbird app should appear '
-            + 'as shown.<br>'
-            + '<br>'
-            + '<b>3. Connect your email account</b> by entering your name, '
-            + 'email address, and password into the Account Setup screen.<br>'
-            + '<br>'
-            + '<b>See more in the</b> '
-            + '<a href="https://kfocus.org/wf/email.html">Email Guided '
-            + 'Solution.</a> There, you will find how to set up calendars, '
-            + 'contacts, and more.';
+              = '<b>1. If Thunderbird is not installed,</b> you will be '
+              + 'asked to install it, and will need to provide your password '
+              + 'to do so.<br>'
+              + '<br>'
+              + '<b>2. Once installed,</b> the Thunderbird app should appear '
+              + 'as shown.<br>'
+              + '<br>'
+              + '<b>3. Connect your email account</b> by entering your name, '
+              + 'email address, and password into the Account Setup '
+              + 'screen.<br>'
+              + '<br>'
+              + '<b>See more in the</b> '
+              + '<a href="https://kfocus.org/wf/email.html">Email Guided '
+              + 'Solution.</a> There, you will find how to set up calendars, '
+              + 'contacts, and more.';
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
             interImageList = [
               'kfocus_mime_thunderbird.svg',
               'thunderbird_ui.png'
+            ];
+            actionName = 'nextPage';
+            regenUiFn( interTemplatePage, false );
+            break;
+
+        case 'dropboxItem':
+            initPage([
+              topImage,       topHeading,
+              primaryText,    actionButton,
+              previousButton, skipButton
+            ]);
+
+            pageTitleText   = 'Dropbox';
+            topImage.source = 'assets/images/dropbox_logo.svg';
+            topHeading.text = 'Access Your File From Anywhere';
+            primaryText.text
+              = '<b>Dropbox is a fast, flexible cloud storage system</b> '
+              + 'that automatically keeps your files synced to your computer '
+              + 'for offline access. You can use it to keep backups, archive '
+              + 'old data, access files from multiple computers, and more. '
+              + 'Up to 2 GB of data can be stored for free, and additional '
+              + 'storage is quite affordable.<br>'
+              + '<br>'
+              + '<b>See more in the</b> '
+              + '<a href="https://kfocus.org/wf/drives.html">Cloud Drives '
+              + 'Guided Solution</a>.';
+            actionButton.text      = 'Launch Dropbox Now';
+            actionButton.icon.name = 'arrow-right';
+            actionName             = 'launchDropbox';
+            regenUiFn( baseTemplatePage, true );
+            break;
+
+        case 'dropboxLaunchedItem':
+            initPage([
+              headerHighlightRect, interTopHeading,
+              instructionsText,    interActionButton,
+              pictureColumn,       interContinueLabel
+            ]);
+
+            pageTitleText             = 'Dropbox';
+            pageTitleImage            = 'assets/images/dropbox_logo.svg';
+            headerHighlightRect.color = '#27ae60';
+            interTopHeading.text      = 'Proceed with Dropbox...';
+            instructionsText.text
+              = '<b>1. If Dropbox is not installed,</b> you will be asked to '
+              + 'install it, and will need to provide your password to do '
+              + 'so.<br>'
+              + '<br>'
+              + '<b>2. Once installed,</b> you may need to click on the icon '
+              + 'in the system tray as shown.<br>'
+              + '<br>'
+              + '<b>3. Create a new Dropbox account or log into your '
+              + 'existing one</b> in the browser window that pops up.<br>'
+              + '<br>'
+              + '<b>See more in the</b> '
+              + '<a href="https://kfocus.org/wf/drives.html">Cloud Drives '
+              + 'Guided Solution</a>.';
+            interActionButton.text      = 'Continue'
+            interActionButton.icon.name = 'arrow-right';
+            interImageList = [
+              'kfocus_mime_dropbox.svg',
+              'dropbox_systray.svg',
+              'dropbox_ui.png'
             ];
             actionName = 'nextPage';
             regenUiFn( interTemplatePage, false );
@@ -1167,6 +1236,11 @@ Kirigami.ApplicationWindow {
         case 'launchThunderbird':
             exeRun.exec( systemDataMap.binDir + 'kfocus-mime -k thunderbird' );
             switchPageFn( 'emailCalendarLaunchedItem' );
+            break;
+
+        case 'launchDropbox':
+            exeRun.exec ( systemDataMap.binDir + 'kfocus-mime -k dropbox' );
+            switchPageFn( 'dropboxLaunchedItem' );
             break;
         }
     }
