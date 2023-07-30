@@ -767,7 +767,11 @@ _runAppFn () {
     exit 0;
   # Execute command and arguments if possible
   elif [ -x "${_app_exe}" ]; then
-    exec "${_app_exe}" "${_arg_list[@]}" &
+    if [ "${_forceForegroundExec}" = "0" ]; then
+      exec "${_app_exe}" "${_arg_list[@]}" &
+    else
+      exec "${_app_exe}" "${_arg_list[@]}";
+    fi
     exit 0;
   fi
 
@@ -806,6 +810,12 @@ _mainFn () {
     shift;
     _arg_app_id="${1:-}";
 
+  # Same as above, but use a blocking execute mode
+  elif [ "${_arg0_str}" = '-kf' ]; then
+    shift;
+    _arg_app_id="${1:-}";
+    _forceForegroundExec="1";
+
   # Handle link file. Bail if not readable.
   else
     # Ensure link file is readable
@@ -833,6 +843,8 @@ _rootDir='';
 
 _etcAptDir="${_rootDir}/etc/apt";
 _pkgNameList=();
+
+_forceForegroundExec="0";
 ## . END Set global vars }
 
 ## BEGIN run main if script is not sourced {

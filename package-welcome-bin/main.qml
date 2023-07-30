@@ -1083,7 +1083,7 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'launchKeePassXC':
-            exeRun.exec( systemDataMap.binDir + 'kfocus-mime -k keepassxc' );
+            exeRun.exec( systemDataMap.binDir + 'kfocus-mime -kf keepassxc' );
             switchPageFn( 'passwordManagerLaunchedItem' );
         }
     }
