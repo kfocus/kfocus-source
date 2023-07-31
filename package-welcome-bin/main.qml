@@ -68,6 +68,11 @@ Kirigami.ApplicationWindow {
             task     : 'Insync'
             taskIcon : 'folder-sync'
         }
+        ListElement {
+            jsId     : 'jetbrainsToolboxItem'
+            task     : 'JetBrains Toolbox'
+            taskIcon : 'code-context'
+        }
     }
 
     StartupData {
@@ -1086,8 +1091,8 @@ Kirigami.ApplicationWindow {
               pictureColumn,       interContinueLabel
             ]);
 
-            pageTitleText   = 'Insync';
-            pageTitleImage  = 'assets/images/insync_logo.svg';
+            pageTitleText             = 'Insync';
+            pageTitleImage            = 'assets/images/insync_logo.svg';
             headerHighlightRect.color = '#27ae60';
             interTopHeading.text      = 'Proceed with Insync...';
             instructionsText.text
@@ -1100,6 +1105,68 @@ Kirigami.ApplicationWindow {
             interActionButton.icon.name = 'arrow-right';
             interImageList = [
               'kfocus_mime_insync.svg'
+            ];
+            actionName = 'nextPage';
+            regenUiFn( interTemplatePage, false );
+            break;
+
+        case 'jetbrainsToolboxItem':
+            initPage([
+              topImage,       topHeading,
+              primaryText,    actionButton,
+              previousButton, skipButton
+            ]);
+
+            pageTitleText   = 'JetBrains Toolbox';
+            topImage.source = 'assets/images/jetbrains_toolbox_logo.svg';
+            topHeading.text = 'Install and Manage JetBrains IDEs';
+            primaryText.text
+              = '<b>JetBrains Toolbox allows you to install, launch, and '
+              + 'uninstall JetBrains development products</b> with just a'
+              + 'few clicks. It’s the preferred tool for installing programs '
+              + 'such as IntelliJ IDEA, PyCharm, and Google’s Android '
+              + 'Studio. Several of JetBrains’ products have a free '
+              + 'community edition, and many of their paid products have a '
+              + 'free trial.<br>'
+              + '<br>'
+              + '<b>See more in the</b> '
+              + '<a href="https://kfocus.org/wf/ide.html">IDEs Guided '
+              + 'Solution</a>.';
+            actionButton.text      = 'Launch JetBrains Toolbox Now';
+            actionButton.icon.name = 'arrow-right';
+            actionName             = 'launchJetbrainsToolbox';
+            regenUiFn( baseTemplatePage, true );
+            break;
+
+        case 'jetbrainsToolboxLaunchedItem':
+            initPage([
+              headerHighlightRect, interTopHeading,
+              instructionsText,    interActionButton,
+              pictureColumn,       interContinueLabel
+            ]);
+
+            pageTitleText             = 'JetBrains Toolbox';
+            pageTitleImage
+              = 'assets/images/jetbrains_toolbox_logo.svg';
+            headerHighlightRect.color = '#27ae60';
+            interTopHeading.text      = 'Proceed with JetBrains Toolbox...';
+            instructionsText.text
+              = '<b>1. If JetBrains Toolbox is not installed,</b> you will '
+              + 'be asked to install it, and will need to provide your '
+              + 'password to do so.<br>'
+              + '<br>'
+              + '<b>2. If you’re launching the Toolbox for the first '
+              + 'time,</b> you will be asked to configure it and accept the '
+              + 'JetBrains User Agreement. It may take up to 30 seconds for '
+              + 'the Toolbox to launch.<br>'
+              + '<br>'
+              + '<b>3. You can find the Toolbox</b> in the system tray.';
+            interActionButton.text      = 'Continue';
+            interActionButton.icon.name = 'arrow-right';
+            interImageList = [
+              'kfocus_mime_jetbrains_toolbox.svg',
+              'jetbrains_toolbox_ui.png',
+              'jetbrains_toolbox_systray.svg'
             ];
             actionName = 'nextPage';
             regenUiFn( interTemplatePage, false );
@@ -1305,6 +1372,12 @@ Kirigami.ApplicationWindow {
         case 'launchInsync':
             exeRun.exec( systemDataMap.binDir + 'kfocus-mime -k insync' );
             switchPageFn( 'insyncLaunchedItem' );
+            break;
+
+        case 'launchJetbrainsToolbox':
+            exeRun.exec( systemDataMap.binDir
+              + 'kfocus-mime -k jetbrains-toolbox' );
+            switchPageFn( 'jetbrainsToolboxLaunchedItem' );
             break;
         }
     }
