@@ -63,6 +63,11 @@ Kirigami.ApplicationWindow {
             task     : 'Dropbox'
             taskIcon : 'cloudstatus'
         }
+        ListElement {
+            jsId     : 'insyncItem'
+            task     : 'Insync'
+            taskIcon : 'folder-sync'
+        }
     }
 
     StartupData {
@@ -1045,6 +1050,60 @@ Kirigami.ApplicationWindow {
             actionName = 'nextPage';
             regenUiFn( interTemplatePage, false );
             break;
+
+        case 'insyncItem':
+            initPage([
+              topImage,       topHeading,
+              primaryText,    actionButton,
+              previousButton, skipButton
+            ]);
+
+            pageTitleText   = 'Insync';
+            topImage.source = 'assets/images/insync_logo.svg';
+            topHeading.text = 'Manage Cloud Drives Easily';
+            primaryText.text
+              = '<b>Insync is a cloud storage synchronizer</b> that works '
+              + 'with Google Drive, OneDrive, and Dropbox. It is '
+              + 'significantly more powerful than other cloud drive '
+              + 'synchronizers, and can work with multiple cloud drive '
+              + 'accounts at the same time. It comes with a free trial '
+              + 'period and offers both subscription and one-time purchase '
+              + 'options.<br>'
+              + '<br>'
+              + '<b>See more in the</b> '
+              + '<a href="https://kfocus.org/wf/drives.html'
+              + '#bkm_sync_with_google>Cloud Drives Guided Solution.</a>';
+            actionButton.text      = 'Launch Insync Now'
+            actionButton.icon.name = 'arrow-right';
+            actionName             = 'launchInsync';
+            regenUiFn( baseTemplatePage, true );
+            break;
+
+        case 'insyncLaunchedItem':
+            initPage([
+              headerHighlightRect, interTopHeading,
+              instructionsText,    interActionButton,
+              pictureColumn,       interContinueLabel
+            ]);
+
+            pageTitleText   = 'Insync';
+            pageTitleImage  = 'assets/images/insync_logo.svg';
+            headerHighlightRect.color = '#27ae60';
+            interTopHeading.text      = 'Proceed with Insync...';
+            instructionsText.text
+              = '<b>1. If Insync is not installed,</b> you will be asked to '
+              + 'install it, and will need to provide your password to do '
+              + 'so.<br>'
+              + '<br>'
+              + 'TODO: Insert remaining steps and images.';
+            interActionButton.text      = 'Continue'
+            interActionButton.icon.name = 'arrow-right';
+            interImageList = [
+              'kfocus_mime_insync.svg'
+            ];
+            actionName = 'nextPage';
+            regenUiFn( interTemplatePage, false );
+            break;
         }
     }
 
@@ -1239,8 +1298,13 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'launchDropbox':
-            exeRun.exec ( systemDataMap.binDir + 'kfocus-mime -k dropbox' );
+            exeRun.exec( systemDataMap.binDir + 'kfocus-mime -k dropbox' );
             switchPageFn( 'dropboxLaunchedItem' );
+            break;
+
+        case 'launchInsync':
+            exeRun.exec( systemDataMap.binDir + 'kfocus-mime -k insync' );
+            switchPageFn( 'insyncLaunchedItem' );
             break;
         }
     }
