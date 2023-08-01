@@ -73,7 +73,21 @@ Kirigami.ApplicationWindow {
             jsId     : 'jetbrainsToolboxItem'
             task     : 'JetBrains Toolbox'
             taskIcon : 'qrc:/assets/images/jetbrains_toolbox_line.svg'
-            // taskIcon : 'code-context'
+        }
+        ListElement {
+            jsId     : 'avatarItem'
+            task     : 'Avatar'
+            taskIcon : 'user'
+        }
+        ListElement {
+            jsId     : 'curatedAppsItem'
+            task     : 'Curated Apps'
+            taskIcon : 'kfocus-bug-apps'
+        }
+        ListElement {
+            jsId     : 'finishItem'
+            task     : 'Finish'
+            taskIcon : 'checkbox'
         }
     }
 
