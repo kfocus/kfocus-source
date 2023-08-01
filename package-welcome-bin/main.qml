@@ -82,7 +82,7 @@ Kirigami.ApplicationWindow {
         ListElement {
             jsId     : 'curatedAppsItem'
             task     : 'Curated Apps'
-            taskIcon : 'kfocus-bug-apps'
+            taskIcon : 'qrc:/assets/images/kfocus_bug_apps_line.svg'
         }
         ListElement {
             jsId     : 'finishItem'
