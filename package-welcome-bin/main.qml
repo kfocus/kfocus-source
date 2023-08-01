@@ -21,6 +21,7 @@ Kirigami.ApplicationWindow {
     property int defaultPassphraseDisks : 0
     property string pageTitleText       : ''
     property string pageTitleImage      : ''
+    property string imgDir              : 'assets/images/'
 
     //
     // Purpose: Describes steps used in wizard
@@ -71,7 +72,8 @@ Kirigami.ApplicationWindow {
         ListElement {
             jsId     : 'jetbrainsToolboxItem'
             task     : 'JetBrains Toolbox'
-            taskIcon : 'code-context'
+            taskIcon : 'assets/images/jetbrains_toolbox_line.svg'
+            // taskIcon : 'code-context'
         }
     }
 
@@ -368,7 +370,7 @@ Kirigami.ApplicationWindow {
                     model: interImageList
 
                     Image {
-                        source   : 'assets/images/' + interImageList[index]
+                        source   : imgDir + interImageList[index]
                         fillMode : Image.PreserveAspectFit
                         mipmap   : true
 
@@ -569,7 +571,7 @@ Kirigami.ApplicationWindow {
         switch(page_id) {
         case 'introductionItem':
             pageTitleText     = 'Introduction';
-            frontImage.source = 'assets/images/frontpage.webp';
+            frontImage.source = imgDir + 'frontpage.webp';
             frontHeading.text = 'Welcome To The Kubuntu Focus!';
             frontText.text
               = '<b>This Welcome Wizard helps you get '
@@ -599,8 +601,7 @@ Kirigami.ApplicationWindow {
               interActionButton,   pictureColumn
             ]);
 
-            pageTitleImage
-              = 'assets/images/network_disconnect.svg';
+            pageTitleImage            = imgDir + 'network_disconnect.svg';
             headerHighlightRect.color = '#ff9900';
             interTopHeading.text      = 'Please Connect to the Internet';
             instructionsText.text
@@ -642,7 +643,7 @@ Kirigami.ApplicationWindow {
             ]);
 
             pageTitleText   = getCryptDiskTextFn('Disk Passphrase');
-            topImage.source = 'assets/images/encrypted_drive.svg';
+            topImage.source = imgDir + 'encrypted_drive.svg';
             topHeading.text = 'Check Disk Encryption Security';
             primaryText.text
               = '<b>The wizard has detected '
@@ -668,7 +669,7 @@ Kirigami.ApplicationWindow {
             initPage([topHeading, busyIndicator]);
 
             pageTitleText   = getCryptDiskTextFn('Disk Passphrase');
-            pageTitleImage  = 'assets/images/encrypted_drive.svg';
+            pageTitleImage  = imgDir + 'encrypted_drive.svg';
             topHeading.text = 'Checking Disk Encryption Security...\n'
               + 'This might take a minute.';
             regenUiFn( baseTemplatePage, false );
@@ -678,7 +679,7 @@ Kirigami.ApplicationWindow {
             initPage([topHeading, busyIndicator]);
 
             pageTitleText   = getCryptDiskTextFn('Disk Passphrase');
-            pageTitleImage  = 'assets/images/encrypted_drive.svg';
+            pageTitleImage  = imgDir + 'encrypted_drive.svg';
             topHeading.text = 'Changing Disk Passphrases...\n'
               + 'This might take a minute.';
             regenUiFn( baseTemplatePage, false );
@@ -686,7 +687,7 @@ Kirigami.ApplicationWindow {
 
         case 'diskPassphraseChangeItem':
             pageTitleText            = getCryptDiskTextFn('Disk Passphrase');
-            pageTitleImage           = 'assets/images/encrypted_drive.svg';
+            pageTitleImage           = imgDir + 'encrypted_drive.svg';
             cryptHighlightRect.color = '#ff9900';
             cryptTopHeading.text
               = 'Change Passphrase for '
@@ -720,7 +721,7 @@ Kirigami.ApplicationWindow {
             ]);
 
             pageTitleText             = getCryptDiskTextFn('Disk Passphrase');
-            pageTitleImage            = 'assets/images/encrypted_drive.svg';
+            pageTitleImage            = imgDir + 'encrypted_drive.svg';
             interImageList            = [ 'finished.svg' ];
             headerHighlightRect.color = '#27ae60';
             interTopHeading.text
@@ -751,7 +752,7 @@ Kirigami.ApplicationWindow {
             ]);
 
             pageTitleText   = 'Extra Software';
-            topImage.source = 'assets/images/extra_software.svg';
+            topImage.source = imgDir + 'extra_software.svg';
             topHeading.text
               = 'Install MS Fonts, VirtualBox Extensions, and More';
             primaryText.text
@@ -780,7 +781,7 @@ Kirigami.ApplicationWindow {
             ]);
 
             pageTitleText             = 'Extra Software';
-            pageTitleImage            = 'assets/images/extra_software.svg';
+            pageTitleImage            = imgDir + 'extra_software.svg';
             headerHighlightRect.color = '#27ae60';
             interTopHeading.text      = 'Proceed with Terminal...';
             instructionsText.text
@@ -811,7 +812,7 @@ Kirigami.ApplicationWindow {
             ]);
 
             pageTitleText   = 'File Backup';
-            topImage.source = 'assets/images/file_backup.svg';
+            topImage.source = imgDir + 'file_backup.svg';
             topHeading.text = 'Snapshot and Recover Files';
             primaryText.text
               = '<b>BackInTime takes snapshots of your home '
@@ -837,7 +838,7 @@ Kirigami.ApplicationWindow {
             ]);
 
             pageTitleText             = 'File Backup';
-            pageTitleImage            = 'assets/images/file_backup.svg';
+            pageTitleImage            = imgDir + 'file_backup.svg';
             headerHighlightRect.color = '#27ae60';
             interTopHeading.text      = 'Proceed with BackInTime...';
             instructionsText.text
@@ -873,7 +874,7 @@ Kirigami.ApplicationWindow {
             ]);
 
             pageTitleText   = 'Password Manager';
-            topImage.source = 'assets/images/keepassxc_logo.svg';
+            topImage.source = imgDir + 'keepassxc_logo.svg';
             topHeading.text = 'Generate, Save, and View Secrets';
             primaryText.text
               = 'KeePassXC is a powerful password manager and generator '
@@ -899,7 +900,7 @@ Kirigami.ApplicationWindow {
             ]);
 
             pageTitleText             = 'Password Manager';
-            pageTitleImage            = 'assets/images/keepassxc_logo.svg';
+            pageTitleImage            = imgDir + 'keepassxc_logo.svg';
             headerHighlightRect.color = '#27ae60';
             interTopHeading.text      = 'Proceed with KeePassXC...'
             instructionsText.text
@@ -937,7 +938,7 @@ Kirigami.ApplicationWindow {
             ]);
 
             pageTitleText   = 'Email';
-            topImage.source = 'assets/images/thunderbird_logo.svg';
+            topImage.source = imgDir + 'thunderbird_logo.svg';
             topHeading.text = 'Manage Emails, Calendar, and Contacts';
             primaryText.text
               = 'Thunderbird is a fast, convenient, and powerful email'
@@ -964,7 +965,7 @@ Kirigami.ApplicationWindow {
             ]);
 
             pageTitleText             = 'Email';
-            pageTitleImage            = 'assets/images/thunderbird_logo.svg'
+            pageTitleImage            = imgDir + 'thunderbird_logo.svg'
             headerHighlightRect.color = '#27ae60';
             interTopHeading.text      = 'Proceed with Thunderbird...';
             instructionsText.text
@@ -1001,7 +1002,7 @@ Kirigami.ApplicationWindow {
             ]);
 
             pageTitleText   = 'Dropbox';
-            topImage.source = 'assets/images/dropbox_logo.svg';
+            topImage.source = imgDir + 'dropbox_logo.svg';
             topHeading.text = 'Access Your File From Anywhere';
             primaryText.text
               = '<b>Dropbox is a fast, flexible cloud storage system</b> '
@@ -1028,7 +1029,7 @@ Kirigami.ApplicationWindow {
             ]);
 
             pageTitleText             = 'Dropbox';
-            pageTitleImage            = 'assets/images/dropbox_logo.svg';
+            pageTitleImage            = imgDir + 'dropbox_logo.svg';
             headerHighlightRect.color = '#27ae60';
             interTopHeading.text      = 'Proceed with Dropbox...';
             instructionsText.text
@@ -1064,7 +1065,7 @@ Kirigami.ApplicationWindow {
             ]);
 
             pageTitleText   = 'Insync';
-            topImage.source = 'assets/images/insync_logo.svg';
+            topImage.source = imgDir + 'insync_logo.svg';
             topHeading.text = 'Manage Cloud Drives Easily';
             primaryText.text
               = '<b>Insync is a cloud storage synchronizer</b> that works '
@@ -1092,7 +1093,7 @@ Kirigami.ApplicationWindow {
             ]);
 
             pageTitleText             = 'Insync';
-            pageTitleImage            = 'assets/images/insync_logo.svg';
+            pageTitleImage            = imgDir + 'insync_logo.svg';
             headerHighlightRect.color = '#27ae60';
             interTopHeading.text      = 'Proceed with Insync...';
             instructionsText.text
@@ -1118,7 +1119,7 @@ Kirigami.ApplicationWindow {
             ]);
 
             pageTitleText   = 'JetBrains Toolbox';
-            topImage.source = 'assets/images/jetbrains_toolbox_logo.svg';
+            topImage.source = imgDir + 'jetbrains_toolbox_logo.svg';
             topHeading.text = 'Install and Manage JetBrains IDEs';
             primaryText.text
               = '<b>JetBrains Toolbox allows you to install, launch, and '
@@ -1146,8 +1147,7 @@ Kirigami.ApplicationWindow {
             ]);
 
             pageTitleText             = 'JetBrains Toolbox';
-            pageTitleImage
-              = 'assets/images/jetbrains_toolbox_logo.svg';
+            pageTitleImage            = imgDir + 'jetbrains_toolbox_logo.svg';
             headerHighlightRect.color = '#27ae60';
             interTopHeading.text      = 'Proceed with JetBrains Toolbox...';
             instructionsText.text
