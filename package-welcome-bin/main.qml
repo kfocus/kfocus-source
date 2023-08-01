@@ -72,7 +72,7 @@ Kirigami.ApplicationWindow {
         ListElement {
             jsId     : 'jetbrainsToolboxItem'
             task     : 'JetBrains Toolbox'
-            taskIcon : 'assets/images/jetbrains_toolbox_line.svg'
+            taskIcon : 'qrc:/assets/images/jetbrains_toolbox_line.svg'
             // taskIcon : 'code-context'
         }
     }
