@@ -72,7 +72,7 @@ Kirigami.ApplicationWindow {
         ListElement {
             jsId     : 'jetbrainsToolboxItem'
             task     : 'JetBrains Toolbox'
-            taskIcon : 'qrc:/assets/images/jetbrains_toolbox_line.svg'
+            taskIcon : 'THEMED|jetbrains_toolbox_line'
         }
         ListElement {
             jsId     : 'avatarItem'
@@ -82,7 +82,7 @@ Kirigami.ApplicationWindow {
         ListElement {
             jsId     : 'curatedAppsItem'
             task     : 'Curated Apps'
-            taskIcon : 'qrc:/assets/images/kfocus_bug_apps_line.svg'
+            taskIcon : 'THEMED|kfocus_bug_apps_line'
         }
         ListElement {
             jsId     : 'finishItem'
@@ -132,10 +132,18 @@ Kirigami.ApplicationWindow {
         id: enabledSidebarDelegate
         Kirigami.BasicListItem {
             label     : task
-            icon      : taskIcon
+            iconColor : Kirigami.Theme.textColor
             iconSize  : Kirigami.Units.gridUnit * 1.5
             onClicked : {
                 switchPageFn( jsId );
+            }
+            Component.onCompleted: {
+                var taskIcon_part_list = taskIcon.split( '|' );
+                if ( taskIcon_part_list[0] === 'THEMED' ) {
+                    this.icon = getThemedIcon( taskIcon_part_list[1] );
+                } else {
+                    this.icon = taskIcon
+                }
             }
         }
     }
@@ -1185,6 +1193,31 @@ Kirigami.ApplicationWindow {
             actionName = 'nextPage';
             regenUiFn( interTemplatePage, false );
             break;
+
+        case 'avatarItem':
+            initPage([
+              topImage,       topHeading,
+              primaryText,    actionButton,
+              previousButton, skipButton
+            ]);
+
+            pageTitleText   = 'Avatar';
+            topImage.source = imgDir + 'avatar.svg';
+            topHeading.text = 'Personalize your Profile Picture';
+            primaryText.text
+              = '<b>Your profile picture is displayed in the Start Menu and '
+              + 'on the lock screen.</b> By default, this picture is a '
+              + 'Kubuntu logo, but it’s easy to change to a picture of your '
+              + 'choice.<br>'
+              + '<br>'
+              + '<b>You may always revisit this later</b> by opening the '
+              + 'Start Menu and clicking on the user avatar image in the '
+              + 'upper-left corner of the menu.';
+            actionButton.text      = 'Change Your Avatar Now';
+            actionButton.icon.name = 'arrow-right';
+            actionName             = 'changeAvatar';
+            regenUiFn( baseTemplatePage, true );
+            break;
         }
     }
 
@@ -1269,6 +1302,14 @@ Kirigami.ApplicationWindow {
             case 'it':
                 return 'them';
             }
+        }
+    }
+
+    function getThemedIcon(icon_name) {
+        if ( Kirigami.Theme.textColor.hsvValue < 0.5 ) {
+            return "qrc:/assets/images/" + icon_name + "_light.svg";
+        } else {
+            return "qrc:/assets/images/" + icon_name + "_dark.svg";
         }
     }
 
