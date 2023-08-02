@@ -620,7 +620,7 @@ Kirigami.ApplicationWindow {
         case 'internetCheckItem':
             initPage([topHeading, busyIndicator]);
 
-            topHeading.text = "Checking for Internet connectivity...";
+            topHeading.text = 'Checking for Internet connectivity...';
             regenUiFn( baseTemplatePage, false );
             break;
 
@@ -700,7 +700,8 @@ Kirigami.ApplicationWindow {
 
             pageTitleText   = getCryptDiskTextFn('Disk Passphrase');
             pageTitleImage  = imgDir + 'encrypted_drive.svg';
-            topHeading.text = 'Checking Disk Encryption Security...\n'
+            topHeading.text
+              = 'Checking Disk Encryption Security...\n'
               + 'This might take a minute.';
             regenUiFn( baseTemplatePage, false );
             break;
@@ -710,7 +711,8 @@ Kirigami.ApplicationWindow {
 
             pageTitleText   = getCryptDiskTextFn('Disk Passphrase');
             pageTitleImage  = imgDir + 'encrypted_drive.svg';
-            topHeading.text = 'Changing Disk Passphrases...\n'
+            topHeading.text
+              = 'Changing Disk Passphrases...\n'
               + 'This might take a minute.';
             regenUiFn( baseTemplatePage, false );
             break;
@@ -908,9 +910,9 @@ Kirigami.ApplicationWindow {
             topHeading.text = 'Generate, Save, and View Secrets';
             primaryText.text
               = 'KeePassXC is a powerful password manager and generator '
-              + 'that takes the hassle out of staying secure. It saves your'
-              + 'passwords offline and in an encrypted form, avoiding the'
-              + 'security issues of cloud-based password managers and keeping'
+              + 'that takes the hassle out of staying secure. It saves your '
+              + 'passwords offline and in an encrypted form, avoiding the '
+              + 'security issues of cloud-based password managers and keeping '
               + 'you safe even if your computer is stolen.'
               + '<br><br>'
               + '<b>See more in the</b> '
@@ -971,11 +973,11 @@ Kirigami.ApplicationWindow {
             topImage.source = imgDir + 'thunderbird_logo.svg';
             topHeading.text = 'Manage Emails, Calendar, and Contacts';
             primaryText.text
-              = 'Thunderbird is a fast, convenient, and powerful email'
-              + 'client. It provides privacy and security features not'
-              + 'generally found in webmail systems, and works with many'
-              + 'email providers such as GMail and Yahoo. It can be used'
-              + 'with multiple email accounts at once, letting you see'
+              = 'Thunderbird is a fast, convenient, and powerful email '
+              + 'client. It provides privacy and security features not '
+              + 'generally found in webmail systems, and works with many '
+              + 'email providers such as GMail and Yahoo. It can be used '
+              + 'with multiple email accounts at once, letting you see '
               + 'all your mail in one place.'
               + '<br><br>'
               + '<b>See more in the</b> '
@@ -1033,7 +1035,7 @@ Kirigami.ApplicationWindow {
 
             pageTitleText   = 'Dropbox';
             topImage.source = imgDir + 'dropbox_logo.svg';
-            topHeading.text = 'Access Your File From Anywhere';
+            topHeading.text = 'Access Your Files From Anywhere';
             primaryText.text
               = '<b>Dropbox is a fast, flexible cloud storage system</b> '
               + 'that automatically keeps your files synced to your computer '
@@ -1153,7 +1155,7 @@ Kirigami.ApplicationWindow {
             topHeading.text = 'Install and Manage JetBrains IDEs';
             primaryText.text
               = '<b>JetBrains Toolbox allows you to install, launch, and '
-              + 'uninstall JetBrains development products</b> with just a'
+              + 'uninstall JetBrains development products</b> with just a '
               + 'few clicks. It’s the preferred tool for installing programs '
               + 'such as IntelliJ IDEA, PyCharm, and Google’s Android '
               + 'Studio. Several of JetBrains’ products have a free '
