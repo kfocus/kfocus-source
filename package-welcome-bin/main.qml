@@ -1256,6 +1256,62 @@ Kirigami.ApplicationWindow {
             actionName = 'nextPage';
             regenUiFn( interTemplatePage, false );
             break;
+
+        case 'curatedAppsItem':
+            initPage([
+              topImage,       topHeading,
+              primaryText,    actionButton,
+              previousButton, skipButton
+            ]);
+
+            pageTitleText   = 'Curated Apps';
+            topImage.source = imgDir + 'kfocus_bug_apps.svg';
+            topHeading.text = 'Find and Install Apps Quickly';
+            primaryText.text
+              = '<b>The Kubuntu Focus team maintains a Curated Apps page</b> '
+              + 'that lists recommended apps that work well with Kubuntu '
+              + 'Focus computers. Click on an icon to launch an app. If it’s '
+              + 'not installed, the system will install the repository and '
+              + 'the package before launching it.<br>'
+              + '<br>'
+              + '<b>We encourage you to take a moment</b> to review the list '
+              + 'of curated apps and install the ones you need now.'
+            actionButton.text      = 'Browse Curated Apps Now';
+            actionButton.icon.name = 'arrow-right';
+            actionName             = 'browseCuratedApps';
+            regenUiFn( baseTemplatePage, true );
+            break;
+
+        case 'browseCuratedAppsItem':
+            initPage([
+              headerHighlightRect, interTopHeading,
+              instructionsText,    interActionButton,
+              pictureColumn,       interContinueLabel
+            ]);
+
+            pageTitleText             = 'Curated Apps';
+            pageTitleImage            = imgDir + 'kfocus_bug_apps.svg';
+            headerHighlightRect.color = '#27ae60';
+            interTopHeading.text      = 'Proceed with Curated Apps...';
+            instructionsText.text
+              = '<b>1. The Curated Apps web page</b> should now be visible '
+              + 'in your default web browser.<br>'
+              + '<br>'
+              + '<b>2. Scroll down to the list of apps</b> and click the '
+              + 'icon of the app you would like to launch.<br>'
+              + '<br>'
+              + '<b>3. If the app needs installed, confirm that you want to '
+              + 'install it and provide your password.</b> The application '
+              + 'will be installed and will automatically launch once '
+              + 'installation is complete.';
+            interActionButton.text      = 'Continue';
+            interActionButton.icon.name = 'arrow-right';
+            interImageList = [
+              'curated_apps.png'
+            ];
+            actionName = 'nextPage';
+            regenUiFn( interTemplatePage, false );
+            break;
         }
     }
 
@@ -1476,6 +1532,11 @@ Kirigami.ApplicationWindow {
         case 'changeAvatar':
             exeRun.exec( 'kcmshell5 users' );
             switchPageFn( 'avatarChangeItem' );
+            break;
+
+        case 'browseCuratedApps':
+            Qt.openUrlExternally( 'https://kfocus.org/wf/apps.html' );
+            switchPageFn( 'browseCuratedAppsItem' );
             break;
         }
     }
