@@ -323,6 +323,14 @@ Kirigami.ApplicationWindow {
                 bottom : parent.bottom
             }
 
+            Controls.CheckBox {
+                id: loginStartCheckbox
+
+                text: 'Run again on Login'
+                checkState: Qt.Unchecked
+                Layout.rightMargin: Kirigami.Units.gridUnit * 0.5
+            }
+
             Controls.Button {
                 id        : actionButton
                 onClicked : {
@@ -1314,18 +1322,43 @@ Kirigami.ApplicationWindow {
             actionName = 'nextPage';
             regenUiFn( interTemplatePage, false );
             break;
+
+        case 'finishItem':
+            initPage([
+              topImage,       topHeading,
+              primaryText,    actionButton,
+              previousButton, loginStartCheckbox
+            ]);
+
+            pageTitleText   = 'Finish';
+            topImage.source = imgDir + 'finished.svg';
+            topHeading.text = 'All Done';
+            primaryText.text
+              = '<b>All steps are complete.</b> We hope you found this '
+              + 'useful and enjoy using your system.<br>'
+              + '<br>'
+              + '<b>To get more help,</b> click Start Menu > Kubuntu Focus '
+              + 'Tools > Help.<br>'
+              + '<br>'
+              + '<b>To run this wizard again,</b> click Start Menu > Kubuntu '
+              + 'Focus Tools > Welcome Wizard.';
+            actionButton.text      = 'Finish';
+            actionButton.icon.name = 'arrow-right';
+            actionName             = 'finishWizard';
+            regenUiFn( baseTemplatePage, true );
+            break;
         }
     }
 
     function initPage(visible_elements_list) {
         var all_elements_list = [
-            actionButton,         busyIndicator,
-            headerHighlightRect,  instructionsText,
-            interActionButton,    interContinueLabel,
-            interSkipButton,      interTopHeading,
-            previousButton,       primaryText,
-            skipButton,           topHeading,
-            topImage
+            actionButton,        busyIndicator,
+            headerHighlightRect, instructionsText,
+            interActionButton,   interContinueLabel,
+            interSkipButton,     interTopHeading,
+            loginStartCheckbox,  previousButton,
+            primaryText,         skipButton,
+            topHeading,          topImage
         ];
         var i;
 
@@ -1540,6 +1573,11 @@ Kirigami.ApplicationWindow {
             Qt.openUrlExternally( 'https://kfocus.org/wf/apps.html' );
             switchPageFn( 'browseCuratedAppsItem' );
             break;
+
+        case 'finishWizard':
+            // TODO: Check loginStartCheckbox state and use it to determine
+            // whether to write a lock file
+            Qt.quit();
         }
     }
 
