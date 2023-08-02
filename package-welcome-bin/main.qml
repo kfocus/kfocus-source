@@ -158,6 +158,14 @@ Kirigami.ApplicationWindow {
             onClicked   : {
                 disabledSidebar.currentIndex = disabledSidebarIndex;
             }
+            Component.onCompleted: {
+                var taskIcon_part_list = taskIcon.split( '|' );
+                if ( taskIcon_part_list[0] === 'THEMED' ) {
+                    this.icon = getThemedIcon( taskIcon_part_list[1] );
+                } else {
+                    this.icon = taskIcon
+                }
+            }
         }
     }
     // . END Define sidebar views
@@ -1218,6 +1226,36 @@ Kirigami.ApplicationWindow {
             actionName             = 'changeAvatar';
             regenUiFn( baseTemplatePage, true );
             break;
+
+        case 'avatarChangeItem':
+            initPage([
+              headerHighlightRect, interTopHeading,
+              instructionsText,    interActionButton,
+              pictureColumn,       interContinueLabel
+            ]);
+
+            pageTitleText             = 'Avatar';
+            pageTitleImage            = imgDir + 'avatar.svg';
+            headerHighlightRect.color = '#27ae60';
+            interTopHeading.text      = 'Proceed with User Manager...';
+            instructionsText.text
+              = '<b>1. Click on the profile picture</b> in the User Manager '
+              + 'interface.<br>'
+              + '<br>'
+              + '<b>2. Pick one of the preinstalled avatars,</b> or click '
+              + '“Choose File” to use a custom avatar.<br>'
+              + '<br>'
+              + '<b>3. Click “Apply” and provide your password</b> to change '
+              + 'your avatar.';
+            interActionButton.text      = 'Continue';
+            interActionButton.icon.name = 'arrow-right';
+            interImageList = [
+              'avatar_steps.png',
+              'avatar_password.png'
+            ];
+            actionName = 'nextPage';
+            regenUiFn( interTemplatePage, false );
+            break;
         }
     }
 
@@ -1433,6 +1471,11 @@ Kirigami.ApplicationWindow {
             exeRun.exec( systemDataMap.binDir
               + 'kfocus-mime -k jetbrains-toolbox' );
             switchPageFn( 'jetbrainsToolboxLaunchedItem' );
+            break;
+
+        case 'changeAvatar':
+            exeRun.exec( 'kcmshell5 users' );
+            switchPageFn( 'avatarChangeItem' );
             break;
         }
     }
