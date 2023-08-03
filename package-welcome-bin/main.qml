@@ -95,6 +95,7 @@ Kirigami.ApplicationWindow {
         id: systemDataMap
         // cryptDiskList is provided by main.cpp
         // binDir is provided by main.cpp
+        // homeDir is provided by main.cpp
     }
     // == . END Models ================================================
 
@@ -1575,8 +1576,12 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'finishWizard':
-            // TODO: Check loginStartCheckbox state and use it to determine
-            // whether to write a lock file
+            if ( loginStartCheckbox.checkState === Qt.Unchecked ) {
+                exeRun.exec(
+                  'touch '
+                   + systemDataMap.homeDir
+                   + '/.config/kfocus-firstrun-wizard')
+            }
             Qt.quit();
         }
     }

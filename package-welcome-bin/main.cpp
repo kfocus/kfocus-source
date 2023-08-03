@@ -2,11 +2,14 @@
 #include <QQmlApplicationEngine>
 #include <QQuickStyle>
 #include <QIcon>
+#include <QStandardPaths>
+#include <QFile>
 #include <startupdata.h>
 #include <shellengine.h>
 
 QStringList StartupData::m_cryptDiskList = QStringList();
 QString StartupData::m_binDir = "/home/bill/Github/kfocus-source/package-main/usr/lib/kfocus/bin/";
+QString StartupData::m_homeDir = "";
 
 int main(int argc, char *argv[])
 {
@@ -28,6 +31,14 @@ int main(int argc, char *argv[])
     QStringList cryptDisks(encryptedDiskFinder.stdout().split('\n'));
     cryptDisks.removeLast();
     dat.setCryptDiskList(cryptDisks);
+    dat.setHomeDir(QStandardPaths::writableLocation(QStandardPaths::HomeLocation));
+
+    if (QFile::exists(dat.homeDir() + "/.config/kfocus-firstrun-wizard")) {
+        if (argc == 1 || QString(argv[1]) != QString("-f")) {
+            qWarning() << "User has directed to not run again. Use -f to override.";
+            return 1;
+        }
+    }
 
     QQmlApplicationEngine engine;
     const QUrl url(QStringLiteral("qrc:/main.qml"));
