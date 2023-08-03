@@ -1561,7 +1561,7 @@ Kirigami.ApplicationWindow {
 
         case 'launchJetbrainsToolbox':
             exeRun.exec( systemDataMap.binDir
-              + 'kfocus-mime -k jetbrains-toolbox' );
+              + 'kfocus-mime -k jetbrains-toolbox-plain' );
             switchPageFn( 'jetbrainsToolboxLaunchedItem' );
             break;
 
