@@ -25,6 +25,7 @@ int main(int argc, char *argv[])
     qmlRegisterType<ShellEngine>("shellengine", 1, 1, "ShellEngine");
     qmlRegisterType<StartupData>("startupdata", 1, 0, "StartupData");
 
+    // Gather system info and expose it to QML via StartupData
     StartupData dat;
     ShellEngine encryptedDiskFinder;
     encryptedDiskFinder.execSync(dat.binDir() + "kfocus-check-crypt -q");
@@ -33,11 +34,26 @@ int main(int argc, char *argv[])
     dat.setCryptDiskList(cryptDisks);
     dat.setHomeDir(QStandardPaths::writableLocation(QStandardPaths::HomeLocation));
 
+    // Check for the presence of a drop file
     if (QFile::exists(dat.homeDir() + "/.config/kfocus-firstrun-wizard")) {
         if (argc == 1 || QString(argv[1]) != QString("-f")) {
             qWarning() << "User has directed to not run again. Use -f to override.";
             return 1;
         }
+    }
+
+    // Check for the presence of a second kfocus-welcome-bin instance
+    ShellEngine duplicateFinder;
+    // NOTE! We only search for "kfocus-welcome" and not "kfocus-welcome-bin"
+    // here because for some unknown reason kfocus-welcome-bin shows up as
+    // "kfocus-welcome-" (yes, with a weird dash at the end) in the output of
+    // "ps axo comm". Why this is, I have no clue.
+    duplicateFinder.execSync("ps axo comm | grep kfocus-welcome");
+    QStringList outputLines = duplicateFinder.stdout().split('\n');
+    if (outputLines.length() > 2) { // there's always one blank line
+        ShellEngine msgbox;
+        msgbox.execSync("kdialog --title \"Kubuntu Focus Welcome Wizard\" --msgbox \"The Welcome Wizard is already running.\"");
+        return 1;
     }
 
     QQmlApplicationEngine engine;
