@@ -739,7 +739,8 @@ Kirigami.ApplicationWindow {
               + ' using the default passphrase.</b> This is insecure, '
               + 'and we recommend you use the form below to change '
               + getCryptDiskTextFn('it')
-              + ' now.';
+              + ' now. <b>Note that all disks using the default passphrase '
+              + 'will be changed to use the new passphrase.</b>'
             cryptSecondaryText.text
               = '<b>Please keep a copy of '
               + 'your passphrase in a safe place.</b> If this is lost, '
@@ -1453,9 +1454,9 @@ Kirigami.ApplicationWindow {
         onAppExited : {
             defaultPassphraseDisks = exitCode
             if ( exitCode > 0 ) {
-                switchPageFn('diskPassphraseChangeItem');
+                switchPageFn( 'diskPassphraseChangeItem' );
             } else {
-                switchPageFn('diskPassphraseGoodItem');
+                switchPageFn( 'diskPassphraseGoodItem' );
             }
         }
     }
@@ -1464,7 +1465,7 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id          : cryptDiskChangeEngine
         onAppExited : {
-            switchPageFn('diskPassphraseGoodItem');
+            switchPageFn( 'diskPassphraseGoodItem' );
         }
     }
 
@@ -1475,9 +1476,9 @@ Kirigami.ApplicationWindow {
             if ( exitCode === 0 ) {
                 actionName = networkReturnAction;
                 takeActionFn();
-                switchPageFn(networkReturnPage);
+                switchPageFn( networkReturnPage );
             } else {
-                switchPageFn('connectInternetItem');
+                switchPageFn( 'connectInternetItem' );
             }
         }
     }
