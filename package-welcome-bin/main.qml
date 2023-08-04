@@ -810,7 +810,6 @@ Kirigami.ApplicationWindow {
             actionButton.text      = 'Install Extra Software Now';
             actionButton.icon.name = 'arrow-right';
             actionName             = 'checkNetwork';
-            networkReturnPage      = 'extraSoftwareInstallItem';
             networkReturnAction    = 'installExtraSoftware';
             regenUiFn( baseTemplatePage, true );
             break;
@@ -995,7 +994,8 @@ Kirigami.ApplicationWindow {
               + 'Solution.</a>';
             actionButton.text      = 'Launch Thunderbird Now';
             actionButton.icon.name = 'arrow-right';
-            actionName             = 'launchThunderbird';
+            actionName             = 'checkNetwork';
+            networkReturnAction    = 'launchThunderbird';
             regenUiFn( baseTemplatePage, true );
             break;
 
@@ -1059,7 +1059,8 @@ Kirigami.ApplicationWindow {
               + 'Guided Solution</a>.';
             actionButton.text      = 'Launch Dropbox Now';
             actionButton.icon.name = 'arrow-right';
-            actionName             = 'launchDropbox';
+            actionName             = 'checkNetwork';
+            networkReturnAction    = 'launchDropbox';
             regenUiFn( baseTemplatePage, true );
             break;
 
@@ -1123,7 +1124,8 @@ Kirigami.ApplicationWindow {
               + '#bkm_sync_with_google>Cloud Drives Guided Solution.</a>';
             actionButton.text      = 'Launch Insync Now'
             actionButton.icon.name = 'arrow-right';
-            actionName             = 'launchInsync';
+            actionName             = 'checkNetwork';
+            networkReturnAction    = 'launchInsync';
             regenUiFn( baseTemplatePage, true );
             break;
 
@@ -1290,7 +1292,8 @@ Kirigami.ApplicationWindow {
               + 'of curated apps and install the ones you need now.'
             actionButton.text      = 'Browse Curated Apps Now';
             actionButton.icon.name = 'arrow-right';
-            actionName             = 'browseCuratedApps';
+            actionName             = 'checkNetwork';
+            networkReturnAction    = 'browseCuratedApps';
             regenUiFn( baseTemplatePage, true );
             break;
 
@@ -1476,7 +1479,6 @@ Kirigami.ApplicationWindow {
             if ( exitCode === 0 ) {
                 actionName = networkReturnAction;
                 takeActionFn();
-                switchPageFn( networkReturnPage );
             } else {
                 switchPageFn( 'connectInternetItem' );
             }
@@ -1533,6 +1535,7 @@ Kirigami.ApplicationWindow {
               + '\'Install Extras\' -xrm \'xterm*iconHint: '
               + '/usr/share/pixmaps/kfocus-bug-wizard\' -e pkexec '
               + systemDataMap.binDir + 'kfocus-extra' );
+            switchPageFn( 'extraSoftwareInstallItem' );
             break;
 
         case 'launchBackInTime':
