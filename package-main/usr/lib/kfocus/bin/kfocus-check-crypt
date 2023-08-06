@@ -150,7 +150,11 @@ _mainFn () {
       return;;
     '-q')
       _setCryptListFn;
-      echo "${_cryptList[@]}";
+      if [ "${#_cryptList[@]}" != "0" ]; then
+        echo "${_cryptList[@]}";
+      else
+        echo -n;
+      fi
       return;;
     *)
       _cm2ErrStrFn 'No directive specified';
