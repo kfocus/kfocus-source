@@ -838,8 +838,8 @@ Kirigami.ApplicationWindow {
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
             interImageList = [
-              'extra_software_terminal.png',
-              'extra_software_license.svg'
+              'extra_software_terminal.webp',
+              'extra_software_license.webp'
             ];
             actionName = 'nextPage';
             regenUiFn( interTemplatePage, false );

@@ -9,7 +9,7 @@
 #include <shellengine.h>
 
 QStringList StartupData::m_cryptDiskList = QStringList();
-QString StartupData::m_binDir = "/home/bill/Github/kfocus-source/package-main/usr/lib/kfocus/bin/";
+QString StartupData::m_binDir = "../package-main/usr/lib/kfocus/bin/";
 QString StartupData::m_homeDir = "";
 
 const qint64 twenty_gib = 21474836480;
