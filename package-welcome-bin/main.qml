@@ -40,7 +40,7 @@ Kirigami.ApplicationWindow {
             taskIcon : 'lock'
         }
         ListElement {
-            jsId     : 'extraSoftwareItem'
+           jsId     : 'extraSoftwareItem'
             task     : 'Extra Software'
             taskIcon : 'install'
         }
@@ -623,7 +623,7 @@ Kirigami.ApplicationWindow {
               + 'these suggestions. You may always run this wizard '
               + 'later using Start Menu > Kubuntu Focus > Welcome Wizard '
               + 'or visit the <a href="https://kfocus.org/wf/tools#wizard">'
-              + 'documentation</a>'
+              + 'documentation.</a>'
               ;
             actionName        = 'nextPage';
             regenUiFn( frontTemplatePage, true );
@@ -665,7 +665,8 @@ Kirigami.ApplicationWindow {
               + 'returned to this page.<br>'
               + '<br>'
               + '<b>If you cannot connect, click Skip</b> to move to '
-              + 'the next step.';
+              + 'the next step.'
+              ;
             interImageList = [
               'network_disconnect.svg',
               'network_button_pointer.svg',
@@ -700,7 +701,8 @@ Kirigami.ApplicationWindow {
               + getCryptDiskTextFn('this disk')
               + ' for the default password now.</b> As a security '
               + 'measure, this app will not perform this check until '
-              + 'you enter your valid user password.';
+              + 'you enter your valid user password.'
+              ;
             actionButton.text      = 'Check Disk Passphrases Now';
             actionButton.icon.name = 'lock';
             actionName             = 'checkCrypt';
@@ -776,8 +778,7 @@ Kirigami.ApplicationWindow {
             interTopHeading.text
               = 'Disk Encryption Passphrases Appear Secure';
             instructionsText.text
-              = '<b>'
-              + getCryptDiskTextFn( 'The encrypted disk uses' )
+              = '<b>' + getCryptDiskTextFn( 'The encrypted disk uses' )
               + ' a unique passphrase.</b><br>'
               + '<br>'
               + '<b>Please keep a copy of your passphrase in a safe '
@@ -786,7 +787,8 @@ Kirigami.ApplicationWindow {
               + 'backup.<br>'
               + '<br>'
               + '<b>For your security, the Kubuntu Focus Team does NOT '
-              + 'install tools</b> that could assist in any recovery.';
+              + 'install tools</b> that could assist in any recovery.'
+              ;
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
             actionName                  = 'nextPage';
@@ -813,7 +815,8 @@ Kirigami.ApplicationWindow {
               + 'Extension Pack.<br>'
               + '<br>'
               + 'You may always revisit this later using <b>Start Menu '
-              + '> Kubuntu Focus Tools > Extra Software Installer.</b>';
+              + '> Kubuntu Focus Tools > Extra Software Installer.</b>'
+              ;
             actionButton.text      = 'Install Extra Software Now';
             actionButton.icon.name = 'arrow-right';
             actionName             = 'checkNetwork';
@@ -841,7 +844,8 @@ Kirigami.ApplicationWindow {
               + '<b>2. As you follow the steps,</b> you will be '
               + 'prompted to accept license terms. If you do not '
               + 'agree with the terms for a particular software '
-              + 'component, you may skip installing it.';
+              + 'component, you may skip installing it.'
+              ;
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
             interImageList = [
@@ -871,7 +875,8 @@ Kirigami.ApplicationWindow {
               + '<br>'
               + '<b>See more in the</b> '
               + '<a href="https://kfocus.org/wf/backup">Backups Guided '
-              + 'Solution.</a>';
+              + 'Solution.</a>'
+              ;
             actionButton.text      = 'Launch BackInTime Now';
             actionButton.icon.name = 'arrow-right';
             actionName             = 'launchBackInTime';
@@ -903,7 +908,8 @@ Kirigami.ApplicationWindow {
               + '<br>'
               + '<b>See more in the</b> '
               + '<a href="https://kfocus.org/wf/backup">Backups Guided '
-              + 'Solution.</a>';
+              + 'Solution.</a>'
+              ;
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
             interImageList = [
@@ -933,7 +939,8 @@ Kirigami.ApplicationWindow {
               + '<br><br>'
               + '<b>See more in the</b> '
               + '<a href="https://kfocus.org/wf/passwords">Passwords Guided '
-              + 'Solution.</a>';
+              + 'Solution.</a>'
+              ;
             actionButton.text      = 'Launch KeePassXC Now';
             actionButton.icon.name = 'arrow-right';
             actionName             = 'launchKeePassXC';
@@ -966,7 +973,8 @@ Kirigami.ApplicationWindow {
               + '<a href="https://kfocus.org/wf/passwords#bkm_keepassxc">'
               + 'Passwords Guided Solution</a> and the '
               + '<a href="https://keepassxc.org/docs/">official '
-              + 'documentation.</a>';
+              + 'documentation.</a>'
+              ;
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
             interImageList = [
@@ -998,7 +1006,8 @@ Kirigami.ApplicationWindow {
               + '<br><br>'
               + '<b>See more in the</b> '
               + '<a href="https://kfocus.org/wf/email">Email Guided '
-              + 'Solution.</a>';
+              + 'Solution.</a>'
+              ;
             actionButton.text      = 'Launch Thunderbird Now';
             actionButton.icon.name = 'arrow-right';
             actionName             = 'checkNetwork';
@@ -1032,7 +1041,8 @@ Kirigami.ApplicationWindow {
               + '<b>See more in the</b> '
               + '<a href="https://kfocus.org/wf/email.html">Email Guided '
               + 'Solution.</a> There, you will find how to set up calendars, '
-              + 'contacts, and more.';
+              + 'contacts, and more.'
+              ;
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
             interImageList = [
@@ -1063,7 +1073,8 @@ Kirigami.ApplicationWindow {
               + '<br>'
               + '<b>See more in the</b> '
               + '<a href="https://kfocus.org/wf/drives.html">Cloud Drives '
-              + 'Guided Solution</a>.';
+              + 'Guided Solution.</a>'
+              ;
             actionButton.text      = 'Launch Dropbox Now';
             actionButton.icon.name = 'arrow-right';
             actionName             = 'checkNetwork';
@@ -1095,7 +1106,8 @@ Kirigami.ApplicationWindow {
               + '<br>'
               + '<b>See more in the</b> '
               + '<a href="https://kfocus.org/wf/drives.html">Cloud Drives '
-              + 'Guided Solution</a>.';
+              + 'Guided Solution.</a>'
+              ;
             interActionButton.text      = 'Continue'
             interActionButton.icon.name = 'arrow-right';
             interImageList = [
@@ -1128,7 +1140,8 @@ Kirigami.ApplicationWindow {
               + '<br>'
               + '<b>See more in the</b> '
               + '<a href="https://kfocus.org/wf/drives.html'
-              + '#bkm_sync_with_google">Cloud Drives Guided Solution.</a>';
+              + '#bkm_sync_with_google">Cloud Drives Guided Solution.</a>'
+              ;
             actionButton.text      = 'Launch Insync Now'
             actionButton.icon.name = 'arrow-right';
             actionName             = 'checkNetwork';
@@ -1152,7 +1165,8 @@ Kirigami.ApplicationWindow {
               + 'install it, and will need to provide your password to do '
               + 'so.<br>'
               + '<br>'
-              + 'TODO: Insert remaining steps and images.';
+              + 'TODO: Insert remaining steps and images.'
+              ;
             interActionButton.text      = 'Continue'
             interActionButton.icon.name = 'arrow-right';
             interImageList = [
@@ -1183,7 +1197,8 @@ Kirigami.ApplicationWindow {
               + '<br>'
               + '<b>See more in the</b> '
               + '<a href="https://kfocus.org/wf/ide.html">IDEs Guided '
-              + 'Solution</a>.';
+              + 'Solution.</a>'
+              ;
             actionButton.text      = 'Launch JetBrains Toolbox Now';
             actionButton.icon.name = 'arrow-right';
             actionName             = 'launchJetbrainsToolbox';
@@ -1211,7 +1226,8 @@ Kirigami.ApplicationWindow {
               + 'JetBrains User Agreement. It may take up to 30 seconds for '
               + 'the Toolbox to launch.<br>'
               + '<br>'
-              + '<b>3. You can find the Toolbox</b> in the system tray.';
+              + '<b>3. Visit the System Tray</b> to interact with the Toolbox.'
+              ;
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
             interImageList = [
@@ -1241,7 +1257,8 @@ Kirigami.ApplicationWindow {
               + '<br>'
               + '<b>You may always revisit this later</b> by opening the '
               + 'Start Menu and clicking on the user avatar image in the '
-              + 'upper-left corner of the menu.';
+              + 'upper-left corner of the menu.'
+              ;
             actionButton.text      = 'Change Your Avatar Now';
             actionButton.icon.name = 'arrow-right';
             actionName             = 'changeAvatar';
@@ -1267,7 +1284,8 @@ Kirigami.ApplicationWindow {
               + '“Choose File” to use a custom avatar.<br>'
               + '<br>'
               + '<b>3. Click “Apply” and provide your password</b> to change '
-              + 'your avatar.';
+              + 'your avatar.'
+              ;
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
             interImageList = [
@@ -1297,6 +1315,7 @@ Kirigami.ApplicationWindow {
               + '<br>'
               + '<b>We encourage you to take a moment</b> to review the list '
               + 'of curated apps and install the ones you need now.'
+              ;
             actionButton.text      = 'Browse Curated Apps Now';
             actionButton.icon.name = 'arrow-right';
             actionName             = 'checkNetwork';
@@ -1325,7 +1344,8 @@ Kirigami.ApplicationWindow {
               + '<b>3. If the app needs installed, confirm that you want to '
               + 'install it and provide your password.</b> The application '
               + 'will be installed and will automatically launch once '
-              + 'installation is complete.';
+              + 'installation is complete.'
+              ;
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
             interImageList = [
@@ -1353,7 +1373,8 @@ Kirigami.ApplicationWindow {
               + 'Tools > Help.<br>'
               + '<br>'
               + '<b>To run this wizard again,</b> click Start Menu > Kubuntu '
-              + 'Focus Tools > Welcome Wizard.';
+              + 'Focus Tools > Welcome Wizard.'
+              ;
             actionButton.text      = 'Finish';
             actionButton.icon.name = 'arrow-right';
             actionName             = 'finishWizard';
@@ -1531,7 +1552,7 @@ Kirigami.ApplicationWindow {
             } else {
                 interErrorMessage.text
                   = 'The provided passphrases do not '
-                  + 'match. Please try again.';
+                    + 'match. Please try again.';
                 interErrorMessage.visible = true;
             }
             break;
