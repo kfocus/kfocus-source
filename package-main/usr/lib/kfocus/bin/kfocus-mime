@@ -47,7 +47,7 @@ _exeLookupList=(
   'gvim|gvim||vim-gtk3|Vim GUI: Edit Text With Extreme Power'
   'gwenview|gwenview||gwenview|Gwenview: Image and Document Viewer'
   'inkscape|inkscape||inkscape|Inkscape: Edit Scalable Vector Graphics'
-  'insync|insync;start||insync-dolphin|InSync: Sync to Google Drive, OneDrive, and Dropbox'
+  'insync|insync;start||insync-dolphin|Insync: Sync Google Drive and Others'
   'jekyll|konsole;-e;man jekyll|jekyll|jekyll|Jekyll: Create Static Web Sites'
   'jetbrains-toolbox-plain|jetbrains-toolbox|jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs'
   'kate|kate||kate|Kate: Edit Text with Power'
@@ -107,7 +107,7 @@ _exeLookupList=(
   'zoom|zoom||zoom|Zoom: Start and Join Video and Web Conferencing'
 
   # Packages with special handlers
-  'dropbox|!dropbox|dropbox|dropbox|Dropbox: Sync to Dropbox Cloud Storage'
+  'dropbox|!dropbox|dropbox|dropbox|Dropbox: Sync to Cloud Storage'
   'jetbrains-toolbox|!jetbrains-toolbox|jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs'
   'intellij|!intellij|jetbrains-toolbox|jetbrains-toolbox|IntelliJ: JetBrains Java IDE'
   'pycharm|!pycharm|jetbrains-toolbox|jetbrains-toolbox|PyCharm: JetBrains Python IDE'
@@ -462,12 +462,12 @@ _echoInstallPromptMsgFn () {
   _readPkgRepoInfoFn "${_pkg_name}";
 
   if _cm2ChkPkgFn "${_pkg_name}"; then
-    echo -e "\n|${_descr_str}| is available ";
+    echo -e "\n'${_descr_str}' is available ";
     echo -e "but it is not installed."
     echo -e "\nInstall and start now?\n";
     return 0;
   elif [ "${METHOD:-}" = 'snap' ]; then
-    echo -e "\n|${_descr_str}| is available ";
+    echo -e "\n'${_descr_str}' is available ";
     echo -e "only as a snap but is not installed.";
     echo -e "\nInstall and start now?\n";
     return 0;
@@ -475,7 +475,7 @@ _echoInstallPromptMsgFn () {
 
   # Read repo info for pkg_name, bail if info not found
   if [ -n "${ERROR_STR:-}" ]; then
-    echo -e "\n${_descr_str}\n has no install candidate.\n";
+    echo -e "\n$'{_descr_str}'\n has no install candidate.\n";
     echo -e "REASON: ${ERROR_STR:-}\n";
     return 1;
   fi
@@ -484,11 +484,11 @@ _echoInstallPromptMsgFn () {
     apt)  _report_str="  APT: ${APT_REPO_URL:-}";;
     ppa)  _report_str="  PPA: ${PPA:-}";;
     website) _report_str="  WEB: ${URL:-}";;
-    *) echo -e "ABORT: Method |${METHOD:-}| is not supported.\n";
+    *) echo -e "ABORT: Method '${METHOD:-}' is not supported.\n";
        return 1;;
   esac;
 
-  echo -e "\n${_descr_str} is available."
+  echo -e "\n'${_descr_str}' is available."
   echo -e "Shall we install this repo now?";
   echo -e "\n${_report_str}\n\n   ";
 
