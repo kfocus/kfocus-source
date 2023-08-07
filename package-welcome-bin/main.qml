@@ -1128,7 +1128,7 @@ Kirigami.ApplicationWindow {
               + '<br>'
               + '<b>See more in the</b> '
               + '<a href="https://kfocus.org/wf/drives.html'
-              + '#bkm_sync_with_google>Cloud Drives Guided Solution.</a>';
+              + '#bkm_sync_with_google">Cloud Drives Guided Solution.</a>';
             actionButton.text      = 'Launch Insync Now'
             actionButton.icon.name = 'arrow-right';
             actionName             = 'checkNetwork';
