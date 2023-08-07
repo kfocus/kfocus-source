@@ -621,7 +621,10 @@ Kirigami.ApplicationWindow {
               + '<b>This is not an endorsement of any product,</b> and '
               + 'the Focus Team is not compensated in any way for '
               + 'these suggestions. You may always run this wizard '
-              + 'later using Start Menu > Kubuntu Focus > Welcome Wizard.';
+              + 'later using Start Menu > Kubuntu Focus > Welcome Wizard '
+              + 'or visit the <a href="https://kfocus.org/wf/tools#wizard">'
+              + 'documentation</a>'
+              ;
             actionName        = 'nextPage';
             regenUiFn( frontTemplatePage, true );
             break;
@@ -739,16 +742,20 @@ Kirigami.ApplicationWindow {
               + ' using the default passphrase.</b> This is insecure, '
               + 'and we recommend you use the form below to change '
               + getCryptDiskTextFn('it')
-              + ' now. <b>Note that all disks using the default passphrase '
-              + 'will be changed to use the new passphrase.</b>'
+              + ' to a unique passphrase. <b>IMPORTANT:</b> All disks using '
+              + 'the default passphrase will be changed to use the new '
+              + 'passphrase.</b>'
             cryptSecondaryText.text
               = '<b>Please keep a copy of '
-              + 'your passphrase in a safe place.</b> If this is lost, '
+              + 'your passphrase</b> in a safe place. If this is lost, '
               + 'there is no recovery except to reformat your disks '
               + 'and restore from backup.<br>'
               + '<br>'
-              + '<b>For your security, the Kubuntu Focus Team does NOT '
-              + 'install tools</b> that could assist in any recovery.';
+              + '<b>For your security</b>, the Kubuntu Focus Team does NOT '
+              + 'install tools that could assist in any recovery. '
+              + 'In other words, if you lose your password, they have no '
+              + 'way to help you recover it!'
+              ;
             cryptActionButton.text      = 'Continue';
             cryptActionButton.icon.name = 'arrow-right';
             actionName                  = 'changeCrypt';
@@ -771,7 +778,7 @@ Kirigami.ApplicationWindow {
             instructionsText.text
               = '<b>'
               + getCryptDiskTextFn( 'The encrypted disk uses' )
-              + ' a non-default passphrase.</b><br>'
+              + ' a unique passphrase.</b><br>'
               + '<br>'
               + '<b>Please keep a copy of your passphrase in a safe '
               + 'place.</b> If this is lost, there is no recovery '
