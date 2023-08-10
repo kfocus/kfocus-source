@@ -1609,10 +1609,15 @@ Kirigami.ApplicationWindow {
 
         case 'finishWizard':
             if ( loginStartCheckbox.checkState === Qt.Unchecked ) {
-                exeRun.exec(
+                exeRun.execSync(
                   'touch '
                    + systemDataMap.homeDir
-                   + '/.config/kfocus-firstrun-wizard')
+                   + '/.config/kfocus-firstrun-wizard');
+            } else {
+                exeRun.execSync(
+                  'rm '
+                  + systemDataMap.homeDir
+                  + '/.config/kfocus-firstrun-wizard');
             }
             Qt.quit();
         }
