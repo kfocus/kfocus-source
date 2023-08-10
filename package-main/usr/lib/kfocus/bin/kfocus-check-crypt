@@ -34,7 +34,8 @@ _importCommonFn () {
 # Returns   : 0 if success, non-zero on failure
 _setCryptListFn () {
   mapfile -t _cryptList < <(
-    grep 'TYPE="crypto_LUKS"' <<<"$(blkid)" \
+    grep 'TYPE="crypto_LUKS"' <<<"
+    $("${_escExe}" "${_setExe}" echo-blkid)" \
     | cut -f1 -d':'
   );
 }
@@ -77,10 +78,8 @@ _checkDisksForDefaultPassFn () {
   _fail_list=();
 
   for _disk_str in "${_cryptList[@]}"; do
-    if blkid "${_disk_str}" | grep -q 'TYPE="crypto_LUKS"'; then
-      if _checkDiskPassFn "${_disk_str}"; then
-        _fail_list+=( "${_disk_str}" );
-      fi
+    if _checkDiskPassFn "${_disk_str}"; then
+      _fail_list+=( "${_disk_str}" );
     fi
   done
 
@@ -180,10 +179,11 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   # Get escalation exe
   _escExe="$(_cm2GetEscExeFn)" || exit;
-  # if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
-  #   _cm2WarnStrFn 'Could not assign variables';
-  #   exit 1;
-  # fi
+  _assignList=( "_setExe|${_binDir}/kfocus-firstrun-set" );
+  if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
+    _cm2WarnStrFn 'Could not assign variables';
+    exit 1;
+  fi
 
   _mainFn "$@";
 fi
