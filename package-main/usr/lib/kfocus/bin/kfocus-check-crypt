@@ -62,19 +62,16 @@ _checkDiskPassFn() {
 
 # BEGIN _checkDisksForDefaultPassFn
 # Summary   : _checkDisksForDefaultPassFn
-# Purpose   : Checks disk partitions for the default passphrase and reports
-#             the result as a script exit code.
+# Purpose   : Checks disk partitions for the default passphrase.
 # Example   : _checkDisksForDefaultPassFn /dev/nvme0n1p3
 # Arguments : One or more device nodes, each of which points to a crypto_LUKS
 #             partition
 # Stdout    : An IFS delimited list of disk devices that were tried and failed.
 #             A blank string if all disks passed.
 # Returns   : An integer representing the number of partitions found that use
-#             the default passphrase. This is returned as a script exit code.
-# Notes     : This function calls "exit", so if you run it, the script *will*
-#             terminate before running anything after it.
+#             the default passphrase.
 _checkDisksForDefaultPassFn () {
-  declare _fail_list _disk_str;
+  declare _fail_list _disk_str _fail_list_item;
 
   _setCryptListFn;
   _fail_list=();
@@ -87,7 +84,9 @@ _checkDisksForDefaultPassFn () {
     fi
   done
 
-  echo "${_fail_list[@]}";
+  for _fail_list_item in "${_fail_list[@]}"; do
+    echo "$_fail_list_item";
+  done
   return "${#_fail_list[@]}";
 }
 # . END _checkDisksForDefaultPassFn
