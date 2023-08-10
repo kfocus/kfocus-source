@@ -135,7 +135,7 @@ _modifyDisksPassFn() {
 
 # BEGIN MAIN
 _mainFn () {
-  declare _cmd_str;
+  declare _cmd_str _crypt_list_item;
 
   _cmd_str="${1:-}";
 
@@ -151,7 +151,9 @@ _mainFn () {
     '-q')
       _setCryptListFn;
       if [ "${#_cryptList[@]}" != "0" ]; then
-        echo "${_cryptList[@]}";
+        for _crypt_list_item in "${_cryptList[@]}"; do
+          echo "$_crypt_list_item";
+        done
       else
         echo -n;
       fi
