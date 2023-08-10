@@ -18,7 +18,7 @@ Kirigami.ApplicationWindow {
     property int disabledSidebarIndex   : 0
     property bool firstRun              : true
     property var interImageList         : []
-    property int defaultPassphraseDisks : 0
+    property var defaultPassphraseDisks : []
     property string pageTitleText       : ''
     property string pageTitleImage      : ''
     property string imgDir              : 'assets/images/'
@@ -685,20 +685,24 @@ Kirigami.ApplicationWindow {
               skipButton,  previousButton
             ]);
 
-            pageTitleText   = getCryptDiskTextFn('Disk Passphrase');
+            pageTitleText   = getCryptDiskTextFn('Disk Passphrase',
+                                systemDataMap.cryptDiskList);
             topImage.source = imgDir + 'encrypted_drive.svg';
             topHeading.text = 'Check Disk Encryption Security';
             primaryText.text
               = '<b>The wizard has detected '
-              + getCryptDiskTextFn('1 encrypted disk')
+              + getCryptDiskTextFn('1 encrypted disk',
+                  systemDataMap.cryptDiskList)
               + '</b> on this system. If you bought a system with disk '
               + 'encryption enabled and you have yet to change the '
-              + getCryptDiskTextFn('passphrase')
+              + getCryptDiskTextFn('passphrase',
+                  systemDataMap.cryptDiskList)
               + ', you should do so now. Otherwise, you can skip this '
               + 'step.<br>'
               + '<br>'
               + '<b>You may check '
-              + getCryptDiskTextFn('this disk')
+              + getCryptDiskTextFn('this disk',
+                  systemDataMap.cryptDiskList)
               + ' for the default password now.</b> As a security '
               + 'measure, this app will not perform this check until '
               + 'you enter your valid user password.'
@@ -712,7 +716,8 @@ Kirigami.ApplicationWindow {
         case 'diskPassphraseCheckerItem':
             initPage([topHeading, busyIndicator]);
 
-            pageTitleText   = getCryptDiskTextFn('Disk Passphrase');
+            pageTitleText   = getCryptDiskTextFn('Disk Passphrase',
+                                systemDataMap.cryptDiskList);
             pageTitleImage  = imgDir + 'encrypted_drive.svg';
             topHeading.text
               = 'Checking Disk Encryption Security...\n'
@@ -723,7 +728,8 @@ Kirigami.ApplicationWindow {
         case 'diskPassphraseChangeInProgressItem':
             initPage([topHeading, busyIndicator]);
 
-            pageTitleText   = getCryptDiskTextFn('Disk Passphrase');
+            pageTitleText   = getCryptDiskTextFn('Disk Passphrase',
+                                systemDataMap.cryptDiskList);
             pageTitleImage  = imgDir + 'encrypted_drive.svg';
             topHeading.text
               = 'Changing Disk Passphrases...\n'
@@ -732,18 +738,22 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'diskPassphraseChangeItem':
-            pageTitleText            = getCryptDiskTextFn('Disk Passphrase');
+            pageTitleText            = getCryptDiskTextFn('Disk Passphrase',
+                                         systemDataMap.cryptDiskList);
             pageTitleImage           = imgDir + 'encrypted_drive.svg';
             cryptHighlightRect.color = '#ff9900';
             cryptTopHeading.text
               = 'Change Passphrase for '
-              + getCryptDiskTextFn('1 Encrypted Disk');
+              + getCryptDiskTextFn('1 Encrypted Disk',
+                  defaultPassphraseDisks);
             cryptInstructionsText.text
               = '<b>'
-              + getCryptDiskTextFn('This disk is')
+              + getCryptDiskTextFn('This disk is',
+                  defaultPassphraseDisks)
               + ' using the default passphrase.</b> This is insecure, '
               + 'and we recommend you use the form below to change '
-              + getCryptDiskTextFn('it')
+              + getCryptDiskTextFn('it',
+                  defaultPassphraseDisks)
               + ' to a unique passphrase. <b>IMPORTANT:</b> All disks using '
               + 'the default passphrase will be changed to use the new '
               + 'passphrase.</b>'
@@ -771,14 +781,18 @@ Kirigami.ApplicationWindow {
               interActionButton
             ]);
 
-            pageTitleText             = getCryptDiskTextFn('Disk Passphrase');
+            pageTitleText             = getCryptDiskTextFn('Disk Passphrase',
+                                          systemDataMap.cryptDiskList);
             pageTitleImage            = imgDir + 'encrypted_drive.svg';
             interImageList            = [ 'finished.svg' ];
             headerHighlightRect.color = '#27ae60';
             interTopHeading.text
-              = 'Disk Encryption Passphrases Appear Secure';
+              = getCryptDiskTextFn( 'Disk Encryption Passphrase Appears',
+                  systemDataMap.cryptDiskList )
+              + ' Secure';
             instructionsText.text
-              = '<b>' + getCryptDiskTextFn( 'The encrypted disk uses' )
+              = '<b>' + getCryptDiskTextFn( 'The encrypted disk uses',
+                          systemDataMap.cryptDiskList )
               + ' a unique passphrase.</b><br>'
               + '<br>'
               + '<b>Please keep a copy of your passphrase in a safe '
@@ -914,7 +928,7 @@ Kirigami.ApplicationWindow {
             interActionButton.icon.name = 'arrow-right';
             interImageList = [
               'kfocus_mime_backintime.svg',
-              'backintime_ui.png'
+              'backintime_ui.svg'
             ];
             actionName = 'nextPage';
             regenUiFn( interTemplatePage, false );
@@ -1431,8 +1445,8 @@ Kirigami.ApplicationWindow {
         switchPageFn(getCurrentPageIdFn());
     }
 
-    function getCryptDiskTextFn(text_type) {
-        if ( systemDataMap.cryptDiskList.length === 1 ) {
+    function getCryptDiskTextFn(text_type, disk_list) {
+        if ( disk_list.length === 1 ) {
             return text_type;
         } else {
             switch(text_type) {
@@ -1440,10 +1454,10 @@ Kirigami.ApplicationWindow {
                 return 'Disk Passphrases';
 
             case '1 encrypted disk':
-                return systemDataMap.cryptDiskList.length + ' encrypted disks';
+                return disk_list.length + ' encrypted disks';
 
             case '1 Encrypted Disk':
-                return systemDataMap.cryptDiskList.length + ' Encrypted Disks';
+                return disk_list.length + ' Encrypted Disks';
 
             case 'passphrase':
                 return 'passphrases';
@@ -1459,10 +1473,13 @@ Kirigami.ApplicationWindow {
                 }
 
             case 'This disk is':
-                return 'These disks are';
+                return disk_list.length + ' disks are';
 
             case 'it':
                 return 'them';
+
+            case 'Disk Encryption Passphrase Appears':
+                return 'Disk Encryption Passphrases Appear';
             }
         }
     }
@@ -1483,7 +1500,7 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id          : cryptDiskCheckerEngine
         onAppExited : {
-            defaultPassphraseDisks = exitCode
+            defaultPassphraseDisks = stdout.split('\n').slice(0, -1);
             if ( exitCode > 0 ) {
                 switchPageFn( 'diskPassphraseChangeItem' );
             } else {
@@ -1545,7 +1562,7 @@ Kirigami.ApplicationWindow {
                 cryptDiskChangeEngine.exec(
                   systemDataMap.binDir
                   + 'kfocus-check-crypt -m '
-                  + systemDataMap.cryptDiskList.join(' '),
+                  + defaultPassphraseDisks.join(' '),
                   'kubuntu\n'
                   + newPassphraseBox.text + '\n' );
                 switchPageFn( 'diskPassphraseChangeInProgressItem' );
