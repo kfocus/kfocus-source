@@ -914,7 +914,7 @@ Kirigami.ApplicationWindow {
             interActionButton.icon.name = 'arrow-right';
             interImageList = [
               'kfocus_mime_backintime.svg',
-              'backintime_ui.svg'
+              'backintime_ui.png'
             ];
             actionName = 'nextPage';
             regenUiFn( interTemplatePage, false );
@@ -979,7 +979,7 @@ Kirigami.ApplicationWindow {
             interActionButton.icon.name = 'arrow-right';
             interImageList = [
               'kfocus_mime_keepassxc.svg',
-              'keepassxc_systray.svg',
+              'keepassxc_systray.png',
               'keepassxc_ui.png'
             ];
             actionName = 'nextPage';
@@ -1112,7 +1112,7 @@ Kirigami.ApplicationWindow {
             interActionButton.icon.name = 'arrow-right';
             interImageList = [
               'kfocus_mime_dropbox.svg',
-              'dropbox_systray.svg',
+              'dropbox_systray.png',
               'dropbox_ui.png'
             ];
             actionName = 'nextPage';
