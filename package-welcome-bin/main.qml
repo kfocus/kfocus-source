@@ -691,7 +691,7 @@ Kirigami.ApplicationWindow {
             topHeading.text = 'Check Disk Encryption Security';
             primaryText.text
               = '<b>The wizard has detected '
-              + getCryptDiskTextFn('1 encrypted disk',
+              + getCryptDiskTextFn('one encrypted disk',
                   systemDataMap.cryptDiskList)
               + '</b> on this system. If you bought a system with disk '
               + 'encryption enabled and you have yet to change the '
@@ -720,8 +720,8 @@ Kirigami.ApplicationWindow {
                                 systemDataMap.cryptDiskList);
             pageTitleImage  = imgDir + 'encrypted_drive.svg';
             topHeading.text
-              = 'Checking Disk Encryption Security...\n'
-              + 'This might take a minute.';
+              = 'Checking Disk Encryption Security.\n'
+              + 'You may have to provide your user password multiple times.';
             regenUiFn( baseTemplatePage, false );
             break;
 
@@ -732,8 +732,8 @@ Kirigami.ApplicationWindow {
                                 systemDataMap.cryptDiskList);
             pageTitleImage  = imgDir + 'encrypted_drive.svg';
             topHeading.text
-              = 'Changing Disk Passphrases...\n'
-              + 'This might take a minute.';
+              = 'Changing Disk Passphrases.\n'
+              + 'You may have to provide your user password multiple times.';
             regenUiFn( baseTemplatePage, false );
             break;
 
@@ -744,11 +744,11 @@ Kirigami.ApplicationWindow {
             cryptHighlightRect.color = '#ff9900';
             cryptTopHeading.text
               = 'Change Passphrase for '
-              + getCryptDiskTextFn('1 Encrypted Disk',
+              + getCryptDiskTextFn('One Encrypted Disk',
                   defaultPassphraseDisks);
             cryptInstructionsText.text
               = '<b>'
-              + getCryptDiskTextFn('This disk is',
+              + getCryptDiskTextFn('One disk is',
                   defaultPassphraseDisks)
               + ' using the default passphrase.</b> This is insecure, '
               + 'and we recommend you use the form below to change '
@@ -1453,11 +1453,19 @@ Kirigami.ApplicationWindow {
             case 'Disk Passphrase':
                 return 'Disk Passphrases';
 
-            case '1 encrypted disk':
-                return disk_list.length + ' encrypted disks';
+            case 'one encrypted disk':
+                if (disk_list.length === 2) {
+                    return 'two encrypted disks';
+                } else {
+                    return disk_list.length + ' encrypted disks';
+                }
 
-            case '1 Encrypted Disk':
-                return disk_list.length + ' Encrypted Disks';
+            case 'One Encrypted Disk':
+                if (disk_list.length === 2) {
+                    return 'Two Encrypted Disks';
+                } else {
+                    return disk_list.length + ' Encrypted Disks';
+                }
 
             case 'passphrase':
                 return 'passphrases';
@@ -1472,8 +1480,12 @@ Kirigami.ApplicationWindow {
                     return 'All encrypted disks use';
                 }
 
-            case 'This disk is':
-                return disk_list.length + ' disks are';
+            case 'One disk is':
+                if (disk_list.length === 2) {
+                    return 'Two disks are';
+                } else {
+                    return disk_list.length + ' disks are';
+                }
 
             case 'it':
                 return 'them';
@@ -1559,18 +1571,24 @@ Kirigami.ApplicationWindow {
 
         case 'changeCrypt':
             if ( newPassphraseBox.text === confirmPassphraseBox.text ) {
-                cryptDiskChangeEngine.exec(
-                  systemDataMap.binDir
-                  + 'kfocus-check-crypt -m '
-                  + defaultPassphraseDisks.join(' '),
-                  'kubuntu\n'
-                  + newPassphraseBox.text + '\n' );
-                switchPageFn( 'diskPassphraseChangeInProgressItem' );
+                if ( newPassphraseBox.text === "" ) {
+                    cryptErrorMessage.text
+                      = 'No passphrase was entered. Please try again.';
+                    cryptErrorMessage.visible = true;
+                } else {
+                    cryptDiskChangeEngine.exec(
+                      systemDataMap.binDir
+                      + 'kfocus-check-crypt -m '
+                      + defaultPassphraseDisks.join(' '),
+                      'kubuntu\n'
+                      + newPassphraseBox.text + '\n' );
+                    switchPageFn( 'diskPassphraseChangeInProgressItem' );
+                }
             } else {
-                interErrorMessage.text
+                cryptErrorMessage.text
                   = 'The provided passphrases do not '
                     + 'match. Please try again.';
-                interErrorMessage.visible = true;
+                cryptErrorMessage.visible = true;
             }
             break;
 
