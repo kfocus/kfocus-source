@@ -928,7 +928,7 @@ Kirigami.ApplicationWindow {
             interActionButton.icon.name = 'arrow-right';
             interImageList = [
               'kfocus_mime_backintime.svg',
-              'backintime_ui.png'
+              'backintime_ui.webp'
             ];
             actionName = 'nextPage';
             regenUiFn( interTemplatePage, false );
@@ -994,7 +994,7 @@ Kirigami.ApplicationWindow {
             interImageList = [
               'kfocus_mime_keepassxc.svg',
               'keepassxc_systray.svg',
-              'keepassxc_ui.png'
+              'keepassxc_ui.svg'
             ];
             actionName = 'nextPage';
             regenUiFn( interTemplatePage, false );
