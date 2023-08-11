@@ -33,16 +33,19 @@ Kirigami.ApplicationWindow {
             jsId     : 'introductionItem'
             task     : 'Introduction'
             taskIcon : 'user-home-symbolic'
+            isChecked: true
         }
         ListElement {
             jsId     : 'diskPassphraseItem'
             task     : 'Disk Passphrase'
             taskIcon : 'lock'
+            isChecked: true
         }
         ListElement {
            jsId     : 'extraSoftwareItem'
             task     : 'Extra Software'
             taskIcon : 'install'
+            isChecked: true
         }
         ListElement {
             jsId     : 'fileBackupItem'
@@ -58,11 +61,13 @@ Kirigami.ApplicationWindow {
             jsId     : 'emailCalendarItem'
             task     : 'Email'
             taskIcon : 'gnumeric-link-email'
+            isChecked: true
         }
         ListElement {
             jsId     : 'dropboxItem'
             task     : 'Dropbox'
             taskIcon : 'cloudstatus'
+            isChecked: true
         }
         ListElement {
             jsId     : 'insyncItem'
@@ -135,6 +140,7 @@ Kirigami.ApplicationWindow {
             label     : task
             iconColor : Kirigami.Theme.textColor
             iconSize  : Kirigami.Units.gridUnit * 1.5
+            trailing  : Kirigami.Icon { source: 'box' }
             onClicked : {
                 switchPageFn( jsId );
             }
@@ -144,6 +150,9 @@ Kirigami.ApplicationWindow {
                     this.icon = getThemedIcon( taskIcon_part_list[1] );
                 } else {
                     this.icon = taskIcon
+                }
+                if ( isChecked ) {
+                  this.trailing.source = 'checkbox'
                 }
             }
         }
