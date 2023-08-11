@@ -22,6 +22,7 @@ Kirigami.ApplicationWindow {
     property string pageTitleText       : ''
     property string pageTitleImage      : ''
     property string imgDir              : 'assets/images/'
+    property var checkMap               : []
 
     //
     // Purpose: Describes steps used in wizard
@@ -33,19 +34,16 @@ Kirigami.ApplicationWindow {
             jsId     : 'introductionItem'
             task     : 'Introduction'
             taskIcon : 'user-home-symbolic'
-            isChecked: true
         }
         ListElement {
             jsId     : 'diskPassphraseItem'
             task     : 'Disk Passphrase'
             taskIcon : 'lock'
-            isChecked: true
         }
         ListElement {
            jsId     : 'extraSoftwareItem'
             task     : 'Extra Software'
             taskIcon : 'install'
-            isChecked: true
         }
         ListElement {
             jsId     : 'fileBackupItem'
@@ -61,13 +59,11 @@ Kirigami.ApplicationWindow {
             jsId     : 'emailCalendarItem'
             task     : 'Email'
             taskIcon : 'gnumeric-link-email'
-            isChecked: true
         }
         ListElement {
             jsId     : 'dropboxItem'
             task     : 'Dropbox'
             taskIcon : 'cloudstatus'
-            isChecked: true
         }
         ListElement {
             jsId     : 'insyncItem'
@@ -106,10 +102,10 @@ Kirigami.ApplicationWindow {
 
     // == BEGIN Views =================================================
     // Define page size and columns
-    width  : Kirigami.Units.gridUnit * 38
-    height : Kirigami.Units.gridUnit * 27
+    width  : Kirigami.Units.gridUnit * 40
+    height : Kirigami.Units.gridUnit * 28
 
-    pageStack.defaultColumnWidth : Kirigami.Units.gridUnit * 10
+    pageStack.defaultColumnWidth : Kirigami.Units.gridUnit * 12
 
     // BEGIN Define sidebar views
     Kirigami.ScrollablePage {
@@ -140,7 +136,9 @@ Kirigami.ApplicationWindow {
             label     : task
             iconColor : Kirigami.Theme.textColor
             iconSize  : Kirigami.Units.gridUnit * 1.5
-            trailing  : Kirigami.Icon { source: 'box' }
+            trailing  : Kirigami.Icon {
+                source: ''
+            }
             onClicked : {
                 switchPageFn( jsId );
             }
@@ -151,8 +149,8 @@ Kirigami.ApplicationWindow {
                 } else {
                     this.icon = taskIcon
                 }
-                if ( isChecked ) {
-                  this.trailing.source = 'checkbox'
+                if ( checkMap[jsId] === true ) {
+                    this.trailing.source = 'checkbox';
                 }
             }
         }
@@ -164,6 +162,9 @@ Kirigami.ApplicationWindow {
             label       : task
             icon        : taskIcon
             iconSize    : Kirigami.Units.gridUnit * 1.5
+            trailing  : Kirigami.Icon {
+                source: ''
+            }
             fadeContent : true
             onClicked   : {
                 disabledSidebar.currentIndex = disabledSidebarIndex;
@@ -174,6 +175,9 @@ Kirigami.ApplicationWindow {
                     this.icon = getThemedIcon( taskIcon_part_list[1] );
                 } else {
                     this.icon = taskIcon
+                }
+                if ( checkMap[jsId] === true ) {
+                    this.trailing.source = 'checkbox';
                 }
             }
         }
@@ -1445,6 +1449,16 @@ Kirigami.ApplicationWindow {
     }
 
     function nextPageFn() {
+        // Trigger the checkbox for the current page if applicable
+        let initialPageId = getCurrentPageIdFn();
+        if (initialPageId !== 'introductionItem' &&
+        initialPageId !== 'finishItem') {
+            checkMap[initialPageId] = true;
+            enabledSidebar.currentItem.trailing.source = 'checkbox';
+            disabledSidebar.currentItem.trailing.source = 'checkbox';
+        }
+
+        // Now advance to the next one
         enabledSidebar.currentIndex++;
         switchPageFn(getCurrentPageIdFn());
     }
@@ -1513,6 +1527,15 @@ Kirigami.ApplicationWindow {
         }
     }
 
+    function serializeCheckMap() {
+        let checkMapSerialized = JSON.stringify( checkMap );
+        exeRun.execSync(
+          'tee '
+          + systemDataMap.homeDir
+          + '/.config/kfocus-firstrun-wizard-data.json',
+          checkMapSerialized );
+    }
+
     /**************
      * Logic code *
      **************/
@@ -1550,6 +1573,9 @@ Kirigami.ApplicationWindow {
             }
         }
     }
+
+    // Reads JSON data tracking what steps are completed or not
+    ShellEngine { id: checkMapReaderEngine }
 
     // Used for shell commands that don't require a callback
     ShellEngine { id : exeRun }
@@ -1663,6 +1689,7 @@ Kirigami.ApplicationWindow {
                   + systemDataMap.homeDir
                   + '/.config/kfocus-firstrun-wizard');
             }
+            serializeCheckMap();
             Qt.quit();
         }
     }
@@ -1672,7 +1699,35 @@ Kirigami.ApplicationWindow {
         if ( systemDataMap.cryptDiskList.length === 0 ) {
             removeSidebarItemFn('diskPassphraseItem');
         }
-        switchPageFn('introductionItem');
+
+        checkMapReaderEngine.execSync(
+          '/usr/bin/cat '
+          + systemDataMap.homeDir
+          + '/.config/kfocus-firstrun-wizard-data.json' )
+        if (checkMapReaderEngine.stdout.length === 0) {
+            // JSON file doesn't exist, initialize empty dict
+            checkMap = {
+                'diskPassphraseItem'   : false,
+                'extraSoftwareItem'    : false,
+                'fileBackupItem'       : false,
+                'passwordManagerItem'  : false,
+                'emailCalendarItem'    : false,
+                'dropboxItem'          : false,
+                'insyncItem'           : false,
+                'jetbrainsToolboxItem' : false,
+                'avatarItem'           : false,
+                'curatedAppsItem'      : false
+            }
+        } else {
+            checkMap = JSON.parse( checkMapReaderEngine.stdout );
+        }
+
+        switchPageFn( 'introductionItem' );
     }
+
+    onClosing: {
+        serializeCheckMap();
+    }
+
     // == . END Controllers ===========================================
 }

@@ -16,6 +16,19 @@ const qint64 twenty_gib = 21474836480;
 
 int main(int argc, char *argv[])
 {
+    // Early system info gathering
+    StartupData dat;
+    dat.setHomeDir(QStandardPaths::writableLocation(QStandardPaths::HomeLocation));
+
+    // Check for the presence of a drop file
+    if (QFile::exists(dat.homeDir() + "/.config/kfocus-firstrun-wizard")) {
+        if (argc == 1 || QString(argv[1]) != QString("-f")) {
+            qWarning() << "User has directed to not run again. Use -f to override.";
+            return 1;
+        }
+    }
+
+    // UI and QML setup
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
@@ -30,22 +43,12 @@ int main(int argc, char *argv[])
 
     ShellEngine msgbox;
 
-    // Gather system info and expose it to QML via StartupData
-    StartupData dat;
+    // Late system info gathering
     ShellEngine encryptedDiskFinder;
     encryptedDiskFinder.execSync(dat.binDir() + "kfocus-check-crypt -q");
     QStringList cryptDisks(encryptedDiskFinder.stdout().split('\n'));
     cryptDisks.removeLast();
     dat.setCryptDiskList(cryptDisks);
-    dat.setHomeDir(QStandardPaths::writableLocation(QStandardPaths::HomeLocation));
-
-    // Check for the presence of a drop file
-    if (QFile::exists(dat.homeDir() + "/.config/kfocus-firstrun-wizard")) {
-        if (argc == 1 || QString(argv[1]) != QString("-f")) {
-            qWarning() << "User has directed to not run again. Use -f to override.";
-            return 1;
-        }
-    }
 
     // Check for the presence of a second kfocus-welcome-bin instance
     ShellEngine duplicateFinder;
