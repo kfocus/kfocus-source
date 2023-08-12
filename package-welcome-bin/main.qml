@@ -149,9 +149,6 @@ Kirigami.ApplicationWindow {
                 } else {
                     this.icon = taskIcon
                 }
-                if ( checkMap[jsId] === true ) {
-                    this.trailing.source = 'checkbox';
-                }
             }
         }
     }
@@ -175,9 +172,6 @@ Kirigami.ApplicationWindow {
                     this.icon = getThemedIcon( taskIcon_part_list[1] );
                 } else {
                     this.icon = taskIcon
-                }
-                if ( checkMap[jsId] === true ) {
-                    this.trailing.source = 'checkbox';
                 }
             }
         }
@@ -1451,9 +1445,8 @@ Kirigami.ApplicationWindow {
     function nextPageFn() {
         // Trigger the checkbox for the current page if applicable
         let initialPageId = getCurrentPageIdFn();
-        if (initialPageId !== 'introductionItem' &&
-        initialPageId !== 'finishItem') {
-            checkMap[initialPageId] = true;
+        if ( initialPageId !== 'finishItem' ) {
+            checkMap[initialPageId] = Date.now();
             enabledSidebar.currentItem.trailing.source = 'checkbox';
             disabledSidebar.currentItem.trailing.source = 'checkbox';
         }
@@ -1706,20 +1699,15 @@ Kirigami.ApplicationWindow {
           + '/.config/kfocus-firstrun-wizard-data.json' )
         if (checkMapReaderEngine.stdout.length === 0) {
             // JSON file doesn't exist, initialize empty dict
-            checkMap = {
-                'diskPassphraseItem'   : false,
-                'extraSoftwareItem'    : false,
-                'fileBackupItem'       : false,
-                'passwordManagerItem'  : false,
-                'emailCalendarItem'    : false,
-                'dropboxItem'          : false,
-                'insyncItem'           : false,
-                'jetbrainsToolboxItem' : false,
-                'avatarItem'           : false,
-                'curatedAppsItem'      : false
-            }
+            checkMap = {};
         } else {
             checkMap = JSON.parse( checkMapReaderEngine.stdout );
+        }
+        for ( var i = 0;i < sidebarModel.count;i++ ) {
+            if ( checkMap[sidebarModel.get(i).jsId] !== undefined ) {
+                enabledSidebar.itemAtIndex(i).trailing.source = 'checkbox';
+                disabledSidebar.itemAtIndex(i).trailing.source = 'checkbox';
+            }
         }
 
         switchPageFn( 'introductionItem' );
