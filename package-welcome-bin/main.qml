@@ -328,7 +328,7 @@ Kirigami.ApplicationWindow {
 
             Controls.Button {
                 id        : clearButton
-                text      : 'Clear Checks'
+                text      : 'Clear Checkmarks'
                 icon.name : 'edit-clear-history'
                 onClicked : {
                     Object.keys( checkMap ).forEach(
@@ -1402,9 +1402,9 @@ Kirigami.ApplicationWindow {
             topImage.source = imgDir + 'finished.svg';
             topHeading.text = 'All Done';
             primaryText.text
-              = '<b>All steps are complete.</b> We hope you found this '
-              + 'useful and enjoy using your system.<br>'
-              + '<br>'
+              = '<b>You have considered</b> all items shown with a checkmark. '
+              + 'Click the "Clear Checkmarks" button to reset them.'
+              + '<br><br>'
               + '<b>To get more help,</b> click Start Menu > Kubuntu Focus '
               + 'Tools > Help.<br>'
               + '<br>'
