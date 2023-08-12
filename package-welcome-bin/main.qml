@@ -22,9 +22,9 @@ Kirigami.ApplicationWindow {
     property string pageTitleText       : ''
     property string pageTitleImage      : ''
     property string imgDir              : 'assets/images/'
-    property var checkMap               : []
+    property var stateMatrix            : {}
+    property var checkMap               : {}
 
-    //
     // Purpose: Describes steps used in wizard
     // See property currentIndex
     //
@@ -310,18 +310,32 @@ Kirigami.ApplicationWindow {
             }
         }
 
-        Controls.Button {
-            id : previousButton
-
+        RowLayout {
             anchors {
                 left   : parent.left
                 bottom : parent.bottom
             }
 
-            text      : 'Previous'
-            icon.name : 'arrow-left'
-            onClicked : {
-                previousPageFn();
+            Controls.Button {
+                id : previousButton
+
+                text      : 'Previous'
+                icon.name : 'arrow-left'
+                onClicked : {
+                    previousPageFn();
+                }
+            }
+
+            Controls.Button {
+                id        : clearButton
+                text      : 'Clear Checks'
+                icon.name : 'edit-clear-history'
+                onClicked : {
+                    Object.keys( checkMap ).forEach(
+                        ( key ) => { delete checkMap[ key ]; }
+                    );
+                    populateCheckboxesFn();
+                }
             }
         }
 
@@ -348,7 +362,7 @@ Kirigami.ApplicationWindow {
 
             Controls.Button {
                 id        : skipButton
-                text      : 'Skip'
+                text      : 'No Thanks'
                 icon.name : 'go-next-skip'
                 onClicked : {
                     nextPageFn();
@@ -439,7 +453,7 @@ Kirigami.ApplicationWindow {
 
             Controls.Button {
                 id        : interSkipButton
-                text      : 'Skip'
+                text      : 'No Thanks'
                 icon.name : 'go-next-skip'
                 onClicked : {
                     nextPageFn();
@@ -584,7 +598,7 @@ Kirigami.ApplicationWindow {
 
             Controls.Button {
                 id        : cryptSkipButton
-                text      : 'Skip'
+                text      : 'No Thanks'
                 icon.name : 'go-next-skip'
                 onClicked : {
                     nextPageFn();
@@ -1380,7 +1394,8 @@ Kirigami.ApplicationWindow {
             initPage([
               topImage,       topHeading,
               primaryText,    actionButton,
-              previousButton, loginStartCheckbox
+              previousButton, loginStartCheckbox,
+              clearButton
             ]);
 
             pageTitleText   = 'Finish';
@@ -1407,6 +1422,7 @@ Kirigami.ApplicationWindow {
     function initPage(visible_elements_list) {
         var all_elements_list = [
             actionButton,        busyIndicator,
+            clearButton,
             headerHighlightRect, instructionsText,
             interActionButton,   interContinueLabel,
             interSkipButton,     interTopHeading,
@@ -1520,13 +1536,34 @@ Kirigami.ApplicationWindow {
         }
     }
 
-    function serializeCheckMap() {
-        let checkMapSerialized = JSON.stringify( checkMap );
+    function storeStateMatrixFn () {
+        let serial_str;
+
+        try { serial_str = JSON.stringify( stateMatrix ); }
+        catch (e) {
+            console.warn( 'Trouble serialising stateMatrix', e );
+            serial_str = '{}'
+        }
+
         exeRun.execSync(
           'tee '
           + systemDataMap.homeDir
           + '/.config/kfocus-firstrun-wizard-data.json',
-          checkMapSerialized );
+          serial_str
+       );
+    }
+
+    function populateCheckboxesFn () {
+        for ( var i = 0; i < sidebarModel.count; i++ ) {
+            var js_id = sidebarModel.get( i ).jsId;
+            for ( let target_obj of [ enabledSidebar, disabledSidebar ] ) {
+                var item_obj = target_obj.itemAtIndex(i);
+                if ( item_obj && typeof item_obj.trailing === 'object' ) {
+                    item_obj.trailing.source = ( checkMap[ js_id ] > 0 )
+                      ? 'checkbox' : '';
+                }
+            }
+        }
     }
 
     /**************
@@ -1568,7 +1605,28 @@ Kirigami.ApplicationWindow {
     }
 
     // Reads JSON data tracking what steps are completed or not
-    ShellEngine { id: checkMapReaderEngine }
+    ShellEngine {
+        id: stateMatrixReaderEngine
+        onAppExited : {
+            let setMap;
+            try {
+                setMap = JSON.parse( stdout );
+            }
+            catch (e) {
+                console.warn( 'Trouble parsing setMap:', e, stdout );
+            }
+            if ( typeof setMap === 'object' ) {
+                stateMatrix = setMap;
+            }
+            if ( typeof stateMatrix.check_map === 'object' ) {
+                checkMap = stateMatrix.check_map;
+            }
+            else {
+                stateMatrix.check_map = checkMap;
+            }
+            populateCheckboxesFn();
+        }
+   }
 
     // Used for shell commands that don't require a callback
     ShellEngine { id : exeRun }
@@ -1682,40 +1740,27 @@ Kirigami.ApplicationWindow {
                   + systemDataMap.homeDir
                   + '/.config/kfocus-firstrun-wizard');
             }
-            serializeCheckMap();
+            storeStateMatrixFn();
             Qt.quit();
         }
     }
 
     // Kick-off rendering on completion
     Component.onCompleted: {
+        stateMatrix = {};
+        checkMap    = {};
         if ( systemDataMap.cryptDiskList.length === 0 ) {
             removeSidebarItemFn('diskPassphraseItem');
         }
-
-        checkMapReaderEngine.execSync(
-          '/usr/bin/cat '
-          + systemDataMap.homeDir
-          + '/.config/kfocus-firstrun-wizard-data.json' )
-        if (checkMapReaderEngine.stdout.length === 0) {
-            // JSON file doesn't exist, initialize empty dict
-            checkMap = {};
-        } else {
-            checkMap = JSON.parse( checkMapReaderEngine.stdout );
-        }
-        for ( var i = 0;i < sidebarModel.count;i++ ) {
-            if ( checkMap[sidebarModel.get(i).jsId] !== undefined ) {
-                enabledSidebar.itemAtIndex(i).trailing.source = 'checkbox';
-                disabledSidebar.itemAtIndex(i).trailing.source = 'checkbox';
-            }
-        }
-
         switchPageFn( 'introductionItem' );
+
+        const json_file = systemDataMap.homeDir
+            + '/.config/kfocus-firstrun-wizard-data.json';
+        stateMatrixReaderEngine.exec( '/usr/bin/cat ' + json_file );
     }
 
     onClosing: {
-        serializeCheckMap();
+        storeStateMatrixFn();
     }
-
     // == . END Controllers ===========================================
 }
