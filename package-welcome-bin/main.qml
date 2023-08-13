@@ -949,7 +949,7 @@ Kirigami.ApplicationWindow {
             interActionButton.icon.name = 'arrow-right';
             interImageList = [
               'kfocus_mime_backintime.svg',
-              'backintime_ui.webp'
+              'backintime_ui.png'
             ];
             actionName = 'nextPage';
             regenUiFn( interTemplatePage, false );
