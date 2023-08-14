@@ -278,12 +278,11 @@ Kirigami.ApplicationWindow {
                 id       : topImage
                 mipmap   : true
                 fillMode : Image.PreserveAspectFit
-
+                Layout.alignment       : Qt.AlignHCenter
+                Layout.bottomMargin    : Kirigami.Units.gridUnit * 2
                 Layout.preferredHeight : Kirigami.Units.gridUnit * 6
                 Layout.preferredWidth  : Kirigami.Units.gridUnit * 20
-                Layout.bottomMargin    : Kirigami.Units.gridUnit * 2
                 Layout.topMargin       : Kirigami.Units.gridUnit * 1
-                Layout.alignment       : Qt.AlignHCenter
             }
 
             Kirigami.Heading {
@@ -294,12 +293,13 @@ Kirigami.ApplicationWindow {
             }
 
             Controls.BusyIndicator {
-                id : busyIndicator
-                running          : true
-                Layout.alignment : Qt.AlignHCenter
-                Layout.topMargin : Kirigami.Units.gridUnit * 1 
-                Layout.preferredHeight : Kirigami.Units.gridUnit * 7
-                Layout.preferredWidth  : Kirigami.Units.gridUnit * 7
+                id       : busyIndicator
+                running  : true
+                Layout.alignment       : Qt.AlignHCenter
+                Layout.bottomMargin    : Kirigami.Units.gridUnit * 2
+                Layout.preferredHeight : Kirigami.Units.gridUnit * 6
+                Layout.preferredWidth  : Kirigami.Units.gridUnit * 6
+                Layout.topMargin       : Kirigami.Units.gridUnit * 1
             }
 
             Controls.Label {
