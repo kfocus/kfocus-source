@@ -22,8 +22,8 @@ Kirigami.ApplicationWindow {
     property string pageTitleText       : ''
     property string pageTitleImage      : ''
     property string imgDir              : 'assets/images/'
-    property var stateMatrix            : {}
-    property var checkMap               : {}
+    property var stateMatrix            : ({})
+    property var checkMap               : ({})
 
     // Purpose: Describes steps used in wizard
     // See property currentIndex
@@ -298,6 +298,9 @@ Kirigami.ApplicationWindow {
                 id : busyIndicator
                 running          : true
                 Layout.alignment : Qt.AlignHCenter
+                Layout.topMargin : Kirigami.Units.gridUnit * 5
+                Layout.preferredHeight : Kirigami.Units.gridUnit * 7
+                Layout.preferredWidth  : Kirigami.Units.gridUnit * 7
             }
 
             Controls.Label {
