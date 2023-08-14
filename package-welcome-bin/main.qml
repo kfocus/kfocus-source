@@ -53,7 +53,7 @@ Kirigami.ApplicationWindow {
          ListElement {
              jsId     : 'passwordManagerItem'
              task     : 'Password Manager'
-             taskIcon : 'lock'
+             taskIcon : 'password-copy'
          }
         ListElement {
             jsId     : 'emailCalendarItem'
@@ -285,13 +285,6 @@ Kirigami.ApplicationWindow {
                 Layout.topMargin       : Kirigami.Units.gridUnit * 1
             }
 
-            Kirigami.Heading {
-                id : topHeading
-                horizontalAlignment : Text.AlignHCenter
-                Layout.bottomMargin : Kirigami.Units.gridUnit
-                Layout.alignment    : Qt.AlignHCenter
-            }
-
             Controls.BusyIndicator {
                 id       : busyIndicator
                 running  : true
@@ -300,6 +293,13 @@ Kirigami.ApplicationWindow {
                 Layout.preferredHeight : Kirigami.Units.gridUnit * 6
                 Layout.preferredWidth  : Kirigami.Units.gridUnit * 6
                 Layout.topMargin       : Kirigami.Units.gridUnit * 1
+            }
+
+            Kirigami.Heading {
+                id : topHeading
+                horizontalAlignment : Text.AlignHCenter
+                Layout.bottomMargin : Kirigami.Units.gridUnit
+                Layout.alignment    : Qt.AlignHCenter
             }
 
             Controls.Label {
