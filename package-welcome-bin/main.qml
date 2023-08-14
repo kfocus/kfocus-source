@@ -1,3 +1,4 @@
+// vim: set syntax=javascript:
 import QtQuick 2.6
 import QtQuick.Controls 2.0 as Controls
 import QtQuick.Layouts 1.2
@@ -9,6 +10,7 @@ import startupdata 1.0
 Kirigami.ApplicationWindow {
     id: root
     title: 'Kubuntu Focus Welcome Wizard'
+    flags: Qt.WindowStaysOnTopHint
 
     // == BEGIN Models ================================================
     // Set Global Properties
@@ -22,8 +24,7 @@ Kirigami.ApplicationWindow {
     property string pageTitleText       : ''
     property string pageTitleImage      : ''
     property string imgDir              : 'assets/images/'
-    property var stateMatrix            : ({})
-    property var checkMap               : ({})
+    property var stateMatrix            : {}
 
     // Purpose: Describes steps used in wizard
     // See property currentIndex
@@ -334,8 +335,9 @@ Kirigami.ApplicationWindow {
                 text      : 'Clear Checkmarks'
                 icon.name : 'edit-clear-history'
                 onClicked : {
-                    Object.keys( checkMap ).forEach(
-                        ( key ) => { delete checkMap[ key ]; }
+                    const check_map = stateMatrix.check_map;
+                    Object.keys( check_map ).forEach(
+                        ( key ) => { delete check_map[ key ]; }
                     );
                     populateCheckboxesFn();
                 }
@@ -1463,9 +1465,10 @@ Kirigami.ApplicationWindow {
 
     function nextPageFn() {
         // Trigger the checkbox for the current page if applicable
-        let initialPageId = getCurrentPageIdFn();
+        const initialPageId = getCurrentPageIdFn();
+        const check_map = stateMatrix.check_map;
         if ( initialPageId !== 'finishItem' ) {
-            checkMap[initialPageId] = Date.now();
+            check_map[initialPageId] = Date.now();
             enabledSidebar.currentItem.trailing.source = 'checkbox';
             disabledSidebar.currentItem.trailing.source = 'checkbox';
         }
@@ -1557,12 +1560,13 @@ Kirigami.ApplicationWindow {
     }
 
     function populateCheckboxesFn () {
+        const check_map = stateMatrix.check_map;
         for ( var i = 0; i < sidebarModel.count; i++ ) {
             var js_id = sidebarModel.get( i ).jsId;
             for ( let target_obj of [ enabledSidebar, disabledSidebar ] ) {
                 var item_obj = target_obj.itemAtIndex(i);
                 if ( item_obj && typeof item_obj.trailing === 'object' ) {
-                    item_obj.trailing.source = ( checkMap[ js_id ] > 0 )
+                    item_obj.trailing.source = ( check_map[ js_id ] > 0 )
                       ? 'checkbox' : '';
                 }
             }
@@ -1618,15 +1622,19 @@ Kirigami.ApplicationWindow {
             catch (e) {
                 console.warn( 'Trouble parsing setMap:', e, stdout );
             }
+
+            // Ensure we have a stateMatrix object
             if ( typeof setMap === 'object' ) {
                 stateMatrix = setMap;
             }
-            if ( typeof stateMatrix.check_map === 'object' ) {
-                checkMap = stateMatrix.check_map;
+            // ... else use the default set on init
+
+            // Ensure we have a check_map object
+            if ( typeof stateMatrix.check_map !== 'object' ) {
+                stateMatrix.check_map = {};
             }
-            else {
-                stateMatrix.check_map = checkMap;
-            }
+            // ... else use whatever object was already there
+
             populateCheckboxesFn();
         }
    }
@@ -1750,8 +1758,7 @@ Kirigami.ApplicationWindow {
 
     // Kick-off rendering on completion
     Component.onCompleted: {
-        stateMatrix = {};
-        checkMap    = {};
+        stateMatrix = { check_map: {} }; // Default stateMatrix
         if ( systemDataMap.cryptDiskList.length === 0 ) {
             removeSidebarItemFn('diskPassphraseItem');
         }
