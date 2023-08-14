@@ -10,7 +10,6 @@ import startupdata 1.0
 Kirigami.ApplicationWindow {
     id: root
     title: 'Kubuntu Focus Welcome Wizard'
-    flags: Qt.WindowStaysOnTopHint
 
     // == BEGIN Models ================================================
     // Set Global Properties
@@ -289,7 +288,6 @@ Kirigami.ApplicationWindow {
 
             Kirigami.Heading {
                 id : topHeading
-
                 horizontalAlignment : Text.AlignHCenter
                 Layout.bottomMargin : Kirigami.Units.gridUnit
                 Layout.alignment    : Qt.AlignHCenter
@@ -299,7 +297,7 @@ Kirigami.ApplicationWindow {
                 id : busyIndicator
                 running          : true
                 Layout.alignment : Qt.AlignHCenter
-                Layout.topMargin : Kirigami.Units.gridUnit * 5
+                Layout.topMargin : Kirigami.Units.gridUnit * 1 
                 Layout.preferredHeight : Kirigami.Units.gridUnit * 7
                 Layout.preferredWidth  : Kirigami.Units.gridUnit * 7
             }
@@ -740,14 +738,18 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'diskPassphraseCheckerItem':
-            initPage([topHeading, busyIndicator]);
+            initPage([topHeading, busyIndicator, primaryText]);
 
-            pageTitleText   = getCryptDiskTextFn('Disk Passphrase',
-                                systemDataMap.cryptDiskList);
+            pageTitleText   = getCryptDiskTextFn(
+              'Disk Passphrase', systemDataMap.cryptDiskList
+            );
             pageTitleImage  = imgDir + 'encrypted_drive.svg';
-            topHeading.text
-              = 'Checking Disk Encryption Security.\n'
-              + 'You may have to provide your user password multiple times.';
+            topHeading.text = 'Checking Disk Encryption Security...';
+            primaryText.text
+              = '<b>You will be prompted</b> to enter your password '
+              + 'at least once for each encrypted disk. Once the check '
+              + 'is complete, you will be directed on the recommended '
+              + 'course of action.';
             regenUiFn( baseTemplatePage, false );
             break;
 
