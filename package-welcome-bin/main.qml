@@ -752,6 +752,30 @@ Kirigami.ApplicationWindow {
             regenUiFn( baseTemplatePage, false );
             break;
 
+        case 'pkexecDeclineCryptCheckItem':
+            initPage([
+              headerHighlightRect, interTopHeading,
+              instructionsText,    pictureColumn,
+              interActionButton,   interSkipButton
+            ]);
+
+            pageTitleText = getCryptDiskTextFn('Disk Passphrase',
+                              systemDataMap.cryptDiskList);
+            pageTitleImage = imgDir + 'encrypted_drive.svg';
+            headerHighlightRect.color = '#ff9900';
+            interTopHeading.text
+              = 'Authorization Declined';
+            instructionsText.text
+              = '<b>Sorry, authorization is required to check disk '
+              + 'passphrases for security.</b> You can try again, or skip '
+              + 'this step.';
+            interActionButton.text = 'Try Again';
+            interActionButton.icon.name = 'arrow-right';
+            interImageList = [ 'locked.svg' ];
+            actionName = 'checkCrypt';
+            regenUiFn( interTemplatePage, false );
+            break;
+
         case 'diskPassphraseChangeInProgressItem':
             initPage([topHeading, busyIndicator]);
 
@@ -1582,17 +1606,15 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id          : handleDefaultCryptListEngine
         onAppExited : {
-            defaultCryptList = stdout.split('\n');
-            //
-            // TODO
-            // if ( errorCode > 0 ) {
-            //   // Display bad password dialog here
-            // }
-            //
-            if ( defaultCryptList.length > 0 ) {
-                switchPageFn( 'diskPassphraseChangeItem' );
+            if ( exitCode > 0 ) {
+                switchPageFn( 'pkexecDeclineCryptCheckItem' );
             } else {
-                switchPageFn( 'diskPassphraseGoodItem' );
+                defaultCryptList = stdout.split('\n');
+                if ( defaultCryptList.length > 0 ) {
+                    switchPageFn( 'diskPassphraseChangeItem' );
+                } else {
+                    switchPageFn( 'diskPassphraseGoodItem' );
+                }
             }
         }
     }
