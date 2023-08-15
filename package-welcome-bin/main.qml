@@ -455,18 +455,17 @@ Kirigami.ApplicationWindow {
             }
 
             Controls.Button {
+                id        : interActionButton
+                onClicked : {
+                    takeActionFn();
+                }
+            }
+            Controls.Button {
                 id        : interSkipButton
                 text      : 'No Thanks'
                 icon.name : 'go-next-skip'
                 onClicked : {
                     nextPageFn();
-                }
-            }
-
-            Controls.Button {
-                id        : interActionButton
-                onClicked : {
-                    takeActionFn();
                 }
             }
         }
@@ -600,18 +599,18 @@ Kirigami.ApplicationWindow {
             }
 
             Controls.Button {
+                id        : cryptActionButton
+                onClicked : {
+                    takeActionFn();
+                }
+            }
+
+            Controls.Button {
                 id        : cryptSkipButton
                 text      : 'No Thanks'
                 icon.name : 'go-next-skip'
                 onClicked : {
                     nextPageFn();
-                }
-            }
-
-            Controls.Button {
-                id        : cryptActionButton
-                onClicked : {
-                    takeActionFn();
                 }
             }
         }
