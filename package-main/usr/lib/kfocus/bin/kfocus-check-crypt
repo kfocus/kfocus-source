@@ -150,7 +150,7 @@ _modifyDiskPassFn () {
       continue;
     fi
 
-    if { echo "${_defaultStr}"$'\n'; echo "${_new_pass}"; echo "${_new_pass}"; } \
+    if { echo "${_defaultStr}"; echo "${_new_pass}"; echo "${_new_pass}"; } \
      | "${_escExe}" cryptsetup luksChangeKey "${_dev_str}"; then
        true;
     else

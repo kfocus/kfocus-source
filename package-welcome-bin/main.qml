@@ -1714,7 +1714,7 @@ Kirigami.ApplicationWindow {
                       systemDataMap.binDir
                       + 'kfocus-check-crypt -m '
                       + defaultCryptList.join(' '),
-                      + newPassphraseBox.text + '\n' );
+                      newPassphraseBox.text + '\n' );
                     switchPageFn( 'diskPassphraseChangeInProgressItem' );
                 }
             } else {
