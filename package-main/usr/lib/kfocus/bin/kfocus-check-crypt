@@ -97,7 +97,11 @@ _getDefaultCryptList () {
     fi
   done
 
-  ( IFS=$'\n'; echo "${_default_list[*]}"; )
+  if [ "${#_default_list[@]}" != 0 ]; then
+    ( IFS=$'\n'; echo "${_default_list[*]}"; )
+  else
+    echo -n;
+  fi
 }
 ## . END _getDefaultCryptList
 
