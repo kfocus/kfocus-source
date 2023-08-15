@@ -45,11 +45,13 @@ int main(int argc, char *argv[])
 
     // Late system info gathering
     ShellEngine encryptedDiskFinder;
-    encryptedDiskFinder.execSync(dat.binDir() + "kfocus-check-crypt -q");
-    // TODO: HOT - check for non-zero exit status
+    int encryptedDiskFinderExitCode = encryptedDiskFinder.execSync(dat.binDir() + "kfocus-check-crypt -q");
+    if (encryptedDiskFinderExitCode != 0) {
+        qWarning() << "Failed to search for encrypted disks, exiting.";
+        return 1;
+    }
     QStringList cryptDisks(encryptedDiskFinder.stdout().split('\n'));
-
-    // TODO: HOT - is this still relevant?
+    // The newline following the last entry creates an "extra" blank entry that needs to be removed
     cryptDisks.removeLast();
     dat.setCryptDiskList(cryptDisks);
 
