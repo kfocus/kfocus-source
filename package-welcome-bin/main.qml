@@ -19,11 +19,11 @@ Kirigami.ApplicationWindow {
     property int disabledSidebarIndex   : 0
     property bool firstRun              : true
     property var interImageList         : []
-    property var defaultPassphraseDisks : []
+    property var defaultCryptList       : []
     property string pageTitleText       : ''
     property string pageTitleImage      : ''
     property string imgDir              : 'assets/images/'
-    property var stateMatrix            : {}
+    property var stateMatrix            : ({})
 
     // Purpose: Describes steps used in wizard
     // See property currentIndex
@@ -773,15 +773,15 @@ Kirigami.ApplicationWindow {
             cryptTopHeading.text
               = 'Change Passphrase for '
               + getCryptDiskTextFn('One Encrypted Disk',
-                  defaultPassphraseDisks);
+                  defaultCryptList);
             cryptInstructionsText.text
               = '<b>'
               + getCryptDiskTextFn('One disk is',
-                  defaultPassphraseDisks)
+                  defaultCryptList)
               + ' using the default passphrase.</b> This is insecure, '
               + 'and we recommend you use the form below to change '
               + getCryptDiskTextFn('it',
-                  defaultPassphraseDisks)
+                  defaultCryptList)
               + ' to a unique passphrase. <b>IMPORTANT:</b> All disks using '
               + 'the default passphrase will be changed to use the new '
               + 'passphrase.</b>'
@@ -1581,10 +1581,16 @@ Kirigami.ApplicationWindow {
 
     // Check all encrypted disks for the default passphrase
     ShellEngine {
-        id          : cryptDiskCheckerEngine
+        id          : handleDefaultCryptListEngine
         onAppExited : {
-            defaultPassphraseDisks = stdout.split('\n').slice(0, -1);
-            if ( exitCode > 0 ) {
+            defaultCryptList = stdout.split('\n');
+            //
+            // TODO
+            // if ( errorCode > 0 ) {
+            //   // Display bad password dialog here
+            // }
+            //
+            if ( defaultCryptList.length > 0 ) {
                 switchPageFn( 'diskPassphraseChangeItem' );
             } else {
                 switchPageFn( 'diskPassphraseGoodItem' );
@@ -1594,7 +1600,7 @@ Kirigami.ApplicationWindow {
 
     // Changes the passphrase on all encrypted disks that use the default
     ShellEngine {
-        id          : cryptDiskChangeEngine
+        id          : handleCryptoChangeEngine
         onAppExited : {
             switchPageFn( 'diskPassphraseGoodItem' );
         }
@@ -1662,9 +1668,9 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'checkCrypt':
-            cryptDiskCheckerEngine.exec(
+            handleDefaultCryptListEngine.exec(
               systemDataMap.binDir + 'kfocus-check-crypt -c '
-              + systemDataMap.cryptDiskList.join( ' ' ) );
+            );
             switchPageFn( 'diskPassphraseCheckerItem' );
             break;
 
@@ -1675,11 +1681,10 @@ Kirigami.ApplicationWindow {
                       = 'No passphrase was entered. Please try again.';
                     cryptErrorMessage.visible = true;
                 } else {
-                    cryptDiskChangeEngine.exec(
+                    handleCryptoChangeEngine.exec(
                       systemDataMap.binDir
                       + 'kfocus-check-crypt -m '
-                      + defaultPassphraseDisks.join(' '),
-                      'kubuntu\n'
+                      + defaultCryptList.join(' '),
                       + newPassphraseBox.text + '\n' );
                     switchPageFn( 'diskPassphraseChangeInProgressItem' );
                 }

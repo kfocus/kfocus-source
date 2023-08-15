@@ -46,7 +46,10 @@ int main(int argc, char *argv[])
     // Late system info gathering
     ShellEngine encryptedDiskFinder;
     encryptedDiskFinder.execSync(dat.binDir() + "kfocus-check-crypt -q");
+    // TODO: HOT - check for non-zero exit status
     QStringList cryptDisks(encryptedDiskFinder.stdout().split('\n'));
+
+    // TODO: HOT - is this still relevant?
     cryptDisks.removeLast();
     dat.setCryptDiskList(cryptDisks);
 

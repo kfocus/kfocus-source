@@ -27,24 +27,30 @@ _importCommonFn () {
 }
 ## . END _importCommonFn
 
-# BEGIN _setCryptListFn
-# Summary   : _setCryptListFn
+## BEGIN _populateCryptListFn
+# Summary   : _populateCryptListFn
 # Purpose   : Populate _cryptList which contains all disk device
 #             paths that appear to contain a LUKS encrypted filesystem
-# Returns   : 0 if success, non-zero on failure
-_setCryptListFn () {
-  mapfile -t _cryptList < <(
-    grep 'TYPE="crypto_LUKS"' <<<"
-    $("${_escExe}" "${_setExe}" echo-blkid)" \
-    | cut -f1 -d':'
-  );
+# Returns   : 0 on success
+# Exits     : 127 bad or cancelled password with pkexec (XDG_SESSION_TYPE=x11)
+#           :   1 bad or cancelled password with sudo   (XDG_SESSION_TYPE=tty)
+#
+_populateCryptListFn () {
+  declare _blkid_str _filter_str;
+  if _blkid_str="$("${_escExe}" "${_setExe}" echo-blkid)"; then
+    _filter_str="$(grep 'TYPE="crypto_LUKS"' <<<"${_blkid_str}" |cut -f1 -d':')";
+    mapfile -t _cryptList <<<"${_filter_str}";
+  else
+    exit; # inherits error code from above (127 or 1)
+  fi
 }
-# . END _setCryptListFn
+## . END _populateCryptListFn
 
-# BEGIN _checkDiskPassFn
+## BEGIN _checkDiskPassFn
 # Summary   : _checkDiskPassFn diskPart1
 # Purpose   : Checks disk partition for the default passphrase
-# Returns   : 0 if success, non-zero on failure
+# Returns   : 0 if success, 2 if non-matching passphrase;
+#             127 on pkexec auth error, 1 on sudo auth error.
 #
 _checkDiskPassFn() {
   declare _disk_str;
@@ -59,117 +65,152 @@ _checkDiskPassFn() {
     luksOpen --test-passphrase "${_disk_str}" \
     <<< "${_defaultStr}" 1>&2 2>/dev/null;
 }
-# . END _checkDiskPassFn
+## . END _checkDiskPassFn
 
-# BEGIN _checkDisksForDefaultPassFn
-# Summary   : _checkDisksForDefaultPassFn
-# Purpose   : Checks disk partitions for the default passphrase.
-# Example   : _checkDisksForDefaultPassFn /dev/nvme0n1p3
-# Arguments : One or more device nodes, each of which points to a crypto_LUKS
-#             partition
-# Stdout    : An IFS delimited list of disk devices that were tried and failed.
-#             A blank string if all disks passed.
-# Returns   : An integer representing the number of partitions found that use
-#             the default passphrase.
-_checkDisksForDefaultPassFn () {
-  declare _fail_list _disk_str _fail_list_item;
+## == BEGIN PUBLIC METHODS ============================================
+## BEGIN _getDefaultCryptList
+# Summary   : _getDefaultCryptList
+# Purpose   : Find disk partitions that use the default passphrase.
+# Example   : _getDefaultCryptList /dev/nvme0n1p3
+# Arguments : One or more device nodes, each of which points to a
+#             crypto_LUKS partition
+# Stdout    : A list of devices that do not pass passphrase check,
+#             one per line. A blank string if all disks passed.
+# Returns   : 0
+# Exits     : 1 (sudo/tty) or 127 (pkexec/x11) on bad auth.
+#
+_getDefaultCryptList () {
+  declare _default_list _device_str _error_code;
+  _default_list=();
 
-  _setCryptListFn;
-  _fail_list=();
-
-  for _disk_str in "${_cryptList[@]}"; do
-    if _checkDiskPassFn "${_disk_str}"; then
-      _fail_list+=( "${_disk_str}" );
+  for _device_str in "${_cryptList[@]}"; do
+    if _checkDiskPassFn "${_device_str}"; then
+      _default_list+=( "${_device_str}" );
+    else
+      _error_code="$?";
+      if [ "${_error_code}" = '127' ] || [ "${_error_code}" = '1' ]; then
+        exit "${_error_code}";
+      else
+        # The return value is 2 if password does not work
+        true;
+      fi
     fi
   done
 
-  for _fail_list_item in "${_fail_list[@]}"; do
-    echo "$_fail_list_item";
-  done
-  return "${#_fail_list[@]}";
+  ( IFS=$'\n'; echo "${_default_list[*]}"; )
 }
-# . END _checkDisksForDefaultPassFn
+## . END _getDefaultCryptList
 
-# BEGIN _modifyDisksPassFn
-# Summary   : _modifyDisksPassFn diskPart1 [diskPart2...]
-# Purpose   : Changes a batch of disks that use the same passphrase to use a
-#             new passphrase.
-# Example   : _modifyDisksPassFn /dev/nvme0n1p3 /dev/nvme1n1p1
-# Arguments : One or more device notes, each of which points to a crypto_LUKS
-#             partition. Additionally, reads the old passphrase and new
-#             passphrase from stdin.
-# Stdout    : An IFS delimited list of disk devices that were tried and failed.
-#             A blank string if all disks passed.
-# Exit      : 0 or the number of failed disks.
-# Notes     : This function calls "exit", so if you run it, the script *will*
-#             terminate before running anything after it.
-_modifyDisksPassFn() {
-  declare _update_list _fail_list _old_pass _new_pass _disk_str;
+## BEGIN _modifyDiskPassFn
+# Summary   : _modifyDiskPassFn diskPart1 [diskPart2...]
+# Purpose   : Changes one or more disks that use the same passphrase
+#             to use a new passphrase.
+# Example   : _modifyDiskPassFn /dev/nvme0n1p3 /dev/nvme1n1p1
+# Arguments : One or more device notes, each of which points to a
+#             crypto_LUKS partition. Additionally, reads the old
+#             passphrase and new passphrase from stdin.
+# Stdout    : A list of disk devices that were tried and failed, one
+#             per line. A blank string if all disks passed.
+# Returns   : 0 or the number of failed disks.
+# Notes     : Only disks in "${_cryptList[@]}" are considered.
+#             Devices provided not in this list are discarded.
+#
+_modifyDiskPassFn () {
+  declare _update_dev_list _fail_list \
+    _new_pass _grep_str _dev_str;
 
-  _update_list=( "$@" );
+  _update_dev_list=("$@");
   _fail_list=();
 
-  read -r -s _old_pass;
+  if [ -z  "${_update_dev_list[*]}" ]; then
+    _cm2WarnStrFn "${_baseName}: Missing arguments.";
+    exit 201;
+  fi
+
   read -r -s _new_pass;
 
-  for _disk_str in "${_update_list[@]}"; do
-    if ! [ -b "${_disk_str}" ]; then
-      _cm2WarnStrFn "${_baseName}: Ignore ${_disk_str}: not a block device.";
+  if [ -z "${_new_pass}" ]; then
+    _cm2WarnStrFn "${_baseName}: Missing arguments.";
+    exit 201;
+  fi
+
+  _grep_str="$( IFS=$'\n'; echo "${_cryptList[*]}" )";
+  for _dev_str in "${_update_dev_list[@]}"; do
+    if ! [ -b "${_dev_str}" ]; then
+      _cm2WarnStrFn "${_baseName}: Ignore ${_dev_str}: not a block device.";
       continue;
     fi
 
-    if { echo "${_old_pass}"; echo "${_new_pass}"; echo "${_new_pass}"; } \
-     | "${_escExe}" cryptsetup luksChangeKey "${_disk_str}"; then
+    if ! grep -q "${_dev_str}" <<< "${_grep_str}"; then
+      _cm2WarnStrFn "${_baseName}: Ignore ${_dev_str}: not in crypt list.";
+      continue;
+    fi
+
+    if { echo "${_defaultStr}"$'\n'; echo "${_new_pass}"; echo "${_new_pass}"; } \
+     | "${_escExe}" cryptsetup luksChangeKey "${_dev_str}"; then
        true;
     else
-      _fail_list+=( "${_disk_str}" );
+      _fail_list+=( "${_dev_str}" );
     fi
   done
 
   echo "${_fail_list[@]}";
   return "${#_fail_list[@]}";
 }
-# . END _modifyDisksPassFn
+## . END _modifyDisksPassFn
 
-# BEGIN MAIN
+## BEGIN _echoCryptListFn
+# Summary   : _echoCryptListFn;
+# Purpose   : Echo all 'TYPE="crypto_LUKS"' disks on the system.
+# Example   : _echoCryptListFn;
+# Arguments : none.
+# Stdout    : List of disk devices, one per line.
+# Returns   : 0
+#
+_echoCryptListFn () {
+  if [ "${#_cryptList[@]}" != "0" ]; then
+    ( IFS=$'\n'; echo "${_cryptList[*]}" );
+  else
+    echo -n;
+  fi
+  return 0;
+}
+## . END _queryCryptListFn
+## == . END PUBLIC METHODS ============================================
+
+## BEGIN MAIN
 _mainFn () {
-  declare _cmd_str _crypt_list_item;
+  declare _cmd_str;
 
+  # Populate crypto disk list.
+  #   Exit 1 (sudo/tty) or 127 (pkexec/x11) on bad auth.
+  _populateCryptListFn;
+
+  ## Begin Dispatch to command
   _cmd_str="${1:-}";
-
-  ## Begin Parse mode argument (if it exists)
   case "${_cmd_str}" in
     '-c')
-      _checkDisksForDefaultPassFn;
-      return;;
+      _getDefaultCryptList;;
     '-m')
       shift;
-      _modifyDisksPassFn "$@";
-      return;;
+      _modifyDiskPassFn "$@";;
     '-q')
-      _setCryptListFn;
-      if [ "${#_cryptList[@]}" != "0" ]; then
-        for _crypt_list_item in "${_cryptList[@]}"; do
-          echo "$_crypt_list_item";
-        done
-      else
-        echo -n;
-      fi
-      return;;
+      _echoCryptListFn;;
     *)
       _cm2ErrStrFn 'No directive specified';
-      return 1;;
+      exit 201;;
   esac;
-  ## . End Parse mode argument
+  ## . End Dispatch to command
+  exit; # Raw exit to propagate above return values
 }
-# . END MAIN
+## . END MAIN
 
-# BEGIN Declare and set global vars
-declare _defaultStr _escExe _cryptList;
+## BEGIN Declare and set global vars
+declare _defaultStr _escExe _cryptList _setExe;
 _defaultStr="$(echo 6b7562756e74750a |xxd -r -p)";
 # . END Declare and set global vars
 
-# BEGIN Run main if script is not sourced
+## BEGIN Run main if script is not sourced
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binName="$(  readlink -f "$0"       )" || exit 101;
   _binDir="$(   dirname  "${_binName}" )" || exit 101;
@@ -187,4 +228,6 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   _mainFn "$@";
 fi
-# . END Run main if script is not sourced
+## . END Run main if script is not sourced
+
+
