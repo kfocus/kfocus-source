@@ -767,8 +767,11 @@ Kirigami.ApplicationWindow {
               = 'Authorization Declined';
             instructionsText.text
               = '<b>Sorry, authorization is required to check disk '
-              + 'passphrases for security.</b> You can try again, or skip '
-              + 'this step.';
+              + 'passphrases for security.</b> If you would like to check '
+              + 'your '
+              + getCryptDiskTextFn( 'disk\'s passphrase',
+                  systemDataMap.cryptDiskList)
+              + ' for security, click "Try Again".';
             interActionButton.text = 'Try Again';
             interActionButton.icon.name = 'arrow-right';
             interImageList = [ 'locked.svg' ];
@@ -1555,6 +1558,9 @@ Kirigami.ApplicationWindow {
 
             case 'Disk Encryption Passphrase Appears':
                 return 'Disk Encryption Passphrases Appear';
+
+            case 'disk\'s passphrase':
+                return 'disk passphrases';
             }
         }
     }
