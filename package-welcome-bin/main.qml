@@ -1609,7 +1609,9 @@ Kirigami.ApplicationWindow {
             if ( exitCode > 0 ) {
                 switchPageFn( 'pkexecDeclineCryptCheckItem' );
             } else {
-                defaultCryptList = stdout.split('\n');
+                // The newline following the last entry creates an "extra" blank entry that needs to be removed
+                defaultCryptList = stdout.split('\n').slice(0, -1);;
+
                 if ( defaultCryptList.length > 0 ) {
                     switchPageFn( 'diskPassphraseChangeItem' );
                 } else {
