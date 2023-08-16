@@ -121,7 +121,7 @@ _getDefaultCryptList () {
 #
 _modifyDiskPassFn () {
   declare _update_dev_list _fail_list \
-    _new_pass _grep_str _dev_str _auth_provided_flag;
+    _new_pass _grep_str _dev_str;
 
   _update_dev_list=("$@");
   _fail_list=();
@@ -150,20 +150,12 @@ _modifyDiskPassFn () {
       continue;
     fi
 
-    _auth_provided_flag="1";
-
-    while [ "${_auth_provided_flag}" != "0" ]; do
-      _auth_provided_flag="1";
-      if { echo "${_defaultStr}"; echo "${_new_pass}"; echo "${_new_pass}"; } \
-       | "${_escExe}" cryptsetup luksChangeKey "${_dev_str}"; then
-         _auth_provided_flag="0";
-      else
-        if [ "$?" != "127" ]; then
-          _auth_provided_flag="0";
-          _fail_list+=( "${_dev_str}" );
-        fi
-      fi
-    done
+    if { echo "${_defaultStr}"; echo "${_new_pass}"; echo "${_new_pass}"; } \
+     | "${_escExe}" cryptsetup luksChangeKey "${_dev_str}"; then
+       true;
+    else
+      _fail_list+=( "${_dev_str}" );
+    fi
   done
 
   echo "${_fail_list[@]}";
