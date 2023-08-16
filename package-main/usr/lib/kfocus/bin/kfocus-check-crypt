@@ -194,8 +194,8 @@ _echoCryptListFn () {
 _exitIfNotRootFn () {
   if [ "$(id -u)" != 0 ]; then
     _cm2ErrStrFn "Please run as root: ${_escExe} ./${_baseName} $*";
+    exit 202;
   fi
-  exit 202;
 }
 
 ## BEGIN MAIN
