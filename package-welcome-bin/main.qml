@@ -1683,8 +1683,9 @@ Kirigami.ApplicationWindow {
 
         case 'checkCrypt':
             handleDefaultCryptListEngine.exec(
-              systemDataMap.binDir + 'kfocus-check-crypt -c '
-            );
+              'pkexec '
+              + systemDataMap.binDir
+              + 'kfocus-check-crypt -c ' );
             switchPageFn( 'diskPassphraseCheckerItem' );
             break;
 
@@ -1696,7 +1697,8 @@ Kirigami.ApplicationWindow {
                     cryptErrorMessage.visible = true;
                 } else {
                     handleCryptoChangeEngine.exec(
-                      systemDataMap.binDir
+                      'pkexec '
+                      + systemDataMap.binDir
                       + 'kfocus-check-crypt -m '
                       + defaultCryptList.join(' '),
                       newPassphraseBox.text + '\n' );
