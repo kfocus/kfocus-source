@@ -526,49 +526,77 @@ Kirigami.ApplicationWindow {
 
             GridLayout {
                 id      : passphraseChangeForm
-                columns : 3
 
                 Layout.alignment    : Qt.AlignHCenter
                 Layout.bottomMargin : Kirigami.Units.gridUnit
 
                 Controls.Label {
-                    text             : 'New passphrase'
+                    id               : oldPassphraseLabel
+                    text             : 'Old passphrase'
                     Layout.alignment : Qt.AlignRight
+                    Layout.row       : 0
+                    Layout.column    : 0
                 }
 
                 Controls.TextField {
-                    id       : newPassphraseBox
-                    echoMode : TextInput.Password
+                    id            : oldPassphraseBox
+                    echoMode      : TextInput.Password
+                    Layout.row    : 0
+                    Layout.column : 1
+                }
+
+                Controls.Label {
+                    text             : 'New passphrase'
+                    Layout.alignment : Qt.AlignRight
+                    Layout.row       : 1
+                    Layout.column    : 0
+                }
+
+                Controls.TextField {
+                    id            : newPassphraseBox
+                    echoMode      : TextInput.Password
+                    Layout.row    : 1
+                    Layout.column : 1
+                }
+
+                Controls.Label {
+                    text             : 'Confirm new passphrase'
+                    Layout.alignment : Qt.AlignRight
+                    Layout.row       : 2
+                    Layout.column    : 0
+                }
+
+                Controls.TextField {
+                    id            : confirmPassphraseBox
+                    echoMode      : TextInput.Password
+                    Layout.row    : 2
+                    Layout.column : 1
                 }
 
                 Controls.Button {
-                    id        : newPassphrasePeekButton
-                    icon.name : 'password-show-off'
-                    onClicked : {
+                    id            : passphrasePeekButton
+                    icon.name     : 'password-show-off'
+                    Layout.row    : 2
+                    Layout.column : 2
+                    onClicked: {
                         if ( this.icon.name === 'password-show-off' ) {
                             this.icon.name = 'password-show-on';
+                            oldPassphraseBox.echoMode
+                              = TextInput.Normal;
                             newPassphraseBox.echoMode
                               = TextInput.Normal;
                             confirmPassphraseBox.echoMode
                               = TextInput.Normal;
                         } else {
                             this.icon.name = 'password-show-off';
+                            oldPassphraseBox.echoMode
+                              = TextInput.Password;
                             newPassphraseBox.echoMode
                               = TextInput.Password;
                             confirmPassphraseBox.echoMode
                               = TextInput.Password;
                         }
                     }
-                }
-
-                Controls.Label {
-                    text : 'Confirm new passphrase'
-                    Layout.alignment: Qt.AlignRight
-                }
-
-                Controls.TextField {
-                    id       : confirmPassphraseBox
-                    echoMode : TextInput.Password
                 }
             }
 
@@ -729,10 +757,9 @@ Kirigami.ApplicationWindow {
             pageTitleImage  = imgDir + 'encrypted_drive.svg';
             topHeading.text = 'Checking Disk Encryption Security...';
             primaryText.text
-              = '<b>You will be prompted</b> to enter your password '
-              + 'at least once for each encrypted disk. Once the check '
-              + 'is complete, you will be directed on the recommended '
-              + 'course of action.';
+              = '<b>You will be prompted</b> to enter your password. Once '
+              + 'the check is complete, you will be directed on the '
+              + 'recommended course of action.';
             regenUiFn( baseTemplatePage, false );
             break;
 
@@ -770,14 +797,16 @@ Kirigami.ApplicationWindow {
                                 systemDataMap.cryptDiskList);
             pageTitleImage  = imgDir + 'encrypted_drive.svg';
             topHeading.text
-              = 'Changing Disk Passphrases.\n'
-              + 'You may have to provide your user password multiple times.';
+              = 'Changing Disk Passphrases...\n'
             regenUiFn( baseTemplatePage, false );
             break;
 
         case 'diskPassphraseChangeItem':
-            pageTitleText            = getCryptDiskTextFn('Disk Passphrase',
-                                         systemDataMap.cryptDiskList);
+            oldPassphraseLabel.visible = false;
+            oldPassphraseBox.visible   = false;
+
+            pageTitleText            = getCryptDiskTextFn( 'Disk Passphrase',
+                                         systemDataMap.cryptDiskList );
             pageTitleImage           = imgDir + 'encrypted_drive.svg';
             cryptHighlightRect.color = '#ff9900';
             cryptTopHeading.text
@@ -795,6 +824,7 @@ Kirigami.ApplicationWindow {
               + ' to a unique passphrase. <b>IMPORTANT:</b> All disks using '
               + 'the default passphrase will be changed to use the new '
               + 'passphrase.</b>'
+              ;
             cryptSecondaryText.text
               = '<b>Please keep a copy of '
               + 'your passphrase</b> in a safe place. If this is lost, '
@@ -816,7 +846,7 @@ Kirigami.ApplicationWindow {
             initPage([
               headerHighlightRect, interTopHeading,
               instructionsText,    pictureColumn,
-              interActionButton
+              interActionButton,   interSkipButton
             ]);
 
             pageTitleText             = getCryptDiskTextFn('Disk Passphrase',
@@ -831,7 +861,11 @@ Kirigami.ApplicationWindow {
             instructionsText.text
               = '<b>' + getCryptDiskTextFn( 'The encrypted disk uses',
                           systemDataMap.cryptDiskList )
-              + ' a unique passphrase.</b><br>'
+              + ' a unique passphrase.</b> We recommend that you don\'t '
+              + 'change your disk '
+              + getCryptDiskTextFn( 'passphrase',
+                  systemDataMap.cryptDiskList )
+              + ', but if you would like to anyway, you may.<br>'
               + '<br>'
               + '<b>Please keep a copy of your passphrase in a safe '
               + 'place.</b> If this is lost, there is no recovery '
@@ -841,10 +875,42 @@ Kirigami.ApplicationWindow {
               + '<b>For your security, the Kubuntu Focus Team does NOT '
               + 'install tools</b> that could assist in any recovery.'
               ;
-            interActionButton.text      = 'Continue';
+            interActionButton.text      = 'Change Passphrases Anyway';
             interActionButton.icon.name = 'arrow-right';
-            actionName                  = 'nextPage';
+            actionName                  = 'changePassphrasesAnyway';
             regenUiFn( interTemplatePage, false) ;
+            break;
+
+        case 'diskPassphraseChangeAnywayItem':
+            oldPassphraseLabel.visible = true;
+            oldPassphraseBox.visible   = true;
+
+            pageTitleText            = getCryptDiskTextFn( 'Disk Passphrase',
+                                         systemDataMap.cryptDiskList );
+            pageTitleImage           = imgDir + 'encrypted_drive.svg';
+            cryptHighlightRect.color = '#27ae60';
+            cryptTopHeading.text     = 'Change Disk Passphrases';
+            cryptInstructionsText.text
+              = '<b> Please enter the old passphrase of the disk(s) you want '
+              + 'to modify.</b> Then provide the passphrase you would like '
+              + 'to use instead. <b>All disks using the specified old '
+              + 'passphrase will be modified to use the new one.<br>'
+              ;
+            cryptSecondaryText.text
+              = '<b>Please keep a copy of '
+              + 'your passphrase</b> in a safe place. If this is lost, '
+              + 'there is no recovery except to reformat your disks '
+              + 'and restore from backup.<br>'
+              + '<br>'
+              + '<b>For your security</b>, the Kubuntu Focus Team does NOT '
+              + 'install tools that could assist in any recovery. '
+              + 'In other words, if you lose your password, they have no '
+              + 'way to help you recover it!'
+              ;
+            cryptActionButton.text      = 'Continue';
+            cryptActionButton.icon.name = 'arrow-right';
+            actionName                  = 'changeCryptNonDefault';
+            regenUiFn( cryptTemplatePage, false );
             break;
 
         case 'extraSoftwareItem':
@@ -1616,6 +1682,10 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id          : handleCryptoChangeEngine
         onAppExited : {
+            /*
+             * TODO: HOT: Check stdout here and let the user know how many
+             * disks were successfully changed
+             */
             switchPageFn( 'diskPassphraseGoodItem' );
         }
     }
@@ -1710,6 +1780,16 @@ Kirigami.ApplicationWindow {
                     + 'match. Please try again.';
                 cryptErrorMessage.visible = true;
             }
+            break;
+
+        case 'changePassphrasesAnyway':
+            switchPageFn( 'diskPassphraseChangeAnywayItem' );
+            break;
+
+        case 'changeCryptNonDefault':
+            // TODO: HOT: This needs extra support in kfocus-check-crypt
+            console.log( 'changeCryptNonDefault UNIMPLEMENTED' );
+            switchPageFn( 'diskPassphraseGoodItem' );
             break;
 
         case 'installExtraSoftware':
