@@ -1787,9 +1787,36 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'changeCryptNonDefault':
-            // TODO: HOT: This needs extra support in kfocus-check-crypt
-            console.log( 'changeCryptNonDefault UNIMPLEMENTED' );
-            switchPageFn( 'diskPassphraseGoodItem' );
+            if ( newPassphraseBox.text === confirmPassphraseBox.text ) {
+                if ( newPassphraseBox.text === "" ) {
+                    cryptErrorMessage.text
+                      = 'No passphrase was entered. Please try again.';
+                    cryptErrorMessage.visible = true;
+                } else if ( oldPassphraseBox.text == "" ) {
+                    /* TODO: Do we really want to do this? What if the user is
+                     * trying to change away from a blank passphrase? */
+                    cryptErrorMessage.text
+                      = 'The old passphrase was not entered. Please try again.';
+                    cryptErrorMessage.visible = true;
+                } else {
+                    handleCryptoChangeEngine.exec(
+                      'pkexec '
+                      + systemDataMap.binDir
+                      + 'kfocus-check-crypt -r '
+                      + systemDataMap.cryptDiskList.join(' '),
+                      oldPassphraseBox.text
+                      + '\n'
+                      + newPassphraseBox.text
+                      + '\n' );
+                    switchPageFn( 'diskPassphraseChangeInProgressItem' );
+                }
+            } else {
+                cryptErrorMessage.text
+                  = 'The provided passphrases do not match. Please try '
+                  + 'again.';
+                cryptErrorMessage.visible = true;
+            }
+
             break;
 
         case 'installExtraSoftware':

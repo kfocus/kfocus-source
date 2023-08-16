@@ -128,7 +128,7 @@ _getDefaultCryptList () {
 #
 _modifyDiskPassFn () {
   declare _update_dev_list _fail_list \
-    _new_pass _grep_str _dev_str;
+    _new_pass _grep_str _dev_str _old_pass;
 
   _update_dev_list=("$@");
   _fail_list=();
@@ -136,6 +136,12 @@ _modifyDiskPassFn () {
   if [ -z  "${_update_dev_list[*]}" ]; then
     _cm2WarnStrFn "${_baseName}: Missing arguments.";
     exit 201;
+  fi
+    
+  if [ "${_readOldPassFlag}" != "0" ]; then
+    _old_pass="${_defaultStr}";
+  else
+    read -r -s _old_pass;
   fi
 
   read -r -s _new_pass;
@@ -157,7 +163,7 @@ _modifyDiskPassFn () {
       continue;
     fi
 
-    if { echo "${_defaultStr}"; echo "${_new_pass}"; echo "${_new_pass}"; } \
+    if { echo "${_old_pass}"; echo "${_new_pass}"; echo "${_new_pass}"; } \
      | cryptsetup luksChangeKey "${_dev_str}"; then
        true;
     else
@@ -188,8 +194,6 @@ _echoCryptListFn () {
   fi
   return 0;
 }
-## . END _queryCryptListFn
-## == . END PUBLIC METHODS ============================================
 
 _exitIfNotRootFn () {
   if [ "$(id -u)" != 0 ]; then
@@ -197,6 +201,9 @@ _exitIfNotRootFn () {
     exit 202;
   fi
 }
+
+## . END _queryCryptListFn
+## == . END PUBLIC METHODS ============================================
 
 ## BEGIN MAIN
 _mainFn () {
@@ -214,6 +221,12 @@ _mainFn () {
       shift;
       _populateCryptListFn;
       _modifyDiskPassFn "$@";;
+    '-r')
+      _exitIfNotRootFn "$@";
+      shift;
+      _populateCryptListFn;
+      _readOldPassFlag="0";
+      _modifyDiskPassFn "$@";;
     '-q')
       _populateCryptListFn;
       _echoCryptListFn;;
@@ -227,8 +240,9 @@ _mainFn () {
 ## . END MAIN
 
 ## BEGIN Declare and set global vars
-declare _defaultStr _escExe _cryptList _setExe;
+declare _defaultStr _escExe _cryptList _setExe _readOldPassFlag;
 _defaultStr="$(echo 6b7562756e74750a |xxd -r -p)";
+_readOldPassFlag="1";
 # . END Declare and set global vars
 
 ## BEGIN Run main if script is not sourced
