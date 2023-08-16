@@ -139,9 +139,7 @@ Kirigami.ApplicationWindow {
             trailing  : Kirigami.Icon {
                 source: ''
             }
-            onClicked : {
-                switchPageFn( jsId );
-            }
+            onClicked : switchPageFn( jsId )
             Component.onCompleted: {
                 var taskIcon_part_list = taskIcon.split( '|' );
                 if ( taskIcon_part_list[0] === 'THEMED' ) {
@@ -256,7 +254,7 @@ Kirigami.ApplicationWindow {
                 id        : frontButton
                 text      : 'Continue'
                 icon.name : 'arrow-right'
-                onClicked : { nextPageFn(); }
+                onClicked : nextPageFn()
             }
         }
     }
@@ -319,13 +317,10 @@ Kirigami.ApplicationWindow {
             }
 
             Controls.Button {
-                id : previousButton
-
+                id        : previousButton
                 text      : 'Previous'
                 icon.name : 'arrow-left'
-                onClicked : {
-                    previousPageFn();
-                }
+                onClicked : previousPageFn()
             }
 
             Controls.Button {
@@ -357,19 +352,16 @@ Kirigami.ApplicationWindow {
             }
 
             Controls.Button {
-                id        : actionButton
-                onClicked : {
-                    takeActionFn();
-                }
+                id          : actionButton
+                palette { button: 'green' }
+                onClicked   : takeActionFn()
             }
 
             Controls.Button {
                 id        : skipButton
                 text      : 'No Thanks'
                 icon.name : 'go-next-skip'
-                onClicked : {
-                    nextPageFn();
-                }
+                onClicked : nextPageFn()
             }
         }
     }
@@ -456,17 +448,13 @@ Kirigami.ApplicationWindow {
 
             Controls.Button {
                 id        : interActionButton
-                onClicked : {
-                    takeActionFn();
-                }
+                onClicked : takeActionFn()
             }
             Controls.Button {
                 id        : interSkipButton
                 text      : 'No Thanks'
                 icon.name : 'go-next-skip'
-                onClicked : {
-                    nextPageFn();
-                }
+                onClicked : nextPageFn()
             }
         }
 
@@ -600,18 +588,14 @@ Kirigami.ApplicationWindow {
 
             Controls.Button {
                 id        : cryptActionButton
-                onClicked : {
-                    takeActionFn();
-                }
+                onClicked : takeActionFn()
             }
 
             Controls.Button {
                 id        : cryptSkipButton
                 text      : 'No Thanks'
                 icon.name : 'go-next-skip'
-                onClicked : {
-                    nextPageFn();
-                }
+                onClicked : nextPageFn()
             }
         }
     }
@@ -982,7 +966,7 @@ Kirigami.ApplicationWindow {
             interActionButton.icon.name = 'arrow-right';
             interImageList = [
               'kfocus_mime_backintime.svg',
-              'backintime_ui.png'
+              'backintime_ui.webp',
             ];
             actionName = 'nextPage';
             regenUiFn( interTemplatePage, false );
@@ -1108,14 +1092,15 @@ Kirigami.ApplicationWindow {
               + '<br>'
               + '<b>See more in the</b> '
               + '<a href="https://kfocus.org/wf/email.html">Email Guided '
-              + 'Solution.</a> There, you will find how to set up calendars, '
+              + 'Solution</a> where it shows how to set up calendars, '
               + 'contacts, and more.'
               ;
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
             interImageList = [
               'kfocus_mime_thunderbird.svg',
-              'thunderbird_ui.png'
+              'thunderbird_login.svg',
+              'thunderbird_ui.webp'
             ];
             actionName = 'nextPage';
             regenUiFn( interTemplatePage, false );
@@ -1181,7 +1166,7 @@ Kirigami.ApplicationWindow {
             interImageList = [
               'kfocus_mime_dropbox.svg',
               'dropbox_systray.svg',
-              'dropbox_ui.png'
+              'dropbox_ui.svg'
             ];
             actionName = 'nextPage';
             regenUiFn( interTemplatePage, false );
@@ -1300,7 +1285,7 @@ Kirigami.ApplicationWindow {
             interActionButton.icon.name = 'arrow-right';
             interImageList = [
               'kfocus_mime_jetbrains_toolbox.svg',
-              'jetbrains_toolbox_ui.png',
+              'jetbrains_toolbox_ui.webp',
               'jetbrains_toolbox_systray.svg'
             ];
             actionName = 'nextPage';
@@ -1357,8 +1342,8 @@ Kirigami.ApplicationWindow {
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
             interImageList = [
-              'avatar_steps.png',
-              'avatar_password.png'
+              'avatar_steps.webp',
+              'avatar_password.webp'
             ];
             actionName = 'nextPage';
             regenUiFn( interTemplatePage, false );
@@ -1417,7 +1402,7 @@ Kirigami.ApplicationWindow {
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
             interImageList = [
-              'curated_apps.png'
+              'curated_apps.webp'
             ];
             actionName = 'nextPage';
             regenUiFn( interTemplatePage, false );
