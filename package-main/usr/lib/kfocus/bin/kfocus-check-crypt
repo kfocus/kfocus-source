@@ -35,6 +35,8 @@ _importCommonFn () {
 # Exits     : 127 bad or cancelled password with pkexec (XDG_SESSION_TYPE=x11)
 #           :   1 bad or cancelled password with sudo   (XDG_SESSION_TYPE=tty)
 #
+# This can be run without being root.
+#
 _populateCryptListFn () {
   declare _blkid_str _filter_str;
   if _blkid_str="$("${_escExe}" "${_setExe}" echo-blkid)"; then
@@ -52,6 +54,8 @@ _populateCryptListFn () {
 # Returns   : 0 if success, 2 if non-matching passphrase;
 #             127 on pkexec auth error, 1 on sudo auth error.
 #
+# This must be run as root.
+#
 _checkDiskPassFn() {
   declare _disk_str;
   _disk_str="${1:-}";
@@ -61,8 +65,7 @@ _checkDiskPassFn() {
     return 1;
   fi
 
-  "${_escExe}" cryptsetup \
-    luksOpen --test-passphrase "${_disk_str}" \
+  cryptsetup luksOpen --test-passphrase "${_disk_str}" \
     <<< "${_defaultStr}" 1>&2 2>/dev/null;
 }
 ## . END _checkDiskPassFn
@@ -78,6 +81,8 @@ _checkDiskPassFn() {
 #             one per line. A blank string if all disks passed.
 # Returns   : 0
 # Exits     : 1 (sudo/tty) or 127 (pkexec/x11) on bad auth.
+#
+# This must be run as root.
 #
 _getDefaultCryptList () {
   declare _default_list _device_str _error_code;
@@ -119,6 +124,8 @@ _getDefaultCryptList () {
 # Notes     : Only disks in "${_cryptList[@]}" are considered.
 #             Devices provided not in this list are discarded.
 #
+# This must be run as root.
+#
 _modifyDiskPassFn () {
   declare _update_dev_list _fail_list \
     _new_pass _grep_str _dev_str;
@@ -151,7 +158,7 @@ _modifyDiskPassFn () {
     fi
 
     if { echo "${_defaultStr}"; echo "${_new_pass}"; echo "${_new_pass}"; } \
-     | "${_escExe}" cryptsetup luksChangeKey "${_dev_str}"; then
+     | cryptsetup luksChangeKey "${_dev_str}"; then
        true;
     else
       _fail_list+=( "${_dev_str}" );
@@ -171,6 +178,8 @@ _modifyDiskPassFn () {
 # Stdout    : List of disk devices, one per line.
 # Returns   : 0
 #
+# This can be run without being root.
+#
 _echoCryptListFn () {
   if [ "${#_cryptList[@]}" != "0" ]; then
     ( IFS=$'\n'; echo "${_cryptList[*]}" );
@@ -182,23 +191,31 @@ _echoCryptListFn () {
 ## . END _queryCryptListFn
 ## == . END PUBLIC METHODS ============================================
 
+_exitIfNotRootFn () {
+  if [ "$(id -u)" != 0 ]; then
+    _cm2ErrStrFn "Please run as root: ${_escExe} ./${_baseName} $*";
+  fi
+  exit 202;
+}
+
 ## BEGIN MAIN
 _mainFn () {
   declare _cmd_str;
-
-  # Populate crypto disk list.
-  #   Exit 1 (sudo/tty) or 127 (pkexec/x11) on bad auth.
-  _populateCryptListFn;
 
   ## Begin Dispatch to command
   _cmd_str="${1:-}";
   case "${_cmd_str}" in
     '-c')
+      _exitIfNotRootFn "$@";
+      _populateCryptListFn;
       _getDefaultCryptList;;
     '-m')
+      _exitIfNotRootFn "$@";
       shift;
+      _populateCryptListFn;
       _modifyDiskPassFn "$@";;
     '-q')
+      _populateCryptListFn;
       _echoCryptListFn;;
     *)
       _cm2ErrStrFn 'No directive specified';
