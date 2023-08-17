@@ -143,7 +143,7 @@ Kirigami.ApplicationWindow {
             Component.onCompleted: {
                 var taskIcon_part_list = taskIcon.split( '|' );
                 if ( taskIcon_part_list[0] === 'THEMED' ) {
-                    this.icon = getThemedIcon( taskIcon_part_list[1] );
+                    this.icon = getThemedIconFn( taskIcon_part_list[1] );
                 } else {
                     this.icon = taskIcon
                 }
@@ -167,7 +167,7 @@ Kirigami.ApplicationWindow {
             Component.onCompleted: {
                 var taskIcon_part_list = taskIcon.split( '|' );
                 if ( taskIcon_part_list[0] === 'THEMED' ) {
-                    this.icon = getThemedIcon( taskIcon_part_list[1] );
+                    this.icon = getThemedIconFn( taskIcon_part_list[1] );
                 } else {
                     this.icon = taskIcon
                 }
@@ -353,7 +353,7 @@ Kirigami.ApplicationWindow {
 
             Controls.Button {
                 id          : actionButton
-                palette { button: 'green' }
+                palette { button: getThemedColorFn( 'green' ) }
                 onClicked   : takeActionFn()
             }
 
@@ -805,10 +805,12 @@ Kirigami.ApplicationWindow {
             oldPassphraseLabel.visible = false;
             oldPassphraseBox.visible   = false;
 
-            pageTitleText            = getCryptDiskTextFn( 'Disk Passphrase',
-                                         systemDataMap.cryptDiskList );
-            pageTitleImage           = imgDir + 'encrypted_drive.svg';
-            cryptHighlightRect.color = '#ff9900';
+            pageTitleText             = getCryptDiskTextFn( 'Disk Passphrase',
+                                          systemDataMap.cryptDiskList );
+            pageTitleImage            = imgDir + 'encrypted_drive.svg';
+            newPassphraseBox.text     = "";
+            confirmPassphraseBox.text = "";
+            cryptHighlightRect.color  = '#ff9900';
             cryptTopHeading.text
               = 'Change Passphrase for '
               + getCryptDiskTextFn('One Encrypted Disk',
@@ -885,11 +887,14 @@ Kirigami.ApplicationWindow {
             oldPassphraseLabel.visible = true;
             oldPassphraseBox.visible   = true;
 
-            pageTitleText            = getCryptDiskTextFn( 'Disk Passphrase',
-                                         systemDataMap.cryptDiskList );
-            pageTitleImage           = imgDir + 'encrypted_drive.svg';
-            cryptHighlightRect.color = '#27ae60';
-            cryptTopHeading.text     = 'Change Disk Passphrases';
+            pageTitleText             = getCryptDiskTextFn( 'Disk Passphrase',
+                                          systemDataMap.cryptDiskList );
+            pageTitleImage            = imgDir + 'encrypted_drive.svg';
+            oldPassphraseBox.text     = "";
+            newPassphraseBox.text     = "";
+            confirmPassphraseBox.text = "";
+            cryptHighlightRect.color  = '#27ae60';
+            cryptTopHeading.text      = 'Change Disk Passphrases';
             cryptInstructionsText.text
               = '<b> Please enter the old passphrase of the disk(s) you want '
               + 'to modify.</b> Then provide the passphrase you would like '
@@ -1616,12 +1621,23 @@ Kirigami.ApplicationWindow {
         }
     }
 
-    function getThemedIcon(icon_name) {
+    function getThemedIconFn(icon_name) {
         if ( Kirigami.Theme.textColor.hsvValue < 0.5 ) {
-            return "qrc:/assets/images/" + icon_name + "_light.svg";
+            return 'qrc:/assets/images/' + icon_name + '_light.svg';
         } else {
-            return "qrc:/assets/images/" + icon_name + "_dark.svg";
+            return 'qrc:/assets/images/' + icon_name + '_dark.svg';
         }
+    }
+
+    function getThemedColorFn(color_name) {
+        if ( Kirigami.Theme.textColor.hsvValue > 0.5 ) {
+            return color_name;
+        } else {
+            switch( color_name ) {
+            case 'green':
+                return 'lightgreen';
+            }
+         }
     }
 
     function storeStateMatrixFn () {
