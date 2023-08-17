@@ -143,7 +143,7 @@ Kirigami.ApplicationWindow {
             Component.onCompleted: {
                 var taskIcon_part_list = taskIcon.split( '|' );
                 if ( taskIcon_part_list[0] === 'THEMED' ) {
-                    this.icon = getThemedIconFn( taskIcon_part_list[1] );
+                    this.icon = getThemedImageFn( taskIcon_part_list[1], 'svg' );
                 } else {
                     this.icon = taskIcon
                 }
@@ -167,7 +167,7 @@ Kirigami.ApplicationWindow {
             Component.onCompleted: {
                 var taskIcon_part_list = taskIcon.split( '|' );
                 if ( taskIcon_part_list[0] === 'THEMED' ) {
-                    this.icon = getThemedIconFn( taskIcon_part_list[1] );
+                    this.icon = getThemedImageFn( taskIcon_part_list[1], 'svg' );
                 } else {
                     this.icon = taskIcon
                 }
@@ -645,7 +645,7 @@ Kirigami.ApplicationWindow {
         switch(page_id) {
         case 'introductionItem':
             pageTitleText     = 'Introduction';
-            frontImage.source = imgDir + 'frontpage.webp';
+            frontImage.source = getThemedImageFn( "frontpage", 'webp' );
             frontHeading.text = 'Welcome To The Kubuntu Focus!';
             frontText.text
               = '<b>This Welcome Wizard helps you get '
@@ -1621,11 +1621,11 @@ Kirigami.ApplicationWindow {
         }
     }
 
-    function getThemedIconFn(icon_name) {
+    function getThemedImageFn(icon_name, file_type) {
         if ( Kirigami.Theme.textColor.hsvValue < 0.5 ) {
-            return 'qrc:/assets/images/' + icon_name + '_light.svg';
+            return 'qrc:/assets/images/' + icon_name + '_light.' + file_type;
         } else {
-            return 'qrc:/assets/images/' + icon_name + '_dark.svg';
+            return 'qrc:/assets/images/' + icon_name + '_dark.' + file_type;
         }
     }
 
