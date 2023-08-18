@@ -272,7 +272,7 @@ _cleanupGrubFileFn () {
 }
 
 _setupSymlinkTableFn () {
-  declare _msg _do_rm_link _link_list _cmd_list;
+  declare _line _msg _do_rm_link _link_list _cmd_list;
   _cmXSetMsgFn 'Set up symlinks';
 
   if [ "${#_symlinkTable[@]}" = '0' ]; then

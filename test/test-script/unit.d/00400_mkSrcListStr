@@ -1,0 +1,71 @@
+#!/bin/bash
+#
+## BEGIN _mkSrcListStrFn {
+# Purpose  : Create a sorted list of source files used by 'apt-get update'
+#   with the following refinements:  
+#     * Exclude deprecated kfocus-recommended.list
+#     * Include /etc/apt/sources.list first
+#
+# We checked the behavior of apt in relation to the files
+# found in /etc/apt:
+# 1. Only /etc/apt/sources.list and /etc/apt/sources.list.d/*.list
+#    are used for updates. Any subdirectories are ignored.
+# 2. Files that have spaces in them and are IGNORED by apt-get.
+#    An example, 'bad idea.list', is included in the test data.
+# 3. Any other *.list file in /etc/apt is ignored. An example,
+#    '/etc/apt/foo.list' is included in the test data.
+#
+_mkSrcListStrFn () {
+  declare _etc_apt_dir _nl _repo_src_str;
+
+  _etc_apt_dir="${_rootDir}/etc/apt";
+  _nl=$'\n';
+  _repo_src_str=$(
+    find "${_etc_apt_dir}/sources.list.d" -maxdepth 1 -type f -name '*.list' \
+    | sort | grep -v --regexp '^.* ' \
+    | grep -v 'kfocus-recommended.list'
+  );
+
+  if [ -n "${_repo_src_str}" ]; then
+    _repo_src_str="${_etc_apt_dir}/sources.list${_nl}${_repo_src_str}";
+  else
+    _repo_src_str="${_etc_apt_dir}/sources.list";
+  fi
+  echo -e "${_repo_src_str}";
+}
+## END _mkSrcListStrFn }
+
+## BEGIN _runTestFn {
+_runTestFn () {
+  declare _src_list_str _expect_str _fix_str;
+
+  # Set some vars for test routines
+  _rootDir="${_t00InitDir}"; # Kept for compatibility
+  _return_int=0;
+
+  _src_list_str=$(_mkSrcListStrFn);
+  _expect_str=$(cat << 'EOL'
+/etc/apt/sources.list
+/etc/apt/sources.list.d/docker.list
+/etc/apt/sources.list.d/dropbox.list
+/etc/apt/sources.list.d/google-talk.list
+/etc/apt/sources.list.d/nv-tensorrt-cuda10.1-trt6.0.1.5-ga-20190913.list
+/etc/apt/sources.list.d/skype.list
+/etc/apt/sources.list.d/tuxedo.list
+EOL
+);
+
+  _fix_str=$(sed 's?^.*/test-data/initial/00400_mkSrcListStr??gm' <<< "${_src_list_str}" );
+
+  if [ "${_fix_str}" = "${_expect_str}" ]; then
+    _cm2SucStrFn 'Repo list matches expected';
+  else
+    _cm2WarnStrFn 'Found string does not match expected';
+    _cm2EchoFn "Found: ${_src_list_str}";
+    _cm2EchoFn "Expected ${_expect_str}";
+    _return_int=1;
+  fi
+
+  return "${_return_int}";
+}
+## . END _runTestFn }

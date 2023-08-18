@@ -1,0 +1,8 @@
+Package: cuda*
+Pin: release l=NVIDIA CUDA
+Pin-Priority: 600
+
+# Favor Ubuntu libs for core nv drivers
+Package: nvidia-* libnvidia-*
+Pin: release l=Ubuntu, v=20.04, n=focal
+Pin-Priority: 700

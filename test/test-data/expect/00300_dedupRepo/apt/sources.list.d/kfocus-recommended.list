@@ -1,0 +1,89 @@
+#x LAST UPDATE 2020-06-28 FOR FOCAL
+
+#x --- 2020-06-28 FOCAL
+#_ azure-cli : DevOps: Azure CLI tools
+deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ focal main
+
+#x !!! 2020-06-28 EOAN is latest supported release
+#_ bit-team-stable : System : Back-in-time repository
+deb http://ppa.launchpad.net/bit-team/stable/ubuntu eoan main
+
+#x --- 2020-04-24 NC
+#_ chrome-remote-desktop : RDP : Chrome remote desktop
+deb [arch=amd64] http://dl.google.com/linux/chrome-remote-desktop/deb/ stable main
+
+#x --- 2020-06-28 FOCAL
+#_ docker: System: Docker container system
+deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
+
+#x !!! 2020-06-28 disco is latest supported release
+#_ dropbox: Cloud : Dropbox storage
+deb [arch=i386,amd64] http://linux.dropbox.com/ubuntu disco main
+
+#x --- 2020-06-28 FOCAL works, but disabled due to libgegl-common concerns
+#_ gimp : Graphics : Gimp latest stable
+# deb http://ppa.launchpad.net/otto-kesselgulasch/gimp/ubuntu focal main
+
+#x --- 2020-04-24 NC
+#_ google-chrome : Browser : Chrome browser
+deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main
+
+#x --- 2020-04-24 FOCAL
+#_ graphics-drivers-ppa : Drivers : Nvidia graphics packages
+# As of 2020-06-28 graphics-drivers-ppa is in conflict with main repos
+# deb http://ppa.launchpad.net/graphics-drivers/ppa/ubuntu focal main
+
+#x --- 2020-04-24 FOCAL
+#_ inkscape_dev-stable : Graphics : Inkscape SVG editor
+deb http://ppa.launchpad.net/inkscape.dev/stable/ubuntu focal main
+
+#x --- 2020-04-24 FOCAL
+#_ insync : Cloud : Insync (GDrive) storage
+deb http://apt.insync.io/ubuntu focal non-free contrib
+
+#x --- 2020-04-24 FOCAL
+#_ kdenlive-stable : Video : KDE non-linear editor stable
+deb http://ppa.launchpad.net/kdenlive/kdenlive-stable/ubuntu focal main
+
+#x --- 2020-03-29 NC (appears current per web search, test of
+#x     eaon, disco, cosmic, bionic all do not work.)
+#_ kubernetes : DevOps : CLI tools for Kubernetes
+deb https://apt.kubernetes.io/ kubernetes-xenial main
+
+#x --- 2020-04-24 FOCAL
+#_ kubuntu-ppa-backports : System : Stable Backports
+deb http://ppa.launchpad.net/kubuntu-ppa/backports/ubuntu focal main
+
+#x --- 2020-03-29 FOCAL
+#_ lutris-team-ubuntu : Games : Non-steam game support
+deb http://ppa.launchpad.net/lutris-team/lutris/ubuntu focal main
+
+#_ neovim-stable-ppa : Editor : New Vim, written in Python
+# deb http://ppa.launchpad.net/neovim-ppa/stable/ubuntu bionic main
+
+#x !!! 2020-06-28 ubuntu1804 is latest that works
+#_ nvidia-cuda : Drivers : Cuda Drivers
+deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /
+
+#x --- 2020-04-24 FOCAL
+#_ nodesource : Development : NodeJS Stable
+deb https://deb.nodesource.com/node_12.x focal main
+
+#x --- 2020-04-24 NC
+#_ skype-stable : Video Chat : Skype application
+# deb [arch=amd64] https://repo.skype.com/deb stable main
+
+#x --- 2020-04-24 NC
+#_ slack : Video Chat : Slack IRC
+deb https://packagecloud.io/slacktechnologies/slack/debian/ jessie main
+
+#x --- 2020-06-28 FOCAL
+#_ stebbins-handbrake : Transcode : Handbrake latest stable
+deb http://ppa.launchpad.net/stebbins/handbrake-releases/ubuntu focal main
+
+#x --- 2020-06-28 FOCAL
+#_ tuxedocomputers : Hardware : Keyboard controls
+deb http://deb.tuxedocomputers.com/ubuntu focal main
+
+# deb http://repo.kfocus.org/ubuntu/ focal main 
+#_ end

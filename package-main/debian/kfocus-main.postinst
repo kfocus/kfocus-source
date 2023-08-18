@@ -4,21 +4,18 @@
 #
 set -e;
 
-## BEGIN Declare common.2.source symbols {
+## BEGIN Declare common.2.source symbols
 #  IMPORT 2022-03-23 EXCERPT from test/test-scripts/common.2.source
-_cm2Arg01="${1:-}";
+_cmXBlockMsg='';
+_cmXEchoFn    () { 1>&2 echo -e "$*";  }
+_cmXSetMsgFn  () { _cmXBlockMsg="$*"; _cmXEchoFn "== BEGIN : ${_cmXBlockMsg}"; }
+_cmXSucFn     () { _cmXEchoFn "== . END : OK   ${_cmXBlockMsg}\n\n"; }
+_cmXSucStrFn  () { _cmXEchoFn "ok  : ${*}"; }
+_cmXWarnFn    () { _cmXEchoFn "== . END : WARN Could not ${_cmXBlockMsg}\n\n"; }
+_cmXWarnStrFn () { _cmXEchoFn "warn: ${*}"; }
+## . END Declare common.2.source symbols
 
-_cm2BlockMsg='';
-_cm2RmExe='/bin/rm';
-_cm2EchoFn    () { 1>&2 echo -e "$*";  }
-_cm2SetMsgFn  () { _cm2BlockMsg="$*"; _cm2EchoFn "== BEGIN : ${_cm2BlockMsg}"; }
-_cm2SucFn     () { _cm2EchoFn "== . END : OK   ${_cm2BlockMsg}\n\n"; }
-_cm2SucStrFn  () { _cm2EchoFn "ok  : ${*}"; }
-_cm2WarnFn    () { _cm2EchoFn "== . END : WARN Could not ${_cm2BlockMsg}\n\n"; }
-_cm2WarnStrFn () { _cm2EchoFn "warn: ${*}"; }
-## } . END Declare common.2.source symbols
-
-## { BEGIN _assignGlobalVarsFn
+## BEGIN _assignGlobalVarsFn
 _assignGlobalVarsFn () {
   declare _repo_src_dir;
   _repo_src_dir="${_rootDir}/etc/apt/sources.list.d";
@@ -26,9 +23,9 @@ _assignGlobalVarsFn () {
   _libKfocusDir="${_rootDir}/usr/lib/kfocus";
   _recomListFile="${_repo_src_dir}/kfocus-recommended.list";
 }
-## . END _assignGlobalVarsFn }
+## . END _assignGlobalVarsFn
 
-## BEGIN _mkSrcListStrFn {
+## BEGIN _mkSrcListStrFn
 # IMPORTED on 2022-02-23 from test/test-scripts/unit.d/00400_mkSrcListStr
 #
 _mkSrcListStrFn () {
@@ -49,9 +46,9 @@ _mkSrcListStrFn () {
   fi
   echo -e "${_repo_src_str}";
 }
-## END _mkSrcListStrFn }
+## END _mkSrcListStrFn
 
-## BEGIN _dedupRepoSrcFileFn {
+## BEGIN _dedupRepoSrcFileFn
 # IMPORTED on 2022-03-23 from test/test-scripts/unit.d/00300_dedupRepo
 #
 _dedupRepoSrcFileFn() {
@@ -63,7 +60,7 @@ _dedupRepoSrcFileFn() {
   _src_list_str=$(_mkSrcListStrFn);
   _is_all_ok='y';
 
-  _cm2SetMsgFn "Disable duplicate repo listings in ${_recomListFile}";
+  _cmXSetMsgFn "Disable duplicate repo listings in ${_recomListFile}";
   while read -r _src_line; do
     # shellcheck disable=2001
     _search_str="$(
@@ -74,12 +71,12 @@ _dedupRepoSrcFileFn() {
 
     while read -r _match_file; do
       if (grep -q "^deb.* ${_search_str}" "${_match_file}"); then
-        _cm2EchoFn "'${_src_line}' found in '${_match_file}'"
+        _cmXEchoFn "'${_src_line}' found in '${_match_file}'"
         if ( sed -i "s?^\\(deb.*${_search_str}.*\\)?# \1?g" \
           "${_recomListFile}" ); then
-            _cm2SucStrFn "Disable '${_src_line}' in '${_recomListFile}'"
+            _cmXSucStrFn "Disable '${_src_line}' in '${_recomListFile}'"
           else
-            _cm2WarnStrFn "Could not disable '${_src_line}' in '${_recomListFile}'";
+            _cmXWarnStrFn "Could not disable '${_src_line}' in '${_recomListFile}'";
             _is_all_ok='n'
           fi
       fi
@@ -87,15 +84,15 @@ _dedupRepoSrcFileFn() {
   done < <( grep --regexp='^\s*deb' "${_recomListFile}" );
 
   if [ "${_is_all_ok}" ]; then
-    _cm2SucFn; return;
+    _cmXSucFn; return;
   else
-    _cm2WarnStrFn "Some or all of the disables were unsuccessful";
-    _cm2WarnFn; return;
+    _cmXWarnStrFn "Some or all of the disables were unsuccessful";
+    _cmXWarnFn; return;
   fi
 }
-## . END _dedupRepoSrcFileFn }
+## . END _dedupRepoSrcFileFn
 
-## BEGIN _updatePciidsFn {
+## BEGIN _updatePciidsFn
 # IMPORTED on 2022-02-23 from test/test-scripts/unit.d/00500_updatePciids
 #
 _updatePciidsFn () {
@@ -104,81 +101,143 @@ _updatePciidsFn () {
   _exe_lspci_str=$( command -v lspci );
   _exe_update_str=$( command -v update-pciids );
 
-  _cm2SetMsgFn 'Update pciids';
+  _cmXSetMsgFn 'Update pciids';
 
   # Circumvent bug listed above
-  if ! "${_cm2RmExe}" -f "${_share_file}.old"; then
-    _cm2WarnStrFn "Could not remove ${_share_file}.old";
+  if ! rm -f "${_share_file}.old"; then
+    _cmXWarnStrFn "Could not remove ${_share_file}.old";
   fi
 
   if [ ! -x "${_exe_lspci_str}" ]; then
-    _cm2WarnStrFn "${_exe_lspci_str} not found";
-    _cm2WarnFn; return 0;
+    _cmXWarnStrFn "${_exe_lspci_str} not found";
+    _cmXWarnFn; return 0;
   fi
 
   if [ ! -x "${_exe_update_str}" ]; then
-    _cm2WarnStrFn "${_exe_update_str} is not executable";
-    _cm2WarnFn; return 0;
+    _cmXWarnStrFn "${_exe_update_str} is not executable";
+    _cmXWarnFn; return 0;
   fi
 
   if "${_exe_update_str}"; then
-    _cm2SucStrFn 'Updated pciids';
-    _cm2SucFn; return 0;
+    _cmXSucStrFn 'Updated pciids';
+    _cmXSucFn; return 0;
   else
-    _cm2WarnStrFn 'Could not update pciids';
-    _cm2WarnFn; return 0;
+    _cmXWarnStrFn 'Could not update pciids';
+    _cmXWarnFn; return 0;
   fi
 }
-## . END _updatePciidsFn }
+## . END _updatePciidsFn
 
-## BEGIN _applyRootStyleFn {
+## BEGIN _applyRootStyleFn
 _applyRootStyleFn () {
   declare _exe_rsync_str;
   _exe_rsync_str=$( command -v 'rsync' );
-  _cm2SetMsgFn 'Apply style for root apps, e.g. partition manager';
+  _cmXSetMsgFn 'Apply style for root apps, e.g. partition manager';
 
   if [ -d "/root/Desktop" ]; then
-    _cm2SucStrFn 'Root style already applied';
-    _cm2SucFn; return 0;
+    _cmXSucStrFn 'Root style already applied';
+    _cmXSucFn; return 0;
   fi
 
   if [ ! -e "${_exe_rsync_str}" ]; then
     _warnStr "${_exe_rsync_str} not executable";
-    _cm2WarnFn; return 0;
+    _cmXWarnFn; return 0;
   fi
 
   if "${_exe_rsync_str}" -azog --chown='0:0' \
     "${_libKfocusDir}/skel/" '/root/'; then
-      _cm2SucFn; else _cm2WarnFn;
+      _cmXSucFn; else _cmXWarnFn;
   fi
 }
-## . END _applyRootStyleFn }
+## . END _applyRootStyleFn
 
-## BEGIN _cleanupFn {
+## BEGIN _setupModelHintsFn
+ # Purpose: Setup hint widget model-specific symlinks
+ # Important: This is an extract from kfocus-hw which is the master.
+ # Update that code first and copy here.
+_setupModelHintsFn () {
+  declare _lib_file _model_code _hints_dir _unique_dir _model_dir \
+    _png_list _src_path _img_file _tgt_path _msg;
+
+  # Initialize
+  _cmXSetMsgFn 'Setup model hints';
+  _hints_dir='/usr/share/kfocus-hints';
+  _lib_file="${_libKfocusDir}/lib/common.2.source";
+
+  # Extract model code from common library if available
+  if [ -r "${_lib_file}" ]; then
+    # shellcheck disable=1091,1090 source=/usr/lib/kfocus/lib/common.2.source
+    source "${_lib_file}" || true;
+    if [ "$(type -t _cm2EchoModelStrFn)" = 'function' ]; then
+      _model_code="$(_cm2EchoModelStrFn 'code')";
+    fi
+  fi
+  if [ -z "${_model_code:-}"  ]; then  _model_code='other'; fi
+
+  # Calculate and test target directories
+  _unique_dir="${_hints_dir}/unique";
+  _model_dir="${_unique_dir}/${_model_code}";
+  if [ ! -d "${_model_dir}" ]; then
+    _cmXWarnStrFn 'Model dir not found. Using default.';
+    _model_dir="${_unique_dir}/default";
+    if [ ! -d "${_model_dir}" ]; then
+      _cmXWarnStrFn "Unexpected missing default dir: ${_model_dir}";
+      _cmXWarnStrFn '  Skipping step.';
+      return;
+    fi
+  fi
+
+  ## Begin Loop through unique images
+  mapfile -n30 -t _png_list < <(
+    find "${_model_dir}" -mindepth 1 -maxdepth 1 -name '*.png' | sort
+  );
+  for _src_path in "${_png_list[@]}"; do
+    _img_file="$(basename "${_src_path}")";
+    _tgt_path="${_hints_dir}/${_img_file}";
+    if [ ! -f "${_src_path}" ]; then continue; fi
+
+    if [ -e "${_tgt_path}" ]; then
+      rm -f "${_tgt_path}" || continue;
+    fi
+
+    _msg="symlink target ${_tgt_path}";
+    if ln -s "${_src_path}" "${_tgt_path}"; then
+      _cmXSucStrFn "Created ${_msg}";
+    else
+      _cmXWarnStrFn "Could not create ${_msg}";
+    fi
+  done
+  ## . End Loop through unique images
+
+  _cmXSucFn;
+}
+## . END _setupModelHintsFn
+
+## BEGIN _cleanupFn
 #  Purpose: Clean up of various bits
 _cleanUpFn () {
   declare _firstrun_file _exe_update_deskdb;
 
   if [ -d "${_libKfocusDir}/skel/.ssh" ]; then
-    _cm2SetMsgFn "Set secure .ssh access rights";
+    _cmXSetMsgFn "Set secure .ssh access rights";
     if chmod 700 "${_libKfocusDir}/skel/.ssh"; then
-      _cm2SucFn; else _cm2WarnFn; fi
+      _cmXSucFn; else _cmXWarnFn; fi
   fi
 
   _exe_update_deskdb=$( command -v update-desktop-database );
   if [ -x "${_exe_update_deskdb}" ]; then
-    _cm2SetMsgFn 'Update desktop database';
-    if "${_exe_update_deskdb}";  then _cm2SucFn; else _cm2WarnFn; fi
+    _cmXSetMsgFn 'Update desktop database';
+    if "${_exe_update_deskdb}";  then _cmXSucFn; else _cmXWarnFn; fi
   fi
 
-  _cm2SetMsgFn 'Set up pip-tools';
-  if pip3 install pip-tools; then _cm2SucFn; else _cm2WarnFn; fi
+  _cmXSetMsgFn 'Set up pip-tools';
+  if pip3 install pip-tools; then _cmXSucFn; else _cmXWarnFn; fi
 
   _firstrun_file='/etc/xdg/autostart/kfocus-firstrun.desktop';
   if [ -e "${_firstrun_file}" ] || [ -L "${_firstrun_file}" ]; then
-    _cm2SetMsgFn "Remove deprecated ${_firstrun_file}";
-    if "${_cm2RmExe}" -f "${_firstrun_file}"; then
-      _cm2SucFn; else _cm2WarnFn;
+    _cmXSetMsgFn "Remove deprecated ${_firstrun_file}";
+    if rm -f "${_firstrun_file}"; then
+      _cmXSucFn; else _cmXWarnFn;
     fi
   fi
 
@@ -186,73 +245,62 @@ _cleanUpFn () {
   # This allows boot work faster before network is enabled
   # 2551 Disabled to prevent breaking network file systems
   #
-  # _cm2SetMsgFn 'Disable wait for network on boot';
+  # _cmXSetMsgFn 'Disable wait for network on boot';
   # if ( deb-systemd-helper disable NetworkManager-wait-online.service ); then
-  #   _cm2SucFn; else _cm2WarnFn;
+  #   _cmXSucFn; else _cmXWarnFn;
   # fi
 }
-## . END _cleanupFn }
+## . END _cleanupFn
 
-## BEGIN _adviseRebootFn {
-#  IMPORTED on 2022-03-23 from test/test-scripts/unit.d/00100_adviseReboot
-#  Purpose: Advise reboot after install
+## BEGIN _adviseRebootFn
+# Call was disabled 2023-08-10 per notes below.
+# IMPORTED on 2022-03-23 from test/test-scripts/unit.d/00100_adviseReboot
+# Purpose: Advise reboot after install
 #
 # See https://askubuntu.com/questions/993570
 #
-_adviseRebootFn () {
-  declare _reboot_file;
+# _adviseRebootFn () {
+#   declare _reboot_file;
+#
+#   _reboot_file="${_rootDir}/var/run/reboot-required";
+#   _cmXSetMsgFn 'Advise reboot';
+#
+#   if touch "${_reboot_file}"; then
+#     _cmXSucStrFn "Wrote ${_reboot_file}";
+#     _cmXSucFn;
+#   else
+#     _cmXWarnStrFn "Could not write ${_reboot_file}";
+#     _cmXWarnFn;
+#   fi
+# }
+## . END _adviseRebootFn
 
-  _reboot_file="${_rootDir}/var/run/reboot-required";
-  _cm2SetMsgFn 'Advise reboot';
-
-  if touch "${_reboot_file}"; then
-    _cm2SucStrFn "Wrote ${_reboot_file}";
-    _cm2SucFn;
-  else
-    _cm2WarnStrFn "Could not write ${_reboot_file}";
-    _cm2WarnFn;
-  fi
-
-  # This is deprecated
-  # _lib_dir="${_rootDir}/var/lib/update-notifier";
-  # _update_dir="${_lib_dir}/user.d";
-  # _touch_file="${_lib_dir}/dpkg-run-stamp";
-  # if touch "${_touch_file}"; then
-  #   _cm2SucStrFn "Touched ${_touch_file}";
-  #   _cm2SucFn; return;
-  # else
-  #   _cm2WarnStrFn "Could not touch ${_touch_file}";
-  #   _cm2WarnFn; return;
-  # fi
-}
-## . END _adviseRebootFn }
-
-## BEGIN _addBashCompletionFn {
+## BEGIN _addBashCompletionFn
 _addBashCompletionFn () {
   if ! [ -f /etc/bash_completion.d/kfocus-bashcompletion ]; then
     ln -sf /usr/lib/kfocus/lib/kfocus-bashcompletion \
       /etc/bash_completion.d/kfocus-bashcompletion
   fi
 }
-## . END _addBashCompletionFn }
+## . END _addBashCompletionFn
 
 ## BEGIN _setupSddmFixFn {
 _setupSddmFixFn () {
   declare _blk_str _xsetup_file _setup_str;
 
-  _cm2SetMsgFn 'Setup SDDM screen fix';
+  _cmXSetMsgFn 'Setup SDDM screen fix';
   _blk_str='/## BEGIN kfocus addition sddm fix\s*$/I,'
   _blk_str+='/## . END kfocus addition sddm fix\s*$/Id';
 
   _xsetup_file="${_rootDir}/usr/share/sddm/scripts/Xsetup";
 
-  ## Begin Short circuit block {
+  ## Begin Short circuit block
   while true; do
     if [ ! -e "${_xsetup_file}" ]; then break; fi
     if ! grep -qi '^## BEGIN kfocus' "${_xsetup_file}"; then break; fi
 
     if sed -i "${_blk_str}" "${_xsetup_file}"; then
-      _cm2SucStrFn "Scrubbed ${_xsetup_file}";
+      _cmXSucStrFn "Scrubbed ${_xsetup_file}";
       break;
     fi
 
@@ -263,13 +311,13 @@ _setupSddmFixFn () {
     sed -i $'/_kfSetupExe=\'\/usr\/lib\/kfocus/d'       "${_xsetup_file}";
     break;
   done
-  ## . End Short circuit block }
+  ## . End Short circuit block
 
   # 3153 Skip adding call if we find a signature of
   # the sddm workaround per 2988.
   if grep -qi '\Wxrandr\W.*--listmonitors' "${_xsetup_file}"; then
-    _cm2EchoFn 'Embedded SDDM fix signature found';
-    _cm2SucFn;
+    _cmXEchoFn 'Embedded SDDM fix signature found';
+    _cmXSucFn;
     return;
   fi
 
@@ -283,23 +331,21 @@ EOS
 )";
 
   if echo "${_setup_str}" >> "${_xsetup_file}"; then
-    _cm2SucFn;
+    _cmXSucFn;
   else
-    _cm2WarnStrFn "Trouble updating ${_xsetup_file}";
-    _cm2WarnFn;
+    _cmXWarnStrFn "Trouble updating ${_xsetup_file}";
+    _cmXWarnFn;
   fi
 }
 ## . END _setupSddmFixFn }
 
-## BEGIN MAIN {
+## Begin Run main if script is not sourced
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   # set -u; # Development only
   _rootDir='';
   _assignGlobalVarsFn;
-  case "${_cm2Arg01}" in
-    abort-upgrade|abort-remove|abort-configure|abort*)
-    ;;
-
+  case "${1:-}" in
+    abort-upgrade|abort-remove|abort-configure|abort*) true;;
     configure|upgrade)
       # Update systemctl for removed kfocus-dm.service
       deb-systemd-helper purge kfocus-dm.service;
@@ -320,17 +366,23 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
       # Add Xsetup for sddm screen fix
       _setupSddmFixFn;
 
+      # Create links per model (copied from kfocus-hw)
+      _setupModelHintsFn;
+
       # Cleanup misc details
       _cleanUpFn;
 
       # Advise reboot
-      _adviseRebootFn;
-
+      # 2023-08-10 Disabled. We would rather have dependent
+      #   packages make this call if needed.
+      # _adviseRebootFn;
     ;;
   esac
   exit 0;
 fi
-## . END MAIN }
+## . End Run main if script is not sourced
 
 # Tag to allow some debhelper commands to inject relevant code
 #DEBHELPER#
+
+exit 0;
