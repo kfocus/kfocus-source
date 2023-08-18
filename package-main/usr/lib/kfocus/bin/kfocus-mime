@@ -768,7 +768,7 @@ _runAppFn () {
     exit 0;
   # Execute command and arguments if possible
   elif [ -x "${_app_exe}" ]; then
-    if [ "${_forceForegroundExec}" = "0" ]; then
+    if [ "${_doForceForeground}" = 'n' ]; then
       exec "${_app_exe}" "${_arg_list[@]}" &
     else
       exec "${_app_exe}" "${_arg_list[@]}";
@@ -815,7 +815,7 @@ _mainFn () {
   elif [ "${_arg0_str}" = '-kf' ]; then
     shift;
     _arg_app_id="${1:-}";
-    _forceForegroundExec="1";
+    _doForceForeground='y';
 
   # Handle link file. Bail if not readable.
   else
@@ -839,14 +839,17 @@ _mainFn () {
 }
 ## END _mainFn }
 
-## BEGIN Set global vars {
+## BEGIN Declare and set global vars {
+declare _binName _binDir _baseDir _baseName \
+  _rootDir _exeAptDir _pkgNameList _doForceForeground;
+
+# Set this first.
 _rootDir='';
 
+_doForceForeground='n';
 _etcAptDir="${_rootDir}/etc/apt";
 _pkgNameList=();
-
-_forceForegroundExec="0";
-## . END Set global vars }
+## . END Declare and set global vars {
 
 ## BEGIN run main if script is not sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
