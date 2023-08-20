@@ -729,7 +729,8 @@ Kirigami.ApplicationWindow {
             pageTitleText   = getCryptDiskTextFn( 'Disk Passphrase',
                                 systemDataMap.cryptDiskList );
             topImage.source = imgDir + 'encrypted_drive.svg';
-            topHeading.text = 'Check Disk Encryption Security';
+            topHeading.text = getCryptDiskTextFn( 'One Encrypted Disk Found',
+                                systemDataMap.cryptDiskList );
             primaryText.text
               = '<b>The wizard has detected '
               + getCryptDiskTextFn('one encrypted disk',
@@ -1666,6 +1667,13 @@ Kirigami.ApplicationWindow {
                     return 'Two Encrypted Disks';
                 } else {
                     return disk_list.length + ' Encrypted Disks';
+                }
+
+            case 'One Encrypted Disk Found':
+                if (disk_list.length === 2) {
+                    return 'Two Encrypted Disks Found';
+                } else {
+                    return disk_list.length + ' Encrypted Disks Found';
                 }
 
             case 'passphrase':
