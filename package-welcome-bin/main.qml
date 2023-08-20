@@ -104,6 +104,8 @@ Kirigami.ApplicationWindow {
     // Define page size and columns
     width  : Kirigami.Units.gridUnit * 40
     height : Kirigami.Units.gridUnit * 28
+    minimumWidth  : Kirigami.Units.gridUnit * 40
+    minimumHeight : Kirigami.Units.gridUnit * 28
 
     pageStack.defaultColumnWidth : Kirigami.Units.gridUnit * 12
 
