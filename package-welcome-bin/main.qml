@@ -13,19 +13,20 @@ Kirigami.ApplicationWindow {
 
     // == BEGIN Models ================================================
     // Set Global Properties
-    property string actionName          : ''
-    property string networkReturnPage   : ''
-    property string networkReturnAction : ''
-    property int disabledSidebarIndex   : 0
-    property bool firstRun              : true
-    property var interImageList         : []
-    property var defaultCryptList       : []
-    property string cryptChangeMode     : ""
-    property int cryptDiskChangeCount  : 0
-    property string pageTitleText       : ''
-    property string pageTitleImage      : ''
-    property string imgDir              : 'assets/images/'
-    property var stateMatrix            : ({})
+    property string actionName                  : ''
+    property string networkReturnPage           : ''
+    property string networkReturnAction         : ''
+    property string networkDisconnectTitleImage : ''
+    property int disabledSidebarIndex           : 0
+    property bool firstRun                      : true
+    property var interImageList                 : []
+    property var defaultCryptList               : []
+    property string cryptChangeMode             : ""
+    property int cryptDiskChangeCount           : 0
+    property string pageTitleText               : ''
+    property string pageTitleImage              : ''
+    property string imgDir                      : 'assets/images/'
+    property var stateMatrix                    : ({})
 
     // Purpose: Describes steps used in wizard
     // See property currentIndex
@@ -682,7 +683,7 @@ Kirigami.ApplicationWindow {
               interActionButton,   pictureColumn
             ]);
 
-            pageTitleImage            = imgDir + 'network_disconnect.svg';
+            pageTitleImage            = networkDisconnectTitleImage;
             headerHighlightRect.color = '#ff9900';
             interTopHeading.text      = 'Please Connect to the Internet';
             instructionsText.text
@@ -1013,10 +1014,11 @@ Kirigami.ApplicationWindow {
               + 'You may always revisit this later using <b>Start Menu '
               + '> Kubuntu Focus Tools > Extra Software Installer.</b>'
               ;
-            actionButton.text      = 'Install Extra Software Now';
-            actionButton.icon.name = 'arrow-right';
-            actionName             = 'checkNetwork';
-            networkReturnAction    = 'installExtraSoftware';
+            actionButton.text           = 'Install Extra Software Now';
+            actionButton.icon.name      = 'arrow-right';
+            actionName                  = 'checkNetwork';
+            networkDisconnectTitleImage = imgDir + 'extra_software.svg';
+            networkReturnAction         = 'installExtraSoftware';
             regenUiFn( baseTemplatePage, true );
             break;
 
@@ -1204,10 +1206,11 @@ Kirigami.ApplicationWindow {
               + '<a href="https://kfocus.org/wf/email">Email Guided '
               + 'Solution.</a>'
               ;
-            actionButton.text      = 'Launch Thunderbird Now';
-            actionButton.icon.name = 'arrow-right';
-            actionName             = 'checkNetwork';
-            networkReturnAction    = 'launchThunderbird';
+            actionButton.text           = 'Launch Thunderbird Now';
+            actionButton.icon.name      = 'arrow-right';
+            actionName                  = 'checkNetwork';
+            networkDisconnectTitleImage = imgDir + 'thunderbird_logo.svg';
+            networkReturnAction         = 'launchThunderbird';
             regenUiFn( baseTemplatePage, true );
             break;
 
@@ -1272,10 +1275,11 @@ Kirigami.ApplicationWindow {
               + '<a href="https://kfocus.org/wf/drives.html">Cloud Drives '
               + 'Guided Solution.</a>'
               ;
-            actionButton.text      = 'Launch Dropbox Now';
-            actionButton.icon.name = 'arrow-right';
-            actionName             = 'checkNetwork';
-            networkReturnAction    = 'launchDropbox';
+            actionButton.text           = 'Launch Dropbox Now';
+            actionButton.icon.name      = 'arrow-right';
+            actionName                  = 'checkNetwork';
+            networkDisconnectTitleImage = imgDir + 'dropbox_logo.svg';
+            networkReturnAction         = 'launchDropbox';
             regenUiFn( baseTemplatePage, true );
             break;
 
@@ -1339,10 +1343,11 @@ Kirigami.ApplicationWindow {
               + '<a href="https://kfocus.org/wf/drives.html'
               + '#bkm_sync_with_google">Cloud Drives Guided Solution.</a>'
               ;
-            actionButton.text      = 'Launch Insync Now'
-            actionButton.icon.name = 'arrow-right';
-            actionName             = 'checkNetwork';
-            networkReturnAction    = 'launchInsync';
+            actionButton.text           = 'Launch Insync Now'
+            actionButton.icon.name      = 'arrow-right';
+            actionName                  = 'checkNetwork';
+            networkDisconnectTitleImage = imgDir + 'insync_logo.svg';
+            networkReturnAction         = 'launchInsync';
             regenUiFn( baseTemplatePage, true );
             break;
 
@@ -1513,10 +1518,11 @@ Kirigami.ApplicationWindow {
               + '<b>We encourage you to take a moment</b> to review the list '
               + 'of curated apps and install the ones you need now.'
               ;
-            actionButton.text      = 'Browse Curated Apps Now';
-            actionButton.icon.name = 'arrow-right';
-            actionName             = 'checkNetwork';
-            networkReturnAction    = 'browseCuratedApps';
+            actionButton.text           = 'Browse Curated Apps Now';
+            actionButton.icon.name      = 'arrow-right';
+            actionName                  = 'checkNetwork';
+            networkDisconnectTitleImage = imgDir + 'kfocus_bug_apps.svg';
+            networkReturnAction         = 'browseCuratedApps';
             regenUiFn( baseTemplatePage, true );
             break;
 
