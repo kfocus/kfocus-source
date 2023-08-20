@@ -20,6 +20,7 @@ Kirigami.ApplicationWindow {
     property bool firstRun              : true
     property var interImageList         : []
     property var defaultCryptList       : []
+    property string cryptChangeMode     : ""
     property string pageTitleText       : ''
     property string pageTitleImage      : ''
     property string imgDir              : 'assets/images/'
@@ -865,7 +866,7 @@ Kirigami.ApplicationWindow {
               = 'Authorization Has Failed';
             instructionsText.text
               = '<b>Sorry, authorization is required to change disk '
-              + 'passphrases for security.</b> If you would like to change '
+              + 'passphrases.</b> If you would like to change '
               + 'your '
               + getCryptDiskTextFn( 'disk\'s passphrase',
                   systemDataMap.cryptDiskList)
@@ -873,7 +874,7 @@ Kirigami.ApplicationWindow {
             interActionButton.text = 'Try Again';
             interActionButton.icon.name = 'arrow-right';
             interImageList = [ 'locked.svg' ];
-            actionName = 'changeCrypt';
+            actionName = cryptChangeMode;
             regenUiFn( interTemplatePage, false );
             break;
 
@@ -1820,6 +1821,7 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'changeCrypt':
+            cryptChangeMode = 'changeCrypt';
             if ( newPassphraseBox.text === confirmPassphraseBox.text ) {
                 if ( newPassphraseBox.text === "" ) {
                     cryptErrorMessage.text
@@ -1847,6 +1849,7 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'changeCryptNonDefault':
+            cryptChangeMode = 'changeCryptNonDefault';
             if ( newPassphraseBox.text === confirmPassphraseBox.text ) {
                 if ( newPassphraseBox.text === "" ) {
                     cryptErrorMessage.text
