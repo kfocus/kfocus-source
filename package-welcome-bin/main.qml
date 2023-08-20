@@ -760,7 +760,7 @@ Kirigami.ApplicationWindow {
               'Disk Passphrase', systemDataMap.cryptDiskList
             );
             pageTitleImage  = imgDir + 'encrypted_drive.svg';
-            topHeading.text = 'Checking Disk Encryption Security...';
+            topHeading.text = 'Checking Disk Passphrases...';
             primaryText.text
               = '<b>You will be prompted</b> to enter your password. Once '
               + 'the check is complete, you will be directed on the '
@@ -795,20 +795,12 @@ Kirigami.ApplicationWindow {
             regenUiFn( interTemplatePage, false );
             break;
 
-        case 'diskPassphraseChangeInProgressItem':
-            initPage([topHeading, busyIndicator]);
-
-            pageTitleText   = getCryptDiskTextFn('Disk Passphrase',
-                                systemDataMap.cryptDiskList);
-            pageTitleImage  = imgDir + 'encrypted_drive.svg';
-            topHeading.text
-              = 'Changing Disk Passphrases...\n'
-            regenUiFn( baseTemplatePage, false );
-            break;
-
         case 'diskPassphraseChangeItem':
-            oldPassphraseLabel.visible = false;
-            oldPassphraseBox.visible   = false;
+            oldPassphraseLabel.visible    = false;
+            oldPassphraseBox.visible      = false;
+            cryptErrorMessage.visible     = false;
+            newPassphraseBox.echoMode     = TextInput.Password;
+            confirmPassphraseBox.echoMode = TextInput.Password;
 
             pageTitleText             = getCryptDiskTextFn( 'Disk Passphrase',
                                           systemDataMap.cryptDiskList );
@@ -845,6 +837,44 @@ Kirigami.ApplicationWindow {
             cryptActionButton.icon.name = 'arrow-right';
             actionName                  = 'changeCrypt';
             regenUiFn( cryptTemplatePage, false );
+            break;
+
+        case 'diskPassphraseChangeInProgressItem':
+            initPage([topHeading, busyIndicator]);
+
+            pageTitleText   = getCryptDiskTextFn('Disk Passphrase',
+                                systemDataMap.cryptDiskList);
+            pageTitleImage  = imgDir + 'encrypted_drive.svg';
+            topHeading.text
+              = 'Changing Disk Passphrases...\n'
+            regenUiFn( baseTemplatePage, false );
+            break;
+
+        case 'pkexecDeclineCryptChangeItem':
+            initPage([
+              headerHighlightRect, interTopHeading,
+              instructionsText,    pictureColumn,
+              interActionButton,   interSkipButton
+            ]);
+
+            pageTitleText = getCryptDiskTextFn('Disk Passphrase',
+                              systemDataMap.cryptDiskList);
+            pageTitleImage = imgDir + 'encrypted_drive.svg';
+            headerHighlightRect.color = '#ff9900';
+            interTopHeading.text
+              = 'Authorization Has Failed';
+            instructionsText.text
+              = '<b>Sorry, authorization is required to change disk '
+              + 'passphrases for security.</b> If you would like to change '
+              + 'your '
+              + getCryptDiskTextFn( 'disk\'s passphrase',
+                  systemDataMap.cryptDiskList)
+              + ', click "Try Again".';
+            interActionButton.text = 'Try Again';
+            interActionButton.icon.name = 'arrow-right';
+            interImageList = [ 'locked.svg' ];
+            actionName = 'changeCrypt';
+            regenUiFn( interTemplatePage, false );
             break;
 
         case 'diskPassphraseGoodItem':
@@ -887,8 +917,12 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'diskPassphraseChangeAnywayItem':
-            oldPassphraseLabel.visible = true;
-            oldPassphraseBox.visible   = true;
+            oldPassphraseLabel.visible    = true;
+            oldPassphraseBox.visible      = true;
+            cryptErrorMessage.visible     = false;
+            oldPassphraseBox.echoMode     = TextInput.Password;
+            newPassphraseBox.echoMode     = TextInput.Password;
+            confirmPassphraseBox.echoMode = TextInput.Password;
 
             pageTitleText             = getCryptDiskTextFn( 'Disk Passphrase',
                                           systemDataMap.cryptDiskList );
@@ -1704,11 +1738,15 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id          : handleCryptoChangeEngine
         onAppExited : {
-            /*
-             * TODO: HOT: Check stdout here and let the user know how many
-             * disks were successfully changed
-             */
-            switchPageFn( 'diskPassphraseGoodItem' );
+            if ( exitCode === 127 ) {
+                switchPageFn( 'pkexecDeclineCryptChangeItem' );
+            } else {
+                /*
+                 * TODO: HOT: Check stdout here and let the user know how many
+                 * disks were successfully changed
+                 */
+                switchPageFn( 'diskPassphraseGoodItem' );
+            }
         }
     }
 
