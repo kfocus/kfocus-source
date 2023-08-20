@@ -722,8 +722,8 @@ Kirigami.ApplicationWindow {
               skipButton,  previousButton
             ]);
 
-            pageTitleText   = getCryptDiskTextFn('Disk Passphrase',
-                                systemDataMap.cryptDiskList);
+            pageTitleText   = getCryptDiskTextFn( 'Disk Passphrase',
+                                systemDataMap.cryptDiskList );
             topImage.source = imgDir + 'encrypted_drive.svg';
             topHeading.text = 'Check Disk Encryption Security';
             primaryText.text
@@ -740,11 +740,13 @@ Kirigami.ApplicationWindow {
               + '<b>You may check '
               + getCryptDiskTextFn('this disk',
                   systemDataMap.cryptDiskList)
-              + ' for the default password now.</b> As a security '
+              + ' for the default passphrase now.</b> As a security '
               + 'measure, this app will not perform this check until '
               + 'you enter your valid user password.'
               ;
-            actionButton.text      = 'Check Disk Passphrases Now';
+            actionButton.text      = getCryptDiskTextFn(
+                                       'Check Disk Passphrase Now',
+                                       systemDataMap.cryptDiskList );
             actionButton.icon.name = 'lock';
             actionName             = 'checkCrypt';
             regenUiFn( baseTemplatePage, true );
@@ -1619,6 +1621,9 @@ Kirigami.ApplicationWindow {
 
             case 'disk\'s passphrase':
                 return 'disk passphrases';
+
+            case 'Check Disk Passphrase Now':
+                return 'Check Disk Passphrases Now';
             }
         }
     }
