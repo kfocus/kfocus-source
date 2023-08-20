@@ -21,6 +21,7 @@ Kirigami.ApplicationWindow {
     property var interImageList         : []
     property var defaultCryptList       : []
     property string cryptChangeMode     : ""
+    property int cryptDiskChangeCount  : 0
     property string pageTitleText       : ''
     property string pageTitleImage      : ''
     property string imgDir              : 'assets/images/'
@@ -870,13 +871,42 @@ Kirigami.ApplicationWindow {
               + 'passphrases.</b> If you would like to change '
               + 'your '
               + getCryptDiskTextFn( 'disk\'s passphrase',
-                  systemDataMap.cryptDiskList)
+                  systemDataMap.cryptDiskList )
               + ', click "Try Again".';
             interActionButton.text      = 'Try Again';
             interActionButton.icon.name = 'arrow-right';
             interSkipButton.text        = 'No Thanks';
             interImageList              = [ 'locked.svg' ];
             actionName                  = cryptChangeMode;
+            regenUiFn( interTemplatePage, false );
+            break;
+
+        case 'diskPassphraseChangeFailedItem':
+            initPage([
+              headerHighlightRect, interTopHeading,
+              instructionsText,    pictureColumn,
+              interActionButton,   interSkipButton
+            ]);
+
+            pageTitleText = getCryptDiskTextFn('Disk Passphrase',
+                              systemDataMap.cryptDiskList);
+            pageTitleImage = imgDir + 'encrypted_drive.svg';
+            headerHighlightRect.color = '#ff9900';
+            interTopHeading.text
+              = 'Disk Passphrase Changing Failed';
+            instructionsText.text
+              = '<b>No disks had their passphrase changed.</b> You may have '
+              + 'mistyped your old passphrase.<br>'
+              + '<br>'
+              + 'If you would like to change your '
+              + getCryptDiskTextFn( 'disk\'s passphrase',
+                  systemDataMap.cryptDiskList )
+              + ', click "Try Again."'
+            interActionButton.text      = 'Try Again';
+            interActionButton.icon.name = 'arrow-right';
+            interSkipButton.text        = 'No Thanks';
+            interImageList = [ 'exclamation.svg' ];
+            actionName = 'changePassphrasesNonDefault';
             regenUiFn( interTemplatePage, false );
             break;
 
@@ -899,11 +929,13 @@ Kirigami.ApplicationWindow {
             instructionsText.text
               = '<b>' + getCryptDiskTextFn( 'The encrypted disk uses',
                           systemDataMap.cryptDiskList )
-              + ' a unique passphrase.</b> We recommend that you don\'t '
-              + 'change your disk '
+              + ' a unique passphrase.</b> '
+              + getCryptDiskChangeTextFn()
+              + '<br><br>'
+              + '<b>We do not recommend changing your disk '
               + getCryptDiskTextFn( 'passphrase',
                   systemDataMap.cryptDiskList )
-              + ', but if you would like to anyway, you may.<br>'
+              + '.</b> However, if you would like to anyway, you may.<br>'
               + '<br>'
               + '<b>Please keep a copy of your passphrase in a safe '
               + 'place.</b> If this is lost, there is no recovery '
@@ -934,13 +966,13 @@ Kirigami.ApplicationWindow {
             oldPassphraseBox.text     = "";
             newPassphraseBox.text     = "";
             confirmPassphraseBox.text = "";
-            cryptHighlightRect.color  = '#27ae60';
-            cryptTopHeading.text      = 'Change Disk Passphrases';
+            cryptHighlightRect.color  = '#ff9900';
+            cryptTopHeading.text      = 'Change Non-Default Passphrases';
             cryptInstructionsText.text
               = '<b> Please enter the old passphrase of the disk(s) you want '
               + 'to modify.</b> Then provide the passphrase you would like '
               + 'to use instead. <b>All disks using the specified old '
-              + 'passphrase will be modified to use the new one.<br>'
+              + 'passphrase will be modified to use the new one.'
               ;
             cryptSecondaryText.text
               = '<b>Please keep a copy of '
@@ -1665,6 +1697,20 @@ Kirigami.ApplicationWindow {
         }
     }
 
+    function getCryptDiskChangeTextFn() {
+        switch ( cryptDiskChangeCount ) {
+        case 0:
+            return '';
+        case 1:
+            return 'One disk had its passphrase changed.';
+        case 2:
+            return 'Two disks had their passphrase changed.';
+        default:
+            return cryptDiskChangeCount
+                     + ' disks had their passphrase changed.';
+        }
+    }
+
     function getThemedImageFn(icon_name, file_type) {
         if ( Kirigami.Theme.textColor.hsvValue < 0.5 ) {
             return 'qrc:/assets/images/' + icon_name + '_light.' + file_type;
@@ -1727,7 +1773,7 @@ Kirigami.ApplicationWindow {
                 switchPageFn( 'pkexecDeclineCryptCheckItem' );
             } else {
                 // The newline following the last entry creates an "extra" blank entry that needs to be removed
-                defaultCryptList = stdout.split('\n').slice(0, -1);;
+                defaultCryptList = stdout.split('\n').slice(0, -1);
 
                 if ( defaultCryptList.length > 0 ) {
                     switchPageFn( 'diskPassphraseChangeItem' );
@@ -1745,11 +1791,20 @@ Kirigami.ApplicationWindow {
             if ( exitCode === 127 ) {
                 switchPageFn( 'pkexecDeclineCryptChangeItem' );
             } else {
-                /*
-                 * TODO: HOT: Check stdout here and let the user know how many
-                 * disks were successfully changed
-                 */
-                switchPageFn( 'diskPassphraseGoodItem' );
+                let stdout_list = stdout.split('\n').slice(0, -1);
+                if ( cryptChangeMode === 'changeCrypt' ) {
+                    cryptDiskChangeCount
+                      = defaultCryptList.length - stdout_list.length;
+                    switchPageFn( 'diskPassphraseGoodItem' );
+                } else {
+                    cryptDiskChangeCount
+                      = systemDataMap.cryptDiskList.length - stdout_list.length;
+                    if ( cryptDiskChangeCount === 0 ) {
+                        switchPageFn( 'diskPassphraseChangeFailedItem' );
+                    } else {
+                        switchPageFn( 'diskPassphraseGoodItem' );
+                    }
+                }
             }
         }
     }

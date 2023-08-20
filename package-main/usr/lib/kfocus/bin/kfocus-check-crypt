@@ -171,7 +171,11 @@ _modifyDiskPassFn () {
     fi
   done
 
-  echo "${_fail_list[@]}";
+  if [ "${#_fail_list[@]}" != 0 ]; then
+    ( IFS=$'\n'; echo "${_fail_list[*]}"; )
+  else
+    echo -n;
+  fi
   return "${#_fail_list[@]}";
 }
 ## . END _modifyDisksPassFn
