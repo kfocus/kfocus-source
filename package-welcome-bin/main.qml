@@ -618,6 +618,7 @@ Kirigami.ApplicationWindow {
 
             Controls.Button {
                 id        : cryptActionButton
+                palette   { button: "#ff9900" }
                 onClicked : takeActionFn()
             }
 
@@ -779,7 +780,7 @@ Kirigami.ApplicationWindow {
             pageTitleImage = imgDir + 'encrypted_drive.svg';
             headerHighlightRect.color = '#ff9900';
             interTopHeading.text
-              = 'Authorization Declined';
+              = 'Authorization Has Failed';
             instructionsText.text
               = '<b>Sorry, authorization is required to check disk '
               + 'passphrases for security.</b> If you would like to check '
@@ -824,25 +825,23 @@ Kirigami.ApplicationWindow {
               + getCryptDiskTextFn('One disk is',
                   defaultCryptList)
               + ' using the default passphrase.</b> This is insecure, '
-              + 'and we recommend you use the form below to change '
-              + getCryptDiskTextFn('it',
-                  defaultCryptList)
-              + ' to a unique passphrase. <b>IMPORTANT:</b> All disks using '
+              + 'and we recommend you use the form below to change it '
+              + 'to a unique passphrase. <b>IMPORTANT:</b> All disks using '
               + 'the default passphrase will be changed to use the new '
               + 'passphrase.</b>'
               ;
             cryptSecondaryText.text
               = '<b>Please keep a copy of '
-              + 'your passphrase</b> in a safe place. If this is lost, '
+              + 'your passphrase in a safe place.</b> If this is lost, '
               + 'there is no recovery except to reformat your disks '
               + 'and restore from backup.<br>'
               + '<br>'
-              + '<b>For your security</b>, the Kubuntu Focus Team does NOT '
-              + 'install tools that could assist in any recovery. '
-              + 'In other words, if you lose your password, they have no '
+              + '<b>For your security, the Kubuntu Focus Team does NOT '
+              + 'install tools that could assist in any recovery.</b> '
+              + 'In other words, if you lose your passphrase, they have no '
               + 'way to help you recover it!'
               ;
-            cryptActionButton.text      = 'Continue';
+            cryptActionButton.text      = 'Change Now';
             cryptActionButton.icon.name = 'arrow-right';
             actionName                  = 'changeCrypt';
             regenUiFn( cryptTemplatePage, false );
