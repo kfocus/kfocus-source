@@ -455,7 +455,6 @@ Kirigami.ApplicationWindow {
             }
             Controls.Button {
                 id        : interSkipButton
-                text      : 'No Thanks'
                 icon.name : 'go-next-skip'
                 onClicked : nextPageFn()
             }
@@ -713,6 +712,7 @@ Kirigami.ApplicationWindow {
             ];
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
+            interSkipButton.text        = 'No Thanks';
             regenUiFn( interTemplatePage, false );
             actionName = 'checkNetwork';
             break;
@@ -789,8 +789,9 @@ Kirigami.ApplicationWindow {
               + getCryptDiskTextFn( 'disk\'s passphrase',
                   systemDataMap.cryptDiskList)
               + ' for security, click "Try Again".';
-            interActionButton.text = 'Try Again';
+            interActionButton.text      = 'Try Again';
             interActionButton.icon.name = 'arrow-right';
+            interSkipButton.text        = 'No Thanks';
             interImageList = [ 'locked.svg' ];
             actionName = 'checkCrypt';
             regenUiFn( interTemplatePage, false );
@@ -858,9 +859,9 @@ Kirigami.ApplicationWindow {
               interActionButton,   interSkipButton
             ]);
 
-            pageTitleText = getCryptDiskTextFn('Disk Passphrase',
-                              systemDataMap.cryptDiskList);
-            pageTitleImage = imgDir + 'encrypted_drive.svg';
+            pageTitleText             = getCryptDiskTextFn('Disk Passphrase',
+                                          systemDataMap.cryptDiskList);
+            pageTitleImage            = imgDir + 'encrypted_drive.svg';
             headerHighlightRect.color = '#ff9900';
             interTopHeading.text
               = 'Authorization Has Failed';
@@ -871,10 +872,11 @@ Kirigami.ApplicationWindow {
               + getCryptDiskTextFn( 'disk\'s passphrase',
                   systemDataMap.cryptDiskList)
               + ', click "Try Again".';
-            interActionButton.text = 'Try Again';
+            interActionButton.text      = 'Try Again';
             interActionButton.icon.name = 'arrow-right';
-            interImageList = [ 'locked.svg' ];
-            actionName = cryptChangeMode;
+            interSkipButton.text        = 'No Thanks';
+            interImageList              = [ 'locked.svg' ];
+            actionName                  = cryptChangeMode;
             regenUiFn( interTemplatePage, false );
             break;
 
@@ -911,13 +913,14 @@ Kirigami.ApplicationWindow {
               + '<b>For your security, the Kubuntu Focus Team does NOT '
               + 'install tools</b> that could assist in any recovery.'
               ;
-            interActionButton.text      = 'Change Passphrases Anyway';
+            interActionButton.text      = 'Change Passphrases';
             interActionButton.icon.name = 'arrow-right';
-            actionName                  = 'changePassphrasesAnyway';
+            interSkipButton.text        = 'Keep Passphrases';
+            actionName                  = 'changePassphrasesNonDefault';
             regenUiFn( interTemplatePage, false) ;
             break;
 
-        case 'diskPassphraseChangeAnywayItem':
+        case 'diskPassphraseChangeNonDefaultItem':
             oldPassphraseLabel.visible    = true;
             oldPassphraseBox.visible      = true;
             cryptErrorMessage.visible     = false;
@@ -1844,8 +1847,8 @@ Kirigami.ApplicationWindow {
             }
             break;
 
-        case 'changePassphrasesAnyway':
-            switchPageFn( 'diskPassphraseChangeAnywayItem' );
+        case 'changePassphrasesNonDefault':
+            switchPageFn( 'diskPassphraseChangeNonDefaultItem' );
             break;
 
         case 'changeCryptNonDefault':
