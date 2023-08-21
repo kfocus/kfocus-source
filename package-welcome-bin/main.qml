@@ -1130,15 +1130,17 @@ Kirigami.ApplicationWindow {
             topImage.source = imgDir + 'keepassxc_logo.svg';
             topHeading.text = 'Generate, Save, and View Secrets';
             primaryText.text
-              = 'KeePassXC is a powerful password manager and generator '
-              + 'that takes the hassle out of staying secure. It saves your '
-              + 'passwords offline and in an encrypted form, avoiding the '
-              + 'security issues of cloud-based password managers and keeping '
-              + 'you safe even if your computer is stolen.'
+              = '<b>KeePassXC is a powerful password manager</b> and '
+              + 'generator that takes the hassle out of staying secure. It '
+              + 'saves your passwords offline and in an encrypted form, '
+              + 'avoiding the security issues of cloud-based password '
+              + 'managers and keeping you safe even if your computer is '
+              + 'stolen.'
               + '<br><br>'
-              + '<b>See more in the</b> '
-              + '<a href="https://kfocus.org/wf/passwords">Passwords Guided '
-              + 'Solution.</a>'
+              + '<b>It can also be used</b> for two-factor authentication, '
+              + 'application secrets, and with smartphones. See more in the '
+              + '<a href="https://kfocus.org/wf/passwords#bkm_keepassxc">'
+              + 'Passwords Guided Solution.</a>'
               ;
             actionButton.text      = 'Launch KeePassXC Now';
             actionButton.icon.name = 'arrow-right';
