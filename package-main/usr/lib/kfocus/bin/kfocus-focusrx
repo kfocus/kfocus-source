@@ -66,7 +66,7 @@ _runXtermCmdFn () {
 
 ## BEGIN _confirmInternetFn {
 _confirmInternetFn () {
-  declare _prompt_msg _title;
+  declare _prompt_msg _title _count;
 
   _prompt_msg="$(cat << _EOH01
 ${_cm2HtmBeginStr}
