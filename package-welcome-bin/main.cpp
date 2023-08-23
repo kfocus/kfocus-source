@@ -5,14 +5,15 @@
 #include <QStandardPaths>
 #include <QFile>
 #include <QStorageInfo>
-#include <startupdata.h>
-#include <shellengine.h>
+#include "startupdata.h"
+#include "shellengine.h"
 
 QStringList StartupData::m_cryptDiskList = QStringList();
-QString StartupData::m_binDir = "../package-main/usr/lib/kfocus/bin/";
-QString StartupData::m_homeDir = "";
+QString StartupData::m_binDir   = "../package-main/usr/lib/kfocus/bin/";
+QString StartupData::m_homeDir  = "";
+QString StartupData::m_userName = "";
 
-const qint64 twenty_gib = 21474836480;
+const qint64 min_disk_int = 1073741824;
 
 int main(int argc, char *argv[])
 {
@@ -27,6 +28,11 @@ int main(int argc, char *argv[])
             return 1;
         }
     }
+    ShellEngine userNameEngine;
+    userNameEngine.execSync("whoami");
+    QString userName = userNameEngine.stdout();
+    userName.remove('\n');
+    dat.setUserName(userName);
 
     // UI and QML setup
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
@@ -68,9 +74,9 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    // Check disk space - we want at least 20 GiB available
+    // Check disk space - we want at least 1 GiB available
     QStorageInfo driveInfo = QStorageInfo::root();
-    if (driveInfo.bytesFree() < twenty_gib) {
+    if (driveInfo.bytesFree() < min_disk_int) {
         msgbox.execSync("kdialog --title \"Kubuntu Focus Welcome Wizard\" --msgbox \"Your primary drive is low on space. Please free some space before running this wizard.\"");
         return 1;
     }

@@ -27,6 +27,9 @@ Kirigami.ApplicationWindow {
     property string pageTitleImage              : ''
     property string imgDir                      : 'assets/images/'
     property var stateMatrix                    : ({})
+    property string liveUsbWarnStr             : '<b>This step cannot '
+        + 'be run in a live session</b> due to storage limits. Please '
+        + 'install to a system disk to enable this option.'
 
     // Purpose: Describes steps used in wizard
     // See property currentIndex
@@ -97,9 +100,11 @@ Kirigami.ApplicationWindow {
 
     StartupData {
         id: systemDataMap
-        // cryptDiskList is provided by main.cpp
-        // binDir is provided by main.cpp
-        // homeDir is provided by main.cpp
+        // Provided by main.cpp:
+        //   * cryptDiskList
+        //   * binDir
+        //   * homeDir
+        //   * userName
     }
     // == . END Models ================================================
 
@@ -259,7 +264,7 @@ Kirigami.ApplicationWindow {
                 id        : frontButton
                 text      : 'Continue'
                 icon.name : 'arrow-right'
-                onClicked : nextPageFn()
+                onClicked : gotoNextPageFn()
             }
         }
     }
@@ -313,6 +318,12 @@ Kirigami.ApplicationWindow {
                 Layout.fillWidth    : true
                 Layout.bottomMargin : Kirigami.Units.gridUnit
             }
+
+            Kirigami.InlineMessage {
+                id               : pageWarn
+                type             : Kirigami.MessageType.Warning
+                Layout.fillWidth : true
+            }
         }
 
         RowLayout {
@@ -325,7 +336,7 @@ Kirigami.ApplicationWindow {
                 id        : previousButton
                 text      : 'Previous'
                 icon.name : 'arrow-left'
-                onClicked : previousPageFn()
+                onClicked : gotoPreviousPageFn()
             }
 
             Controls.Button {
@@ -366,7 +377,7 @@ Kirigami.ApplicationWindow {
                 id        : skipButton
                 text      : 'No Thanks'
                 icon.name : 'go-next-skip'
-                onClicked : nextPageFn()
+                onClicked : gotoNextPageFn()
             }
         }
     }
@@ -458,7 +469,7 @@ Kirigami.ApplicationWindow {
             Controls.Button {
                 id        : interSkipButton
                 icon.name : 'go-next-skip'
-                onClicked : nextPageFn()
+                onClicked : gotoNextPageFn()
             }
         }
 
@@ -628,15 +639,187 @@ Kirigami.ApplicationWindow {
                 id        : cryptSkipButton
                 text      : 'No Thanks'
                 icon.name : 'go-next-skip'
-                onClicked : nextPageFn()
+                onClicked : gotoNextPageFn()
             }
         }
     }
     // == . END Views =================================================
 
     // == BEGIN Controllers ===========================================
-    function removeSidebarItemFn(js_id) {
-        for ( var i = 0;i < sidebarModel.count;i++ ) {
+    function initPageFn ( visible_elements_list ) {
+        var all_elements_list = [
+            actionButton,        busyIndicator,
+            clearButton,
+            headerHighlightRect, instructionsText,
+            interActionButton,   interContinueLabel,
+            interSkipButton,     interTopHeading,
+            loginStartCheckbox,  pageWarn,
+            previousButton,      primaryText,
+            skipButton,          topHeading,
+            topImage
+        ];
+        var i;
+
+        for ( i = 0; i < all_elements_list.length; i++ ) {
+          all_elements_list[i].visible = false;
+        }
+
+        interImageList = [];
+        pageTitleImage = '';
+        for ( i = 0;i < visible_elements_list.length;i++ ) {
+          visible_elements_list[i].visible = true;
+        }
+    }
+
+    function getCurrentPageIdFn () {
+        return sidebarModel.get(enabledSidebar.currentIndex).jsId;
+    }
+
+    function getCryptDiskTextFn (text_type, disk_list) {
+        if ( disk_list.length === 1 ) {
+            return text_type;
+        } else {
+            switch(text_type) {
+            case 'Disk Passphrase':
+                return 'Disk Passphrases';
+
+            case 'one encrypted disk':
+                if (disk_list.length === 2) {
+                    return 'two encrypted disks';
+                } else {
+                    return disk_list.length + ' encrypted disks';
+                }
+
+            case 'One Encrypted Disk':
+                if (disk_list.length === 2) {
+                    return 'Two Encrypted Disks';
+                } else {
+                    return disk_list.length + ' Encrypted Disks';
+                }
+
+            case 'One Encrypted Disk Found':
+                if (disk_list.length === 2) {
+                    return 'Two Encrypted Disks Found';
+                } else {
+                    return disk_list.length + ' Encrypted Disks Found';
+                }
+
+            case 'passphrase':
+                return 'passphrases';
+
+            case 'this disk':
+                return 'these disks';
+
+            case 'The encrypted disk uses':
+                if ( systemDataMap.cryptDiskList.length === 2 ) {
+                    return 'Both encrypted disks use';
+                } else {
+                    return 'All encrypted disks use';
+                }
+
+            case 'One disk is':
+                if (disk_list.length === 2) {
+                    return 'Two disks are';
+                } else {
+                    return disk_list.length + ' disks are';
+                }
+
+            case 'it':
+                return 'them';
+
+            case 'Disk Encryption Passphrase Appears':
+                return 'Disk Encryption Passphrases Appear';
+
+            case 'disk\'s passphrase':
+                return 'disk passphrases';
+
+            case 'Check Disk Passphrase Now':
+                return 'Check Disk Passphrases Now';
+            }
+        }
+    }
+
+    function getCryptDiskChangeTextFn () {
+        switch ( cryptDiskChangeCount ) {
+        case 0:
+            return '';
+        case 1:
+            return 'One disk had its passphrase changed.';
+        case 2:
+            return 'Two disks had their passphrase changed.';
+        default:
+            return cryptDiskChangeCount
+                     + ' disks had their passphrase changed.';
+        }
+    }
+
+    function getThemedImageFn (icon_name, file_type) {
+        if ( Kirigami.Theme.textColor.hsvValue < 0.5 ) {
+            return 'qrc:/assets/images/' + icon_name + '_light.' + file_type;
+        } else {
+            return 'qrc:/assets/images/' + icon_name + '_dark.' + file_type;
+        }
+    }
+
+    function getThemedColorFn (color_name) {
+        if ( Kirigami.Theme.textColor.hsvValue > 0.5 ) {
+            return color_name;
+        } else {
+            switch( color_name ) {
+            case 'green':
+                return 'lightgreen';
+            }
+         }
+    }
+
+    function gotoNextPageFn () {
+        // Trigger the checkbox for the current page if applicable
+        const initialPageId = getCurrentPageIdFn();
+        const check_map = stateMatrix.check_map;
+        if ( initialPageId !== 'finishItem' ) {
+            check_map[initialPageId] = Date.now();
+            enabledSidebar.currentItem.trailing.source = 'checkbox';
+            disabledSidebar.currentItem.trailing.source = 'checkbox';
+        }
+
+        // Now advance to the next one
+        enabledSidebar.currentIndex++;
+        switchPageFn(getCurrentPageIdFn());
+    }
+
+    function gotoPreviousPageFn () {
+        enabledSidebar.currentIndex--;
+        switchPageFn(getCurrentPageIdFn());
+    }
+
+
+    function populateCheckboxesFn () {
+        const check_map = stateMatrix.check_map;
+        for ( var i = 0; i < sidebarModel.count; i++ ) {
+            var js_id = sidebarModel.get( i ).jsId;
+            for ( let target_obj of [ enabledSidebar, disabledSidebar ] ) {
+                var item_obj = target_obj.itemAtIndex(i);
+                if ( item_obj && typeof item_obj.trailing === 'object' ) {
+                    item_obj.trailing.source = ( check_map[ js_id ] > 0 )
+                      ? 'checkbox' : '';
+                }
+            }
+        }
+    }
+
+    function regenUiFn ( current_page, sidebar_enabled ) {
+        if ( sidebar_enabled ) {
+            pageStack.push(enabledSidebarPage);
+        } else {
+            disabledSidebar.currentIndex = enabledSidebar.currentIndex;
+            disabledSidebarIndex = disabledSidebar.currentIndex;
+            pageStack.push(disabledSidebarPage);
+        }
+        pageStack.push(current_page);
+    }
+
+    function removeSidebarItemFn ( js_id ) {
+        for ( var i = 0; i < sidebarModel.count; i++ ) {
             if ( sidebarModel.get(i).jsId === js_id ) {
                 sidebarModel.remove(i);
                 break;
@@ -644,7 +827,18 @@ Kirigami.ApplicationWindow {
         }
     }
 
-    function switchPageFn(page_id) {
+    function setLiveModeFieldsFn () {
+        // TODO: Use 'kubuntu' check; add to other steps
+        //   OR  as a function call (scope is issue here)
+        //   if ( systemDataMap.userName === 'kubuntu' ) {
+        if ( systemDataMap ) {
+            pageWarn.text        = liveUsbWarnStr;
+            pageWarn.visible     = true;
+            actionButton.visible = false;
+        }
+    }
+
+    function switchPageFn ( page_id ) {
         pageStack.clear();
 
         switch(page_id) {
@@ -670,14 +864,14 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'internetCheckItem':
-            initPage([topHeading, busyIndicator]);
+            initPageFn([topHeading, busyIndicator]);
 
             topHeading.text = 'Checking for Internet connectivity...';
             regenUiFn( baseTemplatePage, false );
             break;
 
         case 'connectInternetItem':
-            initPage([
+            initPageFn([
               headerHighlightRect, interTopHeading,
               instructionsText,    interSkipButton,
               interActionButton,   pictureColumn
@@ -720,7 +914,7 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'diskPassphraseItem':
-            initPage([
+            initPageFn([
               topImage,    topHeading,
               primaryText, actionButton,
               skipButton,  previousButton
@@ -758,7 +952,7 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'diskPassphraseCheckerItem':
-            initPage([topHeading, busyIndicator, primaryText]);
+            initPageFn([topHeading, busyIndicator, primaryText]);
 
             pageTitleText   = getCryptDiskTextFn(
               'Disk Passphrase', systemDataMap.cryptDiskList
@@ -773,7 +967,7 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'pkexecDeclineCryptCheckItem':
-            initPage([
+            initPageFn([
               headerHighlightRect, interTopHeading,
               instructionsText,    pictureColumn,
               interActionButton,   interSkipButton
@@ -845,7 +1039,7 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'diskPassphraseChangeInProgressItem':
-            initPage([topHeading, busyIndicator]);
+            initPageFn([topHeading, busyIndicator]);
 
             pageTitleText   = getCryptDiskTextFn('Disk Passphrase',
                                 systemDataMap.cryptDiskList);
@@ -856,7 +1050,7 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'pkexecDeclineCryptChangeItem':
-            initPage([
+            initPageFn([
               headerHighlightRect, interTopHeading,
               instructionsText,    pictureColumn,
               interActionButton,   interSkipButton
@@ -884,7 +1078,7 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'diskPassphraseChangeFailedItem':
-            initPage([
+            initPageFn([
               headerHighlightRect, interTopHeading,
               instructionsText,    pictureColumn,
               interActionButton,   interSkipButton
@@ -913,7 +1107,7 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'diskPassphraseGoodItem':
-            initPage([
+            initPageFn([
               headerHighlightRect, interTopHeading,
               instructionsText,    pictureColumn,
               interActionButton,   interSkipButton
@@ -994,7 +1188,7 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'extraSoftwareItem':
-            initPage([
+            initPageFn([
               topImage,       topHeading,
               primaryText,    actionButton,
               previousButton, skipButton
@@ -1017,6 +1211,8 @@ Kirigami.ApplicationWindow {
               ;
             actionButton.text           = 'Install Extra Software Now';
             actionButton.icon.name      = 'arrow-right';
+
+            setLiveModeFieldsFn();
             actionName                  = 'checkNetwork';
             networkDisconnectTitleImage = imgDir + 'extra_software.svg';
             networkReturnAction         = 'installExtraSoftware';
@@ -1024,7 +1220,7 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'extraSoftwareInstallItem':
-            initPage([
+            initPageFn([
               headerHighlightRect, interTopHeading,
               instructionsText,    interActionButton,
               pictureColumn,       interContinueLabel
@@ -1056,7 +1252,7 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'fileBackupItem':
-            initPage([
+            initPageFn([
               topImage,       topHeading,
               primaryText,    actionButton,
               previousButton, skipButton
@@ -1083,7 +1279,7 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'fileBackupLaunchedItem':
-            initPage([
+            initPageFn([
               headerHighlightRect, interTopHeading,
               instructionsText,    interActionButton,
               pictureColumn,       interContinueLabel
@@ -1120,7 +1316,7 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'passwordManagerItem':
-            initPage([
+            initPageFn([
               topImage,       topHeading,
               primaryText,    actionButton,
               previousButton, skipButton
@@ -1149,7 +1345,7 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'passwordManagerLaunchedItem':
-            initPage([
+            initPageFn([
               headerHighlightRect, interTopHeading,
               instructionsText,    interActionButton,
               pictureColumn,       interContinueLabel
@@ -1188,7 +1384,7 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'emailCalendarItem':
-            initPage([
+            initPageFn([
               topImage,       topHeading,
               primaryText,    actionButton,
               previousButton, skipButton
@@ -1218,7 +1414,7 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'emailCalendarLaunchedItem':
-            initPage([
+            initPageFn([
               headerHighlightRect, interTopHeading,
               instructionsText,    interActionButton,
               pictureColumn,       interContinueLabel
@@ -1257,7 +1453,7 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'dropboxItem':
-            initPage([
+            initPageFn([
               topImage,       topHeading,
               primaryText,    actionButton,
               previousButton, skipButton
@@ -1287,7 +1483,7 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'dropboxLaunchedItem':
-            initPage([
+            initPageFn([
               headerHighlightRect, interTopHeading,
               instructionsText,    interActionButton,
               pictureColumn,       interContinueLabel
@@ -1324,7 +1520,7 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'insyncItem':
-            initPage([
+            initPageFn([
               topImage,       topHeading,
               primaryText,    actionButton,
               previousButton, skipButton
@@ -1355,7 +1551,7 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'insyncLaunchedItem':
-            initPage([
+            initPageFn([
               headerHighlightRect, interTopHeading,
               instructionsText,    interActionButton,
               pictureColumn,       interContinueLabel
@@ -1382,7 +1578,7 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'jetbrainsToolboxItem':
-            initPage([
+            initPageFn([
               topImage,       topHeading,
               primaryText,    actionButton,
               previousButton, skipButton
@@ -1411,7 +1607,7 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'jetbrainsToolboxLaunchedItem':
-            initPage([
+            initPageFn([
               headerHighlightRect, interTopHeading,
               instructionsText,    interActionButton,
               pictureColumn,       interContinueLabel
@@ -1445,7 +1641,7 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'avatarItem':
-            initPage([
+            initPageFn([
               topImage,       topHeading,
               primaryText,    actionButton,
               previousButton, skipButton
@@ -1471,7 +1667,7 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'avatarChangeItem':
-            initPage([
+            initPageFn([
               headerHighlightRect, interTopHeading,
               instructionsText,    interActionButton,
               pictureColumn,       interContinueLabel
@@ -1502,7 +1698,7 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'curatedAppsItem':
-            initPage([
+            initPageFn([
               topImage,       topHeading,
               primaryText,    actionButton,
               previousButton, skipButton
@@ -1530,7 +1726,7 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'browseCuratedAppsItem':
-            initPage([
+            initPageFn([
               headerHighlightRect, interTopHeading,
               instructionsText,    interActionButton,
               pictureColumn,       interContinueLabel
@@ -1562,7 +1758,7 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'finishItem':
-            initPage([
+            initPageFn([
               topImage,       topHeading,
               primaryText,    actionButton,
               previousButton, loginStartCheckbox,
@@ -1590,168 +1786,13 @@ Kirigami.ApplicationWindow {
         }
     }
 
-    function initPage(visible_elements_list) {
-        var all_elements_list = [
-            actionButton,        busyIndicator,
-            clearButton,
-            headerHighlightRect, instructionsText,
-            interActionButton,   interContinueLabel,
-            interSkipButton,     interTopHeading,
-            loginStartCheckbox,  previousButton,
-            primaryText,         skipButton,
-            topHeading,          topImage
-        ];
-        var i;
-
-        for ( i = 0; i < all_elements_list.length; i++ ) {
-          all_elements_list[i].visible = false;
-        }
-
-        interImageList = [];
-        pageTitleImage = '';
-        for ( i = 0;i < visible_elements_list.length;i++ ) {
-          visible_elements_list[i].visible = true;
-        }
-    }
-
-    function regenUiFn(current_page, sidebar_enabled) {
-        if ( sidebar_enabled ) {
-            pageStack.push(enabledSidebarPage);
-        } else {
-            disabledSidebar.currentIndex = enabledSidebar.currentIndex;
-            disabledSidebarIndex = disabledSidebar.currentIndex;
-            pageStack.push(disabledSidebarPage);
-        }
-        pageStack.push(current_page);
-    }
-
-    function getCurrentPageIdFn() {
-        return sidebarModel.get(enabledSidebar.currentIndex).jsId;
-    }
-
-    function nextPageFn() {
-        // Trigger the checkbox for the current page if applicable
-        const initialPageId = getCurrentPageIdFn();
-        const check_map = stateMatrix.check_map;
-        if ( initialPageId !== 'finishItem' ) {
-            check_map[initialPageId] = Date.now();
-            enabledSidebar.currentItem.trailing.source = 'checkbox';
-            disabledSidebar.currentItem.trailing.source = 'checkbox';
-        }
-
-        // Now advance to the next one
-        enabledSidebar.currentIndex++;
-        switchPageFn(getCurrentPageIdFn());
-    }
-
-    function previousPageFn() {
-        enabledSidebar.currentIndex--;
-        switchPageFn(getCurrentPageIdFn());
-    }
-
-    function getCryptDiskTextFn(text_type, disk_list) {
-        if ( disk_list.length === 1 ) {
-            return text_type;
-        } else {
-            switch(text_type) {
-            case 'Disk Passphrase':
-                return 'Disk Passphrases';
-
-            case 'one encrypted disk':
-                if (disk_list.length === 2) {
-                    return 'two encrypted disks';
-                } else {
-                    return disk_list.length + ' encrypted disks';
-                }
-
-            case 'One Encrypted Disk':
-                if (disk_list.length === 2) {
-                    return 'Two Encrypted Disks';
-                } else {
-                    return disk_list.length + ' Encrypted Disks';
-                }
-
-            case 'One Encrypted Disk Found':
-                if (disk_list.length === 2) {
-                    return 'Two Encrypted Disks Found';
-                } else {
-                    return disk_list.length + ' Encrypted Disks Found';
-                }
-
-            case 'passphrase':
-                return 'passphrases';
-
-            case 'this disk':
-                return 'these disks';
-
-            case 'The encrypted disk uses':
-                if ( systemDataMap.cryptDiskList.length === 2 ) {
-                    return 'Both encrypted disks use';
-                } else {
-                    return 'All encrypted disks use';
-                }
-
-            case 'One disk is':
-                if (disk_list.length === 2) {
-                    return 'Two disks are';
-                } else {
-                    return disk_list.length + ' disks are';
-                }
-
-            case 'it':
-                return 'them';
-
-            case 'Disk Encryption Passphrase Appears':
-                return 'Disk Encryption Passphrases Appear';
-
-            case 'disk\'s passphrase':
-                return 'disk passphrases';
-
-            case 'Check Disk Passphrase Now':
-                return 'Check Disk Passphrases Now';
-            }
-        }
-    }
-
-    function getCryptDiskChangeTextFn() {
-        switch ( cryptDiskChangeCount ) {
-        case 0:
-            return '';
-        case 1:
-            return 'One disk had its passphrase changed.';
-        case 2:
-            return 'Two disks had their passphrase changed.';
-        default:
-            return cryptDiskChangeCount
-                     + ' disks had their passphrase changed.';
-        }
-    }
-
-    function getThemedImageFn(icon_name, file_type) {
-        if ( Kirigami.Theme.textColor.hsvValue < 0.5 ) {
-            return 'qrc:/assets/images/' + icon_name + '_light.' + file_type;
-        } else {
-            return 'qrc:/assets/images/' + icon_name + '_dark.' + file_type;
-        }
-    }
-
-    function getThemedColorFn(color_name) {
-        if ( Kirigami.Theme.textColor.hsvValue > 0.5 ) {
-            return color_name;
-        } else {
-            switch( color_name ) {
-            case 'green':
-                return 'lightgreen';
-            }
-         }
-    }
 
     function storeStateMatrixFn () {
         let serial_str;
 
         try { serial_str = JSON.stringify( stateMatrix ); }
         catch (e) {
-            console.warn( 'Trouble serialising stateMatrix', e );
+            console.warn( 'Trouble serializing stateMatrix', e );
             serial_str = '{}'
         }
 
@@ -1761,20 +1802,6 @@ Kirigami.ApplicationWindow {
           + '/.config/kfocus-firstrun-wizard-data.json',
           serial_str
        );
-    }
-
-    function populateCheckboxesFn () {
-        const check_map = stateMatrix.check_map;
-        for ( var i = 0; i < sidebarModel.count; i++ ) {
-            var js_id = sidebarModel.get( i ).jsId;
-            for ( let target_obj of [ enabledSidebar, disabledSidebar ] ) {
-                var item_obj = target_obj.itemAtIndex(i);
-                if ( item_obj && typeof item_obj.trailing === 'object' ) {
-                    item_obj.trailing.source = ( check_map[ js_id ] > 0 )
-                      ? 'checkbox' : '';
-                }
-            }
-        }
     }
 
     /**************
@@ -1871,14 +1898,14 @@ Kirigami.ApplicationWindow {
 
     // BEGIN takeActionFn
     // Purpose : Provide controls for click handlers and other events
-    function takeActionFn() {
+    function takeActionFn () {
         switch ( actionName ) {
         case 'nextPage':
-            nextPageFn();
+            gotoNextPageFn();
             break;
 
         case 'previousPage':
-            previousPageFn();
+            gotoPreviousPageFn();
             break;
 
         case 'checkNetwork':
