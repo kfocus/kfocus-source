@@ -43,7 +43,8 @@ _EOL01
     echo 'rtx20'; return 0;
   elif grep -q 'RTX 30' <<< "${_nv_line}"; then
     echo 'rtx30'; return 0;
-  elif grep -q 'RTX 40' <<< "${_nv_line}"; then
+  # GN21 = RTX 4090
+  elif grep -qE '(RTX 40|GN21)' <<< "${_nv_line}"; then
     echo 'rtx40'; return 0;
   fi
 
@@ -55,7 +56,7 @@ _EOL01
 ${_baseName} ERROR: Unsupported GPU
 ${_nv_line}
 
-You do not appear to be running an Nvidia RTX-20 or RTX-30 series GPU.
+You do not appear to be running an Nvidia RTX 20-,30-, or 40-series GPU.
 If you received this message in error, you may run the following to update
 your GPU information:
 
