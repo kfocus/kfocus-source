@@ -27,9 +27,9 @@ Kirigami.ApplicationWindow {
     property string pageTitleImage              : ''
     property string imgDir                      : 'assets/images/'
     property var stateMatrix                    : ({})
-    property string liveUsbWarnStr             : '<b>This step cannot '
-        + 'be run in a live session</b> due to storage limits. Please '
-        + 'install to a system disk to enable this option.'
+    property string liveUsbWarnStr             : '<b>This step is '
+        + 'not available in a live USB session</b>. Please '
+        + 'install to a system disk to run this step.'
 
     // Purpose: Describes steps used in wizard
     // See property currentIndex
@@ -101,10 +101,7 @@ Kirigami.ApplicationWindow {
     StartupData {
         id: systemDataMap
         // Provided by main.cpp:
-        //   * cryptDiskList
-        //   * binDir
-        //   * homeDir
-        //   * userName
+        //   binDir, cryptDiskList, homeDir, userName
     }
     // == . END Models ================================================
 
@@ -827,7 +824,7 @@ Kirigami.ApplicationWindow {
         }
     }
 
-    function setLiveModeFieldsFn () {
+    function setLiveUsbFieldsFn () {
         // TODO: Use 'kubuntu' check; add to other steps
         //   OR  as a function call (scope is issue here)
         //   if ( systemDataMap.userName === 'kubuntu' ) {
@@ -841,7 +838,7 @@ Kirigami.ApplicationWindow {
     function switchPageFn ( page_id ) {
         pageStack.clear();
 
-        switch(page_id) {
+        switch ( page_id ) {
         case 'introductionItem':
             pageTitleText     = 'Introduction';
             frontImage.source = getThemedImageFn( "frontpage", 'webp' );
@@ -948,6 +945,8 @@ Kirigami.ApplicationWindow {
                                        systemDataMap.cryptDiskList );
             actionButton.icon.name = 'lock';
             actionName             = 'checkCrypt';
+
+            setLiveUsbFieldsFn();
             regenUiFn( baseTemplatePage, true );
             break;
 
@@ -1212,10 +1211,11 @@ Kirigami.ApplicationWindow {
             actionButton.text           = 'Install Extra Software Now';
             actionButton.icon.name      = 'arrow-right';
 
-            setLiveModeFieldsFn();
             actionName                  = 'checkNetwork';
             networkDisconnectTitleImage = imgDir + 'extra_software.svg';
             networkReturnAction         = 'installExtraSoftware';
+
+            setLiveUsbFieldsFn();
             regenUiFn( baseTemplatePage, true );
             break;
 
@@ -1275,6 +1275,8 @@ Kirigami.ApplicationWindow {
             actionButton.text      = 'Launch BackInTime Now';
             actionButton.icon.name = 'arrow-right';
             actionName             = 'launchBackInTime';
+
+            setLiveUsbFieldsFn();
             regenUiFn( baseTemplatePage, true );
             break;
 
@@ -1410,6 +1412,8 @@ Kirigami.ApplicationWindow {
             actionName                  = 'checkNetwork';
             networkDisconnectTitleImage = imgDir + 'thunderbird_logo.svg';
             networkReturnAction         = 'launchThunderbird';
+
+            setLiveUsbFieldsFn();
             regenUiFn( baseTemplatePage, true );
             break;
 
@@ -1479,6 +1483,8 @@ Kirigami.ApplicationWindow {
             actionName                  = 'checkNetwork';
             networkDisconnectTitleImage = imgDir + 'dropbox_logo.svg';
             networkReturnAction         = 'launchDropbox';
+
+            setLiveUsbFieldsFn();
             regenUiFn( baseTemplatePage, true );
             break;
 
@@ -1516,6 +1522,7 @@ Kirigami.ApplicationWindow {
               'dropbox_ui.svg'
             ];
             actionName = 'nextPage';
+
             regenUiFn( interTemplatePage, false );
             break;
 
@@ -1547,6 +1554,8 @@ Kirigami.ApplicationWindow {
             actionName                  = 'checkNetwork';
             networkDisconnectTitleImage = imgDir + 'insync_logo.svg';
             networkReturnAction         = 'launchInsync';
+
+            setLiveUsbFieldsFn();
             regenUiFn( baseTemplatePage, true );
             break;
 
