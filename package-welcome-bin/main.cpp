@@ -38,10 +38,13 @@ int main(int argc, char *argv[])
     dat.setUserName(userName);
 
     // Detect live session (alternate method)
+    // TODO 2023-08-24 arraybolt3 notice: Make ShellEngine able to provide exit
+    // codes when using execSync, then use the exit code here rather than
+    // stdout
     ShellEngine liveSessionDetectEngine;
-    liveSessionDetectEngine.execSync("df | grep /cow");
-    QStringList cowList = liveSessionDetectEngine.stdout().split('\n');
-    if (cowList.length() >= 2) { // take into account the trailing blank item
+    liveSessionDetectEngine.execSync("df --output='source,fstype' / |grep -E '^/cow\\s*overlay'");
+    QStringList liveDetectStrList = liveSessionDetectEngine.stdout().split('\n');
+    if (liveDetectStrList.length() >= 2) {
         dat.setIsLiveSession(true);
     }
 
@@ -74,13 +77,14 @@ int main(int argc, char *argv[])
 
     // Check for the presence of a second kfocus-welcome-bin instance
     ShellEngine duplicateFinder;
-    // NOTE! We only search for "kfocus-welcome" and not "kfocus-welcome-bin"
+    // NOTE: We only search for "kfocus-welcome" and not "kfocus-welcome-bin"
     // here because for some unknown reason kfocus-welcome-bin shows up as
     // "kfocus-welcome-" (yes, with a weird dash at the end) in the output of
     // "ps axo comm". Why this is, I have no clue.
     duplicateFinder.execSync("ps axo comm | grep kfocus-welcome");
     QStringList outputLines = duplicateFinder.stdout().split('\n');
     if (outputLines.length() > 2) { // there's always one blank line
+        // TODO 2023-08-24 arraybolt3 notice: Replace kdialog here?
         msgbox.execSync("kdialog --title \"Kubuntu Focus Welcome Wizard\" --msgbox \"The Welcome Wizard is already running.\"");
         return 1;
     }
