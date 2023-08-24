@@ -1412,8 +1412,8 @@ Kirigami.ApplicationWindow {
             topImage.source = imgDir + 'thunderbird_logo.svg';
             topHeading.text = 'Manage Emails, Calendar, and Contacts';
             primaryText.text
-              = '<p>Thunderbird is a fast, convenient, and powerful email '
-              + 'client. It provides privacy and security features not '
+              = '<p><b>Thunderbird is a fast, convenient, and powerful email '
+              + 'client</b>. It provides privacy and security features not '
               + 'generally found in webmail systems, and works with many '
               + 'email providers such as GMail and Yahoo. It can be used '
               + 'with multiple email accounts at once, letting you see '
@@ -1453,7 +1453,7 @@ Kirigami.ApplicationWindow {
               + '<p>' + ding02Str
               + '<b>If this is the first time</b> you are running '
               + 'Thunderbird, you will be shown the Account Setup screen as '
-              + 'shown. Enter account details to connect.<br></p> '
+              + 'shown. Enter account details to connect.<br></p>'
 
               + '<p>' + ding03Str
               + 'After connecting to an account, the Mail interface will '
@@ -1560,13 +1560,12 @@ Kirigami.ApplicationWindow {
             topImage.source = imgDir + 'insync_logo.svg';
             topHeading.text = 'Manage Cloud Drives Easily';
             primaryText.text
-              = '<p><b>Insync is a cloud storage synchronizer</b> that works '
-              + 'with Google Drive, OneDrive, and Dropbox. It is '
-              + 'significantly more powerful than other cloud drive '
-              + 'synchronizers, and can work with multiple cloud drive '
-              + 'accounts at the same time. It comes with a free trial '
-              + 'period and offers both subscription and one-time purchase '
-              + 'options.<br></p>'
+              = '<p><b>Insync is a cloud storage sync app</b> that works '
+              + 'with Google Drive, OneDrive, and Dropbox. It can sync '
+              + 'with multiple accounts and providers at the same '
+              + 'time. It is paid software, although it has a free trial '
+              + 'period. We have found it reasonably priced and useful '
+              + 'for projects that require the use of cloud drives.<br></p>'
 
               + '<p><b>See more in the</b> '
               + '<a href="https://kfocus.org/wf/drives.html'
@@ -1625,13 +1624,13 @@ Kirigami.ApplicationWindow {
             topImage.source = imgDir + 'jetbrains_toolbox_logo.svg';
             topHeading.text = 'Install and Manage JetBrains IDEs';
             primaryText.text
-              = '<p><b>JetBrains Toolbox allows you to install, launch, and '
-              + 'uninstall JetBrains development products</b> with just a '
-              + 'few clicks. It’s the preferred tool for installing programs '
-              + 'such as IntelliJ IDEA, PyCharm, and Google’s Android '
-              + 'Studio. Several of JetBrains’ products have a free '
-              + 'community edition, and many of their paid products have a '
-              + 'free trial.<br></p>'
+              = '<p><b>JetBrains Toolbox is a convenient way to use JetBrains '
+              + 'products</b>. You can install, browse, remove, upgrade, '
+              + 'configure, and otherwise manage their many popular tools. '
+              + 'This includes popular IDEs like IntelliJ, '
+              + 'PyCharm, WebStorm, Android Studio, and DataGrip. Several '
+              + 'IDEs have free community editions, and many of their '
+              + 'paid products have a generous free trial.<br></p>'
 
               + '<p><b>See more in the</b> '
               + '<a href="https://kfocus.org/wf/ide.html">IDEs Guided '
@@ -1725,10 +1724,11 @@ Kirigami.ApplicationWindow {
 
               + '<p>' + ding02Str
               + '<b>Pick one of the preinstalled avatars,</b> or click '
-              + '“Choose File” to use a custom avatar.<br></p>'
+              + '“Choose File” to use a custom avatar. TODO: Specify image '
+              + 'type and size<br></p>'
 
               + '<p>' + ding03Str
-              + '<b>3. Click “Apply” and provide your password</b> to change '
+              + '<b>Click “Apply” and provide your password</b> to change '
               + 'your avatar.</p>'
               ;
             interActionButton.text      = 'Continue';
@@ -1752,8 +1752,8 @@ Kirigami.ApplicationWindow {
             topImage.source = imgDir + 'kfocus_bug_apps.svg';
             topHeading.text = 'Find and Install Apps Quickly';
             primaryText.text
-              = '<p><b>The Kubuntu Focus team maintains a Curated Apps page</b> '
-              + 'that lists recommended apps that work well with Kubuntu '
+              = '<p><b>The Curated Apps Page</b> '
+              + 'lists recommended apps that work well with Kubuntu '
               + 'Focus computers. Click on an icon to launch an app. If it’s '
               + 'not installed, the system will install the repository and '
               + 'the package before launching it.<br></p>'
