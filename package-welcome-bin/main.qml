@@ -27,9 +27,16 @@ Kirigami.ApplicationWindow {
     property string pageTitleImage              : ''
     property string imgDir                      : 'assets/images/'
     property var stateMatrix                    : ({})
-    property string liveUsbWarnStr             : '<b>This step is '
+    property string liveUsbWarnStr              : '<b>This step is '
         + 'not available in a live USB session</b>. Please '
         + 'install to a system disk to run this step.'
+
+    property string ding01Str : '<font size="5">\u2776</font>&nbsp;'
+    property string ding02Str : '<font size="5">\u2777</font>&nbsp;'
+    property string ding03Str : '<font size="5">\u2778</font>&nbsp;'
+    property string ding04Str : '<font size="5">\u2779</font>&nbsp;'
+    property string ding05Str : '<font size="5">\u277A</font>&nbsp;'
+    property string ding06Str : '<font size="5">\u277B</font>&nbsp;'
 
     // Purpose: Describes steps used in wizard
     // See property currentIndex
@@ -480,7 +487,7 @@ Kirigami.ApplicationWindow {
             width : Kirigami.Units.gridUnit * 15
 
             text  : '<b>Once you are finished,</b> please return here and '
-                  + 'click "Continue" to proceed to the next step.'
+                  + 'click “Continue” to proceed to the next step.'
             wrapMode: Text.WordWrap
         }
     }
@@ -838,20 +845,20 @@ Kirigami.ApplicationWindow {
         switch ( page_id ) {
         case 'introductionItem':
             pageTitleText     = 'Introduction';
-            frontImage.source = getThemedImageFn( "frontpage", 'webp' );
+            frontImage.source = getThemedImageFn( 'frontpage', 'webp' );
             frontHeading.text = 'Welcome To The Kubuntu Focus!';
             frontText.text
-              = '<b>This Welcome Wizard helps you get '
+              = '<p><b>This Welcome Wizard helps you get '
               + 'started as quickly as possible.</b> We have included '
               + 'many tools we feel most developers should '
-              + 'consider.<br>'
-              + '<br>'
-              + '<b>This is not an endorsement of any product,</b> and '
+              + 'consider.<br></p>'
+
+              + '<p><b>This is not an endorsement of any product,</b> and '
               + 'the Focus Team is not compensated in any way for '
               + 'these suggestions. You may always run this wizard '
-              + 'later using Start Menu > Kubuntu Focus > Welcome Wizard '
+              + 'later using Start Menu &gt; Kubuntu Focus &gt; Welcome Wizard '
               + 'or visit the <a href="https://kfocus.org/wf/tools#wizard">'
-              + 'documentation.</a>'
+              + 'documentation.</a></p>'
               ;
             actionName        = 'nextPage';
             regenUiFn( frontTemplatePage, true );
@@ -875,25 +882,28 @@ Kirigami.ApplicationWindow {
             headerHighlightRect.color = '#ff9900';
             interTopHeading.text      = 'Please Connect to the Internet';
             instructionsText.text
-              = '<b>The system is not currently '
+              = '<p><b>The system is not currently '
               + 'connected to the Internet.</b> Please connect to '
-              + 'complete this step.<br>'
-              + '<br>'
-              + '<b>1. Click on the network icon</b> in the system '
-              + 'tray to see a list of available connections.<br>'
-              + '<br>'
-              + '<b>2. Click the "Connect" button</b> on the network '
-              + 'you wish to connect to.<br>'
-              + '<br>'
-              + '<b>3. If necessary, enter your Wi-Fi password</b> and '
-              + 'press Enter to connect to the network.<br>'
-              + '<br>'
-              + '<b>Click on the "Continue" button when finished.</b> '
+              + 'complete this step.<br></p>'
+
+              + '<p>' + ding01Str
+              + '<b>Click on the network icon</b> in the system '
+              + 'tray to see a list of available connections.<br></p>'
+
+              + '<p>' + ding02Str
+              + '<b>Click the “Connect” button</b> on the network '
+              + 'you wish to connect to.<br></p>'
+
+              + '<p>' + ding03Str
+              + '<b>If necessary, enter your Wi-Fi password</b> and '
+              + 'press Enter to connect to the network.<br></p>'
+
+              + '<p><b>Click on the “Continue” button when finished.</b> '
               + 'If the connection is not established, you will be '
-              + 'returned to this page.<br>'
-              + '<br>'
-              + '<b>If you cannot connect, click Skip</b> to move to '
-              + 'the next step.'
+              + 'returned to this page.<br></p>'
+
+              + '<p><b>If you cannot connect, click Skip</b> to move to '
+              + 'the next step.</p>'
               ;
             interImageList = [
               'network_disconnect.svg',
@@ -920,7 +930,7 @@ Kirigami.ApplicationWindow {
             topHeading.text = getCryptDiskTextFn( 'One Encrypted Disk Found',
                                 systemDataMap.cryptDiskList );
             primaryText.text
-              = '<b>The wizard has detected '
+              = '<p><b>The wizard has detected '
               + getCryptDiskTextFn('one encrypted disk',
                   systemDataMap.cryptDiskList)
               + '</b> on this system. If you bought a system with disk '
@@ -928,14 +938,14 @@ Kirigami.ApplicationWindow {
               + getCryptDiskTextFn('passphrase',
                   systemDataMap.cryptDiskList)
               + ', you should do so now. Otherwise, you can skip this '
-              + 'step.<br>'
-              + '<br>'
-              + '<b>You may check '
+              + 'step.<br></p>'
+
+              + '<p><b>You may check '
               + getCryptDiskTextFn('this disk',
                   systemDataMap.cryptDiskList)
               + ' for the default passphrase now.</b> As a security '
               + 'measure, this app will not perform this check until '
-              + 'you enter your valid user password.'
+              + 'you enter your valid user password.</p>'
               ;
             actionButton.text      = getCryptDiskTextFn(
                                        'Check Disk Passphrase Now',
@@ -956,9 +966,10 @@ Kirigami.ApplicationWindow {
             pageTitleImage  = imgDir + 'encrypted_drive.svg';
             topHeading.text = 'Checking Disk Passphrases...';
             primaryText.text
-              = '<b>You will be prompted</b> to enter your password. Once '
+              = '<p><b>You will be prompted</b> to enter your password. Once '
               + 'the check is complete, you will be directed on the '
-              + 'recommended course of action.';
+              + 'recommended course of action.</p>'
+              ;
             regenUiFn( baseTemplatePage, false );
             break;
 
@@ -976,12 +987,13 @@ Kirigami.ApplicationWindow {
             interTopHeading.text
               = 'Authorization Has Failed';
             instructionsText.text
-              = '<b>Sorry, authorization is required to check disk '
+              = '<p><b>Sorry, authorization is required to check disk '
               + 'passphrases for security.</b> If you would like to check '
               + 'your '
               + getCryptDiskTextFn( 'disk\'s passphrase',
                   systemDataMap.cryptDiskList)
-              + ' for security, click "Try Again".';
+              + ' for security, click “Try Again.”.</p>'
+              ;
             interActionButton.text      = 'Try Again';
             interActionButton.icon.name = 'arrow-right';
             interSkipButton.text        = 'No Thanks';
@@ -1000,33 +1012,33 @@ Kirigami.ApplicationWindow {
             pageTitleText             = getCryptDiskTextFn( 'Disk Passphrase',
                                           systemDataMap.cryptDiskList );
             pageTitleImage            = imgDir + 'encrypted_drive.svg';
-            newPassphraseBox.text     = "";
-            confirmPassphraseBox.text = "";
+            newPassphraseBox.text     = '';
+            confirmPassphraseBox.text = '';
             cryptHighlightRect.color  = '#ff9900';
             cryptTopHeading.text
               = 'Change Passphrase for '
               + getCryptDiskTextFn('One Encrypted Disk',
                   defaultCryptList);
             cryptInstructionsText.text
-              = '<b>'
+              = '<p><b>'
               + getCryptDiskTextFn('One disk is',
                   defaultCryptList)
               + ' using the default passphrase.</b> This is insecure, '
               + 'and we recommend you use the form below to change it '
               + 'to a unique passphrase. <b>IMPORTANT:</b> All disks using '
               + 'the default passphrase will be changed to use the new '
-              + 'passphrase.</b>'
+              + 'passphrase.</p>'
               ;
             cryptSecondaryText.text
-              = '<b>Please keep a copy of '
+              = '<p><b>Please keep a copy of '
               + 'your passphrase in a safe place.</b> If this is lost, '
               + 'there is no recovery except to reformat your disks '
-              + 'and restore from backup.<br>'
-              + '<br>'
-              + '<b>For your security, the Kubuntu Focus Team does NOT '
+              + 'and restore from backup.<br></p>'
+
+              + '<p><b>For your security, the Kubuntu Focus Team does NOT '
               + 'install tools that could assist in any recovery.</b> '
               + 'In other words, if you lose your passphrase, they have no '
-              + 'way to help you recover it!'
+              + 'way to help you recover it!</p>'
               ;
             cryptActionButton.text      = 'Change Now';
             cryptActionButton.icon.name = 'arrow-right';
@@ -1059,12 +1071,13 @@ Kirigami.ApplicationWindow {
             interTopHeading.text
               = 'Authorization Has Failed';
             instructionsText.text
-              = '<b>Sorry, authorization is required to change disk '
+              = '<p><b>Sorry, authorization is required to change disk '
               + 'passphrases.</b> If you would like to change '
               + 'your '
               + getCryptDiskTextFn( 'disk\'s passphrase',
                   systemDataMap.cryptDiskList )
-              + ', click "Try Again".';
+              + ', click “Try Again.”</p>';
+              ;
             interActionButton.text      = 'Try Again';
             interActionButton.icon.name = 'arrow-right';
             interSkipButton.text        = 'No Thanks';
@@ -1086,14 +1099,17 @@ Kirigami.ApplicationWindow {
             headerHighlightRect.color = '#ff9900';
             interTopHeading.text
               = 'Disk Passphrase Changing Failed';
+
             instructionsText.text
-              = '<b>No disks had their passphrase changed.</b> You may have '
-              + 'mistyped your old passphrase.<br>'
-              + '<br>'
-              + 'If you would like to change your '
+              = '<p><b>No disks had their passphrase changed.</b> You may have '
+              + 'mistyped your old passphrase.<br></p>'
+
+              + '<p>If you would like to change your '
               + getCryptDiskTextFn( 'disk\'s passphrase',
                   systemDataMap.cryptDiskList )
-              + ', click "Try Again."'
+              + ', click “Try Again.”</p>';
+              ;
+
             interActionButton.text      = 'Try Again';
             interActionButton.icon.name = 'arrow-right';
             interSkipButton.text        = 'No Thanks';
@@ -1119,23 +1135,24 @@ Kirigami.ApplicationWindow {
                   systemDataMap.cryptDiskList )
               + ' Secure';
             instructionsText.text
-              = '<b>' + getCryptDiskTextFn( 'The encrypted disk uses',
+              = '<p><b>' + getCryptDiskTextFn( 'The encrypted disk uses',
                           systemDataMap.cryptDiskList )
               + ' a unique passphrase.</b> '
               + getCryptDiskChangeTextFn()
-              + '<br><br>'
-              + '<b>We do not recommend changing your disk '
+              + '<br></p>'
+
+              + '<p><b>We do not recommend changing your disk '
               + getCryptDiskTextFn( 'passphrase',
                   systemDataMap.cryptDiskList )
-              + '.</b> However, if you would like to anyway, you may.<br>'
-              + '<br>'
-              + '<b>Please keep a copy of your passphrase in a safe '
+              + '.</b> However, if you would like to anyway, you may.<br></p>'
+
+              + '<p><b>Please keep a copy of your passphrase in a safe '
               + 'place.</b> If this is lost, there is no recovery '
               + 'except to reformat your disks and restore from '
-              + 'backup.<br>'
-              + '<br>'
-              + '<b>For your security, the Kubuntu Focus Team does NOT '
-              + 'install tools</b> that could assist in any recovery.'
+              + 'backup.<br></p>'
+
+              + '<p><b>For your security, the Kubuntu Focus Team does NOT '
+              + 'install tools</b> that could assist in any recovery.</p>'
               ;
             interActionButton.text      = 'Change Passphrases';
             interActionButton.icon.name = 'arrow-right';
@@ -1155,27 +1172,27 @@ Kirigami.ApplicationWindow {
             pageTitleText             = getCryptDiskTextFn( 'Disk Passphrase',
                                           systemDataMap.cryptDiskList );
             pageTitleImage            = imgDir + 'encrypted_drive.svg';
-            oldPassphraseBox.text     = "";
-            newPassphraseBox.text     = "";
-            confirmPassphraseBox.text = "";
+            oldPassphraseBox.text     = '';
+            newPassphraseBox.text     = '';
+            confirmPassphraseBox.text = '';
             cryptHighlightRect.color  = '#ff9900';
             cryptTopHeading.text      = 'Change Non-Default Passphrases';
             cryptInstructionsText.text
-              = '<b> Please enter the old passphrase of the disk(s) you want '
+              = '<p><b>Please enter the old passphrase of the disk(s) you want '
               + 'to modify.</b> Then provide the passphrase you would like '
               + 'to use instead. <b>All disks using the specified old '
-              + 'passphrase will be modified to use the new one.'
+              + 'passphrase will be modified to use the new one.</p>'
               ;
             cryptSecondaryText.text
-              = '<b>Please keep a copy of '
+              = '<p><b>Please keep a copy of '
               + 'your passphrase</b> in a safe place. If this is lost, '
               + 'there is no recovery except to reformat your disks '
-              + 'and restore from backup.<br>'
-              + '<br>'
-              + '<b>For your security</b>, the Kubuntu Focus Team does NOT '
+              + 'and restore from backup.<br></p>'
+
+              + '<p><b>For your security</b>, the Kubuntu Focus Team does NOT '
               + 'install tools that could assist in any recovery. '
               + 'In other words, if you lose your password, they have no '
-              + 'way to help you recover it!'
+              + 'way to help you recover it!</p>'
               ;
             cryptActionButton.text      = 'Continue';
             cryptActionButton.icon.name = 'arrow-right';
@@ -1195,15 +1212,15 @@ Kirigami.ApplicationWindow {
             topHeading.text
               = 'Install MS Fonts, VirtualBox Extensions, and More';
             primaryText.text
-              = '<b>Some software is restricted,</b> '
+              = '<p><b>Some software is restricted,</b> '
               + 'meaning you have to approve certain agreements before '
               + 'you install it. We recommend you at least install the '
               + 'MS fonts to assist in compatibility. If you use '
               + 'VirtualBox, we also recommend adding the VirtualBox '
-              + 'Extension Pack.<br>'
-              + '<br>'
-              + 'You may always revisit this later using <b>Start Menu '
-              + '> Kubuntu Focus Tools > Extra Software Installer.</b>'
+              + 'Extension Pack.<br></p>'
+
+              + '<p><b>You may always revisit this later</b> using Start '
+              + 'Menu &gt; Kubuntu Focus Tools &gt; Extra Software Installer.</p>'
               ;
             actionButton.text           = 'Install Extra Software Now';
             actionButton.icon.name      = 'arrow-right';
@@ -1228,15 +1245,15 @@ Kirigami.ApplicationWindow {
             headerHighlightRect.color = '#27ae60';
             interTopHeading.text      = 'Proceed with Terminal...';
             instructionsText.text
-              = '<b>1. You should now see</b> a '
+              = '<p>' + ding01Str + '<b>You should now see</b> a '
               + 'terminal as shown at right with a prompt for '
               + 'installation. Please enter your password to '
-              + 'proceed.<br>'
-              + '<br>'
-              + '<b>2. As you follow the steps,</b> you will be '
-              + 'prompted to accept license terms. If you do not '
+              + 'proceed.<br></p>'
+
+              + '<p>' + ding02Str + '<b>As you follow the steps,</b> '
+              + 'you will be prompted to accept license terms. If you do not '
               + 'agree with the terms for a particular software '
-              + 'component, you may skip installing it.'
+              + 'component, you may skip installing it.</p>'
               ;
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
@@ -1259,15 +1276,15 @@ Kirigami.ApplicationWindow {
             topImage.source = imgDir + 'file_backup.svg';
             topHeading.text = 'Snapshot and Recover Files';
             primaryText.text
-              = '<b>BackInTime takes snapshots of your home '
+              = '<p><b>BackInTime takes snapshots of your home '
               + 'directory</b> so you can recover information that was '
               + 'later changed or removed. We\'ve configured it to '
               + 'ignore folders where cloud drives and software repos '
-              + 'are usually located.<br>'
-              + '<br>'
-              + '<b>See more in the</b> '
+              + 'are usually located.<br></p>'
+
+              + '<p><b>See more in the</b> '
               + '<a href="https://kfocus.org/wf/backup">Backups Guided '
-              + 'Solution.</a>'
+              + 'Solution.</a></p>'
               ;
             actionButton.text      = 'Launch BackInTime Now';
             actionButton.icon.name = 'arrow-right';
@@ -1289,20 +1306,21 @@ Kirigami.ApplicationWindow {
             headerHighlightRect.color = '#27ae60';
             interTopHeading.text      = 'Proceed with BackInTime...';
             instructionsText.text
-              = '<b>1. If BackInTime is not '
+              = '<p>' + ding01Str + '<b>If BackInTime is not '
               + 'installed,</b> you will be asked to install it, and '
-              + 'will need to provide your password to do so.<br>'
-              + '<br>'
-              + '<b>2. Once installed, the BackInTime app</b> should '
-              + 'appear as shown.<br>'
-              + '<br>'
-              + '<b>3. Take snapshots with the Disk icon.</b> You may '
-              + 'also browse snapshots on the left (4), select files '
-              + 'on the right (5), and adjust settings (6).<br>'
-              + '<br>'
-              + '<b>See more in the</b> '
+              + 'will need to provide your password to do so.<br></p>'
+
+              + '<p>' + ding02Str + '<b>Once installed, the '
+              + 'BackInTime app</b> should appear as shown.<br></p>'
+
+              + '<p>' + ding03Str + '<b>Take snapshots with the Disk '
+              + 'icon.</b> ' + ding04Str + 'Browse snapshots on the left, '
+              + ding05Str + 'select files on the right, ' + ding06Str
+              + 'adjust settings.<br></p>'
+
+              + '<p><b>See more in the</b> '
               + '<a href="https://kfocus.org/wf/backup">Backups Guided '
-              + 'Solution.</a>'
+              + 'Solution.</a></p>'
               ;
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
@@ -1325,17 +1343,17 @@ Kirigami.ApplicationWindow {
             topImage.source = imgDir + 'keepassxc_logo.svg';
             topHeading.text = 'Generate, Save, and View Secrets';
             primaryText.text
-              = '<b>KeePassXC is a powerful password manager</b> and '
+              = '<p><b>KeePassXC is a powerful password manager</b> and '
               + 'generator that takes the hassle out of staying secure. It '
               + 'saves your passwords offline and in an encrypted form, '
               + 'avoiding the security issues of cloud-based password '
               + 'managers and keeping you safe even if your computer is '
-              + 'stolen.'
-              + '<br><br>'
-              + '<b>It can also be used</b> for two-factor authentication, '
+              + 'stolen.<br></p>'
+
+              + '<p><b>It can also be used</b> for two-factor authentication, '
               + 'application secrets, and with smartphones. See more in the '
               + '<a href="https://kfocus.org/wf/passwords#bkm_keepassxc">'
-              + 'Passwords Guided Solution.</a>'
+              + 'Passwords Guided Solution.</a></p>'
               ;
             actionButton.text      = 'Launch KeePassXC Now';
             actionButton.icon.name = 'arrow-right';
@@ -1355,21 +1373,22 @@ Kirigami.ApplicationWindow {
             headerHighlightRect.color = '#27ae60';
             interTopHeading.text      = 'Proceed with KeePassXC...'
             instructionsText.text
-              = '<b>1. If KeePassXC is not installed,</b> you will be asked '
-              + 'to install it, and will need to provide your password to do '
-              + 'so.<br>'
-              + '<br>'
-              + '<b>2. Once installed,</b> you may need to click on the icon '
-              + 'in the system tray as shown.<br>'
-              + '<br>'
-              + '<b>3. The main window should then appear.</b> From here, '
-              + 'you can create a new vault to start managing passwords.<br>'
-              + '<br>'
-              + '<b>See more in the</b> '
+              = '<p>' + ding01Str + '<b>If KeePassXC is not installed</b>, '
+              + 'you will be asked to install it, and will need to provide '
+              + 'your password to do so.<br></p>'
+
+              + '<p>' + ding02Str + '<b>Once installed,</b> you may need to '
+              + 'click on the icon in the system tray as shown.<br></p>'
+
+              + '<p>' + ding03Str + 'The main window should then appear.</b> '
+              + 'From here, you can create a new vault to start managing '
+              + 'passwords.<br></p>'
+
+              + '<p><b>See more in the</b> '
               + '<a href="https://kfocus.org/wf/passwords#bkm_keepassxc">'
               + 'Passwords Guided Solution</a> and the '
               + '<a href="https://keepassxc.org/docs/">official '
-              + 'documentation.</a>'
+              + 'documentation.</a></p>'
               ;
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
@@ -1393,16 +1412,16 @@ Kirigami.ApplicationWindow {
             topImage.source = imgDir + 'thunderbird_logo.svg';
             topHeading.text = 'Manage Emails, Calendar, and Contacts';
             primaryText.text
-              = 'Thunderbird is a fast, convenient, and powerful email '
+              = '<p>Thunderbird is a fast, convenient, and powerful email '
               + 'client. It provides privacy and security features not '
               + 'generally found in webmail systems, and works with many '
               + 'email providers such as GMail and Yahoo. It can be used '
               + 'with multiple email accounts at once, letting you see '
-              + 'all your mail in one place.'
-              + '<br><br>'
-              + '<b>See more in the</b> '
+              + 'all your mail in one place.<br></p>'
+
+              + '<p><b>See more in the</b> '
               + '<a href="https://kfocus.org/wf/email">Email Guided '
-              + 'Solution.</a>'
+              + 'Solution.</a></p>'
               ;
             actionButton.text           = 'Launch Thunderbird Now';
             actionButton.icon.name      = 'arrow-right';
@@ -1426,21 +1445,24 @@ Kirigami.ApplicationWindow {
             headerHighlightRect.color = '#27ae60';
             interTopHeading.text      = 'Proceed with Thunderbird...';
             instructionsText.text
-              = '<b>1. If Thunderbird is not installed,</b> you will be '
+              = '<p>' + ding01Str
+              + '<b>If Thunderbird is not installed,</b> you will be '
               + 'asked to install it, and will need to provide your password '
-              + 'to do so.<br>'
-              + '<br>'
-              + '<b>2. Once installed,</b> the Thunderbird app should appear '
-              + 'as shown.<br>'
-              + '<br>'
-              + '<b>3. Connect your email account</b> by entering your name, '
-              + 'email address, and password into the Account Setup '
-              + 'screen.<br>'
-              + '<br>'
-              + '<b>See more in the</b> '
+              + 'to do so.<br></p>'
+
+              + '<p>' + ding02Str
+              + '<b>If this is the first time</b> you are running '
+              + 'Thunderbird, you will be shown the Account Setup screen as '
+              + 'shown. Enter account details to connect.<br></p> '
+
+              + '<p>' + ding03Str
+              + 'After connecting to an account, the Mail interface will '
+              + 'appear as shown.<br></p>'
+
+              + '<p><b>See more in the</b> '
               + '<a href="https://kfocus.org/wf/email.html">Email Guided '
-              + 'Solution</a> where it shows how to set up calendars, '
-              + 'contacts, and more.'
+              + 'Solution</a> where it shows how to add accounts, set up '
+              + 'calendars, manage contacts, and more.</p>'
               ;
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
@@ -1464,16 +1486,16 @@ Kirigami.ApplicationWindow {
             topImage.source = imgDir + 'dropbox_logo.svg';
             topHeading.text = 'Access Your Files From Anywhere';
             primaryText.text
-              = '<b>Dropbox is a fast, flexible cloud storage system</b> '
+              = '<p><b>Dropbox is a fast, flexible cloud storage system</b> '
               + 'that automatically keeps your files synced to your computer '
               + 'for offline access. You can use it to keep backups, archive '
               + 'old data, access files from multiple computers, and more. '
               + 'Up to 2 GB of data can be stored for free, and additional '
-              + 'storage is quite affordable.<br>'
-              + '<br>'
-              + '<b>See more in the</b> '
+              + 'storage is quite affordable.<br></p>'
+
+              + '<p><b>See more in the</b> '
               + '<a href="https://kfocus.org/wf/drives.html">Cloud Drives '
-              + 'Guided Solution.</a>'
+              + 'Guided Solution.</a></p>'
               ;
             actionButton.text           = 'Launch Dropbox Now';
             actionButton.icon.name      = 'arrow-right';
@@ -1497,19 +1519,23 @@ Kirigami.ApplicationWindow {
             headerHighlightRect.color = '#27ae60';
             interTopHeading.text      = 'Proceed with Dropbox...';
             instructionsText.text
-              = '<b>1. If Dropbox is not installed,</b> you will be asked to '
+              = '<p>' + ding01Str
+              + '<b>If Dropbox is not installed,</b> you will be asked to '
               + 'install it, and will need to provide your password to do '
-              + 'so.<br>'
-              + '<br>'
-              + '<b>2. Once installed,</b> you may need to click on the icon '
-              + 'in the system tray as shown.<br>'
-              + '<br>'
-              + '<b>3. Create a new Dropbox account or log into your '
-              + 'existing one</b> in the browser window that pops up.<br>'
-              + '<br>'
-              + '<b>See more in the</b> '
+              + 'so.<br></p>'
+
+              + '<p>' + ding02Str
+              + '<b>Once installed,</b> you may need to click on the icon '
+              + 'in the system tray as shown.<br></p>'
+
+              + '<p>' + ding03Str
+              + '<b>Create a new Dropbox account or log into your '
+              + 'existing one</b> in the browser window that pops up.'
+              + '<br></p>'
+
+              + '<p><b>See more in the</b> '
               + '<a href="https://kfocus.org/wf/drives.html">Cloud Drives '
-              + 'Guided Solution.</a>'
+              + 'Guided Solution.</a></p>'
               ;
             interActionButton.text      = 'Continue'
             interActionButton.icon.name = 'arrow-right';
@@ -1534,17 +1560,17 @@ Kirigami.ApplicationWindow {
             topImage.source = imgDir + 'insync_logo.svg';
             topHeading.text = 'Manage Cloud Drives Easily';
             primaryText.text
-              = '<b>Insync is a cloud storage synchronizer</b> that works '
+              = '<p><b>Insync is a cloud storage synchronizer</b> that works '
               + 'with Google Drive, OneDrive, and Dropbox. It is '
               + 'significantly more powerful than other cloud drive '
               + 'synchronizers, and can work with multiple cloud drive '
               + 'accounts at the same time. It comes with a free trial '
               + 'period and offers both subscription and one-time purchase '
-              + 'options.<br>'
-              + '<br>'
-              + '<b>See more in the</b> '
+              + 'options.<br></p>'
+
+              + '<p><b>See more in the</b> '
               + '<a href="https://kfocus.org/wf/drives.html'
-              + '#bkm_sync_with_google">Cloud Drives Guided Solution.</a>'
+              + '#bkm_sync_with_google">Cloud Drives Guided Solution.</a></p>'
               ;
             actionButton.text           = 'Launch Insync Now'
             actionButton.icon.name      = 'arrow-right';
@@ -1568,11 +1594,16 @@ Kirigami.ApplicationWindow {
             headerHighlightRect.color = '#27ae60';
             interTopHeading.text      = 'Proceed with Insync...';
             instructionsText.text
-              = '<b>1. If Insync is not installed,</b> you will be asked to '
+              = '<p>' + ding01Str
+              + '<b>If Insync is not installed,</b> you will be asked to '
               + 'install it, and will need to provide your password to do '
-              + 'so.<br>'
-              + '<br>'
-              + 'TODO: Insert remaining steps and images.'
+              + 'so.<br></p>'
+
+              + '<p>' + ding02Str
+              + 'TODO: Insert remaining steps and images.<br></p>'
+
+              + '<p>' + ding03Str
+              + 'TODO: Insert remaining steps and images.</br></p>'
               ;
             interActionButton.text      = 'Continue'
             interActionButton.icon.name = 'arrow-right';
@@ -1594,17 +1625,17 @@ Kirigami.ApplicationWindow {
             topImage.source = imgDir + 'jetbrains_toolbox_logo.svg';
             topHeading.text = 'Install and Manage JetBrains IDEs';
             primaryText.text
-              = '<b>JetBrains Toolbox allows you to install, launch, and '
+              = '<p><b>JetBrains Toolbox allows you to install, launch, and '
               + 'uninstall JetBrains development products</b> with just a '
               + 'few clicks. It’s the preferred tool for installing programs '
               + 'such as IntelliJ IDEA, PyCharm, and Google’s Android '
               + 'Studio. Several of JetBrains’ products have a free '
               + 'community edition, and many of their paid products have a '
-              + 'free trial.<br>'
-              + '<br>'
-              + '<b>See more in the</b> '
+              + 'free trial.<br></p>'
+
+              + '<p><b>See more in the</b> '
               + '<a href="https://kfocus.org/wf/ide.html">IDEs Guided '
-              + 'Solution.</a>'
+              + 'Solution.</a></p>'
               ;
             actionButton.text      = 'Launch JetBrains Toolbox Now';
             actionButton.icon.name = 'arrow-right';
@@ -1624,16 +1655,20 @@ Kirigami.ApplicationWindow {
             headerHighlightRect.color = '#27ae60';
             interTopHeading.text      = 'Proceed with JetBrains Toolbox...';
             instructionsText.text
-              = '<b>1. If JetBrains Toolbox is not installed,</b> you will '
+              = '<p>' + ding01Str
+              + '<b>If JetBrains Toolbox is not installed,</b> you will '
               + 'be asked to install it, and will need to provide your '
-              + 'password to do so.<br>'
-              + '<br>'
-              + '<b>2. If you’re launching the Toolbox for the first '
+              + 'password to do so.<br></p>'
+
+              + '<p>' + ding02Str
+              + '<b>If you’re launching the Toolbox for the first '
               + 'time,</b> you will be asked to configure it and accept the '
               + 'JetBrains User Agreement. It may take up to 30 seconds for '
-              + 'the Toolbox to launch.<br>'
-              + '<br>'
-              + '<b>3. Visit the System Tray</b> to interact with the Toolbox.'
+              + 'the Toolbox to launch.<br></p>'
+
+              + '<p>' + ding03Str
+              + '<b>Visit the System Tray</b> to interact with the Toolbox.'
+              + '</p>'
               ;
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
@@ -1657,14 +1692,14 @@ Kirigami.ApplicationWindow {
             topImage.source = imgDir + 'avatar.svg';
             topHeading.text = 'Personalize your Profile Picture';
             primaryText.text
-              = '<b>Your profile picture is displayed in the Start Menu and '
+              = '<p><b>Your profile picture is displayed in the Start Menu and '
               + 'on the lock screen.</b> By default, this picture is a '
               + 'Kubuntu logo, but it’s easy to change to a picture of your '
-              + 'choice.<br>'
-              + '<br>'
-              + '<b>You may always revisit this later</b> by opening the '
+              + 'choice.<br></p>'
+
+              + '<p><b>You may always revisit this later</b> by opening the '
               + 'Start Menu and clicking on the user avatar image in the '
-              + 'upper-left corner of the menu.'
+              + 'upper-left corner of the menu.</p>'
               ;
             actionButton.text      = 'Change Your Avatar Now';
             actionButton.icon.name = 'arrow-right';
@@ -1684,14 +1719,17 @@ Kirigami.ApplicationWindow {
             headerHighlightRect.color = '#27ae60';
             interTopHeading.text      = 'Proceed with User Manager...';
             instructionsText.text
-              = '<b>1. Click on the profile picture</b> in the User Manager '
-              + 'interface.<br>'
-              + '<br>'
-              + '<b>2. Pick one of the preinstalled avatars,</b> or click '
-              + '“Choose File” to use a custom avatar.<br>'
-              + '<br>'
+              = '<p>' + ding01Str
+              + '<b>Click on the profile picture</b> in the User Manager '
+              + 'interface.<br></p>'
+
+              + '<p>' + ding02Str
+              + '<b>Pick one of the preinstalled avatars,</b> or click '
+              + '“Choose File” to use a custom avatar.<br></p>'
+
+              + '<p>' + ding03Str
               + '<b>3. Click “Apply” and provide your password</b> to change '
-              + 'your avatar.'
+              + 'your avatar.</p>'
               ;
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
@@ -1714,14 +1752,14 @@ Kirigami.ApplicationWindow {
             topImage.source = imgDir + 'kfocus_bug_apps.svg';
             topHeading.text = 'Find and Install Apps Quickly';
             primaryText.text
-              = '<b>The Kubuntu Focus team maintains a Curated Apps page</b> '
+              = '<p><b>The Kubuntu Focus team maintains a Curated Apps page</b> '
               + 'that lists recommended apps that work well with Kubuntu '
               + 'Focus computers. Click on an icon to launch an app. If it’s '
               + 'not installed, the system will install the repository and '
-              + 'the package before launching it.<br>'
-              + '<br>'
-              + '<b>We encourage you to take a moment</b> to review the list '
-              + 'of curated apps and install the ones you need now.'
+              + 'the package before launching it.<br></p>'
+
+              + '<p><b>We encourage you to take a moment</b> to review the list '
+              + 'of curated apps and install the ones you need now.</p>'
               ;
             actionButton.text           = 'Browse Curated Apps Now';
             actionButton.icon.name      = 'arrow-right';
@@ -1743,16 +1781,19 @@ Kirigami.ApplicationWindow {
             headerHighlightRect.color = '#27ae60';
             interTopHeading.text      = 'Proceed with Curated Apps...';
             instructionsText.text
-              = '<b>1. The Curated Apps web page</b> should now be visible '
-              + 'in your default web browser.<br>'
-              + '<br>'
-              + '<b>2. Scroll down to the list of apps</b> and click the '
-              + 'icon of the app you would like to launch.<br>'
-              + '<br>'
-              + '<b>3. If the app needs installed, confirm that you want to '
+              = '<p>' + ding01Str
+              + '<b>The Curated Apps web page</b> should now be visible '
+              + 'in your default web browser.<br></p>'
+
+              + '<p>' + ding02Str
+              + '<b>Scroll down to the list of apps</b> and click the '
+              + 'icon of the app you would like to launch.<br></p>'
+
+              + '<p>' + ding03Str
+              + '<b>If the app needs installed, confirm that you want to '
               + 'install it and provide your password.</b> The application '
               + 'will be installed and will automatically launch once '
-              + 'installation is complete.'
+              + 'installation is complete.</p>'
               ;
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
@@ -1775,14 +1816,15 @@ Kirigami.ApplicationWindow {
             topImage.source = imgDir + 'finished.svg';
             topHeading.text = 'All Done';
             primaryText.text
-              = '<b>You have considered</b> all items shown with a checkmark. '
-              + 'Click the "Clear Checkmarks" button to reset them.'
-              + '<br><br>'
-              + '<b>To get more help,</b> click Start Menu > Kubuntu Focus '
-              + 'Tools > Help.<br>'
-              + '<br>'
-              + '<b>To run this wizard again,</b> click Start Menu > Kubuntu '
-              + 'Focus Tools > Welcome Wizard.'
+              = '<p><b>You have considered</b> all items shown with a checkmark. '
+              + 'Click the “Clear Checkmarks” button to reset them.'
+              + '<br></p>'
+
+              + '<p><b>To get more help,</b> click Start Menu &gt; Kubuntu Focus '
+              + 'Tools &gt; Help.<br></p>'
+
+              + '<p><b>To run this wizard again,</b> click Start Menu &gt; '
+              + 'Kubuntu Focus Tools &gt; Welcome Wizard.</p>'
               ;
             actionButton.text      = 'Finish';
             actionButton.icon.name = 'arrow-right';
@@ -1821,7 +1863,8 @@ Kirigami.ApplicationWindow {
             if ( exitCode > 0 ) {
                 switchPageFn( 'pkexecDeclineCryptCheckItem' );
             } else {
-                // The newline following the last entry creates an "extra" blank entry that needs to be removed
+                // The newline following the last entry creates an "extra"
+                // blank entry that needs to be removed
                 defaultCryptList = stdout.split('\n').slice(0, -1);
 
                 if ( defaultCryptList.length > 0 ) {
@@ -1930,7 +1973,7 @@ Kirigami.ApplicationWindow {
         case 'changeCrypt':
             cryptChangeMode = 'changeCrypt';
             if ( newPassphraseBox.text === confirmPassphraseBox.text ) {
-                if ( newPassphraseBox.text === "" ) {
+                if ( newPassphraseBox.text === '' ) {
                     cryptErrorMessage.text
                       = 'No passphrase was entered. Please try again.';
                     cryptErrorMessage.visible = true;
@@ -1958,11 +2001,11 @@ Kirigami.ApplicationWindow {
         case 'changeCryptNonDefault':
             cryptChangeMode = 'changeCryptNonDefault';
             if ( newPassphraseBox.text === confirmPassphraseBox.text ) {
-                if ( newPassphraseBox.text === "" ) {
+                if ( newPassphraseBox.text === '' ) {
                     cryptErrorMessage.text
                       = 'No passphrase was entered. Please try again.';
                     cryptErrorMessage.visible = true;
-                } else if ( oldPassphraseBox.text == "" ) {
+                } else if ( oldPassphraseBox.text === '' ) {
                     /* TODO: Do we really want to do this? What if the user is
                      * trying to change away from a blank passphrase? */
                     cryptErrorMessage.text
