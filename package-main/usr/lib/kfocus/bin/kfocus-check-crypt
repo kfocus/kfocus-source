@@ -41,7 +41,11 @@ _populateCryptListFn () {
   declare _blkid_str _filter_str;
   if _blkid_str="$("${_escExe}" "${_setExe}" echo-blkid)"; then
     _filter_str="$(grep 'TYPE="crypto_LUKS"' <<<"${_blkid_str}" |cut -f1 -d':')";
-    mapfile -t _cryptList <<<"${_filter_str}";
+    if ! [ "${_filter_str}" = "" ]; then
+      mapfile -t _cryptList <<<"${_filter_str}";
+    else
+      _cryptList=();
+    fi
   else
     exit; # inherits error code from above (127 or 1)
   fi
