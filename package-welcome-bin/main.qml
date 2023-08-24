@@ -101,14 +101,14 @@ Kirigami.ApplicationWindow {
     StartupData {
         id: systemDataMap
         // Provided by main.cpp:
-        //   binDir, cryptDiskList, homeDir, userName
+        //   binDir, cryptDiskList, homeDir, userName, isLiveSession
     }
     // == . END Models ================================================
 
     // == BEGIN Views =================================================
     // Define page size and columns
     width  : Kirigami.Units.gridUnit * 40
-    height : Kirigami.Units.gridUnit * 28
+    height : Kirigami.Units.gridUnit * 29
     minimumWidth  : Kirigami.Units.gridUnit * 40
     minimumHeight : Kirigami.Units.gridUnit * 28
 
@@ -825,10 +825,7 @@ Kirigami.ApplicationWindow {
     }
 
     function setLiveUsbFieldsFn () {
-        // TODO: Use 'kubuntu' check; add to other steps
-        //   OR  as a function call (scope is issue here)
-        //   if ( systemDataMap.userName === 'kubuntu' ) {
-        if ( systemDataMap ) {
+        if ( systemDataMap.isLiveSession ) {
             pageWarn.text        = liveUsbWarnStr;
             pageWarn.visible     = true;
             actionButton.visible = false;

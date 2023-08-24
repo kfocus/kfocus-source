@@ -9,9 +9,10 @@
 #include "shellengine.h"
 
 QStringList StartupData::m_cryptDiskList = QStringList();
-QString StartupData::m_binDir   = "../package-main/usr/lib/kfocus/bin/";
-QString StartupData::m_homeDir  = "";
-QString StartupData::m_userName = "";
+QString StartupData::m_binDir     = "../package-main/usr/lib/kfocus/bin/";
+QString StartupData::m_homeDir    = "";
+QString StartupData::m_userName   = "";
+bool StartupData::m_isLiveSession = false;
 
 const qint64 min_disk_int = 1073741824;
 
@@ -28,11 +29,21 @@ int main(int argc, char *argv[])
             return 1;
         }
     }
+
+    // Detect username
     ShellEngine userNameEngine;
     userNameEngine.execSync("whoami");
     QString userName = userNameEngine.stdout();
     userName.remove('\n');
     dat.setUserName(userName);
+
+    // Detect live session (alternate method)
+    ShellEngine liveSessionDetectEngine;
+    liveSessionDetectEngine.execSync("df | grep /cow");
+    QStringList cowList = liveSessionDetectEngine.stdout().split('\n');
+    if (cowList.length() >= 2) { // take into account the trailing blank item
+        dat.setIsLiveSession(true);
+    }
 
     // UI and QML setup
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
