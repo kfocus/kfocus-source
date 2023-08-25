@@ -177,12 +177,12 @@ _addTrustedKeysFn () {
 
 ## BEGIN _addGcloudSdkKeyFn {
 _addGcloudSdkKeyFn () {
-  declare _key_dir _key_table _bit_list _bit_file _bit_min_date \
+  declare _key_dir _key_table _line _bit_list _bit_file _bit_min_date \
     _bit_key_url _bit_key_name _fq_key_file _file_mtime _file_mdate;
 
   _key_dir='/usr/share/keyrings';
   _key_table=(
-    'cloud.google.gpg|2023-01-05|https://packages.cloud.google.com/apt/doc/apt-key.gpg|Google Cloud SDK'
+    'cloud.google.gpg|2023-08-24|https://packages.cloud.google.com/apt/doc/apt-key.gpg|Google Cloud SDK'
   );
   for _line in "${_key_table[@]}"; do
     IFS='|' read -r -a _bit_list <<< "${_line}";
@@ -209,7 +209,7 @@ _addGcloudSdkKeyFn () {
         _cm2SetMsgFn "Update ${_bit_key_name} key file.";
         _cm2EchoFn "${_bit_min_date} > ${_file_mdate}";
       fi
-      if wget -O- "${_bit_key_url}" > "${_fq_key_file}"; then
+      if wget -O- "${_bit_key_url}" | gpg --dearmor > "${_fq_key_file}"; then
         _cm2SucFn; else _cm2WarnFn;
       fi;
     fi
