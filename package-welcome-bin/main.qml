@@ -783,6 +783,7 @@ Kirigami.ApplicationWindow {
         if ( initialPageId !== 'finishItem' ) {
             check_map[initialPageId] = Date.now();
             enabledSidebar.currentItem.trailing.source = 'checkbox';
+            disabledSidebar.currentIndex = enabledSidebar.currentIndex;
             disabledSidebar.currentItem.trailing.source = 'checkbox';
         }
 
