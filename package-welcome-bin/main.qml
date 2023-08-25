@@ -1734,7 +1734,8 @@ Kirigami.ApplicationWindow {
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
             interImageList = [
-              'avatar_steps.webp',
+              'user_manager.webp',
+              'avatar_changer.webp',
               'avatar_password.webp'
             ];
             actionName = 'nextPage';
