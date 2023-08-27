@@ -1960,7 +1960,8 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'checkNetwork':
-            internetCheckerEngine.exec('ping -c 1 8.8.8.8');
+            // internetCheckerEngine.exec('ping -c 1 8.8.8.8');
+            internetCheckerEngine.exec('false');
             switchPageFn( 'internetCheckItem' );
             break;
 
