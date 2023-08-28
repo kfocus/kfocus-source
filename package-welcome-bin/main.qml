@@ -857,8 +857,9 @@ Kirigami.ApplicationWindow {
               + '<p><b>This is not an endorsement of any product,</b> and '
               + 'the Focus Team is not compensated in any way for '
               + 'these suggestions. You may always run this wizard '
-              + 'later using Start Menu &gt; Kubuntu Focus &gt; Welcome Wizard '
-              + 'or visit the <a href="https://kfocus.org/wf/tools#wizard">'
+              + 'later using Start Menu &gt; Kubuntu Focus Tools &gt; '
+              + 'Welcome Wizard or visit '
+              + 'the <a href="https://kfocus.org/wf/tools#wizard">'
               + 'documentation.</a></p>'
               ;
             actionName        = 'nextPage';
@@ -888,28 +889,27 @@ Kirigami.ApplicationWindow {
               + 'complete this step.<br></p>'
 
               + '<p>' + ding01Str
-              + '<b>Click on the network icon</b> in the system '
-              + 'tray to see a list of available connections.<br></p>'
+              + '<b>If you have a wired connection</b>, you should see a '
+              + '“network button” like this. Check the network cable and '
+              + 'reseat the connections on both ends. Then proceed to step '
+              + '3.<br></p>'
 
               + '<p>' + ding02Str
-              + '<b>Click the “Connect” button</b> on the network '
-              + 'you wish to connect to.<br></p>'
+              + '<b>If you have a WiFi adaptor</b>, you should see a “network '
+              + 'button” like this in the system tray.<br></p>'
 
               + '<p>' + ding03Str
-              + '<b>If necessary, enter your Wi-Fi password</b> and '
-              + 'press Enter to connect to the network.<br></p>'
+              + '<b>Click the “network button”</b> to see a list of '
+              + 'connections. Then click on connect and enter your'
+              + 'password if required.<br></p>'
 
-              + '<p><b>Click on the “Continue” button when finished.</b> '
-              + 'If the connection is not established, you will be '
-              + 'returned to this page.<br></p>'
-
-              + '<p><b>If you cannot connect, click Skip</b> to move to '
-              + 'the next step.</p>'
+              + '<p><b>If you cannot connect, click “No Thanks”</b> to '
+              + 'proceed to the next step.</p>'
               ;
             interImageList = [
               'network_disconnect.svg',
               'network_button_pointer.svg',
-              'network_connect_dialog.svg'
+              'network_connect_dialog.webp'
             ];
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
@@ -1316,8 +1316,8 @@ Kirigami.ApplicationWindow {
 
               + '<p>' + ding03Str + '<b>Take snapshots with the Disk '
               + 'icon.</b> ' + ding04Str + 'Browse snapshots on the left, '
-              + ding05Str + 'select files on the right, ' + ding06Str
-              + 'adjust settings.<br></p>'
+              + ding05Str + 'select files on the right, and '
+              + ding06Str + 'adjust settings.<br></p>'
 
               + '<p><b>See more in the</b> '
               + '<a href="https://kfocus.org/wf/backup">Backups Guided '
@@ -1348,11 +1348,12 @@ Kirigami.ApplicationWindow {
               + 'generator that takes the hassle out of staying secure. It '
               + 'saves your passwords offline and in an encrypted form, '
               + 'avoiding the security issues of cloud-based password '
-              + 'managers and keeping you safe even if your computer is '
-              + 'stolen.<br></p>'
+              + 'managers. It can help keep you safe even if your computer '
+              + 'is stolen.<br></p>'
 
-              + '<p><b>It can also be used</b> for two-factor authentication, '
-              + 'application secrets, and with smartphones. See more in the '
+              + '<p><b>KeePassXC can also be used</b> for two-factor '
+              + 'authentication, application secrets, and smartphone '
+              + 'secrets. See more in the '
               + '<a href="https://kfocus.org/wf/passwords#bkm_keepassxc">'
               + 'Passwords Guided Solution.</a></p>'
               ;
@@ -1381,9 +1382,9 @@ Kirigami.ApplicationWindow {
               + '<p>' + ding02Str + '<b>Once installed,</b> you may need to '
               + 'click on the icon in the system tray as shown.<br></p>'
 
-              + '<p>' + ding03Str + 'The main window should then appear.</b> '
-              + 'From here, you can create a new vault to start managing '
-              + 'passwords.<br></p>'
+              + '<p>' + ding03Str + '<b>The main window should then '
+              + 'appear</b> From here, you can create a new vault to start '
+              + 'managing passwords.<br></p>'
 
               + '<p><b>See more in the</b> '
               + '<a href="https://kfocus.org/wf/passwords#bkm_keepassxc">'
@@ -1453,16 +1454,16 @@ Kirigami.ApplicationWindow {
 
               + '<p>' + ding02Str
               + '<b>If this is the first time</b> you are running '
-              + 'Thunderbird, you will be shown the Account Setup screen as '
-              + 'shown. Enter account details to connect.<br></p>'
+              + 'Thunderbird, you will be shown the Account Setup screen. '
+              + 'Enter your account details to connect.<br></p>'
 
               + '<p>' + ding03Str
-              + 'After connecting to an account, the Mail interface will '
+              + '<b>After connecting to an account</b>, the Mail interface will '
               + 'appear as shown.<br></p>'
 
-              + '<p><b>See more in the</b> '
+              + '<p><b>See the</b> '
               + '<a href="https://kfocus.org/wf/email.html">Email Guided '
-              + 'Solution</a> where it shows how to add accounts, set up '
+              + 'Solution</a> to set up '
               + 'calendars, manage contacts, and more.</p>'
               ;
             interActionButton.text      = 'Continue';
@@ -1530,9 +1531,9 @@ Kirigami.ApplicationWindow {
               + 'in the system tray as shown.<br></p>'
 
               + '<p>' + ding03Str
-              + '<b>Create a new Dropbox account or log into your '
-              + 'existing one</b> in the browser window that pops up.'
-              + '<br></p>'
+              + '<b>Sign into your Dropbox account</b> or create '
+              + 'a new one using the web page that should appear '
+              + 'in your browser.<br></p>'
 
               + '<p><b>See more in the</b> '
               + '<a href="https://kfocus.org/wf/drives.html">Cloud Drives '
@@ -1608,7 +1609,9 @@ Kirigami.ApplicationWindow {
             interActionButton.text      = 'Continue'
             interActionButton.icon.name = 'arrow-right';
             interImageList = [
-              'kfocus_mime_insync.svg'
+              'kfocus_mime_insync.svg',
+              'insync_start.webp',
+              'insync_login.webp'
             ];
             actionName = 'nextPage';
             regenUiFn( interTemplatePage, false );
@@ -1800,7 +1803,9 @@ Kirigami.ApplicationWindow {
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
             interImageList = [
-              'curated_apps.webp'
+              'curated_apps_page.webp',
+              'curated_apps_list.webp',
+              'kfocus_mime_filezilla.svg'
             ];
             actionName = 'nextPage';
             regenUiFn( interTemplatePage, false );
@@ -1960,8 +1965,9 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'checkNetwork':
-            // internetCheckerEngine.exec('ping -c 1 8.8.8.8');
-            internetCheckerEngine.exec('false');
+            internetCheckerEngine.exec('ping -c 1 8.8.8.8');
+            // DEBUG: Use the following to simulate a broken connection
+            // internetCheckerEngine.exec('false');
             switchPageFn( 'internetCheckItem' );
             break;
 
