@@ -1083,7 +1083,7 @@ Kirigami.ApplicationWindow {
             interActionButton.icon.name = 'arrow-right';
             interSkipButton.text        = 'No Thanks';
             interImageList              = [ 'locked.svg' ];
-            actionName                  = cryptChangeMode;
+            actionName                  = 'retryCrypt';
             regenUiFn( interTemplatePage, false );
             break;
 
@@ -1162,6 +1162,39 @@ Kirigami.ApplicationWindow {
             regenUiFn( interTemplatePage, false) ;
             break;
 
+        case 'diskPassphraseChangesSuccessfulItem':
+            initPageFn([
+              headerHighlightRect, interTopHeading,
+              instructionsText,    pictureColumn,
+              interActionButton,   interSkipButton
+            ]);
+
+            pageTitleText             = getCryptDiskTextFn('Disk Passphrase',
+                                          systemDataMap.cryptDiskList);
+            pageTitleImage            = imgDir + 'encrypted_drive.svg';
+            interImageList            = [ 'finishedOrange.svg' ];
+            headerHighlightRect.color = '#ff9900';
+            interTopHeading.text = "Passphrase Changes Successful";
+            instructionsText.text
+              = '<p><b>Requested passphrase changes were successful.</b> '
+              + getCryptDiskChangeTextFn()
+              + '<br></p>'
+
+              + '<p><b>Please keep a copy of your passphrase in a safe '
+              + 'place.</b> If this is lost, there is no recovery '
+              + 'except to reformat your disks and restore from '
+              + 'backup.<br></p>'
+
+              + '<p><b>For your security, the Kubuntu Focus Team does NOT '
+              + 'install tools</b> that could assist in any recovery.</p>'
+              ;
+            interActionButton.text      = 'Change Passphrases';
+            interActionButton.icon.name = 'arrow-right';
+            interSkipButton.text        = 'Keep Passphrases';
+            actionName                  = 'changePassphrasesNonDefault';
+            regenUiFn( interTemplatePage, false) ;
+            break;
+
         case 'diskPassphraseChangeNonDefaultItem':
             oldPassphraseLabel.visible    = true;
             oldPassphraseBox.visible      = true;
@@ -1177,7 +1210,7 @@ Kirigami.ApplicationWindow {
             newPassphraseBox.text     = '';
             confirmPassphraseBox.text = '';
             cryptHighlightRect.color  = '#ff9900';
-            cryptTopHeading.text      = 'Change Non-Default Passphrases';
+            cryptTopHeading.text      = 'Change Passphrases';
             cryptInstructionsText.text
               = '<p><b>Please enter the old passphrase of the disk(s) you want '
               + 'to modify.</b> Then provide the passphrase you would like '
@@ -1800,7 +1833,8 @@ Kirigami.ApplicationWindow {
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
             interImageList = [
-              'curated_apps.webp'
+              'curated_apps.webp',
+              'curated_apps_install.svg'
             ];
             actionName = 'nextPage';
             regenUiFn( interTemplatePage, false );
@@ -1896,7 +1930,11 @@ Kirigami.ApplicationWindow {
                     if ( cryptDiskChangeCount === 0 ) {
                         switchPageFn( 'diskPassphraseChangeFailedItem' );
                     } else {
-                        switchPageFn( 'diskPassphraseGoodItem' );
+                        if ( cryptChangeMode === 'changeCrypt' ) {
+                            switchPageFn( 'diskPassphraseGoodItem' );
+                        } else {
+                            switchPageFn( 'diskPassphraseChangesSuccessfulItem' );
+                        }
                     }
                 }
             }
@@ -1965,6 +2003,9 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'checkCrypt':
+            // TODO: INFO: Possibly make it so that when the user finishes
+            // authenticating the wizard reacts while the task is still
+            // running?
             handleDefaultCryptListEngine.exec(
               'pkexec '
               + systemDataMap.binDir
@@ -1973,6 +2014,8 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'changeCrypt':
+            // TODO: NOTICE: Detect if the user re-inputs the default
+            // passphrase here?
             cryptChangeMode = 'changeCrypt';
             if ( newPassphraseBox.text === confirmPassphraseBox.text ) {
                 if ( newPassphraseBox.text === '' ) {
@@ -1993,6 +2036,14 @@ Kirigami.ApplicationWindow {
                   = 'The provided passphrases do not '
                     + 'match. Please try again.';
                 cryptErrorMessage.visible = true;
+            }
+            break;
+
+        case 'retryCrypt':
+            if ( cryptChangeMode === 'changeCrypt' ) {
+                switchPageFn( 'diskPassphraseChangeItem' );
+            } else {
+                switchPageFn( 'diskPassphraseChangeNonDefaultItem' );
             }
             break;
 
