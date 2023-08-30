@@ -9,7 +9,7 @@
 #include "shellengine.h"
 
 QStringList StartupData::m_cryptDiskList = QStringList();
-QString StartupData::m_binDir     = "../package-main/usr/lib/kfocus/bin/";
+QString StartupData::m_binDir     = "";
 QString StartupData::m_homeDir    = "";
 QString StartupData::m_userName   = "";
 bool StartupData::m_isLiveSession = false;
@@ -20,6 +20,28 @@ int main(int argc, char *argv[])
 {
     // Early system info gathering
     StartupData dat;
+
+    // This must be called early to get applicationDirPath
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+    QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+#endif
+    QGuiApplication app(argc, argv);
+
+    // Determine path for kfocus-fixup-set. Prefer dev path if available.
+    QString exeDir = app.applicationDirPath();
+    QString dirList[2] = { "../package-main/usr/lib/kfocus/bin", exeDir };
+    for ( QString testDir : dirList ) {
+      if (QFile::exists(testDir + "/kfocus-firstrun-set")) {
+        dat.setBinDir(testDir);
+        break;
+      }
+    }
+
+    if (dat.binDir() == "") {
+        qWarning() << "Abort: Cannot find valid bin directory.";
+        return 1;
+    }
+
     dat.setHomeDir(QStandardPaths::writableLocation(QStandardPaths::HomeLocation));
 
     // Check for the presence of a drop file
@@ -49,10 +71,6 @@ int main(int argc, char *argv[])
     }
 
     // UI and QML setup
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-    QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-#endif
-    QGuiApplication app(argc, argv);
     if (qEnvironmentVariableIsEmpty("QT_QUICK_CONTROLS_STYLE")) {
             QQuickStyle::setStyle(QStringLiteral("org.kde.desktop"));
         }
@@ -65,36 +83,38 @@ int main(int argc, char *argv[])
 
     // Late system info gathering
     ShellEngine encryptedDiskFinder;
-    int encryptedDiskFinderExitCode = encryptedDiskFinder.execSync(dat.binDir() + "kfocus-check-crypt -q");
+    int encryptedDiskFinderExitCode = encryptedDiskFinder.execSync(
+        dat.binDir() + "/kfocus-check-crypt -q"
+    );
     if (encryptedDiskFinderExitCode != 0) {
-        qWarning() << "Failed to search for encrypted disks, exiting.";
+        qWarning() << "Abort: Failed to search for encrypted disks.";
         return 1;
     }
-    QStringList cryptDisks(encryptedDiskFinder.stdout().split('\n'));
-    // The newline following the last entry creates an "extra" blank entry that needs to be removed
-    cryptDisks.removeLast();
-    dat.setCryptDiskList(cryptDisks);
-
-    // Check for the presence of a second kfocus-firsturn-bin instance
-    ShellEngine duplicateFinder;
-    // NOTE: We only search for "kfocus-firstrun" and not "kfocus-firstrun-bin"
-    // here because for some unknown reason kfocus-firstrun-bin shows up as
-    // "kfocus-firsturn-" (yes, with a weird dash at the end) in the output of
-    // "ps axo comm". Why this is, I have no clue.
-    duplicateFinder.execSync("ps axo comm | grep kfocus-firstrun");
-    QStringList outputLines = duplicateFinder.stdout().split('\n');
-    if (outputLines.length() > 2) { // there's always one blank line
-        // TODO 2023-08-24 arraybolt3 notice: Replace kdialog here?
-        msgbox.execSync("kdialog --title \"Kubuntu Focus Welcome Wizard\" --msgbox \"The Welcome Wizard is already running.\"");
-        return 1;
-    }
-
-    // Check disk space - we want at least 1 GiB available
-    QStorageInfo driveInfo = QStorageInfo::root();
-    if (driveInfo.bytesFree() < min_disk_int) {
-        msgbox.execSync("kdialog --title \"Kubuntu Focus Welcome Wizard\" --msgbox \"Your primary drive is low on space. Please free some space before running this wizard.\"");
-        return 1;
-    }
+//  QStringList cryptDisks(encryptedDiskFinder.stdout().split('\n'));
+//  // The newline following the last entry creates an "extra" blank entry that needs to be removed
+//  cryptDisks.removeLast();
+//  dat.setCryptDiskList(cryptDisks);
+//
+//   // Check for the presence of a second kfocus-firsturn-bin instance
+//   ShellEngine duplicateFinder;
+//   // NOTE: We only search for "kfocus-firstrun" and not "kfocus-firstrun-bin"
+//   // here because for some unknown reason kfocus-firstrun-bin shows up as
+//   // "kfocus-firsturn-" (yes, with a weird dash at the end) in the output of
+//   // "ps axo comm". Why this is, I have no clue.
+//   duplicateFinder.execSync("ps axo comm | grep kfocus-firstrun");
+//   QStringList outputLines = duplicateFinder.stdout().split('\n');
+//   if (outputLines.length() > 2) { // there's always one blank line
+//       // TODO 2023-08-24 arraybolt3 notice: Replace kdialog here?
+//       msgbox.execSync("kdialog --title \"Kubuntu Focus Welcome Wizard\" --msgbox \"The Welcome Wizard is already running.\"");
+//       return 1;
+//   }
+//
+   // Check disk space - we want at least 1 GiB available
+   QStorageInfo driveInfo = QStorageInfo::root();
+   if (driveInfo.bytesFree() < min_disk_int) {
+       msgbox.execSync("kdialog --title \"Kubuntu Focus Welcome Wizard\" --msgbox \"Your primary drive is low on space. Please free some space before running this wizard.\"");
+       return 1;
+   }
 
     QQmlApplicationEngine engine;
     const QUrl url(QStringLiteral("qrc:/main.qml"));

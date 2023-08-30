@@ -2031,7 +2031,7 @@ Kirigami.ApplicationWindow {
             handleDefaultCryptListEngine.exec(
               'pkexec '
               + systemDataMap.binDir
-              + 'kfocus-check-crypt -c ' );
+              + '/kfocus-check-crypt -c ' );
             switchPageFn( 'diskPassphraseCheckerItem' );
             break;
 
@@ -2048,7 +2048,7 @@ Kirigami.ApplicationWindow {
                     handleCryptoChangeEngine.exec(
                       'pkexec '
                       + systemDataMap.binDir
-                      + 'kfocus-check-crypt -m '
+                      + '/kfocus-check-crypt -m '
                       + defaultCryptList.join(' '),
                       newPassphraseBox.text + '\n' );
                     switchPageFn( 'diskPassphraseChangeInProgressItem' );
@@ -2090,7 +2090,7 @@ Kirigami.ApplicationWindow {
                     handleCryptoChangeEngine.exec(
                       'pkexec '
                       + systemDataMap.binDir
-                      + 'kfocus-check-crypt -r '
+                      + '/kfocus-check-crypt -r '
                       + systemDataMap.cryptDiskList.join(' '),
                       oldPassphraseBox.text
                       + '\n'
@@ -2112,38 +2112,38 @@ Kirigami.ApplicationWindow {
               'xterm -fa \'Monospace\' -fs 12 -b 28 -geometry 80x24 -T '
               + '\'Install Extras\' -xrm \'xterm*iconHint: '
               + '/usr/share/pixmaps/kfocus-bug-wizard\' -e pkexec '
-              + systemDataMap.binDir + 'kfocus-extra' );
+              + systemDataMap.binDir + '/kfocus-extra' );
             switchPageFn( 'extraSoftwareInstallItem' );
             break;
 
         case 'launchBackInTime':
-            exeRun.exec( systemDataMap.binDir + 'kfocus-mime -k backintime' );
+            exeRun.exec( systemDataMap.binDir + '/kfocus-mime -k backintime' );
             switchPageFn( 'fileBackupLaunchedItem' );
             break;
 
         case 'launchKeePassXC':
-            exeRun.exec( systemDataMap.binDir + 'kfocus-mime -kf keepassxc' );
+            exeRun.exec( systemDataMap.binDir + '/kfocus-mime -kf keepassxc' );
             switchPageFn( 'passwordManagerLaunchedItem' );
             break;
 
         case 'launchThunderbird':
-            exeRun.exec( systemDataMap.binDir + 'kfocus-mime -k thunderbird' );
+            exeRun.exec( systemDataMap.binDir + '/kfocus-mime -k thunderbird' );
             switchPageFn( 'emailCalendarLaunchedItem' );
             break;
 
         case 'launchDropbox':
-            exeRun.exec( systemDataMap.binDir + 'kfocus-mime -k dropbox' );
+            exeRun.exec( systemDataMap.binDir + '/kfocus-mime -k dropbox' );
             switchPageFn( 'dropboxLaunchedItem' );
             break;
 
         case 'launchInsync':
-            exeRun.exec( systemDataMap.binDir + 'kfocus-mime -k insync' );
+            exeRun.exec( systemDataMap.binDir + '/kfocus-mime -k insync' );
             switchPageFn( 'insyncLaunchedItem' );
             break;
 
         case 'launchJetbrainsToolbox':
             exeRun.exec( systemDataMap.binDir
-              + 'kfocus-mime -k jetbrains-toolbox-plain' );
+              + '/kfocus-mime -k jetbrains-toolbox-plain' );
             switchPageFn( 'jetbrainsToolboxLaunchedItem' );
             break;
 
