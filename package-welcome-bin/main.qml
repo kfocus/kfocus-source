@@ -37,6 +37,7 @@ Kirigami.ApplicationWindow {
     property string ding04Str : '<font size="5">\u2779</font>&nbsp;'
     property string ding05Str : '<font size="5">\u277A</font>&nbsp;'
     property string ding06Str : '<font size="5">\u277B</font>&nbsp;'
+    property string ding07Str : '<font size="5">\u277C</font>&nbsp;'
 
     // Purpose: Describes steps used in wizard
     // See property currentIndex
@@ -1352,6 +1353,11 @@ Kirigami.ApplicationWindow {
               + ding05Str + 'select files on the right, and '
               + ding06Str + 'adjust settings.<br></p>'
 
+              + '<p>' + ding07Str
+              + '<b>Click on the disk icon next to the system tray</b> to '
+              + 'launch BackInTime. This is shown in the default Kubuntu '
+              + 'Focus themes.<br></p>'
+
               + '<p><b>See more in the</b> '
               + '<a href="https://kfocus.org/wf/backup">Backups Guided '
               + 'Solution.</a></p>'
@@ -1361,6 +1367,7 @@ Kirigami.ApplicationWindow {
             interImageList = [
               'kfocus_mime_backintime.svg',
               'backintime_ui.webp',
+              'backintime_panel.svg'
             ];
             actionName = 'nextPage';
             regenUiFn( interTemplatePage, false );
@@ -1634,17 +1641,24 @@ Kirigami.ApplicationWindow {
               + 'so.<br></p>'
 
               + '<p>' + ding02Str
-              + 'TODO: Insert remaining steps and images.<br></p>'
-
+              + '<b>When you first start Insync,</b> you will be shown '
+              + 'account options. Select your drive type to proceed.<br></p>'
+      
               + '<p>' + ding03Str
-              + 'TODO: Insert remaining steps and images.</br></p>'
+              + '<b>Sign into to the drive account</b> you specified in '
+              + 'step 2.<br></p>'
+      
+              + '<p>' + ding04Str
+              + '<b>Click on the Insync icon in the system tray</b> '
+              + 'to open the management interface.<br></p>'
               ;
             interActionButton.text      = 'Continue'
             interActionButton.icon.name = 'arrow-right';
             interImageList = [
               'kfocus_mime_insync.svg',
               'insync_start.webp',
-              'insync_login.webp'
+              'insync_login.webp',
+              'insync_systray.svg'
             ];
             actionName = 'nextPage';
             regenUiFn( interTemplatePage, false );
@@ -1661,13 +1675,13 @@ Kirigami.ApplicationWindow {
             topImage.source = imgDir + 'jetbrains_toolbox_logo.svg';
             topHeading.text = 'Install and Manage JetBrains IDEs';
             primaryText.text
-              = '<p><b>JetBrains Toolbox is a convenient way to use JetBrains '
-              + 'products</b>. You can install, browse, remove, upgrade, '
-              + 'configure, and otherwise manage their many popular tools. '
-              + 'This includes popular IDEs like IntelliJ, '
+              = '<p><b>JetBrains Toolbox provides a convenient interface to '
+              + 'use their products.</b> You can install, browse, remove, '
+              + 'upgrade, configure, and otherwise manage their many popular '
+              + 'developer tools. These includes IDEs like IntelliJ, '
               + 'PyCharm, WebStorm, Android Studio, and DataGrip. Several '
-              + 'IDEs have free community editions, and many of their '
-              + 'paid products have a generous free trial.<br></p>'
+              + 'IDEs have free community editions, while others have have '
+              + 'generous free trial periods.<br></p>'
 
               + '<p><b>See more in the</b> '
               + '<a href="https://kfocus.org/wf/ide.html">IDEs Guided '
@@ -1703,7 +1717,8 @@ Kirigami.ApplicationWindow {
               + 'the Toolbox to launch.<br></p>'
 
               + '<p>' + ding03Str
-              + '<b>Visit the System Tray</b> to interact with the Toolbox.'
+              + '<b>Click on the Toolbox icon</b> in the system tray to open '
+              + 'the management interface. '
               + '</p>'
               ;
             interActionButton.text      = 'Continue';
@@ -1761,8 +1776,8 @@ Kirigami.ApplicationWindow {
 
               + '<p>' + ding02Str
               + '<b>Pick one of the preinstalled avatars,</b> or click '
-              + '“Choose File” to use a custom avatar. TODO: Specify image '
-              + 'type and size<br></p>'
+              + '“Choose File” to use a custom avatar.<br></p>'
+              // TODO: Specify image type and size?
 
               + '<p>' + ding03Str
               + '<b>Click “Apply” and provide your password</b> to change '
@@ -1790,14 +1805,14 @@ Kirigami.ApplicationWindow {
             topImage.source = imgDir + 'kfocus_bug_apps.svg';
             topHeading.text = 'Find and Install Apps Quickly';
             primaryText.text
-              = '<p><b>The Curated Apps Page</b> '
-              + 'lists recommended apps that work well with Kubuntu '
-              + 'Focus computers. Click on an icon to launch an app. If it’s '
-              + 'not installed, the system will install the repository and '
-              + 'the package before launching it.<br></p>'
+              = '<p><b>The Curated Apps Page lists recommended apps </b> '
+              + 'that work well with Kubuntu Focus systems. Click on an '
+              + 'icon to launch an app. If it is not installed, the system '
+              + 'will install the repository and the package before '
+              + 'launching it.<br></p>'
 
-              + '<p><b>We encourage you to take a moment</b> to review the list '
-              + 'of curated apps and install the ones you need now.</p>'
+              + '<p><b>We encourage you to review the list of curated '
+              + 'apps</b> and install the ones you need now.</p>'
               ;
             actionButton.text           = 'Browse Curated Apps Now';
             actionButton.icon.name      = 'arrow-right';
@@ -1821,17 +1836,18 @@ Kirigami.ApplicationWindow {
             instructionsText.text
               = '<p>' + ding01Str
               + '<b>The Curated Apps web page</b> should now be visible '
-              + 'in your default web browser.<br></p>'
+              + 'in the default web browser.<br></p>'
 
               + '<p>' + ding02Str
               + '<b>Scroll down to the list of apps</b> and click the '
               + 'icon of the app you would like to launch.<br></p>'
 
               + '<p>' + ding03Str
-              + '<b>The system will attempt to launch the app</b>. '
-              + 'If the app is not installed, the system will, with '
-              + 'your confirmation, first install the app and then '
-              + 'automatically launch it.</p>'
+              + '<b>The system will launch the app.</b> If needed, '
+              + 'it will install the key, repository, and package as '
+              + 'needed before launching the app. If any of these steps are '
+              + 'required, the system will ask for your authorization '
+              + 'before proceeding.<br></p>'
               ;
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
@@ -1856,9 +1872,9 @@ Kirigami.ApplicationWindow {
             topImage.source = imgDir + 'finished.svg';
             topHeading.text = 'All Done';
             primaryText.text
-              = '<p><b>You have considered</b> all items shown with a checkmark. '
-              + 'Click the “Clear Checkmarks” button to reset them.'
-              + '<br></p>'
+              = '<p><b>You have considered</b> all steps shown with a '
+              + 'checkmark. Click the “Clear Checkmarks” button below to '
+              + 'reset them.<br></p>'
 
               + '<p><b>To get more help,</b> click Start Menu &gt; Kubuntu Focus '
               + 'Tools &gt; Help.<br></p>'
