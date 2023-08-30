@@ -90,25 +90,25 @@ int main(int argc, char *argv[])
         qWarning() << "Abort: Failed to search for encrypted disks.";
         return 1;
     }
-//  QStringList cryptDisks(encryptedDiskFinder.stdout().split('\n'));
-//  // The newline following the last entry creates an "extra" blank entry that needs to be removed
-//  cryptDisks.removeLast();
-//  dat.setCryptDiskList(cryptDisks);
-//
-//   // Check for the presence of a second kfocus-firsturn-bin instance
-//   ShellEngine duplicateFinder;
-//   // NOTE: We only search for "kfocus-firstrun" and not "kfocus-firstrun-bin"
-//   // here because for some unknown reason kfocus-firstrun-bin shows up as
-//   // "kfocus-firsturn-" (yes, with a weird dash at the end) in the output of
-//   // "ps axo comm". Why this is, I have no clue.
-//   duplicateFinder.execSync("ps axo comm | grep kfocus-firstrun");
-//   QStringList outputLines = duplicateFinder.stdout().split('\n');
-//   if (outputLines.length() > 2) { // there's always one blank line
-//       // TODO 2023-08-24 arraybolt3 notice: Replace kdialog here?
-//       msgbox.execSync("kdialog --title \"Kubuntu Focus Welcome Wizard\" --msgbox \"The Welcome Wizard is already running.\"");
-//       return 1;
-//   }
-//
+    QStringList cryptDisks(encryptedDiskFinder.stdout().split('\n'));
+    // The newline following the last entry creates an "extra" blank entry that needs to be removed
+    cryptDisks.removeLast();
+    dat.setCryptDiskList(cryptDisks);
+  
+     // Check for the presence of a second kfocus-firsturn-bin instance
+     ShellEngine duplicateFinder;
+     // NOTE: We only search for "kfocus-firstrun" and not "kfocus-firstrun-bin"
+     // here because for some unknown reason kfocus-firstrun-bin shows up as
+     // "kfocus-firsturn-" (yes, with a weird dash at the end) in the output of
+     // "ps axo comm". Why this is, I have no clue.
+     duplicateFinder.execSync("ps axo comm | grep kfocus-firstrun");
+     QStringList outputLines = duplicateFinder.stdout().split('\n');
+     if (outputLines.length() > 2) { // there's always one blank line
+         // TODO 2023-08-24 arraybolt3 notice: Replace kdialog here?
+         msgbox.execSync("kdialog --title \"Kubuntu Focus Welcome Wizard\" --msgbox \"The Welcome Wizard is already running.\"");
+         return 1;
+     }
+  
    // Check disk space - we want at least 1 GiB available
    QStorageInfo driveInfo = QStorageInfo::root();
    if (driveInfo.bytesFree() < min_disk_int) {
