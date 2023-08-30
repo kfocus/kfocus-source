@@ -887,7 +887,9 @@ _mainFn () {
 #   IFF launched from /etc/xdg/autostart/kfocus-focusrx.desktop.
 #
 _chkWelcomeFn () {
-  if [ "${_parentCmdStr}" = 'plasma_session' ]; then
+  # Check if launched at login. 'plasma_session' is used by Plasma 5.24;
+  # 'systemd' in Plasma 5.27
+  if [[ "${_parentCmdStr}" =~ ^(plasma_session|systemd) ]]; then
     "${_firstRunExe}";
   fi
 }
