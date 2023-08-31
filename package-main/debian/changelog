@@ -1,3 +1,19 @@
+kfocus-main (22.04.52) jammy; urgency=medium
+
+  * Replace kdialog firstrun wizard with QT-native (#3613)
+    - debian/control: Add depends to kfocus-firstrun-bin
+    - debian/kfocus-main.install: Remove kfocus-firstrun 
+    - bin/kfocus-focusrx: Execute on launch for 5.27 too
+    - applications/kfocus-firstrun.desktop
+    - bin/kfocus-mime
+  * Expand crypt passwords change support (#3613)
+    - bin/kfocus-check-crypt
+  * Improved mime support (#3613)
+    - bin/kfocus-mime: Add capability to launch in foreground
+    - bin/kfocus-mime: Minor app description changes
+
+ -- Michael S. Mikowski <support@kfocus.org>  Wed, 30 Aug 2023 23:32:59 -0700
+
 kfocus-main (22.04.51) jammy; urgency=medium
 
   * kfocus-focusrx: declare count variable (#3493)
