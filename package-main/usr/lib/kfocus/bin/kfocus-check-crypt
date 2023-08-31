@@ -4,10 +4,10 @@
 # Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
 #
 # Name    : kfocus-check-crypt
-# Purpose : Prompts user to change encrypted disk passwords.
+# Purpose : Helper app for crypt disks
 # License : GPL v2
-# Run by  : kfocus-firstrun in xterm
-# Spec    : 203, 1314
+# Run by  : kfocus-firstrun-bin
+# Spec    : 203, 1314,3613
 #
 set -u;
 
@@ -272,5 +272,4 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _mainFn "$@";
 fi
 ## . END Run main if script is not sourced
-
 

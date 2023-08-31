@@ -69,9 +69,9 @@ _exeLookupList=(
   'kfocus_vidsync|kfocus-vidsync||kfocus-vidsync|KFocus Vidsync: Sync video across all displays'
   'kfocus_welcome|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://docs.google.com/presentation/d/e/2PACX-1vTsKGkzy_tFm2xZo-BYX7mqeLG43C2vy108qsWZ2L_c4XJGXEVh2fAt3sNvgiqXfw4OFPWynHS-32xx/pub?start=false&loop=false&delayms=3000||kfocus-main|KFocus Welcome Wizard: Consider first-run steps'
   'kfocus_wizard|/usr/lib/kfocus/bin/kfocus-firstrun;-f||kfocus-main|KFocus Welcome Wizard: Consider first-run steps'
-  'kleopatra|kleopatra||kleopatra|Kleopatra: Unifiy Crypto GUI'
+  'kleopatra|kleopatra||kleopatra|Kleopatra: Unified Crypto GUI'
   'konsole|konsole||konsole|Konsole: Use an X Terminal Emulator'
-  'krita|krita||krita|Krita: Rastor Image Editor'
+  'krita|krita||krita|Krita: Raster Image Editor'
   'kruler|kruler||kruler|Kruler: Measure Screen Objects'
   'kubectl|konsole;--hold;-e;kubectl;help|kubectl|kubectl|Kubernetes: Command Line Container Management'
   'libreoffice-base|libreoffice;--base||libreoffice-base|LibreOffice Database: Connect Databases'
@@ -85,8 +85,8 @@ _exeLookupList=(
   'nvidia-settings|nvidia-settings||nvidia-settings|Nvidia Settings: Configure Nvidia GPUs'
   'obs|obs||obs-studio|OBS Studio: Record and Stream Live Video'
   'okular|okular||okular|Okular: View PDFs and Other Documents'
-  'optipng|konsole;-e;man optipng|optipng|optipng|Optpng: Optimize PNG Images'
-  'pavucontrol|pavucontrol-qt||pavucontrol-qt|PulseAudio: Mananage Audio Volume'
+  'optipng|konsole;-e;man optipng|optipng|optipng|Optipng: Optimize PNG Images'
+  'pavucontrol|pavucontrol-qt||pavucontrol-qt|PulseAudio: Manage Audio Volume'
   'plasma-discover|plasma-discover||plasma-discover|Discover: Manage Software'
   'ppa-purge|konsole;-e;man ppa-purge|ppa-purge|ppa-purge|PPA Purge: Purge PPAs'
   'rar|konsole;-e;man rar|rar|rar|Rar: Create .rar Archive Files'
@@ -102,7 +102,7 @@ _exeLookupList=(
   'virtualbox|virtualbox||virtualbox|VirtualBox: Run Virtual Machines'
   'vlc|vlc||vlc|VLC: Play and Stream Video and Multimedia'
   'wallpapers|dolphin;/usr/share/wallpapers||dolphin|Wallpapers: View Wallpaper Images'
-  'webcamoid|webcamoid||webcamoid|Webcamoid: Test Your Web Cam'
+  'webcamoid|webcamoid||webcamoid|Webcamoid: Test Your Webcam'
   'winff|winff||winff-qt|WinFF: Convert Video using ffmpeg'
   'zoom|zoom||zoom|Zoom: Start and Join Video and Web Conferencing'
 
@@ -228,7 +228,7 @@ function deb_lutris() {
   PRETTY_NAME="Lutris"
   WEBSITE="https://lutris.net/"
 }
-# NodeJS is preinstalled. This implementation does not quite work.
+# Node.js is preinstalled. This implementation does not quite work.
 # function deb_nodejs() {
 #   GPG_KEY_URL="https://deb.nodesource.com/gpgkey/nodesource.gpg.key"
 #   APT_REPO_URL="deb https://deb.nodesource.com/node_16.x jammy main"
