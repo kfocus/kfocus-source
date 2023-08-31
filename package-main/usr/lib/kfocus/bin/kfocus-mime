@@ -67,8 +67,9 @@ _exeLookupList=(
   'kfocus_pick_gcc|kfocus-pick-gcc||kfocus-pick-gcc|KFocus Pick GCC: Select default compiler toolchain'
   'kfocus_power|kfocus-power||kfocus-power|KFocus Power: Control CPU Power'
   'kfocus_vidsync|kfocus-vidsync||kfocus-vidsync|KFocus Vidsync: Sync video across all displays'
-  'kfocus_welcome|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://docs.google.com/presentation/d/e/2PACX-1vTsKGkzy_tFm2xZo-BYX7mqeLG43C2vy108qsWZ2L_c4XJGXEVh2fAt3sNvgiqXfw4OFPWynHS-32xx/pub?start=false&loop=false&delayms=3000||kfocus-main|KFocus Welcome Wizard: Consider first-run steps'
-  'kfocus_wizard|/usr/lib/kfocus/bin/kfocus-firstrun;-f||kfocus-main|KFocus Welcome Wizard: Consider first-run steps'
+  'kfocus_welcome|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://docs.google.com/presentation/d/e/2PACX-1vTsKGkzy_tFm2xZo-BYX7mqeLG43C2vy108qsWZ2L_c4XJGXEVh2fAt3sNvgiqXfw4OFPWynHS-32xx/pub?start=false&loop=false&delayms=3000||kfocus-main|KFocus Welcome Document'
+# app_str|cmd_str;with;args|sniff_str|pkg_str|descr_str
+  'kfocus_wizard|/usr/lib/kfocus/bin/kfocus-firstrun-bin;-f||kfocus-firstrun-bin|Welcome Wizard: Configure your apps'
   'kleopatra|kleopatra||kleopatra|Kleopatra: Unified Crypto GUI'
   'konsole|konsole||konsole|Konsole: Use an X Terminal Emulator'
   'krita|krita||krita|Krita: Raster Image Editor'
