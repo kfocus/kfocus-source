@@ -851,7 +851,7 @@ Kirigami.ApplicationWindow {
             frontHeading.text = 'Welcome To The Kubuntu Focus!';
             frontText.text
               = '<p><b>This Welcome Wizard helps you get '
-              + 'started as quickly as possible.</b> We have included '
+              + 'started as quickly as possible</b>. We have included '
               + 'many tools we feel most developers should '
               + 'consider.<br></p>'
 
@@ -886,7 +886,7 @@ Kirigami.ApplicationWindow {
             interTopHeading.text      = 'Please Connect to the Internet';
             instructionsText.text
               = '<p><b>The system is not currently '
-              + 'connected to the Internet.</b> Please connect to '
+              + 'connected to the Internet</b>. Please connect to '
               + 'complete this step.<br></p>'
 
               + '<p>' + ding01Str
@@ -945,7 +945,7 @@ Kirigami.ApplicationWindow {
               + '<p><b>You may check '
               + getCryptDiskTextFn('this disk',
                   systemDataMap.cryptDiskList)
-              + ' for the default passphrase now.</b> As a security '
+              + ' for the default passphrase now</b>. As a security '
               + 'measure, this app will not perform this check until '
               + 'you enter your valid user password.</p>'
               ;
@@ -990,7 +990,7 @@ Kirigami.ApplicationWindow {
               = 'Authorization Has Failed';
             instructionsText.text
               = '<p><b>Sorry, authorization is required to check disk '
-              + 'passphrases for security.</b> If you would like to check '
+              + 'passphrases for security</b>. If you would like to check '
               + 'your '
               + getCryptDiskTextFn( 'disk\'s passphrase',
                   systemDataMap.cryptDiskList)
@@ -1025,7 +1025,7 @@ Kirigami.ApplicationWindow {
               = '<p><b>'
               + getCryptDiskTextFn('One disk is',
                   defaultCryptList)
-              + ' using the default passphrase.</b> This is insecure, '
+              + ' using the default passphrase</b>. This is insecure, '
               + 'and we recommend you use the form below to change it '
               + 'to a unique passphrase. <b>IMPORTANT:</b> All disks using '
               + 'the default passphrase will be changed to use the new '
@@ -1033,12 +1033,12 @@ Kirigami.ApplicationWindow {
               ;
             cryptSecondaryText.text
               = '<p><b>Please keep a copy of '
-              + 'your passphrase in a safe place.</b> If this is lost, '
+              + 'your passphrase in a safe place</b>. If this is lost, '
               + 'there is no recovery except to reformat your disks '
               + 'and restore from backup.<br></p>'
 
               + '<p><b>For your security, the Kubuntu Focus Team does NOT '
-              + 'install tools that could assist in any recovery.</b> '
+              + 'install tools that could assist in any recovery</b>. '
               + 'In other words, if you lose your passphrase, they have no '
               + 'way to help you recover it!</p>'
               ;
@@ -1074,7 +1074,7 @@ Kirigami.ApplicationWindow {
               = 'Authorization Has Failed';
             instructionsText.text
               = '<p><b>Sorry, authorization is required to change disk '
-              + 'passphrases.</b> If you would like to change '
+              + 'passphrases</b>. If you would like to change '
               + 'your '
               + getCryptDiskTextFn( 'disk\'s passphrase',
                   systemDataMap.cryptDiskList )
@@ -1103,7 +1103,7 @@ Kirigami.ApplicationWindow {
               = 'Disk Passphrase Changing Failed';
 
             instructionsText.text
-              = '<p><b>No disks had their passphrase changed.</b> You may have '
+              = '<p><b>No disks had their passphrase changed</b>. You may have '
               + 'mistyped your old passphrase.<br></p>'
 
               + '<p>If you would like to change your '
@@ -1139,17 +1139,17 @@ Kirigami.ApplicationWindow {
             instructionsText.text
               = '<p><b>' + getCryptDiskTextFn( 'The encrypted disk uses',
                           systemDataMap.cryptDiskList )
-              + ' a unique passphrase.</b> '
+              + ' a unique passphrase</b>. '
               + getCryptDiskChangeTextFn()
               + '<br></p>'
 
               + '<p><b>We do not recommend changing your disk '
               + getCryptDiskTextFn( 'passphrase',
                   systemDataMap.cryptDiskList )
-              + '.</b> However, if you would like to anyway, you may.<br></p>'
+              + '</b>. However, if you would like to anyway, you may.<br></p>'
 
               + '<p><b>Please keep a copy of your passphrase in a safe '
-              + 'place.</b> If this is lost, there is no recovery '
+              + 'place</b>. If this is lost, there is no recovery '
               + 'except to reformat your disks and restore from '
               + 'backup.<br></p>'
 
@@ -1177,12 +1177,12 @@ Kirigami.ApplicationWindow {
             headerHighlightRect.color = '#ff9900';
             interTopHeading.text = "Passphrase Changes Successful";
             instructionsText.text
-              = '<p><b>Requested passphrase changes were successful.</b> '
+              = '<p><b>Requested passphrase changes were successful</b>. '
               + getCryptDiskChangeTextFn()
               + '<br></p>'
 
               + '<p><b>Please keep a copy of your passphrase in a safe '
-              + 'place.</b> If this is lost, there is no recovery '
+              + 'place</b>. If this is lost, there is no recovery '
               + 'except to reformat your disks and restore from '
               + 'backup.<br></p>'
 
@@ -1214,7 +1214,7 @@ Kirigami.ApplicationWindow {
             cryptTopHeading.text      = 'Change Passphrases';
             cryptInstructionsText.text
               = '<p><b>Please enter the old passphrase of the disk(s) you want '
-              + 'to modify.</b> Then provide the passphrase you would like '
+              + 'to modify</b>. Then provide the passphrase you would like '
               + 'to use instead. <b>All disks using the specified old '
               + 'passphrase will be modified to use the new one.</p>'
               ;
@@ -1349,7 +1349,7 @@ Kirigami.ApplicationWindow {
               + 'BackInTime app</b> should appear as shown.<br></p>'
 
               + '<p>' + ding03Str + '<b>Take snapshots with the Disk '
-              + 'icon.</b> ' + ding04Str + 'Browse snapshots on the left, '
+              + 'icon</b>. ' + ding04Str + 'Browse snapshots on the left, '
               + ding05Str + 'select files on the right, and '
               + ding06Str + 'adjust settings.<br></p>'
 
@@ -1423,7 +1423,7 @@ Kirigami.ApplicationWindow {
               + 'click on the icon in the system tray as shown.<br></p>'
 
               + '<p>' + ding03Str + '<b>The main window should then '
-              + 'appear</b> From here, you can create a new vault to start '
+              + 'appear</b>. From here, you can create a new vault to start '
               + 'managing passwords.<br></p>'
 
               + '<p><b>See more in the</b> '
@@ -1676,7 +1676,7 @@ Kirigami.ApplicationWindow {
             topHeading.text = 'Install and Manage JetBrains IDEs';
             primaryText.text
               = '<p><b>JetBrains Toolbox provides a convenient interface to '
-              + 'use their products.</b> You can install, browse, remove, '
+              + 'use their products</b>. You can install, browse, remove, '
               + 'upgrade, configure, and otherwise manage their many popular '
               + 'developer tools. These includes IDEs like IntelliJ, '
               + 'PyCharm, WebStorm, Android Studio, and DataGrip. Several '
@@ -1744,7 +1744,7 @@ Kirigami.ApplicationWindow {
             topHeading.text = 'Personalize your Profile Picture';
             primaryText.text
               = '<p><b>Your profile picture is displayed in the Start Menu and '
-              + 'on the lock screen.</b> By default, this picture is a '
+              + 'on the lock screen</b>. By default, this picture is a '
               + 'Kubuntu logo, but it’s easy to change to a picture of your '
               + 'choice.<br></p>'
 
@@ -1843,7 +1843,7 @@ Kirigami.ApplicationWindow {
               + 'icon of the app you would like to launch.<br></p>'
 
               + '<p>' + ding03Str
-              + '<b>The system will launch the app.</b> If needed, '
+              + '<b>The system will launch the app</b>. If needed, '
               + 'it will install the key, repository, and package as '
               + 'needed before launching the app. If any of these steps are '
               + 'required, the system will ask for your authorization '
