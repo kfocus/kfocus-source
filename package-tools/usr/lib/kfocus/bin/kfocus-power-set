@@ -105,11 +105,15 @@ _readNoTurboFn () {
 }
 
 _setKeyboardFn () {
-  if [ -f "${_keyboardFile}" ]; then
-    echo "$*" > "${_keyboardFile}";
-  else
-    _cm2WarnStrFn "Missing |${_keyboardFile}|";
+  if [ -x "${_kbdColorSetExe}" ]; then
+    "${_kbdColorSetExe}" -t "$1";
   fi
+
+# if [ -f "${_keyboardFile}" ]; then
+#   echo "$*" > "${_keyboardFile}";
+# else
+#   _cm2WarnStrFn "Missing |${_keyboardFile}|";
+# fi
 }
 
 _scanFn () {
@@ -241,9 +245,9 @@ _chkInitCpuFn () {
     _cm2SucStrFn 'Drop file found.'; _cm2SucFn; return 0;
   fi
 
-  # Skip if not a special model
-  if [ "$(_cm2EchoModelStrFn 'code')" != 'm2g5' ]; then 
-    touch "${_cpuDropFile}" || _cm2WarnStr 'Could not add drop file';
+  # Skip if not a special hardware config code (m2g5 and m2g5p names)
+  if [ "$(_cm2EchoModelStrFn 'config_code')" != 'm2g5' ]; then
+    touch "${_cpuDropFile}" || _cm2WarnStrFn 'Could not add drop file';
     _cm2SucFn;
     return 0;
   fi
@@ -294,12 +298,11 @@ _chkInitCpuFn () {
 }
 
 _setModeFn () {
-  declare _arg_str _mode_list _match_line _key;
+  declare _arg_str _mode_list _opt_line _match_line _key;
 
   _arg_str="${1:-}";
   _match_line='';
   _mode_list=();
-
 
   for _opt_line in "${_optionTable[@]}"; do
     _key="$(echo "${_opt_line}" |cut -f1 -d';')";
@@ -441,12 +444,11 @@ _mainFn () {
 }
 
 ## BEGIN Set global vars {
-declare _rootDir _cpuDropFile _keyboardFile _noTurboFile _pstateFile \
+declare _rootDir _cpuDropFile _noTurboFile _pstateFile \
   _cpufreqSetExe _cpufreqInfoExe _nprocExe;
 
 _rootDir='';
 _cpuDropFile='/run/kfocus-cpu-init';
-_keyboardFile='/sys/devices/platform/tuxedo_keyboard/state';
 _noTurboFile='/sys/devices/system/cpu/intel_pstate/no_turbo';
 _pstateFile="/sys/devices/system/cpu/intel_pstate/status";
 _altPsaveKey='ondemand'; # schedutil has lower gb5 scores

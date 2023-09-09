@@ -94,13 +94,13 @@ _mainFn () {
 }
 ## . END _mainFn }
 
-## BEGIN set global vars {
+## BEGIN Declare and set global vars {
 # <= Declare package vars
 declare _userId _binName _binDir _baseName _baseDir;
 
 # <= Set values that will load for tests
 _userId="$(id -u)";
-## . END set global vars }
+## . END Declare and set global vars }
 
 ## BEGIN Run main if script is not sourced {
 # <= This is only run if not sourced.

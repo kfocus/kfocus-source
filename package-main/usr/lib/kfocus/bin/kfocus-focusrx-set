@@ -76,6 +76,18 @@ _installToolsPkgFn () {
 }
 ## . END _installToolsPkgFn }
 
+## BEGIN _installKbdIteFn {
+# Purpose: Install kfocus tool package specified in $1
+#   The caller must provide the appropriate package.
+#
+_installKbdIteFn () {
+  _cm2SetMsgFn 'Install kfocus-keyboard-ite package';
+  if apt-get reinstall -y 'kfocus-keyboard-ite'; then
+    _cm2SucFn; else _cm2WarnFn; return 1;
+  fi
+}
+## . END _installKbdIteFn }
+
 ## BEGIN _installNvidiaFn {
 # Purpose: Install kfocus nvidia packages.
 #   The caller must determine if this step is appropriate.
@@ -167,10 +179,9 @@ _chkHwConfigFn () {
   #   _is_hw_reconfig='y';
   # fi
 
+  ## Begin Adjust tool suffix per config code {
+  # kfocus-tools-nxg1, kfocus-tools-other, kfocus-tools (#3424)
   _tool_pkg_suffix='';
-
-  # 3424 Adjust tool suffix per config code
-  # kfocus-tools-nxg1, kfocus-tools-other, kfocus-tools
   case "${_dmi_hw_config_code}" in
     default|generic|m2g4|m2g5|xeg2) _tool_pkg_suffix='';;
     nxg1) _tool_pkg_suffix='-nxg1';;
@@ -190,8 +201,18 @@ _chkHwConfigFn () {
     _msg+="Package ${_tool_pkg_name} forced re-installation.";
     _reason_list+=( "${_msg}" );
   fi
+  # . End Adjust tool suffix per config code }
 
-  # Run lib updates iff hardware reconfig is flagged.
+  ## Begin Add special keyboard support when required {
+  if [ "${_is_hw_reconfig}" = 'y' ] \
+    && [ "${_dmi_hw_model_code}" = 'm2g5p' ]; then
+    _msg='install-kbd-ite;;';
+    _msg+='This model requires kfocus-keyboard-ite package';
+    _reason_list+=( "${_msg}" );
+  fi
+  ## End Add special keyboard support when required }
+
+  ## Begin Run lib updates iff hardware reconfig is flagged {
   #   do_force OR mismatched config-code triggers this.
   # Thus do_force is NOT guaranteed = 'y' for this block.
   #
@@ -207,6 +228,7 @@ _chkHwConfigFn () {
       fi
     fi
   fi
+  ## . End Run lib updates iff hardware reconfig is flagged }
 
   ( IFS=$'|'; echo "${_reason_list[*]}"; )
 }
@@ -230,6 +252,7 @@ _fixHwConfigFn () {
       'reconfig-hw'      ) _cmd_list=( '_reconfigHwPkgFn'   );;
       'install-hw-tools' ) _cmd_list=( '_installToolsPkgFn' );
         _cmd_list+=( "${_bit_list[1]:-}" );;
+      'install-kbd-ite'  ) _cmd_list=( '_installKbdIteFn'   );;
       'install-nvidia'   ) _cmd_list=( '_installNvidiaFn'   );;
       *) _cm2WarnStrFn "Option ${_bit_list[0]} is not supported";
         continue;

@@ -122,70 +122,7 @@ _EOH03
 }
 ## . END _confirmInternetFn }
 
-## BEGIN _chkHwConfigFn {
-# _cm2PromptUserFn \
-#   'Restart the system for hardware mods to take effect' "${_baseName}" 'p';
-#
-_chkHwConfigFn () {
-  declare _win_title _reason_str _prompt_msg _ans_str _output_str;
-
-  _win_title='Configure for Hardware';
-  # Check if reconfig is required
-  _reason_str="$("${_escExe}" "${_focusRxSetExe}" 'chk-hw-config')";
-  if [ -z "${_reason_str}" ]; then
-    # Always skip if not in force mode
-    if [ "${_doForce}" = 'n' ]; then
-      return 0;
-    # Provide user *option* to reconfig in force mode
-    else
-      _prompt_msg="$(cat << _EOH04
-${_cm2HtmBeginStr}
-${_cm2HtmH3Str}SKIP ${_win_title}?</h3>
-${_cm2HtmPStr}<b>The hardware signature already matches expected.</b><br>
-You can reconfigure for the hardware, but it takes <br>
-time and is usually not needed.</p>
-
-${_cm2HtmPStr}<b>SKIP reconfigure to hardware?</b><br></p>
-${_cm2HtmEndStr}
-_EOH04
-      )";
-      _ans_str="$(
-        _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}" 'a'
-      )";
-      if [ "${_ans_str}" = 'n' ]; then
-        _reason_str="$("${_escExe}" "${_focusRxSetExe}" 'force-hw-config')";
-      fi
-    fi
-  fi
-  if [ -z "${_reason_str}" ]; then return 0; fi
-
-  # Bail if internet connection appears hopeless
-  if ! _confirmInternetFn; then return; fi
-  _prompt_msg="${_win_title}: This only needs to be done once";
-  _reason_str="$(tr ' ' '_' <<< "${_reason_str}")";
-  if _output_str="$(
-    _cm2RunLongCmdFn "${_prompt_msg}" "${_focusRxSetExe}" \
-      'fix-hw-config' "${_reason_str}"
-  )"; then
-    _prompt_msg="$(cat << _EOH05
-${_cm2HtmBeginStr}
-${_cm2HtmH3Str}Reboot Now?</h3>
-${_cm2HtmPStr}Configuration for the hardware is complete.</p>
-${_cm2HtmPStr}<b>Click Yes to reboot now </b> to ensure optimal<br>
-hardware support and stability.<br></p>
-${_cm2HtmEndStr}
-_EOH05
-    )";
-    _ans_str="$(_cm2PromptUserFn \
-      "${_prompt_msg}" "${_rootTitle}: Reboot Now" 'w'
-    )";
-    if [ "${_ans_str}" = 'y' ]; then reboot; fi
-  else
-    _cm2PromptUserFn "Trouble with hardware config:\n ${_output_str}";
-  fi
-}
-## . END _chkHwConfigFn }
-
+## == BEGIN Check functions run by mainFn {
 ## BEGIN _announceStartFn {
 # Purpose:
 #   Announce the purpose of FocusRx and what it does when forced
@@ -292,6 +229,251 @@ _EOT01
   fi
 }
 ## . END _chkUpdateBiosFn }
+
+## BEGIN _chkHwConfigFn {
+# _cm2PromptUserFn \
+#   'Restart the system for hardware mods to take effect' "${_baseName}" 'p';
+#
+_chkHwConfigFn () {
+  declare _win_title _reason_str _prompt_msg _ans_str _output_str;
+
+  _win_title='Configure for Hardware';
+  # Check if reconfig is required
+  _reason_str="$("${_escExe}" "${_focusRxSetExe}" 'chk-hw-config')";
+  if [ -z "${_reason_str}" ]; then
+    # Always skip if not in force mode
+    if [ "${_doForce}" = 'n' ]; then
+      return 0;
+    # Provide user *option* to reconfig in force mode
+    else
+      _prompt_msg="$(cat << _EOH04
+${_cm2HtmBeginStr}
+${_cm2HtmH3Str}SKIP ${_win_title}?</h3>
+${_cm2HtmPStr}<b>The hardware signature already matches expected.</b><br>
+You can reconfigure for the hardware, but it takes <br>
+time and is usually not needed.</p>
+
+${_cm2HtmPStr}<b>SKIP reconfigure to hardware?</b><br></p>
+${_cm2HtmEndStr}
+_EOH04
+      )";
+      _ans_str="$(
+        _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}" 'a'
+      )";
+      if [ "${_ans_str}" = 'n' ]; then
+        _reason_str="$("${_escExe}" "${_focusRxSetExe}" 'force-hw-config')";
+      fi
+    fi
+  fi
+  if [ -z "${_reason_str}" ]; then return 0; fi
+
+  # Bail if internet connection appears hopeless
+  if ! _confirmInternetFn; then return; fi
+  _prompt_msg="${_win_title}: This only needs to be done once";
+  _reason_str="$(tr ' ' '_' <<< "${_reason_str}")";
+  if _output_str="$(
+    _cm2RunLongCmdFn "${_prompt_msg}" "${_focusRxSetExe}" \
+      'fix-hw-config' "${_reason_str}"
+  )"; then
+    _prompt_msg="$(cat << _EOH05
+${_cm2HtmBeginStr}
+${_cm2HtmH3Str}Reboot Now?</h3>
+${_cm2HtmPStr}Configuration for the hardware is complete.</p>
+${_cm2HtmPStr}<b>Click Yes to reboot now </b> to ensure optimal<br>
+hardware support and stability.<br></p>
+${_cm2HtmEndStr}
+_EOH05
+    )";
+    _ans_str="$(_cm2PromptUserFn \
+      "${_prompt_msg}" "${_rootTitle}: Reboot Now" 'w'
+    )";
+    if [ "${_ans_str}" = 'y' ]; then reboot; fi
+  else
+    _cm2PromptUserFn "Trouble with hardware config:\n ${_output_str}";
+  fi
+}
+## . END _chkHwConfigFn }
+
+## BEGIN _chkKbdLedFn {
+# Purpose: Restore keyboard colors for specific models.
+#   One can add to this list if required.
+#
+_chkKbdLedFn () {
+  declare _model_code;
+  _model_code="$(_cm2EchoModelStrFn 'code')";
+
+  if [[ "${_model_code}" =~ ^(m2g5p)$ ]]; then
+    if [ -x "${_kbdColorSetExe}" ]; then
+      "${_kbdColorSetExe}" -r || return 200;
+    fi
+  fi
+}
+## . END _chkKbdLedFn }
+
+## BEGIN _chkKernelPkgFn {
+_chkKernelPkgFn() {
+  declare _win_title _kernel_pkg_name _installed_kernel_vers \
+    _install_manifest _cmd_list _prompt_msg _ans_str _exit_str;
+
+  # Assign initial vars and announce
+  _win_title='Check Kernel Packages';
+  _kernel_pkg_name='linux-oem-22.04a-kfocus';
+  _installed_kernel_vers="$(_cm2EchoInstalledVersFn "${_kernel_pkg_name}")";
+  _cm2SetMsgFn "${_win_title}";
+
+  # Skip upgrade if package is not installed
+  if [ -z "${_installed_kernel_vers}" ]; then
+    _cm2SucStrFn "${_kernel_pkg_name} is not installed. Skipped.";
+    _cm2SucFn;
+    return;
+  fi
+
+  # Define desired packages
+  _install_manifest=(
+    linux-generic-hwe-22.04-kfocus
+    linux-headers-generic-hwe-22.04-kfocus
+    linux-image-generic-hwe-22.04-kfocus
+    linux-tools-generic-hwe-22.04-kfocus
+  );
+
+  _prompt_msg="$(cat <<_EOW06B
+${_cm2HtmBeginStr}
+${_cm2HtmH3Str}${_win_title}?</h3>
+
+${_cm2HtmPStr}The kernel packages need to be upgraded to <br>
+the latest tested version. You may be prompted to provide <br>
+your password.</p>
+
+${_cm2HtmPStr}This can take a few minutes. You will be alerted when<br>
+the process is finished.</p>
+
+${_cm2HtmPStr}<b>Upgrade now?</b></p>
+_EOW06B
+  )";
+
+  # Confirm user intent
+  _ans_str="$(
+    _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}" 'a'
+  )";
+
+  if [ "${_ans_str}" = 'n' ]; then
+    _cm2PromptUserFn 'Upgrade Kernel cancelled on user request' \
+      "${_rootTitle}: ${_win_title}" 'p';
+    return 0;
+  fi
+
+  # Install kernel packages
+  # Note: _cm2RunLongCmdFn prefixes commands with pkexec
+  _cmd_list=('apt-get' 'install' '--reinstall' '-y' "${_install_manifest[@]}");
+  if _exit_str="$(
+    _cm2RunLongCmdFn "${_rootTitle}: ${_win_title}" \
+      "${_cmd_list[@]}"
+  )"; then
+    _prompt_msg='Upgrade is complete. Reboot to use the latest kernel.';
+    _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}" 'p';
+    _cm2SucFn;
+  else
+    _cm2PromptUserFn "WARNING: Trouble installing latest kernel." \
+      "${_rootTitle}: ${_win_title}" 'p';
+    _cm2WarnFn;
+  fi
+}
+## . END _chkKernelPkgFn }
+
+## BEGIN _chkNvidiaPkgFn {
+_chkNvidiaPkgFn () {
+  declare _win_title _nv_pkg_name _pin_pkg_name _installed_nv_vers \
+    _installed_pin_vers _cmd_list _prompt_msg _ans_str _exit_str;
+
+  _cm2SetMsgFn 'Check Nvidia Drivers';
+
+  _win_title='Upgrade Nvidia Drivers';
+  _nv_pkg_name='kfocus-nvidia';
+  _pin_pkg_name='kfocus-nvidia-pinning';
+
+  _installed_nv_vers="$(_cm2EchoInstalledVersFn "${_nv_pkg_name}")";
+  _installed_pin_vers="$(_cm2EchoInstalledVersFn "${_pin_pkg_name}")";
+
+  # Skip upgrade if kfocus-nv package is not installed.
+  if [ -z "${_installed_nv_vers}" ]; then
+    _cm2SucStrFn "${_nv_pkg_name} is not installed. Skipped.";
+    _cm2SucFn;
+    return;
+  fi
+
+  # Skip kfocus-nv package upgrade if same or later version is installed.
+  # Note: Because of kfocus-nv package pre-depends, it should not be possible
+  #   for pin package to be out-of-date and the kfocus-nv package up-to-date.
+  if [ "${_installed_nv_vers}" = "${_gfxTgtVersStr}" ] \
+    || _cm2TestVersFn "${_installed_nv_vers}" "${_gfxTgtVersStr}"; then
+    _cm2SucStrFn "${_nv_pkg_name} upgrade not required. Skipped.";
+    _cm2SucFn;
+    return;
+  fi
+
+  _prompt_msg="$(cat <<_EOW06
+${_cm2HtmBeginStr}
+${_cm2HtmH3Str}${_win_title}?</h3>
+
+${_cm2HtmPStr}The Nvidia driver packages need to be <br>
+upgraded to the latest Focus-tested version <br>
+(nvidia-driver-535). This requires your password <br>
+and can take a few minutes to complete. Please <br>
+allow the upgrade to finish before rebooting.</p>
+
+${_cm2HtmPStr}<b>Upgrade now?</b></p>
+${_cm2HtmEndStr}
+_EOW06
+  )";
+  _ans_str="$(
+    _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}" 'a'
+  )";
+
+  if [ "${_ans_str}" = 'n' ]; then
+    _cm2PromptUserFn 'Upgrade Nvidia drivers cancelled on user request' \
+    "${_rootTitle}: ${_win_title}" 'p';
+    return 0;
+  fi
+
+  # Skip nv pin package upgrade if same or later version is already installed
+  if [ "${_installed_pin_vers}" = "${_gfxTgtVersStr}" ] \
+    || _cm2TestVersFn "${_installed_pin_vers}" "${_gfxTgtVersStr}"; then
+    _cm2SucStrFn "Nvidia pinning package is up-to-date.";
+
+  # Upgrade the pin package to the latest version.
+  # Tests show pins are applied immediately without need for apt-get update
+  else
+    # Note: _cm2RunLongCmdFn prefixes commands with pkexec
+    _cmd_list=( 'apt-get' 'install' '--reinstall' '-y' "${_pin_pkg_name}" );
+    if _exit_str="$(_cm2RunLongCmdFn "${_rootTitle}: Upgrade Nvidia Pinning" \
+      "${_cmd_list[@]}"
+    )"; then
+      _prompt_msg='Pin upgrade is complete.';
+      _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}" 'p';
+    else
+      _cm2PromptUserFn "WARNING: Trouble installing ${_pin_pkg_name}." \
+        "${_rootTitle}: Upgrade Nvidia Pinning" 'p';
+      _cm2WarnFn;
+      return 1;
+    fi
+  fi
+
+  # Upgrade nv package
+  # Note: _cm2RunLongCmdFn prefixes commands with pkexec
+  _cmd_list=( 'apt-get' 'install' '--reinstall' '-y' "${_nv_pkg_name}" );
+  if _exit_str="$(_cm2RunLongCmdFn "${_rootTitle}: Upgrade Nvidia Drivers" \
+    "${_cmd_list[@]}"
+  )"; then
+    _prompt_msg='Upgrade is complete. Reboot to use the drivers.';
+    _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}" 'p';
+    _cm2SucFn;
+  else
+    _cm2PromptUserFn "WARNING: Trouble installing ${_nv_pkg_name}." \
+      "${_rootTitle}: ${_win_title}" 'p';
+    _cm2WarnFn;
+  fi
+}
+## . END _chkNvidiaPkgFn }
 
 ## BEGIN _chkXorgConfigFn {
 # Purpose: Warn if xorg.conf exists.
@@ -679,170 +861,20 @@ _EOW01
 }
 ## . END _announceEndFn }
 
-## BEGIN _chkKernelPkgFn {
-_chkKernelPkgFn() {
-  declare _win_title _kernel_pkg_name _installed_kernel_vers \
-    _install_manifest _cmd_list _prompt_msg _ans_str _exit_str;
-
-  # Assign initial vars and announce
-  _win_title='Check Kernel Packages';
-  _kernel_pkg_name='linux-oem-22.04a-kfocus';
-  _installed_kernel_vers="$(_cm2EchoInstalledVersFn "${_kernel_pkg_name}")";
-  _cm2SetMsgFn "${_win_title}";
-
-  # Skip upgrade if package is not installed
-  if [ -z "${_installed_kernel_vers}" ]; then
-    _cm2SucStrFn "${_kernel_pkg_name} is not installed. Skipped.";
-    _cm2SucFn;
-    return;
-  fi
-
-  # Define desired packages
-  _install_manifest=(
-    linux-generic-hwe-22.04-kfocus
-    linux-headers-generic-hwe-22.04-kfocus
-    linux-image-generic-hwe-22.04-kfocus
-    linux-tools-generic-hwe-22.04-kfocus
-  );
-
-  _prompt_msg="$(cat <<_EOW06B
-${_cm2HtmBeginStr}
-${_cm2HtmH3Str}${_win_title}?</h3>
-
-${_cm2HtmPStr}The kernel packages need to be upgraded to <br>
-the latest tested version. You may be prompted to provide <br>
-your password.</p>
-
-${_cm2HtmPStr}This can take a few minutes. You will be alerted when<br>
-the process is finished.</p>
-
-${_cm2HtmPStr}<b>Upgrade now?</b></p>
-_EOW06B
-  )";
-
-  # Confirm user intent
-  _ans_str="$(
-    _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}" 'a'
-  )";
-
-  if [ "${_ans_str}" = 'n' ]; then
-    _cm2PromptUserFn 'Upgrade Kernel cancelled on user request' \
-      "${_rootTitle}: ${_win_title}" 'p';
-    return 0;
-  fi
-
-  # Install kernel packages
-  # Note: _cm2RunLongCmdFn prefixes commands with pkexec
-  _cmd_list=('apt-get' 'install' '--reinstall' '-y' "${_install_manifest[@]}");
-  if _exit_str="$(
-    _cm2RunLongCmdFn "${_rootTitle}: ${_win_title}" \
-      "${_cmd_list[@]}"
-  )"; then
-    _prompt_msg='Upgrade is complete. Reboot to use the latest kernel.';
-    _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}" 'p';
-    _cm2SucFn;
-  else
-    _cm2PromptUserFn "WARNING: Trouble installing latest kernel." \
-      "${_rootTitle}: ${_win_title}" 'p';
-    _cm2WarnFn;
+## BEGIN _chkWelcomeFn {
+# Purpose: Daisy-chain kfocus-firstrun
+#   IFF launched from /etc/xdg/autostart/kfocus-focusrx.desktop.
+#
+_chkWelcomeFn () {
+  # Check if launched at login. 'plasma_session' is used by Plasma 5.24;
+  # 'systemd' in Plasma 5.27
+  if [[ "${_parentCmdStr}" =~ ^(plasma_session|systemd) ]]; then
+    "${_firstRunExe}";
   fi
 }
-## . END _chkKernelPkgFn }
+## . END _chkWelcomeFn }
 
-## BEGIN _chkNvidiaPkgFn {
-_chkNvidiaPkgFn () {
-  declare _win_title _nv_pkg_name _pin_pkg_name _installed_nv_vers \
-    _installed_pin_vers _cmd_list _prompt_msg _ans_str _exit_str;
-
-  _cm2SetMsgFn 'Check Nvidia Drivers';
-
-  _win_title='Upgrade Nvidia Drivers';
-  _nv_pkg_name='kfocus-nvidia';
-  _pin_pkg_name='kfocus-nvidia-pinning';
-
-  _installed_nv_vers="$(_cm2EchoInstalledVersFn "${_nv_pkg_name}")";
-  _installed_pin_vers="$(_cm2EchoInstalledVersFn "${_pin_pkg_name}")";
-
-  # Skip upgrade if kfocus-nv package is not installed.
-  if [ -z "${_installed_nv_vers}" ]; then
-    _cm2SucStrFn "${_nv_pkg_name} is not installed. Skipped.";
-    _cm2SucFn;
-    return;
-  fi
-
-  # Skip kfocus-nv package upgrade if same or later version is installed.
-  # Note: Because of kfocus-nv package pre-depends, it should not be possible
-  #   for pin package to be out-of-date and the kfocus-nv package up-to-date.
-  if [ "${_installed_nv_vers}" = "${_gfxTgtVersStr}" ] \
-    || _cm2TestVersFn "${_installed_nv_vers}" "${_gfxTgtVersStr}"; then
-    _cm2SucStrFn "${_nv_pkg_name} upgrade not required. Skipped.";
-    _cm2SucFn;
-    return;
-  fi
-
-  _prompt_msg="$(cat <<_EOW06
-${_cm2HtmBeginStr}
-${_cm2HtmH3Str}${_win_title}?</h3>
-
-${_cm2HtmPStr}The Nvidia driver packages need to be <br>
-upgraded to the latest Focus-tested version <br>
-(nvidia-driver-535). This requires your password <br>
-and can take a few minutes to complete. Please <br>
-allow the upgrade to finish before rebooting.</p>
-
-${_cm2HtmPStr}<b>Upgrade now?</b></p>
-${_cm2HtmEndStr}
-_EOW06
-  )";
-  _ans_str="$(
-    _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}" 'a'
-  )";
-
-  if [ "${_ans_str}" = 'n' ]; then
-    _cm2PromptUserFn 'Upgrade Nvidia drivers cancelled on user request' \
-    "${_rootTitle}: ${_win_title}" 'p';
-    return 0;
-  fi
-
-  # Skip nv pin package upgrade if same or later version is already installed
-  if [ "${_installed_pin_vers}" = "${_gfxTgtVersStr}" ] \
-    || _cm2TestVersFn "${_installed_pin_vers}" "${_gfxTgtVersStr}"; then
-    _cm2SucStrFn "Nvidia pinning package is up-to-date.";
-
-  # Upgrade the pin package to the latest version.
-  # Tests show pins are applied immediately without need for apt-get update
-  else
-    # Note: _cm2RunLongCmdFn prefixes commands with pkexec
-    _cmd_list=( 'apt-get' 'install' '--reinstall' '-y' "${_pin_pkg_name}" );
-    if _exit_str="$(_cm2RunLongCmdFn "${_rootTitle}: Upgrade Nvidia Pinning" \
-      "${_cmd_list[@]}"
-    )"; then
-      _prompt_msg='Pin upgrade is complete.';
-      _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}" 'p';
-    else
-      _cm2PromptUserFn "WARNING: Trouble installing ${_pin_pkg_name}." \
-        "${_rootTitle}: Upgrade Nvidia Pinning" 'p';
-      _cm2WarnFn;
-      return 1;
-    fi
-  fi
-
-  # Upgrade nv package
-  # Note: _cm2RunLongCmdFn prefixes commands with pkexec
-  _cmd_list=( 'apt-get' 'install' '--reinstall' '-y' "${_nv_pkg_name}" );
-  if _exit_str="$(_cm2RunLongCmdFn "${_rootTitle}: Upgrade Nvidia Drivers" \
-    "${_cmd_list[@]}"
-  )"; then
-    _prompt_msg='Upgrade is complete. Reboot to use the drivers.';
-    _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}" 'p';
-    _cm2SucFn;
-  else
-    _cm2PromptUserFn "WARNING: Trouble installing ${_nv_pkg_name}." \
-      "${_rootTitle}: ${_win_title}" 'p';
-    _cm2WarnFn;
-  fi
-}
-## . END _chkNvidiaPkgFn }
+## == . END Check functions run by mainFn }
 
 ## BEGIN _mainFn {
 _mainFn () {
@@ -870,6 +902,7 @@ _mainFn () {
   _announceStartFn;
   _chkUpdateBiosFn;
   _chkHwConfigFn;
+  _chkKbdLedFn; # 3735
   _chkKernelPkgFn;
   _chkNvidiaPkgFn;
   _chkXorgConfigFn;
@@ -879,33 +912,22 @@ _mainFn () {
   _announceEndFn;
   _cm2EchoFn "\n== . END : OK   ${_rootTitle}\n\n";
   ## . End Run focusrx steps }
+
+  # Daisy-chain welcome wizard if available  
+  _chkWelcomeFn;
 }
 ## . END _mainFn }
 
-## BEGIN _chkWelcomeFn {
-# Purpose: Daisy-chain kfocus-firstrun
-#   IFF launched from /etc/xdg/autostart/kfocus-focusrx.desktop.
-#
-_chkWelcomeFn () {
-  # Check if launched at login. 'plasma_session' is used by Plasma 5.24;
-  # 'systemd' in Plasma 5.27
-  if [[ "${_parentCmdStr}" =~ ^(plasma_session|systemd) ]]; then
-    "${_firstRunExe}";
-  fi
-}
-## . END _chkWelcomeFn }
-
 ## BEGIN Declare and assign global vars {
-declare _gfxTgtVersStr _parentCmdStr _pingHost1Str _pingHost2Str \
-  _binName _binDir _baseDir _baseName \
-  _escExe _focusRxDropDir _rootTitle _assignList \
-  _focusRxBtoolExe _focusRxKcleanExe _focusRxSetExe \
+declare _gfxTgtVersStr _parentCmdStr _pingHost1Str _pingHost2Str _binName \
+  _binDir _baseDir _baseName _escExe _focusRxDropDir _rootTitle \
+  _assignList _focusRxBtoolExe _focusRxKcleanExe _focusRxSetExe \
   _focusRxVersExe _firstRunExe _sysVersStr;
 
-_gfxTgtVersStr='22.04.9';
-_parentCmdStr="$(ps -o comm= $PPID)";
-_pingHost1Str='8.8.8.8';
-_pingHost2Str='1.1.1.1';
+_gfxTgtVersStr='22.04.9'
+_parentCmdStr="$(ps -o comm= $PPID)"
+_pingHost1Str='8.8.8.8'
+_pingHost2Str='1.1.1.1'
 ## . END Declare and assign global vars }
 
 ## BEGIN Run main if script is not sourced {
@@ -933,8 +955,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     exit 1;
   fi
 
+  _kbdColorSetExe="${_binDir}/kfocus-kb-color-set";
   _sysVersStr="$("${_focusRxVersExe}" -r)" || exit;
   _mainFn "$@";
-  _chkWelcomeFn;
 fi
 ## . END Run main if script is not sourced }
