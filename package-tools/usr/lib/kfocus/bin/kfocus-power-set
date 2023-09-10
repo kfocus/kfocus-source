@@ -106,7 +106,7 @@ _readNoTurboFn () {
 
 _setKeyboardFn () {
   if [ -x "${_kbdColorSetExe}" ]; then
-    "${_kbdColorSetExe}" -t "$1";
+    "${_kbdColorSetExe}" -e "${1:-}";
   fi
 
 # if [ -f "${_keyboardFile}" ]; then
@@ -444,8 +444,9 @@ _mainFn () {
 }
 
 ## BEGIN Set global vars {
-declare _rootDir _cpuDropFile _noTurboFile _pstateFile \
-  _cpufreqSetExe _cpufreqInfoExe _nprocExe;
+declare _binName _binDir _baseDir _baseName _rootDir \
+  _cpuDropFile _noTurboFile _pstateFile _altPsaveKey \
+  _cpufreqSetExe _cpufreqInfoExe _nprocExe _kbdColorSetExe;
 
 _rootDir='';
 _cpuDropFile='/run/kfocus-cpu-init';
@@ -467,6 +468,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     '_cpufreqInfoExe|cpufreq-info'
     '_nprocExe|nproc'
   );
+  _kbdColorSetExe="${_binDir}/kfocus-kb-color-set";
+
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2WarnStrFn 'ABORT: Required commands not found';
     exit 1;

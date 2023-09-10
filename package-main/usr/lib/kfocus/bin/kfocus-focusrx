@@ -304,7 +304,7 @@ _chkKbdLedFn () {
 
   if [[ "${_model_code}" =~ ^(m2g5p)$ ]]; then
     if [ -x "${_kbdColorSetExe}" ]; then
-      "${_kbdColorSetExe}" -r || return 200;
+      pkexec "${_kbdColorSetExe}" -r || return 200;
     fi
   fi
 }

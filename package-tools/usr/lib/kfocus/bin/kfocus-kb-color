@@ -43,8 +43,8 @@ _importCommonFn () {
 ## BEGIN _mainFn {
 _mainFn () {
   declare _prompt_msg _key_str _model_code _model_label _kbd_cfg_str \
-    _kbd_cfg_file _bright_byte_int _bright_pct_int _color_hex_str   \
-    _read_bright_str _read_hex_str _loop_line _bright_default_str   \
+    _kbd_stat_str _kbd_stat_list _color_bright_str _color_hex_str      \
+    _read_bright_str _read_hex_str _loop_line _bright_default_str    \
     _pick_bright_str _solve_bright_int _pick_hex_str;
 
   if [ ! -x "${_cm2KdiagExe}" ]; then exit 1; fi;
@@ -115,15 +115,20 @@ EOE
 
   ## Begin Handle selection loop {
   while true; do
-    _kbd_cfg_file='/etc/modprobe.d/tuxedo_keyboard.conf';
-    if [ -f "${_kbd_cfg_file}" ]; then
-      _bright_byte_int=$(cut -d' ' -f4 "${_kbd_cfg_file}" | cut -c 12-);
-      _bright_pct_int=$(((_bright_byte_int / 25) * 10));
-      _color_hex_str=$(cut -d' ' -f5 "${_kbd_cfg_file}" | cut -c 14-);
-    else
-      _bright_pct_int='50';
-      _color_hex_str='00ff00';
-    fi
+    # _kbd_cfg_file='/etc/modprobe.d/tuxedo_keyboard.conf';
+    # if [ -f "${_kbd_cfg_file}" ]; then
+    #   _bright_byte_int=$(cut -d' ' -f4 "${_kbd_cfg_file}" | cut -c 12-);
+    #   _bright_pct_int=$(((_bright_byte_int / 25) * 10));
+    #   _color_hex_str=$(cut -d' ' -f5 "${_kbd_cfg_file}" | cut -c 14-);
+    # else
+    #   _bright_pct_int='50';
+    #   _color_hex_str='00ff00';
+    # fi
+    _kbd_stat_str="$(pkexec "${_setKbdExe}" -l)"
+    IFS=';' read -r -a _kbd_stat_list <<< "${_kbd_stat_str}";
+    _color_bright_str="${_kbd_stat_list[0]}";
+    _color_hex_str="${_kbd_stat_list[1]}";
+
     _prompt_msg="$(cat << EOH
 <html><head>${_cssStyleStr}</head><body>
   <h3>Select Keyboard Color</h3>
@@ -131,7 +136,7 @@ EOE
  >https://kfocus.org/wf/tools#kbc</a><br></p>
   <table>
     <tr><td width="33%"><b>Brightness</b></td>
-      <td width="66%">${_bright_pct_int}%</td></tr>
+      <td width="66%">${_color_bright_str}0%</td></tr>
     <tr><td><b>Color</b></td>
       <td style="background-color:#${_color_hex_str}"></td></tr>
     <tr><td colspan="2" class="prompt">Select values to change or click
@@ -154,18 +159,18 @@ EOH
     ## Begin Handle change list
     for _loop_line in "${_change_list[@]}"; do
       _loop_line="${_loop_line//\"/}";
-      _bright_default_str="${_bright_pct_int}%";
+      _bright_default_str="${_color_bright_str}0%";
       if [ "${_loop_line}" = '_read_bright_str' ]; then
         _pick_bright_str=$("${_cm2KdiagExe}" --icon kfocus-bug-kbcolor --title\
-         'Brightness' --combobox 'Set Brightness' 0% 20% 40% 50% 60% \
-         80% 100% --default ${_bright_default_str});
+         'Brightness' --combobox 'Set Brightness' 00% 20% 40% 50% 60% \
+         80% 100% --default "${_bright_default_str}");
         if [ -z "${_pick_bright_str}" ]; then
           "${_cm2KdiagExe}" --icon kfocus-bug-kbcolor \
           --msgbox 'Brightness is unchanged';
-          _read_bright_str="${_bright_pct_int}";
+          _read_bright_str="${_color_bright_str}";
         else
           _solve_bright_int="${_pick_bright_str//%/}";
-          _read_bright_str=$(((_solve_bright_int / 10 ) * 25));
+          _read_bright_str=$((_solve_bright_int / 10 ));
         fi
       elif [ "${_loop_line}" = '_read_hex_str' ]; then
         _pick_hex_str="$("${_cm2KdiagExe}" --icon kfocus-bug-kbcolor \
@@ -182,11 +187,11 @@ EOH
     done
     ## . End Handle change list
 
-    if [ -z "${_read_bright_str}" ]; then _read_bright_str=$(((_bright_pct_int / 10) * 25)); fi
-    if [ "${_read_bright_str}" = "250" ]; then _read_bright_str="255"; fi
-    if [ -z "${_read_hex_str}"  ]; then _read_hex_str="${_color_hex_str}";   fi
-
-    pkexec "${_colorSetExe}" "${_read_bright_str}" "${_read_hex_str}";
+    if [ -z "${_read_bright_str}" ]; then
+      _read_bright_str="${_color_bright_str}"; fi
+    if [ -z "${_read_hex_str}"  ]; then _read_hex_str="${_color_hex_str}"; fi
+    # _cm2WarnStrFn "debug: ${_bright_pct_int};${_read_hex_str}";
+    pkexec "${_setKbdExe}" -s "${_read_bright_str};${_read_hex_str}";
   done
   ## . End Handle selection loop }
 }
@@ -194,7 +199,7 @@ EOH
 
 ## BEGIN declare global vars
 declare _binName _binDir _baseDir _baseName \
-  _assignList _colorSetExe;
+  _assignList _setKbdExe;
 ## . END declare global vars
 
 ## BEGIN Run main if script is not sourced {
@@ -205,7 +210,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _baseName="$( basename "${_binName}" )" || exit 101;
   _importCommonFn;
 
-  _assignList=( "_colorSetExe|${_binDir}/kfocus-kb-color-set" );
+  _assignList=( "_setKbdExe|${_binDir}/kfocus-kb-color-set" );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2WarnStrFn 'ABORT: Required commands not found';
     exit 1;
