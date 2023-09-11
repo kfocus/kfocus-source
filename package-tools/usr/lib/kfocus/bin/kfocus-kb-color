@@ -43,7 +43,7 @@ _importCommonFn () {
 ## BEGIN _mainFn {
 _mainFn () {
   declare _prompt_msg _key_str _model_code _model_label _kbd_cfg_str \
-    _kbd_stat_str _kbd_stat_list _color_bright_str _color_hex_str      \
+    _kbd_stat_str _kbd_stat_list _color_bright_str _color_hex_str    \
     _read_bright_str _read_hex_str _loop_line _bright_default_str    \
     _pick_bright_str _solve_bright_int _pick_hex_str;
 
@@ -115,15 +115,6 @@ EOE
 
   ## Begin Handle selection loop {
   while true; do
-    # _kbd_cfg_file='/etc/modprobe.d/tuxedo_keyboard.conf';
-    # if [ -f "${_kbd_cfg_file}" ]; then
-    #   _bright_byte_int=$(cut -d' ' -f4 "${_kbd_cfg_file}" | cut -c 12-);
-    #   _bright_pct_int=$(((_bright_byte_int / 25) * 10));
-    #   _color_hex_str=$(cut -d' ' -f5 "${_kbd_cfg_file}" | cut -c 14-);
-    # else
-    #   _bright_pct_int='50';
-    #   _color_hex_str='00ff00';
-    # fi
     _kbd_stat_str="$(pkexec "${_setKbdExe}" -l)"
     IFS=';' read -r -a _kbd_stat_list <<< "${_kbd_stat_str}";
     _color_bright_str="${_kbd_stat_list[0]}";

@@ -108,12 +108,6 @@ _setKeyboardFn () {
   if [ -x "${_kbdColorSetExe}" ]; then
     "${_kbdColorSetExe}" -e "${1:-}";
   fi
-
-# if [ -f "${_keyboardFile}" ]; then
-#   echo "$*" > "${_keyboardFile}";
-# else
-#   _cm2WarnStrFn "Missing |${_keyboardFile}|";
-# fi
 }
 
 _scanFn () {
