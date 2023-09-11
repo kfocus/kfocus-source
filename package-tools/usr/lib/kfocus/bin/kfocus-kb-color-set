@@ -45,6 +45,23 @@ _importCommonFn () {
 }
 ## . END _importCommonFn }
 
+## BEGIN _configStrToByte {
+# Purpose: Convert value from range 0-10 to 0-255
+_convertStrToByte () {
+  declare _bright_byte;
+  _bright_byte="$(( ${1:-0} * 25 ))";
+  if [ "${_bright_byte}" = 250 ]; then _bright_byte=255; fi
+  echo "${_bright_byte}";
+}
+## . END _configStrToByte }
+
+## BEGIN _convertByteToStr {
+# Purpose: Convert value from range 0-255 to 0-10
+_convertByteToStr () {
+  echo "$(( ${1:-0} / 25 ))";
+}
+## . END _convertByteToStr {
+
 ## BEGIN _iteCalcKbdStateFn {
 _iteCalcKbdStateFn () {
   declare _bright_str _rgb_file _rgb_str _hex_str _enable_int;
@@ -117,8 +134,9 @@ _iteWriteStateFileFn () {
 
 ## BEGIN _stdCalcKbdStateFn {
 _stdCalcKbdStateFn () {
-  declare _bright_str _hex_str _enable_int;
-  _bright_str="$(head -n1 "${_stdKeyDir}/brightness")";
+  declare _bright_byte _bright_str _hex_str _enable_int;
+  _bright_byte="$(head -n1 "${_stdKeyDir}/brightness")";
+  _bright_str="$(_convertByteToStr "${_bright_byte}")";
   _hex_str="$(head -n1 "${_stdKeyDir}/color_center")";
   _enable_int=$(head -n1 "${_stdEnableFile}" );
   _configStateList=( "${_bright_str}" "${_hex_str}" "${_enable_int}" );
@@ -128,7 +146,7 @@ _stdCalcKbdStateFn () {
 ## BEGIN _stdRestoreKbdFn {
 # Purpose: Restores color to standard keyboard controls
 _stdRestoreKbdFn () {
-  declare _bright_str _hex_str _zone_line;
+  declare _bright_str _hex_str _zone_line _bright_byte;
   _bright_str="${_configStateList[0]}";
   _hex_str="${_configStateList[1]}";
 
@@ -136,14 +154,16 @@ _stdRestoreKbdFn () {
     echo "0x${_hex_str}" > "${_stdKeyDir}/${_zone_line}" || true;
   done;
 
-  echo "${_bright_str}" > "${_stdKeyDir}/brightness" || true;
+  _bright_byte="$(_convertStrToByte "${_bright_str}")";
+  echo "${_bright_byte}" > "${_stdKeyDir}/brightness" || true;
 }
 ## . END _stdRestoreKbdFn }
 
 ## BEGIN _stdWriteStateFileFn {
 _stdWriteStateFileFn () {
-  declare _bright_str _hex_str _enable_int _state_str;
+  declare _bright_str _bright_byte _hex_str _enable_int _state_str;
   _bright_str="${_configStateList[0]}";
+  _bright_byte="$(_convertStrToByte "${_bright_str}")";
   _hex_str="${_configStateList[1]}";
   _enable_int="${_configStateList[2]}";
 
@@ -152,7 +172,7 @@ _stdWriteStateFileFn () {
   # TODO: Is enabled an option here (maybe mode=0?)
   # TODO: See if we can make that persist.
   _state_str="options tuxedo-keyboard mode=${_enable_int} ";
-  _state_str+="brightness=${_bright_str} color_left=0x${_hex_str} ";
+  _state_str+="brightness=${_bright_byte} color_left=0x${_hex_str} ";
   _state_str+="color_center=0x${_hex_str} ";
   _state_str+="color_right=0x${_hex_str}";
 
@@ -250,7 +270,7 @@ _enableKbdFn () {
     fi
   else
     _stdCalcKbdStateFn;
-    if "${_set_str}" > "${_stdEnableFile}"; then
+    if echo "${_set_str}" > "${_stdEnableFile}"; then
       _configStateList[2]=0;
       _stdWriteStateFileFn;
     fi
@@ -318,7 +338,7 @@ _setNewKbdValsFn () {
       _iteWriteStateFileFn;
     fi
   else
-    if _stdRestorKbdFn; then
+    if _stdRestoreKbdFn; then
       _stdWriteStateFileFn;
     fi
   fi

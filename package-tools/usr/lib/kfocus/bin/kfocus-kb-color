@@ -169,8 +169,7 @@ EOH
           --msgbox 'Brightness is unchanged';
           _read_bright_str="${_color_bright_str}";
         else
-          _solve_bright_int="${_pick_bright_str//%/}";
-          _read_bright_str=$((_solve_bright_int / 10 ));
+          _read_bright_str="${_pick_bright_str//0%/}";
         fi
       elif [ "${_loop_line}" = '_read_hex_str' ]; then
         _pick_hex_str="$("${_cm2KdiagExe}" --icon kfocus-bug-kbcolor \
