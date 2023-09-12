@@ -94,13 +94,13 @@ _mainFn () {
 }
 ## . END _mainFn }
 
-## BEGIN Declare and set global vars {
-# <= Declare package vars
+## BEGIN Declare and assign global vars {
+# <= Declare global package vars
 declare _userId _binName _binDir _baseName _baseDir;
 
 # <= Set values that will load for tests
 _userId="$(id -u)";
-## . END Declare and set global vars }
+## . END Declare and assign global vars }
 
 ## BEGIN Run main if script is not sourced {
 # <= This is only run if not sourced.
@@ -110,7 +110,10 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binDir="$(   dirname  "${_binName}" )" || exit 101;
   _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
   _baseName="$( basename "${_binName}" )" || exit 101;
+
+  # Import libs and assign more global vars
   _importCommonFn;
+
   _mainFn "$@";
 
   # Example calls

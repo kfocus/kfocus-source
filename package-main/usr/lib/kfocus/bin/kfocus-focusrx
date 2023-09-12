@@ -4,7 +4,8 @@
 # Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
 #
 # Name    : kfocus-focusrx
-# Purpose : Prompt user to apply latest FocusRx System upgrade
+# Purpose : Prompt user to apply latest FocusRx System upgrade and other
+#         :   on-sign-in checks and actions.
 # License : GPL v2
 # Run By  : Users
 # Spec    : 744
@@ -296,15 +297,13 @@ _EOH05
 
 ## BEGIN _chkKbdLedFn {
 # Purpose: Restore keyboard colors for specific models.
-#   One can add to this list if required.
+# Important: Enable is set by kfocus-power-set which precedes this on sign-in.
+#   All non-m2g5p models use modprobe settings and are not affected.
 #
 _chkKbdLedFn () {
-  declare _model_code;
-  _model_code="$(_cm2EchoModelStrFn 'code')";
-
-  if [[ "${_model_code}" =~ ^(m2g5p)$ ]]; then
+  if [[ "$(_cm2EchoModelStrFn 'code')" =~ ^(m2g5p)$ ]]; then
     if [ -x "${_kbdColorSetExe}" ]; then
-      pkexec "${_kbdColorSetExe}" -r || return 200;
+      "${_escExe}" "${_kbdColorSetExe}" -r || return 200;
     fi
   fi
 }
@@ -901,7 +900,7 @@ _mainFn () {
   _announceStartFn;
   _chkUpdateBiosFn;
   _chkHwConfigFn;
-  _chkKbdLedFn; # 3735
+  _chkKbdLedFn;     #3735
   _chkKernelPkgFn;
   _chkNvidiaPkgFn;
   _chkXorgConfigFn;
@@ -912,7 +911,7 @@ _mainFn () {
   _cm2EchoFn "\n== . END : OK   ${_rootTitle}\n\n";
   ## . End Run focusrx steps }
 
-  # Daisy-chain welcome wizard if available  
+  # Daisy-chain welcome wizard if available
   _chkWelcomeFn;
 }
 ## . END _mainFn }
@@ -936,12 +935,12 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
   _baseName="$( basename "${_binName}" )" || exit 101;
 
-  # Import libs set more globals
+  # Import libs and assign more global vars
   _importCommonFn;
   _escExe="$(_cm2GetEscExeFn)" || exit;
   _focusRxDropDir="${_binDir}/kfocus-focusrx.d";
+  _kbdColorSetExe="${_binDir}/kfocus-kb-color-set";
   _rootTitle='FocusRx';
-
   _assignList=(
     "_firstRunExe|${_binDir}/kfocus-firstrun-bin"
     "_focusRxBtoolExe|${_binDir}/kfocus-btool"
@@ -953,9 +952,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     _cm2WarnStrFn 'Could not assign variables';
     exit 1;
   fi
-
-  _kbdColorSetExe="${_binDir}/kfocus-kb-color-set";
   _sysVersStr="$("${_focusRxVersExe}" -r)" || exit;
+
   _mainFn "$@";
 fi
 ## . END Run main if script is not sourced }
