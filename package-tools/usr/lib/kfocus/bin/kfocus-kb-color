@@ -45,7 +45,7 @@ _mainFn () {
   declare _prompt_msg _key_str _model_code _model_label _kbd_cfg_str \
     _kbd_stat_str _kbd_stat_list _color_bright_str _color_hex_str    \
     _read_bright_str _read_hex_str _loop_line _bright_default_str    \
-    _pick_bright_str _solve_bright_int _pick_hex_str;
+    _pick_bright_str _pick_hex_str;
 
   if [ ! -x "${_cm2KdiagExe}" ]; then exit 1; fi;
 
@@ -180,7 +180,6 @@ EOH
     if [ -z "${_read_bright_str}" ]; then
       _read_bright_str="${_color_bright_str}"; fi
     if [ -z "${_read_hex_str}"  ]; then _read_hex_str="${_color_hex_str}"; fi
-    # _cm2WarnStrFn "debug: ${_bright_pct_int};${_read_hex_str}";
     pkexec "${_setKbdExe}" -s "${_read_bright_str};${_read_hex_str}";
   done
   ## . End Handle selection loop }

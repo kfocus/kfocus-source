@@ -308,8 +308,10 @@ _readInStateFileFn () {
 }
 ## . END _readInStateFileFn }
 
-## BEGIN _setNewKbdValsFn {
-_setNewKbdValsFn () {
+## BEGIN _setKbdValsFn {
+# Purpose: Set keyboard brightness and color from input string
+#
+_setKbdValsFn () {
   declare _set_str _bit_list _bright_str _hex_str;
 
   _set_str="$1";
@@ -343,7 +345,7 @@ _setNewKbdValsFn () {
     fi
   fi
 }
-## . END _setNewKbdValsFn }
+## . END _setKbdValsFn }
 
 ## BEGIN _toggleEnableFn {
 _toggleEnableFn () {
@@ -388,7 +390,7 @@ _mainFn () {
       l) _listActiveStateFn;;
       p) _readInStateFileFn;;
       r) _readInStateFileFn 'apply';;
-      s) _setNewKbdValsFn "${OPTARG}"; shift;;
+      s) _setKbdValsFn "${OPTARG}"; shift;;
       t) _toggleEnableFn;;
       *) _cm2EchoFn "Option ${_opt_str} not supported";;
     esac
@@ -421,4 +423,3 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _mainFn "$@";
 fi
 ## . END Run main if script is not sourced }
-
