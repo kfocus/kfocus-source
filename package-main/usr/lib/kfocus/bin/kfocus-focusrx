@@ -873,7 +873,6 @@ _chkWelcomeFn () {
   fi
 }
 ## . END _chkWelcomeFn }
-
 ## == . END Check functions run by mainFn }
 
 ## BEGIN _mainFn {
@@ -924,10 +923,10 @@ declare _gfxTgtVersStr _parentCmdStr _pingHost1Str _pingHost2Str _binName \
   _assignList _focusRxBtoolExe _focusRxKcleanExe _focusRxSetExe \
   _focusRxVersExe _firstRunExe _sysVersStr;
 
-_gfxTgtVersStr='22.04.9'
-_parentCmdStr="$(ps -o comm= $PPID)"
-_pingHost1Str='8.8.8.8'
-_pingHost2Str='1.1.1.1'
+_gfxTgtVersStr='22.04.9';
+_parentCmdStr="$(ps -o comm= $PPID)";
+_pingHost1Str='8.8.8.8';
+_pingHost2Str='1.1.1.1';
 ## . END Declare and assign global vars }
 
 ## BEGIN Run main if script is not sourced {
