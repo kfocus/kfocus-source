@@ -104,9 +104,9 @@ _readNoTurboFn () {
   fi
 }
 
-_setKeyboardFn () {
+_setKbdEnableFn () {
   if [ -x "${_kbdColorSetExe}" ]; then
-    "${_kbdColorSetExe}" -e "${1:-}";
+    "${_kbdColorSetExe}" -E "${1:-}";
   fi
 }
 
@@ -141,7 +141,7 @@ _scanFn () {
     print|read) true;;
     set)
       _setNoTurboFn "${_noturbo_int}";
-      _setKeyboardFn "${_kbdled_int}";
+      _setKbdEnableFn "${_kbdled_int}";
       # shellcheck disable=SC2076
       if [[ " ${_avail_gov_list[*]} " =~ " ${_altPsaveKey} " ]]; then
         _psave_key="${_altPsaveKey}";
@@ -246,7 +246,7 @@ _chkInitCpuFn () {
     return 0;
   fi
 
-  _status_set_list=(); 
+  _status_set_list=();
   _status_key="$(cat "${_pstateFile}" || true )";
   _success_flag='y';
 
@@ -282,7 +282,7 @@ _chkInitCpuFn () {
     _cm2WarnStrFn 'Could NOT set noturbo flag to |0|';
     _success_flag='n';
   fi
-  
+
   if [ "${_success_flag}" = 'y' ]; then
     touch "${_cpuDropFile}" || _cm2WarnStrFn 'Could not add drop file';
     _cm2SucFn;
@@ -437,7 +437,7 @@ _mainFn () {
   esac
 }
 
-## BEGIN Set global vars {
+## BEGIN Declare and assign global vars {
 declare _binName _binDir _baseDir _baseName _rootDir \
   _cpuDropFile _noTurboFile _pstateFile _altPsaveKey \
   _cpufreqSetExe _cpufreqInfoExe _nprocExe _kbdColorSetExe;
@@ -447,7 +447,7 @@ _cpuDropFile='/run/kfocus-cpu-init';
 _noTurboFile='/sys/devices/system/cpu/intel_pstate/no_turbo';
 _pstateFile="/sys/devices/system/cpu/intel_pstate/status";
 _altPsaveKey='ondemand'; # schedutil has lower gb5 scores
-## . END Set global vars }
+## . END Declare and assign global vars }
 
 ## BEGIN Run main if script is not sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
@@ -455,15 +455,15 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binDir="$(dirname "${_binName}")"    || exit 101;
   _baseDir="$(dirname "${_binDir}")"    || exit 101;
   _baseName="$(basename "${_binName}")" || exit 101;
-  _importCommonFn;
 
+  # Import libs and assign more global vars
+  _importCommonFn;
+  _kbdColorSetExe="${_binDir}/kfocus-kb-color-set";
   _assignList=(
     '_cpufreqSetExe|cpufreq-set'
     '_cpufreqInfoExe|cpufreq-info'
     '_nprocExe|nproc'
   );
-  _kbdColorSetExe="${_binDir}/kfocus-kb-color-set";
-
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2WarnStrFn 'ABORT: Required commands not found';
     exit 1;

@@ -15,8 +15,9 @@ set -u;
 _cssStyleStr="$(cat << '_EOH';
   <style>
     h3{color:#f7941d;text-align:center}
-    a{color:#1d99f3}
+    p{text-align:left}
     .subt{text-align:center}
+    a{color:#1d99f3}
     table{width:100%}
     td{padding:4px 16px 4px 0;}
     .prompt{text-align:center;padding:16px 0 8px 0;font-weight:800}
@@ -117,14 +118,21 @@ EOE
   while true; do
     _kbd_stat_str="$(pkexec "${_setKbdExe}" -l)"
     IFS=';' read -r -a _kbd_stat_list <<< "${_kbd_stat_str}";
-    _color_bright_str="${_kbd_stat_list[0]}";
-    _color_hex_str="${_kbd_stat_list[1]}";
+    _color_bright_str="${_kbd_stat_list[0]:-0}";
+    _color_hex_str="${_kbd_stat_list[1]:-ff0000}";
 
     _prompt_msg="$(cat << EOH
 <html><head>${_cssStyleStr}</head><body>
   <h3>Select Keyboard Color</h3>
-  <p class="subt">Doc: <a href="https://kfocus.org/wf/tools#kbc"
- >https://kfocus.org/wf/tools#kbc</a><br></p>
+  <p class="subt"> Doc: <a href="https://kfocus.org/wf/tools#kbc"
+   >https://kfocus.org/wf/tools#kbc</a>.</p>
+
+  ${_cm2HtmPStr}Select the attribute you would like<br>
+   to change and then <b>OK</b> to proceed.<br>
+   Changes made here are restored<br>
+   on your next login.<br>
+ </p>
+
   <table>
     <tr><td width="33%"><b>Brightness</b></td>
       <td width="66%">${_color_bright_str}0%</td></tr>
