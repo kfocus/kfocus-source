@@ -286,21 +286,21 @@ _HERE3
   # Set Powersave on battery
   if [ "${_is_on_ac}" = 'n' ]; then
     _cm2SetMsgFn 'Set CPU governor to powersave and disable turbo on battery';
-    if pkexec "${_power_set_exe}" 'Low'; then
+    if "${_escExe}" "${_power_set_exe}" 'Low'; then
       _cm2SucFn; else _cm2WarnFn;
     fi
     _cm2SetMsgFn 'Set writeback for battery use';
-    if pkexec "${_pstate_set_exe}" 'writeback-battery'; then
+    if "${_escExe}" "${_pstate_set_exe}" 'writeback-battery'; then
       _cm2SucFn; else _cm2WarnFn;
     fi
   # Set normal on AC
   else
     _cm2SetMsgFn 'Set CPU governor to powersave and enable turbo on AC';
-    if pkexec "${_power_set_exe}" 'Normal'; then
+    if "${_escExe}" "${_power_set_exe}" 'Normal'; then
       _cm2SucFn; else _cm2WarnFn;
     fi
     _cm2SetMsgFn 'Set writeback for AC use'
-    if pkexec "${_pstate_set_exe}" 'writeback-ac'; then
+    if "${_escExe}" "${_pstate_set_exe}" 'writeback-ac'; then
       _cm2SucFn; else _cm2WarnFn;
     fi
   fi
@@ -340,7 +340,7 @@ _HERE3
       _cm2SetMsgFn 'Give user option to disable dGPU when on battery';
       if [ "${_nvidia_list_str}" != '' ]; then
         if "${_cm2KdiagExe}" --yesno "${_ask_disable_msg}"; then
-          if pkexec "${_pstate_set_exe}" 'disable-nvidia'; then
+          if "${_escExe}" "${_pstate_set_exe}" 'disable-nvidia'; then
             echo 'Discrete GPU disable successfully.' || true;
             _cm2SucFn;
           else
@@ -362,6 +362,10 @@ _HERE3
 }
 ## . END _mainFn }
 
+## BEGIN Declare and set global vars {
+declare _binName _binDir _baseName _lockFile _escExe;
+## . END Declare and set global vars }
+
 ## BEGIN Run main if script is not sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binName="$(readlink -f "$0")"        || exit 101;
@@ -369,7 +373,11 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _baseDir="$(dirname "${_binDir}")"    || exit 101;
   _baseName="$(basename "${_binName}")" || exit 101;
   _lockFile="/tmp/${_baseName}.lock"
+
+  # Import libs and assign more global vars
   _importCommonFn;
+  _escExe="$(_cm2GetEscExeFn)" || exit;
+
   _mainFn "$@";
 fi
 ## . END Run main if script is not sourced }
