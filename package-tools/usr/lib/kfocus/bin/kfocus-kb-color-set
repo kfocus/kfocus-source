@@ -179,12 +179,12 @@ _stdRestoreKbdFn () {
 #
 _stdReadInStateFile () {
   declare _line _bright_byte _hex_str _enable_int _bright_str;
-  
+
   # Get config line from modprobe
   if [ -f "${_stdModprobeFile}" ]; then
     _line="$(grep -Ei '^\s*options\s+tuxedo-keyboard' "${_stdModprobeFile}")";
   fi
-  
+
   # Carry forward enabled flag if already set
   _enable_int=1;
   if [ "${#_configStateList}" = 3 ]; then
@@ -193,7 +193,7 @@ _stdReadInStateFile () {
 
   # Force defaults if no state line
   if [ -z "${_line:-}" ]; then _line='___'; fi
-  
+
   # Extract values from line
   # shellcheck disable=SC2001
   _bright_byte="$(sed 's/^.*\sbrightness=\([^ ]\+\).*$/\1/' <<< "${_line}")";
@@ -203,7 +203,7 @@ _stdReadInStateFile () {
   # Set defaults if values not found
   if [ "${_line}" = "${_bright_byte}" ]; then _bright_byte=125; fi
   if [ "${_line}" = "${_hex_str}"     ]; then _hex_str='001820'; fi
-  if ! [[ _enable_int =~ ^[01]$ ]]; then _enable_int=1; fi
+  if ! [[ "${_enable_int}" =~ ^[01]$ ]]; then _enable_int=1; fi
 
   # Convert and save
   _bright_str="$(_convertByteToStr "${_bright_byte}")";
