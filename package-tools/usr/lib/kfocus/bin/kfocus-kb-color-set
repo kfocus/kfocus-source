@@ -186,10 +186,9 @@ _stdReadInStateFile () {
   fi
   
   # Carry forward enabled flag if already set
+  _enable_int=1;
   if [ "${#_configStateList}" = 3 ]; then
     _enable_int="${_configStateList[2]:-1}";
-  else
-    _enable_int=1;
   fi
 
   # Force defaults if no state line
@@ -204,6 +203,7 @@ _stdReadInStateFile () {
   # Set defaults if values not found
   if [ "${_line}" = "${_bright_byte}" ]; then _bright_byte=125; fi
   if [ "${_line}" = "${_hex_str}"     ]; then _hex_str='001820'; fi
+  if ! [[ _enable_int =~ ^[01]$ ]]; then _enable_int=1; fi
 
   # Convert and save
   _bright_str="$(_convertByteToStr "${_bright_byte}")";
@@ -273,6 +273,7 @@ _convertHexToRgbFn () {
 
 ## BEGIN _convertRgbToHexFn {
 # Purpose: Convert RGB triple to hex.
+#
 _convertRgbToHexFn () {
   declare _input_str _rgb_list _line_str _hex_str;
   _input_str="${1:-}";
@@ -419,6 +420,7 @@ _setKbdValsFn () {
 
 ## BEGIN _toggleEnableFn {
 # Purpose: Toggle enable based on existing value.
+#
 _toggleEnableFn () {
   if [ "${_modelCode}" = 'm2g5p' ]; then
     _iteCalcKbdStateFn; else _stdCalcKbdStateFn;

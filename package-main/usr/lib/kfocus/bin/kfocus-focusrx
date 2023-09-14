@@ -5,7 +5,7 @@
 #
 # Name    : kfocus-focusrx
 # Purpose : Prompt user to apply latest FocusRx System upgrade and other
-#         :   on-sign-in checks and actions.
+#         :   on-login checks and actions.
 # License : GPL v2
 # Run By  : Users
 # Spec    : 744
@@ -239,12 +239,16 @@ _chkHwConfigFn () {
   declare _win_title _reason_str _prompt_msg _ans_str _output_str;
 
   _win_title='Configure for Hardware';
+  _cm2SetMsgFn "${_win_title}";
+
   # Check if reconfig is required
   _reason_str="$("${_escExe}" "${_focusRxSetExe}" 'chk-hw-config')";
   if [ -z "${_reason_str}" ]; then
     # Always skip if not in force mode
     if [ "${_doForce}" = 'n' ]; then
-      return 0;
+      _cm2SucStrFn 'Configuration completed and not forced.';
+      _cm2SucFn;
+      return;
     # Provide user *option* to reconfig in force mode
     else
       _prompt_msg="$(cat << _EOH04
@@ -266,10 +270,19 @@ _EOH04
       fi
     fi
   fi
-  if [ -z "${_reason_str}" ]; then return 0; fi
+  if [ -z "${_reason_str}" ]; then
+    _cm2SucStrFn 'Configuration change not needed.';
+    _cm2sucFn;
+    return;
+  fi
 
   # Bail if internet connection appears hopeless
-  if ! _confirmInternetFn; then return; fi
+  if ! _confirmInternetFn; then
+    _cm2WarnStrFn 'Could not connect to internet';
+    _cm2Warnfn;
+    return 1;
+  fi
+
   _prompt_msg="${_win_title}: This only needs to be done once";
   _reason_str="$(tr ' ' '_' <<< "${_reason_str}")";
   if _output_str="$(
@@ -290,8 +303,13 @@ _EOH05
     )";
     if [ "${_ans_str}" = 'y' ]; then reboot; fi
   else
-    _cm2PromptUserFn "Trouble with hardware config:\n ${_output_str}";
+    _prompt_msg="Trouble with hardware config:\n ${_output_str}";
+    _cm2PromptUserFn "${_prompt_msg}";
+    _cm2WarnStrFn "${_prompt_msg}";
+    _cm2WarnFn;
+    return 1;
   fi
+  _cm2SucFn;
 }
 ## . END _chkHwConfigFn }
 
@@ -322,7 +340,7 @@ _chkKernelPkgFn() {
 
   # Skip upgrade if package is not installed
   if [ -z "${_installed_kernel_vers}" ]; then
-    _cm2SucStrFn "${_kernel_pkg_name} is not installed. Skipped.";
+    _cm2SucStrFn "${_kernel_pkg_name} is not installed.";
     _cm2SucFn;
     return;
   fi
@@ -395,7 +413,7 @@ _chkNvidiaPkgFn () {
 
   # Skip upgrade if kfocus-nv package is not installed.
   if [ -z "${_installed_nv_vers}" ]; then
-    _cm2SucStrFn "${_nv_pkg_name} is not installed. Skipped.";
+    _cm2SucStrFn "${_nv_pkg_name} is not installed.";
     _cm2SucFn;
     return;
   fi
@@ -405,7 +423,7 @@ _chkNvidiaPkgFn () {
   #   for pin package to be out-of-date and the kfocus-nv package up-to-date.
   if [ "${_installed_nv_vers}" = "${_gfxTgtVersStr}" ] \
     || _cm2TestVersFn "${_installed_nv_vers}" "${_gfxTgtVersStr}"; then
-    _cm2SucStrFn "${_nv_pkg_name} upgrade not required. Skipped.";
+    _cm2SucStrFn "${_nv_pkg_name} upgrade not required.";
     _cm2SucFn;
     return;
   fi
@@ -577,6 +595,7 @@ _EOW05
       _cm2PromptUserFn "${_confirm_str}" "${_rootTitle}: ${_win_title}" 'p';
     fi
   fi
+  _cm2SucStrFn 'Xorg file considered.';
   _cm2SucFn;
 }
 ## . END _chkXorgConfigFn }
@@ -785,7 +804,6 @@ _EOW08
   ## Begin: Handle non-reboot condition {
   else
     _cm2SucStrFn 'The system is up-to-date. No reboot required.';
-    _cm2EchoFn;
   fi
   ## . End: handle non-reboot condition }
   _cm2SucFn;
