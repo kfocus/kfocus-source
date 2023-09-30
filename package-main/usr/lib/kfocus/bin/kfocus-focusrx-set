@@ -11,6 +11,9 @@
 #
 set -u;
 
+## BEGIN _importCommonFn {
+# Purpose: Import common library with _cm2* symbols
+#
 _importCommonFn() {
   declare _lib_file;
   _lib_file="${_baseDir}/lib/common.2.source";
@@ -22,7 +25,11 @@ _importCommonFn() {
     exit 202;
   fi
 }
+## . END _importCommonFn }
 
+## BEGIN _updatePkgsFn {
+# Purpose: Update all kfocus packages only
+#
 _updatePkgsFn () {
   _cm2SetMsgFn 'Update and upgrade kfocus packages';
   if apt-get update; then
@@ -35,16 +42,26 @@ _updatePkgsFn () {
   fi
   _cm2WarnFn;
 }
+## . END _updatePkgsFn }
 
+## BEGIN _reconfigHwPkgFn {
+# Purpose: Reconfigure the kfocus-hw package.
+#   The caller must determine if this step is appropriate.
+# IMPORTANT: dpkg-configure kfocus-hw runs update-initramfs, update-grub
+#
 _reconfigHwPkgFn () {
   declare _str;
   _cm2SetMsgFn 'Adjust for hardware';
   if _str="$(dpkg-reconfigure kfocus-hw 2>&1)"; then
     _cm2SucFn; else _cm2WarnStrFn "${_str}"; _cm2WarnFn;
   fi
-  # IMPORTANT: dpkg-configure kfocus-hw runs update-initramfs, update-grub
 }
+## . END _reconfigHwPkgFn }
 
+## BEGIN _installToolsPkgFn {
+# Purpose: Install kfocus tool package specified in $1
+#   The caller must provide the appropriate package.
+#
 _installToolsPkgFn () {
   declare _tools_pkg;
   _tools_pkg="${1:-}";
@@ -57,63 +74,45 @@ _installToolsPkgFn () {
     _cm2SucFn; else _cm2WarnFn; return 1;
   fi
 }
+## . END _installToolsPkgFn }
 
+## BEGIN _installKbdIteFn {
+# Purpose: Install kfocus tool package specified in $1
+#   The caller must provide the appropriate package.
+#
+_installKbdIteFn () {
+  _cm2SetMsgFn 'Install kfocus-keyboard-ite package';
+  if apt-get reinstall -y 'kfocus-keyboard-ite'; then
+    _cm2SucFn; else _cm2WarnFn; return 1;
+  fi
+}
+## . END _installKbdIteFn }
+
+## BEGIN _installNvidiaFn {
+# Purpose: Install kfocus nvidia packages.
+#   The caller must determine if this step is appropriate.
+#
 _installNvidiaFn () {
   _cm2SetMsgFn 'Install NVIDIA Packages';
   if ! apt-get reinstall -y kfocus-nvidia-pinning; then
-    _cm2WarnStrFn 'Could not add nvidia-pinning.';
+    _cm2WarnStrFn 'Trouble installing nvidia-pinning.';
     _cm2WarnFn; return 1;
   fi
   if ! apt-get update; then
-    _cm2WarnStrFn 'Could not update';
+    _cm2WarnStrFn 'Trouble updating apt package list.';
     _cm2WarnFn; return 1;
   fi
-  if apt-get reinstall -y kfocus-nvidia; then
-    _cm2WarnStrFn 'Could not install kfocus-nvidia';
-    _cm2WarnFn; return 1;
-  fi
-  _cm2SucFn;
-}
-
-_purgePkgFn () {
-  declare _pkg_name;
-  _pkg_name="${1:-}";
-
-  _cm2SetMsgFn "Purge package |${_pkg_name}|";
-  if [ -z "${_pkg_name}" ]; then _cm2WarnFn; return; fi
-
-  if ! apt-get purge -y "${_pkg_name}"; then
-    _cm2WarnStrFn "Could not purge ${_pkg_name}";
+  if ! apt-get reinstall -y kfocus-nvidia; then
+    _cm2WarnStrFn 'Trouble installing kfocus-nvidia.';
     _cm2WarnFn; return 1;
   fi
   _cm2SucFn;
 }
-
-_installPkgFn () {
-  declare _pkg_name
-  _pkg_name="${1:-}"
-
-  _cm2SetMsgFn "Install package |${_pkg_name}|"
-  if [ -z "${_pkg_name}" ]; then
-    _cm2WarnFn; return 1;
-  fi
-
-  if ! apt-get reinstall -y "${_pkg_name}"; then
-    _cm2WarnStrFn "Could not install ${_pkg_name}";
-    _cm2WarnFn; return 1;
-  fi
-  _cm2SucFn;
-}
-
-_setStateFn () {
-  _cm2SetMsgFn 'Add value to state file';
-  if "${_focusRxVersExe}" '-s' '1.3.0-0'; then
-    _cm2SucFn; else _cm2WarnFn;
-  fi
-}
+## END _installNvidiaFn }
 
 ## BEGIN _chkBiosUpdateFn {
 # Purpose: Return true if no bios upgrade needed, false otherwise
+#
 _chkBiosUpdateFn () {
   declare _model_code _min_vers _dmi_exe _bios_vers;
   _model_code="$(_cm2EchoModelStrFn 'code')"  || exit 0;
@@ -144,11 +143,15 @@ _chkBiosUpdateFn () {
 }
 ## . END _chkBiosUpdateFn }
 
-# Purpose: Check hw config components and return useful string to parent
+## BEGIN _chkHwConfigFn {
+# Purpose: Check hw config components and return fixup steps in a string.
+#          This string can be sent to _fixHwConfigFn using the fix-hw-config
+#          directive.
+#
 _chkHwConfigFn () {
   declare _is_nv_system _do_force _reason_list _dmi_hw_config_code \
     _dmi_hw_model_code _file_hw_config_code _file_hw_model_code \
-    _is_hw_reconfig _msg _tool_pkg_name;
+    _is_hw_reconfig _msg _tool_pkg_suffix _tool_pkg_name;
 
   _do_force='n';
   if [[ "${1:-}" =~ ^[Yy] ]]; then _do_force='y'; fi
@@ -176,9 +179,17 @@ _chkHwConfigFn () {
   #   _is_hw_reconfig='y';
   # fi
 
-  _tool_pkg_name="kfocus-tools-${_dmi_hw_config_code}";
+  ## Begin Adjust tool suffix per config code {
+  # kfocus-tools-nxg1, kfocus-tools-other, kfocus-tools (#3424)
+  _tool_pkg_suffix='';
+  case "${_dmi_hw_config_code}" in
+    default|generic|m2g4|m2g5|xeg2) _tool_pkg_suffix='';;
+    nxg1) _tool_pkg_suffix='-nxg1';;
+    ir14g1|other|*) _tool_pkg_suffix='-other';;
+  esac
+  _tool_pkg_name="kfocus-tools${_tool_pkg_suffix}";
   if ! _cm2ChkPkgFn "${_tool_pkg_name}"; then
-    _tool_pkg_name='kfocus-tools';
+    _tool_pkg_name='kfocus-tools-other';
   fi
 
   if ! _cm2ChkInstalledPkgFn "${_tool_pkg_name}"; then
@@ -190,31 +201,22 @@ _chkHwConfigFn () {
     _msg+="Package ${_tool_pkg_name} forced re-installation.";
     _reason_list+=( "${_msg}" );
   fi
+  # . End Adjust tool suffix per config code }
 
-  # Run lib updates iff hardware reconfig is flagged.
-  #   do_force OR mismatched model- or config-codes triggers this.
-  # Thus do_force is NOT guaranteed 'y' for this block.
+  ## Begin Add special keyboard support when required {
+  if [ "${_is_hw_reconfig}" = 'y' ] \
+    && [ "${_dmi_hw_model_code}" = 'm2g5p' ]; then
+    _msg='install-kbd-ite;;';
+    _msg+='This model requires kfocus-keyboard-ite package';
+    _reason_list+=( "${_msg}" );
+  fi
+  ## End Add special keyboard support when required }
+
+  ## Begin Run lib updates iff hardware reconfig is flagged {
+  #   do_force OR mismatched config-code triggers this.
+  # Thus do_force is NOT guaranteed = 'y' for this block.
   #
   if [ "${_is_hw_reconfig}" = 'y' ]; then
-    if grep -qE '^ir14' <<< "${_dmi_hw_model_code}"; then
-      if _cm2ChkInstalledPkgFn 'xserver-xorg-input-synaptics'; then
-        _msg='purge-synaptics;;Synaptics driver package needs to be purged.';
-        _reason_list+=( "${_msg}" );
-      fi
-    elif [ "${_do_force}" = 'y' ]; then
-      if ! _cm2ChkInstalledPkgFn 'xserver-xorg-input-synaptics'; then
-        if grep -qE '^m[12]g[1-5]|xe[1-2]' <<< "${_dmi_hw_model_code}"; then
-          _msg='install-synaptics;;Synaptics driver forced re-installation.';
-          _reason_list+=( "${_msg}" );
-        fi
-      fi
-    fi
-
-    if _cm2ChkInstalledPkgFn 'xserver-xorg-video-intel'; then
-      _msg='purge-intelvideo;;OOD Intel video package needs to be purged.';
-      _reason_list+=( "${_msg}" );
-    fi
-
     _is_nv_system="$(_cm2EchoModelStrFn 'is_nv_sys')";
     if [ "${_is_nv_system}" = 'y' ]; then
       if ! _cm2ChkInstalledPkgFn 'kfocus-nvidia'; then
@@ -226,10 +228,16 @@ _chkHwConfigFn () {
       fi
     fi
   fi
+  ## . End Run lib updates iff hardware reconfig is flagged }
 
   ( IFS=$'|'; echo "${_reason_list[*]}"; )
 }
+## . END _chkHwConfigFn }
 
+## BEGIN _fixHwConfigFn {
+# Purpose: Loop through hardware config steps and execute as needed.
+#          On completion, writes the model code to a kfocus file.
+#
 _fixHwConfigFn () {
   declare _reason_str _reason_list _loop_line _bit_list _cmd_list _model_code;
 
@@ -244,13 +252,8 @@ _fixHwConfigFn () {
       'reconfig-hw'      ) _cmd_list=( '_reconfigHwPkgFn'   );;
       'install-hw-tools' ) _cmd_list=( '_installToolsPkgFn' );
         _cmd_list+=( "${_bit_list[1]:-}" );;
+      'install-kbd-ite'  ) _cmd_list=( '_installKbdIteFn'   );;
       'install-nvidia'   ) _cmd_list=( '_installNvidiaFn'   );;
-      'install-synaptics') _cmd_list=( '_installPkgFn'      );
-        _cmd_list+=( 'xserver-xorg-input-synaptics' );;
-      'purge-intelvideo' ) _cmd_list=( '_purgePkgFn' );
-        _cmd_list+=( 'xserver-xorg-video-intel' );;
-      'purge-synaptics'  ) _cmd_list=( '_purgePkgFn'  );
-         _cmd_list+=( 'xserver-xorg-input-synaptics' );;
       *) _cm2WarnStrFn "Option ${_bit_list[0]} is not supported";
         continue;
         ;;
@@ -266,7 +269,9 @@ _fixHwConfigFn () {
   # This is set only on post-install configure
   echo "${_model_code}" > "${_hwModelCodeFile}" || true;
 }
+## . END_fixHwConfigFn }
 
+## BEGIN _mainFn {
 _mainFn () {
   declare _arg_str;
   _arg_str="${1:-}";
@@ -278,6 +283,7 @@ _mainFn () {
     *) _cm2WarnStrFn "Unrecognized directive |${_arg_str}|";;
   esac
 }
+## . END _mainFn }
 
 ## BEGIN Declare global variables {
 declare  _binName _binDir _baseName _assignList \

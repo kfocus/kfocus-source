@@ -44,7 +44,6 @@ _importCommonFn () {
 ## . END _importCommonFn }
 
 _printIntFn () { printf '%.0f' "$*"; }
-_stderrFn () { 1>&2 echo -e "$*"; }
 _printMaxIntFn () {
   declare _hw_base_int _hw_min_int _hw_max_int _up_ratio \
     _down_ratio _calc_str;
@@ -65,17 +64,28 @@ _printMaxIntFn () {
   if [ -n "${_calc_str}" ]; then
     _printIntFn "$(bc <<< "${_calc_str}")";
   else
-    _stderrFn 'WARN: No up or down ratio given.';
+    _cm2WarnStrFn 'No up or down ratio given.';
     _printIntFn "${_hw_base_int}";
   fi
 }
 
 _setNoTurboFn () {
-  if [ -f "${_noTurboFile}" ]; then
-    echo "$*" > "${_noTurboFile}";
-  else
-    _stderrFn "Warn: Missing |${_noTurboFile}|";
+  declare _int;
+  _int="$1";
+  if ! [[ "${_int}" =~ ^[01]$ ]]; then
+    _cm2WarnStrFn "Invalid noturbo value |${_int}|";
+    return 1;
   fi
+
+  if [ -f "${_noTurboFile}" ]; then
+    if ! echo "${_int}" > "${_noTurboFile}"; then
+      _cm2WarnStrFn "Could not write |${_int}| noturbo file";
+      return 1;
+    fi
+  else
+    _cm2WarnStrFn "Missing |${_noTurboFile}|";
+  fi
+  return 0;
 }
 
 _readNoTurboFn () {
@@ -89,24 +99,23 @@ _readNoTurboFn () {
       echo '';
     fi
   else
-    _stderrFn "Warn: Missing |${_noTurboFile}|";
+    _cm2WarnStrFn "Missing |${_noTurboFile}|";
     echo '';
   fi
 }
 
-_setKeyboardFn () {
-  if [ -f "${_keyboardFile}" ]; then
-    echo "$*" > "${_keyboardFile}";
-  else
-    _stderrFn "Warn: Missing |${_keyboardFile}|";
+_setKbdEnableFn () {
+  if [ -x "${_kbdColorSetExe}" ]; then
+    "${_kbdColorSetExe}" -E "${1:-}";
   fi
 }
 
 _scanFn () {
-  declare _match_line _mode_key _bit_list _label _up_ratio \
-    _down_ratio _gov_key _noturbo_int _kbdled_int _proc_count \
-    _proc_idx _set_max_int _hw_freq_list _hw_min_int _hw_max_int \
-    _hw_base_file _hw_base_int _param_list _solve_line _prior_max_int;
+  declare _match_line _mode_key _bit_list _label _up_ratio _down_ratio \
+    _gov_key _noturbo_int _kbdled_int _avail_gov_list _proc_count      \
+    _proc_idx _set_max_int _hw_freq_list _hw_min_int _hw_max_int       \
+    _hw_base_file _hw_base_int _param_list _solve_line _prior_max_int  \
+    _psave_key;
 
   _match_line="${1:-}";
   _mode_key="${2:-}";
@@ -114,7 +123,7 @@ _scanFn () {
   IFS=';' read -r -a _bit_list <<< "${_match_line}";
 
   if [ "${#_bit_list[@]}" -ne 6 ]; then
-    _stderrFn "  ABORT: Bad element count |${#_bit_list[@]}|";
+    _cm2ErrStrFn "Bad element count |${#_bit_list[@]}|";
     return 1;
   fi
 
@@ -125,14 +134,20 @@ _scanFn () {
   _gov_key="${_bit_list[3]}";
   _noturbo_int="${_bit_list[4]}";
   _kbdled_int="${_bit_list[5]}";
+  read -r -a _avail_gov_list < <("${_cpufreqInfoExe}" -g);
 
+  _psave_key='powersave';
   case "${_mode_key}" in
     print|read) true;;
     set)
       _setNoTurboFn "${_noturbo_int}";
-      _setKeyboardFn "${_kbdled_int}";
+      _setKbdEnableFn "${_kbdled_int}";
+      # shellcheck disable=SC2076
+      if [[ " ${_avail_gov_list[*]} " =~ " ${_altPsaveKey} " ]]; then
+        _psave_key="${_altPsaveKey}";
+      fi
       ;;
-    *) _stderrFn "Unsupported mode |${_mode_key}|. Abort.";
+    *) _cm2ErrStrFn "Unsupported mode |${_mode_key}|. Abort.";
       return 1;
       ;;
   esac;
@@ -142,7 +157,7 @@ _scanFn () {
   _solve_line='';
   for (( _proc_idx=0; _proc_idx < "${_proc_count}"; _proc_idx++ )); do
     _set_max_int='';
-    read -r -d '' -a _hw_freq_list \
+    read -r -a _hw_freq_list \
       < <("${_cpufreqInfoExe}" -c "${_proc_idx}" -l);
     if [ "${#_hw_freq_list[@]}" = 0 ]; then continue; fi
     _hw_min_int="$( _printIntFn "${_hw_freq_list[0]}")";
@@ -190,14 +205,19 @@ _scanFn () {
         _prior_max_int="${_set_max_int}"
       fi
     else
-      "${_cpufreqSetExe}" -c "${_proc_idx}" -g "${_gov_key}";
+      if [ "${_gov_key}" = "powersave" ]; then
+        _gov_key="${_psave_key}";
+      fi
+      if ! "${_cpufreqSetExe}" -c "${_proc_idx}" -g "${_gov_key}"; then
+        _cm2WarnStrFn "Bad governor set |${_gov_key}| on core |${_proc_idx}|";
+      fi
       if [ -n "${_set_max_int}" ]; then
         if [ "${_set_max_int}" -lt "${_hw_min_int}" ]; then
-          _stderrFn "|${_set_max_int}| below minimum |${_hw_min_int}|";
-          _stderrFn 'Value discarded';
+          _cm2EchoFn "|${_set_max_int}| below minimum |${_hw_min_int}|";
+          _cm2WarnStrFn 'Value discarded';
         elif [ "${_set_max_int}" -gt "${_hw_max_int}" ]; then
-          _stderrFn "|${_set_max_int}| above maximum |${_hw_max_int}|";
-          _stderrFn 'Value discarded';
+          _cm2EchoFn "|${_set_max_int}| above maximum |${_hw_max_int}|";
+          _cm2WarnStrFn 'Value discarded';
         else
           "${_cpufreqSetExe}" -c "${_proc_idx}" -u "${_set_max_int}";
         fi
@@ -210,8 +230,69 @@ _scanFn () {
   fi
 }
 
+_chkInitCpuFn () {
+  declare _status_key _success_flag _status_set_list _set_key _proc_count;
+  _cm2SetMsgFn 'DEBUG: Set CPU properties for M2 GEN 5';
+
+  # This drop file should clear on every boot
+  if [ -f "${_cpuDropFile}" ]; then
+    _cm2SucStrFn 'Drop file found.'; _cm2SucFn; return 0;
+  fi
+
+  # Skip if not a special hardware config code (m2g5 and m2g5p names)
+  if [ "$(_cm2EchoModelStrFn 'config_code')" != 'm2g5' ]; then
+    touch "${_cpuDropFile}" || _cm2WarnStrFn 'Could not add drop file';
+    _cm2SucFn;
+    return 0;
+  fi
+
+  _status_set_list=();
+  _status_key="$(cat "${_pstateFile}" || true )";
+  _success_flag='y';
+
+  # Ensure status key gets changed...
+  if [ "${_status_key}" = 'passive' ]; then
+    _status_set_list=( 'active' 'passive' );
+  else
+    _status_set_list=( 'passive' );
+  fi
+
+  for _set_key in "${_status_set_list[@]}"; do
+    if echo "${_set_key}" > "${_pstateFile}"; then
+      _cm2SucStrFn "Set intel_pstate to |${_set_key}|";
+      _success_flag='y';
+    else
+      _cm2WarnStrFn "Could not set pstate to |${_set_key}|";
+      _success_flag='n';
+    fi
+    sleep 1;
+  done
+
+  # Set default governor on all cores
+  _proc_count="$("${_nprocExe}")";
+
+  for (( _proc_idx=0; _proc_idx < "${_proc_count}"; _proc_idx++ )); do
+    if ! "${_cpufreqSetExe}" -c "${_proc_idx}" -g "${_altPsaveKey}"; then
+      _cm2WarnStrFn "Governor |${_altPsaveKey}| NOT set for core |${_proc_idx}";
+      _success_flag='n';
+    fi
+  done
+
+  if ! _setNoTurboFn 0; then
+    _cm2WarnStrFn 'Could NOT set noturbo flag to |0|';
+    _success_flag='n';
+  fi
+
+  if [ "${_success_flag}" = 'y' ]; then
+    touch "${_cpuDropFile}" || _cm2WarnStrFn 'Could not add drop file';
+    _cm2SucFn;
+  else
+    _cm2WarnFn;
+  fi
+}
+
 _setModeFn () {
-  declare _arg_str _mode_list _match_line _key;
+  declare _arg_str _mode_list _opt_line _match_line _key;
 
   _arg_str="${1:-}";
   _match_line='';
@@ -227,8 +308,8 @@ _setModeFn () {
   done
 
   if [ -z "${_match_line}" ]; then
-    _stderrFn "Mode |${_arg_str}| not supported. Abort.";
-    ( IFS='|'; _stderrFn "  ${_mode_list[*]}" );
+    _cm2ErrStrFn "Mode |${_arg_str}| not supported. Abort.";
+    ( IFS='|'; _cm2EchoFn "  ${_mode_list[*]}" );
     return 1;
   fi
 
@@ -272,9 +353,9 @@ _printOptionsFn () {
   if [ "${#_out_list[@]}" = '0' ]; then
     _title='Frequency Profile';
     _model_msg="$(cat << EOH
-<b>Kubuntu Focus does not have profiles for this CPU</b>.
- If you would like to add a frequency profile, please contribute
- to kfocus-source on GitHub.com.
+<b>We do not have a frequency profile for this CPU</b>.
+ If you would like to contribute a frequency profile, please
+ provide a pull request to kfocus-source on GitHub.com.
 EOH
     )";
     echo "title:${_title}|message:${_cm2HtmPStr}${_model_msg}</p>";
@@ -289,27 +370,35 @@ EOH
 ## . END _printOptionsFn }
 
 ## BEGIN _readModeFn {
-# Returned from _scanFn <line> 'read'
+# Returned from _scanFn <line> 'read':
 #   _label;_set_max_int;_gov_key;noturbo_int;kbdled_int
-# Fields to match from policy
-#          _set_max_int;_gov_key;noturbo_int
+# Fields to match from policy:
+#   _set_max_int;_gov_key;noturbo_int
 #
 _readModeFn () {
-  declare _noturbo_int _scan_int _proc_count _proc_idx _policy_str \
+  declare _noturbo_int _scan_int _gov_key _proc_count _proc_idx _policy_str \
   _policy_list _search_line _opt_line _read_line _bit_list _max_ghz_num;
 
   _noturbo_int="$(_readNoTurboFn)";
   _scan_int=0;
+  _gov_key='';
   _proc_count="$("${_nprocExe}")";
 
   for (( _proc_idx=0; _proc_idx < "${_proc_count}"; _proc_idx++ )); do
-    _policy_str="$("${_cpufreqInfoExe}" -c"${_proc_idx}" -p)";
+    _policy_str="$("${_cpufreqInfoExe}" -c "${_proc_idx}" -p)";
     if [ -z "${_policy_str}" ]; then continue; fi
     read -r -d '' -a _policy_list <<<"${_policy_str}";
     if [ "${_policy_list[1]}" -gt "${_scan_int}" ]; then
-      # idx 1 is max_int, 2 is gov_str
       _scan_int="${_policy_list[1]}";
-      _search_line="${_policy_list[1]} ${_policy_list[2]}";
+      _gov_key="${_policy_list[2]}";
+
+      # Hack to match when cpu in passive mode
+      _search_line="${_scan_int}";
+      if [ "${_gov_key}" = "${_altPsaveKey}" ]; then
+        _search_line+=' powersave';
+      else
+        _search_line+=" ${_gov_key}";
+      fi
       if [ -n "${_noturbo_int}" ]; then
         _search_line+=" ${_noturbo_int}";
       fi
@@ -327,41 +416,38 @@ _readModeFn () {
     fi
   done
 
-  # Fall-through
-  _max_ghz_num="$(echo "${_policy_list[1]}*.000001"|bc)";
+  # Fallthrough
+  _max_ghz_num="$(bc <<< "${_scan_int}*.000001")";
   _max_ghz_num="$(printf '%.2f' "${_max_ghz_num}")";
-  echo "Custom (${_max_ghz_num} GHz ${_policy_list[2]^})";
+  echo "Custom (${_max_ghz_num} GHz ${_gov_key})";
 }
 ## . END _readModeFn }
 
 _mainFn () {
   declare _arg_str;
   _arg_str="${1:-}";
+
+  _chkInitCpuFn; # Set CPUFreq for 2023+ CPUs
   case "${_arg_str}" in
     '-p') _printOptionsFn 'p';;
     '-x') _printOptionsFn 'x';;
     '-r') _readModeFn;;
-      '') _stderrFn 'Argument or flag required'; exit 1;;
+      '') _cm2ErrStrFn 'Argument or flag required'; exit 1;;
        *) _setModeFn "${_arg_str}";
   esac
 }
 
-## BEGIN Set global vars {
-_noTurboFile='/sys/devices/system/cpu/intel_pstate/no_turbo';
-_keyboardFile='/sys/devices/platform/tuxedo_keyboard/state';
+## BEGIN Declare and assign global vars {
+declare _binName _binDir _baseDir _baseName _rootDir \
+  _cpuDropFile _noTurboFile _pstateFile _altPsaveKey \
+  _cpufreqSetExe _cpufreqInfoExe _nprocExe _kbdColorSetExe;
+
 _rootDir='';
-
-_nprocExe="$(command -v nproc)";
-_cpufreqSetExe="$(command -v cpufreq-set)";
-_cpufreqInfoExe="$(command -v cpufreq-info)";
-
-for _exeName in _nprocExe _cpufreqSetExe _cpufreqInfoExe; do
-  if [ ! -x "${!_exeName}" ]; then
-    _stderrFn "ABORT: Required command |${!_exeName}| not found.";
-    exit 1;
-  fi
-done;
-## . END Set global vars }
+_cpuDropFile='/run/kfocus-cpu-init';
+_noTurboFile='/sys/devices/system/cpu/intel_pstate/no_turbo';
+_pstateFile="/sys/devices/system/cpu/intel_pstate/status";
+_altPsaveKey='ondemand'; # schedutil has lower gb5 scores
+## . END Declare and assign global vars }
 
 ## BEGIN Run main if script is not sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
@@ -369,7 +455,20 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binDir="$(dirname "${_binName}")"    || exit 101;
   _baseDir="$(dirname "${_binDir}")"    || exit 101;
   _baseName="$(basename "${_binName}")" || exit 101;
+
+  # Import libs and assign more global vars
   _importCommonFn;
-  _mainFn "$@";
+  _kbdColorSetExe="${_binDir}/kfocus-kb-color-set";
+  _assignList=(
+    '_cpufreqSetExe|cpufreq-set'
+    '_cpufreqInfoExe|cpufreq-info'
+    '_nprocExe|nproc'
+  );
+  if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
+    _cm2WarnStrFn 'ABORT: Required commands not found';
+    exit 1;
+  fi
+
+  _mainFn "$@"; # >> /tmp/kfocus-power-set-debug.txt 2>&1
 fi
 ## . END Run main if script is not sourced }

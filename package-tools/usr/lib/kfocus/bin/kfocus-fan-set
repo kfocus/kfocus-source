@@ -88,9 +88,10 @@ _chkReportFanSupportFn () {
 
   if _cm2ChkInstalledPkgFn 'kfocus-power-fan'; then
     _is_kpf_installed='y';
-    _kpf_msg=' <br><br>IMPORTANT: The kfocus-power-fan package
- is unexpectedly installed. Please uninstall it as it is
- not useful for this system.';
+    _kpf_msg='';
+    # This can be used if we want more detail:
+    # <br><br>The kfocus-power-fan package is installed but
+    # not used. We recommend you remove it.
   else
     _is_kpf_installed='n';
     _kpf_msg='';
@@ -101,45 +102,42 @@ _chkReportFanSupportFn () {
     m1*|m2*|xe*)
       if [ "${_is_kpf_installed}" = 'y' ]; then return 0; fi
       _model_msg="$(cat <<_EOH01
-<b>Custom fan profiles are available.</b><br>
- Please install <code>kfocus-power-fan</code> and then rerun
- this app to see the controls.
+<b>Custom fan profiles are available</b>. Please install
+ <code>kfocus-power-fan</code> and then rerun this app to see
+ the controls.
 _EOH01
       )";;
 
     ir14*)
       _model_msg="$(cat <<_EOH02
-<b>Fan profiles are found in the BIOS</b><br>
- To access, press <code>F2</code> during boot. Select <code>BIOS &gt;
- Advanced &gt; Operating Mode &gt; Balanced</code> for default operation.
-  ${_kpf_msg}
+<b>Select a fan profile in the BIOS</b>.
+ Press <code>F2</code> during boot and select <code>BIOS &gt;
+ Advanced &gt; Operating Mode &gt; Balanced</code> or
+ <code>20 dB</code> mode. ${_kpf_msg}
 _EOH02
       )";;
 
     nxg1*)
       _model_msg="$(cat <<_EOH03
-<b>Fan profiles are found in the BIOS</b><br>
- To access, press <code>F2</code> during boot. Select <code>BIOS &gt; Cooling
-  &gt; Fan Control &gt; Balanced</code> for default operation.
- ${_kpf_msg}
+<b>Select a fan profile in the BIOS</b>. Press <code>F2</code>
+ during boot and select <code>BIOS &gt; Cooling &gt; Fan Control
+ &gt; Balanced</code> or other mode. ${_kpf_msg}
 _EOH03
       )";;
 
     nxg2*)
       _model_msg="$(cat <<_EOH04
-<b>Fan profiles are found in the BIOS</b><br>
- To access, press <code>F2</code> during boot. Select <code>BIOS &gt;
- Power, Performance, and Cooling &gt; Fan Control &gt; Balanced</code>
- for default operation.
- ${_kpf_msg}
+<b>Select a fan profile in the BIOS</b>.
+ Press <code>F2</code> during boot and select <code>BIOS &gt;
+ Power, Performance, and Cooling &gt; Fan Control &gt;
+ Balanced</code> or other mode. ${_kpf_msg}
 _EOH04
       )";;
 
    *)
      _model_msg="$(cat <<_EOH05
-<b>Kubuntu Focus does not have a profile for this device.</b><br>
- You may be able to adjust the fans in the BIOS, which
- can usually be accessed by pressing F2, Delete, or ESC during boot.
+<b>Fan profile not found for this device</b>. You may be able
+ to adjust the fans in the BIOS or with a device specific tool.
  ${_kpf_msg}
 _EOH05
       )";;

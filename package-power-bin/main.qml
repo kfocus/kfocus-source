@@ -1,19 +1,21 @@
 import QtQuick 2.6
 import QtQuick.Controls 2.0 as Controls
 import QtQuick.Layouts 1.2
+import QtQuick.Window 2.2
 import org.kde.kirigami 2.13 as Kirigami
 import org.kde.plasma.core 2.1 as PlasmaCore
+import shellengine 1.0
 
 Kirigami.ApplicationWindow {
     id: root
-    title: "Kubuntu Focus Power Tool"
-    width: 560
-    height: 670
-    minimumWidth: 560
-    minimumHeight: 670
+    title: "Kubuntu Focus"
+    width:  baseWidth  * scaleRatio
+    height: baseHeight * scaleRatio
+    minimumWidth:  (baseWidth  - 50) * scaleRatio
+    minimumHeight: (baseHeight - 50) * scaleRatio
 
     pageStack.initialPage: Kirigami.Page {
-        title: "KFocus Power and Fan"
+        title: "Power and Fan"
         ColumnLayout {
             id: layout
             anchors {
@@ -46,22 +48,25 @@ Kirigami.ApplicationWindow {
                 spacing: 0
                 Layout.fillWidth: true
 
-                Controls.Label{
-                    text: "🔋 Powersave"
+                Controls.Label {
+                    // DEBUG + scaleRatio.toFixed(3)
+                    text: '🔋 Powersave'
                 }
 
                 Item {
                     Layout.fillWidth: true
                 }
 
-                Controls.Label{
-                    text: "Performance ⚡"
+                Controls.Label {
+                    // DEBUG + scaleMap.spreadNum.toFixed(3)
+                    text: 'Performance ⚡'
                 }
                 Layout.bottomMargin: PlasmaCore.Units.largeSpacing
             }
 
             Kirigami.Heading {
-                // text: plasmaProfilesSlider.visible ? "Fine Tuning" : "Power Profile"
+                // text: plasmaProfilesSlider.visible ?
+                //   "Fine Tuning" : "Power Profile"
                 id: powerHeading
                 visible: false
                 text: 'Frequency Profile'
@@ -71,8 +76,8 @@ Kirigami.ApplicationWindow {
             GridLayout {
                 id: grid
                 visible: false
-                columnSpacing: 0
-                rowSpacing: 3
+                columnSpacing: Math.round( scaleRatio )
+                rowSpacing: Math.round( 3 * scaleRatio )
                 // Number of columns is set by the logic part
                 Layout.fillWidth: true
                 Repeater {
@@ -80,12 +85,12 @@ Kirigami.ApplicationWindow {
                     // Each cell of the grid is a rectangle; we have magic properties that are defined in the
                     // logic part, namely elementName, bold, elementColor, firstElementName
                     Rectangle {
-                        property bool firstElement: elementColor != 'transparent'
-                        property bool selectedRow: !firstElement && firstElementName == profilesModel.selectedProfile
+                        property bool firstElement: elementColor !== 'transparent'
+                        property bool selectedRow: !firstElement && firstElementName === profilesModel.selectedProfile
                         Controls.RadioButton {
                             id: radioButton
                             visible: firstElement
-                            checked: profilesModel.selectedProfile == elementName
+                            checked: profilesModel.selectedProfile === elementName
                             onCheckedChanged: {
                                 powerTimer.triggeredOnStart = false
                                 powerTimer.stop()
@@ -101,7 +106,7 @@ Kirigami.ApplicationWindow {
                         color: selectedRow ? "gray" : elementColor
                         Layout.preferredWidth: (layout.width - Layout.rightMargin * grid.columns) / grid.columns
                         Layout.rightMargin: 2
-                        Layout.preferredHeight: 30
+                        Layout.preferredHeight: 30 * scaleRatio
                         Controls.Label {
                             anchors.top: parent.top
                             anchors.bottom: parent.bottom
@@ -148,7 +153,7 @@ Kirigami.ApplicationWindow {
                 onValueChanged: {
                     fanTimer.triggeredOnStart = false
                     fanTimer.stop()
-                    fanProfilesChecker.connectSource('pkexec ' + binDir + '/kfocus-fan-set ' + fanProfilesModel.profileNames[value])
+                    altFanProfilesChecker.exec('pkexec ' + binDir + '/kfocus-fan-set ' + fanProfilesModel.profileNames[value])
                     fanDescription.text = "<i>Description:</i> " + fanProfilesModel.profileDescriptions[fanSlider.value]
                     fanTimer.start()
                 }
@@ -168,8 +173,8 @@ Kirigami.ApplicationWindow {
                     delegate: Controls.Label {
                         text: name
                         Layout.preferredWidth: layout.width / (fanProfilesModel.count)
-                        horizontalAlignment: index == 0 ? Text.AlignLeft : (
-                            index == fanProfilesModel.count - 1 ? Text.AlignRight : Text.AlignHCenter)
+                        horizontalAlignment: index === 0 ? Text.AlignLeft : (
+                            index === fanProfilesModel.count - 1 ? Text.AlignRight : Text.AlignHCenter)
                     }
                 }
             }
@@ -192,22 +197,24 @@ Kirigami.ApplicationWindow {
             //  '#E4A714', '#8EB519', '#33cc33', '#39ceba', '#3caae4', '#007dc6',
             //  '#006091'].reverse()
             property var gridColors: ['transparent', '#F63114', '#F7941E',
-            '#33cc33', '#3caae4', '#006091'].reverse()
-            onSelectedProfileChanged: profilesChecker.connectSource('pkexec '
-            + binDir + '/kfocus-power-set ' + selectedProfile)
+              '#33cc33', '#3caae4', '#006091'].reverse()
+            onSelectedProfileChanged: {
+                altProfilesChecker.exec(
+                    'pkexec ' + binDir + '/kfocus-power-set ' + selectedProfile
+                );
+                doSkipNextFreqPoll = true;
+            }
         }
 
         // Loads and parse the available profiles
-        PlasmaCore.DataSource {
-            engine: "executable"
-            connectedSources: [ binDir + '/kfocus-power-set -x']
-            onNewData: {
-                let stdout = data["stdout"]
+        ShellEngine {
+            commandStr: 'pkexec ' + binDir + '/kfocus-power-set -x'
+            onStdoutChanged: {
                 let freqMissingMsg = false
                 let buildStr = ""
                 stdout.split('\n').forEach(function (line, index) {
                     if (line === '') { return; }
-                    if (line.substring(0,5) == "title") {
+                    if (line.substring(0,5) === "title") {
                         freqMissingMsg = true
                         let lineParts = line.split('|')
                         let titleMsg = lineParts[0].substring(6, lineParts[0].length)
@@ -222,15 +229,15 @@ Kirigami.ApplicationWindow {
                         }
                         let firstElementName = '';
                         line.split(';').forEach(function (value, subindex) {
-                            if (index == 0 && value !== '') {
+                            if (index === 0 && value !== '') {
                                 profilesModel.validIndexes.push(subindex)
                             }
-                            if (subindex == 0) {
+                            if (subindex === 0) {
                                 firstElementName = value
                             }
                             if (profilesModel.validIndexes.includes(subindex)) {
-                               profilesModel.append({'elementName': value, 'bold': index == 0,
-                                    'elementColor': subindex == 0 ? profilesModel.gridColors.pop() : 'transparent',
+                               profilesModel.append({'elementName': value, 'bold': index === 0,
+                                    'elementColor': subindex === 0 ? profilesModel.gridColors.pop() : 'transparent',
                                     'firstElementName': firstElementName
                                 })
                                 // There are items in the table, display them
@@ -246,30 +253,42 @@ Kirigami.ApplicationWindow {
                     powerError.text = buildStr
                     powerError.visible = true
                 }
-                disconnectSource(sourceName)
             }
         }
 
-        // Checks the current profile
-        PlasmaCore.DataSource {
-            id: profilesChecker
-            engine: "executable"
-            connectedSources: []
-            onNewData: {
-                if (data["stdout"].trim() !== '' && data["stdout"].trim().substring(0, 6).toLowerCase() != "custom") {
-                    profilesModel.selectedProfile = data["stdout"].trim()
+        // Refresh the current power profile
+        ShellEngine {
+            id: altProfilesChecker
+            onStdoutChanged: {
+                const chkCustomRegex = /^\s*custom/i
+                const trimmedStdout = stdout.trim();
+                if (trimmedStdout !== ''
+                    && ! chkCustomRegex.test( trimmedStdout )
+                ) {
+                    profilesModel.selectedProfile = trimmedStdout
                 }
-                disconnectSource(sourceName)
             }
         }
-        // This checkes the current profile every 5 seconds
+
+        // This polls Frequency profile every pollingMs
         Timer {
             id: powerTimer
-            interval: 5000
+            interval: pollingMs
             triggeredOnStart: true
             running: true
             repeat: true
-            onTriggered: profilesChecker.connectSource(binDir + '/kfocus-power-set -r')
+            onTriggered: {
+                // Do nothing if the user recently selected a profile
+                // This prevents profiles being jumped back to a prior
+                // value before the set completes.
+                if ( doSkipNextFreqPoll ) {
+                    doSkipNextFreqPoll = false;
+                    return;
+                }
+                altProfilesChecker.exec(
+                  'pkexec ' + binDir + '/kfocus-power-set -r'
+                )
+            }
         }
 
         ListModel {
@@ -280,62 +299,58 @@ Kirigami.ApplicationWindow {
         }
 
         // Loads and parse the available fan profiles
-        PlasmaCore.DataSource {
-            engine: "executable"
-            connectedSources: [binDir + '/kfocus-fan-set -x']
-            onNewData: {
-                let fanMissingMsg = false
-                let buildStr = ""
-                data["stdout"].split('\n').forEach(function (line) {
-                    if (line === '') { return; }
-                    if (line.substring(0, 5) == "title") {
-                        fanMissingMsg = true
-                        root.height = 700
-                        let lineParts = line.split('|')
-                        let titleMsg = lineParts[0].split(':')[1]
-                        let bodyMsg = lineParts[1].split(':')[1]
-                        fanControlHeading.text = titleMsg
-                        buildStr += bodyMsg
-                    }
-                    if (fanMissingMsg) {
-                        buildStr += line
-                    } else {
-                        let [name, description] = line.split('(')
-                        fanProfilesModel.append({'name': name.trim()})
-                        fanProfilesModel.profileNames.push(name.trim())
-                        fanProfilesModel.profileDescriptions.push(description.replace(")", "").trim())
-                        fanProfilesModel.fanAvailable = true
-                    }
-                })
-                if (fanMissingMsg) {
-                    inlineMessage.text = buildStr
+        ShellEngine {
+            commandStr: binDir + '/kfocus-fan-set -x'
+            onStdoutChanged: {
+                const checkRegex = /^\s*title:[^|]+|\s*message:/
+                if ( checkRegex.test( stdout ) ) {
+                    root.height = (baseHeight + 50) * scaleRatio
+                    const msgList = stdout.split('|')
+                    const titleStr = msgList[0].replace(
+                        /^\s*title:\s*/, '' ).trim()
+                    const msgStr = msgList[1].replace(
+                        /^\s*message:\s*/, '' ).trim()
+
+                    fanControlHeading.text = titleStr
+                    inlineMessage.text = msgStr
                     fanSlider.visible = false
                 }
+                else {
+                    stdout.split('\n').forEach(function (line) {
+                        if (line === '') { return }
+                        const [name, description] = line.split('(')
+                        fanProfilesModel.append({'name': name.trim()})
+                        fanProfilesModel.profileNames.push(name.trim())
+                        fanProfilesModel.profileDescriptions.push(
+                            description.replace(')', '').trim())
+                        fanProfilesModel.fanAvailable = true
+                    })
+                }
                 fanTimer.running = true
-                disconnectSource(sourceName)
             }
         }
 
-        // Checks the current fan profile
-        PlasmaCore.DataSource {
-            id: fanProfilesChecker
-            engine: "executable"
-            connectedSources: []
-            onNewData: {
-                if (data["stdout"].trim() !== '') {
-                    fanSlider.value = fanProfilesModel.profileNames.indexOf(data["stdout"].trim())
+        ShellEngine {
+            id: altFanProfilesChecker
+            onStdoutChanged: {
+                let trimmedStdout = stdout.trim()
+                if (trimmedStdout !== '') {
+                    fanSlider.value = fanProfilesModel.profileNames.indexOf(trimmedStdout)
                     fanDescription.text = "<i>Description:</i> " + fanProfilesModel.profileDescriptions[fanSlider.value]
                 }
-                disconnectSource(sourceName)
             }
         }
+
+        // This polls Fan profile every pollingMs
         Timer {
             id: fanTimer
-            interval: 5000
+            interval: pollingMs
             triggeredOnStart: true
             repeat: true
             onTriggered: {
-                fanProfilesChecker.connectSource(binDir + '/kfocus-fan-set -r | cut -d\' \' -f1')
+                altFanProfilesChecker.exec(
+                    binDir + '/kfocus-fan-set -r | cut -d " " -f1'
+                )
             }
         }
     }
@@ -352,11 +367,13 @@ Kirigami.ApplicationWindow {
             disconnectSource(source);
         }
     }
-    // The actuallyActiveProfile is the current profile that's set in power settings;
-    // the activeProfile is usually the same value, however since changes take a bit to apply,
-    // whenever we change the profile we manually set activeProfile to the new value (otherwise the slider
-    // would still be at the old value) and then set it back to follow actuallyActiveProfile as soon
-    // as that one is updated.
+    // The actuallyActiveProfile is the current profile that is set in
+    // power settings; the activeProfile is usually the same value,
+    // however since changes take a bit to apply, whenever we change
+    // the profile we manually set activeProfile to the new value
+    // (otherwise the slider would still be at the old value) and
+    // then set it back to follow actuallyActiveProfile as soon as
+    // that one is updated.
     readonly property string actuallyActiveProfile: pmSource.data["Power Profiles"] ? (pmSource.data["Power Profiles"]["Current Profile"] || "") : ""
     onActuallyActiveProfileChanged: {
         if (root.actuallyActiveProfile === root.activeProfile) {
@@ -367,7 +384,7 @@ Kirigami.ApplicationWindow {
     function activateProfile(profile) {
         if (!profile) { return; }
         if (!root.activeProfile) { return; }
-        if (profile == root.activeProfile) { return; }
+        if (profile === root.activeProfile) { return; }
         const service = pmSource.serviceForSource("PowerDevil");
         const op = service.operationDescription("setPowerProfile");
         op.profile = profile;
@@ -379,9 +396,32 @@ Kirigami.ApplicationWindow {
             }
         })
     }
+
+    function calcScaleRatioFn () {
+      const densityNum  = Screen.pixelDensity;
+      const baseNum     = 3.78; // 96 DPI
+      const quantNum    = 0.125;
+      let spreadNum     = 0;
+      if ( densityNum > baseNum ) {
+        spreadNum = (densityNum - baseNum) / ( 1.75 * baseNum );
+      }
+      return {
+        spreadNum: spreadNum,
+        scaleRatio: 1 + Math.round(spreadNum / quantNum) * quantNum
+      }
+    }
+
     readonly property var profiles: ['power-saver', 'balanced', 'performance']
     // Requires qmlscene ./kfocus.qml "${pathToBin}" to set binDir for
     //   kfocus-fan-set and kfocus-power-set
     readonly property var binDir: Qt.application.arguments[1] || '/usr/lib/kfocus/bin'
     readonly property int activeProfileIndex: root.profiles.indexOf(root.activeProfile)
+    readonly property int pollingMs: 5000
+    readonly property var scaleMap: calcScaleRatioFn()
+    readonly property real scaleRatio: scaleMap.scaleRatio
+
+    readonly property int baseWidth: 460
+    readonly property int baseHeight: 575
+    property bool doSkipNextFreqPoll: false
 }
+

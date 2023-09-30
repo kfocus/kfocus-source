@@ -24,7 +24,7 @@ _exeLookupList=(
   'apt-rollback|konsole;-e;man;apt-rollback|apt-rollback|apt-rollback|AptRollback: Rollback System Packages'
   'atom|atom;--no-sandbox||atom|Atom: A hackable text editor. Use atom --nosandbox to launch.'
   'audacity|audacity||audacity|Audacity: Edit Sound'
-  'aws-cli|konsole;-e;aws;help|aws|awscli|AWS: Command Line DevOps Tool'
+  'aws-cli|konsole;--hold;-e;aws;help|aws|awscli|AWS: Command Line DevOps Tool'
   'azure-cli|konsole;--hold;-e;az;--help|az|azure-cli|Azure: Command Line DevOps Tool'
   'backintime|backintime-qt||backintime-qt|BackInTime: Backup Files'
   'brave-browser|brave-browser||brave-browser|Brave Browser'
@@ -34,7 +34,6 @@ _exeLookupList=(
   'darktable|darktable||darktable||DarkTable: Edit RAW Photos'
   'docker|konsole;-e;man;docker|docker|docker-ce|Docker: Container Engine'
   'dolphin|dolphin||dolphin|Dolphin: Manage Files'
-  'dropbox|dropbox;start;-i|dropbox|dropbox|Dropbox: Sync to Dropbox Cloud Storage'
   'elisa|elisa||elisa|Elisa Music Player'
   'ffmpeg|konsole;-e;man ffmpeg|ffmpeg|ffmpeg|Tools for Transcoding|FFMpeg: Stream and Play Multimedia Files'
   'filezilla|filezilla||filezilla|Filezilla: Transfer Files'
@@ -48,8 +47,9 @@ _exeLookupList=(
   'gvim|gvim||vim-gtk3|Vim GUI: Edit Text With Extreme Power'
   'gwenview|gwenview||gwenview|Gwenview: Image and Document Viewer'
   'inkscape|inkscape||inkscape|Inkscape: Edit Scalable Vector Graphics'
-  'insync|insync;start||insync-dolphin|InSync: Sync to Google Drive, OneDrive, and Dropbox'
+  'insync|insync;start||insync-dolphin|Insync: Sync Google Drive and Others'
   'jekyll|konsole;-e;man jekyll|jekyll|jekyll|Jekyll: Create Static Web Sites'
+  'jetbrains-toolbox-plain|jetbrains-toolbox|jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs'
   'kate|kate||kate|Kate: Edit Text with Power'
   'kde-connect|kdeconnect-settings||kdeconnect|KDE Connect: Connect Smartphones to Desktop'
   'kdenlive|kdenlive||kdenlive|KDEnlive: Edit  Non-Linear Videos'
@@ -67,11 +67,12 @@ _exeLookupList=(
   'kfocus_pick_gcc|kfocus-pick-gcc||kfocus-pick-gcc|KFocus Pick GCC: Select default compiler toolchain'
   'kfocus_power|kfocus-power||kfocus-power|KFocus Power: Control CPU Power'
   'kfocus_vidsync|kfocus-vidsync||kfocus-vidsync|KFocus Vidsync: Sync video across all displays'
-  'kfocus_welcome|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://docs.google.com/presentation/d/e/2PACX-1vTsKGkzy_tFm2xZo-BYX7mqeLG43C2vy108qsWZ2L_c4XJGXEVh2fAt3sNvgiqXfw4OFPWynHS-32xx/pub?start=false&loop=false&delayms=3000||kfocus-main|KFocus Welcome Wizard: Consider first-run steps'
-  'kfocus_wizard|/usr/lib/kfocus/bin/kfocus-firstrun;-f||kfocus-main|KFocus Welcome Wizard: Consider first-run steps'
-  'kleopatra|kleopatra||kleopatra|Kleopatra: Unifiy Crypto GUI'
+  'kfocus_welcome|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://docs.google.com/presentation/d/e/2PACX-1vTsKGkzy_tFm2xZo-BYX7mqeLG43C2vy108qsWZ2L_c4XJGXEVh2fAt3sNvgiqXfw4OFPWynHS-32xx/pub?start=false&loop=false&delayms=3000||kfocus-main|KFocus Welcome Document'
+# app_str|cmd_str;with;args|sniff_str|pkg_str|descr_str
+  'kfocus_wizard|/usr/lib/kfocus/bin/kfocus-firstrun-bin;-f||kfocus-firstrun-bin|Welcome Wizard: Configure your apps'
+  'kleopatra|kleopatra||kleopatra|Kleopatra: Unified Crypto GUI'
   'konsole|konsole||konsole|Konsole: Use an X Terminal Emulator'
-  'krita|krita||krita|Krita: Rastor Image Editor'
+  'krita|krita||krita|Krita: Raster Image Editor'
   'kruler|kruler||kruler|Kruler: Measure Screen Objects'
   'kubectl|konsole;--hold;-e;kubectl;help|kubectl|kubectl|Kubernetes: Command Line Container Management'
   'libreoffice-base|libreoffice;--base||libreoffice-base|LibreOffice Database: Connect Databases'
@@ -85,8 +86,8 @@ _exeLookupList=(
   'nvidia-settings|nvidia-settings||nvidia-settings|Nvidia Settings: Configure Nvidia GPUs'
   'obs|obs||obs-studio|OBS Studio: Record and Stream Live Video'
   'okular|okular||okular|Okular: View PDFs and Other Documents'
-  'optipng|konsole;-e;man optipng|optipng|optipng|Optpng: Optimize PNG Images'
-  'pavucontrol|pavucontrol-qt||pavucontrol-qt|PulseAudio: Mananage Audio Volume'
+  'optipng|konsole;-e;man optipng|optipng|optipng|Optipng: Optimize PNG Images'
+  'pavucontrol|pavucontrol-qt||pavucontrol-qt|PulseAudio: Manage Audio Volume'
   'plasma-discover|plasma-discover||plasma-discover|Discover: Manage Software'
   'ppa-purge|konsole;-e;man ppa-purge|ppa-purge|ppa-purge|PPA Purge: Purge PPAs'
   'rar|konsole;-e;man rar|rar|rar|Rar: Create .rar Archive Files'
@@ -102,11 +103,12 @@ _exeLookupList=(
   'virtualbox|virtualbox||virtualbox|VirtualBox: Run Virtual Machines'
   'vlc|vlc||vlc|VLC: Play and Stream Video and Multimedia'
   'wallpapers|dolphin;/usr/share/wallpapers||dolphin|Wallpapers: View Wallpaper Images'
-  'webcamoid|webcamoid||webcamoid|Webcamoid: Test Your Web Cam'
+  'webcamoid|webcamoid||webcamoid|Webcamoid: Test Your Webcam'
   'winff|winff||winff-qt|WinFF: Convert Video using ffmpeg'
   'zoom|zoom||zoom|Zoom: Start and Join Video and Web Conferencing'
 
   # Packages with special handlers
+  'dropbox|!dropbox|dropbox|dropbox|Dropbox: Sync to Cloud Storage'
   'jetbrains-toolbox|!jetbrains-toolbox|jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs'
   'intellij|!intellij|jetbrains-toolbox|jetbrains-toolbox|IntelliJ: JetBrains Java IDE'
   'pycharm|!pycharm|jetbrains-toolbox|jetbrains-toolbox|PyCharm: JetBrains Python IDE'
@@ -227,7 +229,7 @@ function deb_lutris() {
   PRETTY_NAME="Lutris"
   WEBSITE="https://lutris.net/"
 }
-# NodeJS is preinstalled. This implementation does not quite work.
+# Node.js is preinstalled. This implementation does not quite work.
 # function deb_nodejs() {
 #   GPG_KEY_URL="https://deb.nodesource.com/gpgkey/nodesource.gpg.key"
 #   APT_REPO_URL="deb https://deb.nodesource.com/node_16.x jammy main"
@@ -461,12 +463,12 @@ _echoInstallPromptMsgFn () {
   _readPkgRepoInfoFn "${_pkg_name}";
 
   if _cm2ChkPkgFn "${_pkg_name}"; then
-    echo -e "\n|${_descr_str}| is available ";
+    echo -e "\n'${_descr_str}' is available ";
     echo -e "but it is not installed."
     echo -e "\nInstall and start now?\n";
     return 0;
   elif [ "${METHOD:-}" = 'snap' ]; then
-    echo -e "\n|${_descr_str}| is available ";
+    echo -e "\n'${_descr_str}' is available ";
     echo -e "only as a snap but is not installed.";
     echo -e "\nInstall and start now?\n";
     return 0;
@@ -474,7 +476,7 @@ _echoInstallPromptMsgFn () {
 
   # Read repo info for pkg_name, bail if info not found
   if [ -n "${ERROR_STR:-}" ]; then
-    echo -e "\n${_descr_str}\n has no install candidate.\n";
+    echo -e "\n$'{_descr_str}'\n has no install candidate.\n";
     echo -e "REASON: ${ERROR_STR:-}\n";
     return 1;
   fi
@@ -483,11 +485,11 @@ _echoInstallPromptMsgFn () {
     apt)  _report_str="  APT: ${APT_REPO_URL:-}";;
     ppa)  _report_str="  PPA: ${PPA:-}";;
     website) _report_str="  WEB: ${URL:-}";;
-    *) echo -e "ABORT: Method |${METHOD:-}| is not supported.\n";
+    *) echo -e "ABORT: Method '${METHOD:-}' is not supported.\n";
        return 1;;
   esac;
 
-  echo -e "\n${_descr_str} is available."
+  echo -e "\n'${_descr_str}' is available."
   echo -e "Shall we install this repo now?";
   echo -e "\n${_report_str}\n\n   ";
 
@@ -612,6 +614,16 @@ _runAppHandlerFn () {
         "${_exe_str}"; # ... and continue
       fi
       ;;
+
+    dropbox)
+      _prompt_msg+="|${_app_id}| Click on the Dropbox <br>";
+      _prompt_msg+='found in the system tray. <br>';
+      _exe_str="$(command -v 'dropbox')";
+      if [ -n "${_exe_str}" ]; then
+        "${_exe_str}" start -i; # ... and continue
+      fi
+      ;;
+
     *) true;;
   esac
 
@@ -757,7 +769,11 @@ _runAppFn () {
     exit 0;
   # Execute command and arguments if possible
   elif [ -x "${_app_exe}" ]; then
-    exec "${_app_exe}" "${_arg_list[@]}" &
+    if [ "${_doForceForeground}" = 'n' ]; then
+      exec "${_app_exe}" "${_arg_list[@]}" &
+    else
+      exec "${_app_exe}" "${_arg_list[@]}";
+    fi
     exit 0;
   fi
 
@@ -796,6 +812,12 @@ _mainFn () {
     shift;
     _arg_app_id="${1:-}";
 
+  # Same as above, but use a blocking execute mode
+  elif [ "${_arg0_str}" = '-kf' ]; then
+    shift;
+    _arg_app_id="${1:-}";
+    _doForceForeground='y';
+
   # Handle link file. Bail if not readable.
   else
     # Ensure link file is readable
@@ -818,12 +840,17 @@ _mainFn () {
 }
 ## END _mainFn }
 
-## BEGIN Set global vars {
+## BEGIN Declare and set global vars {
+declare _binName _binDir _baseDir _baseName \
+  _rootDir _exeAptDir _pkgNameList _doForceForeground;
+
+# Set this first.
 _rootDir='';
 
+_doForceForeground='n';
 _etcAptDir="${_rootDir}/etc/apt";
 _pkgNameList=();
-## . END Set global vars }
+## . END Declare and set global vars {
 
 ## BEGIN run main if script is not sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then

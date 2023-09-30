@@ -102,8 +102,8 @@ _disableNvidiaDevicesFn() {
     return 0;
   fi
 
-  # Disable devices from highest number to lowest.
-  # This disabled the GPU device last and avoids a system lock
+  # Disable devices from the highest number to lowest.
+  # This disabled the GPU device last and avoids a system lock.
   #
   if [ "${_nvidia_list_str}" != '' ]; then
     echo -n "${_nvidia_list_str}" | awk '{print $1}' |sort -rn \
@@ -123,7 +123,7 @@ _disableNvidiaDevicesFn() {
 ## BEGIN _mainFn {
 _mainFn() {
   declare _arg_str _uid_int _vm_wb_file _lspci_exe_str _prime_exe_str \
-    _gfx_mode_str _is_nvidia_system;
+    _gfx_mode_str;
 
   _arg_str="${1:-}" # Prevents unset errors
   if [ -z "${_arg_str}" ]; then
@@ -153,9 +153,7 @@ _mainFn() {
 
       _gfx_mode_str="$("$_prime_exe_str" query)";
       _nvidia_list_str="$("${_lspci_exe_str}" -m | grep -i 'nvidia')";
-      _is_nvidia_system="$(_cm2EchoModelStrFn 'is_nv_sys')";
-
-      if [ "${_is_nvidia_system}" = 'y' ]; then
+      if [ -n "${_nvidia_list_str}" ]; then
         _disableNvidiaDevicesFn "${_gfx_mode_str}" "${_nvidia_list_str}";
       fi
       ;;

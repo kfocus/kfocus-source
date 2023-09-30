@@ -1,0 +1,25 @@
+Source:              kfocus-firstrun-bin
+Section:             admin
+Priority:            optional
+Maintainer:          Kubuntu Focus Team <support@kfocus.org>
+Standards-Version:   4.6.0
+Build-Depends:       debhelper-compat (=13),
+                     qtdeclarative5-dev,
+                     qtbase5-dev,
+                     qtquickcontrols2-5-dev
+Rules-Requires-Root: no
+
+Package:      kfocus-firstrun-bin
+Architecture: amd64
+Depends:      ${misc:Depends},
+              ${shlibs:Depends},
+              kfocus-common,
+              kfocus-main,
+              breeze-icon-theme,
+              policykit-1,
+              qml-module-org-kde-kirigami2,
+              plasma-framework
+Description: Kubuntu Focus Welcome Wizard.
+ This tools guides the user on initial login.
+ Internally, it is known as the FirstRun Wizard.
+

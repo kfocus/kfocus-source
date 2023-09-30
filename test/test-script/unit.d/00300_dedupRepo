@@ -1,0 +1,108 @@
+#!/bin/bash
+#
+# _dedupRepoSrcFileFn deduplicates repo sources listed in /etc/apt.
+# It is used in package_repo/DEBIAN/postinst
+#
+# TODO 2020-09-05 mmikowski: Use unit testing shunit2 or BATS per
+# https://www.leadingagile.com/2018/10/unit-testing-shell-scriptspart-one/
+#
+
+## BEGIN _dedupRepoSrcFileFn {
+# Purpose: Remove redundant repo sources
+#   See https://stackoverflow.com/questions/40752
+#
+#   See https://tldp.org/LDP/abs/html/process-sub.html
+#   on how we use process substitution to avoid subshells
+# Example:
+# Requires:
+# Throws:
+#
+_dedupRepoSrcFileFn() {
+  declare _src_list_str _is_all_ok _match_file _search_str _src_line;
+  _src_list_str=$(_mkSrcListStrFn);
+  _is_all_ok='y';
+
+  _cm2SetMsgFn "Disable duplicate repo listings in ${_recomListFile}";
+  while read -r _src_line; do
+    # shellcheck disable=2001
+    _search_str="$(
+      sed 's/^deb.*http/http/g' <<< "${_src_line}"  \
+        | sed 's/^[[:space:]]*\(.*\)[[:space:]]*$/\1/' \
+        | sed -e 's/[]\/$*.^[]/\\&/g'
+    )";
+
+    while read -r _match_file; do
+      if (grep -q "^deb.* ${_search_str}" "${_match_file}"); then
+        _cm2EchoFn "'${_src_line}' found in '${_match_file}'"
+        if ( sed -i "s?^\\(deb.*${_search_str}.*\\)?# \1?g" \
+          "${_recomListFile}" ); then
+            _cm2SucStrFn "Disable '${_src_line}' in '${_recomListFile}'"
+          else
+            _cm2WarnStrFn "Could not disable '${_src_line}' in '${_recomListFile}'";
+            _is_all_ok='n'
+          fi
+      fi
+    done < <( echo -e "${_src_list_str}" );
+  done < <( grep --regexp='^\s*deb' "${_recomListFile}" );
+
+  if [ "${_is_all_ok}" ]; then
+    _cm2SucFn; return;
+  else
+    _cm2WarnStrFn "Some or all of the disables were unsuccessful";
+    _cm2WarnFn; return;
+  fi
+}
+## . END _dedupRepoSrcFileFn }
+
+## BEGIN _mkSrcListStrFn {
+# IMPORTED on 2022-02-23 from test/test-scripts/unit.d/00400_mkSrcListStr
+#
+_mkSrcListStrFn () {
+  declare _etc_apt_dir _nl _repo_src_str;
+
+  _etc_apt_dir="${_rootDir}/etc/apt";
+  _nl=$'\n';
+  _repo_src_str=$(
+    find "${_etc_apt_dir}/sources.list.d" -maxdepth 1 -type f -name '*.list' \
+    | sort | grep -v --regexp '^.* ' \
+    | grep -v 'kfocus-recommended.list'
+  );
+
+  if [ -n "${_repo_src_str}" ]; then
+    _repo_src_str="${_etc_apt_dir}/sources.list${_nl}${_repo_src_str}";
+  else
+    _repo_src_str="${_etc_apt_dir}/sources.list";
+  fi
+  echo -e "${_repo_src_str}";
+}
+## END _mkSrcListStrFn }
+
+## BEGIN _runTestFn {
+_runTestFn () {
+  declare _expect_dir _check_str _etc_apt_dir _return_int;
+
+  # Use function from test harness: clear out run dir,
+  #   copy init data dir, and check expect dir
+  if ! _t00CopyInitDirFn;    then return 1; fi
+  if ! _t00CheckExpectDirFn; then return 1; fi
+
+  # Set some vars for test routines
+  _rootDir="${_t00RunDir}"; # Kept for compatibility
+  _etc_apt_dir="${_t00RunDir}/etc/apt"
+  _recomListFile="${_etc_apt_dir}/sources.list.d/kfocus-recommended.list"
+  _return_int=0;
+
+  _dedupRepoSrcFileFn;
+
+  _expect_dir="${_t00ExpectDir}/apt";
+  _check_str="$(diff -r --brief "${_expect_dir}" "${_etc_apt_dir}")";
+
+  if [ -n "${_check_str}" ]; then
+    _cm2EchoFn ">> ${_check_str} <<"
+    _return_int=1;
+  fi
+
+  return "${_return_int}";
+}
+## . END _runTestFn }
+

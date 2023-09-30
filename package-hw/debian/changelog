@@ -1,3 +1,35 @@
+kfocus-hw (22.04.16) jammy; urgency=medium
+
+  * kfocus-hints: Add 3 images for m2g5p (#3493) 
+
+ -- Michael S. Mikowski <support@kfocus.org>  Sun, 09 Jul 2023 19:02:43 -0700
+
+kfocus-hw (22.04.15) jammy; urgency=medium
+
+  * postinst: Revise m2g5, ir14g1 scaling to use dpi method (#3521)
+  * postinst: Ensure tty fonts by replacing symlink with copy (#3524)
+  * m2g4,ir14..kcmfonts: Adjust default scaling to be more reliable (#3521)
+  * ..intramfs: Revert nx and ir14 initrd compression method to default (#3522)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Sun, 04 Jun 2023 16:49:36 -0700
+
+kfocus-hw (22.04.14) jammy; urgency=medium
+
+  * m2g5-etc_default_grub.d_kfocus.cfg: Update boot params (#3425)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Wed, 17 May 2023 18:33:35 -0700
+
+kfocus-hw (22.04.13) jammy; urgency=medium
+
+  * debian/postinst: Add m2g5 config (#3318)
+  * debian/postinst: Update touchpad config for m2g5 and ir14g1 (#3415)
+  * ir14g1-etc_default_grub.d_kfocus.cfg: reduce boot noise (#3417)
+  * ir14g1-usr_share_X11_xorg.conf.d_80-kfocus.conf (#3415)
+  * m2g5-etc_default_grub.d_kfocus.cfg (#3318,3417)
+  * m2g5-usr_share_X11_xorg.conf.d_80-kfocus.conf (#3318,#3415)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Sun, 30 Apr 2023 19:05:40 -0700
+
 kfocus-hw (22.04.12) jammy; urgency=medium
 
   * Add ir14g1 i915 grub params (#3400)

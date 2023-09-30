@@ -2,6 +2,7 @@
 #include <QQmlApplicationEngine>
 #include <QQuickStyle>
 #include <QIcon>
+#include "shellengine.h"
 
 int main(int argc, char *argv[])
 {

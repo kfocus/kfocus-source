@@ -1,0 +1,86 @@
+#!/bin/bash
+#
+# Purpose: Check desktop files
+# Used by: package-main
+#
+# set -u is set in _runUnitTests (the test harness)
+#
+## BEGIN _echoDesktopFileDirsFn {
+# Purpose : Echo directories that contain desktop files for testing
+#   Only package application directories are searched.
+#   3rd-party meta packages should never be included.
+#   Other examples previously excluded:
+#     '^\./package-main/etc/xdg/autostart'
+#     '^\./package-dolphin-plugin-jetbrains'
+#     '^\./package-plasma-runner-jetbrains'
+#     '^\./package-ubiquity-patched' \
+#     '^\./metadata.desktop'
+#
+_echoDesktopFileDirsFn () {
+  cd "${_t00TopDir}" || exit 1;
+  IFS=$'\n'; while read -r _line; do
+    echo "${_line%/*}";
+  done < <(
+    find ./ -type f -name '*.desktop' |grep '^\./package' \
+    | grep '/applications/' \
+  ) | sort -u
+}
+## . END _echoDesktopFileDirsFn }
+
+## BEGIN _runTestFn {
+# This MUST be called '_runTestFn' for use by the _runUnitTests
+_runTestFn () {
+  declare _check_exe _dir_list _expect_file _run_file _test_count \
+    _test_idx _pwd_dir _check_dir;
+
+  # Validate executable
+  _check_exe="$(command -v desktop-file-validate)";
+  if [ -z "${_check_exe}" ]; then
+    _cm2EchoFn 'FAIL: Could not run test - desktop-file-validate not found';
+    _cm2EchoFn '  Please ensure desktop-file-utils is installed.';
+    return 1;
+  fi
+
+  # Get list of dirs with desktop files
+  IFS=$'\n' read -r -d '' -a _dir_list <<< "$(_echoDesktopFileDirsFn)";
+
+  # Use function from _runUnitTests to prep run and expect dirs
+  if ! _t00ClearRunDirFn;    then return 1; fi
+  if ! _t00CheckExpectDirFn; then return 1; fi
+
+  _expect_file="${_t00ExpectDir}/output.txt";
+  _run_file="${_t00RunDir}/output.txt";
+
+  ## Begin Iterate through tests {
+  _test_count="${#_dir_list[@]}";
+  _test_idx=1;
+  _pwd_dir="$(pwd)";
+  echo 'Validate desktop files' > "${_run_file}";
+  for _test_line_str in "${_dir_list[@]}"; do
+    ( echo "BEGIN Test ${_test_idx} of ${_test_count}:";
+      echo "  Dir: ${_test_line_str}";
+      if [ -d "${_t00TopDir}/${_test_line_str}" ] \
+        && cd "${_t00TopDir}/${_test_line_str}"   \
+        && [ -n "$(ls ./*.desktop 2>/dev/null)" ]; then
+        "${_check_exe}" ./*.desktop;
+      fi
+    ) >> "${_run_file}";
+    (( _test_idx++ ));
+  done;
+  ## . End Iterate through tests }
+
+  ## Begin Check diffs {
+  if [ ! -f "${_expect_file}" ]; then touch "${_expect_file}"; fi
+  _check_str="$(diff -r --brief "${_expect_file}" "${_run_file}" )";
+  if [ -z "${_check_str}" ]; then
+    _cm2EchoFn ". OK   Output matches expected\n\n";
+    return 0;
+  else
+    _cm2EchoFn 'Please compare expected to run file';
+    meld "${_expect_file}" "${_run_file}";
+    _cm2EchoFn ". FAIL Output does NOT match expected\n\n";
+    return 1;
+  fi
+  ## . End Check diffs }
+}
+## . END _runTestFn }
