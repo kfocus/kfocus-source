@@ -1,0 +1,205 @@
+#!/bin/bash
+#
+# _chkRepoSrcFn enables, disables, and lists repo sources in /etc/apt.
+# It is used in package_repo/DEBIAN/postinst:_chkRepoSrcFn
+#
+# TODO 2020-09-05 mmikowski: Use unit testing shunit2 or BATS per
+# https://www.leadingagile.com/2018/10/unit-testing-shell-scriptspart-one/
+#
+
+## BEGIN _chkRepoSrcFn {
+# Purpose: List source files, or enable/disable repo
+# Examples:
+#  - Disable repo: _chkRepoSrcFn \
+#    "http://kernel.tuxedocomputers.com/ubuntu focal main" 'disable' \
+#    || _cm2WarnStrFn 'Cannot disable';
+#   - Enable repo: _chkRepoSrcFn \
+#     'http://developer.odm.com/ubuntu1804/x86_64/ /' 'enable' \
+#    || _cm2WarnStrFn 'Cannot enable';
+#
+_chkRepoSrcFn () {
+  declare _repo_src_str _act_str _prefix _src_list_str \
+    _search_str _replace_str _tgt_list_str _is_first _return_int;
+  _repo_src_str="${1:-XXX__not__XXX}";
+  _act_str="${2:-list}";
+  _prefix="${3:-^#*\s*deb }";
+
+  # See https://stackoverflow.com/questions/40752
+  _search_str=$( sed -e 's/[]\/$*.^[]/\\&/g' <<< "${_repo_src_str}" );
+  _replace_str=$( sed -e 's/[\/&]/\\&/g' <<< "${_repo_src_str}" )
+
+  _src_list_str=$(_mkSrcListStrFn);
+
+  _tgt_list_str="$(
+    # shellcheck disable=SC2086
+    grep -l --regexp="${_prefix}${_search_str}" ${_src_list_str}
+  )";
+
+  if [ -z "${_tgt_list_str}" ]; then
+    if [ "${_act_str}" = 'enable' ]; then
+      echo "deb ${_repo_src_str}" >> "${_recomListFile}";
+      _cm2SucStrFn "Appended ${_repo_src_str} to ${_recomListFile}";
+    fi
+    return 0;
+  fi
+
+  _return_int=1;
+  case "${_act_str}" in
+    list)
+      echo "${_tgt_list_str}";
+      _return_int=0;
+    ;;
+    disable)
+      _is_first='y';
+      for _file in ${_tgt_list_str}; do
+        if [ "${_is_first}" = 'y' ]; then
+          if (
+           sed -i "s/^deb ${_search_str}/# deb ${_replace_str}/g" "${_file}"
+          ); then
+            _cm2SucStrFn "Disable ${_repo_src_str} in ${_file}";
+            _is_first='n';
+            _return_int=0;
+          else
+            _cm2WarnStrFn "Could not disable ${_repo_src_str} in ${_file}";
+          fi
+        else
+          if ( sed -i "/^#*\s*deb ${_search_str}/d" "${_file}" ); then
+            _cm2SucStrFn "Remove extra '${_repo_src_str}' in '${_file}'";
+          else
+            _cm2WarnStrFn "Could not remove extra '${_repo_src_str}' in '${_file}'";
+          fi
+        fi
+      done
+    ;;
+    enable)
+      _is_first='y';
+      for _file in ${_tgt_list_str}; do
+        if [ "${_is_first}" = 'y' ]; then
+          if (grep -q "^deb ${_search_str}" "${_file}"); then
+            _cm2SucStrFn "Already enabled '${_repo_src_str}' in '${_file}'";
+            _is_first='n';
+            _return_int=0;
+          else
+            if (
+              sed -i "s/^# deb ${_search_str}/deb ${_replace_str}/g" "${_file}"
+            ); then
+              _cm2SucStrFn "Enable '${_repo_src_str}' in '${_file}'";
+              _is_first='n';
+              _return_int=0;
+            else
+              _cm2WarnStrFn "Could not Enable '${_repo_src_str}' in '${_file}'";
+            fi
+          fi
+        else
+          if ( sed -i "/^#*\s*deb ${_search_str}/d" "${_file}" ); then
+            _cm2SucStrFn "Remove extra '${_repo_src_str}' in '${_file}'";
+          else
+            _cm2WarnStrFn "Could not remove extra '${_repo_src_str}' in '${_file}'";
+          fi
+        fi
+      done
+    ;;
+  esac
+  return ${_return_int};
+}
+## . END _chkRepoSrcFn }
+
+## BEGIN _mkSrcListStrFn {
+# IMPORTED on 2022-02-23 from test/test-scripts/unit.d/00400_mkSrcListStr
+#
+_mkSrcListStrFn () {
+  declare _etc_apt_dir _nl _repo_src_str;
+
+  _etc_apt_dir="${_rootDir}/etc/apt";
+  _nl=$'\n';
+  _repo_src_str=$(
+    find "${_etc_apt_dir}/sources.list.d" -maxdepth 1 -type f -name '*.list' \
+    | sort | grep -v --regexp '^.* ' \
+    | grep -v 'kfocus-recommended.list'
+  );
+
+  if [ -n "${_repo_src_str}" ]; then
+    _repo_src_str="${_etc_apt_dir}/sources.list${_nl}${_repo_src_str}";
+  else
+    _repo_src_str="${_etc_apt_dir}/sources.list";
+  fi
+  echo -e "${_repo_src_str}";
+}
+## END _mkSrcListStrFn }
+
+## BEGIN _runTestsFn {
+_runTestFn () {
+  declare _test_str _pass_count _pass_idx _check_str _return_int;
+
+  # Use function from test harness: clear out run dir,
+  #   copy init data dir, and check expect dir
+  if ! _t00ClearRunDirFn;    then return; fi
+  if ! _t00CopyInitDirFn;    then return; fi
+  if ! _t00CheckExpectDirFn; then return; fi
+
+  # Set some vars for test routines
+  _rootDir="${_t00RunDir}"; # Kept for compatibility
+  _recomListFile="${_t00RunDir}/etc/apt/sources.list.d/kfocus-recommended.list";
+  _return_int=0;
+
+  # List repo:
+  _test_str="$(_chkRepoSrcFn \
+  'http://us.archive.ubuntu.com/ubuntu/ focal-backports main restricted universe
+  multiverse' 'list' || _warnStr 'Could not list')";
+  _pass_count=6;
+  _pass_idx=0;
+
+  if ( echo "${_test_str}" |grep -q 'chkRepoSrc/etc/apt/sources.list' ); then
+    ((_pass_idx++));
+    _cm2SucStrFn "repo found in ${_test_str}";
+  else
+    _cm2WarnStrFn "repo not found in ${_test_str}";
+  fi
+
+  # Disable repo:
+  if ( _chkRepoSrcFn \
+   "http://kernel.tuxedocomputers.com/ubuntu focal main" \
+     'disable'
+  ); then ((_pass_idx++)); _cm2SucStrFn 'disabled';
+  else _cm2WarnStrFn 'could not disable'; fi
+
+  if ( _chkRepoSrcFn \
+    "file:///var/nv-tensorrt-repo-cuda10.1-trt6.0.1.5-ga-20190913 /" \
+      'disable'
+  ); then ((_pass_idx++)); _cm2SucStrFn 'disabled';
+  else _cm2WarnStrFn 'could not disable'; fi
+
+  # Enable repo:
+  if ( _chkRepoSrcFn \
+    '[arch=i386,amd64] http://linux.dropbox.com/ubuntu/ disco main' \
+    'enable'
+  ); then ((_pass_idx++)); _cm2SucStrFn 'enabled';
+  else _cm2WarnStrFn 'could not enable'; fi
+
+  # Enable repo:
+  if ( _chkRepoSrcFn \
+    '[arch=i386,amd64] http://foo.bar focal main' 'enable'
+  ); then ((_pass_idx++)); _cm2SucStrFn 'enabled';
+  else _cm2WarnStrFn 'could not enable'; fi
+
+  # Compare outputs
+  _check_str="$( diff -r --brief "${_t00ExpectDir}" "${_t00RunDir}" )";
+
+  if [ -n "${_check_str}" ]; then
+    _cm2WarnStrFn ">>${_check_str}<<";
+    _cm2WarnStrFn "Error: Results do not match expected";
+  else
+    ((_pass_idx++));
+    _cm2SucStrFn "All files appear as expected";
+  fi
+
+  if [ "${_pass_idx}" -eq "${_pass_count}" ]; then
+    _cm2EchoFn "PASS: All ${_pass_count} tests OK";
+  else
+    _cm2EchoFn "FAIL: ${_pass_idx} out of ${_pass_count} tests OK";
+    _return_int=1;
+  fi
+
+  return "${_return_int}";
+}
+## . END _runTestFn }

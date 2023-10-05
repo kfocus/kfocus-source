@@ -1,10 +1,11 @@
 #!/bin/bash
 #
-# Copyright 2021-2022 Ólafur Waage, Michael Mikowski
+# Copyright 2013-2023 Ólafur Waage, Michael Mikowski
 #
 # Name   : qwe.source
 # Purpose: Command line bookmarks with autocomplete
 # License: GPL v2
+# Version: 1.0-0
 #
 # Original concept and code
 #   https://github.com/olafurw/olafurw-home/blob/master/tools/qwe.sh
@@ -13,6 +14,8 @@
 #
 # Please add a line to .bashrc to provide this function:
 #   source /path/to/qwe.source
+# To make available to all users
+#   sudo ln -s /path/to/qwe.source /etc/bash_completion.d/qwe
 #
 
 ## BEGIN UTILITIES {

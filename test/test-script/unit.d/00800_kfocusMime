@@ -1,0 +1,108 @@
+#!/bin/bash
+#
+## BEGIN _auditMimeHandlerFn {
+#  Purpose: Check kfocus-mime handler using audit flag
+#  Used by: package-main
+#
+# set -u is set in test harness
+#
+_auditMimeHandlerFn () {
+  declare _output_file;
+
+  _output_file="${_t00RunDir}/kfocus-mime-audit.txt";
+  # Empty accumulator files
+  true > "${_output_file}";
+
+  "${_mimeExe}" -a > "${_output_file}";
+}
+## . END _auditMimeHandlerFn }
+
+# app_str|cmd_str;with;args|sniff_str|pkg_str|descr_str|repo_file;repo_url
+# 1       2                 3         4       5         6
+# 'kubectl|!|kubectl|kubectl|Kubernetes: Command Line Container Management'
+#
+# When sniff_str is empty (||), it is set to cmd_str without args
+# Important! The cmd_str cannot match the sniff_str for handlers
+#   (see kubectl as an example)
+#
+# Verified Repos File Names
+# azure-cli: azure-cli.list [x] 2022-05-04
+#   https://packages.microsoft.com/repos/azure-cli/
+#   per https://docs.microsoft.com/en-us/cli/azure/\
+#   install-azure-cli-linux?pivots=apt
+# aws-cli: 2022-05-06 in default repos
+# skype: 2022-05-04 skype-stable.list
+#   [arch=amd64] https://repo.skype.com/deb stable main'
+#   as INSTALLED by downloadable deb.
+# docker: docker.list       [x] 2022-05-04
+#   [arch=amd64] https://download.docker.com/linux/ubuntu jammy stable
+#   Per https://docs.docker.com/engine/install/ubuntu, install test
+# dropbox: dropbox.list     [x] 2022-05-04
+#   [arch=i386,amd64] http://linux.dropbox.com/ubuntu disco main'
+#   Per https://www.dropbox.com/install-linux, install test
+# backintime: ppa installed by default, verified 2022-05-06
+#
+# kubernetes: kubernetes.list 2022-05-06
+#   deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] \
+#   https://apt.kubernetes.io/ kubernetes-xenial main
+#   Per https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/
+
+## BEGIN _auditInstallFn {
+#  Purpose: Extra check for user
+#  Used by: package-main
+#  apt-rollback audacity aws-cli azure-cli backintime blender code
+#  cpupower-gui darktable docker dolphin dropbox elisa ffmpeg filezilla
+#  firefox gcloud ghb gimp google-chrome google-hangouts gvim gwenview
+#  inkscape insync jekyll jetbrains-toolbox kate kde-connect kdenlive kdiff3
+#  keepassxc kfocus_apps kfocus_conda kfocus_extra kfocus_focusrx
+#  kfocus_guided kfocus_help kfocus_kb_color kfocus_kclean kfocus_pick_gcc
+#  kfocus_power kfocus_vidsync kfocus_welcome kfocus_wizard kleopatra konsole
+#  krita kruler kubectl libreoffice-base libreoffice-calc libreoffice-draw
+#  libreoffice-impress libreoffice-writer lutris meld minecraft-launcher
+#  msteams nvidia-settings nvidia-cuda nvidia-ml obs okular optipng
+#  pavucontrol plasma-discover ppa-purge rar simplescreenrecorder skype slack
+#  spectacle steam systemsettings5 telegram-desktop thunderbird virtualbox vlc
+#  wallpapers webcamoid winff zoom;
+#
+_auditInstallFn () {
+  declare _key_str _key_list _key;
+  _key_str="$("${_mimeExe}" -l)";
+  IFS=$'\n' read -r -d '\n' -a _key_list <<< "${_key_str}";
+
+  for _key in "${_key_list[@]}"; do
+    read -r -p "Press return to test ${_key}";
+    "${_mimeExe}" -k "${_key}";
+    _cm2EchoFn "\nPress return to proceed...\n";
+  done
+}
+
+## BEGIN _runTestFn {
+_runTestFn () {
+  declare _check_str _return_int;
+
+  _return_int=0;
+  _mimeExe="${_t00TopDir}/package-main/usr/lib/kfocus/";
+  _mimeExe+='bin/kfocus-mime';
+
+  # Use function from test harness: clear out run dir and check expect dir
+  if ! _t00ClearRunDirFn;    then return 1; fi
+  if ! _t00CheckExpectDirFn; then return 1; fi
+
+  read -r -p 'Run EXTRA install check? (y/N) ' _reply;
+  if [[ "${_reply,0,1}" =~ [Yy] ]]; then
+    _auditInstallFn;
+  fi
+
+  _auditMimeHandlerFn;
+  _check_str="$(diff -r --brief "${_t00ExpectDir}" "${_t00RunDir}" )";
+
+  if [ -n "${_check_str}" ]; then
+    _cm2EchoFn "fail: ${_check_str}";
+    meld "${_t00ExpectDir}" "${_t00RunDir}";
+    _return_int=1;
+  else
+    _cm2EchoFn 'ok  : Results match expected';
+  fi
+  return "${_return_int}";
+}
+## . END _runTestFn }

@@ -133,10 +133,12 @@ _handle_ir14g1Fn () {
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
     # Select trackpad driver
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|/usr/lib/kfocus/conf/ir14g1-usr_share_X11_xorg.conf.d_80-kfocus.conf'
-    '/usr/share/kfocus/kf5-settings/kcmfonts|'
+    # Default DPI Scaling, See 3521
+    '/usr/share/kfocus/kf5-settings/kcmfonts|/usr/lib/kfocus/conf/ir14g1-usr_share_kfocus_kf5-settings_kcmfonts'
     '/etc/tlp.d/kfocus.conf|'
   );
-  _setScaleFactorFn '1.25';
+  # See 3521
+  _setScaleFactorFn '';
 }
 # hw_config_code 'm2g4' handles models m2g4
 # shellcheck disable=SC2317
@@ -161,12 +163,13 @@ _handle_m2g4Fn () {
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
     # Trackpad config
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|/usr/lib/kfocus/conf/m2g4-usr_share_X11_xorg.conf.d_80-kfocus.conf'
-    # Default DPI Scaling
-    '/usr/share/kfocus/kf5-settings/kcmfonts|'
+    # Default DPI Scaling, See 3521
+    '/usr/share/kfocus/kf5-settings/kcmfonts|/usr/lib/kfocus/conf/m2g4-usr_share_kfocus_kf5-settings_kcmfonts'
     # Remove old TLP config
     '/etc/tlp.d/kfocus.conf|'
   );
-  _setScaleFactorFn '1.5';
+  # See 3521
+  _setScaleFactorFn '';
 }
 # hw_config_code 'm2g5' handles models m2g5
 # shellcheck disable=SC2317
@@ -191,12 +194,13 @@ _handle_m2g5Fn () {
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
     # Select Trackpad config and driver
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|/usr/lib/kfocus/conf/m2g5-usr_share_X11_xorg.conf.d_80-kfocus.conf'
-    # Default DPI Scaling
-    '/usr/share/kfocus/kf5-settings/kcmfonts|'
+    # Default DPI Scaling, See 3521
+    '/usr/share/kfocus/kf5-settings/kcmfonts|/usr/lib/kfocus/conf/m2g4-usr_share_kfocus_kf5-settings_kcmfonts'
     # Remove old TLP config
     '/etc/tlp.d/kfocus.conf|'
   );
-  _setScaleFactorFn '1.5';
+  # See 3521
+  _setScaleFactorFn '';
 }
 # hw_config_code 'nxg1' handles models nxg1 and nxg2
 # shellcheck disable=SC2317
@@ -268,7 +272,7 @@ _cleanupGrubFileFn () {
 }
 
 _setupSymlinkTableFn () {
-  declare _msg _do_rm_link _link_list;
+  declare _line _msg _do_rm_link _link_list _cmd_list;
   _cmXSetMsgFn 'Set up symlinks';
 
   if [ "${#_symlinkTable[@]}" = '0' ]; then
@@ -282,11 +286,17 @@ _setupSymlinkTableFn () {
     _msg='';
     _do_rm_link='y';
 
-    # Backup regular file if directed
-    if [ -f "${_link_list[0]}" ] && [ ! -h "${_link_list[0]}" ]; then
-      if [ -n "${_link_list[2]:-}" ]; then
-        mv "${_link_list[0]}" "${_link_list[0]}.kfocus.$(date +%Y%m%d)" || true;
-        _do_rm_link='n';
+    # Backup target if (a) directed, and ...
+    if [ "${_link_list[2]:-}" = 'y' ]; then
+      # ... (b) the target is a file and the source exists, and ...
+      if [ -f "${_link_list[0]}" ] && [ ! -h "${_link_list[0]}" ] \
+        && [ -f "${_link_list[1]}" ]; then
+        # ... and the first 512 lines differ
+        if [ "$(head -n512 "${_link_list[0]}")" \
+          != "$(head -n512 "${_link_list[1]}")" ]; then
+          mv "${_link_list[0]}" "${_link_list[0]}.kfocus.$(date +%Y%m%d)" || true;
+          _do_rm_link='n';
+        fi
       fi
     fi
 
@@ -300,19 +310,32 @@ _setupSymlinkTableFn () {
       fi
     fi
 
-    # Do not symlink if empty
+    # Do not symlink or copy if source empty
     if [ -z "${_link_list[1]}" ]; then continue; fi
 
-    if [ -e "${_link_list[1]}" ]; then
-      _msg="symlink target ${_link_list[0]}"
-      if ln -s "${_link_list[1]}" "${_link_list[0]}"; then
-        _cmXSucStrFn "Created ${_msg}";
-      else
-        _cmXWarnStrFn "Could not create ${_msg}";
-      fi
-    else
+    # Do not symlink or copy and warn if source not found
+    if [ ! -f "${_link_list[1]}" ]; then
       _cmXWarnStrFn "Symlink source ${_link_list[1]} not found";
+      continue;
     fi
+
+
+    # Decide to copy or symlink
+    _cmd_list=('ln' '-s');
+    _msg='symlink';
+    if [ "${_link_list[0]}" = '/etc/default/console-setup' ]; then
+      _msg='copy'
+      _cmd_list=('cp');
+    fi
+    _msg+=" target ${_link_list[0]}";
+
+    # Execute command and report
+    if "${_cmd_list[@]}" "${_link_list[1]}" "${_link_list[0]}"; then
+      _cmXSucStrFn "Created ${_msg}";
+    else
+      _cmXWarnStrFn "Could not create ${_msg}";
+    fi
+
   done
 
   _cmXSucFn;

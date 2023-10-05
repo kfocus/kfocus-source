@@ -1,3 +1,23 @@
+kfocus-apt-source (22.04.7) jammy; urgency=medium
+
+  * Update cloud.google.gpg sdk key (#3662)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Thu, 24 Aug 2023 22:13:35 -0700
+
+kfocus-apt-source (22.04.6) jammy; urgency=medium
+
+  * sources.list.d/nvidia-cuda.list Update repo to 22.04 (#3600)
+  * sources.list.d/nvidia-ml.list Disable old 18.04 repo (#3600)
+  * Improve docs for both (#3600)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Sun, 09 Jul 2023 18:58:31 -0700
+
+kfocus-apt-source (22.04.5) jammy; urgency=medium
+
+  * postinst: Correctly remove unused repo (#3493)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Sun, 04 Jun 2023 16:46:55 -0700
+
 kfocus-apt-source (22.04.4) jammy; urgency=medium
 
   * Remove tuxedocomputers repo
@@ -6,7 +26,7 @@ kfocus-apt-source (22.04.4) jammy; urgency=medium
 
 kfocus-apt-source (22.04.3) jammy; urgency=medium
 
-  * Update cloud-sdk key (#3149)
+  * Update cloud.google.gpg sdk key (#3149)
   * Add mechanism to easily update key, repos using date mtime check
 
  -- Michael S. Mikowski <support@kfocus.org>  Mon, 23 Jan 2023 21:00:49 -0800

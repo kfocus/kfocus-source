@@ -1,3 +1,67 @@
+kfocus-main (22.04.52) jammy; urgency=medium
+
+  * Replace kdialog firstrun wizard with QT-native (#3613)
+    - debian/control: Add depends to kfocus-firstrun-bin
+    - debian/kfocus-main.install: Remove kfocus-firstrun 
+    - bin/kfocus-focusrx: Execute on launch for 5.27 too
+    - applications/kfocus-firstrun.desktop
+    - bin/kfocus-mime
+  * Expand crypt passwords change support (#3613)
+    - bin/kfocus-check-crypt
+  * Improved mime support (#3613)
+    - bin/kfocus-mime: Add capability to launch in foreground
+    - bin/kfocus-mime: Minor app description changes
+
+ -- Michael S. Mikowski <support@kfocus.org>  Wed, 30 Aug 2023 23:32:59 -0700
+
+kfocus-main (22.04.51) jammy; urgency=medium
+
+  * kfocus-focusrx: declare count variable (#3493)
+  * kfocus-focusrx-set: fix minor kfocus-nvidia install check error (#3493)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Mon, 21 Aug 2023 19:52:20 -0700
+
+kfocus-main (22.04.50) jammy; urgency=medium
+
+  * Add logic to relink hint widget images per-model (#3632)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Thu, 10 Aug 2023 14:34:31 -0700
+
+kfocus-main (22.04.49) jammy; urgency=medium
+
+  * Add dolphin-plugins, kio-extras for broadest thumbnail support (#3607)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Fri, 04 Aug 2023 20:56:49 -0700
+
+kfocus-main (22.04.48) jammy; urgency=medium
+
+  * kfocus-focusrx: Update nvidia package check to 22.04.9 (#3600)
+  * common.2.source: Identify m2g5p (#3493)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Sun, 09 Jul 2023 19:16:32 -0700
+
+kfocus-main (22.04.47) jammy; urgency=medium
+
+  * focusrx: Check and prompt for nv package upgrade (#3516)
+  * pstate-set: Support user-shutdown of nv devices on other systems (#3516)
+  * reset-effects: Use DPI scaling method (#3521)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Sun, 04 Jun 2023 16:51:29 -0700
+
+kfocus-main (22.04.45) jammy; urgency=medium
+
+  * Remove kfocus-dm service (#3425)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Wed, 17 May 2023 18:34:22 -0700
+
+kfocus-main (22.04.44) jammy; urgency=medium
+
+  * kfocus-focusrx-set: Keep default pkgs; use configs instead (#3441)
+  * kfocus-focusrx-set: Refine kfocus-tool selection (#3424)
+  * common.2.source: Add m2g5 config (#3818)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Sun, 30 Apr 2023 19:06:30 -0700
+
 kfocus-main (22.04.43) jammy; urgency=medium
 
   * kfocus-pstate: add qdbus call for power profile (#3404)

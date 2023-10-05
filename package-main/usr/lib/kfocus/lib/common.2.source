@@ -197,6 +197,7 @@ _cm2CalcModelCodeFn () {
   shopt -s nocasematch;
   case "${_dmi_name}" in
     LCS14-12i*)       _code='ir14g1';;
+    X370SN*)          _code='m2g5p';;
     PD5x_7xSNC_*)     _code='m2g5';;
     PD5x_7xPNP_*)     _code='m2g4';;
     PC5x_7xHP_HR_HS*) _code='m2g3';;
@@ -511,6 +512,7 @@ _cm2ModelHeadList=();
 _cm2ModelTable=(
   'code|config_code|label|is_nv_sys|has_kb_led'
   'ir14g1|ir14g1|Ir14 GEN 1|n|n'
+  'm2g5p|m2g5|M2 GEN 5|y|y'
   'm2g5|m2g5|M2 GEN 5|y|y'
   'm2g4|m2g4|M2 GEN 4|y|y'
   'm2g3|default|M2 GEN 3|y|y'

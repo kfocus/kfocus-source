@@ -11,11 +11,493 @@
 #
 set -u;
 
-if [ "$#" -lt 2 ]; then exit 1; fi
-_tuxKeyDir='/sys/devices/platform/tuxedo_keyboard'
-if ! [ -d "${_tuxKeyDir}" ]; then exit 1; fi
-echo "options tuxedo-keyboard mode=0 brightness=$1 color_left=0x$2 color_center=0x$2 color_right=0x$2" > /etc/modprobe.d/tuxedo_keyboard.conf
-echo "$1"   | tee ${_tuxKeyDir}/brightness   > /dev/null
-echo "0x$2" | tee ${_tuxKeyDir}/color_left   > /dev/null
-echo "0x$2" | tee ${_tuxKeyDir}/color_center > /dev/null
-echo "0x$2" | tee ${_tuxKeyDir}/color_right  > /dev/null
+## == BEGIN private functions ========================================= {
+## BEGIN _importCommonFn {
+# Summary   : _importCommonFn
+# Purpose   : Load common routines, prefer relative dir
+# Example   : _importCommonFn;
+# Arguments : none
+# Globals   : Package vars _baseDir _baseName
+# Outputs   : none
+# Returns   : none
+#
+_importCommonFn () {
+  declare _lib_list _is_loaded _lib_file;
+  _lib_list=(
+    "${_baseDir}/lib/common.2.source"
+    '/usr/lib/kfocus/lib/common.2.source'
+  );
+  _is_loaded='n';
+  for _lib_file in "${_lib_list[@]}"; do
+    if [ -r "${_lib_file}" ]; then
+      # shellcheck source=/usr/lib/kfocus/lib/common.2.source
+      if source "${_lib_file}"; then
+        _is_loaded='y';
+        break;
+      fi
+    fi
+  done
+
+  if [ "${_is_loaded}" = 'n' ]; then
+    echo 1>&2 "${_baseName}: ABORT - Cannot source common lib";
+    exit 202;
+  fi
+}
+## . END _importCommonFn }
+
+## BEGIN _configStrToByte {
+# Purpose: Convert value from range 0-10 to 0-255.
+#
+_convertStrToByte () {
+  declare _bright_byte;
+  _bright_byte="$(( ${1:-0} * 25 ))";
+  if [ "${_bright_byte}" = 250 ]; then _bright_byte=255; fi
+  echo "${_bright_byte}";
+}
+## . END _configStrToByte }
+
+## BEGIN _convertByteToStr {
+# Purpose: Convert value from range 0-255 to 0-10.
+#
+_convertByteToStr () {
+  echo "$(( ${1:-0} / 25 ))";
+}
+## . END _convertByteToStr {
+
+## BEGIN _iteCalcKbdStateFn {
+# Purpose: Calculate keyboard state and save to _configStateList.
+#
+_iteCalcKbdStateFn () {
+  declare _bright_str _rgb_file _rgb_str _hex_str _enable_int;
+
+  if [ -f "${_iteBrightFile}" ]; then
+    _bright_str="$(head -n1 "${_iteBrightFile}")";
+  else
+    _bright_str='5'; # default
+  fi
+
+  _rgb_file="${_iteRgbDir}/rgb:kbd_backlight/multi_intensity";
+
+  if [ -f "${_rgb_file}" ]; then
+    _rgb_str="$(head -n1 "${_rgb_file}")";
+    _hex_str="$(_convertRgbToHexFn "${_rgb_str}")";
+  else
+    _hex_str='001820'; # default
+  fi
+
+  # If keyboard is actually on, then the user pressed keys.
+  #   In this case, change enable_int to 1.
+  #
+  [ "${_bright_str}" = '0' ] && _enable_int=0 || _enable_int=1;
+  _configStateList=( "${_bright_str}" "${_hex_str}" "${_enable_int}" );
+}
+## . END _iteCalcKbdStateFn }
+
+## BEGIN _iteReadFileListFn {
+# Purpose: Read keyboard state file into _configStateList.
+#
+_iteReadInStateFile () {
+  declare _str;
+  # Create defaults if no state file.
+  if [ ! -f "${_iteStateFile}" ]; then
+    _iteCalcKbdStateFn;
+    _iteWriteStateFileFn;
+  fi
+
+  # Read and process state file contents.
+  _str="$(head -n1 "${_iteStateFile}")";
+  IFS=';' read -r -a _configStateList <<< "${_str}"
+}
+## . END _iteReadFileListFn }
+
+## BEGIN _iteRestoreKbdFn {
+# Purpose: Restores color and brightness from _configStateList.
+#   IMPORTANT: This does NOT change the enable flag.
+#
+_iteRestoreKbdFn () {
+  declare _rgb_str _line_dir;
+  _rgb_str="$(_convertHexToRgbFn "${_configStateList[1]}")";
+
+  while read -r _line_dir; do
+    if [ -f "${_line_dir}/multi_intensity" ]; then
+      echo "${_rgb_str}" > "${_line_dir}/multi_intensity";
+    fi
+  done < <(find "${_iteRgbDir}" -maxdepth 1 -mindepth 1 -type l \
+    | grep 'rgb:kbd_backlight'
+  );
+
+  if [ -f "${_iteBrightFile}" ]; then
+    echo "${_configStateList[0]}" > "${_iteBrightFile}";
+  fi
+}
+## . END _iteRestoreKbdFn }
+
+## BEGIN _iteWriteStateFileFn {
+# Purpose: Write state to _configStateList.
+#
+_iteWriteStateFileFn () {
+  declare _bright_str _hex_str _enable_int;
+  _bright_str="${_configStateList[0]}";
+  _hex_str="${_configStateList[1]}";
+  _enable_int="${_configStateList[2]}";
+  echo -n "${_bright_str};${_hex_str};${_enable_int:-1}" > "${_iteStateFile}";
+}
+## . END _iteWriteStateFileFn }
+
+## BEGIN _stdCalcKbdStateFn {
+# Purpose: Calculate keyboard state and save to _configStateList.
+#
+_stdCalcKbdStateFn () {
+  declare _bright_byte _bright_str _hex_str _enable_int;
+  _bright_byte="$(head -n1 "${_stdKeyDir}/brightness")";
+  _bright_str="$(_convertByteToStr "${_bright_byte}")";
+  _hex_str="$(head -n1 "${_stdKeyDir}/color_center")";
+  _enable_int=$(head -n1 "${_stdEnableFile}" );
+  _configStateList=( "${_bright_str}" "${_hex_str}" "${_enable_int}" );
+}
+## . END _stdCalcKbdStateFn }
+
+## BEGIN _stdRestoreKbdFn {
+# Purpose: Write color and brightness values to standard registers.
+#
+_stdRestoreKbdFn () {
+  declare _bright_str _hex_str _zone_line _bright_byte;
+  _bright_str="${_configStateList[0]}";
+  _hex_str="${_configStateList[1]}";
+
+  for _zone_line in 'color_left' 'color_center' 'color_right'; do
+    echo "0x${_hex_str}" > "${_stdKeyDir}/${_zone_line}" || true;
+  done;
+
+  _bright_byte="$(_convertStrToByte "${_bright_str}")";
+  echo "${_bright_byte}" > "${_stdKeyDir}/brightness" || true;
+}
+## . END _stdRestoreKbdFn }
+
+## BEGIN _stdReadInStateFile {
+# Purpose: Read standard (modprobe) state file and populate _configStateList.
+#
+_stdReadInStateFile () {
+  declare _line _bright_byte _hex_str _enable_int _bright_str;
+
+  # Get config line from modprobe
+  if [ -f "${_stdModprobeFile}" ]; then
+    _line="$(grep -Ei '^\s*options\s+tuxedo-keyboard' "${_stdModprobeFile}")";
+  fi
+
+  # Carry forward enabled flag if already set
+  _enable_int=1;
+  if [ "${#_configStateList}" = 3 ]; then
+    _enable_int="${_configStateList[2]:-1}";
+  fi
+
+  # Force defaults if no state line
+  if [ -z "${_line:-}" ]; then _line='___'; fi
+
+  # Extract values from line
+  # shellcheck disable=SC2001
+  _bright_byte="$(sed 's/^.*\sbrightness=\([^ ]\+\).*$/\1/' <<< "${_line}")";
+  # shellcheck disable=SC2001
+  _hex_str="$(sed 's/^.*\scolor_center=0x\([^ ]\+\).*$/\1/' <<< "${_line}")";
+
+  # Set defaults if values not found
+  if [ "${_line}" = "${_bright_byte}" ]; then _bright_byte=125; fi
+  if [ "${_line}" = "${_hex_str}"     ]; then _hex_str='001820'; fi
+  if ! [[ "${_enable_int}" =~ ^[01]$ ]]; then _enable_int=1; fi
+
+  # Convert and save
+  _bright_str="$(_convertByteToStr "${_bright_byte}")";
+  _configStateList=( "${_bright_str}" "${_hex_str}" "${_enable_int}" );
+}
+## . END _stdReadInStateFile }
+
+## BEGIN _stdWriteStateFileFn {
+# Purpose: Write standard (modprobe) state file from _configStateList.
+#
+_stdWriteStateFileFn () {
+  declare _bright_str _bright_byte _hex_str _state_str;
+  _bright_str="${_configStateList[0]}";
+  _bright_byte="$(_convertStrToByte "${_bright_str}")";
+  _hex_str="${_configStateList[1]}";
+
+  if ! [ -d "${_stdKeyDir}" ]; then return 1; fi
+
+  _state_str="options tuxedo-keyboard mode=0 ";
+  _state_str+="brightness=${_bright_byte} color_left=0x${_hex_str} ";
+  _state_str+="color_center=0x${_hex_str} ";
+  _state_str+="color_right=0x${_hex_str}";
+
+  echo "${_state_str}" > "${_stdModprobeFile}";
+}
+## . END _stdWriteStateFileFn }
+
+## BEGIN _setKbdFromConfigFn {
+# Purpose: Dispatches to set keyboard from _configStateList.
+#   This must be called after the config file is read-in.
+#
+_setKbdFromConfigFn () {
+  if [ "${#_configStateList[@]}" -lt 2 ]; then
+    _cm2WarnStrFn 'No valid config state available';
+    return 202;
+  fi
+
+  if [ "${_modelCode}" = 'm2g5p' ]; then
+    _iteRestoreKbdFn;
+    # Std restores from modprobe file and is not needed here.
+  fi
+}
+## . END _setKbdFromConfigFn }
+## == . END private functions ========================================= }
+
+## == BEGIN functions run by mainFn =================================== {
+## BEGIN _convertHexToRgbFn {
+# Purpose: Converts hex value to RGB triple.
+#
+_convertHexToRgbFn () {
+  declare _input_str _str _hex_list _rgb_list;
+  _input_str="${1:-}";
+  mapfile -n3 -t _hex_list< <(fold -w 2 <<<"${_input_str}");
+
+  if [ "${#_hex_list[@]}" != 3 ]; then
+    _cm2WarnStrFn 'Bad input';
+    return 201;
+  fi
+
+  _rgb_list=();
+  for _str in "${_hex_list[@]}"; do
+    _rgb_list+=( $(( "16#${_str}")) );
+  done
+  echo "${_rgb_list[*]}";
+}
+## . END _convertHexToRgbFn }
+
+## BEGIN _convertRgbToHexFn {
+# Purpose: Convert RGB triple to hex.
+#
+_convertRgbToHexFn () {
+  declare _input_str _rgb_list _line_str _hex_str;
+  _input_str="${1:-}";
+  IFS=' ' read -r -a _rgb_list <<<"${_input_str}";
+
+  if [ "${#_rgb_list[@]}" != 3 ]; then
+    _cm2WarnStrFn 'Bad input';
+    return 201;
+  fi
+
+  _hex_str='';
+  for _line_str in "${_rgb_list[@]}"; do
+    _hex_str+="$(printf '%02x' "${_line_str}")";
+  done
+
+  echo "${_hex_str}";
+}
+## . END _convertRgbToHexFn }
+
+## BEGIN _enableKbdFn {
+# Purpose: Enable keyboard. Do not change color-bright.
+#
+_enableKbdFn () {
+  declare _set_str _do_ignore_other _bright_str _enable_int _save_str;
+
+  _set_str="${1:-}";
+  _do_ignore_other="${2:-n}";
+
+  if ! [[ "${_set_str}" =~ ^[01]$ ]]; then
+    _cm2WarnStrFn 'Invalid set string';
+    return 201;
+  fi
+
+  # Handle m2g5p ite logic.
+  if [ "${_modelCode}" = 'm2g5p' ]; then
+    _iteReadInStateFile;
+    _enable_int="${_configStateList[2]}";
+    if [ "${_set_str}" = '0' ]; then
+      _save_str="${_configStateList[0]}";
+      _bright_str=0;
+    else
+      _bright_str="${_configStateList[0]}";
+      _save_str="${_bright_str}"
+    fi
+    if [ -n "${_bright_str:-}" ]; then
+      if echo "${_bright_str}" > "${_iteBrightFile}"; then
+        # Do not save state if directed.
+        if [ -z "${_do_ignore_other}" ]; then
+          _iteCalcKbdStateFn;
+          _configStateList[0]="${_save_str}";
+          _configStateList[2]="${_set_str}";
+          _iteWriteStateFileFn;
+        fi
+      fi
+    fi
+
+  # Handle m1, m2gX logic.
+  else
+    _stdCalcKbdStateFn;
+    if echo "${_set_str}" > "${_stdEnableFile}"; then
+      # Do not save state if directed.
+      if [ -z "${_do_ignore_other}" ]; then
+        _configStateList[2]=0;
+        _stdWriteStateFileFn;
+      fi
+    fi
+  fi
+}
+## . END _enableKbdFn }
+
+## BEGIN _listActiveStateFn {
+# Purpose: Print current keyboard state to STDOUT.
+#
+_listActiveStateFn () {
+  if [ "${_modelCode}" = 'm2g5p' ]; then
+    _iteCalcKbdStateFn;
+  else
+    _stdCalcKbdStateFn;
+  fi
+  ( IFS=';'; echo "${_configStateList[*]}"; )
+}
+## . END _listActiveStateFn }
+
+## BEGIN _readInStateFileFn {
+# Purpose: Read state file into _configStateList.
+#
+_readInStateFileFn () {
+  declare _arg_str;
+  _arg_str="${1:-}";
+
+  if [ "${_modelCode}" = 'm2g5p' ]; then
+    _iteReadInStateFile;
+  else
+    _stdReadInStateFile;
+  fi
+
+  # Handle apply directive.
+  if [ "${_arg_str}" = 'apply' ]; then
+    _setKbdFromConfigFn;
+  else
+    ( IFS=';'; echo "${_configStateList[*]}"; )
+  fi
+}
+## . END _readInStateFileFn }
+
+## BEGIN _setKbdValsFn {
+# Purpose: Set keyboard brightness and color from input string.
+#
+_setKbdValsFn () {
+  declare _set_str _bit_list _bright_str _hex_str;
+
+  _set_str="$1";
+  IFS=';' read -r -a _bit_list<<<"${_set_str}";
+
+  _bright_str="${_bit_list[0]}";
+  _hex_str="${_bit_list[1]}";
+  if (( _bright_str < 0 || _bright_str > 10 )); then
+    _cm2WarnStrFn "Brightness arg out of bounds |${_bright_str}|";
+    return 1;
+  fi
+  if ! [[ "${_bright_str}" =~ ^[0-9]+$ ]]; then
+    _cm2WarnStrFn "Brightness arg is not a number |${_bright_str}|";
+    return 1;
+  fi
+
+  if ! [[ "${_hex_str}" =~ ^[0-9a-fA-F]{6}$ ]]; then
+    _cm2WarnStrFn 'Color arg is not a hex';
+    return 1;
+  fi
+
+  # Restore keyboard from _configStateList values and then
+  #   store to the appropriate state file.
+  #   The last value is_enable; 1 = true, 0 = false.
+  #   The restore routines should always re-enable.
+  #
+  _configStateList=( "${_bright_str}" "${_hex_str}" '1' );
+  if [ "${_modelCode}" = 'm2g5p' ]; then
+    if _iteRestoreKbdFn; then _iteWriteStateFileFn; fi
+  else
+    if _stdRestoreKbdFn; then _stdWriteStateFileFn; fi
+  fi
+}
+## . END _setKbdValsFn }
+
+## BEGIN _toggleEnableFn {
+# Purpose: Toggle enable based on existing value.
+#
+_toggleEnableFn () {
+  if [ "${_modelCode}" = 'm2g5p' ]; then
+    _iteCalcKbdStateFn; else _stdCalcKbdStateFn;
+  fi
+
+  if [ "${_configStateList[2]:-}" = 1 ]; then
+    _enableKbdFn 0; else _enableKbdFn 1;
+  fi
+}
+## . END _toggleEnableFn }
+## == . END functions run by mainFn =================================== }
+
+## BEGIN _mainFn {
+# Summary   : _mainFn <options>
+# Purpose   : Dispatch per option to set keyboard brightness and color.
+# Examples  : See below.
+# Arguments : Some options take values.
+#   Hex colors have the form '<rrggbb>'.
+#   Rgb color have the form '<0-255> <0-255> <0-255>'.
+#   -c '<hex>' : Convert hex color to rgb (debug).
+#   -C  : Convert rgb color to hex (debug).
+#   -e 0|1  : Enable keyboard OFF or ON.
+#   -E 0|1  : Enable keyboard OFF or ON, ignore other state.
+#   -a  : print active state from keyboard <int:0-10>;<hex>;<0-1>.
+#   -p  : Read and print state from file <int:0-10>;<hex>;<0-1>.
+#   -r  : Read, print, apply state from file.
+#   -s '<0-10>;<hex>' : Set brightness and color; enable is set to 1.
+#   -t  : Toggle keyboard OFF/ON.
+# Globals   : OPTIND is reset to local for arg processing.
+# Outputs   : Prints diagnostics to stderr.
+# Returns   : 0 on success; no-zero on failure.
+#
+_mainFn () {
+  declare _opt_str;
+  local OPTIND=1;
+  while getopts 'c:C:e:E:lprs:t' _opt_str; do
+    case "${_opt_str}" in
+      c) _convertHexToRgbFn "${OPTARG}"; shift;;
+      C) _convertRgbToHexFn "${OPTARG}"; shift;;
+      e) _enableKbdFn "${OPTARG}"; shift;;
+      E) _enableKbdFn "${OPTARG}" 'do-ignore-other'; shift;;
+      l) _listActiveStateFn;;
+      p) _readInStateFileFn;;
+      r) _readInStateFileFn 'apply';;
+      s) _setKbdValsFn "${OPTARG}"; shift;;
+      t) _toggleEnableFn;;
+      *) _cm2EchoFn "Option ${_opt_str} not supported";;
+    esac
+  done
+}
+## . END _mainFn }
+
+## BEGIN Declare and assign global vars {
+declare _binName _binDir _baseDir _baseName \
+  _configStateList _iteBrightFile _iteStateFile _modelCode   \
+  _stdEnableFile _stdKeyDir _stdModprobeFile;
+
+_configStateList=();
+_iteBrightFile='/sys/class/leds/rgb:kbd_backlight/brightness';
+_iteRgbDir='/sys/class/leds';
+_iteStateFile='/var/lib/kfocus/kbd_color_state';
+_stdEnableFile='/sys/devices/platform/tuxedo_keyboard/state';
+_stdKeyDir='/sys/devices/platform/tuxedo_keyboard';
+_stdModprobeFile='/etc/modprobe.d/tuxedo_keyboard.conf';
+## . END Declare and assign global vars }
+
+## BEGIN Run main if script is not sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+
+  # Import libs and assign more global vars
+  _importCommonFn;
+  _modelCode="$(_cm2EchoModelStrFn 'code')";
+
+  _mainFn "$@";
+fi
+## . END Run main if script is not sourced }

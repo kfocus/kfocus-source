@@ -1,0 +1,62 @@
+#!/bin/bash
+#
+## BEGIN _updatePciidsFn {
+#  Purpose  : Loads pci device details
+#  Example  : _updatePciidsFn
+#  Requires : common.2.source
+#  Returns  : none
+#  Throws   : none
+#  Notes    :
+#    This function always updates the database.
+#    We delete /usr/share/misc/pci.ids.old because it is not properly
+#    cleaned up per https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=950812
+#
+_updatePciidsFn () {
+  declare _share_file _exe_lspci_str _exe_update_str;
+  _share_file="${_rootDir}/usr/share/misc/pci.ids";
+  _exe_lspci_str=$( command -v lspci );
+  _exe_update_str=$( command -v update-pciids );
+
+  _cm2SetMsgFn 'Update pciids';
+
+  # Circumvent bug listed above
+  if ! "${_cm2RmExe}" -f "${_share_file}.old"; then
+    _cm2WarnStrFn "Could not remove ${_share_file}.old";
+  fi
+
+  if [ ! -x "${_exe_lspci_str}" ]; then
+    _cm2ErrStrFn "${_exe_lspci_str} not found";
+    _cm2ErrFn;
+  fi
+
+  if [ ! -x "${_exe_update_str}" ]; then
+    _cm2ErrStrFn "${_exe_update_str} is not executable";
+    _cm2ErrFn;
+  fi
+
+  if "${_exe_update_str}"; then
+    _cm2SucStrFn 'Updated pciids';
+    _cm2SucFn;
+  else
+    _cm2ErrFn;
+  fi
+}
+## . END _updatePciidsFn }
+
+## BEGIN _runTestFn {
+declare _rootDir;
+_rootDir='';
+
+_runTestFn () {
+  declare _fn_str;
+  
+  # See this hack to execute lib + function as root
+  # https://stackoverflow.com/questions/7427262
+  IFS='' read -rd '' _fn_str <"${_t00BinDir}/common.2.source";
+  _fn_str+="$(declare -f _updatePciidsFn)";
+  
+  sudo bash -c "${_fn_str}
+  _updatePciidsFn";
+  return;
+}
+## . END _runTestFn }

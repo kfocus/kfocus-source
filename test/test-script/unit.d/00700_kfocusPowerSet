@@ -202,7 +202,9 @@ _runTestFn () {
   # shellcheck disable=SC1090,SC2154
   _power_exe="${_t00TopDir}/package-tools/usr/lib/kfocus/";
   _power_exe+='bin/kfocus-power-set';
-  _current_mode_str="$("${_power_exe}" -r)";
+
+  ## Important: First call needs sudo to set mode
+  _current_mode_str="$(sudo "${_power_exe}" -r)";
   _total_fail_count=0
 
   ##

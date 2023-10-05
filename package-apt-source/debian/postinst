@@ -23,27 +23,28 @@ _cm2WarnStrFn () { _cm2EchoFn "warn: ${*}"; }
 
 ## BEGIN _installReposFn {
 _installReposFn () {
-  declare _repo_dir _pref_dir _kfocus_dir _pin_str \
+  declare _repo_dir _pref_dir _kfocus_dir \
     _ppa_table _line _bit_list _bit_file _bit_min_date _bit_ppa_str \
     _bit_ppa_name _fq_bit_file _file_mtime _file_mdate _src_dir _top_msg;
 
   _repo_dir='/etc/apt/sources.list.d';
   _pref_dir='/etc/apt/preferences.d';
   _kfocus_dir='/usr/lib/kfocus';
-#  _pin_str=$(cat << EOF3
-##x WARNING! THIS IS A MACHINE GENERATED FILE.
-##x DO NOT EDIT AS CHANGES WILL BE OVERWRITTEN BY FUTURE UPDATES.
-##x LAST UPDATE 2022-05-10 FOR JAMMY
-#
-#Package: tuxedo-keyboard
-#Pin: origin "deb.tuxedocomputers.com"
-#Pin-Priority: 500
-#
-#Package: *
-#Pin: origin "deb.tuxedocomputers.com"
-#Pin-Priority: -1
-#EOF3
-#  );
+
+  #  _pin_str=$(cat << EOF3
+  ##x WARNING! THIS IS A MACHINE GENERATED FILE.
+  ##x DO NOT EDIT AS CHANGES WILL BE OVERWRITTEN BY FUTURE UPDATES.
+  ##x LAST UPDATE 2022-05-10 FOR JAMMY
+  #
+  #Package: tuxedo-keyboard
+  #Pin: origin "deb.tuxedocomputers.com"
+  #Pin-Priority: 500
+  #
+  #Package: *
+  #Pin: origin "deb.tuxedocomputers.com"
+  #Pin-Priority: -1
+  #EOF3
+  #  );
 
   ##
   if [ -e "${_repo_dir}/kfocus-recommended.list" ]; then
@@ -54,10 +55,10 @@ _installReposFn () {
   fi
 
   ##
-#  _cm2SetMsgFn 'Create or overwrite package pinning';
-#  if echo "${_pin_str}" > "${_pref_dir}"/kfocus-package-pinning; then
-#    _cm2SucFn; else _cm2WarnFn;
-#  fi
+  #  _cm2SetMsgFn 'Create or overwrite package pinning';
+  #  if echo "${_pin_str}" > "${_pref_dir}"/kfocus-package-pinning; then
+  #    _cm2SucFn; else _cm2WarnFn;
+  #  fi
 
   ##
   _cm2SetMsgFn 'Create or overwrite repo list files';
@@ -176,12 +177,12 @@ _addTrustedKeysFn () {
 
 ## BEGIN _addGcloudSdkKeyFn {
 _addGcloudSdkKeyFn () {
-  declare _key_dir _key_table _bit_list _bit_file _bit_min_date \
+  declare _key_dir _key_table _line _bit_list _bit_file _bit_min_date \
     _bit_key_url _bit_key_name _fq_key_file _file_mtime _file_mdate;
 
   _key_dir='/usr/share/keyrings';
   _key_table=(
-    'cloud.google.gpg|2023-01-05|https://packages.cloud.google.com/apt/doc/apt-key.gpg|Google Cloud SDK'
+    'cloud.google.gpg|2023-08-24|https://packages.cloud.google.com/apt/doc/apt-key.gpg|Google Cloud SDK'
   );
   for _line in "${_key_table[@]}"; do
     IFS='|' read -r -a _bit_list <<< "${_line}";
@@ -208,7 +209,7 @@ _addGcloudSdkKeyFn () {
         _cm2SetMsgFn "Update ${_bit_key_name} key file.";
         _cm2EchoFn "${_bit_min_date} > ${_file_mdate}";
       fi
-      if wget -O- "${_bit_key_url}" > "${_fq_key_file}"; then
+      if wget -O- "${_bit_key_url}" | gpg --dearmor > "${_fq_key_file}"; then
         _cm2SucFn; else _cm2WarnFn;
       fi;
     fi
@@ -217,21 +218,18 @@ _addGcloudSdkKeyFn () {
 ## . END _addGcloudSdkKeyFn }
 
 ## BEGIN _rmObsoleteReposFn {
-
 _rmObsoleteReposFn () {
   if [ -e /etc/apt/sources.list.d/tuxedocomputers.list ]; then
-    _cm2RmExe /etc/apt/sources.list.d/tuxedocomputers.list
+    "${_cm2RmExe}" /etc/apt/sources.list.d/tuxedocomputers.list
   fi
   if [ -e /etc/apt/preferences.d/kfocus-package-pinning ]; then
-    _cm2RmExe /etc/apt/preferences.d/kfocus-package-pinning
+    "${_cm2RmExe}" /etc/apt/preferences.d/kfocus-package-pinning
   fi
 }
-
 ## . END _rmObsoleteReposFn }
 
 ## BEGIN MAIN {
 #  See https://stackoverflow.com/questions/2683279
-#
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   case "${_cm2Arg01}" in
     abort-upgrade|abort-remove|abort-configure|abort*)
