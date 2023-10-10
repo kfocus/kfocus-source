@@ -419,7 +419,8 @@ Kirigami.ApplicationWindow {
         running: true
         repeat: false
         onTriggered: {
-            root.activeBrightness = pmSource.data["PowerDevil"]["Screen Brightness"] / 100 / 500;
+            root.maximumBrightness = pmSource.data["PowerDevil"]["Maximum Screen Brightness"];
+            root.activeBrightness = pmSource.data["PowerDevil"]["Screen Brightness"] / 100 / (root.maximumBrightness / 100);
         }
     }
 
@@ -454,6 +455,7 @@ Kirigami.ApplicationWindow {
     }
 
     property real activeBrightness: 0
+    property real maximumBrightness: 0
     property bool doChangeBrightness: false
     function changeBrightness(in_brightness) { // don't let the brightness value get so low as to cause screen blackout
         var brightness = 0
@@ -466,7 +468,7 @@ Kirigami.ApplicationWindow {
         }
         const service = pmSource.serviceForSource("PowerDevil");
         const op = service.operationDescription("setBrightness");
-        op.brightness = brightness * 100 * 500
+        op.brightness = brightness * 100 * (root.maximumBrightness / 100)
         const job = service.startOperationCall(op);
         root.activeBrightness = brightness
         job.finished.connect(job => {
