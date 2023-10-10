@@ -65,6 +65,50 @@ Kirigami.ApplicationWindow {
             }
 
             Kirigami.Heading {
+                visible: plasmaBrightnessSlider.visible
+                text: 'Brightness'
+                level: 1
+            }
+
+            Controls.Slider {
+                id: plasmaBrightnessSlider
+                visible: activeBrightness !== 0
+                value: activeBrightness
+                onValueChanged: {
+                    if (root.doChangeBrightness) {
+                        changeBrightness(value);
+                    } else {
+                        root.doChangeBrightness = true;
+                    }
+                }
+
+                Layout.fillWidth: true
+                snapMode: Controls.Slider.NoSnap
+            }
+
+            RowLayout {
+                visible: plasmaBrightnessSlider.visible
+                spacing: 0
+                Layout.fillWidth: true
+
+                Controls.Label {
+                    text: '🔅'
+                    Layout.leftMargin: 3 * scaleRatio
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                }
+
+                Controls.Label {
+                    text: '🔆'
+                    Layout.rightMargin: 3 * scaleRatio
+                }
+
+                Layout.bottomMargin: PlasmaCore.Units.largeSpacing
+            }
+
+            Kirigami.Heading {
                 // text: plasmaProfilesSlider.visible ?
                 //   "Fine Tuning" : "Power Profile"
                 id: powerHeading
@@ -354,6 +398,7 @@ Kirigami.ApplicationWindow {
             }
         }
     }
+
     // Managing Plasma Profiles
     PlasmaCore.DataSource {
         id: pmSource
@@ -367,6 +412,17 @@ Kirigami.ApplicationWindow {
             disconnectSource(source);
         }
     }
+
+    // Populates the activeBrightness field after a short delay to avoid reading "undefined"
+    Timer {
+        interval: 100
+        running: true
+        repeat: false
+        onTriggered: {
+            root.activeBrightness = pmSource.data["PowerDevil"]["Screen Brightness"] / 100 / 500;
+        }
+    }
+
     // The actuallyActiveProfile is the current profile that is set in
     // power settings; the activeProfile is usually the same value,
     // however since changes take a bit to apply, whenever we change
@@ -397,6 +453,29 @@ Kirigami.ApplicationWindow {
         })
     }
 
+    property real activeBrightness: 0
+    property bool doChangeBrightness: false
+    function changeBrightness(in_brightness) { // don't let the brightness value get so low as to cause screen blackout
+        var brightness = 0
+        if (in_brightness <= 0.01) {
+            brightness = 0.01;
+        } else if (in_brightness >= 1) {
+            brightness = 1.0;
+        } else {
+            brightness = in_brightness
+        }
+        const service = pmSource.serviceForSource("PowerDevil");
+        const op = service.operationDescription("setBrightness");
+        op.brightness = brightness * 100 * 500
+        const job = service.startOperationCall(op);
+        root.activeBrightness = brightness
+        job.finished.connect(job => {
+            if (!job.result) {
+                console.log('Something went wrong, could not change screen brightness');
+            }
+        })
+    }
+
     function calcScaleRatioFn () {
       const densityNum  = Screen.pixelDensity;
       const baseNum     = 3.78; // 96 DPI
@@ -421,7 +500,7 @@ Kirigami.ApplicationWindow {
     readonly property real scaleRatio: scaleMap.scaleRatio
 
     readonly property int baseWidth: 460
-    readonly property int baseHeight: 575
+    readonly property int baseHeight: 750
     property bool doSkipNextFreqPoll: false
 }
 
