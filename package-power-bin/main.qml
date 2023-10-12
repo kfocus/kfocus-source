@@ -72,16 +72,11 @@ Kirigami.ApplicationWindow {
 
             Controls.Slider {
                 id: plasmaBrightnessSlider
-                visible: activeBrightness !== 0
+                visible: isBrightnessAvailable
                 value: activeBrightness
                 onValueChanged: {
-                    if (root.doChangeBrightness) {
-                        changeBrightness(value);
-                    } else {
-                        root.doChangeBrightness = true;
-                    }
+                    changeBrightness(value);
                 }
-
                 Layout.fillWidth: true
                 snapMode: Controls.Slider.NoSnap
             }
@@ -411,16 +406,8 @@ Kirigami.ApplicationWindow {
         onSourceRemoved: {
             disconnectSource(source);
         }
-    }
-
-    // Populates the activeBrightness field after a short delay to avoid reading "undefined"
-    Timer {
-        interval: 100
-        running: true
-        repeat: false
-        onTriggered: {
-            root.maximumBrightness = pmSource.data["PowerDevil"]["Maximum Screen Brightness"];
-            root.activeBrightness = pmSource.data["PowerDevil"]["Screen Brightness"] / 100 / (root.maximumBrightness / 100);
+        onDataChanged: {
+            updateBrightness(this.data["PowerDevil"]["Screen Brightness"]);
         }
     }
 
@@ -454,28 +441,50 @@ Kirigami.ApplicationWindow {
         })
     }
 
+    Timer {
+        interval: 25
+        running: true
+        repeat: false
+        onTriggered: {
+            root.doChangeBrightness = true;
+            root.maximumBrightness = pmSource.data["PowerDevil"]["Maximum Screen Brightness"];
+            root.activeBrightness = pmSource.data["PowerDevil"]["Screen Brightness"] / 100 / (root.maximumBrightness / 100);
+            root.isBrightnessAvailable = pmSource.data["PowerDevil"] && pmSource.data["PowerDevil"]["Screen Brightness Available"] ? true : false
+        }
+    }
+
     property real activeBrightness: 0
     property real maximumBrightness: 0
+    property bool isBrightnessAvailable: false
     property bool doChangeBrightness: false
     function changeBrightness(in_brightness) { // don't let the brightness value get so low as to cause screen blackout
-        var brightness = 0
+        if (!root.doChangeBrightness) {
+            return;
+        }
+        var brightness = 0;
         if (in_brightness <= 0.01) {
             brightness = 0.01;
-        } else if (in_brightness >= 1) {
-            brightness = 1.0;
         } else {
-            brightness = in_brightness
+            brightness = in_brightness;
         }
         const service = pmSource.serviceForSource("PowerDevil");
         const op = service.operationDescription("setBrightness");
+        op.silent = true;
         op.brightness = brightness * 100 * (root.maximumBrightness / 100)
         const job = service.startOperationCall(op);
-        root.activeBrightness = brightness
         job.finished.connect(job => {
             if (!job.result) {
                 console.log('Something went wrong, could not change screen brightness');
             }
         })
+    }
+
+    function updateBrightness(brightnessVal) {
+        root.doChangeBrightness = false;
+        if (typeof brightnessVal === 'number') {
+            root.activeBrightness = brightnessVal / 100 / (root.maximumBrightness / 100);
+        }
+        root.doChangeBrightness = true;
     }
 
     function calcScaleRatioFn () {
