@@ -75,13 +75,7 @@ Kirigami.ApplicationWindow {
                 visible: isBrightnessAvailable
                 value: activeBrightness
                 onValueChanged: {
-                    if ( ! root.externalBrightnessChanged ) {
-                        root.internalBrightnessChanged = true;
-                        externalBrightnessChangedTimer.restart();
-                        changeBrightness(value);
-                    } else {
-                        root.externalBrightnessChanged = false;
-                    }
+                    changeBrightnessFn( value, 'internal' );
                 }
                 Layout.fillWidth: true
                 snapMode: Controls.Slider.NoSnap
@@ -425,16 +419,12 @@ Kirigami.ApplicationWindow {
             disconnectSource(source);
         }
         onDataChanged: {
-            if ( ! root.internalBrightnessChanged ) {
-                root.externalBrightnessChanged = true;
-                updateBrightness(
-                    readStructFn( this, [
-                      'data', 'PowerDevil', 'Screen Brightness' ], 1
-                    )
-                );
-            } else {
-                externalBrightnessChangedTimer.restart();
-            }
+            changeBrightnessFn(
+                readStructFn( this, [
+                  'data', 'PowerDevil', 'Screen Brightness' ], 1
+                ) / 100 / (root.maximumBrightness / 100),
+                'external'
+            );
         }
     }
 
@@ -500,17 +490,46 @@ Kirigami.ApplicationWindow {
     }
 
     Timer {
-        id: externalBrightnessChangedTimer
-        interval: 500
+        id: brightnessModeExpireTimer
+        interval: 250
         running: false
         repeat: false
         onTriggered: {
-            root.internalBrightnessChanged = false;
+            console.log('expireDone');
+            root.brightnessInputMode = 'expired';
         }
     }
 
-    function changeBrightness( arg_bright_num ) {
-        let solve_bright_num = 0;
+    function changeBrightnessFn( arg_bright_num, arg_source_str ) {
+        console.log (arg_source_str);
+        if ( root.brightnessInputMode === 'internal' ) {
+            if ( arg_source_str === 'external' ) {
+                console.log('internal change blocked');
+                brightnessModeExpireTimer.restart();
+                return;
+            }
+        } else if (root.brightnessInputMode === 'external' ) {
+            if ( arg_source_str === 'internal' ) {
+                console.log('external change blocked');
+                brightnessModeExpireTimer.restart();
+                return;
+            }
+        }
+
+        if ( arg_source_str === 'external' ) {
+            root.activeBrightness = arg_bright_num;
+            root.brightnessInputMode = 'external';
+        } else {
+            changeBrightnessInternalFn( arg_bright_num );
+            root.brightnessInputMode = 'internal';
+        }
+        brightnessModeExpireTimer.restart();
+    }
+
+    function changeBrightnessInternalFn( arg_bright_num ) {
+        let
+          solve_bright_num = 0,
+          calc_bright_num = 0;
         if ( ! root.isBrightnessAvailable ) { return; }
 
         // Do not let the brightness value get so low as to cause screen blackout
@@ -522,24 +541,14 @@ Kirigami.ApplicationWindow {
 
         operate_obj.silent = true;
         operate_obj.brightness = solve_bright_num * 100
-            * (root.maximumBrightness / 100);
+          * (root.maximumBrightness / 100);
+        root.activeBrightness = arg_bright_num;
         const job_obj = service_obj.startOperationCall(operate_obj);
         job_obj.finished.connect( arg_obj => {
             if ( ! arg_obj.result ) {
                 console.log('Could not change screen brightness');
             }
         })
-    }
-
-    function updateBrightness( arg_bright_num ) {
-        if ( ! root.isBrightnessAvailable ) {
-            return;
-        }
-
-        if (typeof arg_bright_num === 'number') {
-            root.activeBrightness = arg_bright_num / 100
-                / (root.maximumBrightness / 100);
-        }
     }
 
     // BEGIN Utilities
@@ -581,8 +590,7 @@ Kirigami.ApplicationWindow {
     property real activeBrightness: 0
     property real maximumBrightness: 0
     property bool isBrightnessAvailable: false
-    property bool internalBrightnessChanged: false
-    property bool externalBrightnessChanged: false
+    property string brightnessInputMode: 'expired'
 
     readonly property var profiles: ['power-saver', 'balanced', 'performance']
     readonly property var binDir: Qt.application.arguments[1] || '/usr/lib/kfocus/bin'
