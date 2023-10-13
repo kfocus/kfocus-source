@@ -454,10 +454,10 @@ Kirigami.ApplicationWindow {
         if ( profile === root.activeProfile ) { return; }
         const 
           service_obj = pmSource.serviceForSource('PowerDevil'),
-          operate_obj = service.operationDescription('setPowerProfile');
+          operate_obj = service_obj.operationDescription('setPowerProfile');
 
         operate_obj.profile = profile;
-        const job = service.startOperationCall(operate_obj);
+        const job = service_obj.startOperationCall(operate_obj);
         root.activeProfile = profile
         job.finished.connect(job => {
             if ( ! job.result ) {
@@ -495,22 +495,18 @@ Kirigami.ApplicationWindow {
         running: false
         repeat: false
         onTriggered: {
-            console.log('expireDone');
             root.brightnessInputMode = 'expired';
         }
     }
 
     function changeBrightnessFn( arg_bright_num, arg_source_str ) {
-        console.log (arg_source_str);
         if ( root.brightnessInputMode === 'internal' ) {
             if ( arg_source_str === 'external' ) {
-                console.log('internal change blocked');
                 brightnessModeExpireTimer.restart();
                 return;
             }
         } else if (root.brightnessInputMode === 'external' ) {
             if ( arg_source_str === 'internal' ) {
-                console.log('external change blocked');
                 brightnessModeExpireTimer.restart();
                 return;
             }
