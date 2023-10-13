@@ -75,7 +75,13 @@ Kirigami.ApplicationWindow {
                 visible: isBrightnessAvailable
                 value: activeBrightness
                 onValueChanged: {
-                    changeBrightness(value);
+                    if ( ! root.externalBrightnessChanged ) {
+                        root.internalBrightnessChanged = true;
+                        externalBrightnessChangedTimer.restart();
+                        changeBrightness(value);
+                    } else {
+                        root.externalBrightnessChanged = false;
+                    }
                 }
                 Layout.fillWidth: true
                 snapMode: Controls.Slider.NoSnap
@@ -419,11 +425,16 @@ Kirigami.ApplicationWindow {
             disconnectSource(source);
         }
         onDataChanged: {
-            updateBrightness(
-                readStructFn( this, [
-                  'data', 'PowerDevil', 'Screen Brightness' ], 1
-                )
-            );
+            if ( ! root.internalBrightnessChanged ) {
+                root.externalBrightnessChanged = true;
+                updateBrightness(
+                    readStructFn( this, [
+                      'data', 'PowerDevil', 'Screen Brightness' ], 1
+                    )
+                );
+            } else {
+                externalBrightnessChangedTimer.restart();
+            }
         }
     }
 
@@ -480,7 +491,6 @@ Kirigami.ApplicationWindow {
                     'data', 'PowerDevil', 'Screen Brightness' ], 1);
                 root.activeBrightness = root.activeBrightness / 100
                     / (root.maximumBrightness / 100);
-                root.isBrightnessChangeAllowed = true;
                 root.height += (175 * scaleRatio);
             }
             else {
@@ -489,11 +499,19 @@ Kirigami.ApplicationWindow {
         }
     }
 
+    Timer {
+        id: externalBrightnessChangedTimer
+        interval: 500
+        running: false
+        repeat: false
+        onTriggered: {
+            root.internalBrightnessChanged = false;
+        }
+    }
+
     function changeBrightness( arg_bright_num ) {
         let solve_bright_num = 0;
-        if ( ! root.isBrightnessAvailable
-          || ! root.isBrightnessChangeAllowed
-        ) { return; }
+        if ( ! root.isBrightnessAvailable ) { return; }
 
         // Do not let the brightness value get so low as to cause screen blackout
         solve_bright_num = arg_bright_num <= 0.01 ? 0.01 : arg_bright_num;
@@ -518,12 +536,10 @@ Kirigami.ApplicationWindow {
             return;
         }
 
-        root.isBrightnessChangeAllowed = false;
         if (typeof arg_bright_num === 'number') {
             root.activeBrightness = arg_bright_num / 100
                 / (root.maximumBrightness / 100);
         }
-        root.isBrightnessChangeAllowed = true;
     }
 
     // BEGIN Utilities
@@ -565,7 +581,8 @@ Kirigami.ApplicationWindow {
     property real activeBrightness: 0
     property real maximumBrightness: 0
     property bool isBrightnessAvailable: false
-    property bool isBrightnessChangeAllowed: false
+    property bool internalBrightnessChanged: false
+    property bool externalBrightnessChanged: false
 
     readonly property var profiles: ['power-saver', 'balanced', 'performance']
     readonly property var binDir: Qt.application.arguments[1] || '/usr/lib/kfocus/bin'
