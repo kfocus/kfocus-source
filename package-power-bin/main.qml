@@ -15,7 +15,7 @@ Kirigami.ApplicationWindow {
     minimumHeight: (baseHeight - 50) * scaleRatio
 
     pageStack.initialPage: Kirigami.Page {
-        title: "Power and Fan"
+        title: 'Power and Fan'
         ColumnLayout {
             id: layout
             anchors {
@@ -58,7 +58,7 @@ Kirigami.ApplicationWindow {
                 }
 
                 Controls.Label {
-                    // DEBUG + scaleMap.spreadNum.toFixed(3)
+                    // DEBUG + scaleMap.spread_num.toFixed(3)
                     text: 'Performance ⚡'
                 }
                 Layout.bottomMargin: PlasmaCore.Units.largeSpacing
@@ -226,7 +226,8 @@ Kirigami.ApplicationWindow {
             }
 
         }
-        // --- LOGIC ---
+
+        // BEGIN Logic
         ListModel {
             id: profilesModel
             property string selectedProfile
@@ -249,48 +250,58 @@ Kirigami.ApplicationWindow {
         ShellEngine {
             commandStr: 'pkexec ' + binDir + '/kfocus-power-set -x'
             onStdoutChanged: {
-                let freqMissingMsg = false
-                let buildStr = ""
+                let
+                  is_freq_missing_msg = false,
+                  solve_msg = '';
                 stdout.split('\n').forEach(function (line, index) {
-                    if (line === '') { return; }
-                    if (line.substring(0,5) === "title") {
-                        freqMissingMsg = true
-                        let lineParts = line.split('|')
-                        let titleMsg = lineParts[0].substring(6, lineParts[0].length)
-                        let bodyMsg = lineParts[1].substring(8, lineParts[1].length)
-                        powerHeading.text = titleMsg
-                        powerHeading.visible = true
-                        buildStr += bodyMsg
-                    } else {
-                        if (freqMissingMsg) {
-                            buildStr += line
-                            return
+                    if ( line === '' ) { return; }
+                    if ( line.substring(0,5) === 'title' ) {
+                        is_freq_missing_msg = true;
+                        let
+                          bit_list = line.split('|'),
+                          title_msg = bit_list[0].substring(6, bit_list[0].length),
+                          body_msg = bit_list[1].substring(8, bit_list[1].length);
+
+                        powerHeading.text = title_msg;
+                        powerHeading.visible = true;
+                        solve_msg += body_msg;
+                    }
+                    else {
+                        if ( is_freq_missing_msg ) {
+                            solve_msg += line;
+                            return;
                         }
-                        let firstElementName = '';
+
+                        let first_el_name = '';
                         line.split(';').forEach(function (value, subindex) {
-                            if (index === 0 && value !== '') {
-                                profilesModel.validIndexes.push(subindex)
+                            if ( index === 0 && value !== '' ) {
+                                profilesModel.validIndexes.push( subindex );
                             }
-                            if (subindex === 0) {
-                                firstElementName = value
+                            if ( subindex === 0 ) {
+                                first_el_name = value;
                             }
-                            if (profilesModel.validIndexes.includes(subindex)) {
-                               profilesModel.append({'elementName': value, 'bold': index === 0,
-                                    'elementColor': subindex === 0 ? profilesModel.gridColors.pop() : 'transparent',
-                                    'firstElementName': firstElementName
+
+                            if (profilesModel.validIndexes.includes( subindex )) {
+                               profilesModel.append({
+                                   'elementName' : value,
+                                   'bold'        : index === 0,
+                                   'elementColor': subindex === 0
+                                      ? profilesModel.gridColors.pop() : 'transparent',
+                                   'firstElementName': first_el_name
                                 })
+
                                 // There are items in the table, display them
-                                powerHeading.visible = true
-                                grid.visible = true
-                                powerLegend.visible = true
+                                powerHeading.visible = true;
+                                grid.visible = true;
+                                powerLegend.visible = true;
                             }
                         })
-                        grid.columns = profilesModel.validIndexes.length
+                        grid.columns = profilesModel.validIndexes.length;
                     }
                 })
-                if (buildStr != "") {
-                    powerError.text = buildStr
-                    powerError.visible = true
+                if ( solve_msg != '' ) {
+                    powerError.text = solve_msg;
+                    powerError.visible = true;
                 }
             }
         }
@@ -341,41 +352,42 @@ Kirigami.ApplicationWindow {
         ShellEngine {
             commandStr: binDir + '/kfocus-fan-set -x'
             onStdoutChanged: {
-                const checkRegex = /^\s*title:[^|]+|\s*message:/
-                if ( checkRegex.test( stdout ) ) {
-                    root.height = (baseHeight + 50) * scaleRatio
-                    const msgList = stdout.split('|')
-                    const titleStr = msgList[0].replace(
-                        /^\s*title:\s*/, '' ).trim()
-                    const msgStr = msgList[1].replace(
-                        /^\s*message:\s*/, '' ).trim()
+                const check_regex = /^\s*title:[^|]+|\s*message:/;
+                if ( check_regex.test( stdout ) ) {
+                    root.height += ( 50 * scaleRatio );
+                    const
+                      msg_list = stdout.split('|'),
+                      title_str = msg_list[0].replace( /^\s*title:\s*/, '' ).trim(),
+                      trimmed_msg = msg_list[1].replace( /^\s*message:\s*/, '' ).trim();
 
-                    fanControlHeading.text = titleStr
-                    inlineMessage.text = msgStr
-                    fanSlider.visible = false
+                    fanControlHeading.text = title_str;
+                    inlineMessage.text = trimmed_msg;
+                    fanSlider.visible = false;
                 }
                 else {
                     stdout.split('\n').forEach(function (line) {
                         if (line === '') { return }
-                        const [name, description] = line.split('(')
-                        fanProfilesModel.append({'name': name.trim()})
-                        fanProfilesModel.profileNames.push(name.trim())
+                        const [name, description] = line.split('(');
+                        fanProfilesModel.append({'name': name.trim()});
+                        fanProfilesModel.profileNames.push(name.trim());
                         fanProfilesModel.profileDescriptions.push(
-                            description.replace(')', '').trim())
-                        fanProfilesModel.fanAvailable = true
+                            description.replace(')', '').trim()
+                        );
+                        fanProfilesModel.fanAvailable = true;
                     })
                 }
-                fanTimer.running = true
+                fanTimer.running = true;
             }
         }
 
         ShellEngine {
             id: altFanProfilesChecker
             onStdoutChanged: {
-                let trimmedStdout = stdout.trim()
-                if (trimmedStdout !== '') {
-                    fanSlider.value = fanProfilesModel.profileNames.indexOf(trimmedStdout)
-                    fanDescription.text = "<i>Description:</i> " + fanProfilesModel.profileDescriptions[fanSlider.value]
+                let trimmed_str = stdout.trim()
+                if (trimmed_str !== '') {
+                    fanSlider.value = fanProfilesModel.profileNames.indexOf(trimmed_str)
+                    fanDescription.text = '<i>Description:</i> '
+                        + fanProfilesModel.profileDescriptions[fanSlider.value]
                 }
             }
         }
@@ -397,7 +409,7 @@ Kirigami.ApplicationWindow {
     // Managing Plasma Profiles
     PlasmaCore.DataSource {
         id: pmSource
-        engine: "powermanagement"
+        engine: 'powermanagement'
         connectedSources: sources
         onSourceAdded: {
             disconnectSource(source);
@@ -407,7 +419,11 @@ Kirigami.ApplicationWindow {
             disconnectSource(source);
         }
         onDataChanged: {
-            updateBrightness(this.data["PowerDevil"]["Screen Brightness"]);
+            updateBrightness(
+                readStructFn( this, [
+                  'data', 'PowerDevil', 'Screen Brightness' ], 1
+                )
+            );
         }
     }
 
@@ -418,25 +434,33 @@ Kirigami.ApplicationWindow {
     // (otherwise the slider would still be at the old value) and
     // then set it back to follow actuallyActiveProfile as soon as
     // that one is updated.
-    readonly property string actuallyActiveProfile: pmSource.data["Power Profiles"] ? (pmSource.data["Power Profiles"]["Current Profile"] || "") : ""
+    readonly property string actuallyActiveProfile:
+        readStructFn( pmSource, [ 'data', 'Power Profiles' ] )
+            ? readStructFn( pmSource, [
+                'data', 'Power Profiles', 'Current Profile' ], ''
+            ) : '';
+
     onActuallyActiveProfileChanged: {
-        if (root.actuallyActiveProfile === root.activeProfile) {
+        if ( root.actuallyActiveProfile === root.activeProfile ) {
             root.activeProfile = Qt.binding(() => root.actuallyActiveProfile);
         }
     }
     property string activeProfile: actuallyActiveProfile
+
     function activateProfile(profile) {
-        if (!profile) { return; }
-        if (!root.activeProfile) { return; }
-        if (profile === root.activeProfile) { return; }
-        const service = pmSource.serviceForSource("PowerDevil");
-        const op = service.operationDescription("setPowerProfile");
-        op.profile = profile;
-        const job = service.startOperationCall(op);
+        if ( ! profile ) { return; }
+        if ( ! root.activeProfile ) { return; }
+        if ( profile === root.activeProfile ) { return; }
+        const 
+          service_obj = pmSource.serviceForSource('PowerDevil'),
+          operate_obj = service.operationDescription('setPowerProfile');
+
+        operate_obj.profile = profile;
+        const job = service.startOperationCall(operate_obj);
         root.activeProfile = profile
         job.finished.connect(job => {
-            if (!job.result) {
-                console.log('Something went wrong, could not activate profile', profile)
+            if ( ! job.result ) {
+                console.log('Could not activate profile', profile)
             }
         })
     }
@@ -446,72 +470,113 @@ Kirigami.ApplicationWindow {
         running: true
         repeat: false
         onTriggered: {
-            root.doChangeBrightness = true;
-            root.maximumBrightness = pmSource.data["PowerDevil"]["Maximum Screen Brightness"];
-            root.activeBrightness = pmSource.data["PowerDevil"]["Screen Brightness"] / 100 / (root.maximumBrightness / 100);
-            root.isBrightnessAvailable = pmSource.data["PowerDevil"] && pmSource.data["PowerDevil"]["Screen Brightness Available"] ? true : false
+            if ( readStructFn( pmSource, [ 'data', 'PowerDevil',
+                'Screen Brightness Available' ] ) === true
+            ) {
+                root.isBrightnessAvailable = true;
+                root.maximumBrightness     = readStructFn( pmSource, [
+                    'data', 'PowerDevil', 'Maximum Screen Brightness' ], 1);
+                root.activeBrightness      = readStructFn( pmSource, [
+                    'data', 'PowerDevil', 'Screen Brightness' ], 1);
+                root.activeBrightness = root.activeBrightness / 100
+                    / (root.maximumBrightness / 100);
+                root.isBrightnessChangeAllowed = true;
+                root.height += (175 * scaleRatio);
+            }
+            else {
+                root.isBrightnessAvailable = false;
+            }
         }
     }
 
-    property real activeBrightness: 0
-    property real maximumBrightness: 0
-    property bool isBrightnessAvailable: false
-    property bool doChangeBrightness: false
-    function changeBrightness(in_brightness) { // don't let the brightness value get so low as to cause screen blackout
-        if (!root.doChangeBrightness) {
-            return;
-        }
-        var brightness = 0;
-        if (in_brightness <= 0.01) {
-            brightness = 0.01;
-        } else {
-            brightness = in_brightness;
-        }
-        const service = pmSource.serviceForSource("PowerDevil");
-        const op = service.operationDescription("setBrightness");
-        op.silent = true;
-        op.brightness = brightness * 100 * (root.maximumBrightness / 100)
-        const job = service.startOperationCall(op);
-        job.finished.connect(job => {
-            if (!job.result) {
-                console.log('Something went wrong, could not change screen brightness');
+    function changeBrightness( arg_bright_num ) {
+        let solve_bright_num = 0;
+        if ( ! root.isBrightnessAvailable
+          || ! root.isBrightnessChangeAllowed
+        ) { return; }
+
+        // Do not let the brightness value get so low as to cause screen blackout
+        solve_bright_num = arg_bright_num <= 0.01 ? 0.01 : arg_bright_num;
+
+        const 
+          service_obj = pmSource.serviceForSource( 'PowerDevil' ),
+          operate_obj = service_obj.operationDescription( 'setBrightness' );
+
+        operate_obj.silent = true;
+        operate_obj.brightness = solve_bright_num * 100
+            * (root.maximumBrightness / 100);
+        const job_obj = service_obj.startOperationCall(operate_obj);
+        job_obj.finished.connect( arg_obj => {
+            if ( ! arg_obj.result ) {
+                console.log('Could not change screen brightness');
             }
         })
     }
 
-    function updateBrightness(brightnessVal) {
-        root.doChangeBrightness = false;
-        if (typeof brightnessVal === 'number') {
-            root.activeBrightness = brightnessVal / 100 / (root.maximumBrightness / 100);
+    function updateBrightness( arg_bright_num ) {
+        if ( ! root.isBrightnessAvailable ) {
+            return;
         }
-        root.doChangeBrightness = true;
+
+        root.isBrightnessChangeAllowed = false;
+        if (typeof arg_bright_num === 'number') {
+            root.activeBrightness = arg_bright_num / 100
+                / (root.maximumBrightness / 100);
+        }
+        root.isBrightnessChangeAllowed = true;
+    }
+
+    // BEGIN Utilities
+    function readStructFn ( arg_obj, arg_key_list, arg_alt_data ) {
+        let key_count, point_obj, idx, key, val_data;
+        key_count = arg_key_list.length;
+        point_obj = arg_obj;
+
+        for ( idx = 0; idx < key_count; idx++ ) {
+            key      = arg_key_list[ idx ];
+            val_data = point_obj[ key ];
+            if ( typeof val_data === 'object' ) {
+                point_obj = val_data;
+            }
+            else { break; }
+        }
+        if ( idx < key_count - 1 ) { return arg_alt_data; }
+        return val_data;
     }
 
     function calcScaleRatioFn () {
-      const densityNum  = Screen.pixelDensity;
-      const baseNum     = 3.78; // 96 DPI
-      const quantNum    = 0.125;
-      let spreadNum     = 0;
-      if ( densityNum > baseNum ) {
-        spreadNum = (densityNum - baseNum) / ( 1.75 * baseNum );
+      let spread_num = 0;
+      const
+        density_num  = Screen.pixelDensity,
+        base_num     = 3.78, // 96 DPI
+        quantize_num = 0.125;
+
+      if ( density_num > base_num ) {
+        spread_num = (density_num - base_num) / ( 1.75 * base_num );
       }
       return {
-        spreadNum: spreadNum,
-        scaleRatio: 1 + Math.round(spreadNum / quantNum) * quantNum
+        spread_num: spread_num,
+        scale_ratio: 1 + Math.round(spread_num / quantize_num) * quantize_num
       }
     }
+    // . END Utilities
+
+    // BEGIN Global Properties
+    property real activeBrightness: 0
+    property real maximumBrightness: 0
+    property bool isBrightnessAvailable: false
+    property bool isBrightnessChangeAllowed: false
 
     readonly property var profiles: ['power-saver', 'balanced', 'performance']
-    // Requires qmlscene ./kfocus.qml "${pathToBin}" to set binDir for
-    //   kfocus-fan-set and kfocus-power-set
     readonly property var binDir: Qt.application.arguments[1] || '/usr/lib/kfocus/bin'
     readonly property int activeProfileIndex: root.profiles.indexOf(root.activeProfile)
     readonly property int pollingMs: 5000
     readonly property var scaleMap: calcScaleRatioFn()
-    readonly property real scaleRatio: scaleMap.scaleRatio
+    readonly property real scaleRatio: scaleMap.scale_ratio
+    property bool doSkipNextFreqPoll: false
 
     readonly property int baseWidth: 460
-    readonly property int baseHeight: 750
-    property bool doSkipNextFreqPoll: false
+    readonly property int baseHeight: 575
+    // . END Global Properties
 }
 
