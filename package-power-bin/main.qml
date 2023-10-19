@@ -23,7 +23,6 @@ Kirigami.ApplicationWindow {
                 right: parent.right
                 top: parent.top
             }
-            spacing: PlasmaCore.Units.mediumSpacing
 
             Kirigami.Heading {
                 visible: plasmaProfilesSlider.visible
@@ -87,7 +86,7 @@ Kirigami.ApplicationWindow {
                 Layout.fillWidth: true
 
                 Controls.Label {
-                    text: '🔅'
+                    text: '🔅 Dimmer'
                     Layout.leftMargin: 3 * scaleRatio
                 }
 
@@ -96,7 +95,7 @@ Kirigami.ApplicationWindow {
                 }
 
                 Controls.Label {
-                    text: '🔆'
+                    text: 'Brighter 🔆'
                     Layout.rightMargin: 3 * scaleRatio
                 }
 
@@ -481,7 +480,7 @@ Kirigami.ApplicationWindow {
                     'data', 'PowerDevil', 'Screen Brightness' ], 1);
                 root.activeBrightness = root.activeBrightness / 100
                     / (root.maximumBrightness / 100);
-                root.height += (175 * scaleRatio);
+                root.height += (110 * scaleRatio);
             }
             else {
                 root.isBrightnessAvailable = false;
@@ -597,7 +596,7 @@ Kirigami.ApplicationWindow {
     property bool doSkipNextFreqPoll: false
 
     readonly property int baseWidth: 460
-    readonly property int baseHeight: 575
+    readonly property int baseHeight: 593
     // . END Global Properties
 }
 
