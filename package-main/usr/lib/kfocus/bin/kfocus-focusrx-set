@@ -77,8 +77,7 @@ _installToolsPkgFn () {
 ## . END _installToolsPkgFn }
 
 ## BEGIN _installKbdIteFn {
-# Purpose: Install kfocus tool package specified in $1
-#   The caller must provide the appropriate package.
+# Purpose: Install kfocus-keyboard-ite package.
 #
 _installKbdIteFn () {
   _cm2SetMsgFn 'Install kfocus-keyboard-ite package';
@@ -87,6 +86,17 @@ _installKbdIteFn () {
   fi
 }
 ## . END _installKbdIteFn }
+
+## BEGIN _purgeKbdIteFn {
+# Purpose: Purge kfocus-keyboard-ite package.
+#
+_purgeKbdIteFn () {
+  _cm2SetMsgFn 'Purge kfocus-keyboard-ite package';
+  if apt-get purge -y 'kfocus-keyboard-ite'; then
+    _cm2SucFn; else _cm2WarnFn; return 1;
+  fi
+}
+## . END _purgeKbdIteFn }
 
 ## BEGIN _installNvidiaFn {
 # Purpose: Install kfocus nvidia packages.
@@ -201,16 +211,23 @@ _chkHwConfigFn () {
     _msg+="Package ${_tool_pkg_name} forced re-installation.";
     _reason_list+=( "${_msg}" );
   fi
-  # . End Adjust tool suffix per config code }
+  ## . End Adjust tool suffix per config code }
 
-  ## Begin Add special keyboard support when required {
-  if [ "${_is_hw_reconfig}" = 'y' ] \
-    && [ "${_dmi_hw_model_code}" = 'm2g5p' ]; then
-    _msg='install-kbd-ite;;';
-    _msg+='This model requires kfocus-keyboard-ite package';
-    _reason_list+=( "${_msg}" );
+  ## Begin add or remove extra keyboard package {
+  if _cm2ChkInstalledPkgFn 'kfocus-keyboard-ite'; then
+    if [ "${_dmi_hw_model_code}" != 'm2g5p' ]; then
+      _msg='remove-kbd-ite;;';
+      _msg+='Package kfocus-keyboard-ite needs to be removed';
+      _reason_list+=( "${_msg}" );
+    fi
+  else
+    if [ "${_dmi_hw_model_code}" = 'm2g5p' ]; then
+      _msg='install-kbd-ite;;';
+      _msg+='Package kfocus-keyboard-ite needs to be installed.';
+      _reason_list+=( "${_msg}" );
+    fi
   fi
-  ## End Add special keyboard support when required }
+  ## . End add or remove extra keyboard package }
 
   ## Begin Run lib updates iff hardware reconfig is flagged {
   #   do_force OR mismatched config-code triggers this.
@@ -254,6 +271,7 @@ _fixHwConfigFn () {
         _cmd_list+=( "${_bit_list[1]:-}" );;
       'install-kbd-ite'  ) _cmd_list=( '_installKbdIteFn'   );;
       'install-nvidia'   ) _cmd_list=( '_installNvidiaFn'   );;
+      'purge-kbd-ite'    ) _cmd_list=( '_purgeKbdIteFn'     );;
       *) _cm2WarnStrFn "Option ${_bit_list[0]} is not supported";
         continue;
         ;;
