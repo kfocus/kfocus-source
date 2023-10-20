@@ -23,6 +23,7 @@ Kirigami.ApplicationWindow {
                 right: parent.right
                 top: parent.top
             }
+            spacing: PlasmaCore.Units.smallSpacing
 
             Kirigami.Heading {
                 visible: plasmaProfilesSlider.visible
@@ -98,13 +99,10 @@ Kirigami.ApplicationWindow {
                     text: 'Brighter 🔆'
                     Layout.rightMargin: 3 * scaleRatio
                 }
-
                 Layout.bottomMargin: PlasmaCore.Units.largeSpacing
             }
 
             Kirigami.Heading {
-                // text: plasmaProfilesSlider.visible ?
-                //   "Fine Tuning" : "Power Profile"
                 id: powerHeading
                 visible: false
                 text: 'Frequency Profile'
@@ -116,6 +114,7 @@ Kirigami.ApplicationWindow {
                 visible: false
                 columnSpacing: Math.round( scaleRatio )
                 rowSpacing: Math.round( 3 * scaleRatio )
+
                 // Number of columns is set by the logic part
                 Layout.fillWidth: true
                 Repeater {
@@ -221,7 +220,7 @@ Kirigami.ApplicationWindow {
                 id: fanDescription
                 visible: fanSlider.visible
                 text: "<i>Description:</i> " + fanProfilesModel.profileDescriptions[fanSlider.value]
-                Layout.bottomMargin: PlasmaCore.Units.largeSpacing
+                Layout.bottomMargin: PlasmaCore.Units.smallSpacing
             }
 
         }
@@ -451,7 +450,7 @@ Kirigami.ApplicationWindow {
         if ( ! profile ) { return; }
         if ( ! root.activeProfile ) { return; }
         if ( profile === root.activeProfile ) { return; }
-        const 
+        const
           service_obj = pmSource.serviceForSource('PowerDevil'),
           operate_obj = service_obj.operationDescription('setPowerProfile');
 
@@ -530,7 +529,7 @@ Kirigami.ApplicationWindow {
         // Do not let the brightness value get so low as to cause screen blackout
         solve_bright_num = arg_bright_num <= 0.01 ? 0.01 : arg_bright_num;
 
-        const 
+        const
           service_obj = pmSource.serviceForSource( 'PowerDevil' ),
           operate_obj = service_obj.operationDescription( 'setBrightness' );
 
@@ -595,8 +594,8 @@ Kirigami.ApplicationWindow {
     readonly property real scaleRatio: scaleMap.scale_ratio
     property bool doSkipNextFreqPoll: false
 
-    readonly property int baseWidth: 460
-    readonly property int baseHeight: 593
+    readonly property int baseWidth: 470
+    readonly property int baseHeight: 540
     // . END Global Properties
 }
 
