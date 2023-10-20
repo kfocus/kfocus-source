@@ -221,9 +221,9 @@ Kirigami.ApplicationWindow {
                 visible: fanSlider.visible
                 text: getFanStrFn()
                 horizontalAlignment: Text.AlignHCenter
+                Layout.fillWidth: true
                 Layout.bottomMargin: PlasmaCore.Units.smallSpacing
             }
-
         }
 
         // BEGIN Logic
@@ -546,8 +546,9 @@ Kirigami.ApplicationWindow {
 
     function getFanStrFn () {
         let label, descr_str;
-        label = fanProfilesModel.profileNames[fanSlider.value];
-        descr_str = fanProfilesModel.profileDescriptions[fanSlider.value];
+        label = fanProfilesModel.profileNames[fanSlider.value] || '';
+        descr_str = fanProfilesModel.profileDescriptions[fanSlider.value] || '';
+        if ( ! descr_str ) { return '' }
         return label + ': ' + descr_str.toLowerCase();
     }
 
