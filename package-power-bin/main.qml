@@ -28,7 +28,7 @@ Kirigami.ApplicationWindow {
             Kirigami.Heading {
                 visible: plasmaProfilesSlider.visible
                 text: 'Power Profile'
-                level: 1
+                level: 3
             }
 
             Controls.Slider {
@@ -67,7 +67,7 @@ Kirigami.ApplicationWindow {
             Kirigami.Heading {
                 visible: plasmaBrightnessSlider.visible
                 text: 'Brightness'
-                level: 1
+                level: 3
             }
 
             Controls.Slider {
@@ -106,7 +106,7 @@ Kirigami.ApplicationWindow {
                 id: powerHeading
                 visible: false
                 text: 'Frequency Profile'
-                level: 1
+                level: 3
             }
 
             GridLayout {
@@ -174,7 +174,7 @@ Kirigami.ApplicationWindow {
             Kirigami.Heading {
                 id: fanControlHeading
                 text: "Fan Profile"
-                level: 1
+                level: 3
             }
 
             Kirigami.InlineMessage {
