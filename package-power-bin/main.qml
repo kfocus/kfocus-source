@@ -191,7 +191,7 @@ Kirigami.ApplicationWindow {
                     fanTimer.triggeredOnStart = false
                     fanTimer.stop()
                     altFanProfilesChecker.exec('pkexec ' + binDir + '/kfocus-fan-set ' + fanProfilesModel.profileNames[value])
-                    fanDescription.text = getFanStrFn(); 
+                    fanDescription.text = getFanStrFn();
                     fanTimer.start()
                 }
                 to: fanProfilesModel.count - 1
@@ -220,7 +220,7 @@ Kirigami.ApplicationWindow {
                 id: fanDescription
                 visible: fanSlider.visible
                 text: getFanStrFn()
-                horizontalAlignment: Text.AlignCenter
+                horizontalAlignment: Text.AlignHCenter
                 Layout.bottomMargin: PlasmaCore.Units.smallSpacing
             }
 
@@ -385,7 +385,7 @@ Kirigami.ApplicationWindow {
                 let trimmed_str = stdout.trim()
                 if (trimmed_str !== '') {
                     fanSlider.value = fanProfilesModel.profileNames.indexOf(trimmed_str);
-                    fanDescription.text = getFanStrFn(); 
+                    fanDescription.text = getFanStrFn();
                 }
             }
         }
@@ -545,11 +545,10 @@ Kirigami.ApplicationWindow {
     }
 
     function getFanStrFn () {
-        let descr_str;
-        descr_str = fanProfilesModel.profileNames[fanSlider.value];
-        descr_str += ': ';
+        let label, descr_str;
+        label = fanProfilesModel.profileNames[fanSlider.value];
         descr_str += fanProfilesModel.profileDescriptions[fanSlider.value];
-        return descr_str.toLowerCase();
+        return label + ': ' + descr_str.toLowerCase();
     }
 
     // BEGIN Utilities
