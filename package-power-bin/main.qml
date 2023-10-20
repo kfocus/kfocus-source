@@ -547,7 +547,7 @@ Kirigami.ApplicationWindow {
     function getFanStrFn () {
         let label, descr_str;
         label = fanProfilesModel.profileNames[fanSlider.value];
-        descr_str += fanProfilesModel.profileDescriptions[fanSlider.value];
+        descr_str = fanProfilesModel.profileDescriptions[fanSlider.value];
         return label + ': ' + descr_str.toLowerCase();
     }
 
