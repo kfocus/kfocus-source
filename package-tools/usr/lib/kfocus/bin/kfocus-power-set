@@ -239,7 +239,7 @@ _chkInitCpuFn () {
     _cm2SucStrFn 'Drop file found.'; _cm2SucFn; return 0;
   fi
 
-  # Skip if not a special hardware config code (m2g5 and m2g5p names)
+  # Skip if not an m2g5 or m2g5p model (both share config_code m2g5)
   if [ "$(_cm2EchoModelStrFn 'config_code')" != 'm2g5' ]; then
     touch "${_cpuDropFile}" || _cm2WarnStrFn 'Could not add drop file';
     _cm2SucFn;
