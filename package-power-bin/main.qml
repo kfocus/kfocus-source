@@ -191,7 +191,7 @@ Kirigami.ApplicationWindow {
                     fanTimer.triggeredOnStart = false
                     fanTimer.stop()
                     altFanProfilesChecker.exec('pkexec ' + binDir + '/kfocus-fan-set ' + fanProfilesModel.profileNames[value])
-                    fanDescription.text = "<i>Description:</i> " + fanProfilesModel.profileDescriptions[fanSlider.value]
+                    fanDescription.text = getFanStrFn(); 
                     fanTimer.start()
                 }
                 to: fanProfilesModel.count - 1
@@ -219,7 +219,8 @@ Kirigami.ApplicationWindow {
             Controls.Label {
                 id: fanDescription
                 visible: fanSlider.visible
-                text: "<i>Description:</i> " + fanProfilesModel.profileDescriptions[fanSlider.value]
+                text: getFanStrFn()
+                horizontalAlignment: Text.AlignCenter
                 Layout.bottomMargin: PlasmaCore.Units.smallSpacing
             }
 
@@ -383,9 +384,8 @@ Kirigami.ApplicationWindow {
             onStdoutChanged: {
                 let trimmed_str = stdout.trim()
                 if (trimmed_str !== '') {
-                    fanSlider.value = fanProfilesModel.profileNames.indexOf(trimmed_str)
-                    fanDescription.text = '<i>Description:</i> '
-                        + fanProfilesModel.profileDescriptions[fanSlider.value]
+                    fanSlider.value = fanProfilesModel.profileNames.indexOf(trimmed_str);
+                    fanDescription.text = getFanStrFn(); 
                 }
             }
         }
@@ -463,7 +463,6 @@ Kirigami.ApplicationWindow {
             }
         })
     }
-
     Timer {
         interval: 25
         running: true
@@ -545,6 +544,14 @@ Kirigami.ApplicationWindow {
         })
     }
 
+    function getFanStrFn () {
+        let descr_str;
+        descr_str = fanProfilesModel.profileNames[fanSlider.value];
+        descr_str += ': ';
+        descr_str += fanProfilesModel.profileDescriptions[fanSlider.value];
+        return descr_str.toLowerCase();
+    }
+
     // BEGIN Utilities
     function readStructFn ( arg_obj, arg_key_list, arg_alt_data ) {
         let key_count, point_obj, idx, key, val_data;
@@ -595,7 +602,7 @@ Kirigami.ApplicationWindow {
     property bool doSkipNextFreqPoll: false
 
     readonly property int baseWidth: 470
-    readonly property int baseHeight: 540
+    readonly property int baseHeight: 570
     // . END Global Properties
 }
 
