@@ -1,3 +1,19 @@
+kfocus-tools (22.04.40) jammy; urgency=medium
+
+  * Complete m2g5p keyboard support (#3735)
+  ** bin/kfocus-kb-color:
+  *** Change to unified 0-10 brightness selector (was 0-255)
+  *** Read kb active state using kfocus-kb-color-set -l
+  *** Add instructions to interface
+  ** bin/kfocus-kb-color-set:
+  *** Substantial rewrite to support both kb modes
+  *** Add methods for enable, disable, toggle, list, change, restore
+  ** bin/kfocus-power-set
+  *** Switch to enable or disable using kfocus-kb-color-set
+  *** Adjust powerset per config_code (was code) 
+
+ -- Michael S. Mikowski <support@kfocus.org>  Thu, 14 Sep 2023 00:10:45 -0700
+
 kfocus-tools (22.04.39) jammy; urgency=medium
 
   * kfocus-conda: Add support for 4090 GPU ID (#3493)
