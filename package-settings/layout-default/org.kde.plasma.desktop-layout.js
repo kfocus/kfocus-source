@@ -1,5 +1,6 @@
 /*globals gridUnit, desktopsForActivity, currentActivity,
   getApiVersion, screenGeometry, loadTemplate */
+/* Passes eslint 2023-10-21 */
 
 loadTemplate("org.kfocus.desktop.defaultPanel");
 
@@ -61,19 +62,24 @@ widgetPathList = [
   '{"path":"file:///usr/share/kfocus-hints//11_vim_03.png","type":"file"}'
 ];
 
+// BEGIN tweakWallpapersFn {
+// Purpose: Enables rmb > Configure Desktop > Wallpaper type = Image,
+//   scaled-and-cropped.
+//
 function tweakWallpapersFn () {
   var desktop_list, j, desktop_obj;
-
   desktop_list = desktopsForActivity(currentActivity());
   for ( j = 0; j < desktop_list.length; j++) {
     desktop_obj = desktop_list[j];
     desktop_obj.wallpaperPlugin = 'org.kde.image';
-    // plasma5 docs says this does nothing, yet it forces the
-    // presentation of wallpapers in the rmb > Configure Desktop... dialog
     desktop_obj.wallpaperMode   = '2';
   }
 }
+// . END tweakWallpapersFn }
 
+// BEGIN setLayoutFn {
+// Purpose: Defines and loads serialized layout
+//
 function setLayoutFn () {
   var plasma_obj, rect_obj, screen_w_px, screen_h_px, screen_w_num,
     screen_h_num, scale_key, scale_map, icon_pad_int, pad_h_int, pad_w_int,
@@ -251,6 +257,8 @@ function setLayoutFn () {
   plasma_obj.loadSerializedLayout(layout_matrix);
   tweakWallpapersFn();
 }
+// . END setLayoutFn }
+
 setLayoutFn();
 
 // (1) See QRectF https://develop.kde.org/docs/extend/plasma/scripting/api/#screen-geometry
