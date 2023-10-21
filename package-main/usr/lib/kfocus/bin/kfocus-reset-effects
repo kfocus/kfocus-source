@@ -75,9 +75,9 @@ _EOH01
     'kwin|Desktops|Rows|4'
 
     # Disabled in 5.27; remove
-    'kwin|Effect-CoverSwitch|TabBox|'
-    'kwin|Effect-CoverSwitch|TabBoxAlternative|'
-    'kwin|Plugins|coverswitchEnabled|'
+    # 'kwin|Effect-CoverSwitch|TabBox|'
+    # 'kwin|Effect-CoverSwitch|TabBoxAlternative|'
+    # 'kwin|Plugins|coverswitchEnabled|'
 
     # Desktopgrid name changed to lc in 5.27, reset
     'kwin|Effect-DesktopGrid|BorderActivate|'
@@ -121,6 +121,10 @@ _EOH01
     #   Clear values first
     'font|General|forceFontDPI|'
     'glob|KScreen|ScaleFactor||'
+    'glob|KScreen|ScaleFactor|1.25|ir14g1'
+    'glob|KScreen|ScaleFactor|1.5|m2g4'
+    'glob|KScreen|ScaleFactor|1.5|m2g5'
+    'glob|KScreen|ScaleFactor|1.5|m2g5p'
 
     # See 3521 - Do not set global scale for Plasma 5.24.x
     # This will be useful for 5.27.x where it works much better.

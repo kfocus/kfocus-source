@@ -190,7 +190,7 @@ function setLayoutFn () {
             "geometry.x": icon_x_num,
             "geometry.y": icon_table[3].y,
             "plugin": "org.kde.plasma.icon",
-            "title": "Welcome Guide"
+            "title": "Feature Guide"
           }
         ],
         // Keeping this config appears to enhance stability

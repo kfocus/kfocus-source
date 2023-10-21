@@ -1,7 +1,3 @@
-# 2023-09-30 Redundant, now the default.
-# [Desktop]
-# plugin=org.kde.plasma.folder
-
 [kdeglobals][KDE]
 widgetStyle=Breeze
 
@@ -14,9 +10,8 @@ Theme=breeze-dark
 [plasmarc][Theme]
 name=kfocus
 
-# 2023-09-30 Redundany with layout, appears to cause crash.
-# [Wallpaper]
-# Image=Next
+[Wallpaper]
+Image=Next
 
 [kcminputrc][Mouse]
 cursorTheme=Breeze_Snow
@@ -30,6 +25,9 @@ LayoutName=org.kde.breeze.desktop
 
 [kwinrc][org.kde.kdecoration2]
 library=org.kde.breeze
+
+[kwinrc][Windows]
+RollOverDesktops=true
 
 [KSplash]
 Theme=org.kde.Breeze

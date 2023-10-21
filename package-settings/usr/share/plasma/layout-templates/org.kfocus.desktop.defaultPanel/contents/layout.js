@@ -1,10 +1,11 @@
 /*global Panel gridUnit languageId panelIds panelById screenGeometry*/
-/* Refactored 2023-03-29 to pass eslint */
+/* Refactored 2023-10-18, passes eslint */
 var
-  panel_obj,      screen_obj,     edge_map,       idx,
-  tmppanel_obj,   max_ratio,      geom_obj,       max_w_int,
-  kickoff_obj,    pager_obj,      tmanager_obj,   launcher_list,
-  lang_id_list,   backup_obj,     systray_obj,    clock_obj
+  panel_obj,     screen_obj,    edge_map,      prefer_list,
+  idx,           loop_obj,      loop_key,      edge_key,
+  is_horizontal, max_ratio,     geom_obj,      max_w_int,
+  kickoff_obj,   pager_obj,     icontasks_obj, launcher_list,
+  lang_id_list,  backup_obj,    systray_obj,   clock_obj
   ;
 
 panel_obj = new Panel;
@@ -12,40 +13,47 @@ screen_obj = panel_obj.screen;
 edge_map = {
   'bottom': true, 'top': true, 'left': true, 'right': true
 };
+prefer_list = [ 'bottom', 'top', 'left', 'right' ];
+// prefer_list = [ 'left', 'right', 'top', 'bottom' ];
 
-// Begin Favor Bottom Then Top Edge
-for ( idx = 0; idx < panelIds.length; ++idx ) {
-  tmppanel_obj = panelById( panelIds[ idx ] );
-  if ( tmppanel_obj.screen == screen_obj ) {
+// Begin Mark open panels in map
+for ( idx = 0; idx < panelIds.length; idx++ ) {
+  loop_obj = panelById( panelIds[ idx ] );
+  if ( loop_obj.screen === screen_obj ) {
     // Ignore the new panel
-    if ( tmppanel_obj.id != panel_obj.id ) {
-      edge_map[ tmppanel_obj.location ] = false;
+    if ( loop_obj.id !== panel_obj.id ) {
+      edge_map[ loop_obj.location ] = false;
     }
   }
 }
+// . End Mark open panels in map
 
-if ( edge_map[ 'bottom' ] == true ) {
-  panel_obj.location = 'bottom';
-} else if ( edge_map[ 'top' ] == true ) {
-  panel_obj.location = 'top';
-} else if ( edge_map[ 'left' ] == true ) {
-  panel_obj.location = 'left';
-} else if ( edge_map[ 'right' ] == true ) {
-  panel_obj.location = 'right';
-} else {
-  // Use default value if no free edge found
-  panel_obj.location = 'bottom';
+// Begin Use first available edge from prefer_list
+for ( idx = 0; idx < prefer_list.length; idx++ ) {
+  loop_key = prefer_list[ idx ];
+  if ( edge_map[ loop_key ] ) {
+    edge_key = loop_key;
+    break;
+  }
 }
-// . End Favor Bottom Then Top Edge
+// Use default value if no free edge found
+if ( ! edge_key ) {
+  edge_key = prefer_list[ 0 ];
+}
 
-// Begin Horizontal Layout from org.kde.plasma
-// Restrict horizontal panel to a maximum ratio of a 21:9 monitor
-max_ratio = 20/9;
-if ( panel_obj.formFactor === 'horizontal' ) {
+panel_obj.location = edge_key;
+// . End Use first available edge from prefer_list
+
+// Begin Size by orientation
+// Restrict horizontal panel to 2x screen height
+is_horizontal = panel_obj.formFactor === 'horizontal';
+max_ratio = 2;
+if ( is_horizontal ) {
   // For an Icons-Only Task Manager on the bottom, *3 is too much, *2 is too
   // little Round down to next highest even number since the panel_obj size
-  // widget only displays// even numbers
-  panel_obj.height = 2 * Math.floor( gridUnit * 2.5 / 2 );
+  // widget only displays even numbers
+  // panel_obj.height = 2 * Math.floor( gridUnit * 2.5 / 2 );
+  panel_obj.height = Math.round( gridUnit * 2.66667 );
   geom_obj = screenGeometry( screen_obj );
   max_w_int = Math.ceil( geom_obj.height * max_ratio );
   if ( geom_obj.width > max_w_int ) {
@@ -58,7 +66,8 @@ if ( panel_obj.formFactor === 'horizontal' ) {
 
 // Begin Vertical Layout
 else {
-  panel_obj.height = gridUnit * 3;
+  // panel_obj.height = gridUnit * 3;
+  panel_obj.height = Math.round( gridUnit * 2.66667 );
   panel_obj.length = gridUnit * 999;
 }
 // . End Vertical Layout
@@ -68,6 +77,14 @@ kickoff_obj.currentConfigGroup = [ 'Configuration/Shortcuts' ];
 kickoff_obj.writeConfig( 'global', 'Alt+F1' );
 kickoff_obj.currentConfigGroup = [ 'Configuration/General' ];
 kickoff_obj.writeConfig( 'showAppsByName', 'true' );
+
+// If vertical, place clock at top
+if ( ! is_horizontal ) {
+  clock_obj = panel_obj.addWidget( 'org.kde.plasma.digitalclock' );
+  clock_obj.currentConfigGroup = [ 'Configuration/General' ];
+  clock_obj.writeConfig( 'showDate', 'true' );
+  clock_obj.writeConfig( 'dateFormat', 'isoDate' );
+}
 
 // 2023-03-27 This is probably no longer desirable
 // kickoff.currentConfigGroup = ["Configuration/ConfigDialog"];
@@ -80,16 +97,16 @@ kickoff_obj.writeConfig( 'showAppsByName', 'true' );
 // spacer.writeConfig("immutability", "1")
 
 // We do not currently add an activity manager
-// panel_obj.addWidget( 'org.kde.plasma.showActivityManager' );
+// panel_obj.addWidget('org.kde.plasma.showActivityManager');
 
 pager_obj = panel_obj.addWidget( 'org.kde.plasma.pager' );
 // Vertical gets text in the pager mini-screens
 pager_obj.currentConfigGroup = [ 'Configuration/General' ];
-if ( panel_obj.formFactor !== 'horizontal' ) {
+if ( ! is_horizontal ) {
   pager_obj.writeConfig( 'displayedText', 'Name' );
 }
 
-tmanager_obj = panel_obj.addWidget( 'org.kde.plasma.icontasks' );
+icontasks_obj = panel_obj.addWidget( 'org.kde.plasma.icontasks' );
 launcher_list = [
   'applications:systemsettings.desktop',
   'applications:org.kde.discover.desktop',
@@ -98,9 +115,9 @@ launcher_list = [
   'applications:google-chrome.desktop',
   'applications:firefox_firefox.desktop'
 ];
-tmanager_obj.writeConfig( 'launchers', launcher_list );
+icontasks_obj.writeConfig( 'launchers', launcher_list );
 
-/* Next up is determining whether to add the Input Method Panel
+/* Determine whether to add the Input Method Panel
  * widget to the panel or not. This is done based on whether
  * the system locale's language id is a member of the following
  * white list of languages which are known to pull in one of
@@ -158,11 +175,14 @@ systray_obj.currentConfigGroup = [ 'Configuration/General' ];
 // TODO if we add kup
 // systray_obj.writeConfig( 'shownItems', 'org.kde.kupapplet' );
 
-// Place clock on bottom panel, far-right as is the convention.
-clock_obj = panel_obj.addWidget( 'org.kde.plasma.digitalclock' );
-clock_obj.currentConfigGroup = [ 'Configuration/General' ];
-clock_obj.writeConfig( 'showDate', 'true' );
-clock_obj.writeConfig( 'dateFormat', 'isoDate' );
-panel_obj.addWidget( 'org.kde.plasma.showdesktop' );
+// If horizontal, place clock at far right
+if ( is_horizontal ) {
+  // we have room in horizontal for this
+  panel_obj.addWidget( 'org.kde.plasma.showdesktop' );
 
+  clock_obj = panel_obj.addWidget( 'org.kde.plasma.digitalclock' );
+  clock_obj.currentConfigGroup = [ 'Configuration/General' ];
+  clock_obj.writeConfig( 'showDate', 'true' );
+  clock_obj.writeConfig( 'dateFormat', 'isoDate' );
+}
 // End
