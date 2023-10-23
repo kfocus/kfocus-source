@@ -67,6 +67,7 @@ _handle_defaultFn () {
     # xhci enable/disable on sleep
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
+    # Set DPI scaling; deprecated in Plasma 5.27
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
     '/etc/tlp.d/kfocus.conf|'
   );
@@ -84,6 +85,7 @@ _handle_genericFn () {
     '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
+    # Set DPI scaling; deprecated in Plasma 5.27
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
     '/etc/tlp.d/kfocus.conf|'
   );
@@ -108,7 +110,7 @@ _handle_xeg2Fn () {
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
     # Trackpad config
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
-    # Default DPI Scaling
+    # Set DPI scaling; deprecated in Plasma 5.27
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
     # Remove old TLP config
     '/etc/tlp.d/kfocus.conf|'
@@ -133,12 +135,14 @@ _handle_ir14g1Fn () {
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
     # Select trackpad driver
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|/usr/lib/kfocus/conf/ir14g1-usr_share_X11_xorg.conf.d_80-kfocus.conf'
-    # Default DPI Scaling, See 3521
-    '/usr/share/kfocus/kf5-settings/kcmfonts|/usr/lib/kfocus/conf/ir14g1-usr_share_kfocus_kf5-settings_kcmfonts'
+    # Deprecated DPI scaling in Plasma 5.27
+    # '/usr/share/kfocus/kf5-settings/kcmfonts|ir14g1-usr_share_kfocus_kf5-settings_kcmfonts'
+    '/usr/share/kfocus/kf5-settings/kcmfonts|'
+    # Remove old TLP config
     '/etc/tlp.d/kfocus.conf|'
   );
-  # See 3521
-  _setScaleFactorFn '';
+  # Default DPI Scaling, See 3521
+  _setScaleFactorFn '1.125';
 }
 # hw_config_code 'm2g4' handles models m2g4
 # shellcheck disable=SC2317
@@ -163,13 +167,14 @@ _handle_m2g4Fn () {
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
     # Trackpad config
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|/usr/lib/kfocus/conf/m2g4-usr_share_X11_xorg.conf.d_80-kfocus.conf'
-    # Default DPI Scaling, See 3521
-    '/usr/share/kfocus/kf5-settings/kcmfonts|/usr/lib/kfocus/conf/m2g4-usr_share_kfocus_kf5-settings_kcmfonts'
+    # Deprecated DPI scaling in Plasma 5.27
+    # '/usr/share/kfocus/kf5-settings/kcmfonts|/usr/lib/kfocus/conf/m2g4-usr_share_kfocus_kf5-settings_kcmfonts'
+    '/usr/share/kfocus/kf5-settings/kcmfonts|'
     # Remove old TLP config
     '/etc/tlp.d/kfocus.conf|'
   );
   # See 3521
-  _setScaleFactorFn '';
+  _setScaleFactorFn '1.375';
 }
 # hw_config_code 'm2g5' handles models m2g5, m2g5p
 # shellcheck disable=SC2317
@@ -194,13 +199,14 @@ _handle_m2g5Fn () {
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
     # Select Trackpad config and driver
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|/usr/lib/kfocus/conf/m2g5-usr_share_X11_xorg.conf.d_80-kfocus.conf'
-    # Default DPI Scaling, See 3521
-    '/usr/share/kfocus/kf5-settings/kcmfonts|/usr/lib/kfocus/conf/m2g4-usr_share_kfocus_kf5-settings_kcmfonts'
+    # Deprecated DPI scaling in Plasma 5.27
+    # '/usr/share/kfocus/kf5-settings/kcmfonts|/usr/lib/kfocus/conf/m2g4-usr_share_kfocus_kf5-settings_kcmfonts'
+    '/usr/share/kfocus/kf5-settings/kcmfonts|'
     # Remove old TLP config
     '/etc/tlp.d/kfocus.conf|'
   );
   # See 3521
-  _setScaleFactorFn '';
+  _setScaleFactorFn '1.375';
 }
 # hw_config_code 'nxg1' handles models nxg1 and nxg2
 # shellcheck disable=SC2317

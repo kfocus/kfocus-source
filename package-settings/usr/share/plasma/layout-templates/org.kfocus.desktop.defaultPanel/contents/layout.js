@@ -3,9 +3,9 @@
 var
   panel_obj,     screen_obj,    edge_map,      prefer_list,
   idx,           loop_obj,      loop_key,      edge_key,
-  is_horizontal, max_ratio,     geom_obj,      max_w_int,
-  kickoff_obj,   pager_obj,     icontasks_obj, launcher_list,
-  lang_id_list,  backup_obj,    systray_obj,   clock_obj
+  is_horizontal, geom_obj,      max_w_int,     kickoff_obj,
+  pager_obj,     icontasks_obj, launcher_list, lang_id_list,
+  backup_obj,    systray_obj,   clock_obj
   ;
 
 panel_obj = new Panel;
@@ -45,45 +45,41 @@ panel_obj.location = edge_key;
 // . End Use first available edge from prefer_list
 
 // Begin Size by orientation
-// Restrict horizontal panel to 2x screen height
 is_horizontal = panel_obj.formFactor === 'horizontal';
-max_ratio = 2;
 if ( is_horizontal ) {
-  // For an Icons-Only Task Manager on the bottom, *3 is too much, *2 is too
-  // little Round down to next highest even number since the panel_obj size
-  // widget only displays even numbers
-  // panel_obj.height = 2 * Math.floor( gridUnit * 2.5 / 2 );
-  panel_obj.height = Math.round( gridUnit * 2.66667 );
+  panel_obj.height = Math.round( gridUnit * 2.5 );
   geom_obj = screenGeometry( screen_obj );
-  max_w_int = Math.ceil( geom_obj.height * max_ratio );
+  // Restrict horizontal panel to 2x screen height
+  max_w_int = Math.round( geom_obj.height * 2 );
   if ( geom_obj.width > max_w_int ) {
-    panel_obj.alignment = 'center';
     panel_obj.minimumLength = max_w_int;
     panel_obj.maximumLength = max_w_int;
+    panel_obj.alignment = 'center';
   }
 }
 // . End Horizontal Layout from org.kde.plasma
 
 // Begin Vertical Layout
 else {
-  // panel_obj.height = gridUnit * 3;
-  panel_obj.height = Math.round( gridUnit * 2.66667 );
+  panel_obj.height = Math.round( gridUnit * 2.75 );
   panel_obj.length = gridUnit * 999;
 }
 // . End Vertical Layout
 
 kickoff_obj = panel_obj.addWidget( 'org.kde.plasma.kickoff' );
-kickoff_obj.currentConfigGroup = [ 'Configuration/Shortcuts' ];
+kickoff_obj.currentConfigGroup = [ 'Shortcuts' ];
 kickoff_obj.writeConfig( 'global', 'Alt+F1' );
-kickoff_obj.currentConfigGroup = [ 'Configuration/General' ];
-kickoff_obj.writeConfig( 'showAppsByName', 'true' );
+kickoff_obj.currentConfigGroup = [ 'General' ];
+kickoff_obj.writeConfig( 'alphaSort', 'true' );
+kickoff_obj.writeConfig( 'systemFavorites', 'suspend,reboot,shudown');
 
 // If vertical, place clock at top
 if ( ! is_horizontal ) {
   clock_obj = panel_obj.addWidget( 'org.kde.plasma.digitalclock' );
-  clock_obj.currentConfigGroup = [ 'Configuration/General' ];
+  clock_obj.currentConfigGroup = [ 'Appearance' ];
   clock_obj.writeConfig( 'showDate', 'true' );
   clock_obj.writeConfig( 'dateFormat', 'isoDate' );
+  clock_obj.writeConfig( 'showSeconds', 'false' );
 }
 
 // 2023-03-27 This is probably no longer desirable
@@ -100,8 +96,10 @@ if ( ! is_horizontal ) {
 // panel_obj.addWidget('org.kde.plasma.showActivityManager');
 
 pager_obj = panel_obj.addWidget( 'org.kde.plasma.pager' );
-// Vertical gets text in the pager mini-screens
-pager_obj.currentConfigGroup = [ 'Configuration/General' ];
+pager_obj.currentConfigGroup = [ 'General' ];
+
+// Show screen Names if pager is shown in vertical panel
+pager_obj.writeConfig( 'wrapPage', 'true' );
 if ( ! is_horizontal ) {
   pager_obj.writeConfig( 'displayedText', 'Name' );
 }
@@ -158,12 +156,12 @@ lang_id_list = [
   'zh_TW'  // Traditional Chinese
 ];
 
-if ( lang_id_list.indexOf( languageId ) != -1 ) {
+if ( lang_id_list.indexOf( languageId ) !== -1 ) {
   panel_obj.addWidget( 'org.kde.plasma.kimpanel' );
 }
 
 backup_obj = panel_obj.addWidget( 'org.kde.plasma.icon' );
-backup_obj.currentConfigGroup = [ 'Configuration/General' ];
+backup_obj.currentConfigGroup = [ 'General' ];
 backup_obj.writeConfig( 'localPath', '/usr/share/applications/backintime-qt.desktop' );
 backup_obj.writeConfig( 'url', 'file:///usr/share/applications/backintime-qt.desktop' );
 // TODO if we add kup
@@ -171,13 +169,13 @@ backup_obj.writeConfig( 'url', 'file:///usr/share/applications/backintime-qt.des
 // backup_obj.writeConfig( 'url', 'file:///usr/share/kservices5/kcm_kup.desktop' );
 
 systray_obj = panel_obj.addWidget( 'org.kde.plasma.systemtray' );
-systray_obj.currentConfigGroup = [ 'Configuration/General' ];
+systray_obj.currentConfigGroup = [ 'General' ];
 // TODO if we add kup
 // systray_obj.writeConfig( 'shownItems', 'org.kde.kupapplet' );
 
 // If horizontal, place clock at far right
 if ( is_horizontal ) {
-  // we have room in horizontal for this
+  // Add showDesktop for horizontal layouts
   panel_obj.addWidget( 'org.kde.plasma.showdesktop' );
 
   clock_obj = panel_obj.addWidget( 'org.kde.plasma.digitalclock' );

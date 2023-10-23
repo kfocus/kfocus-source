@@ -9,11 +9,6 @@ Name_4=four
 Number=4
 Rows=4
 
-[Effect-Wobbly]
-Drag=85
-Stiffness=10
-WobblynessLevel=1
-
 [Effect-desktopgrid]
 DesktopLayoutMode=1
 DesktopNameAlignment=36
@@ -23,14 +18,31 @@ ShowAddRemove=false
 [Effect-kwin4_effect_translucency]
 MoveResize=80
 
-# Now set to default kf5-settings?
-# [NightColor]
-# Active=false
+[Effect-magiclamp]
+AnimationDuration=500
 
-# Now set to default kf5-settings?
-# [Plugins]
-# desktopgridEnabled=true
-# kwin4_effect_translucencyEnabled=true
-# mouseclickEnabled=true
-# trackmouseEnabled=true
-# wobblywindowsEnabled=true
+[Effect-presentwindows]
+LayoutMode=1
+
+[Effect-wobblywindows]
+AdvancedMode=true
+Drag=85
+Stiffness=10
+WobblynessLevel=5
+
+[NightColor]
+Active=false
+
+[Plugins]
+desktopgridEnabled=true
+kwin4_effect_squashEnabled=false
+kwin4_effect_translucencyEnabled=true
+magiclampEnabled=true
+mouseclickEnabled=true
+trackmouseEnabled=true
+wobblywindowsEnabled=true
+
+[org.kde.kdecoration2]
+BorderSize=Tiny
+BorderSizeAuto=false
+

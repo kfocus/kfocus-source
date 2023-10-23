@@ -49,7 +49,7 @@ _importCommonFn () {
 
 ## BEGIN _mainFn {
 _mainFn () {
-  declare _prompt_msg _model_code _line_list _line _bit_list _key \
+  declare _prompt_msg _model_code _config_list _line _bit_list _key \
     _log_list _name_file _config_file _opt_list _reply_str;
 
   _prompt_msg="$(cat <<_EOH01
@@ -65,50 +65,49 @@ _EOH01
   _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}";
 
   _model_code="$(_cm2EchoModelStrFn 'code')";
-  _line_list=(
-    # Desktops
-    'kwin|Desktops|Name_1|one'
-    'kwin|Desktops|Name_2|two'
-    'kwin|Desktops|Name_3|three'
-    'kwin|Desktops|Name_4|four'
-    'kwin|Desktops|Number|4'
-    'kwin|Desktops|Rows|4'
+  _config_list=(
+    # Desktops. Confirmed clearing these then defaults to k5-settings values.
+    # Click on Virtual Desktops > [Defaults] does NOT do this correctly.
+    'kwin|Desktops|Name_1|'
+    'kwin|Desktops|Name_2|'
+    'kwin|Desktops|Name_3|'
+    'kwin|Desktops|Name_4|'
+    'kwin|Desktops|Number|'
+    'kwin|Desktops|Rows|'
 
-    # Disabled in 5.27; remove
-    # 'kwin|Effect-CoverSwitch|TabBox|'
-    # 'kwin|Effect-CoverSwitch|TabBoxAlternative|'
-    # 'kwin|Plugins|coverswitchEnabled|'
-
-    # Desktopgrid name changed to lc in 5.27, reset
-    'kwin|Effect-DesktopGrid|BorderActivate|'
-    'kwin|Effect-DesktopGrid|ClickBehavior|'
-    'kwin|Effect-DesktopGrid|CustomLayoutRows|'
-    'kwin|Effect-DesktopGrid|DesktopLayoutMode|'
-    'kwin|Effect-DesktopGrid|DesktopNameAlignment|'
-    'kwin|Effect-DesktopGrid|LayoutMode|'
-    'kwin|Effect-DesktopGrid|PresentWindows|'
-    'kwin|Effect-DesktopGrid|ShowAddRemove|'
-
-    # Desktopgrid name changed to lc in 5.27, new settings
+    # Desktopgrid. Confirmed clearing does NOT work correctly. Reset required.
+    # Click on Desktop Effects [Defaults] appears to also works.
+    'kwin|Effect-Desktopgrid|BorderActivate|'
+    'kwin|Effect-Desktopgrid|ClickBehavior|'
+    'kwin|Effect-Desktopgrid|CustomLayoutRows|'
     'kwin|Effect-desktopgrid|DesktopLayoutMode|1'
     'kwin|Effect-desktopgrid|DesktopNameAlignment|36'
     'kwin|Effect-desktopgrid|LayoutMode|1'
+    'kwin|Effect-Desktopgrid|PresentWindows|'
     'kwin|Effect-desktopgrid|ShowAddRemove|false'
 
     # Wobbly and transparent windows
-    'kwin|Effect-Wobbly|Drag|85'
-    'kwin|Effect-Wobbly|Stiffness|10'
-    'kwin|Effect-Wobbly|WobblynessLevel|1'
+    #   Confirmed clearing does NOT work correctly. Reset required.
+    'kwin|Effect-wobblywindows|AdvancedMode|true'
+    'kwin|Effect-wobblywindows|Drag|85'
+    'kwin|Effect-wobblywindows|Stiffness|10'
+    'kwin|Effect-wobblywindows|WobblynessLevel|5'
     'kwin|Effect-kwin4_effect_translucency|MoveResize|80'
 
+    # Magic Lamp
+    'kwin|Effect-magiclamp|AnimationDuration|500'
+
     # Enable plugins
+    #   Confirmed clearing does NOT work correctly. Reset required.
     'kwin|Plugins|desktopgridEnabled|true'
     'kwin|Plugins|kwin4_effect_translucencyEnabled|true'
     'kwin|Plugins|mouseclickEnabled|true'
     'kwin|Plugins|trackmouseEnabled|true'
     'kwin|Plugins|wobblywindowsEnabled|true'
+    'kwin|Plugins|magiclampEnabled|true'
 
     # Disable night color by default; it can cause flickering on Intel
+    #   Confirmed clearing does NOT work correctly. Reset required.
     'kwin|Compositing|OpenGLIsUnsafe|false'
     'kwin|NightColor|Active|false'
 
@@ -116,25 +115,34 @@ _EOH01
     'scut|kwin|Switch to Previous Desktop|Meta+Ctrl+Up,,Switch to Previous Desktop'
     'scut|kwin|Switch to Next Desktop|Meta+Ctrl+Down,,Switch to Next Desktop'
     'scut|kwin|Window Fullscreen|Meta+F,,Make Window Fullscreen'
+    'scut|kwin|Show Desktop Grid|ShowDesktopGrid=Ctrl+F8,Ctrl+F8,Show Desktop Grid'
 
     # Setup scale factor based on device and clear old settings.
-    #   Clear values first
-    'font|General|forceFontDPI|'
+    #   In Plasma 5.27.x, global scale is preferred, deprecates 3521
+    #   Notice we clear *all* values first.
+    'font|General|forceFontDPI||'
     'glob|KScreen|ScaleFactor||'
-    'glob|KScreen|ScaleFactor|1.25|ir14g1'
-    'glob|KScreen|ScaleFactor|1.5|m2g4'
-    'glob|KScreen|ScaleFactor|1.5|m2g5'
-    'glob|KScreen|ScaleFactor|1.5|m2g5p'
 
-    # See 3521 - Do not set global scale for Plasma 5.24.x
-    # This will be useful for 5.27.x where it works much better.
-    # 'glob|KScreen|ScaleFactor|1.5|m2g4'
-    # 'glob|KScreen|ScaleFactor|1.25|ir14g1'
+    # 2023-10-22 This no longer appears needed for Plasma 5.27.
+    #   The default appears pulled from kf5-settings/kdeglobals
+    # 'glob|KScreen|ScaleFactor|1.125|ir14g1'
+    # 'glob|KScreen|ScaleFactor|1.375|m2g4'
+    # 'glob|KScreen|ScaleFactor|1.375|m2g5'
+    # 'glob|KScreen|ScaleFactor|1.375|m2g5p'
   );
+
   _log_list=();
-  for _line in "${_line_list[@]}"; do
+  for _line in "${_config_list[@]}"; do
     IFS='|' read -r -a _bit_list <<< "${_line}";
     _key="${_bit_list[0]:-}";
+
+    ## DEBUG: Skip keys
+    # if [[ "${_key}" =~ ^(font|glob)$ ]]; then _cm2EchoFn "Process ${_line}";
+    # else _cm2WarnStrFn "Skip ${_line}"; continue;
+    # fi
+
+    # DEBUG Delete all kwin keys
+    # if [ "${_key}" = 'kwin' ]; then _bit_list[3]=''; fi
 
     _name_file="${_fileMap[$_key]}";
     if [ -z "${_name_file}" ]; then
@@ -154,13 +162,13 @@ _EOH01
 
     if [ -n "${_bit_list[4]:-}" ]; then
       if grep -q "${_model_code}" <<< "${_bit_list[4]:-}"; then
-        _log_list+=( "Apply ${_line} for model ${_bit_list[4]:-}" );
+        _log_list+=( "Apply ${_bit_list[*]} for model ${_bit_list[4]:-}" );
       else
-        _log_list+=( "SKIP  ${_line} for model ${_bit_list[4]:-}" );
+        _log_list+=( "SKIP  ${_bit_list[*]} for model ${_bit_list[4]:-}" );
         continue;
       fi
     else
-      _log_list+=( "Apply ${_line}" );
+      _log_list+=( "Apply ${_bit_list[*]}" );
     fi
 
     _opt_list=(
@@ -168,6 +176,7 @@ _EOH01
       "${_bit_list[1]}" '--key' "${_bit_list[2]}"
     );
 
+    # DEBUG
     if [ -n "${_bit_list[3]:-}" ]; then
       _opt_list+=("${_bit_list[3]}");
     else
