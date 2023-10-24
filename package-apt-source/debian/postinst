@@ -7,7 +7,7 @@
 #
 set -u;
 
-## { BEGIN Declare common.2.source symbols
+## BEGIN Declare common.2.source symbols {
 #  IMPORT 2022-02-23 EXCERPT from test-scripts/common.2.source
 _cm2Arg01="${1:-}";
 
@@ -19,7 +19,7 @@ _cm2SucFn     () { _cm2EchoFn "== . END : OK   ${_cm2BlockMsg}\n\n"; }
 _cm2SucStrFn  () { _cm2EchoFn "ok  : ${*}"; }
 _cm2WarnFn    () { _cm2EchoFn "== . END : WARN Could not ${_cm2BlockMsg}\n\n"; }
 _cm2WarnStrFn () { _cm2EchoFn "warn: ${*}"; }
-## } . END Declare common.2.source symbols
+## . END Declare common.2.source symbols }
 
 ## BEGIN _installReposFn {
 _installReposFn () {
@@ -31,21 +31,6 @@ _installReposFn () {
   _pref_dir='/etc/apt/preferences.d';
   _kfocus_dir='/usr/lib/kfocus';
 
-  #  _pin_str=$(cat << EOF3
-  ##x WARNING! THIS IS A MACHINE GENERATED FILE.
-  ##x DO NOT EDIT AS CHANGES WILL BE OVERWRITTEN BY FUTURE UPDATES.
-  ##x LAST UPDATE 2022-05-10 FOR JAMMY
-  #
-  #Package: tuxedo-keyboard
-  #Pin: origin "deb.tuxedocomputers.com"
-  #Pin-Priority: 500
-  #
-  #Package: *
-  #Pin: origin "deb.tuxedocomputers.com"
-  #Pin-Priority: -1
-  #EOF3
-  #  );
-
   ##
   if [ -e "${_repo_dir}/kfocus-recommended.list" ]; then
     _cm2SetMsgFn 'Remove deprecated kfocus-recommended.list';
@@ -54,12 +39,26 @@ _installReposFn () {
     fi
   fi
 
-  ##
+  ## Preserved for reference
+  #    _pin_str=$(cat << EOF3
+  #  #x WARNING! THIS IS A MACHINE GENERATED FILE.
+  #  #x DO NOT EDIT AS CHANGES WILL BE OVERWRITTEN BY FUTURE UPDATES.
+  #  #x LAST UPDATE 2022-05-10 FOR JAMMY
+  #
+  #  Package: tuxedo-keyboard
+  #  Pin: origin "deb.tuxedocomputers.com"
+  #  Pin-Priority: 500
+  #
+  #  Package: *
+  #  Pin: origin "deb.tuxedocomputers.com"
+  #  Pin-Priority: -1
+  #  EOF3
+  #    );
+  #
   #  _cm2SetMsgFn 'Create or overwrite package pinning';
   #  if echo "${_pin_str}" > "${_pref_dir}"/kfocus-package-pinning; then
   #    _cm2SucFn; else _cm2WarnFn;
   #  fi
-
   ##
   _cm2SetMsgFn 'Create or overwrite repo list files';
   _src_dir="${_kfocus_dir}/sources.list.d";
@@ -82,8 +81,9 @@ _installReposFn () {
   _cm2SetMsgFn "${_top_msg}";
   _ppa_table=(
     'bit-team-ubuntu-stable-jammy.list|2022-04-02|ppa:bit-team/stable|BackInTime'
-    'phoerious-ubuntu-keepassxc-jammy.list|2022-04-02|ppa:phoerious/keepassxc|KeePassXC'
     'kubuntu-ppa-ubuntu-backports-jammy.list|2022-04-02|ppa:kubuntu-ppa/backports|Kubuntu Backports'
+    'kubuntu-ppa-ubuntu-backports-extra-jammy.list|2023-10-24|ppa:kubuntu-ppa/backports-extra|Kubuntu Backports Extra'
+    'phoerious-ubuntu-keepassxc-jammy.list|2022-04-02|ppa:phoerious/keepassxc|KeePassXC'
     'ubuntustudio-ppa-ubuntu-backports-jammy.list|2022-04-02|ppa:ubuntustudio-ppa/backports|Ubuntu Studio Backports'
   );
 
@@ -141,6 +141,7 @@ _addTrustedKeysFn () {
   _key_dir="${_kfocus_dir}/trusted-keys.d";
 
   _cm2SetMsgFn 'Add trusted repo keys';
+
   ## Begin Short-circuit block
   # shellcheck disable=SC2043
   for _block_idx in 1; do
@@ -243,7 +244,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
       _addTrustedKeysFn;
       # Add Google Cloud SDK keys
       _addGcloudSdkKeyFn;
-      # Clean obsolete repos
+      # Remove obsolete repos
       _rmObsoleteReposFn;
     ;;
   esac
