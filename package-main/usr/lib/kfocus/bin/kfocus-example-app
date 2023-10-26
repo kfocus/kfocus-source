@@ -95,15 +95,17 @@ _mainFn () {
 ## . END _mainFn }
 
 ## BEGIN Declare and assign global vars {
-# <= Declare global package vars
-declare _userId _binName _binDir _baseName _baseDir;
+# <= Declare all package variables
+declare _userId _binName _binDir _baseName _baseDir _exitInt;
 
 # <= Set values that will load for tests
 _userId="$(id -u)";
 ## . END Declare and assign global vars }
 
-## BEGIN Run main if script is not sourced {
-# <= This is only run if not sourced.
+## BEGIN Run mainFn when script is NOT sourced {
+#   When sourced by a test unit, values set inside this test
+#   must be set by the calling routine, usually a test harness.
+#
 # <= When sourced by a test unit, these values must be set elsewhere.
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binName="$(  readlink -f "$0"       )" || exit 101;
@@ -126,5 +128,5 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   # _cm2EchoFn "TEST _mainFn  -j 'optJ' -k 'optK' -x 'arg1' 'arg2'";
   # _mainFn  -x -j 'optJ' -k 'optK' 'arg1' 'arg2';
 fi
-## . END Run main if script is not sourced }
+## . END Run mainFn when script is NOT sourced }
 

@@ -154,7 +154,9 @@ _applyRootStyleFn () {
 ## BEGIN _setupModelHintsFn
  # Purpose: Setup hint widget model-specific symlinks
  # Important: This is an extract from kfocus-hw which is the master.
- # Update that code first and copy here.
+ # Update that code first and copy here. This must be here in case
+ # this is updated separate from kfocus-hw.
+ #
 _setupModelHintsFn () {
   declare _lib_file _model_code _hints_dir _unique_dir _model_dir \
     _png_list _src_path _img_file _tgt_path _msg;
@@ -371,11 +373,6 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
       # Cleanup misc details
       _cleanUpFn;
-
-      # Advise reboot
-      # 2023-08-10 Disabled. We would rather have dependent
-      #   packages make this call if needed.
-      # _adviseRebootFn;
     ;;
   esac
   exit 0;
