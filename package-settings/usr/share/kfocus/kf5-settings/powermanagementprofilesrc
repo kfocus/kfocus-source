@@ -25,11 +25,16 @@ scriptPhase=0
 [AC][PowerProfile]
 profile=balanced
 
+[AC][SuspendSession]
+idleTime=900000
+suspendThenHibernate=false
+suspendType=1
+
 [Battery]
 icon=battery-060
 
 [Battery][BrightnessControl]
-value=20
+value=30
 
 [Battery][DPMSControl]
 idleTime=300

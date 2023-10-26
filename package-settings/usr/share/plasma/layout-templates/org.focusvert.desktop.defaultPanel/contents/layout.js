@@ -101,6 +101,7 @@ pager_obj.currentConfigGroup = [ 'General' ];
 // Show screen Names if pager is shown in vertical panel
 pager_obj.writeConfig( 'wrapPage', 'true' );
 if ( ! is_horizontal ) {
+  pager_obj.currentConfigGroup = [ 'General' ];
   pager_obj.writeConfig( 'displayedText', 'Name' );
 }
 
