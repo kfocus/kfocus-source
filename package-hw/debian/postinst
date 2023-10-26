@@ -1,5 +1,8 @@
 #!/bin/bash
-
+#
+# Copyright 2020-2023 MindShare Inc.
+# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
+#
 set -e
 
 ## TODO: /usr/lib/kfocus/conf path
@@ -26,11 +29,9 @@ _cmXEscapeRxCharsFn() {
 ## . END Declare common.2.source symbols }
 
 ## BEGIN declare and assign global vars {
-declare _kwriteExe, _kf5globalsFile;
-_kwriteExe="$(command -v kwriteconfig5)";
-_kf5globalsFile='/usr/share/kfocus/kf5-settings/kdeglobals';
-if [ ! -w "${_kf5globalsFile}" ]; then _kf5globalsFile=''; fi
+declare _effectsExe _kf5SettingsDir;
 _effectsExe="$(command -v '/usr/lib/kfocus/bin/kfocus-reset-effects')";
+_kf5SettingsDir='/usr/share/kfocus/kf5-settings';
 ## . END declare and assign global vars }
 
 ## BEGIN _supplementXdgConfigsFn {
@@ -43,11 +44,6 @@ _supplementXdgConfigsFn () {
   _cmXSetMsgFn 'Use consistent XDG_CONFIG_DIR values';
   if [ -z "${_effectsExe}" ]; then
     _cmXWarnStrFn "Not executable |${_effectsExe}|";
-    _cm2WarnFn;
-    return;
-  fi
-  if [ -z "${_kf5globalsFile}" ]; then
-    _cmXWarnStrFn "File not writable |${_kf5globalsFile}|";
     _cm2WarnFn;
     return;
   fi
