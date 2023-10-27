@@ -199,9 +199,11 @@ _mainFn () {
 
   # Immediately apply effects and return if -d option provided.
   if [ "${1:-}" = '-d' ]; then
-    _configDir="${2:-}";
-    if [ -d "${_configDir}" ]; then
-      _resetEffectsFn;
+    if [ -n "${2:-}" ]; then
+      _configDir="$(readlink -f "${2:-}")";
+      if [ -d "${_configDir}" ]; then
+        _resetEffectsFn;
+      fi
     fi
     return;
   fi
