@@ -44,15 +44,15 @@ _supplementXdgConfigsFn () {
   _cmXSetMsgFn 'Use consistent XDG_CONFIG_DIR values';
   if [ -z "${_effectsExe}" ]; then
     _cmXWarnStrFn "Not executable |${_effectsExe}|";
-    _cm2WarnFn;
+    _cmXWarnFn;
     return;
   fi
 
   if "${_effectsExe}" -d '/usr/share/kfocus/kf5-settings'; then
-    _cmXSucFn;
+    _cmSucFn;
   else
-    _cm2WarnStr "Could not run |${_effectsExe}|";
-    _cm2WarnFn;
+    _cmXWarnStr "Could not run |${_effectsExe}|";
+    _cmXWarnFn;
   fi
 }
 ## . END _supplementXdgConfigsFn }
