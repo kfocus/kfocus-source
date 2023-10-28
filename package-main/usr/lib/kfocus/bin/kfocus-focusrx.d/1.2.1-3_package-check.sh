@@ -220,6 +220,15 @@ if [ "${_modelLabel}" != 'generic' ]; then
   _modelLabel="Kubuntu Focus ${_modelLabel}";
 fi
 
+# Supplemental check for Nvidia systems
+if [ "${_isNvidiaSystem}" != 'y' ]; then
+  _lspciExe="$(command -v lspci)";
+  if [ -n "${_lspciExe}" ] \
+    && grep -qi 'vga.*nvidia' < <("${_lspciExe}"); then
+    _isNvidiaSystem='y';
+  fi
+fi
+
 # Import distro info
 # Example: DISTRIB_RELEASE=20.04  DISTRIB_CODENAME=focal
 if [ -f '/etc/lsb-release' ]; then

@@ -236,7 +236,7 @@ _chkHwConfigFn () {
   if [ "${_is_hw_reconfig}" = 'y' ]; then
     _is_nv_system="$(_cm2EchoModelStrFn 'is_nv_sys')";
 
-    # Supplement check for systems with eGPU or others
+    # Supplemental check for Nvidia systems
     if [ "${_is_nv_system}" != 'y' ]; then
       _lspci_exe="$(command -v lspci)";
       if [ -n "${_lspci_exe}" ] \
