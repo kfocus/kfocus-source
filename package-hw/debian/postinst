@@ -6,7 +6,7 @@
 set -e
 
 ## TODO: /usr/lib/kfocus/conf path
-## TODO: Move to rtested userspace after expect tests verified
+## TODO: Move to tested userspace after expect results verified
 
 ## BEGIN Declare common.2.source symbols {
 #  IMPORT 2023-04-04 EXCERPT from common.2.source
@@ -49,7 +49,7 @@ _supplementXdgConfigsFn () {
   fi
 
   if "${_effectsExe}" -d '/usr/share/kfocus/kf5-settings'; then
-    _cmSucFn;
+    _cmXSucFn;
   else
     _cmXWarnStr "Could not run |${_effectsExe}|";
     _cmXWarnFn;
@@ -60,7 +60,7 @@ _supplementXdgConfigsFn () {
 # Deprecated by _supplementXdgConfigsFn
 # _setScaleFactorFn () {
 #   declare _factor_str _opt_list;
-
+#
 #   _factor_str="${1:-}";
 #   if [ ! -f "${_kf5globalsFile}" ]; then
 #     touch "${_kf5globalsFile}" || return;
@@ -69,7 +69,7 @@ _supplementXdgConfigsFn () {
 #     _opt_list=('--file' "${_kf5globalsFile}" '--group' 'KScreen'
 #       '--key' 'ScaleFactor'
 #     );
-
+#
 #     if [ -n "${_factor_str}" ]; then
 #       _opt_list+=("${_factor_str}");
 #     else
