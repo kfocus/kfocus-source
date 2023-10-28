@@ -9,7 +9,7 @@ Rules-Requires-Root: no
 
 Package: kfocus-hw
 Architecture: all
-Pre-Depends: kfocus-common (>= 22.04.9)
+Pre-Depends: kfocus-common (>= 22.04.9), kfocus-settings (>= 22.04.16)
 Depends: ${shlibs:Depends}, ${misc:Depends},
          kfocus-main (>> 22.04.42)
 Conflicts: kfocus-main (<< 22.04.3)

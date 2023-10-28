@@ -49,7 +49,7 @@ _supplementXdgConfigsFn () {
   fi
 
   if "${_effectsExe}" -d '/usr/share/kfocus/kf5-settings'; then
-    _cmXsucFn;
+    _cmXSucFn;
   else
     _cm2WarnStr "Could not run |${_effectsExe}|";
     _cm2WarnFn;
