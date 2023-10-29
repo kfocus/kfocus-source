@@ -216,7 +216,7 @@ _chkHwConfigFn () {
   ## Begin add or remove extra keyboard package {
   if _cm2ChkInstalledPkgFn 'kfocus-keyboard-ite'; then
     if [ "${_dmi_hw_model_code}" != 'm2g5p' ]; then
-      _msg='remove-kbd-ite;;';
+      _msg='purge-kbd-ite;;';
       _msg+='Package kfocus-keyboard-ite needs to be removed';
       _reason_list+=( "${_msg}" );
     fi
