@@ -95,7 +95,7 @@ _resetEffectsFn () {
     'kwin|Plugins|trackmouseEnabled|true'
     'kwin|Plugins|wobblywindowsEnabled|true'
 
-    # Add window borders
+    # Window borders
     'kwin|org.kde.kdecoration2|BorderSize|Tiny'
     'kwin|org.kde.kdecoration2|BorderSizeAuto|false'
 
@@ -106,17 +106,17 @@ _resetEffectsFn () {
     'scut|kwin|Switch to Previous Desktop|Meta+Ctrl+Up,,Switch to Previous Desktop'
     'scut|kwin|Switch to Next Desktop|Meta+Ctrl+Down,,Switch to Next Desktop'
     'scut|kwin|Window Fullscreen|Meta+F,,Make Window Fullscreen'
-    'scut|kwin|Show Desktop Grid|Meta+F8,Meta+F8,Show Desktop Grid'
+    # These are both set in 5.27.9 by system settings GUI
+    'scut|kwin|Show Desktop Grid|none,Meta+F8,Show Desktop Grid'
+    'scut|kwin|ShowDesktopGrid|Meta+F8,Meta+F8,Show Desktop Grid'
 
     # Setup scale factor based on device and clear old settings.
-    # Clear all values first
-    #
+    # Clear all values first.
     'font|General|forceFontDPI|'
     'glob|KScreen|ScaleFactor|'
 
-    # Reset DPI per model 3521
+    # Reset DPI per ticket 3521.
     # We tried ScaleFactor in 5.27, but GTK apps did not honor the value.
-    #
     'font|General|forceFontDPI|120|ir14g1'
     'font|General|forceFontDPI|136|m2g4'
     'font|General|forceFontDPI|136|m2g5'
@@ -265,10 +265,10 @@ _EOH02
 ## BEGIN Declare and assign global vars {
 declare _rootTitle _assignList _kwriteconfig5Exe _configDir;
 declare -A _fileMap=(
-  ['scut']=kglobalshortcutsrc
   ['font']=kcmfonts
   ['glob']=kdeglobals
   ['kwin']=kwinrc
+  ['scut']=kglobalshortcutsrc
 );
 _rootTitle='Kubuntu Focus Reset Effects';
 _configDir="$HOME/.config";

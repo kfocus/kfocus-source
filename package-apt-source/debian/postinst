@@ -1,11 +1,9 @@
 #!/bin/bash
-# kfocus-apt-source postinst
-# This must be run as root.
 #
-# set -u is used to exit on uninitialized variables
-# set -e is not used as we do our own error checking
+# Copyright 2020-2023 MindShare Inc.
+# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
 #
-set -u;
+set -e;
 
 ## BEGIN Declare common.2.source symbols {
 #  IMPORT 2022-02-23 EXCERPT from test-scripts/common.2.source

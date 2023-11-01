@@ -1,18 +1,13 @@
 #!/bin/bash
-# kfocus-apt-source preinst
-# This must be run as root.
 #
-# See test/test-scripts/common.2.source for common routines when needed
+# Copyright 2020-2023 MindShare Inc.
+# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
 #
-# set -u is used to exist on uninitialized variables
-# set -e is not used as we do our own error checking
-#
-set -u;
+set -e;
 
 ## BEGIN MAIN {
 case "${1:-}" in
-  abort-upgrade)
-  ;;
+  abort-upgrade) true;;
   install|upgrade|*)
     sed -i 's|^\(deb http://repo.kfocus.org/ubuntu/\? \)|# \1|g' \
       /etc/apt/sources.list

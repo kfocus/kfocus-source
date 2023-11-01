@@ -1,17 +1,13 @@
 #!/bin/bash
-# kfocus-apt-source postrm
-# This must be run as root.
 #
-# set -u is used to exist on uninitialized variables
-# set -e is not used as we do our own error checking
+# Copyright 2020-2023 MindShare Inc.
+# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
 #
-set -u;
-
-[ $# -gt 0 ] && _cmd="${1}" || _cmd='';
+set -e
 
 ## BEGIN MAIN {
 # Only do complete clean-up on purge.
-if [ "${_cmd}" != "purge" ] ; then
+if [ "${1:-}" != "purge" ] ; then
   exit 0
 fi
 
