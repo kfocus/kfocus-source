@@ -42,7 +42,13 @@ _supplementXdgConfigsFn () {
     return;
   fi
 
-  if "${_effectsExe}" -d '/usr/share/kfocus/kf5-settings'; then
+  if ! mkdir -p "${_kf5SettingsDir}"; then
+    _cmXWarnStrFn "Cannot access |${_kf5SettingsDir}|";
+    _cmXWarnFn;
+    return;
+  fi
+
+  if "${_effectsExe}" -d "${_kf5SettingsDir}"; then
     _cmXSucFn;
   else
     _cmXWarnStrFn "Could not run |${_effectsExe}|";
@@ -485,13 +491,13 @@ _configFn () {
   echo "${_config_code}" > "${_config_code_file}" || true;
 }
 
-## BEGIN declare and assign global vars {
+## BEGIN declare and assign package vars {
 declare _effectsExe _kf5SettingsDir;
 _effectsExe="$(command -v '/usr/lib/kfocus/bin/kfocus-reset-effects')";
 _kf5SettingsDir='/usr/share/kfocus/kf5-settings';
-## . END declare and assign global vars }
+## . END declare and assign package vars }
 
-# Format: target|source|do_safe_backup
+# Table line structure is 'target|source|do_safe_backup'
 _symlinkTable=();
 case "${1:-}" in
   configure|upgrade) _configFn;;
