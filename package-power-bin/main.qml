@@ -601,7 +601,7 @@ Kirigami.ApplicationWindow {
     readonly property real scaleRatio: scaleMap.scale_ratio
     property bool doSkipNextFreqPoll: false
 
-    readonly property int baseWidth: 470
+    readonly property int baseWidth: 500
     readonly property int baseHeight: 570
     // . END Global Properties
 }
