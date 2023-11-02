@@ -20,7 +20,34 @@ public, tags are applied in the following format, where x is the numerical
 release order:
 
 ```
-{main|rest|apt-source|cuda-libs|hw|main|nvidia|settings|tools|wallpapers}/22.04.{x}
+# Tag Format
+<name>/22.04.{x}
+
+# Full Package Names
+kfocus-<name>
+```
+
+## Package Table
+
+| Name         | Directory            | Full Package Name   |
+| apt-source   | package-apt-source   | kfocus-apt-source   |
+| firstrun-bin | package-firstrun-bin | kfocus-firstrun-bin |
+| hw           | package-hw           | kfocus-hw           |
+| linux-meta   | package-linux-meta   | kfocus-linux-meta   |
+| main         | package-main         | kfocus-main         |
+| nvidia       | package-nvidia       | kfocus-nvidia       |
+| power-bin    | package-power-bin    | kfocus-power-bin    |
+| qwe          | package-qwe          | kfocus-qwe          |
+| rest         | package-rest         | kfocus-rest         |
+| settings     | package-settings     | kfocus-settings     |
+| tools        | package-tools        | kfocus-tools        |
+| wallpapers   | package-wallpapers   | kfocus-wallpapers   |
+
+As of 22.04, the following packages are deprecated
+
+```
+kfocus-cuda-lib  # Replaced kfocus kfocus-conda tool
+kfocus-001-*     # 20.04 packages renamed to above
 ```
 
 ## Build and Distribution
@@ -39,6 +66,36 @@ generated separately but packaged here using the .source file as the only
 source.
 
 [_0100]:https://launchpad.net/~kfocus-team/+archive/ubuntu/release.
+
+## Dependencies
+In general, avoid `Predepends` in packages and avoid changing any dependencies.
+If you DO change a dependency, make sure one can install the full suite on top
+of stock kubuntu like so:
+
+```bash
+sudo -i 
+
+_rx_dir='/var/lib/kfocus/';
+mkdir -p "${_rx_dir}" || exit;
+echo '1.3.0-0' > "${_rx_dir}/focusrx_version";
+
+dpkg --add-architecture i386
+add-apt-repository multiverse
+add-apt-repository ppa:kfocus-team/release
+apt install kfocus-apt-source
+
+apt update
+apt install kfocus-main
+apt purge google-chrome-unstable
+apt update
+# Retry if this fails due to https timeouts from launchpad or others.
+apt full-upgrade
+
+# Proceed only on successful completion of above steps.
+reboot
+
+# Sign in as user and complete hardware configuration
+```
 
 ## Contributing
 Contributions and pull requests are welcome. See CONTRIBUTING.md for code
