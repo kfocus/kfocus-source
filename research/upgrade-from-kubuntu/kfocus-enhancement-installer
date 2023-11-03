@@ -1,0 +1,164 @@
+#!/bin/bash
+#
+# Copyright 2019-2023 MindShare Inc.
+#
+# Written for the Kubuntu Focus by M. Mikowski and A. Rainbolt.
+#
+# Name     : kfocus-enhancement-installer
+# Summary  : kfocus-enhancement-installer [alreadyInstalled|notKubuntu|asdf]
+# Purpose  : Mockup for the Kubuntu Focus Enhancement Installer.
+# Example  : kfocus-enhancement-installer asdf
+# License  : GPLv2
+# Run By   : Developers only
+# Spec     : 
+#
+set -u;
+
+## BEGIN _importCommonFn {
+# Summary   : _importCommonFn
+# Purpose   : Load common routines, prefer relative dir
+# Example   : _importCommonFn;
+# Arguments : none
+# Globals   : Package vars _baseDir _baseName
+# Outputs   : none
+# Returns   : none
+#
+_importCommonFn () {
+  declare _lib_list _is_loaded _lib_file;
+  _lib_list=(
+    "${_binDir}/lib/common.2.source"
+  );
+  _is_loaded='n';
+  for _lib_file in "${_lib_list[@]}"; do
+    if [ -r "${_lib_file}" ]; then
+      # shellcheck source=/usr/lib/kfocus/lib/common.2.source
+      if source "${_lib_file}"; then
+        _is_loaded='y';
+        break;
+      fi
+    fi
+  done
+
+  if [ "${_is_loaded}" = 'n' ]; then
+    echo 1>&2 "${_baseName}: ABORT - Cannot source common lib";
+    exit 202;
+  fi
+}
+## . END _importCommonFn }
+
+## BEGIN _mainFn {
+# Summary   : _mainFn [args-and-options]
+# Purpose   : Main function for package
+# Example   : _mainFn 'myArg' -i 'op1' -k 'op2' -x;
+# Arguments : Any arbitrary positional arguments.
+#             Switches -i|j|k take a string value.
+#             Switch -x takes no string.
+# Globals   : OPTIND is reset to local for arg processing
+# Outputs   : Prints diagnostics to stderr
+# Returns   : none
+#
+_mainFn () {
+  declare _opt_str _proceed_str _op_result_code;
+
+  if [ "$#" -ge 1 ]; then
+    _opt_str="$1";
+  fi
+
+  _cm2PromptUserFn "Welcome to the Kubuntu Focus Enhancement Installer. This \
+program will help you install or remove KFocus enhancements on a Kubuntu \
+system.
+
+Please back up your data before installing or uninstalling the enhancements. \
+If you have not done this yet, you can cancel the installation or \
+uninstallation process on the next screen.
+
+Press OK to continue." "${_titleStr}";
+
+  if [ "${_opt_str}" = "notKubuntu" ]; then
+    _cm2PromptUserFn "This system is not running Kubuntu 22.04 LTS. Only \
+Kubuntu 22.04 LTS systems can have Kubuntu Focus enhancements installed.
+
+Press OK to exit the installer." "${_titleStr}";
+  exit 1;
+  elif [ "${_opt_str}" = "alreadyInstalled" ]; then
+    _proceed_str="$(_cm2PromptUserFn "This system already has Kubuntu Focus \
+enhancements installed. We highly recommend that you NOT uninstall these if \
+you are using Kubuntu Focus hardware.
+
+Remove Kubuntu Focus enhancements?" "${_titleStr}" "w";)";
+    if [ "${_proceed_str}" = "n" ]; then
+      _cm2PromptUserFn "Uninstallation canceled." "${_titleStr}";
+    else
+      _op_result_code="$(_cm2RunLongCmdFn "Uninstalling Kubuntu Focus \
+enhancements" "${_binDir}/sleep.sh" > /dev/null; echo $?;)";
+      if [ "${_op_result_code}" = "0" ]; then
+        _cm2PromptUserFn "Uninstallation complete. Please reboot to ensure \
+all changes have been properly applied." "${_titleStr}";
+      else
+        _cm2PromptUserFn "Uninstallation failed! The installer will now \
+attempt to recover." "${_titleStr}" "e";
+        _op_result_code="$(_cm2RunLongCmdFn "Recovering from failed \
+installation" "${_binDir}/sleep.sh" > /dev/null; echo $?;)";
+        if [ "${_op_result_code}" = "0" ]; then
+          _cm2PromptUserFn "Recovery successful. Please check and make sure \
+that your package manager is in a consistent state." "${_titleStr}";
+        else
+          _cm2PromptUserFn "Recovery failed! You will need to repair your \
+package manager. Please contact technical support for help." "${_titleStr}" \
+"e";
+        fi
+      fi
+    fi
+  else
+    _proceed_str="$(_cm2PromptUserFn "This system does not yet have Kubuntu \
+Focus enhancements installed. Would you like to install them?" \
+"${_titleStr}" w;)";
+    if [ "${_proceed_str}" = "n" ]; then
+      _cm2PromptUserFn "Installation canceled." "${_titleStr}";
+    else
+      _op_result_code="$(_cm2RunLongCmdFn "Installing Kubuntu Focus \
+enhancements" "${_binDir}/sleep.sh" > /dev/null; echo $?;)"
+      echo "${_op_result_code}";
+      if [ "${_op_result_code}" = "0" ]; then
+        _cm2PromptUserFn "Installation complete. Please reboot to ensure all \
+changes have been properly applied." "${_titleStr}";
+      else
+        _cm2PromptUserFn "Installation failed! The installer will now \
+attempt to recover." "${_titleStr}" "e";
+        _op_result_code="$(_cm2RunLongCmdFn "Recovering from failed \
+installation" "${_binDir}/sleep.sh" > /dev/null; echo $?;)";
+        if [ "${_op_result_code}" = "0" ]; then
+          _cm2PromptUserFn "Recovery successful. Please check and make sure \
+that your package manager is in a consistent state." "${_titleStr}";
+        else
+          _cm2PromptUserFn "Recovery failed! You will need to repair your \
+package manager. Please contact technical support for help." "${_titleStr}" \
+"e";
+        fi
+      fi
+    fi
+  fi
+}
+## . END _mainFn }
+
+## BEGIN Declare and assign global vars {
+declare _titleStr;
+## . END Declare and assign global vars }
+
+## BEGIN Run main if script is not sourced {
+# <= This is only run if not sourced.
+# <= When sourced by a test unit, these values must be set elsewhere.
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+  _titleStr="Kubuntu Focus Enhancement Installer";
+
+  # Import libs and assign more global vars
+  _importCommonFn;
+
+  _mainFn "$@";
+fi
+## . END Run main if script is not sourced }
+
