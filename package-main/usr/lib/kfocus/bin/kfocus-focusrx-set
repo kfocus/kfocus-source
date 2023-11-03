@@ -219,22 +219,26 @@ _chkHwConfigFn () {
     _reason_list+=( "${_msg}" );
   elif [ "${_do_force}" = 'y' ]; then
     _msg="install-hw-tools;${_tool_pkg_name};";
-    _msg+="Package ${_tool_pkg_name} forced re-installation.";
+    _msg+="Package ${_tool_pkg_name} reinstall forced.";
     _reason_list+=( "${_msg}" );
   fi
   ## . End Adjust tool suffix per config code }
 
   ## Begin add or remove extra keyboard package {
-  if _cm2ChkInstalledPkgFn 'kfocus-keyboard-ite'; then
-    if [ "${_dmi_hw_model_code}" != 'm2g5p' ]; then
-      _msg='purge-kbd-ite;;';
-      _msg+='Package kfocus-keyboard-ite needs to be removed';
+  if [ "${_dmi_hw_model_code}" = 'm2g5p' ]; then
+    if ! _cm2ChkInstalledPkgFn 'kfocus-keyboard-ite'; then
+      _msg='install-kbd-ite;;';
+      _msg+='Package kfocus-keyboard-ite needs to be installed.';
+      _reason_list+=( "${_msg}" );
+    elif [ "${_do_force}" = 'y' ]; then
+      _msg='install-kbd-ite;;';
+      _msg+='Package kfocus-keyboard-ite reinstall forced.';
       _reason_list+=( "${_msg}" );
     fi
   else
-    if [ "${_dmi_hw_model_code}" = 'm2g5p' ]; then
-      _msg='install-kbd-ite;;';
-      _msg+='Package kfocus-keyboard-ite needs to be installed.';
+    if _cm2ChkInstalledPkgFn 'kfocus-keyboard-ite'; then
+      _msg='purge-kbd-ite;;';
+      _msg+='Package kfocus-keyboard-ite needs purge.';
       _reason_list+=( "${_msg}" );
     fi
   fi
@@ -262,7 +266,7 @@ _chkHwConfigFn () {
         _msg='install-nvidia;;Nvidia libraries needs to be installed.';
         _reason_list+=( "${_msg}" );
       elif [ "${_do_force}" = 'y' ]; then
-        _msg='install-nvidia;;Nvidia libraries forced re-installation.';
+        _msg='install-nvidia;;Nvidia libraries reinstall forced.';
         _reason_list+=( "${_msg}" );
       fi
     fi

@@ -14,7 +14,7 @@ if [ "${_arg}" = 'in-favour' ]; then
   _cmd='upgrade';
 fi
 
-# Do not clean-up just for an upgrade
+# Do not clean for an upgrade
 if [ "${_cmd}" = 'upgrade' ] ; then
   exit 0
 fi
