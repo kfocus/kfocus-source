@@ -46,6 +46,39 @@ _importCommonFn () {
 }
 ## . END _importCommonFn }
 
+## BEGIN _checkEnvFn {
+# Summary   : _checkEnvFn
+# Purpose   : Checks the system to see if it is a supported Kubuntu LTS system
+#             and if it has KFocus enhancements already installed.
+# Example   : _checkEnvFn
+# Arguments : none
+# Outputs   : "notKubuntuLts" if the system is not a supported version of
+#             Kubuntu LTS, "alreadyInstalled" if KFocus enhancements are
+#             present, and "notInstalled" if KFocus enhancements are not
+#             present.
+# Returns   : none
+#
+_checkEnvFn() {
+  declare _is_ubuntu_lts_int _is_kubuntu_int _is_kfocus_int;
+
+  _is_ubuntu_lts_int="$(grep -q "Ubuntu 22.04" /etc/lsb-release; echo $?;)";
+  _is_kubuntu_int="$(grep -q "Name=Kubuntu" /etc/xdg/kcm-about-distrorc; \
+    echo $?;)";
+  if [ "${_is_ubuntu_lts_int}" != "0" ] ||
+     [ "${_is_kubuntu_int}" != "0" ]; then
+    echo "notKubuntuLts";
+    return;
+  fi
+
+  _is_kfocus_int="$(dpkg-query -s kfocus-main > /dev/null; echo $?)";
+  if [ "${_is_kfocus_int}" != "0" ]; then
+    echo "notInstalled";
+  else
+    echo "alreadyInstalled";
+  fi
+}
+## . END _checkEnvFn }
+
 ## BEGIN _mainFn {
 # Summary   : _mainFn [args-and-options]
 # Purpose   : Main function for package
@@ -58,13 +91,18 @@ _importCommonFn () {
 # Returns   : none
 #
 _mainFn () {
-  declare _opt_str _proceed_str _op_result_code;
+  declare _notty_msg _welcome_msg _unsupported_warning_msg \
+    _uninstall_offer_msg _uninstall_cancel_msg _uninstalling_msg \
+    _uninstall_complete_msg _uninstall_failed_msg _uninstall_recovering_msg \
+    _uninstall_recover_complete_msg _uninstall_recover_failed_msg \
+    _install_offer_msg _install_cancel_msg _installing_msg \
+    _install_complete_msg _proceed_str _op_result_code _sys_status_str;
 
-  if [ "$#" -ge 1 ]; then
-    _opt_str="$1";
-  fi
+  _notty_msg="This script must be run from within a graphical KDE \
+environment, and kdialog must be installed. Also note that this script only \
+works on Kubuntu 22.04 LTS.";
 
-  _cm2PromptUserFn "Welcome to the Kubuntu Focus Enhancement Installer. This \
+  _welcome_msg="Welcome to the Kubuntu Focus Enhancement Installer. This \
 program will help you install or remove KFocus enhancements on a Kubuntu \
 system. This will provide you with various utilities for system and power \
 management, a curated kernel that is less likely to cause hardware breakage \
@@ -74,68 +112,126 @@ Please back up your data before installing or uninstalling the enhancements. \
 If you have not done this yet, you can cancel the installation or \
 uninstallation process on the next screen.
 
-Press OK to continue." "${_titleStr}";
+Press OK to continue.";
 
-  if [ "${_opt_str}" = "notKubuntu" ]; then
-    _cm2PromptUserFn "This system is not running Kubuntu 22.04 LTS. Only \
-Kubuntu 22.04 LTS systems can have Kubuntu Focus enhancements installed.
+  _unsupported_warning_msg="This system is not running Kubuntu 22.04 LTS. \
+Only Kubuntu 22.04 LTS systems can have Kubuntu Focus enhancements installed.
 
-Press OK to exit the installer." "${_titleStr}";
-  exit 1;
-  elif [ "${_opt_str}" = "alreadyInstalled" ]; then
-    _proceed_str="$(_cm2PromptUserFn "This system already has Kubuntu Focus \
-enhancements installed. We highly recommend that you NOT uninstall these if \
-you are using Kubuntu Focus hardware.
+Press OK to exit the installer.";
 
-Remove Kubuntu Focus enhancements?" "${_titleStr}" "w";)";
+  _uninstall_offer_msg="This system already has Kubuntu Focus enhancements \
+installed. We highly recommend that you NOT uninstall these if you are using \
+Kubuntu Focus hardware.
+
+Remove Kubuntu Focus enhancements?";
+
+  _uninstall_cancel_msg="Uninstallation canceled.";
+
+  _uninstalling_msg="Uninstalling Kubuntu Focus Enhancements";
+
+  _uninstall_complete_msg="Uninstallation complete. Please reboot to ensure \
+all changes have been properly applied.";
+
+  _uninstall_failed_msg="Uninstallation failed! The installer will now \
+attempt to recover.";
+
+  _uninstall_recovering_msg="Recovering from failed installation";
+
+  _uninstalled_recover_complete_msg="Recovery successful. Please check and \
+make sure that your package manager is in a consistent state.";
+
+  _uninstalled_recover_failed_msg="Recovery failed! You will need to repair \
+your package manager. Please contact technical support for help.";
+
+  _install_offer_msg="This system does not yet have Kubuntu Focus \
+enhancements installed. Would you like to install them?";
+
+  _install_cancel_msg="Installation canceled.";
+
+  _installing_msg="Installing Kubuntu Focus enhancements";
+
+  _install_complete_msg="Installation complete. Please reboot to ensure all \
+changes have been properly applied.";
+
+  _install_failed_msg="Installation failed! The installer will now attempt \
+to recover.";
+
+  _install_recovering_msg="Recovering from failed installation";
+
+  _install_recover_complete_msg="Recovery successful. Please check and make \
+sure that your package manager is in a consistent state.";
+
+  _install_recover_failed_msg="Recovery failed! You will need to repair your \
+package manager. Please contact technical support for help.";
+
+  if [ "${_cm2IsTty}" = "y" ]; then
+    _cm2PromptUserFn "${_notty_msg}" "${_titleStr}";
+    exit 1;
+  fi
+
+  _cm2PromptUserFn "${_welcome_msg}" "${_titleStr}";
+
+  _sys_status_str="$(_checkEnvFn)"
+
+  if [ "${_sys_status_str}" = "notKubuntuLts" ]; then
+    _cm2PromptUserFn "${_unsupported_warning_msg}" "${_titleStr}";
+    exit 1;
+
+  elif [ "${_sys_status_str}" = "alreadyInstalled" ]; then
+    _proceed_str="$(_cm2PromptUserFn "${_uninstall_offer_msg}" \
+      "${_titleStr}" "w";)";
+
     if [ "${_proceed_str}" = "n" ]; then
-      _cm2PromptUserFn "Uninstallation canceled." "${_titleStr}";
+      _cm2PromptUserFn "${_uninstall_cancel_msg}" "${_titleStr}";
+
     else
-      _op_result_code="$(_cm2RunLongCmdFn "Uninstalling Kubuntu Focus \
-enhancements" "${_binDir}/sleep.sh" > /dev/null; echo $?;)";
+      _op_result_code="$(_cm2RunLongCmdFn "${_uninstalling_msg}" \
+        "${_binDir}/uninstall.sh" > /dev/null; echo $?;)";
+
       if [ "${_op_result_code}" = "0" ]; then
-        _cm2PromptUserFn "Uninstallation complete. Please reboot to ensure \
-all changes have been properly applied." "${_titleStr}";
+        _cm2PromptUserFn "${_uninstall_complete_msg}" "${_titleStr}";
+
       else
-        _cm2PromptUserFn "Uninstallation failed! The installer will now \
-attempt to recover." "${_titleStr}" "e";
-        _op_result_code="$(_cm2RunLongCmdFn "Recovering from failed \
-installation" "${_binDir}/sleep.sh" > /dev/null; echo $?;)";
+        _cm2PromptUserFn "${_uninstall_failed_msg}" "${_titleStr}" "e";
+        _op_result_code="$(_cm2RunLongCmdFn "${_uninstall_recovering_msg}" \
+          "${_binDir}/recover_uninstall.sh" > /dev/null; echo $?;)";
+
         if [ "${_op_result_code}" = "0" ]; then
-          _cm2PromptUserFn "Recovery successful. Please check and make sure \
-that your package manager is in a consistent state." "${_titleStr}";
+          _cm2PromptUserFn "${_uninstall_recover_complete_msg}" \
+            "${_titleStr}";
+
         else
-          _cm2PromptUserFn "Recovery failed! You will need to repair your \
-package manager. Please contact technical support for help." "${_titleStr}" \
-"e";
+          _cm2PromptUserFn "${_uninstall_recover_failed_msg}" "${_titleStr}" \
+            "e";
         fi
       fi
     fi
+
   else
-    _proceed_str="$(_cm2PromptUserFn "This system does not yet have Kubuntu \
-Focus enhancements installed. Would you like to install them?" \
-"${_titleStr}" w;)";
+    _proceed_str="$(_cm2PromptUserFn "${_install_offer_msg}" "${_titleStr}" \
+      w;)";
+
     if [ "${_proceed_str}" = "n" ]; then
-      _cm2PromptUserFn "Installation canceled." "${_titleStr}";
+      _cm2PromptUserFn "${_install_cancel_msg}" "${_titleStr}";
+
     else
-      _op_result_code="$(_cm2RunLongCmdFn "Installing Kubuntu Focus \
-enhancements" "${_binDir}/sleep.sh" > /dev/null; echo $?;)"
-      echo "${_op_result_code}";
+      _op_result_code="$(_cm2RunLongCmdFn "${_installing_msg}" \
+        "${_binDir}/install.sh" > /dev/null; echo $?;)"
+
       if [ "${_op_result_code}" = "0" ]; then
-        _cm2PromptUserFn "Installation complete. Please reboot to ensure all \
-changes have been properly applied." "${_titleStr}";
+        _cm2PromptUserFn "${_install_complete_msg}" "${_titleStr}";
+
       else
-        _cm2PromptUserFn "Installation failed! The installer will now \
-attempt to recover." "${_titleStr}" "e";
-        _op_result_code="$(_cm2RunLongCmdFn "Recovering from failed \
-installation" "${_binDir}/sleep.sh" > /dev/null; echo $?;)";
+        _cm2PromptUserFn "${_install_failed_msg}" "${_titleStr}" "e";
+        _op_result_code="$(_cm2RunLongCmdFn "${_install_recovering_msg}" \
+          "${_binDir}/recover_install.sh" > /dev/null; echo $?;)";
+
         if [ "${_op_result_code}" = "0" ]; then
-          _cm2PromptUserFn "Recovery successful. Please check and make sure \
-that your package manager is in a consistent state." "${_titleStr}";
+          _cm2PromptUserFn "${_install_recover_complete_msg}" "${_titleStr}";
+
         else
-          _cm2PromptUserFn "Recovery failed! You will need to repair your \
-package manager. Please contact technical support for help." "${_titleStr}" \
-"e";
+          _cm2PromptUserFn "${_install_recover_failed_msg}" "${_titleStr}" \
+            "e";
         fi
       fi
     fi
@@ -160,7 +256,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   # Import libs and assign more global vars
   _importCommonFn;
 
-  _mainFn "$@";
+  _mainFn;
 fi
 ## . END Run main if script is not sourced }
 
