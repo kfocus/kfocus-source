@@ -7,7 +7,7 @@ set -e
 
 ## BEGIN Maintain adduser.local
 _thisScriptVers='22.04.3'; # BUMP THIS IF THE FOLLOWING STRING IS UPDATED
-_addUserStr=$(cat << 'EOF'
+_addUserStr="$(cat << 'EOF'
 #!/bin/bash
 #
 # THIS IS A MACHINE GENERATED FILE. PLEASE DO NOT EDIT.
@@ -150,10 +150,9 @@ fi
 # Always exit 0 so user can be created even if this script is broken
 exit 0;
 EOF
-)
-_addUserStr="$(
-  echo "${_addUserStr}" |sed "s/<_thisScriptVers_>/${_thisScriptVers}/g"
 )";
+
+_addUserStr="${_addUserStr/<_thisScriptVers_>/${_thisScriptVers}}";
 
 if ! [ -d /usr/local/sbin ]; then mkdir -p /usr/local/sbin; fi
 
@@ -165,7 +164,7 @@ else
 fi
 
 if ! [ -e /usr/local/sbin/adduser.local ] \
-  || [ "${_thisScriptVers}" != "${_foundScriptVers}" ]; then
+  || [ "${_thisScriptVers}" != "${_foundScriptVers:-}" ]; then
   echo "${_addUserStr}" > /usr/local/sbin/adduser.local;
   chmod +x /usr/local/sbin/adduser.local || true;
 fi
@@ -178,7 +177,7 @@ fi
 #
 _effectsExe="$(command -v '/usr/lib/kfocus/bin/kfocus-reset-effects')";
 _kf5SettingsDir='/usr/share/kfocus/kf5-settings';
-if [ "${_effectsExe}" ] && [ -d "${_kf5SettingsDir}" ]; then
+if [ -n "${_effectsExe}" ] && [ -d "${_kf5SettingsDir}" ]; then
   if ! "${_effectsExe}" -d "${_kf5SettingsDir}"; then
     1>&2 echo "warn: Errors populating |${_kf5SettingsDir}|";
   fi
