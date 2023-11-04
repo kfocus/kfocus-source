@@ -15,16 +15,6 @@ _cmXWarnFn    () { _cmXEchoFn "== . END : WARN Could not ${_cmXBlockMsg}\n\n"; }
 _cmXWarnStrFn () { _cmXEchoFn "warn: ${*}"; }
 ## . END Declare common.2.source symbols
 
-## BEGIN _assignGlobalVarsFn
-_assignGlobalVarsFn () {
-  declare _repo_src_dir;
-  _repo_src_dir="${_rootDir}/etc/apt/sources.list.d";
-
-  _libKfocusDir="${_rootDir}/usr/lib/kfocus";
-  _recomListFile="${_repo_src_dir}/kfocus-recommended.list";
-}
-## . END _assignGlobalVarsFn
-
 ## BEGIN _mkSrcListStrFn
 # IMPORTED on 2022-02-23 from test/test-scripts/unit.d/00400_mkSrcListStr
 #
@@ -110,20 +100,20 @@ _updatePciidsFn () {
 
   if [ ! -x "${_exe_lspci_str}" ]; then
     _cmXWarnStrFn "${_exe_lspci_str} not found";
-    _cmXWarnFn; return 0;
+    _cmXWarnFn; return;
   fi
 
   if [ ! -x "${_exe_update_str}" ]; then
     _cmXWarnStrFn "${_exe_update_str} is not executable";
-    _cmXWarnFn; return 0;
+    _cmXWarnFn; return;
   fi
 
   if "${_exe_update_str}"; then
     _cmXSucStrFn 'Updated pciids';
-    _cmXSucFn; return 0;
+    _cmXSucFn; return;
   else
     _cmXWarnStrFn 'Could not update pciids';
-    _cmXWarnFn; return 0;
+    _cmXWarnFn; return;
   fi
 }
 ## . END _updatePciidsFn
@@ -136,12 +126,12 @@ _applyRootStyleFn () {
 
   if [ -d "/root/Desktop" ]; then
     _cmXSucStrFn 'Root style already applied';
-    _cmXSucFn; return 0;
+    _cmXSucFn; return;
   fi
 
   if [ ! -e "${_exe_rsync_str}" ]; then
     _warnStr "${_exe_rsync_str} not executable";
-    _cmXWarnFn; return 0;
+    _cmXWarnFn; return;
   fi
 
   if "${_exe_rsync_str}" -azog --chown='0:0' \
@@ -258,23 +248,20 @@ _cleanUpFn () {
 # Call was disabled 2023-08-10 per notes below.
 # IMPORTED on 2022-03-23 from test/test-scripts/unit.d/00100_adviseReboot
 # Purpose: Advise reboot after install
+#   See https://askubuntu.com/questions/993570
 #
-# See https://askubuntu.com/questions/993570
-#
-# _adviseRebootFn () {
-#   declare _reboot_file;
-#
-#   _reboot_file="${_rootDir}/var/run/reboot-required";
-#   _cmXSetMsgFn 'Advise reboot';
-#
-#   if touch "${_reboot_file}"; then
-#     _cmXSucStrFn "Wrote ${_reboot_file}";
-#     _cmXSucFn;
-#   else
-#     _cmXWarnStrFn "Could not write ${_reboot_file}";
-#     _cmXWarnFn;
-#   fi
-# }
+_adviseRebootFn () {
+  declare _reboot_file;
+  _reboot_file="${_rootDir}/var/run/reboot-required";
+  _cmXSetMsgFn 'Advise reboot';
+  if touch "${_reboot_file}"; then
+    _cmXSucStrFn "Wrote ${_reboot_file}";
+    _cmXSucFn;
+  else
+    _cmXWarnStrFn "Could not write ${_reboot_file}";
+    _cmXWarnFn;
+  fi
+}
 ## . END _adviseRebootFn
 
 ## BEGIN _addBashCompletionFn
@@ -341,11 +328,17 @@ EOS
 }
 ## . END _setupSddmFixFn }
 
+## BEGIN declare and assign global vars {
+declare _rootDir _repoSrcDir _libKfocusDir _recomListFile;
+_rootDir='';
+_repoSrcDir="${_rootDir}/etc/apt/sources.list.d";
+
+_libKfocusDir="${_rootDir}/usr/lib/kfocus";
+_recomListFile="${_repoSrcDir}/kfocus-recommended.list";
+## . END declare and assign global vars }
+
 ## Begin Run main if script is not sourced
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-  # set -u; # Development only
-  _rootDir='';
-  _assignGlobalVarsFn;
   case "${1:-}" in
     abort-upgrade|abort-remove|abort-configure|abort*) true;;
     configure|upgrade)
@@ -373,6 +366,11 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
       # Cleanup misc details
       _cleanUpFn;
+
+      # Advise reboot
+      # 2023-11-04 Enable this when changes warrant.
+      #   Otherwise, have packages make this call if needed.
+      _adviseRebootFn;
     ;;
   esac
   exit 0;
