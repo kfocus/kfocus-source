@@ -97,7 +97,9 @@ _mainFn () {
     _uninstall_complete_msg _uninstall_failed_msg _uninstall_recovering_msg \
     _uninstall_recover_complete_msg _uninstall_recover_failed_msg \
     _install_offer_msg _install_cancel_msg _installing_msg \
-    _install_complete_msg _proceed_str _op_result_code _sys_status_str;
+    _install_complete_msg _no_internet_msg _proceed_str \
+    _boot_space_insufficient_msg _op_result_code _boot_space_int \
+    _sys_status_str;
 
   _notty_msg="This script must be run from within a graphical KDE \
 environment, and kdialog must be installed. Also note that this script only \
@@ -114,6 +116,22 @@ If you have not done this yet, you can cancel the installation or \
 uninstallation process on the next screen.
 
 Press OK to continue.";
+
+  _no_internet_msg="No Internet access was found.
+
+Internet access is required to download and install KFocus enhancements. \
+Furthermore, Internet access is required to uninstall KFocus enhancements \
+due to the fact that uninstalling the enhancements replaces the KFocus \
+curated kernel with a stock Ubuntu HWE kernel (which has to be downloaded \
+and installed).
+
+Please connect to the Internet and try again.";
+
+  _boot_space_insufficient_msg="Your /boot partition has less than 200 \
+megabytes of available space remaining. This is insufficient to safely \
+install or uninstall KFocus enhancements.
+
+Please uninstall some of your unused kernels and try again.";
 
   _unsupported_warning_msg="This system is not running Kubuntu 22.04 LTS. \
 Only Kubuntu 22.04 LTS systems can have Kubuntu Focus enhancements installed.
@@ -163,6 +181,17 @@ package manager. Please contact technical support for help.";
   fi
 
   _cm2PromptUserFn "${_welcome_msg}" "${_titleStr}";
+
+  if ! ping -c 1 8.8.8.8 > /dev/null; then
+    _cm2PromptUserFn "${_no_internet_msg}" "${_titleStr}";
+    exit 1;
+  fi
+
+  _boot_space_int=$(df -BM --output=avail /boot | tail -n1 | head -c-2);
+  if [ "${_boot_space_int}" -lt 200 ]; then
+    _cm2PromptUserFn "${_boot_space_insufficient_msg}" "${_titleStr}";
+    exit 1;
+  fi
 
   _sys_status_str="$(_checkEnvFn)"
 
