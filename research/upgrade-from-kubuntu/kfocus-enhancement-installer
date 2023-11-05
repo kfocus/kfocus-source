@@ -5,12 +5,13 @@
 # Written for the Kubuntu Focus by M. Mikowski and A. Rainbolt.
 #
 # Name     : kfocus-enhancement-installer
-# Summary  : kfocus-enhancement-installer [alreadyInstalled|notKubuntu|asdf]
-# Purpose  : Mockup for the Kubuntu Focus Enhancement Installer.
-# Example  : kfocus-enhancement-installer asdf
+# Summary  : kfocus-enhancement-installer
+# Purpose  : Installs Kubuntu Focus enhancements on supported Kubuntu LTS
+#            systems.
+# Example  : kfocus-enhancement-installer
 # License  : GPLv2
-# Run By   : Developers only
-# Spec     : 
+# Run By   : End-users
+# Spec     : 3288
 #
 set -u;
 
@@ -132,16 +133,8 @@ Remove Kubuntu Focus enhancements?";
   _uninstall_complete_msg="Uninstallation complete. Please reboot to ensure \
 all changes have been properly applied.";
 
-  _uninstall_failed_msg="Uninstallation failed! The installer will now \
-attempt to recover.";
-
-  _uninstall_recovering_msg="Recovering from failed installation";
-
-  _uninstalled_recover_complete_msg="Recovery successful. Please check and \
-make sure that your package manager is in a consistent state.";
-
-  _uninstalled_recover_failed_msg="Recovery failed! You will need to repair \
-your package manager. Please contact technical support for help.";
+  _uninstall_failed_msg="Uninstallation failed! This should never happen. \
+Please contact technical support for further assistance.";
 
   _install_offer_msg="This system does not yet have Kubuntu Focus \
 enhancements installed. Would you like to install them?";
@@ -193,17 +186,6 @@ package manager. Please contact technical support for help.";
 
       else
         _cm2PromptUserFn "${_uninstall_failed_msg}" "${_titleStr}" "e";
-        _op_result_code="$(_cm2RunLongCmdFn "${_uninstall_recovering_msg}" \
-          "${_binDir}/recover_uninstall.sh" > /dev/null; echo $?;)";
-
-        if [ "${_op_result_code}" = "0" ]; then
-          _cm2PromptUserFn "${_uninstall_recover_complete_msg}" \
-            "${_titleStr}";
-
-        else
-          _cm2PromptUserFn "${_uninstall_recover_failed_msg}" "${_titleStr}" \
-            "e";
-        fi
       fi
     fi
 

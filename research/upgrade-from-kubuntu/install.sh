@@ -3,20 +3,30 @@ _rx_dir='/var/lib/kfocus/';
 mkdir -p "${_rx_dir}" || exit;
 echo '1.3.0-0' > "${_rx_dir}/focusrx_version";
 
+apt-get -y -f install;
+if [ "$?" != "0" ]; then
+  exit 1;
+fi
+dpkg --configure -a;
+if [ "$?" != "0" ]; then
+  exit 1;
+fi
+
 dpkg --add-architecture i386;
 add-apt-repository -y multiverse;
 add-apt-repository -y ppa:kfocus-team/release;
-apt-get -y install kfocus-apt-source;
-
-apt-get update;
-apt-get -y install kfocus-main;
-apt-get -y purge google-chrome-unstable;
-apt-get update;
 
 # Retry if this fails due to https timeouts from launchpad or others.
 _install_success="no";
 _install_attempts=0;
 while [ "${_install_success}" = "no" ] && [ "${_install_attempts}" != "3" ]; do
+  apt-get -y install kfocus-apt-source;
+
+  apt-get update;
+  apt-get -y install kfocus-main;
+  apt-get -y purge google-chrome-unstable;
+  apt-get update;
+
   apt-get -y full-upgrade;
   if [ "$?" != "0" ]; then
     _install_attempts=$((_install_attempts + 1));
