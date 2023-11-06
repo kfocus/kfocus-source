@@ -157,8 +157,8 @@ _cm2RunLongCmdFn () {
     _exit_int="$(cat "${_tmp_int_file}")";
     _exit_str="$(cat "${_tmp_str_file}")";
     "${_cm2RmExe}" "${_tmp_int_file}" "${_tmp_str_file}" || true;
+    echo "${_exit_str}";
   fi
-  echo "${_exit_str}";
   return "${_exit_int}";
 }
 
