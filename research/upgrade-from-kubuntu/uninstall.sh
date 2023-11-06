@@ -3,7 +3,7 @@ _uninstall_success="no";
 _uninstall_attempts=0;
 
 while [ "${_uninstall_success}" = "no" ] && [ "${_uninstall_attempts}" != "3" ]; do
-  if ! ppa-purge ppa:kfocus-team/release; then
+  if ! ppa-purge -y -o kfocus-team -p release; then
     _uninstall_attempts=$((_uninstall_attempts + 1));
     continue;
   fi

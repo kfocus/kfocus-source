@@ -2,7 +2,7 @@
 _rx_dir='/var/lib/kfocus/';
 mkdir -p "${_rx_dir}" || exit;
 echo '1.3.0-0' > "${_rx_dir}/focusrx_version";
-
+export DEBIAN_FRONTEND=noninteractive;
 
 if ! apt-get -y -f install; then
   exit 1;

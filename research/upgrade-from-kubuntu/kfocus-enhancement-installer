@@ -71,7 +71,7 @@ _checkEnvFn() {
     return;
   fi
 
-  _is_kfocus_int="$(dpkg-query -s kfocus-main > /dev/null; echo $?)";
+  _is_kfocus_int="$(dpkg-query -s kfocus-main > /dev/null; echo $?;)";
   if [ "${_is_kfocus_int}" != "0" ]; then
     echo "notInstalled";
   else
@@ -79,6 +79,29 @@ _checkEnvFn() {
   fi
 }
 ## . END _checkEnvFn }
+
+## BEGIN _checkUtilsFn {
+# Summary   : _checkUtilsFn
+# Purpose   : Checks the system to see if all needed utilities for installing
+#             or uninstalling KFocus enhancements are present.
+# Example   : _checkUtilsFn
+# Arguments : none
+# Outputs   : none
+# Returns   : 0 if all utilities are present, 1 if not
+#
+_checkUtilsFn() {
+  declare _zenity_present_int _ppapurge_present_int;
+
+  _zenity_present_int="$(dpkg-query -s zenity > /dev/null; echo $?;)";
+  _ppapurge_present_int="$(dpkg-query -s ppa-purge > /dev/null; echo $?;)";
+
+  if [ "${_zenity_present_int}" != "0" ] ||
+     [ "${_ppapurge_present_int}" != "0" ]; then
+    return 1;
+  fi
+  return 0;
+}
+## . END _checkUtilsFn }
 
 ## BEGIN _mainFn {
 # Summary   : _mainFn [args-and-options]
@@ -98,8 +121,9 @@ _mainFn () {
     _uninstall_recover_complete_msg _uninstall_recover_failed_msg \
     _install_offer_msg _install_cancel_msg _installing_msg \
     _install_complete_msg _no_internet_msg _proceed_str \
-    _boot_space_insufficient_msg _op_result_code _boot_space_int \
-    _sys_status_str;
+    _boot_space_insufficient_msg _missing_utils_msg _installing_utils_msg \
+    _install_utils_complete_msg _install_utils_failed_msg _op_result_code \
+    _boot_space_int _utils_missing_int _install_utils_str _sys_status_str;
 
   _notty_msg="This script must be run from within a graphical KDE \
 environment, and kdialog must be installed. Also note that this script only \
@@ -137,6 +161,20 @@ Please uninstall some of your unused kernels and try again.";
 Only Kubuntu 22.04 LTS systems can have Kubuntu Focus enhancements installed.
 
 Press OK to exit the installer.";
+
+  _missing_utils_msg="This system does not have all the utilities needed to \
+reliably install or uninstall KFocus enhancements. This installer can install \
+the needed utilities now, however the installer will appear to be inactive \
+while installing them.
+
+Would you like to install the needed utilities now?";
+
+  _installing_utils_msg="Installing needed utilities";
+
+  _install_utils_complete_msg="Utility installation complete.";
+
+  _install_utils_failed_msg="Utility installation failed! Please check your \
+Internet connection and try again.";
 
   _uninstall_offer_msg="This system already has Kubuntu Focus enhancements \
 installed. We highly recommend that you NOT uninstall these if you are using \
@@ -198,8 +236,31 @@ package manager. Please contact technical support for help.";
   if [ "${_sys_status_str}" = "notKubuntuLts" ]; then
     _cm2PromptUserFn "${_unsupported_warning_msg}" "${_titleStr}";
     exit 1;
+  fi
 
-  elif [ "${_sys_status_str}" = "alreadyInstalled" ]; then
+  _utils_missing_int="$(_checkUtilsFn)"
+
+  if [ "${_utils_missing_int}" != "0" ]; then
+    _install_utils_str="$(_cm2PromptUserFn "${_missing_utils_msg}" \
+      "${_titleStr}" "w";)";
+
+    if [ "${_install_utils_str}" = "n" ]; then
+      _cm2PromptUserFn "${_install_cancel_msg}" "${_titleStr}";
+      exit 1;
+    else
+      _op_result_code="$(_cm2RunLongCmdFn "${_installing_utils_msg}" \
+        "${_binDir}/install_utils.sh" > /dev/null; echo $?;)"
+      
+      if [ "${_op_result_code}" = "0" ]; then
+        _cm2PromptUserFn "${_install_utils_complete_msg}" "${_titleStr}";
+      else
+        _cm2PromptUserFn "${_install_utils_failed_msg}" "${_titleStr}" "e";
+        exit 1;
+      fi
+    fi
+  fi
+
+  if [ "${_sys_status_str}" = "alreadyInstalled" ]; then
     _proceed_str="$(_cm2PromptUserFn "${_uninstall_offer_msg}" \
       "${_titleStr}" "w";)";
 
@@ -212,7 +273,6 @@ package manager. Please contact technical support for help.";
 
       if [ "${_op_result_code}" = "0" ]; then
         _cm2PromptUserFn "${_uninstall_complete_msg}" "${_titleStr}";
-
       else
         _cm2PromptUserFn "${_uninstall_failed_msg}" "${_titleStr}" "e";
       fi
