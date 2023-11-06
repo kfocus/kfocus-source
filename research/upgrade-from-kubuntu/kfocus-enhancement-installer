@@ -290,6 +290,7 @@ package manager. Please contact technical support for help.";
         "${_binDir}/install.sh" > /dev/null; echo $?;)"
 
       if [ "${_op_result_code}" = "0" ]; then
+        lookandfeeltool -a "org.kfocus.desktop" --resetLayout;
         _cm2PromptUserFn "${_install_complete_msg}" "${_titleStr}";
 
       else
