@@ -9,9 +9,6 @@
 # Run by : User
 # Spec   : 2169
 #
-# TODO: Consider adduser.local application on install
-# See _configDir below on updates.
-#
 set -u;
 
 ## BEGIN _importCommonFn {
@@ -106,9 +103,9 @@ _resetEffectsFn () {
     'scut|kwin|Switch to Previous Desktop|Meta+Ctrl+Up,,Switch to Previous Desktop'
     'scut|kwin|Switch to Next Desktop|Meta+Ctrl+Down,,Switch to Next Desktop'
     'scut|kwin|Window Fullscreen|Meta+F,,Make Window Fullscreen'
-    # These are both set in 5.27.9 by system settings GUI
+    # Reverted to Ctrl+F8 as this is the default again in 5.27.9
     'scut|kwin|Show Desktop Grid|none,Meta+F8,Show Desktop Grid'
-    'scut|kwin|ShowDesktopGrid|Meta+F8,Ctrl+F8,Show Desktop Grid'
+    'scut|kwin|ShowDesktopGrid|Ctrl+F8,Ctrl+F8,Show Desktop Grid'
 
     # Setup scale factor based on device and clear old settings.
     # Clear all values first.
