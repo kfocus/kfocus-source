@@ -3,23 +3,20 @@ _uninstall_success="no";
 _uninstall_attempts=0;
 
 while [ "${_uninstall_success}" = "no" ] && [ "${_uninstall_attempts}" != "3" ]; do
-  ppa-purge ppa:kfocus-team/release;
-  if [ "$?" != "0" ]; then
+  if ! ppa-purge ppa:kfocus-team/release; then
     _uninstall_attempts=$((_uninstall_attempts + 1));
     continue;
   fi
 
-  apt-get -y install linux-generic-hwe-22.04 \
+  if ! apt-get -y install linux-generic-hwe-22.04 \
     linux-headers-generic-hwe-22.04 \
     linux-image-generic-hwe-22.04 \
-    linux-tools-generic-hwe-22.04;
-  if [ "$?" != "0" ]; then
+    linux-tools-generic-hwe-22.04; then
     _uninstall_attempts=$((_uninstall_attempts + 1));
     continue;
   fi
 
-  apt-get -y autopurge;
-  if [ "$?" != "0" ]; then
+  if ! apt-get -y autopurge; then
     _uninstall_attempts=$((_uninstall_attempts + 1));
     continue;
   fi

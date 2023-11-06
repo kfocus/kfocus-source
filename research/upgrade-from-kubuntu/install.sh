@@ -3,48 +3,59 @@ _rx_dir='/var/lib/kfocus/';
 mkdir -p "${_rx_dir}" || exit;
 echo '1.3.0-0' > "${_rx_dir}/focusrx_version";
 
-apt-get -y -f install;
-if [ "$?" != "0" ]; then
+
+if ! apt-get -y -f install; then
   exit 1;
 fi
-dpkg --configure -a;
-if [ "$?" != "0" ]; then
+
+if ! dpkg --configure -a; then
   exit 1;
 fi
 
 dpkg --add-architecture i386;
 add-apt-repository -y multiverse;
-add-apt-repository -y ppa:kfocus-team/release;
+
+if ! add-apt-repository -y ppa:kfocus-team/release; then
+  exit 1;
+fi
 
 # Retry if this fails due to https timeouts from launchpad or others.
 _install_success="no";
 _install_attempts=0;
 while [ "${_install_success}" = "no" ] && [ "${_install_attempts}" != "3" ]; do
-  apt-get -y install kfocus-apt-source;
-
-  apt-get update;
-  apt-get -y install kfocus-main;
-  apt-get -y purge google-chrome-unstable;
-  apt-get update;
-
-  apt-get -y full-upgrade;
-  if [ "$?" != "0" ]; then
+  if ! apt-get -y install kfocus-apt-source; then
     _install_attempts=$((_install_attempts + 1));
     continue;
   fi
 
-  apt-get -y install linux-generic-hwe-22.04-kfocus \
+  apt-get update;
+
+  if ! apt-get -y install kfocus-main; then
+    _install_attempts=$((_install_attempts + 1));
+    continue;
+  fi
+
+  if ! apt-get -y purge google-chrome-unstable; then
+    _install_attempts=$((_install_attempts + 1));
+    continue;
+  fi
+
+  apt-get update;
+
+  if ! apt-get -y full-upgrade; then
+    _install_attempts=$((_install_attempts + 1));
+    continue;
+  fi
+
+  if ! apt-get -y install linux-generic-hwe-22.04-kfocus \
     linux-headers-generic-hwe-22.04-kfocus \
     linux-image-generic-hwe-22.04-kfocus \
-    linux-tools-generic-hwe-22.04-kfocus;
-  if [ "$?" != "0" ]; then
+    linux-tools-generic-hwe-22.04-kfocus; then
     _install_attempts=$((_install_attempts + 1));
     continue;
   fi
 
-  apt-get -y autopurge;
-  
-  if [ "$?" != "0" ]; then
+  if ! apt-get -y autopurge; then
     _install_attempts=$((_install_attempts + 1));
     continue;
   fi
