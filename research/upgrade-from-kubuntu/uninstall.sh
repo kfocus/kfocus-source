@@ -1,12 +1,44 @@
 #!/bin/bash
 _uninstall_success="no";
 _uninstall_attempts=0;
+export DEBIAN_FRONTEND=noninteractive;
 
 while [ "${_uninstall_success}" = "no" ] && [ "${_uninstall_attempts}" != "3" ]; do
   if ! ppa-purge -y -o kfocus-team -p release; then
     _uninstall_attempts=$((_uninstall_attempts + 1));
     continue;
   fi
+
+  if ! ppa-purge -y -o bit-team -p stable; then
+    _uninstall_attempts=$((_uninstall_attempts + 1));
+    continue;
+  fi
+
+  if ! apt-get -y purge google-chrome-*; then
+    _uninstall_attempts=$((_uninstall_attempts + 1));
+    continue;
+  fi
+
+  if ! ppa-purge -y -o kubuntu-ppa -p backports; then
+    _uninstall_attempts=$((_uninstall_attempts + 1));
+    continue;
+  fi
+
+  if ! ppa-purge -y -o phoerious -p keepassxc; then
+    _uninstall_attempts=$((_uninstall_attempts + 1));
+    continue;
+  fi
+
+  if ! ppa-purge -y -o ubuntustudio-ppa -p backports; then
+    _uninstall_attempts=$((_uninstall_attempts + 1));
+    continue;
+  fi
+
+  rm /etc/apt/sources.list.d/nvidia-cuda.list \
+    /etc/apt/sources.list.d/nvidia-ml.list \
+    /etc/apt/sources.list.d/nodesource.list \
+    /etc/apt/sources.list.d/google-cloud-sdk.list \
+    /etc/apt/sources.list.d/google-chrome.list;
 
   if ! apt-get -y install linux-generic-hwe-22.04 \
     linux-headers-generic-hwe-22.04 \
