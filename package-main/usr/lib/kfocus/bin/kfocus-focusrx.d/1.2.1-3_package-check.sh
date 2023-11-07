@@ -105,24 +105,6 @@ _nextStepFn () {
 }
 ## . END _nextStepFn }
 
-## BEGIN _cm2ChkInstalledPkgFn {
- # Summary  : _cm2ChkInstalledPkgFn <package-name>;
- # Purpose  : Check to see if package is installed, quickly
- # Example  : _cm2ChkInstalledPkgFn kfocus-nvidia;
- # Returns  : 0 = package found; 1 = not found
- # Throws   : none
- #
-_cm2ChkInstalledPkgFn () {
-  declare _pkg_name _status_str;
-  [ "$#" -gt 0 ] && _pkg_name="${1}" || return 1;
-  _status_str="$(dpkg-query -f '${db:Status-abbrev}' -W "${_pkg_name}")";
-  if echo "${_status_str}"| grep -vqE '^.i '; then
-    return 1;
-  fi
-  return 0;
-}
-## . END _cm2ChkInstalledPkgFn }
-
 ## BEGIN _reinstallRecommendsFn {
  # Summary   : _reinstallRecommendsFn;
  # Purpose   : Reinstall all kfocus-main recommended packages that
@@ -218,6 +200,15 @@ _isNvidiaSystem="$(_cm2EchoModelStrFn 'is_nv_sys')" || exit 202;
 _modelLabel="$(    _cm2EchoModelStrFn 'label'    )" || exit 202;
 if [ "${_modelLabel}" != 'generic' ]; then
   _modelLabel="Kubuntu Focus ${_modelLabel}";
+fi
+
+# Supplemental check for Nvidia systems
+if [ "${_isNvidiaSystem}" != 'y' ]; then
+  _lspciExe="$(command -v lspci)";
+  if [ -n "${_lspciExe}" ] \
+    && grep -qi 'vga.*nvidia' < <("${_lspciExe}"); then
+    _isNvidiaSystem='y';
+  fi
 fi
 
 # Import distro info
@@ -415,7 +406,7 @@ else
   _cm2EchoFn "${_adviceStr} Do not be alarmed by missing i915 module warnings,";
   _cm2EchoFn "  THESE ARE NORMAL.\n";
   # Use -k all to update all initramfs (this can be dangerous as it can
-  # propogate an issue to all kernels, so be careful!)
+  # propagate an issue to all kernels, so be careful!)
   if update-initramfs -u; then _cm2SucFn; else _cm2WarnFn; fi
 fi
 

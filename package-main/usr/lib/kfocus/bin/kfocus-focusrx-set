@@ -77,8 +77,7 @@ _installToolsPkgFn () {
 ## . END _installToolsPkgFn }
 
 ## BEGIN _installKbdIteFn {
-# Purpose: Install kfocus tool package specified in $1
-#   The caller must provide the appropriate package.
+# Purpose: Install kfocus-keyboard-ite package.
 #
 _installKbdIteFn () {
   _cm2SetMsgFn 'Install kfocus-keyboard-ite package';
@@ -87,6 +86,17 @@ _installKbdIteFn () {
   fi
 }
 ## . END _installKbdIteFn }
+
+## BEGIN _purgeKbdIteFn {
+# Purpose: Purge kfocus-keyboard-ite package.
+#
+_purgeKbdIteFn () {
+  _cm2SetMsgFn 'Purge kfocus-keyboard-ite package';
+  if apt-get purge -y 'kfocus-keyboard-ite'; then
+    _cm2SucFn; else _cm2WarnFn; return 1;
+  fi
+}
+## . END _purgeKbdIteFn }
 
 ## BEGIN _installNvidiaFn {
 # Purpose: Install kfocus nvidia packages.
@@ -109,6 +119,17 @@ _installNvidiaFn () {
   _cm2SucFn;
 }
 ## END _installNvidiaFn }
+
+## BEGIN _installSynapticsFn {
+# Purpose: Install kfocus-keyboard-ite package.
+#
+_installSynapticsFn () {
+  _cm2SetMsgFn 'Install xserver-xorg-input-synaptics package';
+  if apt-get reinstall -y 'xserver-xorg-input-synaptics'; then
+    _cm2SucFn; else _cm2WarnFn; return 1;
+  fi
+}
+## . END _installSynapticsFn }
 
 ## BEGIN _chkBiosUpdateFn {
 # Purpose: Return true if no bios upgrade needed, false otherwise
@@ -151,7 +172,7 @@ _chkBiosUpdateFn () {
 _chkHwConfigFn () {
   declare _is_nv_system _do_force _reason_list _dmi_hw_config_code \
     _dmi_hw_model_code _file_hw_config_code _file_hw_model_code \
-    _is_hw_reconfig _msg _tool_pkg_suffix _tool_pkg_name;
+    _is_hw_reconfig _msg _tool_pkg_suffix _tool_pkg_name _lspci_exe;
 
   _do_force='n';
   if [[ "${1:-}" =~ ^[Yy] ]]; then _do_force='y'; fi
@@ -198,19 +219,30 @@ _chkHwConfigFn () {
     _reason_list+=( "${_msg}" );
   elif [ "${_do_force}" = 'y' ]; then
     _msg="install-hw-tools;${_tool_pkg_name};";
-    _msg+="Package ${_tool_pkg_name} forced re-installation.";
+    _msg+="Package ${_tool_pkg_name} reinstall forced.";
     _reason_list+=( "${_msg}" );
   fi
-  # . End Adjust tool suffix per config code }
+  ## . End Adjust tool suffix per config code }
 
-  ## Begin Add special keyboard support when required {
-  if [ "${_is_hw_reconfig}" = 'y' ] \
-    && [ "${_dmi_hw_model_code}" = 'm2g5p' ]; then
-    _msg='install-kbd-ite;;';
-    _msg+='This model requires kfocus-keyboard-ite package';
-    _reason_list+=( "${_msg}" );
+  ## Begin add or remove extra keyboard package {
+  if [ "${_dmi_hw_model_code}" = 'm2g5p' ]; then
+    if ! _cm2ChkInstalledPkgFn 'kfocus-keyboard-ite'; then
+      _msg='install-kbd-ite;;';
+      _msg+='Package kfocus-keyboard-ite needs to be installed.';
+      _reason_list+=( "${_msg}" );
+    elif [ "${_do_force}" = 'y' ]; then
+      _msg='install-kbd-ite;;';
+      _msg+='Package kfocus-keyboard-ite reinstall forced.';
+      _reason_list+=( "${_msg}" );
+    fi
+  else
+    if _cm2ChkInstalledPkgFn 'kfocus-keyboard-ite'; then
+      _msg='purge-kbd-ite;;';
+      _msg+='Package kfocus-keyboard-ite needs purge.';
+      _reason_list+=( "${_msg}" );
+    fi
   fi
-  ## End Add special keyboard support when required }
+  ## . End add or remove extra keyboard package }
 
   ## Begin Run lib updates iff hardware reconfig is flagged {
   #   do_force OR mismatched config-code triggers this.
@@ -218,15 +250,42 @@ _chkHwConfigFn () {
   #
   if [ "${_is_hw_reconfig}" = 'y' ]; then
     _is_nv_system="$(_cm2EchoModelStrFn 'is_nv_sys')";
+
+    # Supplemental check for Nvidia systems
+    if [ "${_is_nv_system}" != 'y' ]; then
+      _lspci_exe="$(command -v lspci)";
+      if [ -n "${_lspci_exe}" ] \
+        && grep -qi 'vga.*nvidia' < <("${_lspci_exe}"); then
+        _is_nv_system='y';
+      fi
+    fi
+
+    # Install nvidia libs
     if [ "${_is_nv_system}" = 'y' ]; then
       if ! _cm2ChkInstalledPkgFn 'kfocus-nvidia'; then
-        _msg='install-nvidia;;Nvidia libraries need to be installed.';
+        _msg='install-nvidia;;Nvidia libraries needs to be installed.';
         _reason_list+=( "${_msg}" );
       elif [ "${_do_force}" = 'y' ]; then
-        _msg='install-nvidia;;Nvidia library forced re-installation.';
+        _msg='install-nvidia;;Nvidia libraries reinstall forced.';
         _reason_list+=( "${_msg}" );
       fi
     fi
+
+    # Install synaptics for devices that need it
+    case "${_dmi_hw_config_code}" in
+      default|generic|xeg2)  # For models m1g1, m2g1-3 | xeg1 | xeg2
+        if ! _cm2ChkInstalledPkgFn 'xserver-xorg-input-synaptics'; then
+          _msg='install-synaptics;;';
+          _msg+='Synaptics touchpad driver needs to be installed.';
+          _reason_list+=( "${_msg}" );
+        elif [ "${_do_force}" = 'y' ]; then
+          _msg='install-synaptics;;';
+          _msg+='Synaptics touchpad driver forced re-installation.';
+          _reason_list+=( "${_msg}" );
+        fi
+      ;;
+      *) true;
+    esac
   fi
   ## . End Run lib updates iff hardware reconfig is flagged }
 
@@ -249,11 +308,13 @@ _fixHwConfigFn () {
   for _loop_line in "${_reason_list[@]}"; do
     IFS=';' read -r -a _bit_list <<< "${_loop_line}";
     case "${_bit_list[0]}" in
-      'reconfig-hw'      ) _cmd_list=( '_reconfigHwPkgFn'   );;
-      'install-hw-tools' ) _cmd_list=( '_installToolsPkgFn' );
+      'reconfig-hw'       ) _cmd_list=( '_reconfigHwPkgFn'    );;
+      'install-hw-tools'  ) _cmd_list=( '_installToolsPkgFn'  );
         _cmd_list+=( "${_bit_list[1]:-}" );;
-      'install-kbd-ite'  ) _cmd_list=( '_installKbdIteFn'   );;
-      'install-nvidia'   ) _cmd_list=( '_installNvidiaFn'   );;
+      'install-kbd-ite'   ) _cmd_list=( '_installKbdIteFn'    );;
+      'install-nvidia'    ) _cmd_list=( '_installNvidiaFn'    );;
+      'install-synaptics' ) _cmd_list=( '_installSynapticsFn' );;
+      'purge-kbd-ite'     ) _cmd_list=( '_purgeKbdIteFn'      );;
       *) _cm2WarnStrFn "Option ${_bit_list[0]} is not supported";
         continue;
         ;;

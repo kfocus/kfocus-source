@@ -9,9 +9,6 @@
 # Run by : User
 # Spec   : 2169
 #
-# TODO: Consider adduser.local application on install
-# See _configDir below on updates.
-#
 set -u;
 
 ## BEGIN _importCommonFn {
@@ -47,116 +44,132 @@ _importCommonFn () {
 }
 ## . END _importCommonFn }
 
-## BEGIN _mainFn {
-_mainFn () {
-  declare _prompt_msg _model_code _line_list _line _bit_list _key \
-    _log_list _name_file _config_file _opt_list _reply_str;
-
-  _prompt_msg="$(cat <<_EOH01
-${_cm2HtmBeginStr}
-<h3 style="color:#f7941d">RESET KFOCUS DESKTOP UX</h3>
-
-${_cm2HtmPStr}This app resets keyboard shortcuts and desktop<br>
-effects to Kubuntu Focus defaults. Please close <br>
-<b>System Settings</b> before proceeding.</p>
-${_cm2HtmEndStr}
-_EOH01
-  )";
-  _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}";
+## BEGIN _resetEffectsFn {
+_resetEffectsFn () {
+  declare _model_code _config_list _line _bit_list _key \
+    _apply_str _log_list _name_file _config_file _opt_list;
 
   _model_code="$(_cm2EchoModelStrFn 'code')";
-  _line_list=(
+  _config_list=(
     # Desktops
-    'kwin|Desktops|Name_1|one'
-    'kwin|Desktops|Name_2|two'
-    'kwin|Desktops|Name_3|three'
-    'kwin|Desktops|Name_4|four'
+    'kwin|Desktops|Name_1|ONE'
+    'kwin|Desktops|Name_2|TWO'
+    'kwin|Desktops|Name_3|THREE'
+    'kwin|Desktops|Name_4|FOUR'
     'kwin|Desktops|Number|4'
     'kwin|Desktops|Rows|4'
 
-    # Disabled in 5.27; remove
-    'kwin|Effect-CoverSwitch|TabBox|'
-    'kwin|Effect-CoverSwitch|TabBoxAlternative|'
-    'kwin|Plugins|coverswitchEnabled|'
-
-    # Desktopgrid name changed to lc in 5.27, reset
-    'kwin|Effect-DesktopGrid|BorderActivate|'
-    'kwin|Effect-DesktopGrid|ClickBehavior|'
-    'kwin|Effect-DesktopGrid|CustomLayoutRows|'
-    'kwin|Effect-DesktopGrid|DesktopLayoutMode|'
-    'kwin|Effect-DesktopGrid|DesktopNameAlignment|'
-    'kwin|Effect-DesktopGrid|LayoutMode|'
-    'kwin|Effect-DesktopGrid|PresentWindows|'
-    'kwin|Effect-DesktopGrid|ShowAddRemove|'
-
-    # Desktopgrid name changed to lc in 5.27, new settings
+    # Desktopgrid
+    'kwin|Effect-desktopgrid|BorderActivate|'
+    'kwin|Effect-desktopgrid|ClickBehavior|'
+    'kwin|Effect-desktopgrid|CustomLayoutRows|'
     'kwin|Effect-desktopgrid|DesktopLayoutMode|1'
     'kwin|Effect-desktopgrid|DesktopNameAlignment|36'
     'kwin|Effect-desktopgrid|LayoutMode|1'
+    'kwin|Effect-desktopgrid|PresentWindows|'
     'kwin|Effect-desktopgrid|ShowAddRemove|false'
 
-    # Wobbly and transparent windows
-    'kwin|Effect-Wobbly|Drag|85'
-    'kwin|Effect-Wobbly|Stiffness|10'
-    'kwin|Effect-Wobbly|WobblynessLevel|1'
+    # Night Color
+    # Disable night by default as it can cause flickering on Intel.
+    # Users also find it confusing.
+    'kwin|Compositing|OpenGLIsUnsafe|false'
+    'kwin|NightColor|Active|false'
+
+    # Effects of transparent move, squash windows, wobbly
     'kwin|Effect-kwin4_effect_translucency|MoveResize|80'
+    'kwin|Effect-presentwindows|LayoutMode|1'
+    'kwin|Effect-wobblywindows|AdvancedMode|true'
+    'kwin|Effect-wobblywindows|Drag|85'
+    'kwin|Effect-wobblywindows|Stiffness|10'
+    'kwin|Effect-wobblywindows|WobblynessLevel|5'
 
     # Enable plugins
     'kwin|Plugins|desktopgridEnabled|true'
     'kwin|Plugins|kwin4_effect_translucencyEnabled|true'
+    'kwin|Plugins|magiclampEnabled|false'
+    'kwin|Plugins|kwin4_effect_squashEnabled|true'
     'kwin|Plugins|mouseclickEnabled|true'
     'kwin|Plugins|trackmouseEnabled|true'
     'kwin|Plugins|wobblywindowsEnabled|true'
 
-    # Disable night color by default; it can cause flickering on Intel
-    'kwin|Compositing|OpenGLIsUnsafe|false'
-    'kwin|NightColor|Active|false'
+    # Window borders
+    'kwin|org.kde.kdecoration2|BorderSize|Tiny'
+    'kwin|org.kde.kdecoration2|BorderSizeAuto|false'
+
+    # Wrap-around navigation
+    'kwin|Windows|RollOverDesktops|true'
 
     # Keyboard shortcuts
     'scut|kwin|Switch to Previous Desktop|Meta+Ctrl+Up,,Switch to Previous Desktop'
     'scut|kwin|Switch to Next Desktop|Meta+Ctrl+Down,,Switch to Next Desktop'
     'scut|kwin|Window Fullscreen|Meta+F,,Make Window Fullscreen'
+    # Reverted to Ctrl+F8 as this is the default again in 5.27.9
+    'scut|kwin|Show Desktop Grid|none,Meta+F8,Show Desktop Grid'
+    'scut|kwin|ShowDesktopGrid|Ctrl+F8,Ctrl+F8,Show Desktop Grid'
 
     # Setup scale factor based on device and clear old settings.
-    #   Clear values first
+    # Clear all values first.
     'font|General|forceFontDPI|'
-    'glob|KScreen|ScaleFactor||'
+    'glob|KScreen|ScaleFactor|'
 
-    # See 3521 - Do not set global scale for Plasma 5.24.x
-    # This will be useful for 5.27.x where it works much better.
-    # 'glob|KScreen|ScaleFactor|1.5|m2g4'
-    # 'glob|KScreen|ScaleFactor|1.25|ir14g1'
+    # Reset DPI per ticket 3521.
+    # We tried ScaleFactor in 5.27, but GTK apps did not honor the value.
+    'font|General|forceFontDPI|120|ir14g1'
+    'font|General|forceFontDPI|136|m2g4'
+    'font|General|forceFontDPI|136|m2g5'
+    'font|General|forceFontDPI|136|m2g5p'
   );
+
   _log_list=();
-  for _line in "${_line_list[@]}"; do
-    IFS='|' read -r -a _bit_list <<< "${_line}";
+  for _line in "${_config_list[@]}"; do
+    IFS='|' read -r -a _bit_list <<<"${_line}";
     _key="${_bit_list[0]:-}";
+
+    ## DEBUG: Skip keys
+    # if [[ "${_key}" =~ ^(font|glob)$ ]];
+    # then _cm2EchoFn "Process ${_line}";
+    # else _cm2WarnStrFn "Skip ${_line}"; continue;
+    # fi
+
+    _apply_str="${_line}";
+    # DEBUG Delete all kwin keys
+    # if [ "${_key}" = 'kwin' ]; then
+    #   _bit_list[3]='';
+    #   _apply_str="$(IFS='|'; echo "${_bit_list[*]}")";
+    # fi
 
     _name_file="${_fileMap[$_key]}";
     if [ -z "${_name_file}" ]; then
-      _log_list+=( "WARN: Config key |${_key}| is not supported." );
+      _log_list+=("WARN: Config key |${_key}| is not supported.");
       continue;
     fi
 
     _config_file="${_configDir}/${_name_file}";
+    # If this is a symbolic link, remove it
+    if [ -h "${_config_file}" ]; then
+      rm "${_config_file}";
+    fi
     if [ ! -f "${_config_file}" ]; then
+      # Skip creating a file just to delete an attribute
+      if [ -z "${_bit_list[3]:-}" ]; then continue; fi
+
       if touch "${_config_file}"; then
-        _log_list+=( "NOTICE: Created config file |${_config_file}|." );
+        _log_list+=("NOTICE: Created config file |${_config_file}|.");
       else
-        _log_list+=( "ERROR: Could not create config file |${_config_file}|." );
+        _log_list+=("ERROR: Could not create config file |${_config_file}|.");
         continue;
       fi
     fi
 
     if [ -n "${_bit_list[4]:-}" ]; then
-      if grep -q "${_model_code}" <<< "${_bit_list[4]:-}"; then
-        _log_list+=( "Apply ${_line} for model ${_bit_list[4]:-}" );
+      if grep -q "${_model_code}" <<<"${_bit_list[4]:-}"; then
+        _log_list+=("Apply ${_apply_str} for model ${_bit_list[4]:-}");
       else
-        _log_list+=( "SKIP  ${_line} for model ${_bit_list[4]:-}" );
-        continue;
+        _log_list+=("SKIP  ${_apply_str} for model ${_bit_list[4]:-}");
+        continue
       fi
     else
-      _log_list+=( "Apply ${_line}" );
+      _log_list+=("Apply ${_apply_str}");
     fi
 
     _opt_list=(
@@ -173,23 +186,72 @@ _EOH01
     "${_kwriteconfig5Exe}" "${_opt_list[@]}";
   done
 
-  ( IFS=$'\n'; _cm2EchoFn "Reset values:\n${_log_list[*]}"; )
+  ( IFS=$'\n'; _cm2EchoFn "Reset values:\n${_log_list[*]}" )
+}
+## . END _resetEffects }
 
-  _config_file="${_configDir}/powermanagementprofilesrc";
+## BEGIN _mainFn {
+_mainFn () {
+  declare _prompt_msg _reply_str _power_file _mime_file;
 
-  if [ -f "${_config_file}" ]; then
+  # Immediately apply effects and return if -d option provided.
+  if [ "${1:-}" = '-d' ]; then
+    if [ -n "${2:-}" ]; then
+      _configDir="$(readlink -f "${2:-}")";
+      if [ -d "${_configDir}" ]; then
+        _resetEffectsFn;
+      fi
+    fi
+    return;
+  fi
+
+  # Notify user
+  _prompt_msg="$(
+    cat <<_EOH01
+${_cm2HtmBeginStr}
+<h3 style="color:#f7941d">RESET KFOCUS DESKTOP UX</h3>
+
+${_cm2HtmPStr}This app resets keyboard shortcuts and desktop<br>
+effects to Kubuntu Focus defaults. Please close <br>
+<b>System Settings</b> before proceeding.</p>
+${_cm2HtmEndStr}
+_EOH01
+  )";
+  _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}";
+
+  # Request to reset effects and keyboard shortcuts
+  _prompt_msg='Reset effects and keyboard shortcuts';
+  _reply_str="$(_cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}" 'a')";
+  if [ "${_reply_str}" = 'y' ]; then
+    _resetEffectsFn;
+  fi
+
+  # Request to reset power management
+  _power_file="${_configDir}/powermanagementprofilesrc";
+  if [ -f "${_power_file}" ]; then
     _prompt_msg='Reset power management to default';
     _reply_str="$(_cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}" 'a')";
     if [ "${_reply_str}" = 'y' ]; then
-      rm "${_config_file}" || true;
+      rm "${_power_file}" || true;
     fi
   fi
 
+  # Request to reset mime handlers
+  _mime_file="${_configDir}/mimeapps.list";
+  if [ -f "${_mime_file}" ]; then
+    _prompt_msg='Reset file associations to default';
+    _reply_str="$(_cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}" 'a')";
+    if [ "${_reply_str}" = 'y' ]; then
+      rm "${_mime_file}" || true;
+    fi
+  fi
+
+  # Confirm application of settings
   _prompt_msg="$(cat <<_EOH02
 ${_cm2HtmBeginStr}
 <h3 style="color:#f7941d">RESET KFOCUS UX COMPLETE</h3>
-${_cm2HtmPStr}Please <b>IMMEDIATELY</b> log out and back in<br>
-to ensure all defaults are applied.</p>
+${_cm2HtmPStr}To ensure all changes are applied, you <br>
+should immediately log out and back in.</p>
 ${_cm2HtmEndStr}
 _EOH02
   )";
@@ -200,10 +262,10 @@ _EOH02
 ## BEGIN Declare and assign global vars {
 declare _rootTitle _assignList _kwriteconfig5Exe _configDir;
 declare -A _fileMap=(
-  ['scut']=kglobalshortcutsrc
   ['font']=kcmfonts
   ['glob']=kdeglobals
   ['kwin']=kwinrc
+  ['scut']=kglobalshortcutsrc
 );
 _rootTitle='Kubuntu Focus Reset Effects';
 _configDir="$HOME/.config";
