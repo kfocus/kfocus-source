@@ -15,7 +15,7 @@ Description:  Transitional Dummy Package for kfocus-main
 
 Package:      kfocus-main
 Architecture: all
-Pre-Depends:  kfocus-apt-source (>>20.04.12)
+Pre-Depends:  kfocus-apt-source (>> 22.04.7)
 Depends:      ${misc:Depends}, ${shlibs:Depends},
               build-essential (>= 12.4),
               cpufrequtils,
@@ -24,9 +24,8 @@ Depends:      ${misc:Depends}, ${shlibs:Depends},
               kdialog,
               kfocus-common,
               kfocus-firstrun-bin,
-              kfocus-hw (>= 22.04.11),
-              kfocus-settings |
-              ubuntustudio-default-settings (>= 20.10),
+              kfocus-hw (>> 22.04.16),
+              kfocus-settings (>> 22.04.15) | ubuntustudio-default-settings (>= 20.10),
               policykit-1,
               python3-pip,
               rsync (>= 3.1.2),
@@ -70,12 +69,9 @@ Recommends:   unattended-upgrades,
               gimp-data-extras,
               gimp-help-en,
               git,
-              gitolite3,
               gstreamer1.0-plugins-bad,
               gstreamer1.0-plugins-ugly,
               haskell-platform,
-              hplip,
-              hplip-gui,
               htop,
               hwinfo,
               inkscape,

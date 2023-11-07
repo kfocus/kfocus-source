@@ -1,9 +1,12 @@
 #!/bin/bash
-
+#
+# Copyright 2020-2023 MindShare Inc.
+# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
+#
 set -e;
 
 ## TODO: /usr/lib/kfocus/conf path
-## TODO: Move to rtested userspace after expect tests written
+## TODO: Move to tested userspace after expect results verified
 
 ## BEGIN Declare common.2.source symbols {
 #  IMPORT 2023-04-04 EXCERPT from common.2.source
@@ -25,32 +28,34 @@ _cmXEscapeRxCharsFn () {
 }
 ## . END Declare common.2.source symbols }
 
-# Set global scale factor in XDG_CONFIG_DIRS
-# See kfocus-reset-effects for general config-setting logic
-# shellcheck disable=SC2317
+## BEGIN _supplementXdgConfigsFn {
+# Purpose: Set UX defaults in XDG_CONFIG_DIR kfocus/kf5-settings
+#    kglobalshortcutsrc, kcmfont, kdeglobals, kwinrc, and others
+#    for consistency.
+# 3521, 3802 requires DPI setting it for GTK apps.
 #
-_setScaleFactorFn () {
-  declare _factor_str _kwrite_exe _config_file _opt_list;
-
-  _factor_str="${1:-}";
-  _kwrite_exe="$(command -v kwriteconfig5)";
-  _config_file='/usr/share/kfocus/kf5-settings/kdeglobals';
-  if [ ! -f "${_config_file}" ]; then
-    touch "${_config_file}" || return;
+_supplementXdgConfigsFn () {
+  _cmXSetMsgFn 'Use consistent XDG_CONFIG_DIR values';
+  if [ -z "${_effectsExe}" ]; then
+    _cmXWarnStrFn "Not executable |${_effectsExe}|";
+    _cmXWarnFn;
+    return;
   fi
-  if [ -n "${_kwrite_exe}" ]; then
-    _opt_list=('--file' "${_config_file}" '--group' 'KScreen'
-      '--key' 'ScaleFactor'
-    );
 
-    if [ -n "${_factor_str}" ]; then
-      _opt_list+=("${_factor_str}");
-    else
-      _opt_list+=('--delete');
-    fi
-    "${_kwrite_exe}" "${_opt_list[@]}" || true;
+  if ! mkdir -p "${_kf5SettingsDir}"; then
+    _cmXWarnStrFn "Cannot access |${_kf5SettingsDir}|";
+    _cmXWarnFn;
+    return;
+  fi
+
+  if "${_effectsExe}" -d "${_kf5SettingsDir}"; then
+    _cmXSucFn;
+  else
+    _cmXWarnStrFn "Could not run |${_effectsExe}|";
+    _cmXWarnFn;
   fi
 }
+## . END _supplementXdgConfigsFn }
 
 # hw_config_code 'default' handles models m2g3, m2g2, m2g1, m1g1
 # shellcheck disable=SC2317
@@ -67,10 +72,12 @@ _handle_defaultFn () {
     # xhci enable/disable on sleep
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
+    # DPI scale symlink removed; Deprecated by _supplementXdgConfigsFn.
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
     '/etc/tlp.d/kfocus.conf|'
   );
-  _setScaleFactorFn '';
+  # Deprecated by _supplementXdgConfigsFn
+  # _setScaleFactorFn '';
 }
 # hw_config_code 'generic' handles model xeg1
 # shellcheck disable=SC2317
@@ -84,10 +91,12 @@ _handle_genericFn () {
     '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
+    # DPI scale symlink removed; Deprecated by _supplementXdgConfigsFn.
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
     '/etc/tlp.d/kfocus.conf|'
   );
-  _setScaleFactorFn '';
+  # Deprecated by _supplementXdgConfigsFn
+  # _setScaleFactorFn '';
 }
 # hw_config_code 'xeg2' handles model xeg2
 # shellcheck disable=SC2317
@@ -108,12 +117,13 @@ _handle_xeg2Fn () {
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
     # Trackpad config
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
-    # Default DPI Scaling
+    # DPI scale symlink removed; Deprecated by _supplementXdgConfigsFn.
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
     # Remove old TLP config
     '/etc/tlp.d/kfocus.conf|'
   );
-  _setScaleFactorFn '';
+  # Deprecated by _supplementXdgConfigsFn
+  # _setScaleFactorFn '';
 }
 # hw_config_code 'ir14g1' handles model ir14g1.
 # Based on nxg1. Remove sound-pop fix. Add 1.25 scale, console fonts
@@ -133,12 +143,13 @@ _handle_ir14g1Fn () {
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
     # Select trackpad driver
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|/usr/lib/kfocus/conf/ir14g1-usr_share_X11_xorg.conf.d_80-kfocus.conf'
-    # Default DPI Scaling, See 3521
-    '/usr/share/kfocus/kf5-settings/kcmfonts|/usr/lib/kfocus/conf/ir14g1-usr_share_kfocus_kf5-settings_kcmfonts'
+    # DPI scale symlink removed; Deprecated by _supplementXdgConfigsFn.
+    '/usr/share/kfocus/kf5-settings/kcmfonts|'
+    # Remove old TLP config
     '/etc/tlp.d/kfocus.conf|'
   );
-  # See 3521
-  _setScaleFactorFn '';
+  # Deprecated by _supplementXdgConfigsFn
+  # _setScaleFactorFn '';
 }
 # hw_config_code 'm2g4' handles models m2g4
 # shellcheck disable=SC2317
@@ -163,13 +174,13 @@ _handle_m2g4Fn () {
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
     # Trackpad config
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|/usr/lib/kfocus/conf/m2g4-usr_share_X11_xorg.conf.d_80-kfocus.conf'
-    # Default DPI Scaling, See 3521
-    '/usr/share/kfocus/kf5-settings/kcmfonts|/usr/lib/kfocus/conf/m2g4-usr_share_kfocus_kf5-settings_kcmfonts'
+    # DPI scale symlink removed; Deprecated by _supplementXdgConfigsFn.
+    '/usr/share/kfocus/kf5-settings/kcmfonts|'
     # Remove old TLP config
     '/etc/tlp.d/kfocus.conf|'
   );
-  # See 3521
-  _setScaleFactorFn '';
+  # Deprecated by _supplementXdgConfigsFn
+  # _setScaleFactorFn '';
 }
 # hw_config_code 'm2g5' handles models m2g5, m2g5p
 # shellcheck disable=SC2317
@@ -194,13 +205,13 @@ _handle_m2g5Fn () {
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
     # Select Trackpad config and driver
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|/usr/lib/kfocus/conf/m2g5-usr_share_X11_xorg.conf.d_80-kfocus.conf'
-    # Default DPI Scaling, See 3521
-    '/usr/share/kfocus/kf5-settings/kcmfonts|/usr/lib/kfocus/conf/m2g4-usr_share_kfocus_kf5-settings_kcmfonts'
+    # DPI Scale Symlink removed; Deprecated by _supplementXdgConfigsFn.
+    '/usr/share/kfocus/kf5-settings/kcmfonts|'
     # Remove old TLP config
     '/etc/tlp.d/kfocus.conf|'
   );
-  # See 3521
-  _setScaleFactorFn '';
+  # Deprecated by _supplementXdgConfigsFn
+  # _setScaleFactorFn '';
 }
 # hw_config_code 'nxg1' handles models nxg1 and nxg2
 # shellcheck disable=SC2317
@@ -217,10 +228,12 @@ _handle_nxg1Fn () {
     '/etc/modules-load.d/kfocus.conf|'
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
+    # DPI scale symlink removed; Deprecated by _supplementXdgConfigsFn.
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
     '/etc/tlp.d/kfocus.conf|'
   );
-  _setScaleFactorFn '';
+  # Deprecated by _supplementXdgConfigsFn
+  # _setScaleFactorFn '';
 }
 # hw_config_code 'other' handles unrecognized models
 # shellcheck disable=SC2317
@@ -235,10 +248,12 @@ _handle_otherFn () {
     '/etc/modules-load.d/kfocus.conf|'
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
+    # DPI scale symlink removed; Deprecated by _supplementXdgConfigsFn.
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
     '/etc/tlp.d/kfocus.conf|'
   );
-  _setScaleFactorFn '';
+  # Deprecated by _supplementXdgConfigsFn
+  # _setScaleFactorFn '';
 }
 
 _cleanupGrubFileFn () {
@@ -255,7 +270,7 @@ _cleanupGrubFileFn () {
     return;
   fi
 
-  _esc1_rx="$(_cmXEscapeRxCharsFn "${_grub_line}")"
+  _esc1_rx="$(_cmXEscapeRxCharsFn "${_grub_line}")";
   for _str in 'modprobe.blacklist=nouveau' 'modprobe.blacklist=ucsi_acpi' \
     'tpm_tis.interrupts=0' 'acpi_backlight=vendor' 'acpi_os=linux' \
     'acpi_osi=linux'; do
@@ -276,7 +291,7 @@ _setupSymlinkTableFn () {
   _cmXSetMsgFn 'Set up symlinks';
 
   if [ "${#_symlinkTable[@]}" = '0' ]; then
-    _cmXWarnStrFn "No symlinks specified";
+    _cmXWarnStrFn 'No symlinks specified';
     _cmXSucFn;
     return 0;
   fi
@@ -319,12 +334,11 @@ _setupSymlinkTableFn () {
       continue;
     fi
 
-
     # Decide to copy or symlink
     _cmd_list=('ln' '-s');
     _msg='symlink';
     if [ "${_link_list[0]}" = '/etc/default/console-setup' ]; then
-      _msg='copy'
+      _msg='copy';
       _cmd_list=('cp');
     fi
     _msg+=" target ${_link_list[0]}";
@@ -401,7 +415,7 @@ _setupBootFn () {
   for _line in "${_cmd_table[@]}"; do
     IFS=' ' read -r -a _cmd_list <<<"${_line}";
     if [ -x "${_cmd_list[0]}" ]; then
-      "${_cmd_list[@]}" || _cmXWarnStrFn "Could not exec ${_cmd_list[*]}"
+      "${_cmd_list[@]}" || _cmXWarnStrFn "Could not exec ${_cmd_list[*]}";
     fi
   done
 
@@ -463,6 +477,9 @@ _configFn () {
   # Set up symlinks
   _setupSymlinkTableFn;
 
+  # Run kfocus-reset-effects on XDG_CONFIG_DIR
+  _supplementXdgConfigsFn;
+
   # Link hints per model
   _setupModelHintsFn "${_model_code}";
 
@@ -474,14 +491,18 @@ _configFn () {
   echo "${_config_code}" > "${_config_code_file}" || true;
 }
 
-# target|source|do_safe_backup
+## BEGIN declare and assign package vars {
+declare _effectsExe _kf5SettingsDir;
+_effectsExe="$(command -v '/usr/lib/kfocus/bin/kfocus-reset-effects')";
+_kf5SettingsDir='/usr/share/kfocus/kf5-settings';
+## . END declare and assign package vars }
+
+# Table line structure is 'target|source|do_safe_backup'
 _symlinkTable=();
 case "${1:-}" in
-  configure | upgrade) _configFn ;;
-  abort-upgrade | abort-remove | abort-deconfigure) true ;;
-  *) echo "postinst called with unhandled argument '$1'">&2;
-    exit 0;
-  ;;
+  configure|upgrade) _configFn;;
+  abort-upgrade|abort-remove|abort-deconfigure) true;;
+  *) _cmXWarnStrFn "Unhandled argument |${1:-}|";;
 esac
 #DEBHELPER#
 

@@ -5,9 +5,9 @@ Maintainer: Ubuntu Kernel Team <kernel-team@lists.ubuntu.com>
 Standards-Version: 3.9.8
 Build-Depends: dpkg (>= 1.13.19), debhelper (>= 11), gawk, kmod
 Build-Depends-Arch:
- linux-hwe-6.2-headers-6.2.0-31,
- linux-headers-6.2.0-31-generic,
- linux-modules-6.2.0-31-generic,
+ linux-hwe-6.2-headers-6.2.0-35,
+ linux-headers-6.2.0-35-generic,
+ linux-modules-6.2.0-35-generic,
 Vcs-Git: git://git.launchpad.net/~ubuntu-kernel/ubuntu/+source/linux-meta/+git/jammy
 
 Package: linux-headers-generic-hwe-22.04-kfocus
@@ -31,6 +31,19 @@ Recommends: thermald [amd64]
 Description: Generic Linux kernel image
  This package will always depend on the latest generic kernel image
  available.
+
+Package: linux-image-uc-generic-hwe-22.04-kfocus
+Architecture: amd64 arm64
+Section: kernel
+Replaces: linux-image-uc-generic-hwe-22.04
+Conflicts: linux-image-uc-generic-hwe-22.04
+Depends: ${misc:Depends}, linux-image-uc-${kernel-abi-version}-generic, linux-modules-extra-${kernel-abi-version}-generic, linux-firmware, firmware-sof-signed [amd64], wireless-regdb
+Description: Generic Linux kernel image for Ubuntu Core
+ This package will always depend on the latest generic kernel image
+ available.
+ .
+ This kernel is suitable for staging into a kernel snap, and is not
+ suitable to be used directly on classic systems.
 
 Package: linux-tools-generic-hwe-22.04-kfocus
 Architecture: amd64 armhf arm64 powerpc ppc64el s390x
@@ -87,6 +100,19 @@ Recommends: thermald [amd64]
 Description: Generic Linux kernel image
  This package will always depend on the latest generic kernel image
  available.
+
+Package: linux-image-uc-generic-hwe-22.04-edge-kfocus
+Architecture: amd64 arm64
+Section: kernel
+Replaces: linux-image-uc-generic-hwe-22.04-edge
+Conflicts: linux-image-uc-generic-hwe-22.04-edge
+Depends: ${misc:Depends}, linux-image-uc-${kernel-abi-version}-generic, linux-modules-extra-${kernel-abi-version}-generic, linux-firmware, firmware-sof-signed [amd64], wireless-regdb
+Description: Generic Linux kernel image for Ubuntu Core
+ This package will always depend on the latest generic kernel image
+ available.
+ .
+ This kernel is suitable for staging into a kernel snap, and is not
+ suitable to be used directly on classic systems.
 
 Package: linux-tools-generic-hwe-22.04-edge-kfocus
 Architecture: amd64 armhf arm64 powerpc ppc64el s390x

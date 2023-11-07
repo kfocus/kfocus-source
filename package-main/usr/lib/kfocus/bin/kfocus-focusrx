@@ -42,6 +42,46 @@ _importCommonFn () {
 }
 ## . END _importCommonFn }
 
+## BEGIN _testNagCountFn {
+ # Purpose: Read a _drop_file count.
+ #   Increment that count and place in _drop_file.
+ # Arguments: (positional)
+ #  _file_name is drop file relative to $HOME/.config/)
+ #
+_testNagCountFn () {
+  declare _file_name _drop_file _view_count _left_count;
+
+  _file_name="${1:-}";
+  if [ -z "${_file_name}" ]; then
+    _cm2WarnStrFn 'No file name provided';
+    return 1;
+  fi
+
+  _drop_file="$HOME/.config/${_file_name}";
+  _view_count=0;
+  if [ -f "${_drop_file}" ]; then
+    _view_count="$(_cm2EchoIntFn "$(cat "${_drop_file}")")";
+  fi
+
+  if [ "${_doForce}" = 'y' ]; then
+    _view_count=0;
+  elif (( _view_count >= "${_maxNagCount}" )); then
+    return 1;
+  fi
+
+  (( _view_count++ ));
+  _left_count=$(( _maxNagCount - _view_count ));
+  echo "${_view_count}" > "${_drop_file}" || true;
+  if (( _left_count == 0 )); then
+    echo 'warning will not be shown again';
+  elif (( _left_count == 1 )); then
+    echo 'warning will be shown for one more login';
+  else
+    echo "warning will be shown for ${_left_count} more logins";
+  fi
+}
+## . END _testNagCountFn }
+
 ## BEGIN _runXtermCmdFn {
 # Purpose:
 #   Run and return script in xterm
@@ -133,7 +173,7 @@ _announceStartFn () {
   if [ "${_doForce}" = 'n' ]; then return; fi
 
   _win_title='System Diagnostics';
-  _prompt_msg="$( cat <<_EOW01
+  _prompt_msg="$( cat <<_EOH04
 ${_cm2HtmBeginStr}${_cm2HtmH3Str}SYSTEM DIAGNOSTICS</h3>
 <p>Doc: <a style="color:#1d99f3"
   href="https://kfocus.org/wf/tools#focusrx"
@@ -150,7 +190,7 @@ Menu &gt; Kubuntu Focus &gt; FocusRx</code>.</p>
 
 ${_cm2HtmPStr}<b>Continue with FocusRx System Diagnostics?</b><br></p>
 ${_cm2HtmEndStr}
-_EOW01
+_EOH04
   )";
 
   _ans_str="$(
@@ -162,26 +202,21 @@ _EOW01
 ## . END _announceStartFn }
 
 ## BEGIN _chkUpdateBiosFn {
+ # Purpose: Check BIOS for upgrade
+ #
 _chkUpdateBiosFn () {
-  declare _drop_file _view_count _win_title _cmd_list _check_msg \
-    _ask_msg _do_run_btool;
+  declare _win_title _nag_msg _cmd_list _check_msg \
+    _prompt_msg _do_run_btool;
 
   _cm2SetMsgFn 'Check BIOS version, run-tool if needed';
   _win_title='BIOS Update';
 
-  _drop_file="${HOME}/.config/kfocus-bios-count";
-  _view_count=0;
-  if [ -f "${_drop_file}" ]; then
-    _view_count="$(_cm2EchoIntFn "$(cat "${_drop_file}")")";
-  fi
-
-  if [ "${_doForce}" = 'y' ]; then
-    _view_count=0;
-  elif (( _view_count > 5 )); then
+  if ! _nag_msg="$(_testNagCountFn 'kfocus-bios-count')"; then
     _cm2SucStrFn 'View count limit reached.';
     _cm2SucFn;
     return 0;
   fi
+
   _cmd_list=("${_escExe}" "${_focusRxSetExe}" 'chk-bios');
 
   # Skip if check succeeds (no bios update available)
@@ -191,7 +226,7 @@ _chkUpdateBiosFn () {
     return 0;
   fi
 
-  _ask_msg="$(cat <<_EOT01
+  _prompt_msg="$(cat <<_EOH05
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}Update the BIOS</h3>
 
@@ -201,16 +236,16 @@ ${_cm2HtmPStr}This will improve system stability and performance.<br>
 If you run the BIOS-update wizard now, you will need <br>
 about 10 minutes and an empty, 8+ GB USB drive.</p>
 
+${_cm2HtmPStr}If you skip this prompt, this <br>
+${_nag_msg}.</p>
+
 ${_cm2HtmPStr}<b>Run the BIOS-update wizard now?</b></p>${_cm2HtmEndStr}
-_EOT01
+_EOH05
   )";
 
   _do_run_btool="$(
-    _cm2PromptUserFn "${_ask_msg}" "${_rootTitle}: ${_win_title}" 'a'
+    _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}" 'a'
   )"
-
-  (( _view_count++ ));
-  echo "${_view_count}" > "${_drop_file}" || true;
 
   if [ "${_do_run_btool}" = 'n' ]; then
     _cm2SucStrFn "${_check_msg}";
@@ -251,7 +286,7 @@ _chkHwConfigFn () {
       return;
     # Provide user *option* to reconfig in force mode
     else
-      _prompt_msg="$(cat << _EOH04
+      _prompt_msg="$(cat << _EOH06
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}SKIP ${_win_title}?</h3>
 ${_cm2HtmPStr}<b>The hardware signature already matches expected.</b><br>
@@ -260,7 +295,7 @@ time and is usually not needed.</p>
 
 ${_cm2HtmPStr}<b>SKIP reconfigure to hardware?</b><br></p>
 ${_cm2HtmEndStr}
-_EOH04
+_EOH06
       )";
       _ans_str="$(
         _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}" 'a'
@@ -289,14 +324,14 @@ _EOH04
     _cm2RunLongCmdFn "${_prompt_msg}" "${_focusRxSetExe}" \
       'fix-hw-config' "${_reason_str}"
   )"; then
-    _prompt_msg="$(cat << _EOH05
+    _prompt_msg="$(cat << _EOH07
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}Reboot Now?</h3>
 ${_cm2HtmPStr}Configuration for the hardware is complete.</p>
 ${_cm2HtmPStr}<b>Click Yes to reboot now </b> to ensure optimal<br>
 hardware support and stability.<br></p>
 ${_cm2HtmEndStr}
-_EOH05
+_EOH07
     )";
     _ans_str="$(_cm2PromptUserFn \
       "${_prompt_msg}" "${_rootTitle}: Reboot Now" 'w'
@@ -353,7 +388,7 @@ _chkKernelPkgFn() {
     linux-tools-generic-hwe-22.04-kfocus
   );
 
-  _prompt_msg="$(cat <<_EOW06B
+  _prompt_msg="$(cat <<_EOH08
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}${_win_title}?</h3>
 
@@ -365,7 +400,7 @@ ${_cm2HtmPStr}This can take a few minutes. You will be alerted when<br>
 the process is finished.</p>
 
 ${_cm2HtmPStr}<b>Upgrade now?</b></p>
-_EOW06B
+_EOH08
   )";
 
   # Confirm user intent
@@ -428,7 +463,7 @@ _chkNvidiaPkgFn () {
     return;
   fi
 
-  _prompt_msg="$(cat <<_EOW06
+  _prompt_msg="$(cat <<_EOH09
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}${_win_title}?</h3>
 
@@ -440,7 +475,7 @@ allow the upgrade to finish before rebooting.</p>
 
 ${_cm2HtmPStr}<b>Upgrade now?</b></p>
 ${_cm2HtmEndStr}
-_EOW06
+_EOH09
   )";
   _ans_str="$(
     _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}" 'a'
@@ -507,17 +542,17 @@ _chkXorgConfigFn () {
   _xorg_file='/etc/X11/xorg.conf';
   _win_title='xorg.conf FILE';
 
-  _explain_str="$(cat <<_EOW02
+  _explain_str="$(cat <<_EOH10
 ${_cm2HtmPStr}While an <code>xorg.conf</code> file may be beneficial in some<br>
 cases, it is almost never desirable on a laptop because it<br>
 can disable the primary display panel. Instead, one should<br>
 rely on System Settings &gt; Displays to manipulate displays.<br>
 Advanced users may add files to the drop directory,<br>
 <code>/usr/share/X11/xorg.conf.d</code>.</p>
-_EOW02
+_EOH10
   )";
 
-  _warn_str="$(cat <<_EOW03
+  _warn_str="$(cat <<_EOH11
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}xorg.conf FILE FOUND</h3>
 
@@ -527,10 +562,10 @@ ${_explain_str}
 
 ${_cm2HtmPStr}<b>Delete xorg.conf file NOW?</b></p>
 ${_cm2HtmEndStr}
-_EOW03
+_EOH11
   )";
 
-  _confirm_str="$(cat <<_EOW04
+  _confirm_str="$(cat <<_EOH12
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}X11 CONFIG OK</h3>
 
@@ -540,7 +575,7 @@ ${_cm2HtmPStr}This system does not use an <code>xorg.conf</code> file.<br>
 ${_explain_str}
 
 ${_cm2HtmPStr}<b>Click OK to continue.</b></p>${_cm2HtmEndStr}
-_EOW04
+_EOH12
   )";
 
   if [ "${_doForce}" = 'y' ]; then
@@ -567,14 +602,14 @@ _EOW04
         _win_title='xorg.conf';
         _cm2PromptUserFn "FocusRx: ${_prompt_msg}" "${_rootTitle}: ${_win_title}";
       else
-        _prompt_msg="$( cat <<_EOW05
+        _prompt_msg="$( cat <<_EOH13
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}SHOW PROMPT AGAIN?</h3>
 
-${_cm2HtmPStr}The xorg.conf file was NOT deleted. Would you like<br>
+${_cm2HtmPStr}The xorg.conf file was NOT deleted. Would you like <br>
 to show this warning again in the future?<br></p>
 ${_cm2HtmEndStr}
-_EOW05
+_EOH13
         )";
         _win_title='Show Prompt?';
         _do_show_again="$(
@@ -709,7 +744,7 @@ _runDropScriptsFn () {
           _ans_str='n'
         # Prompt for runnable script
         else
-          _prompt_msg="$(cat <<_EOW07
+          _prompt_msg="$(cat <<_EOH14
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}SKIP Running ${_loop_name}?</h3>
 ${_loop_check_str}
@@ -719,7 +754,7 @@ run it again, but it can take time and is usually not required.</p>
 
 ${_cm2HtmPStr}<b>SKIP running ${_loop_name}?</b><br></p>
 ${_cm2HtmEndStr}
-_EOW07
+_EOH14
           )";
           _ans_str="$(
             _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_loop_name}" 'a'
@@ -782,7 +817,7 @@ _EOW07
 
   ## Begin: Handle reboot if recommended {
   if [ ${_do_reboot} = 'y' ]; then
-    _prompt_msg="$(cat <<_EOW08
+    _prompt_msg="$(cat <<_EOH15
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}REBOOT RECOMMENDED</h3>
 
@@ -791,7 +826,7 @@ However, for safety, this is not the default action.<br><br>
 Continue <b>WITHOUT</b> rebooting?<br></p>
 
 ${_cm2HtmEndStr}
-_EOW08
+_EOH15
     )";
     _ans_str="$(
       _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: SKIP Reboot?" 'a'
@@ -810,49 +845,56 @@ _EOW08
 }
 ## . END _runDropScriptsFn }
 
-## BEGIN _cleanupZoomFn {
-_cleanupZoomFn () {
-  declare _zoom_vers_str _zoom_min_str  _win_title \
-    _request_str _ans_str;
+# _cleanupZoomFn is OOD. See prior versions for function.
 
-  _zoom_vers_str="$(_cm2EchoInstalledVersFn zoom)";
-  if [ -z "${_zoom_vers_str}" ]; then return; fi
+## BEGIN _chkExperRepoFn {
+ # Purpose:
+ #   Recommend user purge kubuntu-ppa-experimental if
+ #   kubuntu-ppa-backports-extra installed
+ #
+_chkExperRepoFn () {
+  declare _win_title _cache_str _prompt_str _nag_msg;
 
-  _zoom_min_str='5.10.6.3194';
-  if _cm2TestVersFn "${_zoom_min_str}" "${_zoom_vers_str}"; then
-    _win_title='Upgrade Zoom?';
-    _request_str="$( cat <<_EOW01
-${_cm2HtmBeginStr}${_cm2HtmH3Str}UPGRADE ZOOM</h3>
-${_cm2HtmPStr}You have an older version of Zoom installed<br>
-(${_zoom_vers_str}). We suggest you purge and reinstall.</p>
+  _cm2SetMsgFn 'Check Experimental Repo';
+  _win_title='Remove Experimental Repo?';
 
-${_cm2HtmPStr}<b>Continue and reinstall?</b><br></p>
+  if ! _nag_msg="$(_testNagCountFn 'kfocus-exper-count')"; then
+    _cm2SucStrFn 'View count limit reached.';
+    _cm2SucFn;
+    return 0;
+  fi
+
+  _cache_str="$(
+    apt-cache policy |sed '/^Pinned packages:/q' \
+    | grep -iE '^\s*release'
+  )";
+
+  if grep -q 'o=LP-PPA-kubuntu-ppa-backports-extra' <<< "${_cache_str}"; then
+    if grep -q 'o=LP-PPA-kubuntu-ppa-experimental' <<< "${_cache_str}"; then
+  _prompt_msg="$( cat <<_EOH17
+${_cm2HtmBeginStr}
+${_cm2HtmH3Str}Experimental Repo Detected</h3>
+
+${_cm2HtmPStr}The kubuntu-ppa-experimental repo is installed <br>
+along with kubuntu-ppa-backports-extra. We strongly <br>
+recommend you purge this now in a terminal using <br>
+the following command:</p>
+
+${_cm2HtmPStr}
+<code>sudo ppa-purge ppa:kubuntu-ppa/experimental</code></p>
+
+${_cm2HtmPStr}If you do not purge the repo, this <br>
+${_nag_msg}.</p>
 ${_cm2HtmEndStr}
-_EOW01
-    )";
-    _ans_str="$(
-      _cm2PromptUserFn "${_request_str}" "${_rootTitle}: ${_win_title}" 'a'
-    )";
-    if [ "${_ans_str}" = 'y' ]; then
-      if "${_escExe}" apt-get purge -y zoom; then
-        kfocus-mime -k zoom;
-      else
-        _cm2PromptUserFn 'Trouble purging Zoom';
-        return;
-      fi
+_EOH17
+  )";
+      _ans_str="$(
+        _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}"
+      )";
     fi
   fi
-
-  _zoom_vers_str="$(_cm2EchoInstalledVersFn zoom)";
-  if [ -n "${_zoom_vers_str}" ] \
-    && _cm2TestVersFn "${_zoom_vers_str}" "${_zoom_min_str}" \
-    && [ -x /usr/local/bin/zoom ]; then
-    "${_escExe}" "${_cm2RmExe}" -f /usr/local/bin/zoom \
-      /usr/local/share/applications/zoom.desktop \
-     /usr/local/share/applications/Zoom.desktop;
-  fi
 }
-## . END _cleanupZoomFn }
+## . END _chkExperRepoFn }
 
 ## BEGIN _announceEndFn {
  # Purpose:
@@ -863,13 +905,13 @@ _announceEndFn () {
   if [ "${_doForce}" = 'n' ]; then return; fi
 
   _win_title='Guided Maintenance ';
-  _prompt_msg="$( cat <<_EOW01
+  _prompt_msg="$( cat <<_EOH18
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}SYSTEM DIAGNOSTICS FINISHED</h3>
 
 ${_cm2HtmPStr}All diagnostics are complete.</p>
 ${_cm2HtmEndStr}
-_EOW01
+_EOH18
   )";
 
   _ans_str="$(
@@ -924,7 +966,7 @@ _mainFn () {
   _chkXorgConfigFn;
   _runKernelCleanFn;
   _runDropScriptsFn;
-  _cleanupZoomFn;
+  _chkExperRepoFn;
   _announceEndFn;
   _cm2EchoFn "\n== . END : OK   ${_rootTitle}\n\n";
   ## . End Run focusrx steps }
@@ -935,15 +977,17 @@ _mainFn () {
 ## . END _mainFn }
 
 ## BEGIN Declare and assign global vars {
-declare _gfxTgtVersStr _parentCmdStr _pingHost1Str _pingHost2Str _binName \
-  _binDir _baseDir _baseName _escExe _focusRxDropDir _rootTitle \
-  _assignList _focusRxBtoolExe _focusRxKcleanExe _focusRxSetExe \
+declare _gfxTgtVersStr _parentCmdStr _pingHost1Str _pingHost2Str \
+  _maxNagCount _binName _binDir _baseDir _baseName _escExe \
+  _focusRxDropDir _kbdColorSetExe _rootTitle _assignList \
+  _focusRxBtoolExe _focusRxKcleanExe _focusRxSetExe \
   _focusRxVersExe _firstRunExe _sysVersStr;
 
 _gfxTgtVersStr='22.04.9';
 _parentCmdStr="$(ps -o comm= $PPID)";
 _pingHost1Str='8.8.8.8';
 _pingHost2Str='1.1.1.1';
+_maxNagCount=6;
 ## . END Declare and assign global vars }
 
 ## BEGIN Run main if script is not sourced {
