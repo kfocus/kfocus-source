@@ -1,0 +1,193 @@
+#!/bin/bash
+
+# Copyright 2023 MindShare Inc.
+#
+# Written for the Kubuntu Focus by M. Mikowski and A. Rainbolt
+#
+# Name   : kfocus-packagetree.source
+# Purpose: Lists KFocus package dependencies to allow easy uninstallation of
+#          the KFocus suite
+# Example: source packagetree.source
+# License: GPL v2
+# Run By : Scripts that source this file
+# Package: kfocus-enhancement-installer
+
+## BEGIN _echoPurgeListStrFn {
+# Summary   : _echoPurgeListStrFn
+# Purpose   : Create a list of packages that were installed when enabling the
+#             kfocus suite. These packages should be purged when uninstalling
+#             the suite. This  list does not include packages that were
+#             already installed on the system prior to the initial
+#             installation.
+# Example   : mapfile _purge_list <<< "$(_echoPurgeListStrFn;)";
+# Arguments : none
+# Globals   : _foundPkgList _preInstallPkgStr.
+# Outputs   : A newline-separated list of package names.
+# Returns   : none
+#
+_echoPurgeListStrFn () {
+  declare _pkg_name _skip_list _purge_list _installed_list;
+  _skip_list=();
+  _purge_list=();
+  _installed_list=();
+
+  mapfile _installed_list < <(apt list --installed | cut -d'/' -f1);
+
+  for _pkg_name in "${_foundPkgList[@]}"; do
+    if grep -q "${_pkg_name}" <<< "${_preInstallPkgStr}" ||
+      ! grep -q "${_pkg_name}" <<< "${_installed_list[@]}"; then
+      _skip_list+=( "${_pkg_name}" );
+      continue;
+    fi
+    _purge_list+=( "${_pkg_name}" );
+  done
+  IFS=$'\n'; echo "${_purge_list[*]}" |sort -u
+}
+## . END _echoPurgeListStrFn }
+
+## BEGIN _echoPkgRecDepsFn {
+# Summary   : _echoPkgRecDepsFn "pkgName"
+# Purpose   : Get a list of all immediate Recommends, Depends, and Pre-Depends
+#             of the specified package.
+# Example   : mapfile _immediate_dep_list << "$(_echoPkgRecDepsFn;)";
+# Arguments : The name of the package to get the dependency info of.
+# Outputs   : A newline-separated list of package names.
+# Returns   : none
+#
+_echoPkgRecDepsFn () {
+  apt-cache depends \
+    "${1}" | grep -P '^\s*\|*(Recommends|Depends|Pre-Depends)' \
+    | grep -v '<' | awk '{print $2}';
+}
+## . END _echoPkgRecDepsFn }
+
+## BEGIN _loadKfPkgListFn {
+# Summary   : _loadKfPkgListFn
+# Purpose   : Get a list of all Recommends, Depends, and Pre-Depends of
+#             KFocus-related packages found while crawling the dependency
+#             tree of a KFocus package.
+# Example   : _loadKfPkgListFn;
+# Arguments : none
+# Globals   : reads starting package from _foundPkgList and populates
+#             _foundPkgList with the full list of packages found
+# Outputs   : none
+# Returns   : none
+#
+_loadKfPkgListFn () {
+  declare _start_idx _processed_list _safety_int _pkg_count _idx _pkg_name \
+    _add_list _clean_list _chk_name _last_count;
+  _start_idx=0;
+  for _safety_int in {0..3}; do
+    _pkg_count="${#_foundPkgList[@]}";
+    for (( _idx="${_start_idx}";_idx < _pkg_count;_idx++)); do
+      _pkg_name="${_foundPkgList[${_idx}]}";
+      # shellcheck disable=SC2076
+      if [[ " ${_processed_list[*]} " =~ " ${_pkg_name} " ]]; then
+        # echo "Outer: Already processed |${_pkg_name}|";
+        continue;
+      fi
+
+      if [[ "${_pkg_name}" =~ ^kfocus ]]; then
+        mapfile -t _add_list < <(_echoPkgRecDepsFn "${_pkg_name}");
+        _clean_list=();
+        for _chk_name in "${_add_list[@]}"; do
+          # Skip the pkg_name if already in the processed or clean list
+          # shellcheck disable=SC2076
+          if [[ " ${_processed_list[*]} " =~ " ${_chk_name} " ]] \
+            || [[ " ${_foundPkgList[*]} " =~ " ${_chk_name} " ]]; then
+            # echo "Inner: Already processed |${_pkg_name}|";
+            continue;
+          fi
+          _clean_list+=( "${_chk_name}" );
+        done
+        if [[ "${#_clean_list[@]}" -gt 0 ]]; then
+          _foundPkgList+=("${_clean_list[@]}");
+        fi
+      fi
+      _processed_list+=( "${_pkg_name}" );
+    done
+    _last_count="${#_foundPkgList[@]}";
+    # echo "_idx: ${_idx} _last_count: ${_last_count} _pkg_count: ${_pkg_count}";
+    if (( _last_count <= _pkg_count )); then
+      break;
+    else
+      _start_idx="${_idx}";
+    fi
+  done
+
+  # The processed_list should equal _foundPkgList here
+  # IFS=$'\n'; echo "${_processed_list[*]}";
+}
+## . END _loadKfPkgListFn
+
+## BEGIN Declare global vars {
+declare _foundPkgList _preInstallPkgFile _preInstallPkgStr;
+
+# _foundPkgList is an array of strings. Load a KFocus package name into it at
+# _foundPkgList[0] and then run _loadKfPkgListFn to populate it with packages
+# that are depended on or recommended by any KFocus packages in the dependency
+# tree of the initial package. See _loadKfPkgListFn for more info.
+#
+# _preInstallPkgStr is a string containing a newline-separated list of
+# packages that existed on the system **before** installing Kubuntu Focus
+# enhancements. This list should be generated using `apt list --installed`,
+# saved to a file before installing the enhancements, then read back from
+# that file using `cat` and loaded into this variable when needed.
+
+## . END Declare global vars }
+
+#_loadKfPkgListFn;
+#_echoPurgeListStrFn;
+
+# Example pre-install-pkg.list
+# apt-file
+# apt-rollback
+# aptitude
+# audacity
+# awscli
+# backintime-qt
+# breeze-icon-theme
+# build-essential
+# chrome-remote-desktop
+# cpufrequtils
+# curl
+# darktable
+# dia
+# diffpdf
+# dkms
+# dmidecode
+# dolphin-plugins
+# exfat-fuse
+# ffmpeg
+# gimp
+# gimp-data-extras
+# gimp-help-en
+# git
+# google-chrome-stable
+# gstreamer1.0-plugins-bad
+# gstreamer1.0-plugins-ugly
+# haskell-platform
+# hicolor-icon-theme
+# htop
+# hwinfo
+# inkscape
+# jetbrains-toolbox
+# kdenlive
+# kdialog
+# kdiff3
+# keepassxc
+# kfind
+# kio-extras
+# libc6
+# libgcc-s1
+# libqt5core5a
+# libqt5gui5
+# libqt5gui5-gles
+# libqt5qml5
+# libqt5quickcontrols2-5
+# libreoffice-base
+# libstdc++6
+# libudev1
+# libvulkan1
+# libxcb-xtest0
+# libxvidcore4

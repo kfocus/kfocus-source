@@ -1,5 +1,5 @@
 #!/bin/bash
-_rx_dir='/var/lib/kfocus/';
+_rx_dir="/var/lib/kfocus/";
 mkdir -p "${_rx_dir}" || exit;
 echo '1.3.0-0' > "${_rx_dir}/focusrx_version";
 
@@ -10,6 +10,9 @@ fi
 if ! dpkg --configure -a; then
   exit 1;
 fi
+
+apt list --installed | awk -F '/' '{print $1}' > "${_rx_dir}/pre-install-pkgs.list"
+ls /etc/apt/sources.list.d > "${_rx_dir}/pre-install-repos.list";
 
 dpkg --add-architecture i386;
 add-apt-repository -y multiverse;
