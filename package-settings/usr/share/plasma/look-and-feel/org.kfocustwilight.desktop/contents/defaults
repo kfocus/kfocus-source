@@ -1,9 +1,12 @@
+# 2023-09-30 Redundant with inherited.
+# [Desktop]
+# plugin=org.kde.plasma.folder
+
 [kdeglobals][KDE]
-widgetStyle=breeze
+widgetStyle=Breeze
 
 [kdeglobals][General]
-ColorScheme=Breeze Light
-Name=Breeze Light
+ColorScheme=BreezeLight
 
 [kdeglobals][Icons]
 Theme=breeze
@@ -11,15 +14,25 @@ Theme=breeze
 [plasmarc][Theme]
 name=kfocus
 
-[Wallpaper]
-Image=Next
+# 2023-09-30 Redundant with inherited.
+# [Wallpaper]
+# Image=Next
+
+[kcminputrc][Mouse]
+cursorTheme=Breeze_Snow
+cursorSize=36
+
+[kwinrc][WindowSwitcher]
+LayoutName=org.kde.breeze.desktop
+
+[kwinrc][DesktopSwitcher]
+LayoutName=org.kde.breeze.desktop
 
 [kwinrc][org.kde.kdecoration2]
 library=org.kde.breeze
 
-[kcminputrc][Mouse]
-cursorSize=36
-cursorTheme=Breeze
+[kwinrc][Windows]
+RollOverDesktops=true
 
-[Desktop][org.kde.plasma.desktop]
-Containment=org.kde.plasma.folder
+[KSplash]
+Theme=org.kde.Breeze

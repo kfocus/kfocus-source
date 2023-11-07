@@ -4,7 +4,7 @@
 #
 set -e;
 
-## BEGIN Declare common.2.source symbols
+## BEGIN Declare common.2.source symbols {
 #  IMPORT 2022-03-23 EXCERPT from test/test-scripts/common.2.source
 _cmXBlockMsg='';
 _cmXEchoFn    () { 1>&2 echo -e "$*";  }
@@ -13,19 +13,9 @@ _cmXSucFn     () { _cmXEchoFn "== . END : OK   ${_cmXBlockMsg}\n\n"; }
 _cmXSucStrFn  () { _cmXEchoFn "ok  : ${*}"; }
 _cmXWarnFn    () { _cmXEchoFn "== . END : WARN Could not ${_cmXBlockMsg}\n\n"; }
 _cmXWarnStrFn () { _cmXEchoFn "warn: ${*}"; }
-## . END Declare common.2.source symbols
+## . END Declare common.2.source symbols }
 
-## BEGIN _assignGlobalVarsFn
-_assignGlobalVarsFn () {
-  declare _repo_src_dir;
-  _repo_src_dir="${_rootDir}/etc/apt/sources.list.d";
-
-  _libKfocusDir="${_rootDir}/usr/lib/kfocus";
-  _recomListFile="${_repo_src_dir}/kfocus-recommended.list";
-}
-## . END _assignGlobalVarsFn
-
-## BEGIN _mkSrcListStrFn
+## BEGIN _mkSrcListStrFn {
 # IMPORTED on 2022-02-23 from test/test-scripts/unit.d/00400_mkSrcListStr
 #
 _mkSrcListStrFn () {
@@ -46,9 +36,9 @@ _mkSrcListStrFn () {
   fi
   echo -e "${_repo_src_str}";
 }
-## END _mkSrcListStrFn
+## END _mkSrcListStrFn }
 
-## BEGIN _dedupRepoSrcFileFn
+## BEGIN _dedupRepoSrcFileFn {
 # IMPORTED on 2022-03-23 from test/test-scripts/unit.d/00300_dedupRepo
 #
 _dedupRepoSrcFileFn() {
@@ -90,9 +80,9 @@ _dedupRepoSrcFileFn() {
     _cmXWarnFn; return;
   fi
 }
-## . END _dedupRepoSrcFileFn
+## . END _dedupRepoSrcFileFn }
 
-## BEGIN _updatePciidsFn
+## BEGIN _updatePciidsFn {
 # IMPORTED on 2022-02-23 from test/test-scripts/unit.d/00500_updatePciids
 #
 _updatePciidsFn () {
@@ -110,25 +100,25 @@ _updatePciidsFn () {
 
   if [ ! -x "${_exe_lspci_str}" ]; then
     _cmXWarnStrFn "${_exe_lspci_str} not found";
-    _cmXWarnFn; return 0;
+    _cmXWarnFn; return;
   fi
 
   if [ ! -x "${_exe_update_str}" ]; then
     _cmXWarnStrFn "${_exe_update_str} is not executable";
-    _cmXWarnFn; return 0;
+    _cmXWarnFn; return;
   fi
 
   if "${_exe_update_str}"; then
     _cmXSucStrFn 'Updated pciids';
-    _cmXSucFn; return 0;
+    _cmXSucFn; return;
   else
     _cmXWarnStrFn 'Could not update pciids';
-    _cmXWarnFn; return 0;
+    _cmXWarnFn; return;
   fi
 }
-## . END _updatePciidsFn
+## . END _updatePciidsFn }
 
-## BEGIN _applyRootStyleFn
+## BEGIN _applyRootStyleFn {
 _applyRootStyleFn () {
   declare _exe_rsync_str;
   _exe_rsync_str=$( command -v 'rsync' );
@@ -136,12 +126,12 @@ _applyRootStyleFn () {
 
   if [ -d "/root/Desktop" ]; then
     _cmXSucStrFn 'Root style already applied';
-    _cmXSucFn; return 0;
+    _cmXSucFn; return;
   fi
 
   if [ ! -e "${_exe_rsync_str}" ]; then
     _warnStr "${_exe_rsync_str} not executable";
-    _cmXWarnFn; return 0;
+    _cmXWarnFn; return;
   fi
 
   if "${_exe_rsync_str}" -azog --chown='0:0' \
@@ -149,12 +139,14 @@ _applyRootStyleFn () {
       _cmXSucFn; else _cmXWarnFn;
   fi
 }
-## . END _applyRootStyleFn
+## . END _applyRootStyleFn }
 
-## BEGIN _setupModelHintsFn
+## BEGIN _setupModelHintsFn {
  # Purpose: Setup hint widget model-specific symlinks
  # Important: This is an extract from kfocus-hw which is the master.
- # Update that code first and copy here.
+ # Update that code first and copy here. This must be here in case
+ # this is updated separate from kfocus-hw.
+ #
 _setupModelHintsFn () {
   declare _lib_file _model_code _hints_dir _unique_dir _model_dir \
     _png_list _src_path _img_file _tgt_path _msg;
@@ -211,9 +203,9 @@ _setupModelHintsFn () {
 
   _cmXSucFn;
 }
-## . END _setupModelHintsFn
+## . END _setupModelHintsFn }
 
-## BEGIN _cleanupFn
+## BEGIN _cleanupFn {
 #  Purpose: Clean up of various bits
 _cleanUpFn () {
   declare _firstrun_file _exe_update_deskdb;
@@ -250,39 +242,36 @@ _cleanUpFn () {
   #   _cmXSucFn; else _cmXWarnFn;
   # fi
 }
-## . END _cleanupFn
+## . END _cleanupFn }
 
-## BEGIN _adviseRebootFn
+## BEGIN _adviseRebootFn {
 # Call was disabled 2023-08-10 per notes below.
 # IMPORTED on 2022-03-23 from test/test-scripts/unit.d/00100_adviseReboot
 # Purpose: Advise reboot after install
+#   See https://askubuntu.com/questions/993570
 #
-# See https://askubuntu.com/questions/993570
-#
-# _adviseRebootFn () {
-#   declare _reboot_file;
-#
-#   _reboot_file="${_rootDir}/var/run/reboot-required";
-#   _cmXSetMsgFn 'Advise reboot';
-#
-#   if touch "${_reboot_file}"; then
-#     _cmXSucStrFn "Wrote ${_reboot_file}";
-#     _cmXSucFn;
-#   else
-#     _cmXWarnStrFn "Could not write ${_reboot_file}";
-#     _cmXWarnFn;
-#   fi
-# }
-## . END _adviseRebootFn
+_adviseRebootFn () {
+  declare _reboot_file;
+  _reboot_file="${_rootDir}/var/run/reboot-required";
+  _cmXSetMsgFn 'Advise reboot';
+  if touch "${_reboot_file}"; then
+    _cmXSucStrFn "Wrote ${_reboot_file}";
+    _cmXSucFn;
+  else
+    _cmXWarnStrFn "Could not write ${_reboot_file}";
+    _cmXWarnFn;
+  fi
+}
+## . END _adviseRebootFn }
 
-## BEGIN _addBashCompletionFn
+## BEGIN _addBashCompletionFn {
 _addBashCompletionFn () {
   if ! [ -f /etc/bash_completion.d/kfocus-bashcompletion ]; then
     ln -sf /usr/lib/kfocus/lib/kfocus-bashcompletion \
       /etc/bash_completion.d/kfocus-bashcompletion
   fi
 }
-## . END _addBashCompletionFn
+## . END _addBashCompletionFn }
 
 ## BEGIN _setupSddmFixFn {
 _setupSddmFixFn () {
@@ -339,11 +328,17 @@ EOS
 }
 ## . END _setupSddmFixFn }
 
-## Begin Run main if script is not sourced
+## BEGIN declare and assign global vars {
+declare _rootDir _repoSrcDir _libKfocusDir _recomListFile;
+_rootDir='';
+_repoSrcDir="${_rootDir}/etc/apt/sources.list.d";
+
+_libKfocusDir="${_rootDir}/usr/lib/kfocus";
+_recomListFile="${_repoSrcDir}/kfocus-recommended.list";
+## . END declare and assign global vars }
+
+## BEGIN Run main if script is not sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-  # set -u; # Development only
-  _rootDir='';
-  _assignGlobalVarsFn;
   case "${1:-}" in
     abort-upgrade|abort-remove|abort-configure|abort*) true;;
     configure|upgrade)
@@ -373,14 +368,14 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
       _cleanUpFn;
 
       # Advise reboot
-      # 2023-08-10 Disabled. We would rather have dependent
-      #   packages make this call if needed.
-      # _adviseRebootFn;
+      # 2023-11-04 Enable this when changes warrant.
+      #   Otherwise, have packages make this call if needed.
+      _adviseRebootFn;
     ;;
   esac
   exit 0;
 fi
-## . End Run main if script is not sourced
+## . END Run main if script is not sourced }
 
 # Tag to allow some debhelper commands to inject relevant code
 #DEBHELPER#
