@@ -133,6 +133,8 @@ _cm2RunLongCmdFn () {
   declare _prompt_msg _cmd_list _zenity_exe _exit_int _exit_str \
     _tmp_str_file _tmp_int_file;
 
+  _exit_str="";
+
   _prompt_msg="${1:-Please wait.}"; shift;
 
   read -r -d '' -a _cmd_list <<< "$@";
@@ -158,7 +160,7 @@ _cm2RunLongCmdFn () {
     _exit_str="$(cat "${_tmp_str_file}")";
     "${_cm2RmExe}" "${_tmp_int_file}" "${_tmp_str_file}" || true;
   fi
-  echo "${_exit_str}";
+  echo "${_exit_str:-}";
   return "${_exit_int}";
 }
 
