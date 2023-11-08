@@ -1,3 +1,18 @@
+kfocus-settings (22.04.16) jammy; urgency=medium
+
+  * control: Depends kfocus-main >> 22.0.53 (#3802)
+  * postinst: Set defaults with kfocus-reset-effects (KRE) (#3802)
+  * postinst: Update adduser.local to use KRE (#3802)
+  * skel/.config: Remove all kde configs (#3802)
+  * kf5-settings/kdeglobals: Trim redundant colors (#3802)
+  * kf5-settings/kglobalshortcutsrc: Set with KRE (#3802)
+  * kf5-settings/kmcfont: Set with KRE (#3802)
+  * kf5-settings/kwinrc: Set with KRE (#3802)
+  * kf5-settings/powermanagementprofilesrc: Harmonize 5.27 defaults (#3802)
+  * share/plasma: Refine, debug, test all kfocus themes (#3802)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Tue, 07 Nov 2023 09:56:33 -0800
+
 kfocus-settings (22.04.15) jammy; urgency=medium
 
   * Add tiny window border by default (#3718)
@@ -100,7 +115,7 @@ kfocus-settings (22.04.1) jammy; urgency=medium
 
 kfocus-001-settings (20.04.23) focal; urgency=medium
 
-  * Change from kfocus-001-turbo-on to gpu_check.sh to run power mgmt (#1782) 
+  * Change from kfocus-001-turbo-on to gpu_check.sh to run power mgmt (#1782)
 
  -- Erich Eickmeyer <eeickmeyer@kfocus.org>  Fri, 17 Dec 2021 11:31:25 -0800
 
@@ -121,34 +136,34 @@ kfocus-001-settings (20.04.20) focal; urgency=medium
 
   * Revamp default theme and layout to match Kubuntu proper (#1125)
   * Change former vertical panel to be different look & feel (#1125)
-  * Change default pinned icons (#1125) 
+  * Change default pinned icons (#1125)
   * Add mouse ignores for XE (#689)
-  * Remove ksysguard defaults (#1125) 
+  * Remove ksysguard defaults (#1125)
 
  -- Kubuntu Focus Support <support@kfocus.org>  Thu, 05 Aug 2021 12:46:01 -0700
 
 kfocus-001-settings (20.04.19) focal; urgency=medium
 
   * Add keys for defaults for Plasma 5.22+ due in 22.04 (#1001)
-  * Fix for incorrect panel placement for light and hybrid themes (#1044) 
+  * Fix for incorrect panel placement for light and hybrid themes (#1044)
 
  -- Kubuntu Focus Support <support@kfocus.org>  Mon, 14 Jun 2021 12:18:21 -0700
 
 kfocus-001-settings (20.04.18) focal; urgency=medium
 
-  * Make desktop icons into shortcut widget (#621) 
+  * Make desktop icons into shortcut widget (#621)
 
  -- Kubuntu Focus Support <support@kfocus.org>  Tue, 13 Apr 2021 15:59:39 -0700
 
 kfocus-001-settings (20.04.17) focal; urgency=medium
 
-  * Fix for inability to remove wallpaper package (#700) 
+  * Fix for inability to remove wallpaper package (#700)
 
  -- Kubuntu Focus Support <support@kfocus.org>  Tue, 13 Apr 2021 13:03:34 -0700
 
 kfocus-001-settings (20.04.16) focal; urgency=medium
 
-  * Fix for icon layouts (#645) 
+  * Fix for icon layouts (#645)
 
  -- Kubuntu Focus Support <support@kfocus.org>  Tue, 30 Mar 2021 13:55:30 -0700
 

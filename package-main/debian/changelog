@@ -1,3 +1,17 @@
+kfocus-main (22.04.54) jammy; urgency=medium
+
+  * control: Remove Recommends: hplip, hplip-gui, gitolite3 (#3802)
+  * focusrx: Add nag for removing OOD experimental repo (#3802)
+  * focusrx-set: Manage kbd-ite package per hw (#3805,3735)
+  * focusrx-set: Add hw check for NV GPUs (#3824)
+  * …package-check.sh: Add hw check fo NV GPUs (#3824)
+  * kfocus-reset-effects: Use as single source for defaults (#3802)
+  * kfocus-reset-effects: Add ability to reset mimeapps.list (#3802)
+  * kfocus-reset-effects: Support 5.27 settings (#3802)
+  * kfocus-support-welcome.desktop: Rename to Feature Guide (#3802)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Tue, 07 Nov 2023 09:55:55 -0800
+
 kfocus-main (22.04.53) jammy; urgency=medium
 
   * Complete ite keyboard support (#3735)
@@ -12,7 +26,7 @@ kfocus-main (22.04.52) jammy; urgency=medium
 
   * Replace kdialog firstrun wizard with QT-native (#3613)
     - debian/control: Add depends to kfocus-firstrun-bin
-    - debian/kfocus-main.install: Remove kfocus-firstrun 
+    - debian/kfocus-main.install: Remove kfocus-firstrun
     - bin/kfocus-focusrx: Execute on launch for 5.27 too
     - applications/kfocus-firstrun.desktop
     - bin/kfocus-mime
