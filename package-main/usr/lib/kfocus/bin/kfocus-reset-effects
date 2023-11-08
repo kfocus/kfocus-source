@@ -205,6 +205,13 @@ _mainFn () {
     return;
   fi
 
+  # Bail if HOME is not set
+  if [ -z "${HOME:-}" ]; then
+    _cm2WarnStrFn 'SKIP: No HOME var set.';
+    return;
+  fi
+  _configDir="${HOME:-}/.config";
+
   # Notify user
   _prompt_msg="$(
     cat <<_EOH01
@@ -268,10 +275,7 @@ declare -A _fileMap=(
   ['scut']=kglobalshortcutsrc
 );
 _rootTitle='Kubuntu Focus Reset Effects';
-_configDir="$HOME/.config";
-# Update the following files with this script before deployment
-# _configDir="$HOME/Github/kfocus-source/package-settings/usr/lib/kfocus/skel/.config";
-# _configDir="$HOME/Github/kfocus-source/package-settings/usr/share/kfocus/kf5-settings";
+_configDir='';
 ## . END Declare and assign global vars }
 
 ## BEGIN Run main if script is not sourced {
