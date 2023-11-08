@@ -4,11 +4,11 @@
 #
 # Written for the Kubuntu Focus by M. Mikowski and A. Rainbolt.
 #
-# Name     : kfocus-enhancement-installer
-# Summary  : kfocus-enhancement-installer
-# Purpose  : Installs Kubuntu Focus enhancements on supported Kubuntu LTS
-#            systems.
-# Example  : kfocus-enhancement-installer
+# Name     : kfocus-suite-manager
+# Summary  : kfocus-suite-manager
+# Purpose  : Adds or purges Kubuntu Focus Suite on top of 
+#          : An Existing Kubuntu Installation.
+# Example  : kfocus-suite-manager
 # License  : GPLv2
 # Run By   : End-users
 # Spec     : 3288
@@ -53,29 +53,22 @@ _importCommonFn () {
 #             and if it has KFocus enhancements already installed.
 # Example   : _checkEnvFn
 # Arguments : none
-# Outputs   : "notKubuntuLts" if the system is not a supported version of
-#             Kubuntu LTS, "alreadyInstalled" if KFocus enhancements are
-#             present, and "notInstalled" if KFocus enhancements are not
+# Outputs   : 'notKubuntuLts' if the system is not a supported version of
+#             Kubuntu LTS, 'alreadyInstalled' if KFocus enhancements are
+#             present, and 'notInstalled' if KFocus enhancements are not
 #             present.
 # Returns   : none
 #
 _checkEnvFn() {
-  declare _is_ubuntu_lts_int _is_kubuntu_int _is_kfocus_int;
-
-  _is_ubuntu_lts_int="$(grep -q "Ubuntu 22.04" /etc/lsb-release; echo $?;)";
-  _is_kubuntu_int="$(grep -q "Name=Kubuntu" /etc/xdg/kcm-about-distrorc; \
-    echo $?;)";
-  if [ "${_is_ubuntu_lts_int}" != "0" ] ||
-     [ "${_is_kubuntu_int}" != "0" ]; then
-    echo "notKubuntuLts";
-    return;
-  fi
-
-  _is_kfocus_int="$(dpkg-query -s kfocus-main > /dev/null; echo $?;)";
-  if [ "${_is_kfocus_int}" != "0" ]; then
-    echo "notInstalled";
+  if grep -q 'Ubuntu 22.04' /etc/lsb-release \
+    && grep -q 'Name=Kubuntu' /etc/xdg/kcm-about-distrorc; then
+    if _cm2ChkInstalledPkgFn 'kfocus-main'; then
+      echo 'alreadyInstalled';
+    else
+      echo 'notInstalled';
+    fi
   else
-    echo "alreadyInstalled";
+    echo 'notKubuntuLts';
   fi
 }
 ## . END _checkEnvFn }
@@ -90,16 +83,14 @@ _checkEnvFn() {
 # Returns   : 0 if all utilities are present, 1 if not
 #
 _checkUtilsFn() {
-  declare _zenity_present_int _ppapurge_present_int;
-
-  _zenity_present_int="$(dpkg-query -s zenity > /dev/null; echo $?;)";
-  _ppapurge_present_int="$(dpkg-query -s ppa-purge > /dev/null; echo $?;)";
-
-  if [ "${_zenity_present_int}" != "0" ] ||
-     [ "${_ppapurge_present_int}" != "0" ]; then
-    return 1;
-  fi
-  return 0;
+  declare _util_list _pkg_name;
+  _util_list=( zenity ppa-purge );
+  for _pkg_name in "${_util_list[@]}"; do
+    if ! _cm2ChkInstalledPkgFn "${_pkg_name}"; then
+      _cm2WarnStrFn "${_pkg_name} is not installed.";
+      return 1;
+    fi
+  done;
 }
 ## . END _checkUtilsFn }
 
@@ -123,13 +114,14 @@ _mainFn () {
     _install_complete_msg _no_internet_msg _proceed_str \
     _boot_space_insufficient_msg _missing_utils_msg _installing_utils_msg \
     _install_utils_complete_msg _install_utils_failed_msg _op_result_code \
-    _boot_space_int _utils_missing_int _install_utils_str _sys_status_str;
+    _boot_space_int _install_utils_str _sys_status_str _response_str;
+
 
   _notty_msg="This script must be run from within a graphical KDE \
 environment, and kdialog must be installed. Also note that this script only \
 works on Kubuntu 22.04 LTS.";
 
-  _welcome_msg="Welcome to the Kubuntu Focus Enhancement Installer. This \
+  _welcome_msgX="Welcome to the Kubuntu Focus Enhancement Installer. This \
 program will help you install or remove KFocus enhancements on a Kubuntu \
 system. This will provide you with various utilities for system and power \
 management, a curated kernel that is less likely to cause hardware breakage \
@@ -140,6 +132,23 @@ If you have not done this yet, you can cancel the installation or \
 uninstallation process on the next screen.
 
 Press OK to continue.";
+
+_cm2HtmH3Str="${_cm2HtmH3Str/FocusRx: /}";
+
+  _welcome_msg="$(cat << EOF
+${_cm2HtmH3Str}Kubuntu Focus Suite Manager</h3>
+
+${_cm2HtmPStr}This program will help you install or remove the <br>
+<code>Kubuntu Focus Suite</code> on top of stock <code>Kubuntu <br>
+LTS 22.04</code>.</p>
+
+${_cm2HtmPStr}The Suite provides many enhancements to improve <br>
+reliability and ease of use. Please back up your data <br>
+before you add or remove the Suite.</p>
+
+${_cm2HtmPStr}<b>Would you like to continue?</b></p>
+EOF
+  )";
 
   _no_internet_msg="No Internet access was found.
 
@@ -213,97 +222,107 @@ sure that your package manager is in a consistent state.";
   _install_recover_failed_msg="Recovery failed! You will need to repair your \
 package manager. Please contact technical support for help.";
 
-  if [ "${_cm2IsTty}" = "y" ]; then
+  if [ "${_cm2IsTty}" = 'y' ]; then
     _cm2PromptUserFn "${_notty_msg}" "${_titleStr}";
     exit 1;
   fi
 
-  _cm2PromptUserFn "${_welcome_msg}" "${_titleStr}";
+  _response_str="$(
+    _cm2PromptUserFn "${_welcome_msg}" "${_titleStr}" 'a';
+  )";
+
+  if [ "${_response_str}" = 'n' ]; then
+    _cm2PromptUserFn "${_install_cancel_msg}" "${_titleStr}";
+    exit 1;
+  fi
 
   if ! ping -c 1 8.8.8.8 > /dev/null; then
     _cm2PromptUserFn "${_no_internet_msg}" "${_titleStr}";
     exit 1;
   fi
 
-  _boot_space_int=$(df -BM --output=avail /boot | tail -n1 | head -c-2);
-  if [ "${_boot_space_int}" -lt 200 ]; then
+  _echoIntFn  () { printf '%d' "${1:-0}" 2>/dev/null; }
+
+  _boot_space_str="$(df -BM --output=avail '/boot' | tail -n1 | head -c-2)";
+  _boot_space_int="$(_echoIntFn "${_boot_space_str}")";
+
+  if (( _boot_space_int < 200 )); then
     _cm2PromptUserFn "${_boot_space_insufficient_msg}" "${_titleStr}";
     exit 1;
   fi
 
   _sys_status_str="$(_checkEnvFn)"
 
-  if [ "${_sys_status_str}" = "notKubuntuLts" ]; then
+  if [ "${_sys_status_str}" = 'notKubuntuLts' ]; then
     _cm2PromptUserFn "${_unsupported_warning_msg}" "${_titleStr}";
     exit 1;
   fi
 
-  _utils_missing_int="$(_checkUtilsFn)"
-
-  if [ "${_utils_missing_int}" != "0" ]; then
+  if ! _checkUtilsFn; then
     _install_utils_str="$(_cm2PromptUserFn "${_missing_utils_msg}" \
-      "${_titleStr}" "w";)";
+      "${_titleStr}" 'w';)";
 
-    if [ "${_install_utils_str}" = "n" ]; then
+    if [ "${_install_utils_str}" = 'n' ]; then
       _cm2PromptUserFn "${_install_cancel_msg}" "${_titleStr}";
       exit 1;
     else
       _op_result_code="$(_cm2RunLongCmdFn "${_installing_utils_msg}" \
         "${_binDir}/install_utils.sh" > /dev/null; echo $?;)"
       
-      if [ "${_op_result_code}" = "0" ]; then
+      if [ "${_op_result_code}" = '0' ]; then
         _cm2PromptUserFn "${_install_utils_complete_msg}" "${_titleStr}";
       else
-        _cm2PromptUserFn "${_install_utils_failed_msg}" "${_titleStr}" "e";
+        _cm2PromptUserFn "${_install_utils_failed_msg}" "${_titleStr}" 'e';
         exit 1;
       fi
     fi
   fi
 
-  if [ "${_sys_status_str}" = "alreadyInstalled" ]; then
+  if [ "${_sys_status_str}" = 'alreadyInstalled' ]; then
     _proceed_str="$(_cm2PromptUserFn "${_uninstall_offer_msg}" \
-      "${_titleStr}" "w";)";
+      "${_titleStr}" 'w';)";
 
-    if [ "${_proceed_str}" = "n" ]; then
+    if [ "${_proceed_str}" = 'n' ]; then
       _cm2PromptUserFn "${_uninstall_cancel_msg}" "${_titleStr}";
 
     else
       _op_result_code="$(_cm2RunLongCmdFn "${_uninstalling_msg}" \
         "${_binDir}/uninstall.sh" > /dev/null; echo $?;)";
 
-      if [ "${_op_result_code}" = "0" ]; then
+      if [ "${_op_result_code}" = '0' ]; then
         _cm2PromptUserFn "${_uninstall_complete_msg}" "${_titleStr}";
       else
-        _cm2PromptUserFn "${_uninstall_failed_msg}" "${_titleStr}" "e";
+        _cm2PromptUserFn "${_uninstall_failed_msg}" "${_titleStr}" 'e';
       fi
     fi
 
   else
-    _proceed_str="$(_cm2PromptUserFn "${_install_offer_msg}" "${_titleStr}" \
-      w;)";
+    _proceed_str="$(
+      _cm2PromptUserFn "${_install_offer_msg}" "${_titleStr}" 'w';
+    )";
 
-    if [ "${_proceed_str}" = "n" ]; then
+    if [ "${_proceed_str}" = 'n' ]; then
       _cm2PromptUserFn "${_install_cancel_msg}" "${_titleStr}";
 
     else
       _op_result_code="$(_cm2RunLongCmdFn "${_installing_msg}" \
         "${_binDir}/install.sh" > /dev/null; echo $?;)"
 
-      if [ "${_op_result_code}" = "0" ]; then
+      if [ "${_op_result_code}" = '0' ]; then
         lookandfeeltool -a "org.kfocus.desktop" --resetLayout;
         _cm2PromptUserFn "${_install_complete_msg}" "${_titleStr}";
 
       else
-        _cm2PromptUserFn "${_install_failed_msg}" "${_titleStr}" "e";
+        _cm2PromptUserFn "${_install_failed_msg}" "${_titleStr}" 'e';
         _op_result_code="$(_cm2RunLongCmdFn "${_install_recovering_msg}" \
           "${_binDir}/recover_install.sh" > /dev/null; echo $?;)";
 
-        if [ "${_op_result_code}" = "0" ]; then
+        if [ "${_op_result_code}" = '0' ]; then
           _cm2PromptUserFn "${_install_recover_complete_msg}" "${_titleStr}";
 
         else
-          _cm2PromptUserFn "${_install_recover_failed_msg}" "${_titleStr}" \
-            "e";
+          _cm2PromptUserFn "${_install_recover_failed_msg}" \
+            "${_titleStr}" 'e';
         fi
       fi
     fi
@@ -323,7 +342,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binDir="$(   dirname  "${_binName}" )" || exit 101;
   _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
   _baseName="$( basename "${_binName}" )" || exit 101;
-  _titleStr="Kubuntu Focus Enhancement Installer";
+  _titleStr="Kubuntu Focus Suite Manager";
 
   # Import libs and assign more global vars
   _importCommonFn;
