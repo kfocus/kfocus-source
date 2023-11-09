@@ -1,18 +1,17 @@
 #!/bin/bash
-_rx_dir="/var/lib/kfocus";
-_repo_dir="/etc/apt/sources.list.d";
+_rx_dir='/var/lib/kfocus';
+_repo_dir='/etc/apt/sources.list.d';
 source lib/kfocus-packagetree.source
 
-_uninstall_success="no";
+_uninstall_success='no';
 _uninstall_attempts=0;
   
-_foundPkgList=( "kfocus-main" );
+_foundPkgList=( 'kfocus-main' );
 _preInstallPkgStr="$(cat "${_rx_dir}/pre-install-pkgs.list";)" || exit 1;
 _loadKfPkgListFn;
-_purge_str="$(_echoPurgeListStrFn;)";
-_pre_install_repo_str="$(cat ${_rx_dir}/pre-install-repos.list)";
+_pre_install_repo_str="$(cat "${_rx_dir}/pre-install-repos.list")";
 
-while [ "${_uninstall_success}" = "no" ] && [ "${_uninstall_attempts}" != "3" ]; do
+while [ "${_uninstall_success}" = 'no' ] && [ "${_uninstall_attempts}" != '3' ]; do
   if ! apt-get -y install linux-generic-hwe-22.04 \
     linux-headers-generic-hwe-22.04 \
     linux-image-generic-hwe-22.04 \
@@ -24,74 +23,71 @@ while [ "${_uninstall_success}" = "no" ] && [ "${_uninstall_attempts}" != "3" ];
   if ! DEBIAN_FRONTEND=noninteractive ppa-purge -y -o kfocus-team -p release; then
     _uninstall_attempts=$((_uninstall_attempts + 1));
     continue;
-  else
-    rm -f "${_repo_dir}/kfocus-team-ubuntu-release-jammy.list";
   fi
+
+  if ! [[ "${_pre_install_repo_str}" =~ 'o=LP-PPA-bit-team-stable' ]]; then
+    if ! DEBIAN_FRONTEND=noninteractive ppa-purge -y -o bit-team -p stable; then
+      _uninstall_attempts=$((_uninstall_attempts + 1));
+      continue;
+    fi
+  fi
+
+  if ! [[ "${_pre_install_repo_str}" =~ 'o=LP-PPA-kubuntu-ppa-backports' ]]; then
+    if ! DEBIAN_FRONTEND=noninteractive ppa-purge -y -o kubuntu-ppa -p backports; then
+      _uninstall_attempts=$((_uninstall_attempts + 1));
+      continue;
+    fi
+  fi
+
+  if ! [[ "${_pre_install_repo_str}" =~ 'o=LP-PPA-kubuntu-ppa-backports-extra' ]]; then
+    if ! DEBIAN_FRONTEND=noninteractive ppa-purge -y -o kubuntu-ppa -p backports-extra; then
+      _uninstall_attempts=$((_uninstall_attempts + 1));
+      continue;
+    fi
+  fi
+  
+  if ! [[ "${_pre_install_repo_str}" =~ 'o=LP-PPA-phoerious-keepassxc' ]]; then
+    if ! DEBIAN_FRONTEND=noninteractive ppa-purge -y -o phoerious -p keepassxc; then
+      _uninstall_attempts=$((_uninstall_attempts + 1));
+      continue;
+    fi
+  fi
+
+  if ! [[ "${_pre_install_repo_str}" =~ 'o=LP-PPA-ubuntustudio-ppa-backports' ]]; then
+    if ! DEBIAN_FRONTEND=noninteractive ppa-purge -y -o ubuntustudio-ppa -p backports; then
+      _uninstall_attempts=$((_uninstall_attempts + 1));
+      continue;
+    fi
+  fi
+
+  if ! [[ "${_pre_install_repo_str}" =~ 'o=NVIDIA,l=NVIDIA CUDA' ]]; then
+    if ! DEBIAN_FRONTEND=noninteractive ppa-purge -s developer.download.nvidia.com -o compute -p cuda; then
+      _uninstall_attempts=$((_uninstall_attempts + 1));
+      continue;
+    fi
+  fi
+
+  # TODO: Perhaps tighten up this check
+  if ! [[ "${_pre_install_repo_str}" =~ 'o=Google LLC' ]]; then
+    if ! DEBIAN_FRONTEND=noninteractive ppa-purge -s dl.google.com -o linux -p chrome; then
+      _uninstall_attempts=$((_uninstall_attempts + 1));
+      continue;
+    fi
+  fi
+
+  # TODO: These repos are REALLY HARD to remove with ppa-purge
+  # if ! [[ "${_pre_install_repo_str}" =~ "nodesource.list" ]]; then
+  #   rm -f "${_repo_dir}/nodesource.list";
+  # fi
+  # if ! [[ "${_pre_install_repo_str}" =~ "google-cloud-sdk.list" ]]; then
+  #   rm -f "${_repo_dir}/google-cloud-sdk.list";
+  # fi
+
+  _purge_str="$(_echoPurgeListStrFn;)";
 
   if ! apt -y purge ${_purge_str}; then
     _uninstall_attempts=$((_uninstall_attempts + 1));
     continue;
-  fi
-
-  if ! [[ "${_pre_install_repo_str}" =~ "bit-team-ubuntu-stable-jammy.list" ]]; then
-    if ! DEBIAN_FRONTEND=noninteractive ppa-purge -y -o bit-team -p stable; then
-      _uninstall_attempts=$((_uninstall_attempts + 1));
-      continue;
-    else
-      rm -f "${_repo_dir}/bit-team-ubuntu-stable-jammy.list";
-    fi
-  fi
-  
-  if ! [[ "${_pre_install_repo_str}" =~ "kubuntu-ppa-ubuntu-backports-jammy.list" ]]; then
-    if ! DEBIAN_FRONTEND=noninteractive ppa-purge -y -o kubuntu-ppa -p backports; then
-      _uninstall_attempts=$((_uninstall_attempts + 1));
-      continue;
-    else
-      rm -f "${_repo_dir}/kubuntu-ppa-ubuntu-backports-jammy.list";
-    fi
-  fi
-  
-  if ! [[ "${_pre_install_repo_str}" =~ "kubuntu-ppa-ubuntu-backports-extra-jammy.list" ]]; then
-    if ! DEBIAN_FRONTEND=noninteractive ppa-purge -y -o kubuntu-ppa -p backports-extra; then
-      _uninstall_attempts=$((_uninstall_attempts + 1));
-      continue;
-    else
-      rm -f "${_repo_dir}/kubuntu-ppa-ubuntu-backports-extra-jammy.list";
-    fi
-  fi
-
-  if ! [[ "${_pre_install_repo_str}" =~ "phoerious-ubuntu-keepassxc-jammy.list" ]]; then
-    if ! DEBIAN_FRONTEND=noninteractive ppa-purge -y -o phoerious -p keepassxc; then
-      _uninstall_attempts=$((_uninstall_attempts + 1));
-      continue;
-    else
-      rm -f "${_repo_dir}/phoerious-ubuntu-keepassxc-jammy.list";
-    fi
-  fi
-
-  if ! [[ "${_pre_install_repo_str}" =~ "ubuntustudio-ppa-ubuntu-backports-jammy.list" ]]; then
-    if ! DEBIAN_FRONTEND=noninteractive ppa-purge -y -o ubuntustudio-ppa -p backports; then
-      _uninstall_attempts=$((_uninstall_attempts + 1));
-      continue;
-    else
-      rm -f "${_repo_dir}/ubuntustudio-ppa-ubuntu-backports-jammy.list";
-    fi
-  fi
-
-  if ! [[ "${_pre_install_repo_str}" =~ "nvidia-cuda.list" ]]; then
-    rm -f "${_repo_dir}/nvidia-cuda.list";
-  fi
-  if ! [[ "${_pre_install_repo_str}" =~ "nvidia-ml.list" ]]; then
-    rm -f "${_repo_dir}/nvidia-ml.list";
-  fi
-  if ! [[ "${_pre_install_repo_str}" =~ "nodesource.list" ]]; then
-    rm -f "${_repo_dir}/nodesource.list";
-  fi
-  if ! [[ "${_pre_install_repo_str}" =~ "google-cloud-sdk.list" ]]; then
-    rm -f "${_repo_dir}/google-cloud-sdk.list";
-  fi
-  if ! [[ "${_pre_install_repo_str}" =~ "google-chrome.list" ]]; then
-    rm -f "${_repo_dir}/google-chrome.list";
   fi
 
   if ! DEBIAN_FRONTEND=noninteractive apt-get -y autopurge; then
