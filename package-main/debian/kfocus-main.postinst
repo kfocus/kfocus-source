@@ -245,7 +245,6 @@ _cleanUpFn () {
 ## . END _cleanupFn }
 
 ## BEGIN _adviseRebootFn {
-# Call was disabled 2023-08-10 per notes below.
 # IMPORTED on 2022-03-23 from test/test-scripts/unit.d/00100_adviseReboot
 # Purpose: Advise reboot after install
 #   See https://askubuntu.com/questions/993570
@@ -368,9 +367,9 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
       _cleanUpFn;
 
       # Advise reboot
-      # 2023-11-04 Enable this when changes warrant.
-      #   Otherwise, have packages make this call if needed.
-      _adviseRebootFn;
+      # 2023-11-04 Enable or disable as appropriate.
+      #   Otherwise, have subordinate packages make this call if needed.
+      # _adviseRebootFn;
     ;;
   esac
   exit 0;
