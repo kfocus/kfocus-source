@@ -1890,13 +1890,13 @@ Kirigami.ApplicationWindow {
             primaryText.text
               = '<p><b>The KDE Welcome Center</b> guides you through '
               + 'the important features and concepts of the KDE desktop. '
-              + 'This has been developed by the KDE team and we highly '
+              + 'This has been developed by the KDE team, and we highly '
               + 'recommend it.<br></p>'
 
               + '<p><b>You can always run this again</b> using <code>'
               + 'Start Menu &gt; Utilities &gt; Welcome Center</code>.</p>'
               ;
-            actionButton.text           = 'Launch KDE Welcome Center';
+            actionButton.text           = 'Launch KDE Welcome Center Now';
             actionButton.icon.name      = 'arrow-right';
             actionName                  = 'launchKdeWelcome';
             regenUiFn( baseTemplatePage, true );
