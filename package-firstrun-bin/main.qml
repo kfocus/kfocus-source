@@ -100,16 +100,23 @@ Kirigami.ApplicationWindow {
             taskIcon : 'THEMED|kfocus_bug_apps_line'
         }
         ListElement {
+            jsId     : 'kdeWelcomeItem'
+            task     : 'KDE Welcome'
+            taskIcon : 'start-here-symbolic'
+        }
+        ListElement {
             jsId     : 'finishItem'
             task     : 'Finish'
-            taskIcon : 'checkbox'
+            taskIcon : 'emblem-system-symbolic'
         }
     }
 
     StartupData {
         id: systemDataMap
         // Provided by main.cpp:
-        //   binDir, cryptDiskList, homeDir, userName, isLiveSession
+        //   binDir, cryptDiskList, homeDir,
+        //   isLiveSession, userName, WelcomeCmd
+        //
     }
     // == . END Models ================================================
 
@@ -380,7 +387,7 @@ Kirigami.ApplicationWindow {
 
             Controls.Button {
                 id        : skipButton
-                text      : 'No Thanks'
+                text      : 'Skip'
                 icon.name : 'go-next-skip'
                 onClicked : gotoNextPageFn()
             }
@@ -777,18 +784,20 @@ Kirigami.ApplicationWindow {
          }
     }
 
+    function setCheckMarkFn () {
+        const current_page_id = getCurrentPageIdFn();
+        const check_map = stateMatrix.check_map;
+        check_map[current_page_id] = Date.now();
+        enabledSidebar.currentItem.trailing.source = 'checkbox';
+        disabledSidebar.currentIndex = enabledSidebar.currentIndex;
+        disabledSidebar.currentItem.trailing.source = 'checkbox';
+    }
+
     function gotoNextPageFn () {
         // Trigger the checkbox for the current page if applicable
-        const initialPageId = getCurrentPageIdFn();
-        const check_map = stateMatrix.check_map;
-        if ( initialPageId !== 'finishItem' ) {
-            check_map[initialPageId] = Date.now();
-            enabledSidebar.currentItem.trailing.source = 'checkbox';
-            disabledSidebar.currentIndex = enabledSidebar.currentIndex;
-            disabledSidebar.currentItem.trailing.source = 'checkbox';
-        }
+        setCheckMarkFn();
 
-        // Now advance to the next one
+        // Advance to next page
         enabledSidebar.currentIndex++;
         switchPageFn(getCurrentPageIdFn());
     }
@@ -1643,14 +1652,14 @@ Kirigami.ApplicationWindow {
               + '<p>' + ding02Str
               + '<b>When you first start Insync,</b> you will be shown '
               + 'account options. Select your drive type to proceed.<br></p>'
-      
+
               + '<p>' + ding03Str
               + '<b>Sign into to the drive account</b> you specified in '
               + 'step 2.<br></p>'
-      
+
               + '<p>' + ding04Str
               + '<b>Click on the Insync icon in the system tray</b> '
-              + 'to open the management interface.<br></p>'
+              + 'to open the management interface.</p>'
               ;
             interActionButton.text      = 'Continue'
             interActionButton.icon.name = 'arrow-right';
@@ -1690,6 +1699,7 @@ Kirigami.ApplicationWindow {
             actionButton.text      = 'Launch JetBrains Toolbox Now';
             actionButton.icon.name = 'arrow-right';
             actionName             = 'launchJetbrainsToolbox';
+
             regenUiFn( baseTemplatePage, true );
             break;
 
@@ -1729,6 +1739,7 @@ Kirigami.ApplicationWindow {
               'jetbrains_toolbox_systray.svg'
             ];
             actionName = 'nextPage';
+
             regenUiFn( interTemplatePage, false );
             break;
 
@@ -1812,7 +1823,13 @@ Kirigami.ApplicationWindow {
               + 'launching it.<br></p>'
 
               + '<p><b>We encourage you to review the list of curated '
-              + 'apps</b> and install the ones you need now.</p>'
+              + 'apps</b> and install the ones you need now.<br></p>'
+
+              + '<p><b>Curated apps are supported by</b> '
+              + '<a href="https://kfocus.org/wf/">Guided Solutions</a>. '
+              + 'Use these HOWTOs to get advice on many popular topics, '
+              + 'such as attaching external displays, disabling Ubuntu Pro '
+              + 'notifications, or configuring YubiKeys.</p>'
               ;
             actionButton.text           = 'Browse Curated Apps Now';
             actionButton.icon.name      = 'arrow-right';
@@ -1847,7 +1864,7 @@ Kirigami.ApplicationWindow {
               + 'it will install the key, repository, and package as '
               + 'needed before launching the app. If any of these steps are '
               + 'required, the system will ask for your authorization '
-              + 'before proceeding.<br></p>'
+              + 'before proceeding.</p>'
               ;
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
@@ -1858,6 +1875,31 @@ Kirigami.ApplicationWindow {
             ];
             actionName = 'nextPage';
             regenUiFn( interTemplatePage, false );
+            break;
+
+        case 'kdeWelcomeItem':
+            initPageFn([
+              topImage,       topHeading,
+              primaryText,    actionButton,
+              previousButton, skipButton
+            ]);
+
+            pageTitleText   = 'KDE Welcome';
+            topImage.source = imgDir + 'kde.svg';
+            topHeading.text = 'Explore KDE Featues';
+            primaryText.text
+              = '<p><b>The KDE Welcome Center</b> guides you through '
+              + 'the important features and concepts of the KDE desktop. '
+              + 'This has been developed by the KDE team and we highly '
+              + 'recommend it.<br></p>'
+
+              + '<p><b>You can always run this again</b> using <code>'
+              + 'Start Menu &gt; Utilities &gt; Welcome Center</code>.</p>'
+              ;
+            actionButton.text           = 'Launch KDE Welcome Center';
+            actionButton.icon.name      = 'arrow-right';
+            actionName                  = 'launchKdeWelcome';
+            regenUiFn( baseTemplatePage, true );
             break;
 
         case 'finishItem':
@@ -2141,6 +2183,11 @@ Kirigami.ApplicationWindow {
             switchPageFn( 'insyncLaunchedItem' );
             break;
 
+        case 'launchKdeWelcome':
+            setCheckMarkFn();
+            exeRun.exec( systemDataMap.welcomeCmd );
+            break;
+
         case 'launchJetbrainsToolbox':
             exeRun.exec( systemDataMap.binDir
               + '/kfocus-mime -k jetbrains-toolbox-plain' );
@@ -2159,16 +2206,15 @@ Kirigami.ApplicationWindow {
 
         case 'finishWizard':
             if ( loginStartCheckbox.checkState === Qt.Unchecked ) {
-                exeRun.execSync(
-                  'touch '
-                   + systemDataMap.homeDir
-                   + '/.config/kfocus-firstrun-wizard');
+                exeRun.execSync( 'touch ' + systemDataMap.homeDir
+                   + '/.config/kfocus-firstrun-wizard'
+                );
             } else {
-                exeRun.execSync(
-                  'rm '
-                  + systemDataMap.homeDir
-                  + '/.config/kfocus-firstrun-wizard');
+                exeRun.execSync( 'rm ' + systemDataMap.homeDir
+                  + '/.config/kfocus-firstrun-wizard'
+                );
             }
+            setCheckMarkFn();
             storeStateMatrixFn();
             Qt.quit();
         }
@@ -2179,6 +2225,10 @@ Kirigami.ApplicationWindow {
         stateMatrix = { check_map: {} }; // Default stateMatrix
         if ( systemDataMap.cryptDiskList.length === 0 ) {
             removeSidebarItemFn('diskPassphraseItem');
+        }
+
+        if ( systemDataMap.welcomeCmd === '' ) {
+            removeSidebarItemFn('kdeWelcomeItem');
         }
         switchPageFn( 'introductionItem' );
 
