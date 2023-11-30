@@ -96,12 +96,12 @@ int main(int argc, char *argv[])
     cryptDisks.removeLast();
     dat.setCryptDiskList(cryptDisks);
 
-    // Check for the presence of a second kfocus-firsturn-bin instance
+    // Check for the presence of a second kfocus-firstrun-bin instance
     ShellEngine duplicateFinder;
     // NOTE: We only search for "kfocus-firstrun" and not "kfocus-firstrun-bin"
     // here because for some unknown reason kfocus-firstrun-bin shows up as
-    // "kfocus-firsturn-" (yes, with a weird dash at the end) in the output of
-    // "ps axo comm". Why this is, I have no clue.
+    // "kfocus-firstrun-" (yes, with a weird dash at the end) in the output of
+    // "ps axo comm". (msm: It gets truncated).
     duplicateFinder.execSync("ps axo comm | grep kfocus-firstrun");
     QStringList outputLines = duplicateFinder.stdout().split('\n');
     if (outputLines.length() > 2) { // there's always one blank line
