@@ -36,19 +36,98 @@ _updatePkgsFn () {
   _cm2WarnFn;
 }
 
-_echoBlkId () { blkid; }
+# Run this as root using pkexec or sudo
+_echoBlkIdFn () { blkid; }
+
+# Run this as root using pkexec or sudo
+_writeConfigRcFn () {
+  declare _arg_config_file _arg_uid _arg_gid _arg_config_file \
+    _line _bit_list _group _key _val;
+
+  _arg_config_file="${1:-}";
+  _arg_uid="${2:-}";
+  _arg_gid="${3:-}";
+
+  _cm2SetMsgFn "Set config for |${_arg_config_file}|${_arg_uid}|${_arg_gid}";
+  for _line in "${_configList[@]}"; do
+    IFS='|' read -r -a _bit_list <<<"${_line}";
+    _group="${_bit_list[0]:-}";
+    _key="${_bit_list[1]:-}";
+    _val="${_bit_list[2]:-}";
+
+    "${_kwriteExe}" --file "${_arg_config_file}" --group "${_group}" \
+      --key "${_key}" "${_val}";
+  done
+   chown "${_arg_uid}:${_arg_gid}" "${_arg_config_file}" || true;
+  _cm2SucFn;
+}
+
+_writeUserWelcomeRcFn () {
+  declare _script_uid _assign_list _plasma_version _etc_list \
+    _line _bit_list _home_dir _config_dir _config_file;
+
+  _script_uid="$(id -u)";
+  if [ "${_script_uid}" != '0' ]; then
+    _cm2WarnStrFn "Please run as root: sudo ./${_baseName} $*";
+    return 1;
+  fi
+  # Set variables used outside of loop
+  _assign_list=( '_kwriteExe|kwriteconfig5' '_plasmashellExe|plasmashell' );
+  if ! _cm2AssignExeVarsFn "${_assign_list[@]}"; then
+    _cm2WarnStrFn 'Could not assign executables variables';
+    return 1;
+  fi
+
+  _plasma_version="$(
+    dpkg -l plasma-desktop |awk -F'[:-]' '/plasma-desktop\s/{print $3}'
+  )";
+
+  _configList=(
+    "General|LastSeenVersion|${_plasma_version:-5.27.9}"
+    'General|ShouldShow|false'
+  );
+
+  mapfile -t _etc_list < <(grep -P ':\d{4,}:\d{4,}' /etc/passwd);
+  for _line in "${_etc_list[@]}"; do
+    # 0 = username, 2=uid, 3=gid, 5=homedir, 6=shell
+    IFS=':' read -r -a _bit_list <<< "${_line}";
+
+    _home_dir="${_bit_list[5]}";
+    if ! grep -qP '^/home/[^/]+' <<< "${_home_dir}"; then
+      _cm2WarnStrFn "Skip: home dir |${_home_dir}| not sane.";
+      continue;
+    fi
+
+    _config_dir="${_home_dir}/.config";
+    if [ ! -d "${_config_dir}" ]; then
+      _cm2WarnStrFn "Skip: Config dir |${_config_dir}| not found.";
+      continue;
+    fi
+
+    _config_file="${_config_dir}/plasma-welcomerc";
+    if [ -e "${_config_file}" ]; then
+      _cm2WarnStrFn "Skip: Config file |${_config_file}| already exists.";
+      continue;
+    fi
+
+    _writeConfigRcFn \
+      "${_config_file}" "${_bit_list[2]}" "${_bit_list[3]}" || true;
+  done
+}
 
 _mainFn () {
   declare _arg_str;
   _arg_str="${1:-}";
   case "${_arg_str}" in
-    'echo-blkid') _echoBlkId;;
+    'echo-blkid') _echoBlkIdFn;;
+    'write-plasma-welcomerc') _writeUserWelcomeRcFn "$@";;
     *) _cm2WarnStrFn "Unrecognized directive |${_arg_str}|";;
   esac
 }
 
 ## BEGIN Declare global variables {
-declare _binName _binDir _baseDir _baseName;
+declare _binName _binDir _baseDir _baseName \
+  _kwriteExe _plasmashellExe _configList;
 ## . END Declare global variables }
 
 ## BEGIN Run main if script is not sourced {

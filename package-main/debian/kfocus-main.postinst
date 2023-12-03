@@ -246,21 +246,21 @@ _cleanUpFn () {
 
 ## BEGIN _adviseRebootFn {
 # IMPORTED on 2022-03-23 from test/test-scripts/unit.d/00100_adviseReboot
-# Purpose: Advise reboot after install
+# Purpose: Advise reboot after install. Enable when appropriate.
 #   See https://askubuntu.com/questions/993570
 #
-_adviseRebootFn () {
-  declare _reboot_file;
-  _reboot_file="${_rootDir}/var/run/reboot-required";
-  _cmXSetMsgFn 'Advise reboot';
-  if touch "${_reboot_file}"; then
-    _cmXSucStrFn "Wrote ${_reboot_file}";
-    _cmXSucFn;
-  else
-    _cmXWarnStrFn "Could not write ${_reboot_file}";
-    _cmXWarnFn;
-  fi
-}
+#_adviseRebootFn () {
+#  declare _reboot_file;
+#  _reboot_file="${_rootDir}/var/run/reboot-required";
+#  _cmXSetMsgFn 'Advise reboot';
+#  if touch "${_reboot_file}"; then
+#    _cmXSucStrFn "Wrote ${_reboot_file}";
+#    _cmXSucFn;
+#  else
+#    _cmXWarnStrFn "Could not write ${_reboot_file}";
+#    _cmXWarnFn;
+#  fi
+#}
 ## . END _adviseRebootFn }
 
 ## BEGIN _addBashCompletionFn {
@@ -327,6 +327,17 @@ EOS
 }
 ## . END _setupSddmFixFn }
 
+## BEGIN _createPlasmaWelcomeRcFn {
+_createPlasmaWelcomeRcFn () {
+  declare _firstrun_exe;
+  _firstrun_exe="$(command -v kfocus-firstrun-set)";
+  if [ -x "${_firstrun_exe}" ]; then
+    "${_firstrun_exe}" 'write-plasma-welcomerc' || true
+  fi
+}
+## . END _createPlasmaWelcomeRcFn }
+
+
 ## BEGIN declare and assign global vars {
 declare _rootDir _repoSrcDir _libKfocusDir _recomListFile;
 _rootDir='';
@@ -363,11 +374,15 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
       # Create links per model (copied from kfocus-hw)
       _setupModelHintsFn;
 
+      # Create .config/plasma-welcomerc for users iff not existing.
+      # This avoids race condition with welcome wizard.
+      _createPlasmaWelcomeRcFn;
+      
       # Cleanup misc details
       _cleanUpFn;
 
       # Advise reboot
-      # 2023-11-04 Enable or disable as appropriate.
+      # 2023-11-04 Enable when appropriate.
       #   Otherwise, have subordinate packages make this call if needed.
       # _adviseRebootFn;
     ;;
