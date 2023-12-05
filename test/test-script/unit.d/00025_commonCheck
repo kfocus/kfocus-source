@@ -123,7 +123,7 @@ _audit_cm2EchoStackFn () {
     _cm2EchoFn "  ok   : Solved matches expected";
     return 0;
   else
-    _cm2EchoFn "  fail : Solved |${_solve_str}|
+    _cm2EchoFn "  FAIL : Solved |${_solve_str}|
       !~ expect |${_expect_str}|";
     return 1;
   fi
@@ -296,7 +296,7 @@ _audit_cm2EchoModelStrFn () {
       if [ "${_expect_str}" = "${_found_str}"  ]; then
         _cm2EchoFn "  ok   : Col key ${_col_key} matches |${_expect_str}|";
       else
-        _cm2EchoFn "  fail : Col key ${_col_key} nomatch |${_expect_str}|";
+        _cm2EchoFn "  FAIL : Col key ${_col_key} nomatch |${_expect_str}|";
         _cm2EchoFn "    Found string is |${_found_str}|";
         _did_assert_fail='y';
       fi
@@ -306,7 +306,7 @@ _audit_cm2EchoModelStrFn () {
     if [ "${_bit_list[1]}" = "$(_cm2CalcModelCodeFn)" ]; then
       _cm2EchoFn "  ok   : Code matches |${_expect_str}|";
     else
-      _cm2EchoFn "  fail : Code nomatch |${_expect_str}|";
+      _cm2EchoFn "  FAIL : Code nomatch |${_expect_str}|";
       _did_assert_fail='y';
     fi
 
@@ -364,7 +364,7 @@ _audit_cm2ChkInstalledPkgFn () {
     if _cm2ChkInstalledPkgFn "${_loop_pkg_name}"; then
       _cm2EchoFn "  ok   : Found pkg";
     else
-      _cm2EchoFn "  fail : Not found";
+      _cm2EchoFn "  FAIL : Not found";
       _ret_int=1;
     fi
   done
@@ -372,7 +372,7 @@ _audit_cm2ChkInstalledPkgFn () {
   for _loop_pkg_name in fake-package-name to-not-be-found; do
     printf '  %-40s' "Assert for ${_loop_pkg_name}";
     if _cm2ChkInstalledPkgFn "${_loop_pkg_name}"; then
-      _cm2EchoFn "  fail : found";
+      _cm2EchoFn "  FAIL : found";
       _ret_int=1;
     else
       _cm2EchoFn "  ok   : Not found";
@@ -427,7 +427,7 @@ _audit_cm2ChkPkgFn () {
     if [ "${_chk_int}" = "${_bit_list[1]}" ]; then
       _cm2EchoFn "  ok   : pkg find match";
     else
-      _cm2EchoFn "    fail : ${_chk_int} != ${_bit_list[1]}";
+      _cm2EchoFn "  FAIL : ${_chk_int} != ${_bit_list[1]}";
       _ret_int=1;
     fi
 
@@ -439,7 +439,7 @@ _audit_cm2ChkPkgFn () {
     if [ "${_chk_int}" = "${_bit_list[1]}" ]; then
       _cm2EchoFn "  ok   : pkg version find match";
     else
-      _cm2EchoFn "    fail : ${_chk_int} != ${_bit_list[1]} |${_chk_str}|";
+      _cm2EchoFn "  FAIL : ${_chk_int} != ${_bit_list[1]} |${_chk_str}|";
       _ret_int=1;
     fi
   done
@@ -628,7 +628,7 @@ _audit_cm2PromptUserFn () {
       if [ "${_ans_str}" = "${_bit_list[1]:-}" ]; then
         _cm2EchoFn '  ok   : pass';
       else
-        _cm2EchoFn '  fail : not as expected';
+        _cm2EchoFn '  FAIL : not as expected';
       fi
     done
   done
