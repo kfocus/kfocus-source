@@ -210,7 +210,7 @@ _installEnvFn () {
   _conda_expect_dir="${HOME}/anaconda3";
   _conda_expect01_exe="${_conda_expect_dir}/condabin/conda";
   _conda_expect02_exe="${_conda_expect_dir}/bin/conda";
-  _conda_installed_exe="$(command -v conda)";
+  _conda_installed_exe="$(command -v conda || true)";
   _conda_installed_vers='';
   _conda_oldstyle_vers='';
   _conda_md5_str='b3332806aa15750d6bc4e604f9110622';
@@ -248,7 +248,7 @@ _installEnvFn () {
     fi
   fi
 
-  if [[  "${_conda_installed_vers}" =~ ^23.5.0$|^4.12.0$ ]]; then
+  if [[  "${_conda_installed_vers}" =~ ^2[3-9]\.|^4.12.0$ ]]; then
     _cm2EchoFn "Using compatible conda version |${_conda_installed_vers}|.";
   else
     _conda_oldstyle_vers="$(
