@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
 
     // Look for plasma-welcome executable
     ShellEngine welcomeFinder;
-    welcomeFinder.execSync("command -v plasma-welcome");
+    welcomeFinder.execSync("command -v plasma-welcome || true");
     QString welcomeCmd = welcomeFinder.stdout();
     welcomeCmd.remove('\n');
     dat.setWelcomeCmd(welcomeCmd);
