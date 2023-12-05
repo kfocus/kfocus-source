@@ -37,7 +37,7 @@ _cmXEscapeRxCharsFn () {
 _supplementXdgConfigsFn () {
   _cmXSetMsgFn 'Use consistent XDG_CONFIG_DIR values';
   if [ -z "${_effectsExe}" ]; then
-    _cmXWarnStrFn "Not executable |${_effectsExe}|";
+    _cmXWarnStrFn "Could not find |${_effectsExe}|";
     _cmXWarnFn;
     return;
   fi
@@ -493,7 +493,7 @@ _configFn () {
 
 ## BEGIN declare and assign package vars {
 declare _effectsExe _kf5SettingsDir;
-_effectsExe="$(command -v '/usr/lib/kfocus/bin/kfocus-reset-effects')";
+_effectsExe="$(command -v /usr/lib/kfocus/bin/kfocus-reset-effects || true)";
 _kf5SettingsDir='/usr/share/kfocus/kf5-settings';
 ## . END declare and assign package vars }
 
