@@ -171,7 +171,7 @@ _resetEffectsFn () {
     fi
 
     if [ -n "${_bit_list[4]:-}" ]; then
-      if grep -q "${_model_code}" <<<"${_bit_list[4]:-}"; then
+      if grep -q "^${_model_code}$" <<<"${_bit_list[4]:-}"; then
         _log_list+=("Apply ${_apply_str} for model ${_bit_list[4]:-}");
       else
         _log_list+=("SKIP  ${_apply_str} for model ${_bit_list[4]:-}");
