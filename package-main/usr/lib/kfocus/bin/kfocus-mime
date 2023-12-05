@@ -512,7 +512,7 @@ _getPkgInfoStrFn () {
 
   _cm2EchoFn "Progress ... ${_sniff_str}";
 
-  _exe_str="$(readlink -f "$(command -v "${_sniff_str}")")";
+  _exe_str="$(readlink -f "$(command -v "${_sniff_str}" || true)")";
   if [ -z "${_exe_str}" ]; then
     echo "Cannot find cmd_str |${_sniff_str}|. Please install to audit.";
     return 1;
@@ -600,7 +600,7 @@ _runAppHandlerFn () {
       _prompt_msg+='Please use JetBrains Toolbox found <br>';
       _prompt_msg+='in the system tray to launch <br>';
       _prompt_msg+="|${_descr_str}|";
-      _exe_str="$(command -v 'jetbrains-toolbox')";
+      _exe_str="$(command -v 'jetbrains-toolbox' || true)";
       if [ -n "${_exe_str}" ]; then
         "${_exe_str}"; # ... and continue
       fi
@@ -609,7 +609,7 @@ _runAppHandlerFn () {
     jetbrains-toolbox)
       _prompt_msg+='Click on the JetBrains Toolbox <br>';
       _prompt_msg+='found in the system tray. <br>';
-      _exe_str="$(command -v 'jetbrains-toolbox')";
+      _exe_str="$(command -v 'jetbrains-toolbox' || true)";
       if [ -n "${_exe_str}" ]; then
         "${_exe_str}"; # ... and continue
       fi
@@ -618,7 +618,7 @@ _runAppHandlerFn () {
     dropbox)
       _prompt_msg+="|${_app_id}| Click on the Dropbox <br>";
       _prompt_msg+='found in the system tray. <br>';
-      _exe_str="$(command -v 'dropbox')";
+      _exe_str="$(command -v 'dropbox' || true)";
       if [ -n "${_exe_str}" ]; then
         "${_exe_str}" start -i; # ... and continue
       fi
@@ -651,7 +651,7 @@ _runAppFn () {
     _line_str _bit_list _app_id _full_cmd_str _sniff_str  \
     _descr_str _cmd_str _do_handler _arg_list _report_str \
     _sniff_exe _app_exe _install_prompt_msg  _ans_str     \
-    _exit_str;
+    _exit_str _idx;
 
   _arg_app_id="${1:-}";
   _found_list=();
@@ -723,11 +723,11 @@ _runAppFn () {
   ## Begin sniff-and-run loop {
   for _idx in {0..1}; do
     # Set up _app_exe and _sniff_exe
-    _app_exe="$(command -v "${_cmd_str}")";
+    _app_exe="$(command -v "${_cmd_str}" || true)";
     if [ "${_sniff_str}" = "${_cmd_str}" ]; then
       _sniff_exe="${_app_exe}";
     else
-      _sniff_exe="$(command -v "${_sniff_str}")";
+      _sniff_exe="$(command -v "${_sniff_str}" || true)";
     fi
 
     # Try to install package using pkexec (may install repository too)

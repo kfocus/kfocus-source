@@ -87,10 +87,10 @@ _setPlasmaPowerProfileFn () {
   fi
   _cm2SetMsgFn "${_msg}";
 
-  _powerctl_exe="$(command -v 'powerprofilesctl')";
+  _powerctl_exe="$(command -v powerprofilesctl || true)";
 
-  if ! [ -x "${_powerctl_exe}" ]; then
-    _cm2WarnStrFn "Required powerctl tool not found. Skipped.";
+  if [ -z "${_powerctl_exe}" ]; then
+    _cm2WarnStrFn 'Optional power control tool not found. Skipped.';
     _cm2SucFn;
     return;
   fi
@@ -285,7 +285,7 @@ _HERE3
 
   # Set Powersave on battery
   if [ "${_is_on_ac}" = 'n' ]; then
-    _cm2SetMsgFn 'Set CPU governor to powersave and disable turbo on battery';
+    _cm2SetMsgFn 'Set CPU power mode to Low on battery';
     if "${_escExe}" "${_power_set_exe}" 'Low'; then
       _cm2SucFn; else _cm2WarnFn;
     fi
@@ -295,7 +295,7 @@ _HERE3
     fi
   # Set normal on AC
   else
-    _cm2SetMsgFn 'Set CPU governor to powersave and enable turbo on AC';
+    _cm2SetMsgFn 'Set CPU power mode to Normal on AC';
     if "${_escExe}" "${_power_set_exe}" 'Normal'; then
       _cm2SucFn; else _cm2WarnFn;
     fi
@@ -314,7 +314,7 @@ _HERE3
   fi
   _nvidia_list_str="$("${_lspci_exe}" -m | grep -i 'nvidia')";
 
-  # Handle nvidia modes
+  # Handle Nvidia mode
   if [ "${_gpu_mode_str}" = 'nvidia' ] || [ "${_gpu_mode_str}" = 'on-demand' ]; then
     if [ -z "${_nvidia_list_str}" ]; then
       _cm2SetMsgFn 'Warn user if using iGPU when dGPU requested';
@@ -334,14 +334,14 @@ _HERE3
     fi
   fi
 
-  # Handle intel mode
+  # Handle Intel mode
   if [ "${_gpu_mode_str}" = 'intel' ]; then
     if [ "${_is_on_ac}" = 'n' ]; then
       _cm2SetMsgFn 'Give user option to disable dGPU when on battery';
-      if [ "${_nvidia_list_str}" != '' ]; then
+      if [ -n "${_nvidia_list_str}" ]; then
         if "${_cm2KdiagExe}" --yesno "${_ask_disable_msg}"; then
           if "${_escExe}" "${_pstate_set_exe}" 'disable-nvidia'; then
-            echo 'Discrete GPU disable successfully.' || true;
+            echo 'Discrete GPU disable successfully.';
             _cm2SucFn;
           else
             "${_cm2KdiagExe}" \

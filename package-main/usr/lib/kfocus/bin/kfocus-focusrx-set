@@ -253,7 +253,7 @@ _chkHwConfigFn () {
 
     # Supplemental check for Nvidia systems
     if [ "${_is_nv_system}" != 'y' ]; then
-      _lspci_exe="$(command -v lspci)";
+      _lspci_exe="$(command -v lspci || true)";
       if [ -n "${_lspci_exe}" ] \
         && grep -qi 'vga.*nvidia' < <("${_lspci_exe}"); then
         _is_nv_system='y';
