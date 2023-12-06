@@ -340,12 +340,13 @@ _createPlasmaWelcomeRcFn () {
   _set_exe="$(command -v "${_libKfocusDir}/bin/kfocus-firstrun-set" || true)";
   if [ -n "${_set_exe}" ]; then
     if "${_set_exe}" 'write-plasma-welcomerc'; then
-      _cmXSucFn; return;
+      _cmXSucFn;
     else
       _cmXWarnStrFn "Trouble with |${_set_exe} 'write-plasma-welcomerc'|";
      fi
+  else
+    _cmXWarnStrFn "Command for kfocus-firstrun-set not found";
   fi
-  _cmXWarnStrFn "Set file |${_set_exe}| not executable";
 }
 ## . END _createPlasmaWelcomeRcFn }
 
