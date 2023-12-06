@@ -88,8 +88,8 @@ _dedupRepoSrcFileFn() {
 _updatePciidsFn () {
   declare _share_file _exe_lspci_str _exe_update_str;
   _share_file="${_rootDir}/usr/share/misc/pci.ids";
-  _exe_lspci_str=$( command -v lspci );
-  _exe_update_str=$( command -v update-pciids );
+  _exe_lspci_str="$( command -v lspci         || true)";
+  _exe_update_str="$(command -v update-pciids || true)";
 
   _cmXSetMsgFn 'Update pciids';
 
@@ -98,13 +98,14 @@ _updatePciidsFn () {
     _cmXWarnStrFn "Could not remove ${_share_file}.old";
   fi
 
-  if [ ! -x "${_exe_lspci_str}" ]; then
+  # Use -z instead of ! -x to allow for functional mocks.
+  if [ -z "${_exe_lspci_str}" ]; then
     _cmXWarnStrFn "${_exe_lspci_str} not found";
     _cmXWarnFn; return;
   fi
 
-  if [ ! -x "${_exe_update_str}" ]; then
-    _cmXWarnStrFn "${_exe_update_str} is not executable";
+  if [ -z "${_exe_update_str}" ]; then
+    _cmXWarnStrFn "${_exe_update_str} not found";
     _cmXWarnFn; return;
   fi
 
@@ -121,7 +122,7 @@ _updatePciidsFn () {
 ## BEGIN _applyRootStyleFn {
 _applyRootStyleFn () {
   declare _exe_rsync_str;
-  _exe_rsync_str=$( command -v 'rsync' );
+  _exe_rsync_str="$(command -v rsync || true)";
   _cmXSetMsgFn 'Apply style for root apps, e.g. partition manager';
 
   if [ -d "/root/Desktop" ]; then
@@ -129,8 +130,8 @@ _applyRootStyleFn () {
     _cmXSucFn; return;
   fi
 
-  if [ ! -e "${_exe_rsync_str}" ]; then
-    _warnStr "${_exe_rsync_str} not executable";
+  if [ -z "${_exe_rsync_str}" ]; then
+    _warnStr "${_exe_rsync_str} not found";
     _cmXWarnFn; return;
   fi
 
@@ -209,15 +210,14 @@ _setupModelHintsFn () {
 #  Purpose: Clean up of various bits
 _cleanUpFn () {
   declare _firstrun_file _exe_update_deskdb;
-
   if [ -d "${_libKfocusDir}/skel/.ssh" ]; then
     _cmXSetMsgFn "Set secure .ssh access rights";
     if chmod 700 "${_libKfocusDir}/skel/.ssh"; then
       _cmXSucFn; else _cmXWarnFn; fi
   fi
 
-  _exe_update_deskdb=$( command -v update-desktop-database );
-  if [ -x "${_exe_update_deskdb}" ]; then
+  _exe_update_deskdb="$(command -v update-desktop-database || true)";
+  if [ -n "${_exe_update_deskdb}" ]; then
     _cmXSetMsgFn 'Update desktop database';
     if "${_exe_update_deskdb}";  then _cmXSucFn; else _cmXWarnFn; fi
   fi
@@ -233,6 +233,12 @@ _cleanUpFn () {
     fi
   fi
 
+  # Update systemctl for removed kfocus-dm.service
+  _cmXSetMsgFn 'Remove out-of-date services';
+  2>/dev/null deb-systemd-helper purge  kfocus-dm.service || true;
+  2>/dev/null deb-systemd-helper unmask kfocus-dm.service || true;
+  _cmXSucFn;
+
   # See https://askubuntu.com/questions/1018576
   # This allows boot work faster before network is enabled
   # 2551 Disabled to prevent breaking network file systems
@@ -245,23 +251,22 @@ _cleanUpFn () {
 ## . END _cleanupFn }
 
 ## BEGIN _adviseRebootFn {
-# Call was disabled 2023-08-10 per notes below.
 # IMPORTED on 2022-03-23 from test/test-scripts/unit.d/00100_adviseReboot
-# Purpose: Advise reboot after install
+# Purpose: Advise reboot after install. Enable when appropriate.
 #   See https://askubuntu.com/questions/993570
 #
-_adviseRebootFn () {
-  declare _reboot_file;
-  _reboot_file="${_rootDir}/var/run/reboot-required";
-  _cmXSetMsgFn 'Advise reboot';
-  if touch "${_reboot_file}"; then
-    _cmXSucStrFn "Wrote ${_reboot_file}";
-    _cmXSucFn;
-  else
-    _cmXWarnStrFn "Could not write ${_reboot_file}";
-    _cmXWarnFn;
-  fi
-}
+#_adviseRebootFn () {
+#  declare _reboot_file;
+#  _reboot_file="${_rootDir}/var/run/reboot-required";
+#  _cmXSetMsgFn 'Advise reboot';
+#  if touch "${_reboot_file}"; then
+#    _cmXSucStrFn "Wrote ${_reboot_file}";
+#    _cmXSucFn;
+#  else
+#    _cmXWarnStrFn "Could not write ${_reboot_file}";
+#    _cmXWarnFn;
+#  fi
+#}
 ## . END _adviseRebootFn }
 
 ## BEGIN _addBashCompletionFn {
@@ -328,6 +333,24 @@ EOS
 }
 ## . END _setupSddmFixFn }
 
+## BEGIN _createPlasmaWelcomeRcFn {
+_createPlasmaWelcomeRcFn () {
+  declare _set_exe;
+  _cmXSetMsgFn 'Add plasma-welcomerc';
+  _set_exe="$(command -v "${_libKfocusDir}/bin/kfocus-firstrun-set" || true)";
+  if [ -n "${_set_exe}" ]; then
+    if "${_set_exe}" 'write-plasma-welcomerc'; then
+      _cmXSucFn;
+    else
+      _cmXWarnStrFn "Trouble with |${_set_exe} 'write-plasma-welcomerc'|";
+     fi
+  else
+    _cmXWarnStrFn "Command for kfocus-firstrun-set not found";
+  fi
+}
+## . END _createPlasmaWelcomeRcFn }
+
+
 ## BEGIN declare and assign global vars {
 declare _rootDir _repoSrcDir _libKfocusDir _recomListFile;
 _rootDir='';
@@ -342,10 +365,6 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   case "${1:-}" in
     abort-upgrade|abort-remove|abort-configure|abort*) true;;
     configure|upgrade)
-      # Update systemctl for removed kfocus-dm.service
-      deb-systemd-helper purge kfocus-dm.service;
-      deb-systemd-helper unmask kfocus-dm.service;
-
       # Dedup entries in kfocus-recommends.list
       _dedupRepoSrcFileFn;
 
@@ -364,16 +383,19 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
       # Create links per model (copied from kfocus-hw)
       _setupModelHintsFn;
 
+      # Create .config/plasma-welcomerc for users iff not existing.
+      # This avoids race condition with welcome wizard.
+      _createPlasmaWelcomeRcFn;
+      
       # Cleanup misc details
       _cleanUpFn;
 
       # Advise reboot
-      # 2023-11-04 Enable this when changes warrant.
-      #   Otherwise, have packages make this call if needed.
-      _adviseRebootFn;
+      # 2023-11-04 Enable when appropriate.
+      #   Otherwise, have subordinate packages make this call if needed.
+      # _adviseRebootFn;
     ;;
   esac
-  exit 0;
 fi
 ## . END Run main if script is not sourced }
 

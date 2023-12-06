@@ -135,7 +135,7 @@ fi
 
 ## Begin Find current linked gcc {
 _inUseVersStr='';
-_gccExeFile="$( command -v gcc )";
+_gccExeFile="$(command -v gcc || true)";
 if [ -n "${_gccExeFile}" ]; then
   _inUseVersStr="$(
     readlink -f "${_gccExeFile}" |sed 's/^.*-\([^-]\+\)/\1/g'

@@ -10,7 +10,6 @@
 # Spec      : 744
 # Exit codes:
 #   * 99 - suggest reboot
-#   * 98 - user cancel
 #   *  0 - success
 #
 set -u;
@@ -204,7 +203,7 @@ fi
 
 # Supplemental check for Nvidia systems
 if [ "${_isNvidiaSystem}" != 'y' ]; then
-  _lspciExe="$(command -v lspci)";
+  _lspciExe="$(command -v lspci || true)";
   if [ -n "${_lspciExe}" ] \
     && grep -qi 'vga.*nvidia' < <("${_lspciExe}"); then
     _isNvidiaSystem='y';
@@ -417,9 +416,9 @@ if [ "${_doSafe}" = 'y' ]; then
 fi
 
 if [ "${_isNvidiaSystem}" = 'y' ]; then
-  _primeExeStr=$(command -v 'prime-select');
-  if [ "${_primeExeStr}" ]; then
-    _primeQueryStr=$("${_primeExeStr}" query);
+  _primeExeStr="$(command -v 'prime-select' || true)";
+  if [ -n "${_primeExeStr}" ]; then
+    _primeQueryStr="$("${_primeExeStr}" query || true)";
     if [ "${_primeQueryStr}" != 'nvidia' ]; then
       _nextStepFn 'Ensure Nvidia mode for next boot';
       if "${_primeExeStr}" 'nvidia'; then _cm2SucFn; else _cm2WarnFn; fi

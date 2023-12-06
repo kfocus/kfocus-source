@@ -46,10 +46,14 @@ _importCommonFn () {
 
 ## BEGIN _resetEffectsFn {
 _resetEffectsFn () {
-  declare _model_code _config_list _line _bit_list _key \
-    _apply_str _log_list _name_file _config_file _opt_list;
+  declare _model_code _plasma_version _config_list _line _bit_list \
+    _key _apply_str _log_list _name_file _config_file _opt_list;
 
   _model_code="$(_cm2EchoModelStrFn 'code')";
+  _plasma_version="$(
+    dpkg -l plasma-desktop |awk -F'[:-]' '/plasma-desktop\s/{print $3}'
+  )";
+
   _config_list=(
     # Desktops
     'kwin|Desktops|Name_1|ONE'
@@ -118,6 +122,11 @@ _resetEffectsFn () {
     'font|General|forceFontDPI|136|m2g4'
     'font|General|forceFontDPI|136|m2g5'
     'font|General|forceFontDPI|136|m2g5p'
+
+    # Prevent plasma-welcome center from running alone.
+    # It is presented in first-run wizard.
+    "plwc|General|LastSeenVersion|${_plasma_version:-5.27.9}"
+    'plwc|General|ShouldShow|false'
   );
 
   _log_list=();
@@ -162,7 +171,7 @@ _resetEffectsFn () {
     fi
 
     if [ -n "${_bit_list[4]:-}" ]; then
-      if grep -q "${_model_code}" <<<"${_bit_list[4]:-}"; then
+      if grep -q "^${_model_code}$" <<<"${_bit_list[4]:-}"; then
         _log_list+=("Apply ${_apply_str} for model ${_bit_list[4]:-}");
       else
         _log_list+=("SKIP  ${_apply_str} for model ${_bit_list[4]:-}");
@@ -272,6 +281,7 @@ declare -A _fileMap=(
   ['font']=kcmfonts
   ['glob']=kdeglobals
   ['kwin']=kwinrc
+  ['plwc']=plasma-welcomerc
   ['scut']=kglobalshortcutsrc
 );
 _rootTitle='Kubuntu Focus Reset Effects';

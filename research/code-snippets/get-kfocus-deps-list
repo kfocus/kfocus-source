@@ -1,0 +1,135 @@
+#!/bin/bash
+
+# Create list of package not installed prior to kfocus
+_echoPurgeListStrFn () {
+  declare _pkg_name _skip_list _purge_list;
+  _skip_list=();
+  _purge_list=();
+
+  for _pkg_name in "${_foundPkgList[@]}"; do
+    if grep -q "${_pkg_name}" <<< "${_preInstallPkgStr}"; then
+      _skip_list+=( "${_pkg_name}" );
+      continue;
+    fi
+    _purge_list+=( "${_pkg_name}" );
+  done
+  IFS=$'\n'; echo "${_purge_list[*]}" |sort -u
+}
+
+# Get list of all recommended packages
+_echoPkgRecDepsFn () {
+  apt-cache depends "${1}" | grep -P '^\s*\|*(Recommends|Depends|Pre-Depends)' \
+    | grep -v '<' | awk '{print $2}';
+}
+
+# Follow all unique depends of parent package
+_loadKfPkgListFn () {
+  declare _start_idx _processed_list _safety_int _pkg_count _idx _pkg_name \
+    _add_list _clean_list _chk_name _last_count;
+  _start_idx=0;
+  for _safety_int in {0..3}; do
+    _pkg_count="${#_foundPkgList[@]}";
+    for (( _idx="${_start_idx}";_idx < _pkg_count;_idx++)); do
+      _pkg_name="${_foundPkgList[${_idx}]}";
+      # shellcheck disable=SC2076
+      if [[ " ${_processed_list[*]} " =~ " ${_pkg_name} " ]]; then
+        # echo "Outer: Already processed |${_pkg_name}|";
+        continue;
+      fi
+
+      if [[ "${_pkg_name}" =~ ^kfocus ]]; then
+        mapfile -t _add_list < <(_echoPkgRecDepsFn "${_pkg_name}");
+        _clean_list=();
+        for _chk_name in "${_add_list[@]}"; do
+          # Skip the pkg_name if already in the processed or clean list
+          # shellcheck disable=SC2076
+          if [[ " ${_processed_list[*]} " =~ " ${_chk_name} " ]] \
+            || [[ " ${_foundPkgList[*]} " =~ " ${_chk_name} " ]]; then
+            # echo "Inner: Already processed |${_pkg_name}|";
+            continue;
+          fi
+          _clean_list+=( "${_chk_name}" );
+        done
+        if [[ "${#_clean_list[@]}" -gt 0 ]]; then
+          _foundPkgList+=("${_clean_list[@]}");
+        fi
+      fi
+      _processed_list+=( "${_pkg_name}" );
+    done
+    _last_count="${#_foundPkgList[@]}";
+    # echo "_idx: ${_idx} _last_count: ${_last_count} _pkg_count: ${_pkg_count}";
+    if (( _last_count <= _pkg_count )); then
+      break;
+    else
+      _start_idx="${_idx}";
+    fi
+  done
+
+  # The processed_list should equal _foundPkgList here
+  # IFS=$'\n'; echo "${_processed_list[*]}";
+}
+
+declare _foundPkgList;
+_foundPkgList=( kfocus-main );
+
+# Get list of all installed packages from file.
+#   Create this file BEFORE install kfocus-*
+#   apt list --installed |awk -F '/' '{print $1}' > "${_preInstallPkgFile}";
+_preInstallPkgFile='./pre-install-pkg.list'
+_preInstallPkgStr="$(cat "${_preInstallPkgFile}")" || exit 1;
+
+_loadKfPkgListFn;
+_echoPurgeListStrFn;
+
+# Example pre-install-pkg.list
+# apt-file
+# apt-rollback
+# aptitude
+# audacity
+# awscli
+# backintime-qt
+# breeze-icon-theme
+# build-essential
+# chrome-remote-desktop
+# cpufrequtils
+# curl
+# darktable
+# dia
+# diffpdf
+# dkms
+# dmidecode
+# dolphin-plugins
+# exfat-fuse
+# ffmpeg
+# gimp
+# gimp-data-extras
+# gimp-help-en
+# git
+# google-chrome-stable
+# gstreamer1.0-plugins-bad
+# gstreamer1.0-plugins-ugly
+# haskell-platform
+# hicolor-icon-theme
+# htop
+# hwinfo
+# inkscape
+# jetbrains-toolbox
+# kdenlive
+# kdialog
+# kdiff3
+# keepassxc
+# kfind
+# kio-extras
+# libc6
+# libgcc-s1
+# libqt5core5a
+# libqt5gui5
+# libqt5gui5-gles
+# libqt5qml5
+# libqt5quickcontrols2-5
+# libreoffice-base
+# libstdc++6
+# libudev1
+# libvulkan1
+# libxcb-xtest0
+# libxvidcore4

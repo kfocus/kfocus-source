@@ -89,7 +89,8 @@ _EOH04
 _mainFn () {
   declare _nv_line _gfx_mode_str \
     _solve_list_str _mod_list_str _solve_comp_str _solve_full_str \
-    _default_str _main_message_str _user_pick_str;
+    _default_str _main_message_str _user_pick_str \
+    _a_str _b_str _set_str;
 
   _cm2SetMsgFn 'Ensure nvidia device';
   _nv_line=$(lspci |grep -i 'VGA compatible controller' |grep -i 'nvidia' );
@@ -100,14 +101,14 @@ _mainFn () {
   _cm2SucFn;
 
   _cm2SetMsgFn 'Ensure needed executables';
-  if [ ! -x "${_nvSetExe}" ] || [ ! -x "${_primeSelectExe}" ]; then
+  if [ -z "${_nvSetExe}" ] || [ -z "${_primeSelectExe}" ]; then
     _promptBadExesFn;
     _cm2ErrFn;
   fi
   _cm2SucFn;
 
   _cm2SetMsgFn 'Ensure Nvidia Performance mode';
-  _gfx_mode_str="$("${_primeSelectExe}" query || echo '')";
+  _gfx_mode_str="$("${_primeSelectExe}" query || true)";
   if [ "${_gfx_mode_str}" != 'nvidia' ]; then
     _promptBadModeFn;
     _cm2ErrFn;
@@ -116,7 +117,7 @@ _mainFn () {
 
   _cm2SetMsgFn 'Determine current meta mode';
   _solve_list_str="$("${_nvSetExe}" -q CurrentMetaMode -t)";
-  _mod_list_str="${_solve_list_str#*" :: "}"; # snip off front of metastr
+  _mod_list_str="${_solve_list_str#*" :: "}"; # snip off front of meta
   _solve_comp_str='Off';
   _solve_full_str='Off';
   _default_str='Off';
@@ -178,9 +179,12 @@ _EOH05
     return;
   fi
 
-  _mod_list_str="${_mod_list_str//\}/, ForceCompositionPipeline=${_solve_comp_str}, ForceFullCompositionPipeline=${_solve_full_str}\}}";
+  _a_str="ForceCompositionPipeline=${_solve_comp_str}";
+  _b_str="ForceFullCompositionPipeline=${_solve_full_str}";
+  # shellcheck disable=SC2001
+  _set_str="$(sed -e "s/}/, ${_a_str}, ${_b_str}\}/g" <<< "${_mod_list_str}")";
 
-  if "${_nvSetExe}" -a CurrentMetaMode="${_mod_list_str}"; then
+  if "${_nvSetExe}" -a CurrentMetaMode="${_set_str}"; then
     _cm2SucFn; else _cm2ErrFn; fi
 }
 ## . END _mainFn }
@@ -189,8 +193,8 @@ _EOH05
 _localHtmPStr='<p style="margin-left:32px;margin-right:32px">'
 _titleStr='Focus Video Sync';
 
-_nvSetExe="$(command -v nvidia-settings)";
-_primeSelectExe="$(command -v 'prime-select')";
+_nvSetExe="$(      command -v nvidia-settings || true)";
+_primeSelectExe="$(command -v prime-select    || true)";
 ## . END Set global vars }
 
 ## BEGIN Run main if script is not sourced {

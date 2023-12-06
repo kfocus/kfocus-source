@@ -12,10 +12,10 @@
 #    cleaned up per https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=950812
 #
 _updatePciidsFn () {
-  declare _share_file _exe_lspci_str _exe_update_str;
+  declare _share_file _lspci_exe _update_exe;
   _share_file="${_rootDir}/usr/share/misc/pci.ids";
-  _exe_lspci_str=$( command -v lspci );
-  _exe_update_str=$( command -v update-pciids );
+  _lspci_exe="$(  command -v lspci         || true)";
+  _update_exe="$( command -v update-pciids || true)";
 
   _cm2SetMsgFn 'Update pciids';
 
@@ -24,17 +24,17 @@ _updatePciidsFn () {
     _cm2WarnStrFn "Could not remove ${_share_file}.old";
   fi
 
-  if [ ! -x "${_exe_lspci_str}" ]; then
-    _cm2ErrStrFn "${_exe_lspci_str} not found";
+  if [ -z "${_lspci_exe}" ]; then
+    _cm2ErrStrFn "${_lspci_exe} not found";
     _cm2ErrFn;
   fi
 
-  if [ ! -x "${_exe_update_str}" ]; then
-    _cm2ErrStrFn "${_exe_update_str} is not executable";
+  if [ -z "${_update_exe}" ]; then
+    _cm2ErrStrFn "${_update_exe} not found";
     _cm2ErrFn;
   fi
 
-  if "${_exe_update_str}"; then
+  if "${_update_exe}"; then
     _cm2SucStrFn 'Updated pciids';
     _cm2SucFn;
   else

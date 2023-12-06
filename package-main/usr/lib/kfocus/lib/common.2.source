@@ -143,7 +143,7 @@ _cm2RunLongCmdFn () {
     return;
   fi
 
-  _zenity_exe="$(command -v 'zenity')";
+  _zenity_exe="$(command -v 'zenity' || true)";
   if [ -z "${_zenity_exe}" ]; then
     pkexec "${_cmd_list[@]}";
     _exit_int="$?";
@@ -347,7 +347,7 @@ _cm2AssignExeVarsFn () {
     # Handle file assignment
     case "${_type}" in
       '' )
-        _cmd_exe="$( command -v "${_cmd_name}" )";
+        _cmd_exe="$(command -v "${_cmd_name}" || true)";
         if [ -z "${_cmd_exe}" ] || [ ! -x "${_cmd_exe}" ]; then
           _cm2WarnStrFn "Command |${_cmd_name}| NOT EXECUTABLE as |${_cmd_exe}|";
           _return_int=1;
@@ -373,7 +373,7 @@ _cm2AssignExeVarsFn () {
         fi
         ;;
         * )
-          _cm2WarnStrFn "Assignment type |$_type| not supported"
+          _cm2WarnStrFn "Assignment type |$_type| not supported";
           _return_int=1;
           continue;
           ;;
@@ -534,9 +534,9 @@ case "${XDG_SESSION_TYPE:-}" in
   *  ) _cm2IsTty='n';;
 esac
 
-_cm2KdiagExe="$(command -v 'kdialog')";
+_cm2KdiagExe="$(command -v 'kdialog' || true)";
 if [ -z "${_cm2KdiagExe}" ]; then
-  _cm2WarnStrFn 'No kdialog executable found. Fallback to terminal';
+  _cm2WarnStrFn 'No kdialog executable found. Fallback to terminal.';
   _cm2IsTty='y';
 fi
 

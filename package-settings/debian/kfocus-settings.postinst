@@ -6,7 +6,7 @@
 set -e
 
 ## BEGIN Maintain adduser.local
-_thisScriptVers='22.04.3'; # BUMP THIS IF THE FOLLOWING STRING IS UPDATED
+_thisScriptVers='22.04.4'; # BUMP THIS IF THE FOLLOWING STRING IS UPDATED
 _addUserStr="$(cat << 'EOF'
 #!/bin/bash
 #
@@ -40,7 +40,7 @@ _mainFn () {
   _gid="${3:-}";
   _home_dir="${_rootDir}${4:-}";
   _hostname="$(hostname)";
-  _rsync_exe=$(command -v rsync);
+  _rsync_exe="$(command -v rsync || true)";
   _skel_dir="${_rootDir}/usr/lib/kfocus/skel";
 
   echo "  Parameters:
@@ -86,15 +86,17 @@ _mainFn () {
   fi
 
   # Sync ${_skel_dir}/ to home
-  if [ -d "${_skel_dir}" ]; then
+  if [ ! -d "${_skel_dir}" ]; then
+    echo   "  - ERROR : No skel dir |${_skel_dir}|";
+  elif [ -z "${_rsync_exe}" ]; then
+    echo   "  - ERROR : Cannot find rsync";
+  else
     if "${_rsync_exe}" -azog --chown="${_uid}:${_gid}" \
       "${_skel_dir}/" "${_home_dir}"; then
       echo "  - OK    : Synced skel configs";
     else
       echo "  - WARN  : Could not sync configs";
     fi
-  else
-    echo   "  - ERROR : No skel dir |${_skel_dir}|";
   fi
 
   # Set UX defaults in user .config directory (kwin, kcmfont, ...)
@@ -175,7 +177,7 @@ fi
 #    for consistency.
 # 3521, 3802 requires DPI setting it for GTK apps.
 #
-_effectsExe="$(command -v '/usr/lib/kfocus/bin/kfocus-reset-effects')";
+_effectsExe="$(command -v '/usr/lib/kfocus/bin/kfocus-reset-effects' || true)";
 _kf5SettingsDir='/usr/share/kfocus/kf5-settings';
 if [ -n "${_effectsExe}" ] && [ -d "${_kf5SettingsDir}" ]; then
   if ! "${_effectsExe}" -d "${_kf5SettingsDir}"; then

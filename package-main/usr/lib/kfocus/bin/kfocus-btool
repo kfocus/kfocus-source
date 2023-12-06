@@ -29,6 +29,7 @@ _cleanupFn () {
     2>/dev/null rm -rf "${_tmpMntDir}" || true;
   fi
 }
+
 _trapExitFn () {
   declare _msg;
   _msg="$(cat << _EOT
@@ -39,6 +40,7 @@ _EOT
   _cleanupFn;
   # Original exit value is returned to calling routine
 }
+
 _exitCleanFn () {
   declare _int;
   _int="$(_echoIntFn "${1:-0}")";
@@ -46,6 +48,7 @@ _exitCleanFn () {
   _cleanupFn;
   exit "${_int}";
 }
+
 _echoWrapFn () {
   declare _str _w_int;
   _str="${1:-}";
@@ -53,10 +56,12 @@ _echoWrapFn () {
 
   fold -w "${_w_int}" -s <<<"$(tr '\n' ' ' <<< "${_str}")";
 }
+
 _cancelFn () {
   _echoFn "ABORT ${_baseName}: Cancelled by user";
   exit 1;
 }
+
 _testVersFn () {
   declare _v1 _v2;
   _v1="${1:-}"; _v2="${2:-}";
@@ -66,12 +71,13 @@ _testVersFn () {
 
 _echoDmiDecodeFn () {
   declare _decode_exe;
-  _decode_exe="$(command -v dmidecode)";
-  if [ -z "${_decode_exe}" ] || [ ! -x "${_decode_exe}" ]; then
-    _echoFn
-    _echoFn 'Please install dmidecode and then rerun.'
+  _decode_exe="$(command -v dmidecode || true)";
+  # Use -z instead of ! -x to allow for functional mock
+  if [ -z "${_decode_exe}" ]; then
+    _echoFn;
+    _echoFn 'Please install dmidecode and then rerun.';
     _echoFn 'sudo apt install dmidecode';
-    _echoFn
+    _echoFn;
     exit 1;
   fi
   dmidecode -s "${1:-}"  || exit 1;
@@ -123,7 +129,7 @@ _EOT00
         )";
       else
         _m2g4_msg+="$(cat << _EOT01
-The BIOS version (${_bios_vers}) is up to date. Proceed only if you need
+The BIOS version (${_bios_vers}) is up-to-date. Proceed only if you need
 to create a USB drive for use on another M2 GEN 4 system.
 _EOT01
         )";
@@ -228,12 +234,12 @@ _selectDiskFn () {
         _example_str="$(sed 's/^/    sudo umount /' <<< "${_match_str}")";
         _msg="$(cat <<_EOT5
 If you wish to use this device:
-  a. IN ANOTHER TERMINAL, unmount the partition(s) like so:
+  A. IN ANOTHER TERMINAL, unmount the partition(s) like so:
 ${_example_str}
-  b. If any partition cannot be unmounted because it is "busy", close
+  B. If any partition cannot be unmounted because it is "busy", close
     any file manager or terminal that is using the file system and try
     again.
-  c. Select "rescan" from the options below to proceed.
+  C. Select "rescan" from the options below to proceed.
 _EOT5
         )";
         _echoFn "${_msg}";
@@ -265,7 +271,7 @@ _EOT5
     if (( _pick_idx == _idx )); then _cancelFn; fi
     if (( _pick_idx == (_idx - 1) )); then continue; fi # on scan-block
     if (( _pick_idx < 0 || _pick_idx >= _idx )); then
-      _echoFn "Please enter 0 thru ${_idx}. Rescanning...";
+      _echoFn "Please enter 0 through ${_idx}. Rescanning...";
       continue; # on scan-block
     fi
     IFS=';' read -r -a _bitList<<<"${_found_list[$_pick_idx]}";
@@ -322,6 +328,7 @@ _wipeAndInstallFn () {
   _echoFn "\n${_baseName}: Wrote M2 GEN 4 ${_installVers} BIOS"
   _echoFn "to USB Device.\n\n";
 }
+
 _echoNextStepsFn () {
   declare _msg;
   _msg="$(cat << _EOT7
@@ -354,6 +361,7 @@ _EOT7
   )";
   _echoFn "${_msg}\n";
 }
+
 _mainFn () {
   declare _arg_str _uid;
 

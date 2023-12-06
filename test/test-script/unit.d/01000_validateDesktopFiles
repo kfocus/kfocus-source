@@ -31,10 +31,10 @@ _echoDesktopFileDirsFn () {
 # This MUST be called '_runTestFn' for use by the _runUnitTests
 _runTestFn () {
   declare _check_exe _dir_list _expect_file _run_file _test_count \
-    _test_idx _pwd_dir _check_dir;
+    _test_idx _pwd_dir _line _check_str;
 
   # Validate executable
-  _check_exe="$(command -v desktop-file-validate)";
+  _check_exe="$(command -v desktop-file-validate || true)";
   if [ -z "${_check_exe}" ]; then
     _cm2EchoFn 'FAIL: Could not run test - desktop-file-validate not found';
     _cm2EchoFn '  Please ensure desktop-file-utils is installed.';
@@ -56,11 +56,11 @@ _runTestFn () {
   _test_idx=1;
   _pwd_dir="$(pwd)";
   echo 'Validate desktop files' > "${_run_file}";
-  for _test_line_str in "${_dir_list[@]}"; do
+  for _line in "${_dir_list[@]}"; do
     ( echo "BEGIN Test ${_test_idx} of ${_test_count}:";
-      echo "  Dir: ${_test_line_str}";
-      if [ -d "${_t00TopDir}/${_test_line_str}" ] \
-        && cd "${_t00TopDir}/${_test_line_str}"   \
+      echo "  Dir: ${_line}";
+      if [ -d "${_t00TopDir}/${_line}" ] \
+        && cd "${_t00TopDir}/${_line}"   \
         && [ -n "$(ls ./*.desktop 2>/dev/null)" ]; then
         "${_check_exe}" ./*.desktop;
       fi
