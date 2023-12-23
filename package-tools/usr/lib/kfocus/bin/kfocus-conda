@@ -169,7 +169,7 @@ _installEnvFn () {
   declare  _reply_str _conda_installed_exe _conda_oldstyle_vers \
    _conda_installed_vers _conda_expect_dir _conda_expect01_exe \
    _conda_expect02_exe _conda_pkg_str _conda_repo_url \
-   _conda_md5_str _is_new_conda _chk_str __conda_setup;
+   _conda_md5_str _is_new_conda _chk_str __conda_setup _msg;
 
   ## Begin Install GPU Libs
   _cm2SetMsgFn 'Check GPU and install libs if needed';
@@ -363,9 +363,15 @@ _installEnvFn () {
     conda activate base                    || _exitFn;
     conda create -y --name jnb python=3.10 || _exitFn;
     conda activate jnb                     || _exitFn;
-    conda install -y -q -c numpy matplotlib jupyter nb_conda || _exitFn;
+    # 2023-12-22 nb_conda no longer works
+    # conda install -y -q -c numpy matplotlib jupyter nb_conda || _exitFn;
+    conda install -y -q -c numpy matplotlib jupyter || _exitFn;
     set -u;
     _cm2SucFn;
+    _cm2EchoFn "${_jupyterStr}";
+    _cm2EchoFn;
+    read -rp 'Press return to continue ' _reply;
+    _cm2EchoFn;
   fi
 
   ## TODO mxnet is not supported with cuda 11.7 (10.2 is latest)
@@ -550,7 +556,7 @@ if ! _nvSeriesStr="$(_getNvSeriesStrFn)"; then
 fi
 
 # bashsupport disable=GrazieInspection
-_condaRawStr=$(cat << '_HERE01'
+_condaRawStr="$(cat << '_HERE01'
 # >>> conda initialize >>>
 # !! Contents within this block are managed by 'conda init' !!
 __conda_setup="$(
@@ -568,7 +574,7 @@ fi
 unset __conda_setup
 # <<< conda initialize <<<
 _HERE01
-);
+)";
 
 ## TODO mxnet is not supported with cuda 11.7 (10.2 is latest)
 # This is maintained here for reference.
@@ -583,7 +589,7 @@ _HERE01
 # _HERE03
 # );
 
-_testPytorchStr=$(cat << '_HERE04';
+_testPytorchStr="$(cat << '_HERE04';
 import torch
 # Setting a device on GPU if available, else CPU
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -597,16 +603,16 @@ if device.type == 'cuda':
     print('Allocated:', round(torch.cuda.memory_allocated(0)/1024**3,1), 'GB')
     print('Cached:   ', round(torch.cuda.memory_cached(0)/1024**3,1), 'GB')
 _HERE04
-);
+)";
 
-_testTf01Str=$(cat << '_HERE05';
+_testTf01Str="$(cat << '_HERE05';
 import tensorflow as tf
 print( 'TF Version: ', tf.__version__ )
 print( 'Devices   : ', tf.config.list_physical_devices('GPU') )
 _HERE05
-);
+)";
 
-_testTf02Str=$(cat << '_HERE05a';
+_testTf02Str="$(cat << '_HERE05a';
 import tensorflow as tf
 print( 'TF Version: ', tf.__version__ )
 print( 'Devices   : ', tf.config.list_physical_devices('GPU') )
@@ -623,9 +629,9 @@ benchmark = AIBenchmark()
 results = benchmark.run()
 
 _HERE05a
-);
+)";
 
-_welcomeStr=$(cat << '_HERE06';
+_welcomeStr="$(cat << '_HERE06';
 
 KUBUNTU FOCUS DEEP LEARNING SUITE
   See https://kfocus.org/wf/deep.html for more information.
@@ -647,7 +653,22 @@ All other appropriate package licenses.
 PLEASE REVIEW AND AGREE TO ALL LICENSES BEFORE PROCEEDING!
 
 _HERE06
-)
+)";
+
+_jupyterStr="$(cat << '_HERE07';
+
+Here are a few notebooks to download and try:
+  1. https://github.comhupesh-V/Learn-Python-Packages/blob/master/Learning%20Numpy.ipynb
+  2. https://github.com/NadimKawwa/Statistics/blob/master/Experiment_Size.ipynb
+
+To start:
+  conda activate jnb; jupyter notebook;
+
+To clean up after exiting:
+  conda deactivate;
+
+_HERE07
+)";
 
 # use ${variable//search/replace/}?
 # shellcheck disable=2001
