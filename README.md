@@ -30,7 +30,7 @@ kfocus-<name>
 ## Package Table
 
 | Name         | Directory            | Full Package Name   |
-| ------------ + -------------------- + ------------------- |
+| ------------ | -------------------- | ------------------- |
 | apt-source   | package-apt-source   | kfocus-apt-source   |
 | firstrun-bin | package-firstrun-bin | kfocus-firstrun-bin |
 | hw           | package-hw           | kfocus-hw           |
