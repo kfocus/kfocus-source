@@ -60,6 +60,39 @@ _makeRunStrFn () {
   echo -e "${_str}";
 }
 
+# BEGIN _normalizeCompareStrFn
+# Summary   : _normalizeCompareStrFn "${_string_to_mangle}";
+# Purpose   : Processes and sorts expect and run strings for frequency profile
+#             checks so that even if expect and run data have the cores in a
+#             different order, the tests will still pass. Needed to work around
+#             core ordering issues in 12th-gen and higher Intel Core i-series
+#             CPUs.
+# Example   : _normalizeCompareStrFn "${_run_str}";
+# Arguments : A string to be normalized. Must be in the same format as
+#               test/test-data/expect/00700_kfocusPowerSet
+#               /m2g5p_i9-13900HX_High.txt.
+# Globals   : none
+# Outputs   : A processed string with core info sorted.
+# Returns   : none
+#
+_normalizeCompareStrFn () {
+  declare _str _end_str _line_list _line _bit_list;
+
+  _str="${1:-}";
+  _end_str="$(echo "${_str}" | tail -n-4)";
+  _str="$(echo "${_str}" | head -n-4 | tail -n+2 | sed '/^\s*$/d' | tr $'\n' '|')"
+  _str="$(echo "${_str//CORE/$'\n'}" |sed -E 's/\s*//g;/^$/d')";
+  mapfile -t _line_list <<< "${_str}";
+
+  for _line in "${_line_list[@]}"; do
+    mapfile -t -d '|' _bit_list <<< "${_line}";
+    _bit_list=("${_bit_list[@]:1}");
+    (IFS='|'; echo "${_bit_list[5]}|${_bit_list[*]}");
+  done | sort -rn |sed '/^\s*$/q' | head -n-1
+  echo "${_end_str}";
+}
+# . END _normalizeCompareStrFn
+
 _echoCpuModelNameFn () {
   declare _model_line _cpu_name;
 
@@ -83,7 +116,8 @@ _echoCpuModelNameFn () {
 _runAssertsFn () {
   declare _cr _cpu_name _pick_list _pick_str _power_exe _model_code \
     _assert_count _assert_idx _fail_count _mode_str _expect_file _run_file \
-    _descr_str _expect_str _run_str _check_str _count_str;
+    _descr_str _expect_str _run_str _expect_normalized_str \
+    _run_normalized_str _check_str _count_str;
 
   _cr=$'\n';
   _cpu_name="$(_echoCpuModelNameFn)";
@@ -128,8 +162,11 @@ _runAssertsFn () {
     _run_str+="END   ${_descr_str}";
     echo "${_run_str}" > "${_run_file}";
 
+    _expect_normalized_str="$(_normalizeCompareStrFn "${_expect_str}")";
+    _run_normalized_str="$(_normalizeCompareStrFn "${_run_str}")";
+
     _descr_str="${_count_str} kfocus-power-set ${_mode_str}";
-    if [ "${_expect_str}" = "${_run_str}" ]; then
+    if [ "${_expect_normalized_str}" = "${_run_normalized_str}" ]; then
       _cm2EchoFn "  ok  : ${_descr_str}";
     else
       ((_fail_count++));
