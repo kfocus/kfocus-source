@@ -1,5 +1,5 @@
 Package: linux-headers-generic${variant:suffix}-kfocus
-Architecture: amd64 armhf arm64 powerpc ppc64el s390x
+Architecture: amd64 armhf arm64 ppc64el s390x
 Section: kernel
 Replaces: linux-headers-generic${variant:suffix}, linux-headers-oem-22.04a-kfocus
 Conflicts: linux-headers-generic${variant:suffix}, linux-headers-oem-22.04a-kfocus
@@ -9,12 +9,12 @@ Description: Generic Linux kernel headers
  available.
 
 Package: linux-image-generic${variant:suffix}-kfocus
-Architecture: amd64 armhf arm64 powerpc ppc64el s390x
+Architecture: amd64 armhf arm64 ppc64el s390x
 Section: kernel
 Provides: ${dkms:v4l2loopback-modules} ${dkms:zfs-modules} ${dkms:virtualbox-guest-modules} ${dkms:wireguard-linux-compat-modules}
 Replaces: linux-image-generic${variant:suffix}, linux-image-oem-22.04a-kfocus
 Conflicts: linux-image-generic${variant:suffix}, linux-image-oem-22.04a-kfocus
-Depends: ${misc:Depends}, linux-image-${kernel-abi-version}-generic, linux-modules-extra-${kernel-abi-version}-generic [amd64 arm64 powerpc ppc64el s390x], linux-firmware [amd64 armhf arm64 ppc64el], intel-microcode [amd64], amd64-microcode [amd64]
+Depends: ${misc:Depends}, linux-image-${kernel-abi-version}-generic, linux-modules-extra-${kernel-abi-version}-generic [amd64 arm64 ppc64el s390x], linux-firmware [amd64 armhf arm64 ppc64el], intel-microcode [amd64], amd64-microcode [amd64]
 Recommends: thermald [amd64]
 Description: Generic Linux kernel image
  This package will always depend on the latest generic kernel image
@@ -34,7 +34,7 @@ Description: Generic Linux kernel image for Ubuntu Core
  suitable to be used directly on classic systems.
 
 Package: linux-tools-generic${variant:suffix}-kfocus
-Architecture: amd64 armhf arm64 powerpc ppc64el s390x
+Architecture: amd64 armhf arm64 ppc64el s390x
 Section: kernel
 Provides: linux-tools
 Replaces: linux-tools-generic${variant:suffix}, linux-tools-oem-22.04a-kfocus
@@ -56,7 +56,7 @@ Description: Generic Linux kernel cloud tools
  available.
 
 Package: linux-generic${variant:suffix}-kfocus
-Architecture: amd64 armhf arm64 powerpc ppc64el s390x
+Architecture: amd64 armhf arm64 ppc64el s390x
 Section: kernel
 Provides: ${test:provides-full-generic} ${test:provides-full-preferred}
 Replaces: linux-generic${variant:suffix}, linux-oem-22.04a-kfocus

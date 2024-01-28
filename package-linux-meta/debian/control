@@ -1,17 +1,17 @@
-Source: linux-meta-hwe-6.2-kfocus
+Source: linux-meta-hwe-6.5-kfocus
 Section: devel
 Priority: optional
 Maintainer: Ubuntu Kernel Team <kernel-team@lists.ubuntu.com>
 Standards-Version: 3.9.8
 Build-Depends: dpkg (>= 1.13.19), debhelper (>= 11), gawk, kmod
 Build-Depends-Arch:
- linux-hwe-6.2-headers-6.2.0-35,
- linux-headers-6.2.0-35-generic,
- linux-modules-6.2.0-35-generic,
+ linux-hwe-6.5-headers-6.5.0-14,
+ linux-headers-6.5.0-14-generic,
+ linux-modules-6.5.0-14-generic,
 Vcs-Git: git://git.launchpad.net/~ubuntu-kernel/ubuntu/+source/linux-meta/+git/jammy
 
 Package: linux-headers-generic-hwe-22.04-kfocus
-Architecture: amd64 armhf arm64 powerpc ppc64el s390x
+Architecture: amd64 armhf arm64 ppc64el s390x
 Section: kernel
 Replaces: linux-headers-generic-hwe-22.04, linux-headers-oem-22.04a-kfocus
 Conflicts: linux-headers-generic-hwe-22.04, linux-headers-oem-22.04a-kfocus
@@ -21,12 +21,12 @@ Description: Generic Linux kernel headers
  available.
 
 Package: linux-image-generic-hwe-22.04-kfocus
-Architecture: amd64 armhf arm64 powerpc ppc64el s390x
+Architecture: amd64 armhf arm64 ppc64el s390x
 Section: kernel
 Provides: ${dkms:v4l2loopback-modules} ${dkms:zfs-modules} ${dkms:virtualbox-guest-modules} ${dkms:wireguard-linux-compat-modules}
 Replaces: linux-image-generic-hwe-22.04, linux-image-oem-22.04a-kfocus
 Conflicts: linux-image-generic-hwe-22.04, linux-image-oem-22.04a-kfocus
-Depends: ${misc:Depends}, linux-image-${kernel-abi-version}-generic, linux-modules-extra-${kernel-abi-version}-generic [amd64 arm64 powerpc ppc64el s390x], linux-firmware [amd64 armhf arm64 ppc64el], intel-microcode [amd64], amd64-microcode [amd64]
+Depends: ${misc:Depends}, linux-image-${kernel-abi-version}-generic, linux-modules-extra-${kernel-abi-version}-generic [amd64 arm64 ppc64el s390x], linux-firmware [amd64 armhf arm64 ppc64el], intel-microcode [amd64], amd64-microcode [amd64]
 Recommends: thermald [amd64]
 Description: Generic Linux kernel image
  This package will always depend on the latest generic kernel image
@@ -46,7 +46,7 @@ Description: Generic Linux kernel image for Ubuntu Core
  suitable to be used directly on classic systems.
 
 Package: linux-tools-generic-hwe-22.04-kfocus
-Architecture: amd64 armhf arm64 powerpc ppc64el s390x
+Architecture: amd64 armhf arm64 ppc64el s390x
 Section: kernel
 Provides: linux-tools
 Replaces: linux-tools-generic-hwe-22.04, linux-tools-oem-22.04a-kfocus
@@ -68,9 +68,9 @@ Description: Generic Linux kernel cloud tools
  available.
 
 Package: linux-generic-hwe-22.04-kfocus
-Architecture: amd64 armhf arm64 powerpc ppc64el s390x
+Architecture: amd64 armhf arm64 ppc64el s390x
 Section: kernel
-Provides: kernel-testing--linux-hwe-6.2-kfocus--full--generic, kernel-testing--linux-hwe-6.2-kfocus--full--preferred,
+Provides: kernel-testing--linux-hwe-6.5-kfocus--full--generic, kernel-testing--linux-hwe-6.5-kfocus--full--preferred,
 Replaces: linux-generic-hwe-22.04, linux-oem-22.04a-kfocus
 Conflicts: linux-generic-hwe-22.04, linux-oem-22.04a-kfocus
 Depends: ${misc:Depends}, linux-image-generic-hwe-22.04-kfocus (= ${binary:Version}), linux-headers-generic-hwe-22.04-kfocus (= ${binary:Version})
@@ -80,7 +80,7 @@ Description: Complete Generic Linux kernel and headers
 
 
 Package: linux-headers-generic-hwe-22.04-edge-kfocus
-Architecture: amd64 armhf arm64 powerpc ppc64el s390x
+Architecture: amd64 armhf arm64 ppc64el s390x
 Section: kernel
 Replaces: linux-headers-generic-hwe-22.04-edge, linux-headers-oem-22.04a-kfocus
 Conflicts: linux-headers-generic-hwe-22.04-edge, linux-headers-oem-22.04a-kfocus
@@ -90,12 +90,12 @@ Description: Generic Linux kernel headers
  available.
 
 Package: linux-image-generic-hwe-22.04-edge-kfocus
-Architecture: amd64 armhf arm64 powerpc ppc64el s390x
+Architecture: amd64 armhf arm64 ppc64el s390x
 Section: kernel
 Provides: ${dkms:v4l2loopback-modules} ${dkms:zfs-modules} ${dkms:virtualbox-guest-modules} ${dkms:wireguard-linux-compat-modules}
 Replaces: linux-image-generic-hwe-22.04-edge, linux-image-oem-22.04a-kfocus
 Conflicts: linux-image-generic-hwe-22.04-edge, linux-image-oem-22.04a-kfocus
-Depends: ${misc:Depends}, linux-image-${kernel-abi-version}-generic, linux-modules-extra-${kernel-abi-version}-generic [amd64 arm64 powerpc ppc64el s390x], linux-firmware [amd64 armhf arm64 ppc64el], intel-microcode [amd64], amd64-microcode [amd64]
+Depends: ${misc:Depends}, linux-image-${kernel-abi-version}-generic, linux-modules-extra-${kernel-abi-version}-generic [amd64 arm64 ppc64el s390x], linux-firmware [amd64 armhf arm64 ppc64el], intel-microcode [amd64], amd64-microcode [amd64]
 Recommends: thermald [amd64]
 Description: Generic Linux kernel image
  This package will always depend on the latest generic kernel image
@@ -115,7 +115,7 @@ Description: Generic Linux kernel image for Ubuntu Core
  suitable to be used directly on classic systems.
 
 Package: linux-tools-generic-hwe-22.04-edge-kfocus
-Architecture: amd64 armhf arm64 powerpc ppc64el s390x
+Architecture: amd64 armhf arm64 ppc64el s390x
 Section: kernel
 Provides: linux-tools
 Replaces: linux-tools-generic-hwe-22.04-edge, linux-tools-oem-22.04a-kfocus
@@ -137,7 +137,7 @@ Description: Generic Linux kernel cloud tools
  available.
 
 Package: linux-generic-hwe-22.04-edge-kfocus
-Architecture: amd64 armhf arm64 powerpc ppc64el s390x
+Architecture: amd64 armhf arm64 ppc64el s390x
 Section: kernel
 Provides:  
 Replaces: linux-generic-hwe-22.04-edge, linux-oem-22.04a-kfocus

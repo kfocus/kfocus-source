@@ -1,94 +1,292 @@
-linux-meta-hwe-6.2-kfocus (6.2.0.35.35~22.04.13) jammy; urgency=medium
+linux-meta-hwe-6.5-kfocus (6.5.0.14.14~22.04.8) jammy; urgency=medium
 
   * Release for Kubuntu Focus
 
- -- Michael S. Mikowski <support@kfocus.org>  Sat, 28 Oct 2023 14:07:35 -0700
+ -- Michael S. Mikowski <support@kfocus.org>  Sun, 14 Jan 2024 15:37:10 -0800
 
-linux-meta-hwe-6.2 (6.2.0.35.35~22.04.13) jammy; urgency=medium
+linux-meta-hwe-6.5 (6.5.0.14.14~22.04.7) jammy; urgency=medium
 
-  * Bump ABI 6.2.0-35.35~22.04
+  * Packaging resync (LP: #1786013)
+    - [Packaging] update variants
 
- -- Stefan Bader <stefan.bader@canonical.com>  Fri, 06 Oct 2023 11:31:20 +0200
+ -- Roxana Nicolescu <roxana.nicolescu@canonical.com>  Wed, 13 Dec 2023 12:41:59 +0100
 
-linux-meta-hwe-6.2 (6.2.0.34.34~22.04.12) jammy; urgency=medium
+linux-meta-hwe-6.5 (6.5.0.14.14~22.04.6) jammy; urgency=medium
+
+  * Bump ABI 6.5.0-14.14~22.04
+
+ -- Roxana Nicolescu <roxana.nicolescu@canonical.com>  Mon, 20 Nov 2023 15:12:38 +0100
+
+linux-meta-hwe-6.5 (6.5.0.12.12~22.04.5) jammy; urgency=medium
+
+  * Bump version up
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Thu, 09 Nov 2023 14:41:23 +0200
+
+linux-meta-hwe-6.5 (6.5.0.12.12~22.04.4) jammy; urgency=medium
+
+  * Bump ABI 6.5.0-12.12~22.04
+
+  * Miscellaneous upstream changes
+    - Revert "UBUNTU: [Packaging] use meta version for changelog and tag"
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Thu, 09 Nov 2023 14:01:15 +0200
+
+linux-meta-hwe-6.5 (6.5.0.9.11~22.04.3) jammy; urgency=medium
+
+  * Bump ABI 6.5.0-12.12~22.04
+
+  * Packaging resync (LP: #1786013)
+    - [Packaging] resync git-ubuntu-log
+    - [Packaging] update variants
+    - [Packaging] resync debian/dkms-versions from main package
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Thu, 09 Nov 2023 13:17:25 +0200
+
+linux-meta-hwe-6.5 (6.5.0.9.11~22.04.2) jammy; urgency=medium
+
+  * Packaging resync (LP: #1786013)
+    - [Packaging] update variants
+
+  * Miscellaneous Ubuntu changes
+    - [Packaging] initialize linux-meta-hwe-6.5
+    - [Packaging] use meta version for changelog and tag
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Wed, 11 Oct 2023 15:05:06 +0200
+
+linux-meta-hwe-6.5 (6.5.0.9.11~22.04.1) jammy; urgency=medium
+
+  * Empty entry
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Wed, 11 Oct 2023 08:53:42 +0200
+
+linux-meta (6.5.0.9.11) mantic; urgency=medium
+
+  * Bump ABI 6.5.0-9
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Fri, 06 Oct 2023 21:13:38 +0200
+
+linux-meta (6.5.0.8.10) mantic; urgency=medium
+
+  * Bump ABI 6.5.0-8
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Fri, 06 Oct 2023 07:36:32 +0200
+
+linux-meta (6.5.0.7.9) mantic; urgency=medium
+
+  * Bump ABI 6.5.0-7
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Thu, 28 Sep 2023 10:21:43 +0200
+
+linux-meta (6.5.0.6.8) mantic; urgency=medium
+
+  * Bump ABI 6.5.0-6
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Thu, 14 Sep 2023 16:48:17 +0200
+
+linux-meta (6.5.0.5.7) mantic; urgency=medium
+
+  * Bump ABI 6.5.0-5
+
+  * Packaging resync (LP: #1786013)
+    - [Packaging] resync debian/dkms-versions from main package
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Wed, 06 Sep 2023 15:52:13 +0200
+
+linux-meta (6.5.0.4.6) mantic; urgency=medium
+
+  * Bump ABI 6.5.0-4
+
+  * Packaging resync (LP: #1786013)
+    - [Packaging] resync debian/dkms-versions from main package
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Mon, 04 Sep 2023 16:56:44 +0200
+
+linux-meta (6.5.0.3.5) mantic; urgency=medium
+
+  * Bump ABI 6.5.0-3
+
+  * Packaging resync (LP: #1786013)
+    - [Packaging] resync debian/dkms-versions from main package
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Fri, 01 Sep 2023 16:17:46 +0200
+
+linux-meta (6.5.0.2.4) mantic; urgency=medium
+
+  * Remove non-LPAE kernel flavor (LP: #2025265)
+    - [Packaging] Fix lpae transitional
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Fri, 01 Sep 2023 12:22:51 +0200
+
+linux-meta (6.5.0.2.3) mantic; urgency=medium
 
   * SIGNEDv5: add ubuntu-core-initrd support to the linux-generate ancillary
     package (LP: #2027818)
     - Add linux-image-uc-generic meta
 
- -- Dimitri John Ledkov <dimitri.ledkov@canonical.com>  Wed, 04 Oct 2023 21:00:14 +0100
+ -- Andrea Righi <andrea.righi@canonical.com>  Wed, 30 Aug 2023 14:11:47 +0200
 
-linux-meta-hwe-6.2 (6.2.0.34.34~22.04.11) jammy; urgency=medium
+linux-meta (6.5.0.2.2) mantic; urgency=medium
 
-  * Bump ABI 6.2.0-34.34~22.04
+  * Bump ABI 6.5.0-2
 
- -- Stefan Bader <stefan.bader@canonical.com>  Thu, 07 Sep 2023 14:19:09 +0200
+ -- Andrea Righi <andrea.righi@canonical.com>  Mon, 28 Aug 2023 09:37:12 +0200
 
-linux-meta-hwe-6.2 (6.2.0.33.33~22.04.10) jammy; urgency=medium
+linux-meta (6.5.0.1.1) mantic; urgency=medium
 
-  * Bump ABI 6.2.0-33.33~22.04
-
- -- Stefan Bader <stefan.bader@canonical.com>  Thu, 07 Sep 2023 10:19:29 +0200
-
-linux-meta-hwe-6.2 (6.2.0.32.32~22.04.9) jammy; urgency=medium
-
-  * Bump ABI 6.2.0-32.32~22.04
-
- -- Stefan Bader <stefan.bader@canonical.com>  Fri, 18 Aug 2023 11:41:17 +0200
-
-linux-meta-hwe-6.2 (6.2.0.31.31~22.04.8) jammy; urgency=medium
-
-  * Bump ABI 6.2.0-31.31~22.04
-
- -- Stefan Bader <stefan.bader@canonical.com>  Wed, 16 Aug 2023 14:43:54 +0200
-
-linux-meta-hwe-6.2 (6.2.0.26.26~22.04.7) jammy; urgency=medium
+  * Bump ABI 6.5.0-1
 
   * Packaging resync (LP: #1786013)
-    - [Packaging] update variants
-
- -- Stefan Bader <stefan.bader@canonical.com>  Wed, 26 Jul 2023 17:09:21 +0200
-
-linux-meta-hwe-6.2 (6.2.0.26.26~22.04.6) jammy; urgency=medium
-
-  * Bump ABI 6.2.0-26.26~22.04
-
- -- Stefan Bader <stefan.bader@canonical.com>  Thu, 13 Jul 2023 17:31:59 +0200
-
-linux-meta-hwe-6.2 (6.2.0.25.25~22.04.5) jammy; urgency=medium
-
-  * Bump ABI 6.2.0-25.25~22.04
-
- -- Luke Nowakowski-Krijger <luke.nowakowskikrijger@canonical.com>  Tue, 27 Jun 2023 15:18:49 -0700
-
-linux-meta-hwe-6.2 (6.2.0.23.23~22.04.4) jammy; urgency=medium
-
-  * Bump ABI 6.2.0-23.23~22.04
-
-  * Packaging resync (LP: #1786013)
-    - [Packaging] resync git-ubuntu-log
     - [Packaging] resync debian/dkms-versions from main package
 
- -- Andrea Righi <andrea.righi@canonical.com>  Tue, 30 May 2023 13:40:03 +0200
+ -- Andrea Righi <andrea.righi@canonical.com>  Thu, 24 Aug 2023 17:49:18 +0200
 
-linux-meta-hwe-6.2 (6.2.0.21.21~22.04.3) jammy; urgency=medium
-
-  * Packaging resync (LP: #1786013)
-    - [Packaging] update variants
-
- -- Andrea Righi <andrea.righi@canonical.com>  Thu, 11 May 2023 12:03:20 +0200
-
-linux-meta-hwe-6.2 (6.2.0.21.21~22.04.2) jammy; urgency=medium
-
-  * Bump version
-
- -- Andrea Righi <andrea.righi@canonical.com>  Thu, 11 May 2023 08:48:54 +0200
-
-linux-meta-hwe-6.2 (6.2.0.21.21~22.04.1) jammy; urgency=medium
+linux-meta (6.5.0.0.0) mantic; urgency=medium
 
   * Empty entry
 
- -- Andrea Righi <andrea.righi@canonical.com>  Wed, 10 May 2023 09:34:37 +0200
+ -- Andrea Righi <andrea.righi@canonical.com>  Wed, 23 Aug 2023 08:16:05 +0200
+
+linux-meta-unstable (6.5.0.4.5) mantic; urgency=medium
+
+  * Miscellaneous Ubuntu changes
+    - [Packaging] support zstd compressed modules
+
+  * Miscellaneous upstream changes
+    - Revert "UBUNTU: [Packaging] support compressed modules"
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Wed, 02 Aug 2023 08:04:47 +0200
+
+linux-meta-unstable (6.5.0.4.4) mantic; urgency=medium
+
+  * Miscellaneous Ubuntu changes
+    - [Packaging] support compressed modules
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Wed, 02 Aug 2023 07:49:51 +0200
+
+linux-meta-unstable (6.5.0.4.3) mantic; urgency=medium
+
+  * Bump ABI 6.5.0-4
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Mon, 31 Jul 2023 16:56:42 +0200
+
+linux-meta-unstable (6.5.0.2.2) mantic; urgency=medium
+
+  * Bump ABI 6.5.0-2
+
+  * Remove non-LPAE kernel flavor (LP: #2025265)
+    - [Packaging] Transition armhf generic-lpae to generic
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Wed, 19 Jul 2023 07:32:36 +0200
+
+linux-meta-unstable (6.5.0.1.1) mantic; urgency=medium
+
+  * Bump ABI 6.5.0-1
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Mon, 10 Jul 2023 10:10:17 +0200
+
+linux-meta-unstable (6.4.0.8.8) mantic; urgency=medium
+
+  * Bump ABI 6.4.0-8
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Mon, 26 Jun 2023 11:16:21 +0200
+
+linux-meta-unstable (6.4.0.7.7) mantic; urgency=medium
+
+  * Bump ABI 6.4.0-7
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Mon, 19 Jun 2023 09:10:04 +0200
+
+linux-meta-unstable (6.4.0.6.6) mantic; urgency=medium
+
+  * Bump ABI 6.4.0-6
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Thu, 15 Jun 2023 23:47:01 +0200
+
+linux-meta-unstable (6.4.0.5.5) mantic; urgency=medium
+
+  * Bump ABI 6.4.0-5
+
+  * Miscellaneous Ubuntu changes
+    - [Packaging] Drop absolete 32-bit powerpc arch
+    - [Packaging] Drop oem-20.04 transitionals
+    - [Packaging] roll oem-22.04 to hwe-22.04
+    - [Packaging] Add armhf to virtual pointing at generic-lpae
+    - [Packaging] Transition kvm to virtual
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Tue, 06 Jun 2023 08:51:42 +0200
+
+linux-meta-unstable (6.4.0.4.4) mantic; urgency=medium
+
+  * Bump ABI 6.4.0-4
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Tue, 30 May 2023 12:04:33 +0200
+
+linux-meta-unstable (6.4.0.3.3) mantic; urgency=medium
+
+  * Bump ABI 6.4.0-3
+
+  * Packaging resync (LP: #1786013)
+    - [Packaging] resync git-ubuntu-log
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Tue, 30 May 2023 11:15:26 +0200
+
+linux-meta-unstable (6.4.0.2.2) mantic; urgency=medium
+
+  * Bump ABI 6.4.0-2
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Mon, 22 May 2023 12:08:06 +0200
+
+linux-meta-unstable (6.4.0.1.1) mantic; urgency=medium
+
+  * Bump ABI 6.4.0-1
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Thu, 18 May 2023 08:13:03 +0200
+
+linux-meta-unstable (6.4.0.0.0) mantic; urgency=medium
+
+  * Empty entry
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Thu, 18 May 2023 08:10:04 +0200
+
+linux-meta (6.3.0.4.4) mantic; urgency=medium
+
+  * Bump ABI 6.3.0-4
+
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Thu, 11 May 2023 13:27:59 +0200
+
+linux-meta (6.3.0.3.3) mantic; urgency=medium
+
+  * Bump ABI 6.3.0-3
+
+  * Packaging resync (LP: #1786013)
+    - [Packaging] update variants
+
+  * Miscellaneous Ubuntu changes
+    - [Packaging] rename to linux and move to mantic
+
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Wed, 10 May 2023 15:12:16 +0200
+
+linux-meta (6.3.0.2.2) mantic; urgency=medium
+
+  * Bump ABI 6.3.0-2
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Wed, 26 Apr 2023 21:55:37 +0200
+
+linux-meta-unstable (6.3.0.1.1) lunar; urgency=medium
+
+  * Bump ABI 6.3.0-1
+
+  * Packaging resync (LP: #1786013)
+    - [Packaging] resync debian/dkms-versions from main package
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Wed, 26 Apr 2023 15:40:15 +0200
+
+linux-meta-unstable (6.3.0.0.0) lunar; urgency=medium
+
+  * Empty entry
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Wed, 26 Apr 2023 14:50:04 +0200
 
 linux-meta (6.2.0.21.21) lunar; urgency=medium
 

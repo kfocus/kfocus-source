@@ -10,6 +10,8 @@
 # Run By : Scripts that source this file
 # Package: kfocus-main
 #
+# See documentation in rtests
+#
 _cm2EchoFn    () { 1>&2 echo -e  "$*"; }
 _cm2NechoFn   () { 1>&2 echo -ne "$*"; }
 _cm2EchoIntFn () { printf '%d' "${1:-0}" 2>/dev/null; }
