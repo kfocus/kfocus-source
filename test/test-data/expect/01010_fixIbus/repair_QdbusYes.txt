@@ -1,0 +1,17 @@
+Check kfocus-fix-ibus
+Command: repair
+Qdbus String: :1.0
+ org.freedesktop.systemd1
+:1.15
+ org.a11y.Bus
+:1.16
+ org.kde.kappmenu
+ org.kde.kcookiejar5
+ org.kde.kded5
+:1.8
+:1.9
+org.freedesktop.portal.IBus
+org.freedesktop.DBus
+
+_fi2MainFn repair OUTPUT:
+IBus configuration repaired.

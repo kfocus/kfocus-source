@@ -1,0 +1,151 @@
+#!/bin/bash
+#
+# Test for default kfocus-fan on mocked hardware
+#
+# set -u is set in _runUnitTests (the test harness)
+#
+
+## BEGIN _overwriteWithMocksFn {
+# Purpose: Source and overwrite function with mocks
+_overwriteWithMocksFn () {
+  declare _exe_file;
+  # shellcheck disable=SC2154
+  _exe_file="${_t00TopDir}";
+  _exe_file+='/package-main/usr/lib/kfocus/bin/kfocus-fix-ibus';
+  # shellcheck disable=SC1090
+  source "${_exe_file}" || exit 1;
+}
+## . END _overwriteWithMocksFn }
+
+## BEGIN _unsetMocksFn {
+# Purpose : Unset mocked functions and other globals to prevent
+#   pollution of namespaces. Mocked functions from commons.2.source are not
+#   reset here; instead they are re-source after every test in runUnitTests.
+#   See more notes in 00900.
+_unsetMocksFn () { unset _fi2StderrFn; }
+## . END _unsetMocksFn }
+_mockStr="$(cat << 'EOT';
+:1.0
+ org.freedesktop.systemd1
+:1.15
+ org.a11y.Bus
+:1.16
+ org.kde.kappmenu
+ org.kde.kcookiejar5
+ org.kde.kded5
+:1.8
+:1.9
+org.freedesktop.portal.IBus
+org.freedesktop.DBus
+EOT
+)";
+
+_mockQdbusNoFn () { 
+  _qdbusExe () { echo ''; }
+}
+_mockQdbusNoFailFn () { 
+  _qdbusExe () { echo ''; return 1; }
+}
+_mockQdbusYesFn () { 
+  _qdbusExe () { echo "${_mockStr}"; }
+}
+_mockQdbuswithIbusFailFn () { 
+  _qdbusExe () { echo "${_mockStr}"; return 1; }
+}
+
+## BEGIN _runTestFn {
+# This MUST be called '_runTestFn' for use by the _runUnitTests
+_runTestFn () {
+  declare _fail_count _assert_table _assert_count _assert_idx _assert_line \
+    _inner_str _tag_str _file _expect_file _msg _check_str _count_str;
+
+  # Use function from _runUnitTests: clear out run dir and check expect dir
+  if ! _t00ClearRunDirFn;    then return 1; fi
+  if ! _t00CheckExpectDirFn; then return 1; fi
+
+  # WE DO NOT NEED TO IMPORT COMMON FOR sourced scripts, as the common lib
+  #   is already imported by _runUnitTests.
+  # _importCommonFn;
+
+  # Source and overwrite functions with mocks
+  _overwriteWithMocksFn;
+
+  # Shift off header from _cm2ModelTable to create _assert_table.
+  # This will grow with model support.
+  _assert_table=(
+    'check|QdbusNo'
+    'check|QdbusNoFail'
+    'check|QdbusYes'
+    'check|QdbuswithIbusFail'
+    'repair|QdbusNo'
+    'repair|QdbusNoFail'
+    'repair|QdbusYes'
+    'repair|QdbuswithIbusFail'
+    'repair|QdbusNo'
+    'repair|QdbusNoFail'
+    'repair|QdbusYes'
+    'repair|QdbuswithIbusFail'
+  );
+
+  ## Begin Iterate through assertions {
+  _cr=$'\n';
+  _fail_count=0;
+  _assert_count="${#_assert_table[@]}";
+  _assert_idx=1;
+  for _assert_line in "${_assert_table[@]}"; do
+    IFS='|' read -r -d '' -a _bit_list < <(echo -n "${_assert_line}");
+    _arg_str="${_bit_list[0]}";
+    # Mock qdbus using function
+    _set_exe="_mock${_bit_list[1]}Fn";
+    "${_set_exe}";
+
+    # Calculate expect and run files
+    # bashsupport disable=BP2001
+    _file="$( printf '%s_%s.txt' "${_bit_list[0]}" "${_bit_list[1]}" )";
+
+    # shellcheck disable=SC2154
+    _expect_file="${_t00ExpectDir}/${_file}";
+    # shellcheck disable=SC2154
+    _run_file="${_t00RunDir}/${_file}";
+
+    _msg="$(cat << EOT
+Check kfocus-fix-ibus
+Command: ${_arg_str}
+Qdbus String: $(_qdbusExe)
+EOT
+    )";
+
+    echo "${_msg}" > "${_run_file}";
+    echo -e "\n_fi2MainFn ${_arg_str} OUTPUT:" >> "${_run_file}";
+    _fi2MainFn "${_arg_str}" >> "${_run_file}" 2>&1
+
+    # shellcheck disable=SC2154
+    _count_str="$(_t00MakeCountStrFn "${_assert_idx}" "${_assert_count}")";
+
+    ## Begin Check diffs
+    if [ ! -f "${_expect_file}" ]; then touch "${_expect_file}"; fi
+    _check_str="$(diff -r --brief "${_expect_file}" "${_run_file}" )";
+    if [ -z "${_check_str}" ]; then
+      _cm2EchoFn "  ok  : ${_count_str} ${_msg}";
+    else
+      _cm2EchoFn "  fail: ${_count_str} ${_msg}";
+      _cm2EchoFn '    Please compare expected to run file';
+      meld "${_expect_file}" "${_run_file}";
+      (( _fail_count++ ));
+    fi
+    ## . End Check diffs }
+      (( _assert_idx++ ));
+  done
+  ## End Iterate through assertions }
+
+  if [ "${_fail_count}" -gt 0 ]; then
+    _cm2EchoFn "FAIL: ${_fail_count} of ${_assert_count} asserts failed.";
+  else
+    _cm2EchoFn 'OK  : Results match expected';
+  fi
+
+  _unsetMocksFn;
+
+  return "${_fail_count}";
+}
+## . END _runTestFn }
