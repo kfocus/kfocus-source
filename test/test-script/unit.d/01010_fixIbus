@@ -1,4 +1,6 @@
 #!/bin/bash
+#All of our nested mock functions are showing up as unreachable, silence it
+#shellcheck disable=SC2317
 #
 # Test for default kfocus-fan on mocked hardware
 #
@@ -7,6 +9,8 @@
 
 ## BEGIN _overwriteWithMocksFn {
 # Purpose: Source and overwrite function with mocks
+# The global declares are on purpose for modifying global vars.
+# bashsupport disable=BP2001
 _overwriteWithMocksFn () {
   declare _exe_file;
   # shellcheck disable=SC2154
@@ -179,8 +183,8 @@ _mockDconfWithIbusBadConfReadonlyFn () {
 # This MUST be called '_runTestFn' for use by the _runUnitTests
 _runTestFn () {
   declare _fail_count _assert_table _assert_count _assert_idx _assert_line \
-    _inner_str _tag_str _file _expect_file _msg _check_str _count_str \
-    _old_ibus_conf;
+    _file _expect_file _msg _check_str _count_str _cr _testfn_str _arg_str \
+    _set_exe _run_file _bit_list ;
 
   # Use function from _runUnitTests: clear out run dir and check expect dir
   if ! _t00ClearRunDirFn;    then return 1; fi
@@ -251,7 +255,7 @@ _runTestFn () {
 
     _msg="$(cat << EOT
 Check kfocus-fix-ibus
-Command: ${_arg_str}
+Function Call: _fi2${_testfn_str} '${_arg_str}';
 Qdbus String: $(_qdbusExe)
 Dconf Panel Indicator State: ${_mockDconfIbusSystray}
 Dconf Keyboard Follows System: ${_mockDconfIbusSystemKeyboard}
@@ -264,7 +268,6 @@ EOT
 
     _msg="$(cat << EOT
 Check kfocus-fix-ibus changes
-Command: ${_arg_str}
 Dconf Panel Indicator State: ${_mockDconfIbusSystray}
 Dconf Keyboard Follows System: ${_mockDconfIbusSystemKeyboard}
 Return Value: $?

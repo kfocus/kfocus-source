@@ -1,5 +1,5 @@
 Check kfocus-fix-ibus
-Command: repair
+Function Call: _fi2MainFn 'repair';
 Qdbus String: :1.0
  org.freedesktop.systemd1
 :1.15
@@ -19,7 +19,6 @@ _fi2MainFn repair OUTPUT:
 IBus configuration repaired.
 
 Check kfocus-fix-ibus changes
-Command: repair
 Dconf Panel Indicator State: false
 Dconf Keyboard Follows System: true
 Return Value: 0
