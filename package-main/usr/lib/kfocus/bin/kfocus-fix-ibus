@@ -8,7 +8,7 @@
 # Summary  : kfocus-fix-ibus <check|repair>
 # Purpose  : Provides features for checking IBus configuration for
 #            compatibility with Plasma and reconfiguring IBus if needed.
-#            Also usable as a library for adding IBus checking and fixing
+#            Also, usable as a library for adding IBus checking and fixing
 #            capabilities to other scripts.
 # Example  : kfocus-fix-ibus check; kfocus-fix-ibus repair;
 # License  : GPLv2
@@ -20,6 +20,7 @@ set -u;
 _fi2StderrFn () { 1>&2 echo -e  "$*"; }
 
 ## BEGIN _fi2RepairIbusConfigFn {
+# See https://unix.stackexchange.com/questions/49452
 _fi2RepairIbusConfigFn () {
   "${_dconfExe}" write \
     '/desktop/ibus/panel/show-icon-on-systray' 'false' || return 1;
@@ -104,7 +105,11 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   if [ -z "${_qdbusExe}" ]; then
     _fi2StderrFn 'qdbus not found';
-    return 1;
+    exit 1;
+  fi
+  if [ -z "${_dconfExe}" ]; then
+    _fi2StderrFn 'dconf not found';
+    exit 0;
   fi
 
   _fi2MainFn "$@";
