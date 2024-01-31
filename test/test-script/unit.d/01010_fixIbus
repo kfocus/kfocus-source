@@ -14,6 +14,9 @@ _overwriteWithMocksFn () {
   _exe_file+='/package-main/usr/lib/kfocus/bin/kfocus-fix-ibus';
   # shellcheck disable=SC1090
   source "${_exe_file}" || exit 1;
+  # Override executables with functions
+  declare -g _qdbusExe="_qdbusExe";
+  declare -g _dconfExe="_dconfExe";
 }
 ## . END _overwriteWithMocksFn }
 
@@ -22,9 +25,9 @@ _overwriteWithMocksFn () {
 #   pollution of namespaces. Mocked functions from commons.2.source are not
 #   reset here; instead they are re-source after every test in runUnitTests.
 #   See more notes in 00900.
-_unsetMocksFn () { unset _fi2StderrFn; }
+_unsetMocksFn () { unset _qdbusExe; }
 ## . END _unsetMocksFn }
-_mockStr="$(cat << 'EOT';
+_mockWithIbusStr="$(cat << 'EOT';
 :1.0
  org.freedesktop.systemd1
 :1.15
@@ -35,10 +38,28 @@ _mockStr="$(cat << 'EOT';
  org.kde.kded5
 :1.8
 :1.9
-org.freedesktop.portal.IBus
+org.freedesktop.IBus
 org.freedesktop.DBus
 EOT
 )";
+_mockNoIbusStr="$(cat << 'EOT';
+:1.0
+ org.freedesktop.systemd1
+:1.15
+ org.a11y.Bus
+:1.16
+ org.kde.kappmenu
+ org.kde.kcookiejar5
+ org.kde.kded5
+:1.8
+:1.9
+org.freedesktop.DBus
+EOT
+)";
+
+# These are dynamically changed by the Dconf mocks.
+_mockDconfIbusSystray='';
+_mockDconfIbusSystemKeyboard='';
 
 _mockQdbusNoFn () { 
   _qdbusExe () { echo ''; }
@@ -46,18 +67,99 @@ _mockQdbusNoFn () {
 _mockQdbusNoFailFn () { 
   _qdbusExe () { echo ''; return 1; }
 }
-_mockQdbusYesFn () { 
-  _qdbusExe () { echo "${_mockStr}"; }
+_mockQdbusWithIbusFn () { 
+  _qdbusExe () { echo "${_mockWithIbusStr}"; }
 }
-_mockQdbuswithIbusFailFn () { 
-  _qdbusExe () { echo "${_mockStr}"; return 1; }
+_mockQdbusWithIbusFailFn () { 
+  _qdbusExe () { echo "${_mockWithIbusStr}"; return 1; }
+}
+_mockQdbusNoIbusFn () {
+  _qdbusExe () { echo "${_mockNoIbusStr}"; }
+}
+_mockQdbusNoIbusFailFn () {
+  _qdbusExe () { echo "${_mockNoIbusStr}"; return 1; }
+}
+_mockDconfActiveFn () {
+  _dconfExe () {
+    if [ "${1:-}" = 'read' ]; then
+      case "${2:-}" in
+        /desktop/ibus/panel/show-icon-on-systray)
+          echo "${_mockDconfIbusSystray}";
+          ;;
+        /desktop/ibus/general/use-system-keyboard-layout)
+          echo "${_mockDconfIbusSystemKeyboard}";
+          ;;
+        *)
+          return 1;
+          ;;
+      esac
+    elif [ "${1:-}" = 'write' ]; then
+      case "${2:-}" in
+        /desktop/ibus/panel/show-icon-on-systray)
+          _mockDconfIbusSystray="${3:-}";
+          ;;
+        /desktop/ibus/general/use-system-keyboard-layout)
+          _mockDconfIbusSystemKeyboard="${3:-}";
+          ;;
+        *)
+          return 1;
+          ;;
+      esac
+    else
+      return 1;
+    fi
+  }
+}
+_mockDconfNoIbusFn () {
+  _mockDconfIbusSystray='';
+  _mockDconfIbusSystemKeyboard='';
+  _mockDconfActiveFn;
+}
+_mockDconfNoIbusFailFn () {
+  _dconfExe () {
+    echo '';
+    return 1;
+  }
+}
+_mockDconfWithIbusBadConfFn () {
+  _mockDconfIbusSystray='true';
+  _mockDconfIbusSystemKeyboard='false';
+  _mockDconfActiveFn;
+}
+_mockDconfWithIbusGoodConfFn () {
+  _mockDconfIbusSystray='false';
+  _mockDconfIbusSystemKeyboard='true';
+  _mockDconfActiveFn;
+}
+_mockDconfWithIbusBadConfReadonlyFn () {
+  _mockDconfIbusSystray='true';
+  _mockDconfIbusSystemKeyboard='false';
+  _dconfExe () {
+    if [ "${1:-}" = 'read' ]; then
+      case "${2:-}" in
+        /desktop/ibus/panel/show-icon-on-systray)
+          echo "${_mockDconfIbusSystray}";
+          ;;
+        /desktop/ibus/general/use-system-keyboard-layout)
+          echo "${_mockDconfIbusSystemKeyboard}";
+          ;;
+        *)
+          return 1;
+          ;;
+      esac
+    else
+      # this will return 1 even if a valid write command is passed
+      return 1;
+    fi
+  }
 }
 
 ## BEGIN _runTestFn {
 # This MUST be called '_runTestFn' for use by the _runUnitTests
 _runTestFn () {
   declare _fail_count _assert_table _assert_count _assert_idx _assert_line \
-    _inner_str _tag_str _file _expect_file _msg _check_str _count_str;
+    _inner_str _tag_str _file _expect_file _msg _check_str _count_str \
+    _old_ibus_conf;
 
   # Use function from _runUnitTests: clear out run dir and check expect dir
   if ! _t00ClearRunDirFn;    then return 1; fi
@@ -73,35 +175,53 @@ _runTestFn () {
   # Shift off header from _cm2ModelTable to create _assert_table.
   # This will grow with model support.
   _assert_table=(
-    'check|QdbusNo'
-    'check|QdbusNoFail'
-    'check|QdbusYes'
-    'check|QdbuswithIbusFail'
-    'repair|QdbusNo'
-    'repair|QdbusNoFail'
-    'repair|QdbusYes'
-    'repair|QdbuswithIbusFail'
-    'repair|QdbusNo'
-    'repair|QdbusNoFail'
-    'repair|QdbusYes'
-    'repair|QdbuswithIbusFail'
+    'CheckIbusConfigFn||QdbusNo'
+    'CheckIbusConfigFn||QdbusNoFail'
+    'CheckIbusConfigFn||QdbusWithIbusFail'
+    'CheckIbusConfigFn||QdbusNoIbus'
+    'CheckIbusConfigFn||QdbusNoIbusFail'
+    # N.B. The next assert *must* be at the end of this section as it
+    # influences the behavior of subsequent assertions.
+    'CheckIbusConfigFn||QdbusWithIbus'
+
+    'CheckIbusConfigFn||DconfNoIbus'
+    'CheckIbusConfigFn||DconfNoIbusFail'
+    'CheckIbusConfigFn||DconfWithIbusBadConf'
+    'CheckIbusConfigFn||DconfWithIbusGoodConf'
+
+    'RepairIbusConfigFn||DconfWithIbusBadConf'
+    'RepairIbusConfigFn||DconfWithIbusGoodConf'
+    'RepairIbusConfigFn||DconfWithIbusBadConfReadonly'
+
+    'MainFn|check|DconfWithIbusGoodConf'
+    'MainFn|check|DconfWithIbusBadConf'
+    'MainFn|repair|DconfWithIbusBadConf'
+    'MainFn|repair|DconfWithIbusBadConfReadonly'
+    'MainFn||DconfWithIbusBadConf'
+    'MainFn||DconfWithIbusGoodConf'
+    'MainFn||DconfWithIbusBadConfReadonly'
   );
+
+  # Reset 
 
   ## Begin Iterate through assertions {
   _cr=$'\n';
   _fail_count=0;
   _assert_count="${#_assert_table[@]}";
   _assert_idx=1;
+
+  _mockDconfWithIbusGoodConfFn;
   for _assert_line in "${_assert_table[@]}"; do
     IFS='|' read -r -d '' -a _bit_list < <(echo -n "${_assert_line}");
-    _arg_str="${_bit_list[0]}";
+    _testfn_str="${_bit_list[0]}";
+    _arg_str="${_bit_list[1]}";
     # Mock qdbus using function
-    _set_exe="_mock${_bit_list[1]}Fn";
+    _set_exe="_mock${_bit_list[2]}Fn";
     "${_set_exe}";
 
     # Calculate expect and run files
     # bashsupport disable=BP2001
-    _file="$( printf '%s_%s.txt' "${_bit_list[0]}" "${_bit_list[1]}" )";
+    _file="$( printf '%s_%s_%s.txt' "${_bit_list[0]}" "${_bit_list[1]}" "${_bit_list[2]}" )";
 
     # shellcheck disable=SC2154
     _expect_file="${_t00ExpectDir}/${_file}";
@@ -112,12 +232,25 @@ _runTestFn () {
 Check kfocus-fix-ibus
 Command: ${_arg_str}
 Qdbus String: $(_qdbusExe)
+Dconf Panel Indicator State: ${_mockDconfIbusSystray}
+Dconf Keyboard Follows System: ${_mockDconfIbusSystemKeyboard}
 EOT
     )";
 
     echo "${_msg}" > "${_run_file}";
-    echo -e "\n_fi2MainFn ${_arg_str} OUTPUT:" >> "${_run_file}";
-    _fi2MainFn "${_arg_str}" >> "${_run_file}" 2>&1
+    echo -e "\n_fi2${_testfn_str} ${_arg_str} OUTPUT:" >> "${_run_file}";
+    "_fi2${_testfn_str}" "${_arg_str}" >> "${_run_file}" 2>&1
+
+    _msg="$(cat << EOT
+Check kfocus-fix-ibus changes
+Return Value: $?
+Command: ${_arg_str}
+Qdbus String: $(_qdbusExe)
+Dconf Panel Indicator State: ${_mockDconfIbusSystray}
+Dconf Keyboard Follows System: ${_mockDconfIbusSystemKeyboard}
+EOT
+    )";
+    echo "${_msg}" >> "${_run_file}";
 
     # shellcheck disable=SC2154
     _count_str="$(_t00MakeCountStrFn "${_assert_idx}" "${_assert_count}")";

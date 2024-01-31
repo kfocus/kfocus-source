@@ -29,9 +29,10 @@ _fi2StderrFn () { 1>&2 echo -e  "$*"; }
 # Returns   : 0 on success, 1 if a DConf key cannot be written to
 #
 _fi2RepairIbusConfigFn () {
-  dconf write '/desktop/ibus/panel/show-icon-on-systray' 'false' || return 1;
-  dconf write '/desktop/ibus/general/use-system-keyboard-layout' 'true' || \
-    return 1;
+  "${_dconfExe}" write \
+    '/desktop/ibus/panel/show-icon-on-systray' 'false' || return 1;
+  "${_dconfExe}" write \
+    '/desktop/ibus/general/use-system-keyboard-layout' 'true' || return 1;
 }
 ## . END _fi2RepairIbusConfigFn }
 
@@ -50,9 +51,10 @@ _fi2CheckIbusConfigFn () {
 
   # NOTE: Right now this just checks for a running IBus service. It may be
   # worthwhile to also check and see if IBus is installed.
-  if qdbus | grep -qi 'org.freedesktop.ibus'; then
-    _do_show_icon="$(dconf read '/desktop/ibus/panel/show-icon-on-systray')";
-    _do_use_system_keyboard="$(dconf read \
+  if grep -qai 'org.freedesktop.ibus' < <("${_qdbusExe}"); then
+    _do_show_icon="$("${_dconfExe}" read \
+      '/desktop/ibus/panel/show-icon-on-systray')";
+    _do_use_system_keyboard="$("${_dconfExe}" read \
       '/desktop/ibus/general/use-system-keyboard-layout')";
 
     if [ "${_do_show_icon}" != 'false' ] || \
@@ -69,28 +71,44 @@ _fi2MainFn () {
 
   _mode_str="${1:-}";
 
-  if [ "${_mode_str}" = 'check' ]; then
-    if _fi2CheckIbusConfigFn; then
-      _fi2StderrFn 'IBus is configured properly.';
-      return;
-    else
-      _fi2StderrFn 'IBus is misconfigured.';
-      return 1;
-    fi
-  elif [ "${_mode_str}" = 'repair' ]; then
-    if _fi2RepairIbusConfigFn; then
-      _fi2StderrFn 'IBus configuration repaired.';
-      return;
-    else
-      _fi2StderrFn 'IBus configuration repair failed!';
-      return 1;
-    fi
-  else
-    _fi2StderrFn "Unrecognized command |${_mode_str}|.";
-    return 1;
-  fi
+  case "${_mode_str}" in
+    check)
+      if _fi2CheckIbusConfigFn; then
+        _fi2StderrFn 'IBus is configured properly.';
+        return;
+      else
+        _fi2StderrFn 'IBus is misconfigured.';
+        return 1;
+      fi
+      ;;
+    repair)
+      if _fi2RepairIbusConfigFn; then
+        _fi2StderrFn 'IBus configuration repaired.';
+        return;
+      else
+        _fi2StderrFn 'IBus configuration repair failed!';
+        return 1;
+      fi
+      ;;
+    *)
+      if ! _fi2CheckIbusConfigFn; then
+        if _fi2RepairIbusConfigFn; then
+          _fi2StderrFn 'Bad IBus configuration detected, repair successful.';
+          return
+        else
+          _fi2StderrFn 'Bad IBus configuration detected, repair failed!';
+          return 1;
+        fi
+      else
+        _fi2StderrFn   'IBus is configured properly.';
+        return;
+      fi
+      ;;
+  esac
 }
 ## . END _fi2MainFn }
+
+declare _binName _binDir _baseDir _baseName _qdbusExe;
 
 ## BEGIN Run fi2MainFn when script is NOT sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
@@ -98,6 +116,13 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binDir="$(   dirname  "${_binName}" )" || exit 101;
   _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
   _baseName="$( basename "${_binName}" )" || exit 101;
+  _qdbusExe="$( command -v qdbus       )";
+  _dconfExe="$( command -v dconf       )";
+
+  if [ -z "${_qdbusExe}" ]; then
+    _fi2StderrFn 'qdbus not found';
+    return 1;
+  fi
 
   _fi2MainFn "$@";
 fi
