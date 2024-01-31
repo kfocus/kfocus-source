@@ -105,7 +105,6 @@ _exeLookupList=(
   'wallpapers|dolphin;/usr/share/wallpapers||dolphin|Wallpapers: View Wallpaper Images'
   'webcamoid|webcamoid||webcamoid|Webcamoid: Test Your Webcam'
   'winff|winff||winff-qt|WinFF: Convert Video using ffmpeg'
-  'zoom|zoom||zoom|Zoom: Start and Join Video and Web Conferencing'
 
   # Packages with special handlers
   'dropbox|!dropbox|dropbox|dropbox|Dropbox: Sync to Cloud Storage'
@@ -113,6 +112,7 @@ _exeLookupList=(
   'intellij|!intellij|jetbrains-toolbox|jetbrains-toolbox|IntelliJ: JetBrains Java IDE'
   'pycharm|!pycharm|jetbrains-toolbox|jetbrains-toolbox|PyCharm: JetBrains Python IDE'
   'webstorm|!webstorm|jetbrains-toolbox|jetbrains-toolbox|WebStorm: JetBrains Web IDE'
+  'zoom|!zoom||zoom|Zoom: Start and Join Video and Web Conferencing'
 
   # These are experimental and WIP
   # 'nodejs16|konsole;-e man node|node|nodejs|NodeJS: Javascript + TCP Server'
@@ -621,6 +621,16 @@ _runAppHandlerFn () {
       _exe_str="$(command -v 'dropbox' || true)";
       if [ -n "${_exe_str}" ]; then
         "${_exe_str}" start -i; # ... and continue
+      fi
+      ;;
+
+    zoom)
+      if ! "${_binDir}/kfocus-fix-ibus" 'check'; then
+        "${_binDir}/kfocus-fix-ibus" 'repair';
+      fi
+      _exe_str="$(command -v 'zoom' || true)";
+      if [ -n "${_exe_str}" ]; then
+        "${_exe_str}" & disown; # ... and continue
       fi
       ;;
 

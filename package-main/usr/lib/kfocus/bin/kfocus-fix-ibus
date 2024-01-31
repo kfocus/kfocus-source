@@ -1,0 +1,104 @@
+#!/bin/bash
+#
+# Copyright 2019-2024 MindShare Inc.
+#
+# Written for the Kubuntu Focus by M. Mikowski and A. Rainbolt.
+#
+# Name     : kfocus-fix-ibus
+# Summary  : kfocus-fix-ibus <check|repair>
+# Purpose  : Provides features for checking IBus configuration for
+#            compatibility with Plasma and reconfiguring IBus if needed.
+#            Also usable as a library for adding IBus checking and fixing
+#            capabilities to other scripts.
+# Example  : kfocus-fix-ibus check; kfocus-fix-ibus repair;
+# License  : GPLv2
+# Run By   : Developers only
+# Spec     : 4027
+#
+set -u;
+
+_fi2StderrFn () { 1>&2 echo -e  "$*"; }
+
+## BEGIN _fi2RepairIbusConfigFn {
+# Summary   : _fi2RepairIbusConfigFn
+# Purpose   : Reconfigures IBus to be compatible with Plasma.
+# Example   : _fi2RepairIbusConfigFn
+# Arguments : none
+# Globals   : none
+# Outputs   : none
+# Returns   : 0 on success, 1 if a DConf key cannot be written to
+#
+_fi2RepairIbusConfigFn () {
+  dconf write '/desktop/ibus/panel/show-icon-on-systray' 'false' || return 1;
+  dconf write '/desktop/ibus/general/use-system-keyboard-layout' 'true' || \
+    return 1;
+}
+## . END _fi2RepairIbusConfigFn }
+
+## BEGIN _fi2CheckIbusConfigFn {
+# Summary   : _fi2CheckIbusConfigFn
+# Purpose   : Checks IBus config for compatibility with Plasma.
+# Example   : _fi2CheckIbusConfigFn
+# Arguments : none
+# Globals   : none
+# Outputs   : none
+# Returns   : 0 if IBus configuration is Plasma-compatible or IBus is not
+#             running, 1 otherwise
+#
+_fi2CheckIbusConfigFn () {
+  declare _do_show_icon _do_use_system_keyboard;
+
+  # NOTE: Right now this just checks for a running IBus service. It may be
+  # worthwhile to also check and see if IBus is installed.
+  if qdbus | grep -qi 'org.freedesktop.ibus'; then
+    _do_show_icon="$(dconf read '/desktop/ibus/panel/show-icon-on-systray')";
+    _do_use_system_keyboard="$(dconf read \
+      '/desktop/ibus/general/use-system-keyboard-layout')";
+
+    if [ "${_do_show_icon}" != 'false' ] || \
+      [ "${_do_use_system_keyboard}" != 'true' ]; then
+      return 1;
+    fi
+  fi
+}
+## . END _fi2CheckIbusConfigFn }
+
+## BEGIN _fi2MainFn {
+_fi2MainFn () {
+  declare _mode_str;
+
+  _mode_str="${1:-}";
+
+  if [ "${_mode_str}" = 'check' ]; then
+    if _fi2CheckIbusConfigFn; then
+      _fi2StderrFn 'IBus is configured properly.';
+      return;
+    else
+      _fi2StderrFn 'IBus is misconfigured.';
+      return 1;
+    fi
+  elif [ "${_mode_str}" = 'repair' ]; then
+    if _fi2RepairIbusConfigFn; then
+      _fi2StderrFn 'IBus configuration repaired.';
+      return;
+    else
+      _fi2StderrFn 'IBus configuration repair failed!';
+      return 1;
+    fi
+  else
+    _fi2StderrFn "Unrecognized command |${_mode_str}|.";
+    return 1;
+  fi
+}
+## . END _fi2MainFn }
+
+## BEGIN Run fi2MainFn when script is NOT sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+
+  _fi2MainFn "$@";
+fi
+## . END Run fi2MainFn when script is NOT sourced }

@@ -42,6 +42,20 @@ _importCommonFn () {
 }
 ## . END _importCommonFn }
 
+## BEGIN _importFixIbusFun {
+_importFixIbusFn () {
+  declare _lib_file;
+  _lib_file="${_binDir}/kfocus-fix-ibus";
+  if [ -r "${_lib_file}" ]; then
+    # shellcheck source=../bin/kfocus-fix-ibus
+    source "${_lib_file}" || exit 201;
+  else
+    1>&2 echo "${_baseName}: ABORT - Cannot source lib |${_lib_file}|";
+    exit 201;
+  fi
+}
+## . END _importFixIbusFn }
+
 ## BEGIN _testNagCountFn {
  # Purpose: Read a _drop_file count.
  #   Increment that count and place in _drop_file.
@@ -653,6 +667,42 @@ _runKernelCleanFn () {
 }
 ## . END _runKernelCleanFn }
 
+## BEGIN _checkIbusConfigFn {
+_chkIbusConfigFn () {
+  declare _title_str _prompt_msg _ans_str;
+
+  _cm2SetMsgFn 'Check and Fix IBus Configuration';
+  _title_str="${_rootTitle}: IBus Configuration Check";
+
+  if ! _fi2CheckIbusConfigFn; then
+    _prompt_msg="$(cat <<_EOH1
+IBus is running on your system, but it is not configured properly. This may
+cause strange keyboard and application behavior, and you may notice an odd
+keyboard indicator in your system tray.
+
+Fix IBus configuration now?
+_EOH1
+    )";
+    _ans_str="$(
+      _cm2PromptUserFn "${_prompt_msg}" "${_title_str}" 'a';
+    )";
+
+    if [ "${_ans_str}" = 'y' ]; then
+      if _fi2RepairIbusConfigFn; then
+        _cm2PromptUserFn 'IBus configuration repaired.' "${_title_str}";
+        _cm2SucStrFn 'IBus configuration repaired.';
+      else
+        _cm2PromptUserFN 'IBus configuration repair failed!' "${_title_str}";
+        _cm2WarnFn;
+        return;
+      fi
+    fi
+  fi
+
+  _cm2SucFn;
+}
+## . END _checkIbusConfigFn }
+
 ## BEGIN _runDropScriptsFn {
 # Summary : _runDropScriptsFn;
 # Purpose : Run fixup scripts in kfocus-focusrx.d in order of version.
@@ -965,6 +1015,7 @@ _mainFn () {
   _chkNvidiaPkgFn;
   _chkXorgConfigFn;
   _runKernelCleanFn;
+  _chkIbusConfigFn;
   _runDropScriptsFn;
   _chkExperRepoFn;
   _announceEndFn;
@@ -999,6 +1050,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   # Import libs and assign more global vars
   _importCommonFn;
+  _importFixIbusFn;
   _escExe="$(_cm2GetEscExeFn)" || exit;
   _focusRxDropDir="${_binDir}/kfocus-focusrx.d";
   _kbdColorSetExe="${_binDir}/kfocus-kb-color-set";
