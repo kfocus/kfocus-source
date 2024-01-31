@@ -154,6 +154,27 @@ _mockDconfWithIbusBadConfReadonlyFn () {
   }
 }
 
+## BEGIN _fi2RepairIbusConfigFn {
+# Summary   : _fi2RepairIbusConfigFn
+# Purpose   : Reconfigures IBus to be compatible with Plasma.
+# Example   : _fi2RepairIbusConfigFn
+# Arguments : none
+# Globals   : none
+# Outputs   : none
+# Returns   : 0 on success, 1 if a DConf key cannot be written to
+## . END _fi2RepairIbusConfigFn }
+
+## BEGIN _fi2CheckIbusConfigFn {
+# Summary   : _fi2CheckIbusConfigFn
+# Purpose   : Checks IBus config for compatibility with Plasma.
+# Example   : _fi2CheckIbusConfigFn
+# Arguments : none
+# Globals   : none
+# Outputs   : none
+# Returns   : 0 if IBus configuration is Plasma-compatible or IBus is not
+#             running, 1 otherwise
+## . END _fi2CheckIbusConfigFn }
+
 ## BEGIN _runTestFn {
 # This MUST be called '_runTestFn' for use by the _runUnitTests
 _runTestFn () {
@@ -243,13 +264,13 @@ EOT
 
     _msg="$(cat << EOT
 Check kfocus-fix-ibus changes
-Return Value: $?
 Command: ${_arg_str}
-Qdbus String: $(_qdbusExe)
 Dconf Panel Indicator State: ${_mockDconfIbusSystray}
 Dconf Keyboard Follows System: ${_mockDconfIbusSystemKeyboard}
+Return Value: $?
 EOT
     )";
+    echo '' >> "${_run_file}";
     echo "${_msg}" >> "${_run_file}";
 
     # shellcheck disable=SC2154

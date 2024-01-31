@@ -1,0 +1,25 @@
+Check kfocus-fix-ibus
+Command: 
+Qdbus String: :1.0
+ org.freedesktop.systemd1
+:1.15
+ org.a11y.Bus
+:1.16
+ org.kde.kappmenu
+ org.kde.kcookiejar5
+ org.kde.kded5
+:1.8
+:1.9
+org.freedesktop.IBus
+org.freedesktop.DBus
+Dconf Panel Indicator State: false
+Dconf Keyboard Follows System: true
+
+_fi2MainFn  OUTPUT:
+IBus is configured properly.
+
+Check kfocus-fix-ibus changes
+Command: 
+Dconf Panel Indicator State: false
+Dconf Keyboard Follows System: true
+Return Value: 0

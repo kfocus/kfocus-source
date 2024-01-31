@@ -20,14 +20,6 @@ set -u;
 _fi2StderrFn () { 1>&2 echo -e  "$*"; }
 
 ## BEGIN _fi2RepairIbusConfigFn {
-# Summary   : _fi2RepairIbusConfigFn
-# Purpose   : Reconfigures IBus to be compatible with Plasma.
-# Example   : _fi2RepairIbusConfigFn
-# Arguments : none
-# Globals   : none
-# Outputs   : none
-# Returns   : 0 on success, 1 if a DConf key cannot be written to
-#
 _fi2RepairIbusConfigFn () {
   "${_dconfExe}" write \
     '/desktop/ibus/panel/show-icon-on-systray' 'false' || return 1;
@@ -37,15 +29,6 @@ _fi2RepairIbusConfigFn () {
 ## . END _fi2RepairIbusConfigFn }
 
 ## BEGIN _fi2CheckIbusConfigFn {
-# Summary   : _fi2CheckIbusConfigFn
-# Purpose   : Checks IBus config for compatibility with Plasma.
-# Example   : _fi2CheckIbusConfigFn
-# Arguments : none
-# Globals   : none
-# Outputs   : none
-# Returns   : 0 if IBus configuration is Plasma-compatible or IBus is not
-#             running, 1 otherwise
-#
 _fi2CheckIbusConfigFn () {
   declare _do_show_icon _do_use_system_keyboard;
 
