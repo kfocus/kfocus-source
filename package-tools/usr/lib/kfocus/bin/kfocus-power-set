@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2019-2022 MindShare Inc.
+# Copyright 2019-2024 MindShare Inc.
 # Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
 #
 # Name    : kfocus-power-set
@@ -141,7 +141,9 @@ _scanFn () {
     print|read) true;;
     set)
       _setNoTurboFn "${_noturbo_int}";
-      _setKbdEnableFn "${_kbdled_int}";
+      if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
+        _setKbdEnableFn "${_kbdled_int}";
+      fi
       # shellcheck disable=SC2076
       if [[ " ${_avail_gov_list[*]} " =~ " ${_altPsaveKey} " ]]; then
         _psave_key="${_altPsaveKey}";
@@ -239,7 +241,7 @@ _chkInitCpuFn () {
     _cm2SucStrFn 'Drop file found.'; _cm2SucFn; return 0;
   fi
 
-  # Skip if not an m2g5 or m2g5p model (both share config_code m2g5)
+  # Skip if not the m2g5 or m2g5p model (both share config_code m2g5)
   if [ "$(_cm2EchoModelStrFn 'config_code')" != 'm2g5' ]; then
     touch "${_cpuDropFile}" || _cm2WarnStrFn 'Could not add drop file';
     _cm2SucFn;

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2020-2022 MindShare Inc.
+# Copyright 2020-2024 MindShare Inc.
 # Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
 #
 # Name    : kfocus-kb-color-set
@@ -307,7 +307,7 @@ _enableKbdFn () {
     return 201;
   fi
 
-  # Handle m2g5p ite logic.
+  # Handle m2g5p ITE logic
   if [ "${_modelCode}" = 'm2g5p' ]; then
     _iteReadInStateFile;
     _enable_int="${_configStateList[2]}";
@@ -330,8 +330,8 @@ _enableKbdFn () {
       fi
     fi
 
-  # Handle m1, m2gX logic.
-  else
+  # Handle m1, m2 logic
+  elif [[ "${_modelCode}" =~ ^m1|m2 ]]; then
     _stdCalcKbdStateFn;
     if echo "${_set_str}" > "${_stdEnableFile}"; then
       # Do not save state if directed.
@@ -370,7 +370,7 @@ _readInStateFileFn () {
     _stdReadInStateFile;
   fi
 
-  # Handle apply directive.
+  # Handle apply directive
   if [ "${_arg_str}" = 'apply' ]; then
     _setKbdFromConfigFn;
   else
@@ -436,6 +436,7 @@ _toggleEnableFn () {
 ## BEGIN _mainFn {
 # Summary   : _mainFn <options>
 # Purpose   : Dispatch per option to set keyboard brightness and color.
+#   This is a no-op if _cm2EchoModelStrFn 'has_kb_led' echos 'n'.
 # Examples  : See below.
 # Arguments : Some options take values.
 #   Hex colors have the form '<rrggbb>'.
@@ -455,6 +456,12 @@ _toggleEnableFn () {
 #
 _mainFn () {
   declare _opt_str;
+
+  # Skip any action if model does not have kbd
+  if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'n' ]; then
+    return;
+  fi
+
   local OPTIND=1;
   while getopts 'c:C:e:E:lprs:t' _opt_str; do
     case "${_opt_str}" in
