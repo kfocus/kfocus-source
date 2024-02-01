@@ -105,8 +105,12 @@ _readNoTurboFn () {
 }
 
 _setKbdEnableFn () {
+  # Only if tool found
   if [ -x "${_kbdColorSetExe}" ]; then
-    "${_kbdColorSetExe}" -E "${1:-}";
+    # Only if model has LEDs
+    if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
+      "${_kbdColorSetExe}" -E "${1:-}";
+    fi
   fi
 }
 
@@ -141,9 +145,7 @@ _scanFn () {
     print|read) true;;
     set)
       _setNoTurboFn "${_noturbo_int}";
-      if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
-        _setKbdEnableFn "${_kbdled_int}";
-      fi
+      _setKbdEnableFn "${_kbdled_int}";
       # shellcheck disable=SC2076
       if [[ " ${_avail_gov_list[*]} " =~ " ${_altPsaveKey} " ]]; then
         _psave_key="${_altPsaveKey}";

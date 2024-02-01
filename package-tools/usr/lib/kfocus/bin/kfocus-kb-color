@@ -93,7 +93,7 @@ EOE
   esac
 
   if [ -n "${_prompt_msg}" ]; then
-    "${_cm2KdiagExe}" --title 'Keyboard Color Error' \
+    "${_cm2KdiagExe}" --title 'Keyboard Color Message' \
       --icon 'kfocus-bug-kbcolor' --msgbox "${_prompt_msg}";
     exit 0;
   fi
