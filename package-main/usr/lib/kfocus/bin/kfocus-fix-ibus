@@ -92,16 +92,12 @@ _fi2MainFn () {
 }
 ## . END _fi2MainFn }
 
-declare _binName _binDir _baseDir _baseName _qdbusExe;
+declare _qdbusExe _dconfExe;
 
 ## BEGIN Run fi2MainFn when script is NOT sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-  _binName="$(  readlink -f "$0"       )" || exit 101;
-  _binDir="$(   dirname  "${_binName}" )" || exit 101;
-  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
-  _baseName="$( basename "${_binName}" )" || exit 101;
-  _qdbusExe="$( command -v qdbus       )";
-  _dconfExe="$( command -v dconf       )";
+  _qdbusExe="$(command -v qdbus)";
+  _dconfExe="$(command -v dconf)";
 
   if [ -z "${_qdbusExe}" ]; then
     _fi2StderrFn 'qdbus not found';
