@@ -78,7 +78,7 @@ _echoInstKversListStrFn () {
 #   The version is in the <number> format, e.g. '5.13.0-1010'.
 #   WARNING: This routine expect only one image metapackage.
 # Example  :
-# _kversHweStr="$( _echoMetaKversStrFn linux-image-generic-hwe-20.04 )";
+# _kversHweStr="$( _echoMetaKversStrFn linux-image-generic-hwe-22.04 )";
 # Arguments: _str is the metapackage name to check
 #
 _echoMetaKversStrFn () {
@@ -96,7 +96,7 @@ _echoMetaKversStrFn () {
 }
 ## . END _echoMetaKversStrFn }
 
-## BEGIN _echoPurgeableKversListStr {
+## BEGIN _echoPurgableKversListStr {
 # Purpose  : Print to STDOUT all the kernel versions we think can be removed.
 #   Versions are in the <number> format, e.g. '5.13.0-1010'.
 #   Fields are newline delimited, sorted, and deduped.
@@ -104,23 +104,23 @@ _echoMetaKversStrFn () {
 #   This string EXCLUDES all versions we have already determined we are going
 #   to keep as found in _kversRunStr and similar.
 
-# Example  : _echoPurgeableKversListStr;
+# Example  : _echoPurgableKversListStr;
 # Arguments: Requires _aptListStr pkg variable
-#   _kversRunStr _kversOemStr _kversHweStr _kversLlHweStr _kversExtraKeepStr
+#   _kversRunStr _kversHweStr _kversLlHweStr _kversExtraKeepStr
+#  Deprecated:  grep -vE "^${_kversOemStr}$" \
 
-_echoPurgeableKversListStr () {
+_echoPurgableKversListStr () {
   echo -e "${_aptListStr}" \
     | grep -E '^linux-(image|modules|modules-extra|headers|tools)-[0-9]' \
     | grep -E '^linux-[a-z]+-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+$' \
     | sed  -E 's/^linux-[a-z]+-([0-9]+\.[0-9]+\.[0-9]+-[0-9]+)-[a-z-]+$/\1/' \
     | grep -vE "^${_kversRunStr}$" \
-    | grep -vE "^${_kversOemStr}$" \
     | grep -vE "^${_kversHweStr}$" \
     | grep -vE "^${_kversLlHweStr}$" \
     | grep -vE "^(${_kversExtraKeepStr})$" \
     | sort -uV;
 }
-## . END _echoPurgeableKversListStr }
+## . END _echoPurgableKversListStr }
 
 ## BEGIN _echoInstKversPkgStrFn {
 # Purpose  : Print to STDOUT all packages installed that are match the
@@ -174,12 +174,13 @@ _echoInstKversPkgStrFn () {
 #   kernel-related packages.
 # Example  :  _keep_pkg_list_str="$( _echoKeepPkgListStrFn )";
 # Arguments: Requires package variables:
-#  _kversRunStr _kversOemStr _kversHweStr _kversLlHweStr _kversExtraKeepStr
+#  _kversRunStr _kversHweStr _kversLlHweStr _kversExtraKeepStr
 #
 _echoKeepPkgListStrFn () {
   declare _keep_list _append_list _vers_str;
+  # Deprecated: "${_kversOemStr}"  
   _keep_list=(
-    "${_kversRunStr}" "${_kversOemStr}"
+    "${_kversRunStr}" 
     "${_kversHweStr}" "${_kversLlHweStr}"
   );
 
@@ -200,13 +201,13 @@ _echoKeepPkgListStrFn () {
 #   version strings and finding matching kernel-related packages.
 # Example  :  _purgePkgListStr="$( _echoPurgePkgListStrFn )";
 # Arguments: Requires package variables:
-#  _kversRunStr _kversOemStr _kversHweStr _kversLlHweStr _kversExtraKeepStr
+#  _kversRunStr _kversHweStr _kversLlHweStr _kversExtraKeepStr
 #
 _echoPurgePkgListStrFn() {
-  declare _vers_str
+  declare _vers_str;
   while read -r _vers_str; do
-    _echoInstKversPkgStrFn "${_vers_str}"
-  done < <(_echoPurgeableKversListStr)
+    _echoInstKversPkgStrFn "${_vers_str}";
+  done < <(_echoPurgableKversListStr);
 }
 ## . END _echoPurgePkgListStrFn }
 
@@ -254,8 +255,8 @@ _printDebug01Fn() {
 
 ## BEGIN _mainFn {
 # Example install group for linux meta-packages:
-#   sudo apt install linux-image-lowlatency-hwe-20.04 \
-#   linux-headers-lowlatency-hwe-20.04 linux-tools-lowlatency-hwe-20.04
+#   sudo apt install linux-image-lowlatency-hwe-22.04 \
+#   linux-headers-lowlatency-hwe-22.04 linux-tools-lowlatency-hwe-22.04
 # Example install for non-meta oem group:
 #   sudo apt install linux-image-5.14.0-1010-oem linux-tools-5.14.0-1010-oem \
 #   linux-headers-5.14.0-1010-oem linux-modules-5.14.0-1010-oem
@@ -267,14 +268,14 @@ _mainFn() {
     _kernel_min_count _kernel_max_count _kernel_unit_size_int _do_check \
     _keep_pkg_list_str _keep_kvers_list_count _reserve_kvers_count \
     _kvers_full_run_str _purge_pkg_list_str _purge_msg _do_purge _exit_str \
-    _end_msg_str _purge_pkg_list _cmd_list
+    _end_msg_str _purge_pkg_list _cmd_list _win_title;
 
   ## Begin Initialize {
   _aptListStr="$(_echoAptListStrFn)";
-  _windowTitle='FocusRx: Kernel Cleaner';
+  _win_title='FocusRx: Kernel Cleaner';
 
   _body_title='FocusRx: KERNEL CLEANER';
-  _run_msg_str=''
+  _run_msg_str='';
 
   _brow_str='<tr><td style="padding:8px 32px 8px 0">';
   _erow_str='</td></tr>';
@@ -286,16 +287,11 @@ _mainFn() {
   _do_force='n';
   while getopts ':fh' _opt_str; do
     case "${_opt_str}" in
-    h)
-      _echoHelpFn
-      return 0
-      ;;
-    f) _do_force='y' ;;
-    *)
-      _cm2EchoFn "\nInvalid option: ${_opt_str} \n"
-      _echoHelpFn
-      return 1
-      ;;
+    h) _echoHelpFn; return 0;;
+    f) _do_force='y';;
+    *) _cm2EchoFn "\nInvalid option: ${_opt_str} \n";
+      _echoHelpFn;
+      return 1;;
     esac
   done
   ## . End Process Options }
@@ -319,7 +315,7 @@ _mainFn() {
   _is_boot_mounted="$(_echoIsBootMountedFn)";
 
   # Adjust max allowable kernel count to space
-  _check_int=$((("${_boot_size_int}" / "${_kernel_unit_size_int}")));
+  _check_int=$(("${_boot_size_int}" / "${_kernel_unit_size_int}"));
   (("${_check_int}" < "${_kernel_max_count}")) &&
     _kernel_max_count="${_check_int}";
 
@@ -368,28 +364,26 @@ ${_inst_kvers_list_count} kernel images are installed.";
   ## . End Heuristics }
 
   ## Begin Create Keeper Versions {
-  # linux-image-oem-20.04d-kfocus tracks
-  # the 5.14.x oem kernel with security updates
-  #
-  # TODO: Revise logic to pull from list from config file popluated by
+  # TODO: Revise logic to pull from list from config file populated by
   # a 'this is what I want to keep' GUI.
-  #  Logic: List top-level metapackages like linux-generic-oem-20.04:
+  #  Logic: List top-level metapackages like linux-generic-hwe-22.04:
   #    * If not found, do not reserve any associate kernel packages
   #    * In installed, find related image package and use as below
-  #    We should keep 2 version of any meta-level like generic-oem-20.04
+  #    We should keep 2 version of any meta-level like generic-hwe-22.04
   #
   _kversExtraKeepStr='';
   _kversRunStr="$(_echoKversRunStrFn)";
-  _kversHweStr="$(_echoMetaKversStrFn linux-image-generic-hwe-20.04)";
-  _kversLlHweStr="$(_echoMetaKversStrFn linux-image-lowlatency-hwe-20.04)";
-  _kversOemStr="$(_echoMetaKversStrFn linux-image-oem-20.04d-kfocus)";
+  _kversHweStr="$(_echoMetaKversStrFn linux-image-generic-hwe-22.04-kfocus)";
+  _kversLlHweStr="$(_echoMetaKversStrFn linux-image-lowlatency-hwe-22.04)";
+  # Deprecated
+  # _kversOemStr="$(_echoMetaKversStrFn linux-image-oem-22.04-kfocus)";
 
   # Hack to remove packages if top-level meta is not installed
   # (see note above for long-term plan)
-  if ! grep -qE '^linux-generic-hwe-20.04$' <<<"${_aptListStr}"; then
+  if ! grep -qE '^linux-generic-hwe-22.04-kfocus$' <<<"${_aptListStr}"; then
     _kversHweStr='XXX_NOT_FOUND_XXX';
   fi
-  if ! grep -qe '^linux-lowlatency-hwe-20.04$' <<<"${_aptListStr}"; then
+  if ! grep -qe '^linux-lowlatency-hwe-22.04$' <<<"${_aptListStr}"; then
     _kversLlHweStr='XXX_NOT_FOUND_XXX';
   fi
 
@@ -398,7 +392,7 @@ ${_inst_kvers_list_count} kernel images are installed.";
     _run_msg_str="${_body_title}: Internal error:<br>
 Unexpected empty running-kernel string (uname -r).<br>
 Please see your system administrator to fix.";
-    _cm2PromptUserFn "${_run_msg_str}" "${_windowTitle}" 'p';
+    _cm2PromptUserFn "${_run_msg_str}" "${_win_title}" 'p';
     return 1;
   fi
 
@@ -410,7 +404,7 @@ Please see your system administrator to fix.";
   )";
 
   # Calculate how many more kernels to reserve
-  # TODO: This is a hueristic where we have a higher min if
+  # TODO: This is a heuristic where we have a higher min if
   #   we have lots of space. In the future, we would instead
   #   use the keep-2-versions concept presented above.
   #
@@ -427,10 +421,10 @@ Please see your system administrator to fix.";
   #
   if [ "${_reserve_kvers_count}" -gt '0' ]; then
     _kvers_full_run_str="$(_echoKversFrunStrFn)"
+    # Deprecated: grep -vE "^${_kversOemStr}-oem$" |
     _kversExtraKeepStr="$(
       echo -e "${_inst_kvers_list_str}" |
         grep -vE "^${_kvers_full_run_str}$" |
-        grep -vE "^${_kversOemStr}-oem$" |
         grep -vE "^${_kversHweStr}-generic$" |
         grep -vE "^${_kversLlHweStr}-lowlatency$" |
         sort -uV |
@@ -486,7 +480,7 @@ ${_brow_str}<b>Click OK to finish.</b>${_erow_str}</table>
 ${_cm2HtmEndStr}
 _EOW02
     )";
-    _cm2PromptUserFn "${_purge_msg}" "${_windowTitle}" 'p'
+    _cm2PromptUserFn "${_purge_msg}" "${_win_title}" 'p'
     return 0
   fi
   ## . End Show dialog if there are no packages to purge }
@@ -516,10 +510,10 @@ ${_cm2HtmEndStr}
 _EOW04
   )";
 
-  _do_purge="$(_cm2PromptUserFn "${_purge_msg}" "${_windowTitle}" 'w')"
+  _do_purge="$(_cm2PromptUserFn "${_purge_msg}" "${_win_title}" 'w')";
   if [ "${_do_purge}" = 'n' ]; then
     _prompt_str='Exit without purge on user request';
-    _cm2PromptUserFn "${_prompt_str}" "${_windowTitle}" 'p';
+    _cm2PromptUserFn "${_prompt_str}" "${_win_title}" 'p';
     return;
   fi
   ## . End Show dialog with packages to purge }
@@ -553,7 +547,7 @@ ${_brow_str}${_end_msg_str}${_erow_str}
 ${_cm2HtmEndStr}
 _EOW05
   )";
-  _cm2PromptUserFn "${_purge_msg}" "${_windowTitle}" 'p'
+  _cm2PromptUserFn "${_purge_msg}" "${_win_title}" 'p';
   ## . End Report purge results }
 }
 ## . END _mainFn }
@@ -563,7 +557,7 @@ _aptListStr='';
 _kversExtraKeepStr='';
 _kversHweStr='';
 _kversLlHweStr='';
-_kversOemStr='';
+# _kversOemStr=''; # Deprecated
 _kversRunStr='';
 ## . END Declare global vars }
 

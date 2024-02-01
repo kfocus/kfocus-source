@@ -457,7 +457,7 @@ _toggleEnableFn () {
 _mainFn () {
   declare _opt_str;
 
-  # Skip any action if model does not have kbd
+  # Skip any action if model does not have kbd leds
   if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'n' ]; then
     return;
   fi
