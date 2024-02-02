@@ -11,35 +11,119 @@
 #            Also, usable as a library for adding IBus checking and fixing
 #            capabilities to other scripts.
 # Example  : kfocus-fix-ibus check; kfocus-fix-ibus repair;
-# License  : GPLv2
+# License  : GPLv2 (with JavaScript components GPLv3)
 # Run By   : Developers only
 # Spec     : 4027
 #
 set -u;
 
-_fi2StderrFn () { 1>&2 echo -e  "$*"; }
+_stderrFn () { 1>&2 echo -e  "$*"; }
 
-## BEGIN _fi2RepairIbusConfigFn {
+## BEGIN _chkInstalledPkgFn {
+# Copied from common.2.source _cm2ChkInstalledPkgFn
+_chkInstalledPkgFn () {
+  declare _pkg_name _status_str;
+  _pkg_name="${1:-}";
+  _status_str="$( 2>&1 \
+    dpkg-query -f '${db:Status-abbrev}' -W "${_pkg_name}"
+  )";
+  if grep -qE '^.i ' <<< "${_status_str}"; then return 0; fi
+  return 1;
+}
+## . END _chkInstalledPkgFn }
+
+## BEGIN _repairIbusConfigFn {
 # See https://unix.stackexchange.com/questions/49452
-_fi2RepairIbusConfigFn () {
-  "${_dconfExe}" write \
-    '/desktop/ibus/panel/show-icon-on-systray' 'false' || return 1;
+_repairIbusConfigFn () {
   "${_dconfExe}" write \
     '/desktop/ibus/general/use-system-keyboard-layout' 'true' || return 1;
-}
-## . END _fi2RepairIbusConfigFn }
 
-## BEGIN _fi2CheckIbusConfigFn {
-_fi2CheckIbusConfigFn () {
+    # Hiding the systray icon via IBus's dconf setting doesn't work reliably,
+    # so we use a Plasma script to do it.
+    "${_qdbusExe}" 'org.kde.plasmashell' '/PlasmaShell' \
+      'org.kde.PlasmaShell.evaluateScript' "$(cat <<EOL
+// Copyright: 2024 MindShare Inc., 2024 KDE Contributors
+// License: GPLv3
+// Copied and adapted for the Kubuntu Focus from the example shown at
+// https://develop.kde.org/docs/plasma/scripting/
+
+panelIds.forEach((panel) => {
+    panel = panelById(panel);
+    if (!panel) {
+        return;
+    }
+    panel.widgetIds.forEach((myWidget) => {
+        myWidget = panel.widgetById(myWidget);
+        if (myWidget.type === "org.kde.plasma.systemtray") {
+            systrayId = myWidget.readConfig("SystrayContainmentId");
+            if (systrayId) {
+                const systray = desktopById(systrayId);
+                systray.currentConfigGroup = ["General"];
+                const hiddenItems = systray.readConfig("hiddenItems")
+                  .split(",");
+                if (hiddenItems.indexOf("ibus-ui-gtk3") === -1) {
+                    hiddenItems.push("ibus-ui-gtk3");
+                    systray.writeConfig("hiddenItems", hiddenItems);
+                    systray.reloadConfig();
+                }
+            }
+        }
+    });
+});
+EOL
+    )";
+}
+## . END _repairIbusConfigFn }
+
+## BEGIN _checkIbusConfigFn {
+_checkIbusConfigFn () {
   declare _do_show_icon _do_use_system_keyboard;
 
   # NOTE: Right now this just checks for a running IBus service. It may be
   # worthwhile to also check and see if IBus is installed.
-  if grep -qai 'org.freedesktop.ibus' < <("${_qdbusExe}"); then
-    _do_show_icon="$("${_dconfExe}" read \
-      '/desktop/ibus/panel/show-icon-on-systray')";
+  if _chkInstalledPkgFn 'ibus'; then
+    _do_show_icon="$(
+      "${_qdbusExe}" 'org.kde.plasmashell' '/PlasmaShell' \
+        'org.kde.PlasmaShell.evaluateScript' "$(cat <<EOL
+// Copyright: 2024 MindShare Inc., 2024 KDE Contributors
+// License: GPLv3
+// Copied and adapted for the Kubuntu Focus from the example shown at
+// https://develop.kde.org/docs/plasma/scripting/
+
+isIbusIconFound=false;
+
+panelIds.forEach((panel) => {
+    panel = panelById(panel);
+    if (!panel) {
+        return;
+    }
+    panel.widgetIds.forEach((myWidget) => {
+        myWidget = panel.widgetById(myWidget);
+        if (myWidget.type === "org.kde.plasma.systemtray") {
+            systrayId = myWidget.readConfig("SystrayContainmentId");
+            if (systrayId) {
+                const systray = desktopById(systrayId);
+                systray.currentConfigGroup = ["General"];
+                const hiddenItems = systray.readConfig("hiddenItems")
+                  .split(",");
+                if (hiddenItems.indexOf("ibus-ui-gtk3") === -1) {
+                    isIbusIconFound=true;
+                }
+            }
+        }
+    });
+});
+
+if (isIbusIconFound) {
+    print('true');
+} else {
+    print ('false');
+}
+EOL
+      )";
+    )";
     _do_use_system_keyboard="$("${_dconfExe}" read \
-      '/desktop/ibus/general/use-system-keyboard-layout')";
+     '/desktop/ibus/general/use-system-keyboard-layout')";
 
     if [ "${_do_show_icon}" != 'false' ] || \
       [ "${_do_use_system_keyboard}" != 'true' ]; then
@@ -47,67 +131,72 @@ _fi2CheckIbusConfigFn () {
     fi
   fi
 }
-## . END _fi2CheckIbusConfigFn }
+## . END _checkIbusConfigFn }
 
-## BEGIN _fi2MainFn {
-_fi2MainFn () {
+## BEGIN _mainFn {
+_mainFn () {
   declare _mode_str;
 
   _mode_str="${1:-}";
 
   case "${_mode_str}" in
     check)
-      if _fi2CheckIbusConfigFn; then
-        _fi2StderrFn 'IBus is configured properly.';
+      if _checkIbusConfigFn; then
+        _stderrFn 'IBus is configured properly.';
         return;
       else
-        _fi2StderrFn 'IBus is misconfigured.';
+        _stderrFn 'IBus is misconfigured.';
         return 1;
       fi
       ;;
     repair)
-      if _fi2RepairIbusConfigFn; then
-        _fi2StderrFn 'IBus configuration repaired.';
+      if _repairIbusConfigFn; then
+        _stderrFn 'IBus configuration repaired.';
         return;
       else
-        _fi2StderrFn 'IBus configuration repair failed!';
+        _stderrFn 'IBus configuration repair failed!';
         return 1;
       fi
       ;;
     *)
-      if ! _fi2CheckIbusConfigFn; then
-        if _fi2RepairIbusConfigFn; then
-          _fi2StderrFn 'Bad IBus configuration detected, repair successful.';
+      if ! _checkIbusConfigFn; then
+        if _repairIbusConfigFn; then
+          _stderrFn 'Bad IBus configuration detected, repair successful.';
           return
         else
-          _fi2StderrFn 'Bad IBus configuration detected, repair failed!';
+          _stderrFn 'Bad IBus configuration detected, repair failed!';
           return 1;
         fi
       else
-        _fi2StderrFn   'IBus is configured properly.';
+        _stderrFn   'IBus is configured properly.';
         return;
       fi
       ;;
   esac
 }
-## . END _fi2MainFn }
+## . END _mainFn }
 
 declare _qdbusExe _dconfExe;
 
 ## BEGIN Run fi2MainFn when script is NOT sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-  _qdbusExe="$(command -v qdbus)";
-  _dconfExe="$(command -v dconf)";
+  _qdbusExe="$(      command -v qdbus      )";
+  _dconfExe="$(      command -v dconf      )";
+  _dpkgQueryExe="$(  command -v dpkg-query )";
 
   if [ -z "${_qdbusExe}" ]; then
-    _fi2StderrFn 'qdbus not found';
+    _stderrFn 'qdbus not found';
     exit 1;
   fi
   if [ -z "${_dconfExe}" ]; then
-    _fi2StderrFn 'dconf not found';
+    _stderrFn 'dconf not found';
     exit 0;
   fi
+  if [ -z "${_dpkgQueryExe}" ]; then
+    _stdErrFn 'dpkg-query not found';
+    exit 1;
+  fi
 
-  _fi2MainFn "$@";
+  _mainFn "$@";
 fi
 ## . END Run fi2MainFn when script is NOT sourced }

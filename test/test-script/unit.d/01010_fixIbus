@@ -19,7 +19,6 @@ _overwriteWithMocksFn () {
   # shellcheck disable=SC1090
   source "${_exe_file}" || exit 1;
   # Override executables with functions
-  declare -g _qdbusExe="_qdbusExe";
   declare -g _dconfExe="_dconfExe";
 }
 ## . END _overwriteWithMocksFn }
@@ -65,23 +64,25 @@ EOT
 _mockDconfIbusSystray='';
 _mockDconfIbusSystemKeyboard='';
 
-_mockQdbusNoFn () { 
-  _qdbusExe () { echo ''; }
+_mockPackageNoIbusGoodConfFn () {
+  _chkInstalledPkgFn () { return 1; }
+  _mockDconfIbusSystray='false';
+  _mockDconfIbusSystemKeyboard='true';
 }
-_mockQdbusNoFailFn () { 
-  _qdbusExe () { echo ''; return 1; }
+_mockPackageNoIbusBadConfFn () {
+  _chkInstalledPkgFn () { return 1; }
+  _mockDconfIbusSystray='true';
+  _mockDconfIbusSystemKeyboard='false';
 }
-_mockQdbusWithIbusFn () { 
-  _qdbusExe () { echo "${_mockWithIbusStr}"; }
+_mockPackageWithIbusGoodConfFn () {
+  _chkInstalledPkgFn () { return 0; }
+  _mockDconfIbusSystray='false';
+  _mockDconfIbusSystemKeyboard='true';
 }
-_mockQdbusWithIbusFailFn () { 
-  _qdbusExe () { echo "${_mockWithIbusStr}"; return 1; }
-}
-_mockQdbusNoIbusFn () {
-  _qdbusExe () { echo "${_mockNoIbusStr}"; }
-}
-_mockQdbusNoIbusFailFn () {
-  _qdbusExe () { echo "${_mockNoIbusStr}"; return 1; }
+_mockPackageWithIbusBadConfFn () {
+  _chkInstalledPkgFn () { return 0; }
+  _mockDconfIbusSystray='true';
+  _mockDconfIbusSystemKeyboard='false';
 }
 _mockDconfActiveFn () {
   _dconfExe () {
@@ -158,26 +159,26 @@ _mockDconfWithIbusBadConfReadonlyFn () {
   }
 }
 
-## BEGIN _fi2RepairIbusConfigFn {
-# Summary   : _fi2RepairIbusConfigFn
+## BEGIN _repairIbusConfigFn {
+# Summary   : _repairIbusConfigFn
 # Purpose   : Reconfigures IBus to be compatible with Plasma.
-# Example   : _fi2RepairIbusConfigFn
+# Example   : _repairIbusConfigFn
 # Arguments : none
 # Globals   : none
 # Outputs   : none
 # Returns   : 0 on success, 1 if a DConf key cannot be written to
-## . END _fi2RepairIbusConfigFn }
+## . END _repairIbusConfigFn }
 
-## BEGIN _fi2CheckIbusConfigFn {
-# Summary   : _fi2CheckIbusConfigFn
+## BEGIN _checkIbusConfigFn {
+# Summary   : _checkIbusConfigFn
 # Purpose   : Checks IBus config for compatibility with Plasma.
-# Example   : _fi2CheckIbusConfigFn
+# Example   : _checkIbusConfigFn
 # Arguments : none
 # Globals   : none
 # Outputs   : none
 # Returns   : 0 if IBus configuration is Plasma-compatible or IBus is not
 #             running, 1 otherwise
-## . END _fi2CheckIbusConfigFn }
+## . END _checkIbusConfigFn }
 
 ## BEGIN _runTestFn {
 # This MUST be called '_runTestFn' for use by the _runUnitTests
@@ -200,31 +201,25 @@ _runTestFn () {
   # Shift off header from _cm2ModelTable to create _assert_table.
   # This will grow with model support.
   _assert_table=(
-    'CheckIbusConfigFn||QdbusNo'
-    'CheckIbusConfigFn||QdbusNoFail'
-    'CheckIbusConfigFn||QdbusWithIbusFail'
-    'CheckIbusConfigFn||QdbusNoIbus'
-    'CheckIbusConfigFn||QdbusNoIbusFail'
-    # N.B. The next assert *must* be at the end of this section as it
-    # influences the behavior of subsequent assertions.
-    'CheckIbusConfigFn||QdbusWithIbus'
+    'checkIbusConfigFn||PackageNoIbusGoodConf'
+    'checkIbusConfigFn||PackageNoIbusBadConf'
+    'checkIbusConfigFn||PackageWithIbusGoodConf'
+    'checkIbusConfigFn||PackageWithIbusBadConf'
 
-    'CheckIbusConfigFn||DconfNoIbus'
-    'CheckIbusConfigFn||DconfNoIbusFail'
-    'CheckIbusConfigFn||DconfWithIbusBadConf'
-    'CheckIbusConfigFn||DconfWithIbusGoodConf'
+    'checkIbusConfigFn||DconfNoIbus'
+    'checkIbusConfigFn||DconfNoIbusFail'
 
-    'RepairIbusConfigFn||DconfWithIbusBadConf'
-    'RepairIbusConfigFn||DconfWithIbusGoodConf'
-    'RepairIbusConfigFn||DconfWithIbusBadConfReadonly'
+    'repairIbusConfigFn||DconfWithIbusBadConf'
+    'repairIbusConfigFn||DconfWithIbusGoodConf'
+    'repairIbusConfigFn||DconfWithIbusBadConfReadonly'
 
-    'MainFn|check|DconfWithIbusGoodConf'
-    'MainFn|check|DconfWithIbusBadConf'
-    'MainFn|repair|DconfWithIbusBadConf'
-    'MainFn|repair|DconfWithIbusBadConfReadonly'
-    'MainFn||DconfWithIbusBadConf'
-    'MainFn||DconfWithIbusGoodConf'
-    'MainFn||DconfWithIbusBadConfReadonly'
+    'mainFn|check|DconfWithIbusGoodConf'
+    'mainFn|check|DconfWithIbusBadConf'
+    'mainFn|repair|DconfWithIbusBadConf'
+    'mainFn|repair|DconfWithIbusBadConfReadonly'
+    'mainFn||DconfWithIbusBadConf'
+    'mainFn||DconfWithIbusGoodConf'
+    'mainFn||DconfWithIbusBadConfReadonly'
   );
 
   # Reset 
@@ -255,16 +250,15 @@ _runTestFn () {
 
     _msg="$(cat << EOT
 Check kfocus-fix-ibus
-Function Call: _fi2${_testfn_str} '${_arg_str}';
-Qdbus String: $(_qdbusExe)
+Function Call: _${_testfn_str} '${_arg_str}';
 Dconf Panel Indicator State: ${_mockDconfIbusSystray}
 Dconf Keyboard Follows System: ${_mockDconfIbusSystemKeyboard}
 EOT
     )";
 
     echo "${_msg}" > "${_run_file}";
-    echo -e "\n_fi2${_testfn_str} ${_arg_str} OUTPUT:" >> "${_run_file}";
-    "_fi2${_testfn_str}" "${_arg_str}" >> "${_run_file}" 2>&1
+    echo -e "\n_${_testfn_str} ${_arg_str} OUTPUT:" >> "${_run_file}";
+    "_${_testfn_str}" "${_arg_str}" >> "${_run_file}" 2>&1
 
     _msg="$(cat << EOT
 Check kfocus-fix-ibus changes

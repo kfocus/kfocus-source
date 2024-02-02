@@ -42,20 +42,6 @@ _importCommonFn () {
 }
 ## . END _importCommonFn }
 
-## BEGIN _importFixIbusFun {
-_importFixIbusFn () {
-  declare _lib_file;
-  _lib_file="${_binDir}/kfocus-fix-ibus";
-  if [ -r "${_lib_file}" ]; then
-    # shellcheck source=../bin/kfocus-fix-ibus
-    source "${_lib_file}" || exit 201;
-  else
-    1>&2 echo "${_baseName}: ABORT - Cannot source lib |${_lib_file}|";
-    exit 201;
-  fi
-}
-## . END _importFixIbusFn }
-
 ## BEGIN _testNagCountFn {
  # Purpose: Read a _drop_file count.
  #   Increment that count and place in _drop_file.
@@ -669,12 +655,13 @@ _runKernelCleanFn () {
 
 ## BEGIN _checkIbusConfigFn {
 _chkIbusConfigFn () {
+  # shellcheck disable=SC2154
   declare _title_str _prompt_msg _ans_str;
 
   _cm2SetMsgFn 'Check and Fix IBus Configuration';
   _title_str="${_rootTitle}: IBus Configuration Check";
 
-  if ! _fi2CheckIbusConfigFn; then
+  if ! "${_focusFixIbusExe}" 'check' 2>/dev/null; then
     _prompt_msg="$(cat <<_EOH1
 IBus is running on your system, but it is not configured properly. This may
 cause strange keyboard and application behavior, and you may notice an odd
@@ -688,7 +675,7 @@ _EOH1
     )";
 
     if [ "${_ans_str}" = 'y' ]; then
-      if _fi2RepairIbusConfigFn; then
+      if "${_focusFixIbusExe}" 'repair' 2>/dev/null; then
         _cm2PromptUserFn 'IBus configuration repaired.' "${_title_str}";
         _cm2SucStrFn 'IBus configuration repaired.';
       else
@@ -1050,7 +1037,6 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   # Import libs and assign more global vars
   _importCommonFn;
-  _importFixIbusFn;
   _escExe="$(_cm2GetEscExeFn)" || exit;
   _focusRxDropDir="${_binDir}/kfocus-focusrx.d";
   _kbdColorSetExe="${_binDir}/kfocus-kb-color-set";
@@ -1061,6 +1047,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     "_focusRxKcleanExe|${_binDir}/kfocus-kclean"
     "_focusRxSetExe|${_binDir}/kfocus-focusrx-set"
     "_focusRxVersExe|${_binDir}/kfocus-rx-version"
+    "_focusFixIbusExe|${_binDir}/kfocus-fix-ibus"
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2WarnStrFn 'Could not assign variables';
