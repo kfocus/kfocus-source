@@ -20,6 +20,7 @@ _overwriteWithMocksFn () {
   source "${_exe_file}" || exit 1;
   # Override executables with functions
   declare -g _dconfExe="_dconfExe";
+  declare -g _qdbusExe="_qdbusExe";
 }
 ## . END _overwriteWithMocksFn }
 
@@ -59,40 +60,105 @@ _mockNoIbusStr="$(cat << 'EOT';
 org.freedesktop.DBus
 EOT
 )";
+_mockQdbusRepairScript="$(cat << 'EOT';
+// Copyright: 2024 MindShare Inc., 2024 KDE Contributors
+// License: GPLv3
+// Copied and adapted for the Kubuntu Focus from the example shown at
+// https://develop.kde.org/docs/plasma/scripting/
+
+panelIds.forEach((panel) => {
+    panel = panelById(panel);
+    if (!panel) {
+        return;
+    }
+    panel.widgetIds.forEach((myWidget) => {
+        myWidget = panel.widgetById(myWidget);
+        if (myWidget.type === "org.kde.plasma.systemtray") {
+            systrayId = myWidget.readConfig("SystrayContainmentId");
+            if (systrayId) {
+                const systray = desktopById(systrayId);
+                systray.currentConfigGroup = ["General"];
+                const hiddenItems = systray.readConfig("hiddenItems")
+                  .split(",");
+                if (hiddenItems.indexOf("ibus-ui-gtk3") === -1) {
+                    hiddenItems.push("ibus-ui-gtk3");
+                    systray.writeConfig("hiddenItems", hiddenItems);
+                    systray.reloadConfig();
+                }
+            }
+        }
+    });
+});
+EOT
+)";
+_mockQdbusCheckScript="$(cat <<'EOT';
+// Copyright: 2024 MindShare Inc., 2024 KDE Contributors
+// License: GPLv3
+// Copied and adapted for the Kubuntu Focus from the example shown at
+// https://develop.kde.org/docs/plasma/scripting/
+
+isIbusIconFound=false;
+
+panelIds.forEach((panel) => {
+    panel = panelById(panel);
+    if (!panel) {
+        return;
+    }
+    panel.widgetIds.forEach((myWidget) => {
+        myWidget = panel.widgetById(myWidget);
+        if (myWidget.type === "org.kde.plasma.systemtray") {
+            systrayId = myWidget.readConfig("SystrayContainmentId");
+            if (systrayId) {
+                const systray = desktopById(systrayId);
+                systray.currentConfigGroup = ["General"];
+                const hiddenItems = systray.readConfig("hiddenItems")
+                  .split(",");
+                if (hiddenItems.indexOf("ibus-ui-gtk3") === -1) {
+                    isIbusIconFound=true;
+                }
+            }
+        }
+    });
+});
+
+if (isIbusIconFound) {
+    print('true');
+} else {
+    print ('false');
+}
+EOT
+)";
 
 # These are dynamically changed by the Dconf mocks.
-_mockDconfIbusSystray='';
-_mockDconfIbusSystemKeyboard='';
+_mockIbusSystray='';
+_mockIbusSystemKeyboard='';
 
 _mockPackageNoIbusGoodConfFn () {
   _chkInstalledPkgFn () { return 1; }
-  _mockDconfIbusSystray='false';
-  _mockDconfIbusSystemKeyboard='true';
+  _mockIbusSystray='false';
+  _mockIbusSystemKeyboard='true';
 }
 _mockPackageNoIbusBadConfFn () {
   _chkInstalledPkgFn () { return 1; }
-  _mockDconfIbusSystray='true';
-  _mockDconfIbusSystemKeyboard='false';
+  _mockIbusSystray='true';
+  _mockIbusSystemKeyboard='false';
 }
 _mockPackageWithIbusGoodConfFn () {
   _chkInstalledPkgFn () { return 0; }
-  _mockDconfIbusSystray='false';
-  _mockDconfIbusSystemKeyboard='true';
+  _mockIbusSystray='false';
+  _mockIbusSystemKeyboard='true';
 }
 _mockPackageWithIbusBadConfFn () {
   _chkInstalledPkgFn () { return 0; }
-  _mockDconfIbusSystray='true';
-  _mockDconfIbusSystemKeyboard='false';
+  _mockIbusSystray='true';
+  _mockIbusSystemKeyboard='false';
 }
 _mockDconfActiveFn () {
   _dconfExe () {
     if [ "${1:-}" = 'read' ]; then
       case "${2:-}" in
-        /desktop/ibus/panel/show-icon-on-systray)
-          echo "${_mockDconfIbusSystray}";
-          ;;
         /desktop/ibus/general/use-system-keyboard-layout)
-          echo "${_mockDconfIbusSystemKeyboard}";
+          echo "${_mockIbusSystemKeyboard}";
           ;;
         *)
           return 1;
@@ -100,11 +166,8 @@ _mockDconfActiveFn () {
       esac
     elif [ "${1:-}" = 'write' ]; then
       case "${2:-}" in
-        /desktop/ibus/panel/show-icon-on-systray)
-          _mockDconfIbusSystray="${3:-}";
-          ;;
         /desktop/ibus/general/use-system-keyboard-layout)
-          _mockDconfIbusSystemKeyboard="${3:-}";
+          _mockIbusSystemKeyboard="${3:-}";
           ;;
         *)
           return 1;
@@ -115,38 +178,59 @@ _mockDconfActiveFn () {
     fi
   }
 }
-_mockDconfNoIbusFn () {
-  _mockDconfIbusSystray='';
-  _mockDconfIbusSystemKeyboard='';
-  _mockDconfActiveFn;
+_mockQdbusActiveFn () {
+  _qdbusExe () {
+    if [ "$1" = 'org.kde.plasmashell' ] && \
+      [ "$2" = '/PlasmaShell' ] && \
+      [ "$3" = 'org.kde.PlasmaShell.evaluateScript' ]; then
+      if [ "$4" = "${_mockQdbusCheckScript}" ]; then
+        echo "${_mockIbusSystray}";
+      elif [ "$4" = "${_mockQdbusRepairScript}" ]; then
+        _mockIbusSystray='false';
+      else
+        return 1;
+      fi
+    fi
+  }
 }
-_mockDconfNoIbusFailFn () {
+_mockNoIbusFn () {
+  _mockIbusSystray='';
+  _mockIbusSystemKeyboard='';
+  _mockDconfActiveFn;
+  _mockQdbusActiveFn;
+}
+_mockNoIbusFailFn () {
+  _mockIbusSystray='';
+  _mockIbusSystemKeyboard='';
   _dconfExe () {
     echo '';
     return 1;
   }
+  _qdbusExe () {
+    echo '';
+    return 1;
+  }
 }
-_mockDconfWithIbusBadConfFn () {
-  _mockDconfIbusSystray='true';
-  _mockDconfIbusSystemKeyboard='false';
+_mockWithIbusBadConfFn () {
+  _mockIbusSystray='true';
+  _mockIbusSystemKeyboard='false';
   _mockDconfActiveFn;
+  _mockQdbusActiveFn;
 }
-_mockDconfWithIbusGoodConfFn () {
-  _mockDconfIbusSystray='false';
-  _mockDconfIbusSystemKeyboard='true';
+_mockWithIbusGoodConfFn () {
+  _mockIbusSystray='false';
+  _mockIbusSystemKeyboard='true';
   _mockDconfActiveFn;
+  _mockQdbusActiveFn;
 }
-_mockDconfWithIbusBadConfReadonlyFn () {
-  _mockDconfIbusSystray='true';
-  _mockDconfIbusSystemKeyboard='false';
+_mockWithIbusBadConfReadonlyFn () {
+  _mockIbusSystray='true';
+  _mockIbusSystemKeyboard='false';
   _dconfExe () {
     if [ "${1:-}" = 'read' ]; then
       case "${2:-}" in
-        /desktop/ibus/panel/show-icon-on-systray)
-          echo "${_mockDconfIbusSystray}";
-          ;;
         /desktop/ibus/general/use-system-keyboard-layout)
-          echo "${_mockDconfIbusSystemKeyboard}";
+          echo "${_mockIbusSystemKeyboard}";
           ;;
         *)
           return 1;
@@ -155,6 +239,18 @@ _mockDconfWithIbusBadConfReadonlyFn () {
     else
       # this will return 1 even if a valid write command is passed
       return 1;
+    fi
+  }
+  _qdbusExe () {
+    if [ "$1" = 'org.kde.plasmashell' ] && \
+      [ "$2" = '/PlasmaShell' ] && \
+      [ "$3" = 'org.kde.PlasmaShell.evaluateScript' ]; then
+      if [ "$4" = "${_mockQdbusCheckScript}" ]; then
+        echo "${_mockIbusSystray}";
+      else
+        # ditto
+        return 1;
+      fi
     fi
   }
 }
@@ -206,20 +302,20 @@ _runTestFn () {
     'checkIbusConfigFn||PackageWithIbusGoodConf'
     'checkIbusConfigFn||PackageWithIbusBadConf'
 
-    'checkIbusConfigFn||DconfNoIbus'
-    'checkIbusConfigFn||DconfNoIbusFail'
+    'checkIbusConfigFn||NoIbus'
+    'checkIbusConfigFn||NoIbusFail'
 
-    'repairIbusConfigFn||DconfWithIbusBadConf'
-    'repairIbusConfigFn||DconfWithIbusGoodConf'
-    'repairIbusConfigFn||DconfWithIbusBadConfReadonly'
+    'repairIbusConfigFn||WithIbusBadConf'
+    'repairIbusConfigFn||WithIbusGoodConf'
+    'repairIbusConfigFn||WithIbusBadConfReadonly'
 
-    'mainFn|check|DconfWithIbusGoodConf'
-    'mainFn|check|DconfWithIbusBadConf'
-    'mainFn|repair|DconfWithIbusBadConf'
-    'mainFn|repair|DconfWithIbusBadConfReadonly'
-    'mainFn||DconfWithIbusBadConf'
-    'mainFn||DconfWithIbusGoodConf'
-    'mainFn||DconfWithIbusBadConfReadonly'
+    'mainFn|check|WithIbusGoodConf'
+    'mainFn|check|WithIbusBadConf'
+    'mainFn|repair|WithIbusBadConf'
+    'mainFn|repair|WithIbusBadConfReadonly'
+    'mainFn||WithIbusBadConf'
+    'mainFn||WithIbusGoodConf'
+    'mainFn||WithIbusBadConfReadonly'
   );
 
   # Reset 
@@ -230,7 +326,7 @@ _runTestFn () {
   _assert_count="${#_assert_table[@]}";
   _assert_idx=1;
 
-  _mockDconfWithIbusGoodConfFn;
+  _mockWithIbusGoodConfFn;
   for _assert_line in "${_assert_table[@]}"; do
     IFS='|' read -r -d '' -a _bit_list < <(echo -n "${_assert_line}");
     _testfn_str="${_bit_list[0]}";
@@ -251,8 +347,8 @@ _runTestFn () {
     _msg="$(cat << EOT
 Check kfocus-fix-ibus
 Function Call: _${_testfn_str} '${_arg_str}';
-Dconf Panel Indicator State: ${_mockDconfIbusSystray}
-Dconf Keyboard Follows System: ${_mockDconfIbusSystemKeyboard}
+Panel Indicator State: ${_mockIbusSystray}
+Keyboard Follows System: ${_mockIbusSystemKeyboard}
 EOT
     )";
 
@@ -262,8 +358,8 @@ EOT
 
     _msg="$(cat << EOT
 Check kfocus-fix-ibus changes
-Dconf Panel Indicator State: ${_mockDconfIbusSystray}
-Dconf Keyboard Follows System: ${_mockDconfIbusSystemKeyboard}
+Panel Indicator State: ${_mockIbusSystray}
+Keyboard Follows System: ${_mockIbusSystemKeyboard}
 Return Value: $?
 EOT
     )";

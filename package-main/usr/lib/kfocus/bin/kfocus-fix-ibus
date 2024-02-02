@@ -176,7 +176,7 @@ _mainFn () {
 }
 ## . END _mainFn }
 
-declare _qdbusExe _dconfExe;
+declare _qdbusExe _dconfExe _dpkgQueryExe;
 
 ## BEGIN Run fi2MainFn when script is NOT sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
