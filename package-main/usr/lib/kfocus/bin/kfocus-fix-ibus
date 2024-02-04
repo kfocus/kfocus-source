@@ -41,7 +41,7 @@ _repairIbusConfigFn () {
     # Hiding the systray icon via IBus's dconf setting doesn't work reliably,
     # so we use a Plasma script to do it.
     "${_qdbusExe}" 'org.kde.plasmashell' '/PlasmaShell' \
-      'org.kde.PlasmaShell.evaluateScript' "$(cat <<EOL
+      'org.kde.PlasmaShell.evaluateScript' "$(cat <<'EOL'
 // Copyright: 2024 MindShare Inc., 2024 KDE Contributors
 // License: GPLv3
 // Copied and adapted for the Kubuntu Focus from the example shown at
@@ -84,7 +84,7 @@ _checkIbusConfigFn () {
   if _chkInstalledPkgFn 'ibus'; then
     _do_show_icon="$(
       "${_qdbusExe}" 'org.kde.plasmashell' '/PlasmaShell' \
-        'org.kde.PlasmaShell.evaluateScript' "$(cat <<EOL
+        'org.kde.PlasmaShell.evaluateScript' "$(cat <<'EOL'
 // Copyright: 2024 MindShare Inc., 2024 KDE Contributors
 // License: GPLv3
 // Copied and adapted for the Kubuntu Focus from the example shown at
