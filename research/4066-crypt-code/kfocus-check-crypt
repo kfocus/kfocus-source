@@ -1,0 +1,282 @@
+#!/bin/bash
+#
+# Copyright 2021-2022 MindShare Inc.
+# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
+#
+# Name    : kfocus-check-crypt
+# Purpose : Helper app for crypt disks
+# License : GPL v2
+# Run by  : kfocus-firstrun-bin
+# Spec    : 203, 1314,3613
+#
+set -u;
+
+## BEGIN _importCommonFn
+# Run ls-common-symbols.sh to list in-use symbols
+#
+_importCommonFn () {
+  declare _lib_file;
+  _lib_file="${_baseDir}/lib/common.2.source";
+  if [ -r "${_lib_file}" ]; then
+    # shellcheck source=../lib/common.2.source
+    source "${_lib_file}" || exit 201;
+  else
+    1>&2 echo "${_baseName}: ABORT - Cannot source lib |${_lib_file}|";
+    exit 201;
+  fi
+}
+## . END _importCommonFn
+
+## BEGIN _populateCryptListFn
+# Summary   : _populateCryptListFn
+# Purpose   : Populate _cryptList which contains all disk device
+#             paths that appear to contain a LUKS encrypted filesystem
+# Returns   : 0 on success
+# Exits     : 127 bad or cancelled password with pkexec (XDG_SESSION_TYPE=x11)
+#           :   1 bad or cancelled password with sudo   (XDG_SESSION_TYPE=tty)
+#
+# This can be run without being root.
+#
+_populateCryptListFn () {
+  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  # ! This function has been modified to use lsblk rather than blkid. This !
+  # ! may workaround a bug in which only one disk's passphrase is changed  !
+  # ! when using the kfocus-firstrun-bin passphrase changer.               !
+  # !                                                                      !
+  # ! See ticket 4066.                                                     !
+  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  declare _lsblk_str _filter_str;
+  if _lsblk_str="$(lsblk -lf)"; then
+    _filter_str="$(grep 'crypto_LUKS' <<<"${_lsblk_str}" |cut -f1 -d' ' |sed -e 's/^/\/dev\//')";
+    if ! [ "${_filter_str}" = "" ]; then
+      mapfile -t _cryptList <<<"${_filter_str}";
+    else
+      _cryptList=();
+    fi
+  else
+    exit; # inherits error code from above (127 or 1)
+  fi
+}
+## . END _populateCryptListFn
+
+## BEGIN _checkDiskPassFn
+# Summary   : _checkDiskPassFn diskPart1
+# Purpose   : Checks disk partition for the default passphrase
+# Returns   : 0 if success, 2 if non-matching passphrase;
+#             127 on pkexec auth error, 1 on sudo auth error.
+#
+# This must be run as root.
+#
+_checkDiskPassFn() {
+  declare _disk_str;
+  _disk_str="${1:-}";
+  if [ -z "${_disk_str}" ]; then return 1; fi
+  if ! [ -b "${_disk_str}" ]; then
+    _cm2WarnStrFn "${_baseName}: Ignore ${_disk_str}: not a block device.";
+    return 1;
+  fi
+
+  cryptsetup luksOpen --test-passphrase "${_disk_str}" \
+    <<< "${_defaultStr}" 1>&2 2>/dev/null;
+}
+## . END _checkDiskPassFn
+
+## == BEGIN PUBLIC METHODS ============================================
+## BEGIN _getDefaultCryptList
+# Summary   : _getDefaultCryptList
+# Purpose   : Find disk partitions that use the default passphrase.
+# Example   : _getDefaultCryptList /dev/nvme0n1p3
+# Arguments : One or more device nodes, each of which points to a
+#             crypto_LUKS partition
+# Stdout    : A list of devices that do not pass passphrase check,
+#             one per line. A blank string if all disks passed.
+# Returns   : 0
+# Exits     : 1 (sudo/tty) or 127 (pkexec/x11) on bad auth.
+#
+# This must be run as root.
+#
+_getDefaultCryptList () {
+  declare _default_list _device_str _error_code;
+  _default_list=();
+
+  for _device_str in "${_cryptList[@]}"; do
+    if _checkDiskPassFn "${_device_str}"; then
+      _default_list+=( "${_device_str}" );
+    else
+      _error_code="$?";
+      if [ "${_error_code}" = '127' ] || [ "${_error_code}" = '1' ]; then
+        exit "${_error_code}";
+      else
+        # The return value is 2 if password does not work
+        true;
+      fi
+    fi
+  done
+
+  if [ "${#_default_list[@]}" != 0 ]; then
+    ( IFS=$'\n'; echo "${_default_list[*]}"; )
+  else
+    echo -n;
+  fi
+}
+## . END _getDefaultCryptList
+
+## BEGIN _modifyDiskPassFn
+# Summary   : _modifyDiskPassFn diskPart1 [diskPart2...]
+# Purpose   : Changes one or more disks that use the same passphrase
+#             to use a new passphrase.
+# Example   : _modifyDiskPassFn /dev/nvme0n1p3 /dev/nvme1n1p1
+# Arguments : One or more device notes, each of which points to a
+#             crypto_LUKS partition. Additionally, reads the old
+#             passphrase and new passphrase from stdin.
+# Stdout    : A list of disk devices that were tried and failed, one
+#             per line. A blank string if all disks passed.
+# Returns   : 0 or the number of failed disks.
+# Notes     : Only disks in "${_cryptList[@]}" are considered.
+#             Devices provided not in this list are discarded.
+#
+# This must be run as root.
+#
+_modifyDiskPassFn () {
+  declare _update_dev_list _fail_list \
+    _new_pass _grep_str _dev_str _old_pass;
+
+  _update_dev_list=("$@");
+  _fail_list=();
+
+  if [ -z  "${_update_dev_list[*]}" ]; then
+    _cm2WarnStrFn "${_baseName}: Missing arguments.";
+    exit 201;
+  fi
+    
+  if [ "${_readOldPassFlag}" != "0" ]; then
+    _old_pass="${_defaultStr}";
+  else
+    read -r -s _old_pass;
+  fi
+
+  read -r -s _new_pass;
+
+  if [ -z "${_new_pass}" ]; then
+    _cm2WarnStrFn "${_baseName}: Missing arguments.";
+    exit 201;
+  fi
+
+  _grep_str="$( IFS=$'\n'; echo "${_cryptList[*]}" )";
+  for _dev_str in "${_update_dev_list[@]}"; do
+    if ! [ -b "${_dev_str}" ]; then
+      _cm2WarnStrFn "${_baseName}: Ignore ${_dev_str}: not a block device.";
+      continue;
+    fi
+
+    if ! grep -q "${_dev_str}" <<< "${_grep_str}"; then
+      _cm2WarnStrFn "${_baseName}: Ignore ${_dev_str}: not in crypt list.";
+      continue;
+    fi
+
+    if { echo "${_old_pass}"; echo "${_new_pass}"; echo "${_new_pass}"; } \
+     | cryptsetup luksChangeKey "${_dev_str}"; then
+       true;
+    else
+      _fail_list+=( "${_dev_str}" );
+    fi
+  done
+
+  if [ "${#_fail_list[@]}" != 0 ]; then
+    ( IFS=$'\n'; echo "${_fail_list[*]}"; )
+  else
+    echo -n;
+  fi
+  return "${#_fail_list[@]}";
+}
+## . END _modifyDisksPassFn
+
+## BEGIN _echoCryptListFn
+# Summary   : _echoCryptListFn;
+# Purpose   : Echo all 'TYPE="crypto_LUKS"' disks on the system.
+# Example   : _echoCryptListFn;
+# Arguments : none.
+# Stdout    : List of disk devices, one per line.
+# Returns   : 0
+#
+# This can be run without being root.
+#
+_echoCryptListFn () {
+  if [ "${#_cryptList[@]}" != "0" ]; then
+    ( IFS=$'\n'; echo "${_cryptList[*]}" );
+  else
+    echo -n;
+  fi
+  return 0;
+}
+
+_exitIfNotRootFn () {
+  if [ "$(id -u)" != 0 ]; then
+    _cm2ErrStrFn "Please run as root: ${_escExe} ./${_baseName} $*";
+    exit 202;
+  fi
+}
+
+## . END _queryCryptListFn
+## == . END PUBLIC METHODS ============================================
+
+## BEGIN MAIN
+_mainFn () {
+  declare _cmd_str;
+
+  ## Begin Dispatch to command
+  _cmd_str="${1:-}";
+  case "${_cmd_str}" in
+    '-c')
+      _exitIfNotRootFn "$@";
+      _populateCryptListFn;
+      _getDefaultCryptList;;
+    '-m')
+      _exitIfNotRootFn "$@";
+      shift;
+      _populateCryptListFn;
+      _modifyDiskPassFn "$@";;
+    '-r')
+      _exitIfNotRootFn "$@";
+      shift;
+      _populateCryptListFn;
+      _readOldPassFlag="0";
+      _modifyDiskPassFn "$@";;
+    '-q')
+      _populateCryptListFn;
+      _echoCryptListFn;;
+    *)
+      _cm2ErrStrFn 'No directive specified';
+      exit 201;;
+  esac;
+  ## . End Dispatch to command
+  exit; # Raw exit to propagate above return values
+}
+## . END MAIN
+
+## BEGIN Declare and set global vars
+declare _defaultStr _escExe _cryptList _setExe _readOldPassFlag;
+_defaultStr="$(echo 6b7562756e74750a |xxd -r -p)";
+_readOldPassFlag="1";
+# . END Declare and set global vars
+
+## BEGIN Run main if script is not sourced
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+  _importCommonFn;
+
+  # Get escalation exe
+  _escExe="$(_cm2GetEscExeFn)" || exit;
+  _assignList=( "_setExe|${_binDir}/kfocus-firstrun-set" );
+  if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
+    _cm2WarnStrFn 'Could not assign variables';
+    exit 1;
+  fi
+
+  _mainFn "$@";
+fi
+## . END Run main if script is not sourced
+
