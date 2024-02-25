@@ -38,9 +38,10 @@ _importCommonFn () {
 # This can be run without being root.
 #
 _populateCryptListFn () {
-  declare _blkid_str _filter_str;
-  if _blkid_str="$("${_escExe}" "${_setExe}" echo-blkid)"; then
-    _filter_str="$(grep 'TYPE="crypto_LUKS"' <<<"${_blkid_str}" |cut -f1 -d':')";
+  declare _lsblk_str _filter_str;
+  udevadm settle;
+  if _lsblk_str="$(lsblk -lf)"; then
+    _filter_str="$(grep 'crypto_LUKS' <<<"${_lsblk_str}" |cut -f1 -d' ' |sed -e 's/^/\/dev\//')";
     if ! [ "${_filter_str}" = "" ]; then
       mapfile -t _cryptList <<<"${_filter_str}";
     else
