@@ -661,6 +661,14 @@ _chkIbusConfigFn () {
   _cm2SetMsgFn 'Check and Fix IBus Configuration';
   _title_str="${_rootTitle}: IBus Configuration Check";
 
+  # We can't properly check the IBus configuration if Plasmashell failed to
+  # start, because Plasma scripting is used as part of the detection
+  # mechanism.
+  if ! ps axo comm | grep plasmashell; then
+    _cm2WarnFn;
+    return;
+  fi
+
   if ! "${_focusFixIbusExe}" 'check' 2>/dev/null; then
     _prompt_msg="$(cat <<_EOH1
 IBus is running on your system, but it is not configured properly. This may
@@ -679,7 +687,7 @@ _EOH1
         _cm2PromptUserFn 'IBus configuration repaired.' "${_title_str}";
         _cm2SucStrFn 'IBus configuration repaired.';
       else
-        _cm2PromptUserFN 'IBus configuration repair failed!' "${_title_str}";
+        _cm2PromptUserFn 'IBus configuration repair failed!' "${_title_str}";
         _cm2WarnFn;
         return;
       fi
