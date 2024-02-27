@@ -1,15 +1,17 @@
-.001 Installed Kernels are generic-hwe-20.04,
-oem-20.04d-kfocus, and 5.14.0-1018-oem.
-Running kernel is 5.14.0-1018-oem.
-/boot is mounted with 139M free.
-Results in no action but a warning for low disk space.
+.001 Installed Kernels are generic-hwe-22.04-kfocus
+version 6.5.0-14-generic and prior version 6.2.0-35-generic.
+- Running kernel is 6.5.0-14-generic.
+- /boot is mounted with 139M free of 705M.
+- Results in no action BECAUSE
+ -- kclean protects a minimum of 2 kernels.
+ -- HOWEVER, a warning for low disk should be shown.
 
 FocusRx: KERNEL CLEANER
 Doc: https://kfocus.org/wf/tools#kclean
 
 Check forced: limited space.
 The /boot directory has 139M available.
-3 kernel images are installed.
+2 kernel images are installed.
 
 Disk space on /boot is critically low,
 but only supported kernels are installed.
@@ -17,23 +19,16 @@ If you have a kernel you are not using,
 purge it to increase available space.
 
 Packages to Keep
-linux-headers-5.13.0-27-generic
-linux-headers-5.14.0-1011-oem
-linux-headers-5.14.0-1018-oem
-linux-image-5.13.0-27-generic
-linux-image-5.14.0-1011-oem
-linux-image-5.14.0-1018-oem
-linux-modules-5.13.0-27-generic
-linux-modules-5.14.0-1011-oem
-linux-modules-5.14.0-1018-oem
-linux-modules-extra-5.13.0-27-generic
-linux-oem-5.14-headers-5.14.0-1011
-linux-oem-5.14-headers-5.14.0-1018
-linux-oem-5.14-tools-5.14.0-1011
-linux-oem-5.14-tools-5.14.0-1018
-linux-tools-5.13.0-27-generic
-linux-tools-5.14.0-1011-oem
-linux-tools-5.14.0-1018-oem
+linux-headers-6.2.0-35-generic
+linux-headers-6.5.0-14-generic
+linux-image-6.2.0-35-generic
+linux-image-6.5.0-14-generic
+linux-modules-6.2.0-35-generic
+linux-modules-6.5.0-14-generic
+linux-modules-extra-6.2.0-35-generic
+linux-modules-extra-6.5.0-14-generic
+linux-tools-6.2.0-35-generic
+linux-tools-6.5.0-14-generic
 
 Packages to Remove
 There are no unused kernels to purge.

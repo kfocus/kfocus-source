@@ -5,6 +5,20 @@
 #
 # set -u is set in _runUnitTests (the test harness)
 #
+# Script for generating a list of kernel package names (purposefully not
+# called in code here):
+_makeMockKernelListFn () {
+  _apt_list_str="$(apt list |cut -d/ -f1)";
+
+  readarray -t _image_list < <(
+    grep -P '^linux-image-[0-9\.-]+' <<<"${_apt_list_str}" \
+    | tail -n15 | sed 's/^linux-image-//g'
+  );
+
+  for _vers_str in "${_image_list[@]}"; do
+    grep -P "^linux-(tools|modules|modules-extra|headers|image)-${_vers_str}" <<< "${_apt_list_str}";
+  done
+}
 
 ## BEGIN _testDataTable
 # Values are delimited by ';'.
@@ -18,7 +32,7 @@
 #   7. Value for _echoAptListStrFn
 
 _testDataTable=(
-  '.001 Installed Kernels are generic-hwe-20.04-kfocus
+  '.001 Installed Kernels are generic-hwe-22.04-kfocus
 version 6.5.0-14-generic and prior version 6.2.0-35-generic.
 - Running kernel is 6.5.0-14-generic.
 - /boot is mounted with 139M free of 705M.
@@ -50,7 +64,7 @@ linux-tools-6.5.0-14-generic
 linux-tools-common
 linux-tools-generic-hwe-22.04-kfocus'
 
-  '.002 Installed Kernels are generic-hwe-20.04-kfocus
+  '.002 Installed Kernels are generic-hwe-22.04-kfocus
 version 6.5.0-14-generic and prior version 6.2.0-35-generic.
 - Running kernel is 6.5.0-14-generic.
 - /boot is mounted with 1161,1646 (avail,size).
@@ -84,10 +98,87 @@ linux-tools-6.2.0-35-generic
 linux-tools-6.5.0-14-generic
 linux-tools-common
 linux-tools-generic-hwe-22.04-kfocus'
-
-# TODO: Add test were _echoIsBootMountPoint = 'n'
-#   AND maximum number of kernels is exceeded,
-#   resulting in the request to purge.
+  
+  '.003 Installed Kernels are every single kernel in Ubuntu 22.04 that is 5.19
+or higher, along with generic-hwe-22.04-kfocus.
+- Running kernel is 6.5.0-14-generic.
+- /boot is not mounted. Sizes are 11610,16460 (avail,size).
+- Check forced: > 8 kernels found.
+;;y;6.5.0-14-generic;n;11610,16460;0;
+linux-base
+linux-firmware
+linux-headers-generic-hwe-22.04-kfocus
+linux-image-generic-hwe-22.04-kfocus
+linux-libc-dev
+linux-sound-base
+linux-headers-6.5.0-1014-gcp
+linux-image-6.5.0-1014-gcp
+linux-modules-6.5.0-1014-gcp
+linux-modules-extra-6.5.0-1014-gcp
+linux-tools-6.5.0-1014-gcp
+linux-headers-6.5.0-1014-oem
+linux-image-6.5.0-1014-oem
+linux-modules-6.5.0-1014-oem
+linux-tools-6.5.0-1014-oem
+linux-headers-6.5.0-1014-oracle
+linux-image-6.5.0-1014-oracle
+linux-modules-6.5.0-1014-oracle
+linux-modules-extra-6.5.0-1014-oracle
+linux-tools-6.5.0-1014-oracle
+linux-image-6.5.0-1015-azure-fde
+linux-headers-6.5.0-1015-azure
+linux-image-6.5.0-1015-azure-fde
+linux-image-6.5.0-1015-azure
+linux-modules-6.5.0-1015-azure
+linux-modules-extra-6.5.0-1015-azure
+linux-tools-6.5.0-1015-azure
+linux-headers-6.5.0-1015-oracle
+linux-image-6.5.0-1015-oracle
+linux-modules-6.5.0-1015-oracle
+linux-modules-extra-6.5.0-1015-oracle
+linux-tools-6.5.0-1015-oracle
+linux-headers-6.5.0-1016-oracle
+linux-image-6.5.0-1016-oracle
+linux-modules-6.5.0-1016-oracle
+linux-modules-extra-6.5.0-1016-oracle
+linux-tools-6.5.0-1016-oracle
+linux-headers-6.5.0-14-generic
+linux-image-6.5.0-14-generic
+linux-modules-6.5.0-14-generic
+linux-modules-extra-6.5.0-14-generic
+linux-tools-6.5.0-14-generic
+linux-headers-6.5.0-14-lowlatency
+linux-image-6.5.0-14-lowlatency
+linux-modules-6.5.0-14-lowlatency
+linux-tools-6.5.0-14-lowlatency
+linux-headers-6.5.0-15-generic
+linux-image-6.5.0-15-generic
+linux-modules-6.5.0-15-generic
+linux-modules-extra-6.5.0-15-generic
+linux-tools-6.5.0-15-generic
+linux-headers-6.5.0-15-lowlatency
+linux-image-6.5.0-15-lowlatency
+linux-modules-6.5.0-15-lowlatency
+linux-tools-6.5.0-15-lowlatency
+linux-headers-6.5.0-17-generic
+linux-image-6.5.0-17-generic
+linux-modules-6.5.0-17-generic
+linux-modules-extra-6.5.0-17-generic
+linux-tools-6.5.0-17-generic
+linux-headers-6.5.0-17-lowlatency
+linux-image-6.5.0-17-lowlatency
+linux-modules-6.5.0-17-lowlatency
+linux-tools-6.5.0-17-lowlatency
+linux-headers-6.5.0-18-generic
+linux-image-6.5.0-18-generic
+linux-modules-6.5.0-18-generic
+linux-modules-extra-6.5.0-18-generic
+linux-tools-6.5.0-18-generic
+linux-headers-6.5.0-21-generic
+linux-image-6.5.0-21-generic
+linux-modules-6.5.0-21-generic
+linux-modules-extra-6.5.0-21-generic
+linux-tools-6.5.0-21-generic'
 );
 
 #   '.001 Installed Kernels are generic-hwe-20.04,
@@ -541,7 +632,6 @@ _overwriteWithMocksFn () {
   # 1. _cm2PromptUserFn
   # shellcheck disable=SC2317
   _cm2PromptUserFn () {
-    _cm2EchoFn "WHAT IS WRONG? <<<< ";
     declare _prompt_str _query_type _ans_str;
     _prompt_str="${1:-Continue}";
     _query_type="${3:-}";
