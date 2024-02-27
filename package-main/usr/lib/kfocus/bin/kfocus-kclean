@@ -46,20 +46,20 @@ _importCommonFn () {
 ## BEGIN _echoPkgStrFn {
 # Purpose  : Echo to STDOUT the provided package string
 #   IFF it is found installed
-# Example  : _echoPkgStrFn 'linux-image-5.13.0-1010-oem'
+# Example  : _echoPkgStrFn 'linux-image-6.5.0-14-generic'
 # Arguments: _str is the package string to match
 #
 _echoPkgStrFn () {
-  declare _str="${*}"
+  declare _str="${*}";
   if grep -qE "^${_str}$" <<<"${_aptListStr}"; then
-    echo "${_str}<br>"
+    echo "${_str}<br>";
   fi
 }
 ## . END _echoPkgStrFn }
 
 ## BEGIN _echoInstKversListStrFn {
 # Purpose  : Echo to STDOUT all kernel versions found in installed packages.
-#   Versions are in the <number-type> format, e.g. '5.13.0-1010-oem'.
+#   Versions are in the <number-type> format, e.g. '6.5.0-14-generic'.
 #   Fields are newline delimited, sorted, and deduped.
 # Example  : _inst_kvers_list_str="$(_echoInstKversListStrFn)";
 # Arguments: Requires _aptListStr pkg variable
@@ -75,7 +75,7 @@ _echoInstKversListStrFn () {
 ## BEGIN _echoMetaKversStrFn {
 # Purpose  : Prints to STDOUT any linux-image version DEPENDED upon by the
 #   named metapackage.
-#   The version is in the <number> format, e.g. '5.13.0-1010'.
+#   The version is in the <number> format, e.g. '6.5.0-14'.
 #   WARNING: This routine expect only one image metapackage.
 # Example  :
 # _kversHweStr="$( _echoMetaKversStrFn linux-image-generic-hwe-22.04 )";
@@ -96,20 +96,20 @@ _echoMetaKversStrFn () {
 }
 ## . END _echoMetaKversStrFn }
 
-## BEGIN _echoPurgableKversListStr {
-# Purpose  : Print to STDOUT all the kernel versions we think can be removed.
-#   Versions are in the <number> format, e.g. '5.13.0-1010'.
+## BEGIN _echoPurgeableKversListStr {
+# Purpose  : Print to STDOUT all the kernel versions that can be removed.
+#   Versions are in the <number> format, e.g. '6.5.0-14'.
 #   Fields are newline delimited, sorted, and deduped.
 #
 #   This string EXCLUDES all versions we have already determined we are going
 #   to keep as found in _kversRunStr and similar.
-
-# Example  : _echoPurgableKversListStr;
+#
+# Example  : _echoPurgeableKversListStr;
 # Arguments: Requires _aptListStr pkg variable
 #   _kversRunStr _kversHweStr _kversLlHweStr _kversExtraKeepStr
-#  Deprecated:  grep -vE "^${_kversOemStr}$" \
+#  Deprecated:  grep -vE "^${_kversOemStr}$"
 
-_echoPurgableKversListStr () {
+_echoPurgeableKversListStr () {
   echo -e "${_aptListStr}" \
     | grep -E '^linux-(image|modules|modules-extra|headers|tools)-[0-9]' \
     | grep -E '^linux-[a-z]+-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+$' \
@@ -120,14 +120,14 @@ _echoPurgableKversListStr () {
     | grep -vE "^(${_kversExtraKeepStr})$" \
     | sort -uV;
 }
-## . END _echoPurgableKversListStr }
+## . END _echoPurgeableKversListStr }
 
 ## BEGIN _echoInstKversPkgStrFn {
 # Purpose  : Print to STDOUT all packages installed that are match the
 #   provided kernel version string. For example, if version
-#   '5.13.0-1010' is provided, we might find these packages installed:
-#   'linux-image-5.13.0-1010-oem', 'linux-headers-5.13.0-1010-oem', etc.
-# Example  : _echoInstKversPkgStrFn '5.13.0-1010';
+#   '6.5.0-14' is provided, we might find these packages installed:
+#   'linux-image-6.5.0-14-oem', 'linux-headers-6.5.0-14-oem', etc.
+# Example  : _echoInstKversPkgStrFn '6.5.0-14';
 # Arguments: _vers_str
 #
 _echoInstKversPkgStrFn () {
@@ -178,15 +178,15 @@ _echoInstKversPkgStrFn () {
 #
 _echoKeepPkgListStrFn () {
   declare _keep_list _append_list _vers_str;
-  # Deprecated: "${_kversOemStr}"  
+  # Deprecated: "${_kversOemStr}"
   _keep_list=(
-    "${_kversRunStr}" 
+    "${_kversRunStr}"
     "${_kversHweStr}" "${_kversLlHweStr}"
   );
 
   if [ -n "${_kversExtraKeepStr}" ]; then
-    IFS='|' read -r -a _append_list <<<"${_kversExtraKeepStr}"
-    _keep_list+=("${_append_list[@]}")
+    IFS='|' read -r -a _append_list <<<"${_kversExtraKeepStr}";
+    _keep_list+=("${_append_list[@]}");
   fi
 
   while read -r _vers_str; do
@@ -207,7 +207,7 @@ _echoPurgePkgListStrFn() {
   declare _vers_str;
   while read -r _vers_str; do
     _echoInstKversPkgStrFn "${_vers_str}";
-  done < <(_echoPurgableKversListStr);
+  done < <(_echoPurgeableKversListStr);
 }
 ## . END _echoPurgePkgListStrFn }
 
@@ -222,21 +222,24 @@ _echoAptListStrFn () {
 ## BEGIN _echoKversRunStrFn {
 # Mock this for tests
 #
+# Purpose: Echo numeric version string, e.g. 6.5.0-14
 _echoKversRunStrFn () {
   uname -r | sed -E 's/^([0-9]+\.[0-9]+\.[0-9]+-[0-9]+)-[a-z-]+$/\1/';
 }
-_echoKversFrunStrFn() {
-  uname -r | sed -E 's/^([0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-])+$/\1/'
+
+# Purpose: Echo full version string, e.g. 6.5.0-14-generic
+_echoKversFullRunStrFn () {
+  uname -r | sed -E 's/^([0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-])+$/\1/';
 }
 ## . END _echoKversRunStrFn }
 
-## BEGIN _echoIsBootMountedFn (
+## BEGIN _echoIsBootMountPointFn (
 # Mock this for tests
 #
-_echoIsBootMountedFn () {
+_echoIsBootMountPointFn () {
   if mountpoint /boot 1>/dev/null; then echo 'y'; else echo 'n'; fi
 }
-## . END _echoIsBootMountedFn }
+## . END _echoIsBootMountPointFn }
 
 ## BEGIN _echoBootMegsFn {
 # Mock this for tests
@@ -255,12 +258,20 @@ _printDebug01Fn() {
 
 ## BEGIN _mainFn {
 # Example install group for linux meta-packages:
-#   sudo apt install linux-image-lowlatency-hwe-22.04 \
-#   linux-headers-lowlatency-hwe-22.04 linux-tools-lowlatency-hwe-22.04
-# Example install for non-meta oem group:
-#   sudo apt install linux-image-5.14.0-1010-oem linux-tools-5.14.0-1010-oem \
-#   linux-headers-5.14.0-1010-oem linux-modules-5.14.0-1010-oem
-#
+#   sudo apt install \
+#     linux-generic-hwe-22.04-kfocus         \
+#     linux-headers-generic-hwe-22.04-kfocus \
+#     linux-image-generic-hwe-22.04-kfocus   \
+#     linux-tools-generic-hwe-22.04-kfocus;
+
+# Example install for non-meta hwe group:
+#   sudo apt install \
+#    linux-headers-6.5.0-14-generic          \
+#    linux-image-6.5.0-14-generic            \
+#    linux-modules-6.5.0-14-generic          \
+#    linux-modules-extra-6.5.0-14-generic    \
+#    linux-tools-6.5.0-14-generic;
+
 _mainFn() {
   declare _body_title _run_msg_str _brow_str _erow_str _table_str _do_force \
     _opt_str _prompt_str _is_boot_low _is_boot_mounted _boot_avail_int \
@@ -312,7 +323,7 @@ _mainFn() {
   # Read boot disk size
   _boot_avail_int="$(_echoBootMegsFn 'avail')";
   _boot_size_int="$(_echoBootMegsFn 'size')";
-  _is_boot_mounted="$(_echoIsBootMountedFn)";
+  _is_boot_mounted="$(_echoIsBootMountPointFn)";
 
   # Adjust max allowable kernel count to space
   _check_int=$(("${_boot_size_int}" / "${_kernel_unit_size_int}"));
@@ -320,27 +331,27 @@ _mainFn() {
     _kernel_max_count="${_check_int}";
 
   # Expand required available space by 5x if /boot is not a mount point
-  _printDebug01Fn 'Is boot mounted' "${_is_boot_mounted}"
-  _printDebug01Fn '/boot size      (M)' "${_boot_size_int}"
-  _printDebug01Fn '/boot available (M)' "${_boot_avail_int}"
-  _printDebug01Fn 'Target max kernels' "${_kernel_max_count}"
+  _printDebug01Fn 'Is boot mounted' "${_is_boot_mounted}";
+  _printDebug01Fn '/boot size      (M)' "${_boot_size_int}";
+  _printDebug01Fn '/boot available (M)' "${_boot_avail_int}";
+  _printDebug01Fn 'Target max kernels' "${_kernel_max_count}";
 
-  _is_boot_low='n'
+  _is_boot_low='n';
   if [ "${_is_boot_mounted}" = 'y' ]; then
     if (("${_boot_avail_int}" < "${_kernel_unit_size_int}")); then
-      _is_boot_low='y'
+      _is_boot_low='y';
     fi
   else
     if (("${_boot_avail_int}" < 5 * "${_kernel_unit_size_int}")); then
-      _is_boot_low='y'
+      _is_boot_low='y';
     fi
   fi
 
   # Determine installed kernel version
-  _inst_kvers_list_str="$(_echoInstKversListStrFn)"
-  _inst_kvers_list_count="$(echo -e "${_inst_kvers_list_str}" | wc -l)"
+  _inst_kvers_list_str="$(_echoInstKversListStrFn)";
+  _inst_kvers_list_count="$(echo -e "${_inst_kvers_list_str}" | wc -l)";
 
-  _do_check='n'
+  _do_check='n';
   if [ "${_do_force}" = 'y' ]; then
     _run_msg_str='Check forced by flag.';
     _do_check='y';
@@ -348,8 +359,8 @@ _mainFn() {
     _run_msg_str='Check forced: limited space.';
     _do_check='y';
   elif [ "${_inst_kvers_list_count}" -ge "${_kernel_max_count}" ]; then
-    _run_msg_str="Check forced: &gt; ${_kernel_max_count} kernels found."
-    _do_check='y'
+    _run_msg_str="Check forced: &gt; ${_kernel_max_count} kernels found.";
+    _do_check='y';
   fi
   _run_msg_str+="<br>
 The /boot directory has ${_boot_avail_int}M available.<br>
@@ -409,30 +420,29 @@ Please see your system administrator to fix.";
   #   use the keep-2-versions concept presented above.
   #
   if (("${_kernel_max_count}" >= 5)); then
-    _kernel_min_count=3
+    _kernel_min_count=3;
   fi
-  _printDebug01Fn 'Target min kernels' "${_kernel_min_count}"
-  _reserve_kvers_count=$((\
-    "${_kernel_min_count}" - "${_keep_kvers_list_count}"))
+  _printDebug01Fn 'Target min kernels' "${_kernel_min_count}";
+  _reserve_kvers_count=$(("${_kernel_min_count}" - "${_keep_kvers_list_count}"));
 
   # Create regex string to match more kernel versions to keep ignoring
   # the other exclusions we've already created. This is used to ensure
   # we always have the minimum number of kernels (usually >= 2) installed.
   #
   if [ "${_reserve_kvers_count}" -gt '0' ]; then
-    _kvers_full_run_str="$(_echoKversFrunStrFn)"
+    _kvers_full_run_str="$(_echoKversFullRunStrFn)";
     # Deprecated: grep -vE "^${_kversOemStr}-oem$" |
     _kversExtraKeepStr="$(
-      echo -e "${_inst_kvers_list_str}" |
-        grep -vE "^${_kvers_full_run_str}$" |
-        grep -vE "^${_kversHweStr}-generic$" |
-        grep -vE "^${_kversLlHweStr}-lowlatency$" |
-        sort -uV |
-        tail -n "${_reserve_kvers_count}" |
-        sed -E 's/-[[:alpha:]]+$//' |
-        tr '\n' '|' |
-        sed 's/|$//'
-    )"
+      echo -e "${_inst_kvers_list_str}"              \
+        | grep -vE "^${_kvers_full_run_str}$"        \
+        | grep -vE "^${_kversHweStr}-generic$"       \
+        | grep -vE "^${_kversLlHweStr}-lowlatency$"  \
+        | sort -uV                                   \
+        | tail -n "${_reserve_kvers_count}"          \
+        | sed -E 's/-[[:alpha:]]+$//'                \
+        | tr '\n' '|'                                \
+        | sed 's/|$//'
+    )";
   fi
   ## . End Create Keeper Versions }
 
@@ -480,8 +490,7 @@ ${_brow_str}<b>Click OK to finish.</b>${_erow_str}</table>
 ${_cm2HtmEndStr}
 _EOW02
     )";
-    _cm2PromptUserFn "${_purge_msg}" "${_win_title}" 'p'
-    return 0
+    _cm2PromptUserFn "${_purge_msg}" "${_win_title}" 'p';
   fi
   ## . End Show dialog if there are no packages to purge }
 
