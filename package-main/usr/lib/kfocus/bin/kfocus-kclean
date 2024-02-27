@@ -43,20 +43,6 @@ _importCommonFn () {
 }
 ## . END _importCommonFn }
 
-## BEGIN _echoPkgStrFn {
-# Purpose  : Echo to STDOUT the provided package string
-#   IFF it is found installed
-# Example  : _echoPkgStrFn 'linux-image-6.5.0-14-generic'
-# Arguments: _str is the package string to match
-#
-_echoPkgStrFn () {
-  declare _str="${*}";
-  if grep -qE "^${_str}$" <<<"${_aptListStr}"; then
-    echo "${_str}<br>";
-  fi
-}
-## . END _echoPkgStrFn }
-
 ## BEGIN _echoInstKversListStrFn {
 # Purpose  : Echo to STDOUT all kernel versions found in installed packages.
 #   Versions are in the <number-type> format, e.g. '6.5.0-14-generic'.
@@ -105,65 +91,43 @@ _echoMetaKversStrFn () {
 #   to keep as found in _kversRunStr and similar.
 #
 # Example  : _echoPurgeableKversListStr;
-# Arguments: Requires _aptListStr pkg variable
-#   _kversRunStr _kversHweStr _kversLlHweStr _kversExtraKeepStr
-#  Deprecated:  grep -vE "^${_kversOemStr}$"
-
+# Arguments: Requires _aptListStr, _kversRunStr,
+#   _kversHweStr, _kversExtraKeepStr
+#   Deprecated: grep -vE "^${_kversOemStr}$"
+#   Deprecated: grep -vE "^${_kversLlHweStr}$"
+#
 _echoPurgeableKversListStr () {
+  declare _kvers_full_run_str;
+  _kvers_full_run_str="$(_echoKversFullRunStrFn)";
   echo -e "${_aptListStr}" \
     | grep -E '^linux-(image|modules|modules-extra|headers|tools)-[0-9]' \
     | grep -E '^linux-[a-z]+-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+$' \
-    | sed  -E 's/^linux-[a-z]+-([0-9]+\.[0-9]+\.[0-9]+-[0-9]+)-[a-z-]+$/\1/' \
-    | grep -vE "^${_kversRunStr}$" \
-    | grep -vE "^${_kversHweStr}$" \
-    | grep -vE "^${_kversLlHweStr}$" \
+    | sed  -E 's/^linux-[a-z]+-([0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+)$/\1/' \
+    | grep -vE "^${_kvers_full_run_str}$"  \
+    | grep -vE "^${_kversHweStr}-generic$" \
     | grep -vE "^(${_kversExtraKeepStr})$" \
     | sort -uV;
 }
 ## . END _echoPurgeableKversListStr }
 
+## BEGIN _echoPkgStrFn {
+# Purpose: Echo installed packages matching pattern
+_echoPkgStrFn () {
+  declare _str="${*}";
+  grep -E "^${_str}" <<<"${_aptListStr}" | sed 's/$/<br>/g'
+}
+## . END _echoPkgStrFn }
+
 ## BEGIN _echoInstKversPkgStrFn {
-# Purpose  : Print to STDOUT all packages installed that are match the
-#   provided kernel version string. For example, if version
-#   '6.5.0-14' is provided, we might find these packages installed:
-#   'linux-image-6.5.0-14-oem', 'linux-headers-6.5.0-14-oem', etc.
-# Example  : _echoInstKversPkgStrFn '6.5.0-14';
-# Arguments: _vers_str
-#
 _echoInstKversPkgStrFn () {
-  declare _vers_str _short_str;
+  declare _vers_str _short_str _prefix;
   _vers_str="${*}";
   _short_str="$(cut -f1-2 -d'.' <<< "${_vers_str}")";
 
-  # Headers
-  _echoPkgStrFn "linux-headers-${_vers_str}";
-  _echoPkgStrFn "linux-headers-${_vers_str}-lowlatency";
-  _echoPkgStrFn "linux-headers-${_vers_str}-generic";
-  _echoPkgStrFn "linux-headers-${_vers_str}-oem";
-  _echoPkgStrFn "linux-oem-${_short_str}-headers-${_vers_str}";
-
-  # Images
-  _echoPkgStrFn "linux-image-${_vers_str}-generic";
-  _echoPkgStrFn "linux-image-unsigned-${_vers_str}-generic";
-  _echoPkgStrFn "linux-image-${_vers_str}-lowlatency";
-  _echoPkgStrFn "linux-image-unsigned-${_vers_str}-lowlatency";
-  _echoPkgStrFn "linux-image-unsigned-${_vers_str}-oem";
-  _echoPkgStrFn "linux-image-${_vers_str}-oem";
-
-  # Modules
-  _echoPkgStrFn "linux-modules-${_vers_str}-generic";
-  _echoPkgStrFn "linux-modules-extra-${_vers_str}-generic";
-  _echoPkgStrFn "linux-modules-${_vers_str}-lowlatency";
-  _echoPkgStrFn "linux-modules-extra-${_vers_str}-lowlatency";
-  _echoPkgStrFn "linux-modules-${_vers_str}-oem";
-  _echoPkgStrFn "linux-modules-extra-${_vers_str}-oem";
-
-  # Tools
-  _echoPkgStrFn "linux-tools-${_vers_str}";
-  _echoPkgStrFn "linux-tools-${_vers_str}-lowlatency";
-  _echoPkgStrFn "linux-tools-${_vers_str}-generic";
-  _echoPkgStrFn "linux-tools-${_vers_str}-oem";
-  _echoPkgStrFn "linux-oem-${_short_str}-tools-${_vers_str}";
+  for _prefix in 'headers' 'image' 'image-unsigned' 'modules' \
+    'modules-extra' 'tools'; do
+    _echoPkgStrFn "linux-${_prefix}-${_vers_str}";
+  done
 }
 ## . END _echoInstKversPkgStrFn }
 
@@ -177,18 +141,18 @@ _echoInstKversPkgStrFn () {
 #  _kversRunStr _kversHweStr _kversLlHweStr _kversExtraKeepStr
 #
 _echoKeepPkgListStrFn () {
-  declare _keep_list _append_list _vers_str;
-  # Deprecated: "${_kversOemStr}"
+  declare _keep_list _append_list _vers_str _kvers_full_run_str;
+  # Deprecated: "${_kversOemStr}" "${_kversLlHweStr}"
+  _kvers_full_run_str="$(_echoKversFullRunStrFn)";
   _keep_list=(
-    "${_kversRunStr}"
-    "${_kversHweStr}" "${_kversLlHweStr}"
+    "${_kvers_full_run_str}" "${_kversHweStr}-generic"
   );
-
+_cm2EchoFn "KVERS KEEP LIST PRE >>>${_keep_list[*]}<<<";
   if [ -n "${_kversExtraKeepStr}" ]; then
     IFS='|' read -r -a _append_list <<<"${_kversExtraKeepStr}";
     _keep_list+=("${_append_list[@]}");
   fi
-
+_cm2EchoFn "KVERS KEEP LIST POST >>>${_keep_list[*]}<<<";
   while read -r _vers_str; do
     _echoInstKversPkgStrFn "${_vers_str}";
   done < <(printf '%s\n' "${_keep_list[@]}" | grep -v '^XXX' | sort -uV);
@@ -205,6 +169,7 @@ _echoKeepPkgListStrFn () {
 #
 _echoPurgePkgListStrFn() {
   declare _vers_str;
+_cm2EchoFn "PURGEABLE KVERS LIST >>>$(_echoPurgeableKversListStr)<<<";
   while read -r _vers_str; do
     _echoInstKversPkgStrFn "${_vers_str}";
   done < <(_echoPurgeableKversListStr);
@@ -212,6 +177,8 @@ _echoPurgePkgListStrFn() {
 ## . END _echoPurgePkgListStrFn }
 
 ## BEGIN _echoAptListStrFn {
+# Purpose: Return string with all packages
+#   that are fully or partially installed.
 # Mock this for tests
 #
 _echoAptListStrFn () {
@@ -278,8 +245,9 @@ _mainFn() {
     _boot_size_int _check_int _inst_kvers_list_str _inst_kvers_list_count \
     _kernel_min_count _kernel_max_count _kernel_unit_size_int _do_check \
     _keep_pkg_list_str _keep_kvers_list_count _reserve_kvers_count \
-    _kvers_full_run_str _purge_pkg_list_str _purge_msg _do_purge _exit_str \
-    _end_msg_str _purge_pkg_list _cmd_list _win_title;
+    _kvers_full_run_str _purge_pkg_list_str _purge_msg _do_purge \
+    _end_msg_str _purge_pkg_list _purge_pkg _cmd_list _win_title \
+    _exit_str;
 
   ## Begin Initialize {
   _aptListStr="$(_echoAptListStrFn)";
@@ -349,7 +317,8 @@ _mainFn() {
 
   # Determine installed kernel version
   _inst_kvers_list_str="$(_echoInstKversListStrFn)";
-  _inst_kvers_list_count="$(echo -e "${_inst_kvers_list_str}" | wc -l)";
+_cm2EchoFn "INSTALLED KERNEL LIST VERSIONS >>>${_inst_kvers_list_str}<<<";
+  _inst_kvers_list_count="$(wc -l <<< "${_inst_kvers_list_str}")";
 
   _do_check='n';
   if [ "${_do_force}" = 'y' ]; then
@@ -380,23 +349,25 @@ ${_inst_kvers_list_count} kernel images are installed.";
   #  Logic: List top-level metapackages like linux-generic-hwe-22.04:
   #    * If not found, do not reserve any associate kernel packages
   #    * In installed, find related image package and use as below
-  #    We should keep 2 version of any meta-level like generic-hwe-22.04
+  #    WE SHOULD KEEP 2 VERSION OF ANY META-LEVEL LIKE generic-hwe-22.04
   #
   _kversExtraKeepStr='';
   _kversRunStr="$(_echoKversRunStrFn)";
   _kversHweStr="$(_echoMetaKversStrFn linux-image-generic-hwe-22.04-kfocus)";
-  _kversLlHweStr="$(_echoMetaKversStrFn linux-image-lowlatency-hwe-22.04)";
+
   # Deprecated
+  # _kversLlHweStr="$(_echoMetaKversStrFn linux-image-lowlatency-hwe-22.04)";
   # _kversOemStr="$(_echoMetaKversStrFn linux-image-oem-22.04-kfocus)";
 
-  # Hack to remove packages if top-level meta is not installed
+  # Not desired: Hack to remove packages if top-level meta is not installed
   # (see note above for long-term plan)
-  if ! grep -qE '^linux-generic-hwe-22.04-kfocus$' <<<"${_aptListStr}"; then
-    _kversHweStr='XXX_NOT_FOUND_XXX';
-  fi
-  if ! grep -qe '^linux-lowlatency-hwe-22.04$' <<<"${_aptListStr}"; then
-    _kversLlHweStr='XXX_NOT_FOUND_XXX';
-  fi
+  # if ! grep -qE '^linux-generic-hwe-22.04-kfocus$' <<<"${_aptListStr}"; then
+  #   _kversHweStr='XXX_NOT_FOUND_XXX';
+  # fi
+  # Deprecated
+  # if ! grep -qe '^linux-lowlatency-hwe-22.04$' <<<"${_aptListStr}"; then
+  #   _kversLlHweStr='XXX_NOT_FOUND_XXX';
+  # fi
 
   # Report bad running kernel string
   if [ -z "${_kversRunStr}" ]; then
@@ -419,8 +390,8 @@ Please see your system administrator to fix.";
   #   we have lots of space. In the future, we would instead
   #   use the keep-2-versions concept presented above.
   #
-  if (("${_kernel_max_count}" >= 5)); then
-    _kernel_min_count=3;
+  if (("${_kernel_max_count}" >= 8)); then
+    _kernel_min_count=4;
   fi
   _printDebug01Fn 'Target min kernels' "${_kernel_min_count}";
   _reserve_kvers_count=$(("${_kernel_min_count}" - "${_keep_kvers_list_count}"));
@@ -431,15 +402,16 @@ Please see your system administrator to fix.";
   #
   if [ "${_reserve_kvers_count}" -gt '0' ]; then
     _kvers_full_run_str="$(_echoKversFullRunStrFn)";
-    # Deprecated: grep -vE "^${_kversOemStr}-oem$" |
+    # Deprecated: grep -vE "^${_kversOemStr}-oem$"
+    # Deprecated: grep -vE "^${_kversLlHweStr}-lowlatency$"
+    # Deprecated: Previously just before the tr:
+    #   | sed -E 's/-[[:alpha:]]+$//'
     _kversExtraKeepStr="$(
       echo -e "${_inst_kvers_list_str}"              \
         | grep -vE "^${_kvers_full_run_str}$"        \
         | grep -vE "^${_kversHweStr}-generic$"       \
-        | grep -vE "^${_kversLlHweStr}-lowlatency$"  \
         | sort -uV                                   \
         | tail -n "${_reserve_kvers_count}"          \
-        | sed -E 's/-[[:alpha:]]+$//'                \
         | tr '\n' '|'                                \
         | sed 's/|$//'
     )";
@@ -454,7 +426,6 @@ Please see your system administrator to fix.";
   else
     _kversExtraKeepStr='XXX_NOT_FOUND_XXX';
   fi
-
   _purge_pkg_list_str="$(_echoPurgePkgListStrFn | sort -u)";
   ## . End Create strings for purge, keep, and dialogs }
 
@@ -533,6 +504,13 @@ _EOW04
   IFS=$'\n' read -r -d '' -a _purge_pkg_list < <(
     echo "${_purge_pkg_list_str}" | cut -f1 -d '<'
   );
+
+  for _purge_pkg in "${_purge_pkg_list[@]}"; do
+    if [[ "${_keep_pkg_list_str}" =~ ^${_purge_pkg}\< ]]; then
+      _cm2ErrStrFn "Purge package |${_purge_pkg}| is also in keep list!";
+      exit 1;
+    fi
+  done
   _cmd_list=('apt-get' 'purge' '-y' "${_purge_pkg_list[@]}");
 
   if _exit_str="$(
@@ -563,12 +541,12 @@ _EOW05
 ## . END _mainFn }
 
 ## BEGIN Declare global vars {
+declare _aptListStr _kversExtraKeepStr _kversHweStr _kversRunStr;
 _aptListStr='';
 _kversExtraKeepStr='';
 _kversHweStr='';
-_kversLlHweStr='';
-# _kversOemStr=''; # Deprecated
 _kversRunStr='';
+# Deprecated _kversLlHweStr=''; _kversOemStr='';
 ## . END Declare global vars }
 
 ## BEGIN Run main if script is not sourced {

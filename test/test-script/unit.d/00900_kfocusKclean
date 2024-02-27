@@ -8,6 +8,7 @@
 # Script for generating a list of kernel package names (purposefully not
 # called in code here):
 _makeMockKernelListFn () {
+  declare _apt_list_str _image_list _vers_str;
   _apt_list_str="$(apt list |cut -d/ -f1)";
 
   readarray -t _image_list < <(
@@ -35,7 +36,7 @@ _testDataTable=(
   '.001 Installed Kernels are generic-hwe-22.04-kfocus
 version 6.5.0-14-generic and prior version 6.2.0-35-generic.
 - Running kernel is 6.5.0-14-generic.
-- /boot is mounted with 139M free of 705M.
+- /boot is its own partition with 139M free of 705M.
 - Results in no action BECAUSE
  -- kclean protects a minimum of 2 kernels.
  -- HOWEVER, a warning for low disk should be shown.
@@ -67,7 +68,7 @@ linux-tools-generic-hwe-22.04-kfocus'
   '.002 Installed Kernels are generic-hwe-22.04-kfocus
 version 6.5.0-14-generic and prior version 6.2.0-35-generic.
 - Running kernel is 6.5.0-14-generic.
-- /boot is mounted with 1161,1646 (avail,size).
+- /boot is its own partition with 1161,1646 (avail,size).
 - Check forced by flag.
 - Results in no action BECAUSE:
  -- Disk avail is NOT < kernel_unit_size_int
@@ -98,11 +99,10 @@ linux-tools-6.2.0-35-generic
 linux-tools-6.5.0-14-generic
 linux-tools-common
 linux-tools-generic-hwe-22.04-kfocus'
-  
-  '.003 Installed Kernels are every single kernel in Ubuntu 22.04 that is 5.19
-or higher, along with generic-hwe-22.04-kfocus.
+
+  '.003 Installed Kernels 15 6.5.0 kernel variants.
 - Running kernel is 6.5.0-14-generic.
-- /boot is not mounted. Sizes are 11610,16460 (avail,size).
+- /boot is on root disk. Sizes are 11610,16460 (avail,size).
 - Check forced: > 8 kernels found.
 ;;y;6.5.0-14-generic;n;11610,16460;0;
 linux-base
@@ -184,7 +184,7 @@ linux-tools-6.5.0-21-generic'
 #   '.001 Installed Kernels are generic-hwe-20.04,
 # oem-20.04d-kfocus, and 5.14.0-1018-oem.
 # Running kernel is 5.14.0-1018-oem.
-# /boot is mounted with 139M free.
+# /boot is its own partition with 139M free.
 # Results in no action but a warning for low disk space.
 # ;;y;5.14.0-1018-oem;y;139,705;0;
 # linux-base
@@ -223,7 +223,7 @@ linux-tools-6.5.0-21-generic'
 #   '.002 Installed Kernels are generic-hwe-20.04,
 #   oem-20.04d-kfocus, and 5.14.0-1018-oem.
 # Running kernel is oem-20.04d-kfocus (5.14.0-1011-oem).
-# /boot is mounted with 139M free.
+# /boot is its own partition with 139M free.
 # Results in purge for 5.14.0-1018-oem.
 # ;;y;5.14.0-1011-oem;y;139,705;0;
 # linux-base
@@ -261,14 +261,14 @@ linux-tools-6.5.0-21-generic'
 #
 #   '.003 Installed Kernels are generic-hwe-20.04 and oem-20.04d-kfocus.
 # Running kernel is oem-20.04d-kfocus (5.14.0-1011-oem).
-# /boot is mounted with 297M free.
+# /boot is its own partition with 297M free.
 # Results in no action.
 # ;;y;5.14.0-1011-oem;y;297,705;0;
 # '
 #
 #   '.004 Installed Kernels are generic-hwe-20.04 and oem-20.04d-kfocus.
 # Running kernel is oem-20.04d-kfocus (5.14.0-1011-oem).
-# /boot is mounted with 297M free. Run is forced by -f flag.
+# /boot is its own partition with 297M free. Run is forced by -f flag.
 # Results in no action but presents report due to force flag.
 # ;-f;y;5.14.0-1011-oem;y;297,705;0;
 # linux-base
@@ -301,7 +301,7 @@ linux-tools-6.5.0-21-generic'
 #   '.005 Installed Kernels are generic-hwe-20.04,
 #   lowlatency-hwe-20.04, and oem-20.04d-kfocus.
 # Running kernel is lowlatency-hwe-20.04 (5.13.0-27-lowlatency).
-# /boot is mounted with 133M free.
+# /boot is its own partition with 133M free.
 # Results in no action but a warning for low disk space.
 # ;;y;5.13.0-27-lowlatency;y;133,705;0;
 # linux-base
@@ -341,7 +341,7 @@ linux-tools-6.5.0-21-generic'
 #   '.006 Installed Kernels are generic-hwe-20.04, oem-20.04d-kfocus,
 #    5.14.0-1010-oem, and 5.14.0-1013-oem.
 # Running kernel is oem-20.04d-kfocus (5.14.0-1011).
-# /boot is mounted with 0M free.
+# /boot is its own partition with 0M free.
 # Results in purge for 5.14.0-1010-oem and 5.14.10-1013-oem.
 # ;;y;5.14.0-1011-oem;y;0,705;0;
 # linux-base
@@ -386,7 +386,7 @@ linux-tools-6.5.0-21-generic'
 #   '.007 Installed Kernels are generic-hwe-20.04,
 #   oem-20.04d-kfocus, and 5.14.0-1010-oem.
 # Running kernel is oem-20.04d-kfocus (5.14.0-1011).
-# /boot is mounted with 139M free.
+# /boot is its own partition with 139M free.
 # Results in purge of 5.14.0-1010-oem.
 # ;;y;5.14.0-1011-oem;y;139,705;0;
 # linux-base
@@ -422,7 +422,7 @@ linux-tools-6.5.0-21-generic'
 #   '.008 Installed Kernels are generic-hwe-20.04 (meta purged),
 #   oem-20.04d-kfocus, and 5.14.0-1010-oem.
 # Running kernel is oem-20.04d-kfocus (5.14.0-1011).
-# /boot is mounted with 139M free.
+# /boot is its own partition with 139M free.
 # Results in purge of components of generic-hwe-20.04 because meta purged.
 # These have the version 5.13.0-27.
 # ;;y;5.14.0-1011-oem;y;139,705;0;
@@ -458,7 +458,7 @@ linux-tools-6.5.0-21-generic'
 #   '.009 Installed Kernels are generic-hwe-20.04 (meta purged),
 #   oem-20.04d-kfocus, and 5.14.0-1010-oem.
 # Running kernel is oem-20.04d-kfocus (5.14.0-1011).
-# /boot is mounted with 1482M free.
+# /boot is its own partition with 1482M free.
 # Results in no action.
 # ;;y;5.14.0-1011-oem;y;1482,2048;0;
 # '
@@ -466,7 +466,7 @@ linux-tools-6.5.0-21-generic'
 #   '.010 Installed Kernels are generic-hwe-20.04 (meta purged),
 #   oem-20.04d-kfocus, and 5.14.0-1010-oem.
 # Running kernel is oem-20.04d-kfocus (5.14.0-1011).
-# /boot is NOT mounted with 1482M free.
+# /boot is on root disk with 1482M free.
 # Results in no action.
 # ;;y;5.14.0-1011-oem;n;1482,2048;0;
 # '
@@ -474,7 +474,7 @@ linux-tools-6.5.0-21-generic'
 #   '.011 Installed Kernels are generic-hwe-20.04 (meta purged),
 #   oem-20.04d-kfocus, and 5.14.0-1010-oem.
 # Running kernel is oem-20.04d-kfocus (5.14.0-1011).
-# /boot is NOT mounted with 1482M free. Run is forced by -f flag.
+# /boot is on root disk 1482M free. Run is forced by -f flag.
 # Results in no action but presents report due to force flag.
 #   generic-hwe-20.04 remnants (5.13.0-27) are preserved due to ample space.
 # ;-f;y;5.14.0-1011-oem;n;1482,2048;0;
@@ -510,7 +510,7 @@ linux-tools-6.5.0-21-generic'
 #   '.012 Installed Kernels are generic-hwe-20.04,
 #   oem-20.04d-kfocus, and 5.14.0-1010-oem.
 # Running kernel is oem-20.04d-kfocus (5.14.0-1011).
-# /boot is NOT mounted with 1482M free. Run is forced by -f flag.
+# /boot is on root disk with 1482M free. Run is forced by -f flag.
 # Results in no action but presents report due to force flag.
 # ;-f;y;5.14.0-1011-oem;n;1482,2048;0;
 # linux-base
@@ -546,7 +546,7 @@ linux-tools-6.5.0-21-generic'
 #   '.013 Installed Kernels are generic-hwe-20.04,
 #   oem-20.04d-kfocus, and 5.14.0-1010-oem.
 # Running kernel is oem-20.04d-kfocus (5.14.0-1011).
-# /boot is NOT mounted with 1482M free. Run is forced by -f flag.
+# /boot is on root disk with 1482M free. Run is forced by -f flag.
 # Results in no action but presents report due to force flag.
 # ;-f;y;5.14.0-1011-oem;n;101482,102048;0;
 # linux-base
@@ -582,7 +582,7 @@ linux-tools-6.5.0-21-generic'
 #   '.014 Installed Kernels are generic-hwe-20.04, oem-20.04d-kfocus,
 #    5.14.0-1010-oem, and 5.14.0-1013-oem.
 # Running kernel is generic-hwe-2-20.04 (5.13.0-27-hwe).
-# /boot is mounted with 0M free.
+# /boot is its own partition with 0M free.
 # Results in purge for 5.14.0-1010-oem and 5.14.10-1013-oem.
 # ;;y;5.13.0-27-hwe;y;0,500;0;
 # linux-base
