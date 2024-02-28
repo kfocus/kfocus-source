@@ -64,7 +64,7 @@ _echoInstKversListStrFn () {
 #   The version is in the <number> format, e.g. '6.5.0-14'.
 #   WARNING: This routine expect only one image metapackage.
 # Example  :
-# _kversHweStr="$( _echoMetaKversStrFn linux-image-generic-hwe-22.04 )";
+# _kversFullPrefStr="$( _echoMetaKversStrFn linux-image-generic-hwe-22.04 )";
 # Arguments: _str is the metapackage name to check
 #
 _echoMetaKversStrFn () {
@@ -73,7 +73,7 @@ _echoMetaKversStrFn () {
     | grep -E '^\s*Depends:' \
     | sed  -E 's/^\s*Depends:\s*//' \
     | grep -E '^\s*linux-image-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+$' \
-    | sed  -E 's/^\s*linux-image-([0-9]+\.[0-9]+\.[0-9]+-[0-9]+)-[a-z-]+$/\1/' \
+    | sed  -E 's/^\s*linux-image-([0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+)$/\1/' \
     | sort -uV \
     | tail -n1
   )";
@@ -88,23 +88,21 @@ _echoMetaKversStrFn () {
 #   Fields are newline delimited, sorted, and deduped.
 #
 #   This string EXCLUDES all versions we have already determined we are going
-#   to keep as found in _kversRunStr and similar.
+#   to keep as found in _kversFullRunStr and similar.
 #
 # Example  : _echoPurgeableKversListStr;
-# Arguments: Requires _aptListStr, _kversRunStr,
-#   _kversHweStr, _kversExtraKeepStr
+# Arguments: Requires _aptListStr, _kversFullRunStr,
+#   _kversFullPrefStr, _kversExtraKeepStr
 #   Deprecated: grep -vE "^${_kversOemStr}$"
 #   Deprecated: grep -vE "^${_kversLlHweStr}$"
 #
 _echoPurgeableKversListStr () {
-  declare _kvers_full_run_str;
-  _kvers_full_run_str="$(_echoKversFullRunStrFn)";
   echo -e "${_aptListStr}" \
     | grep -E '^linux-(image|modules|modules-extra|headers|tools)-[0-9]' \
     | grep -E '^linux-[a-z]+-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+$' \
     | sed  -E 's/^linux-[a-z]+-([0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+)$/\1/' \
-    | grep -vE "^${_kvers_full_run_str}$"  \
-    | grep -vE "^${_kversHweStr}-generic$" \
+    | grep -vE "^${_kversFullRunStr}$"     \
+    | grep -vE "^${_kversFullPrefStr}$"    \
     | grep -vE "^(${_kversExtraKeepStr})$" \
     | sort -uV;
 }
@@ -123,6 +121,8 @@ _echoInstKversPkgStrFn () {
   declare _vers_str _short_str _prefix;
   _vers_str="${*}";
   _short_str="$(cut -f1-2 -d'.' <<< "${_vers_str}")";
+  # TODO some kernel packages use the short_str, those should be
+  # removed too. Add logic here.
 
   for _prefix in 'headers' 'image' 'image-unsigned' 'modules' \
     'modules-extra' 'tools'; do
@@ -138,15 +138,15 @@ _echoInstKversPkgStrFn () {
 #   kernel-related packages.
 # Example  :  _keep_pkg_list_str="$( _echoKeepPkgListStrFn )";
 # Arguments: Requires package variables:
-#  _kversRunStr _kversHweStr _kversLlHweStr _kversExtraKeepStr
+#  _kversFullRunStr _kversFullPrefStr _kversLlHweStr _kversExtraKeepStr
 #
 _echoKeepPkgListStrFn () {
-  declare _keep_list _append_list _vers_str _kvers_full_run_str;
+  declare _scratch_list _keep_list _append_list _vers_str ;
+
   # Deprecated: "${_kversOemStr}" "${_kversLlHweStr}"
-  _kvers_full_run_str="$(_echoKversFullRunStrFn)";
-  _keep_list=(
-    "${_kvers_full_run_str}" "${_kversHweStr}-generic"
-  );
+  _scratch_list=( "${_kversFullRunStr}" "${_kversFullPrefStr}" );
+
+  readarray -t _keep_list < <(IFS=$'\n'; uniq <<<"${_scratch_list[*]}");
 _cm2EchoFn "KVERS KEEP LIST PRE >>>${_keep_list[*]}<<<";
   if [ -n "${_kversExtraKeepStr}" ]; then
     IFS='|' read -r -a _append_list <<<"${_kversExtraKeepStr}";
@@ -165,7 +165,7 @@ _cm2EchoFn "KVERS KEEP LIST POST >>>${_keep_list[*]}<<<";
 #   version strings and finding matching kernel-related packages.
 # Example  :  _purgePkgListStr="$( _echoPurgePkgListStrFn )";
 # Arguments: Requires package variables:
-#  _kversRunStr _kversHweStr _kversLlHweStr _kversExtraKeepStr
+#  _kversFullRunStr _kversFullPrefStr _kversLlHweStr _kversExtraKeepStr
 #
 _echoPurgePkgListStrFn() {
   declare _vers_str;
@@ -245,7 +245,7 @@ _mainFn() {
     _boot_size_int _check_int _inst_kvers_list_str _inst_kvers_list_count \
     _kernel_min_count _kernel_max_count _kernel_unit_size_int _do_check \
     _keep_pkg_list_str _keep_kvers_list_count _reserve_kvers_count \
-    _kvers_full_run_str _purge_pkg_list_str _purge_msg _do_purge \
+    _purge_pkg_list_str _purge_msg _do_purge \
     _end_msg_str _purge_pkg_list _purge_pkg _cmd_list _win_title \
     _exit_str;
 
@@ -352,8 +352,10 @@ ${_inst_kvers_list_count} kernel images are installed.";
   #    WE SHOULD KEEP 2 VERSION OF ANY META-LEVEL LIKE generic-hwe-22.04
   #
   _kversExtraKeepStr='';
-  _kversRunStr="$(_echoKversRunStrFn)";
-  _kversHweStr="$(_echoMetaKversStrFn linux-image-generic-hwe-22.04-kfocus)";
+  _kversFullRunStr="$(_echoKversFullRunStrFn)";
+  _kversFullPrefStr="$(
+    _echoMetaKversStrFn "${_preferredMetaPkg}";
+  )";
 
   # Deprecated
   # _kversLlHweStr="$(_echoMetaKversStrFn linux-image-lowlatency-hwe-22.04)";
@@ -362,7 +364,7 @@ ${_inst_kvers_list_count} kernel images are installed.";
   # Not desired: Hack to remove packages if top-level meta is not installed
   # (see note above for long-term plan)
   # if ! grep -qE '^linux-generic-hwe-22.04-kfocus$' <<<"${_aptListStr}"; then
-  #   _kversHweStr='XXX_NOT_FOUND_XXX';
+  #   _kversFullPrefStr='XXX_NOT_FOUND_XXX';
   # fi
   # Deprecated
   # if ! grep -qe '^linux-lowlatency-hwe-22.04$' <<<"${_aptListStr}"; then
@@ -370,7 +372,7 @@ ${_inst_kvers_list_count} kernel images are installed.";
   # fi
 
   # Report bad running kernel string
-  if [ -z "${_kversRunStr}" ]; then
+  if [ -z "${_kversFullRunStr}" ]; then
     _run_msg_str="${_body_title}: Internal error:<br>
 Unexpected empty running-kernel string (uname -r).<br>
 Please see your system administrator to fix.";
@@ -401,15 +403,28 @@ Please see your system administrator to fix.";
   # we always have the minimum number of kernels (usually >= 2) installed.
   #
   if [ "${_reserve_kvers_count}" -gt '0' ]; then
-    _kvers_full_run_str="$(_echoKversFullRunStrFn)";
     # Deprecated: grep -vE "^${_kversOemStr}-oem$"
     # Deprecated: grep -vE "^${_kversLlHweStr}-lowlatency$"
     # Deprecated: Previously just before the tr:
     #   | sed -E 's/-[[:alpha:]]+$//'
+
+
+    # TODO:
+    # 1. Pull out preferred flavors from currently installed kernels
+    #
+    # 2. In _inst_kvers_list_str, replace preferred flavor names with
+    #    sortable keys
+    #     -generic    => -000000a1
+    #     -lowlatency => -000000a2
+    # 3. After creation and sort, replace these with original strings
+    #     -000000a1   => -generic
+    #     -000000a2   => -lowlatency
+    # 4. Process as before
+
     _kversExtraKeepStr="$(
       echo -e "${_inst_kvers_list_str}"              \
-        | grep -vE "^${_kvers_full_run_str}$"        \
-        | grep -vE "^${_kversHweStr}-generic$"       \
+        | grep -vE "^${_kversFullRunStr}$"           \
+        | grep -vE "^${_kversFullPrefStr}$"          \
         | sort -uV                                   \
         | tail -n "${_reserve_kvers_count}"          \
         | tr '\n' '|'                                \
@@ -541,11 +556,14 @@ _EOW05
 ## . END _mainFn }
 
 ## BEGIN Declare global vars {
-declare _aptListStr _kversExtraKeepStr _kversHweStr _kversRunStr;
+declare _aptListStr _kversExtraKeepStr _kversFullPrefStr \
+  _kversFullRunStr _preferredMetaPkg;
+
 _aptListStr='';
 _kversExtraKeepStr='';
-_kversHweStr='';
-_kversRunStr='';
+_kversFullPrefStr='';
+_kversFullRunStr='';
+_preferredMetaPkg='linux-image-generic-hwe-22.04-kfocus';
 # Deprecated _kversLlHweStr=''; _kversOemStr='';
 ## . END Declare global vars }
 
