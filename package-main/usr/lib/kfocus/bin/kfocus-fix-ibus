@@ -20,7 +20,7 @@ set -u;
 _stderrFn () { 1>&2 echo -e  "$*"; }
 
 ## BEGIN _chkInstalledPkgFn {
-# Copied from common.2.source _cm2ChkInstalledPkgFn
+# 2024-02-26: Copied from common.2.source _cm2ChkInstalledPkgFn
 _chkInstalledPkgFn () {
   declare _pkg_name _status_str;
   _pkg_name="${1:-}";
