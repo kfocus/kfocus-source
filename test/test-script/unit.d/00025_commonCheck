@@ -240,7 +240,7 @@ _audit_cm2EchoStackFn () {
 ## BEGIN _audit_cm2EchoModelStrFn {
 _audit_cm2EchoModelStrFn () {
   # bashsupport disable=BP2001
-  declare _restore_file _assert_table _assert_count _assert_idx _fail_count \
+  declare _assert_table _assert_count _assert_idx _fail_count \
     _loop_line _did_assert_fail _bit_list _name_str _expect_str _found_str;
 
   _restore_name_file="${_cm2DmiProductNameFile:-}";
@@ -449,16 +449,17 @@ _audit_cm2ChkPkgFn () {
 
 # 0s_
 ## BEGIN _cm2AssignExeVarsFn {
-# Summary   : _cm2AssignExeVarsFn '<name>|<command>[|<type>]', ...
-# Purpose   : Assign global variables to file paths
-#   Default : Assign the variable <name> to the path found by 'command -v
-#           : <command>' if that path is found and executable.
-#           : If <type> is specified, assign the variable with different
-#           : requirements.
-#   <type> = filerw : Requires a read-write file
-#   <type> = filero : Requires a readable file
-#           :
-#           :
+# Summary   : _cm2AssignExeVarsFn '<name>|<command>[|<type>|<required>', ...
+# Purpose   : For all in arg list, assign value to global variable <name>
+#   If <type> = 'exe' (default), value is 'command -v <command>'
+#     if found and executable; otherwise ''.
+#   If <type> = 'filerw', value is <command> filepath if writable
+#   If <type> = 'filero', value is <command> filepath if readable
+#   If <required> = 'required' (default), a return status of 1 is provided
+#     if any path lookup fails.
+#   If <required> = 'optional', the value is '', and the return value
+#     is not affected.
+#     
 # Example   : declare _lscpiExe _printfExe;
 #           : _cm2AssignExeVarsFn '_lspciExe|lspci' '_printfExe|printf';
 # Arguments : One delimited string per variable
@@ -470,36 +471,54 @@ _audit_cm2ChkPkgFn () {
 ## BEGIN _audit_cm2AssignExeVarsFn {
 _audit_cm2AssignExeVarsFn () {
   declare _assert_table _assert_count _assert_idx _fail_count \
-    _loop_line _bit_list _cmd_str _type _expect_str _arg_list \
-    _tell_str _err_str;
+    _loop_line _bit_list _cmd_str _type _req_key _expect_str _expect_int \
+    _arg_list _stat_str _err_str _return_int;
 
   _assert_table=(
-    # command/path     | type   | expect_str
-    'awk               |        | /usr/bin/awk'
-    'tr                |        | /usr/bin/tr'
-    'tr                | filero | '
-    '/usr/bin/tr       | filero | /usr/bin/tr'
-    '/usr/bin/tr       | filerw | '
-    '/etc/lsb-release  | filero | /etc/lsb-release'
-    '/etc/lsb-release  | filerw | '
-    '/etc/lsb-release  | unreal | '
+    # Command/path     | Type   | Required | R | Expect Value
+    'awk               |        |          | 0 |/usr/bin/awk'
+    'tr                |        |          | 0 |/usr/bin/tr'
+    # Since cmd is not found sets as ''. Ret is 1 because required.
+    'snuggle_bear      | exe    |          | 1 |'
+    # Since cmd is not found sets as ''. Ret is 1 because required.
+    'snuggle_bear      | exe    | required | 1 |'
+    # Since cmd is not found sets as ''. But ret is 0 since optional.
+    'snuggle_bear      | exe    | optional | 0 |'
+    'tr                | filero |          | 1 |'
+    '/usr/bin/tr       | filero |          | 0 |/usr/bin/tr'
+    '/usr/bin/tr       | filerw |          | 1 |'
+    '/etc/lsb-release  | filero |          | 0 |/etc/lsb-release'
+    '/etc/lsb-release  | filerw |          | 1 |'
+    '/etc/lsb-release  | unreal |          | 1 |'
+    # Since file is not rw, sets as ''. But ret is 0 since optional.
+    '/etc/lsb-release  | filerw | optional | 0 |'
+    # Since the type is not known, this should always return 1
+    '/etc/lsb-release  | unreal | optional | 1 |'
   );
 
   _assert_count="${#_assert_table[@]}";
   _assert_idx=1;
   _fail_count=0;
 
-  { printf '  %-4s : %-20s %-8s %-20s ' \
-    "Stat" "Command/path" "Type" "Expected Assignment";
+  { printf '  %-4s : %-17s|%-8s|%-8s|%-1s|%-17s\n' \
+    "Stat" "Command/path" "Type" "Required" " " "Expect Value";
   } >&2;
   for _loop_line in "${_assert_table[@]}"; do
-    IFS='|' read -r -a _bit_list <<< "${_loop_line}";
+    readarray -t -d'|' _bit_list <<< "${_loop_line}";
+    # IFS='|' read -r -a _bit_list <<< "${_loop_line}";
     _cmd_str="$(    _echoScrubStrFn "${_bit_list[0]}" )";
     _type="$(       _echoScrubStrFn "${_bit_list[1]}" )";
-    _expect_str="$( _echoScrubStrFn "${_bit_list[2]}" )";
+    _req_key="$(    _echoScrubStrFn "${_bit_list[2]}" )";
+    _expect_int="$( _echoScrubStrFn "${_bit_list[3]}" )";
+    _expect_str="$( _echoScrubStrFn "${_bit_list[4]}" )";
 
     declare _assert01Str _assert02Str;
-    if [ -n "${_type}" ]; then
+    if [ -n "${_type}" ] && [ -n "${_req_key}" ]; then
+      _arg_list=(
+        "_assert01Str|${_cmd_str}|${_type}|${_req_key}"
+        "_assert02Str|${_cmd_str}|${_type}|${_req_key}"
+      );
+    elif [ -n "${_type}" ]; then
       _arg_list=(
         "_assert01Str|${_cmd_str}|${_type}"
         "_assert02Str|${_cmd_str}|${_type}"
@@ -512,21 +531,31 @@ _audit_cm2AssignExeVarsFn () {
     fi
 
     _cm2AssignExeVarsFn "${_arg_list[@]}" 2> /dev/null;
+    _return_int="$?";
 
-    if [ "${_assert01Str:-}" != "${_assert02Str:-}" ]; then
-      _tell_str='fail';
-    elif [ "${_assert01Str:-}" = "${_expect_str}" ]; then
-      _tell_str='ok'; else _tell_str='fail';
+    if [ "${_assert01Str}" != "${_assert02Str}" ]; then
+      _stat_str='fail';
+      _err_str="Consecutive assignments do not match";
+    elif [ "${_assert01Str}" = "${_expect_str}" ]; then
+      _stat_str='ok';
+    else
+      _stat_str='fail';
+      _err_str="${_assert01Str} != ${_expect_str}";
     fi
 
     unset _assert01Str _assert02Str;
+    if [ "${_return_int}" != "${_expect_int}" ]; then
+      _err_str="Unexpected return |${_return_int}| != |${_expect_int}|";
+      _stat_str='fail';
+    fi
 
-    { printf '  %-4s : %-20s %-8s %-20s ' \
-         "${_tell_str}" "${_cmd_str}" "${_type}" "${_expect_str}";
-       printf '%02i / %02i \n' "${_assert_idx}" "${_assert_count}";
+    { printf '  %-4s : %-17s|%-8s|%-8s|%-1s|%-17s|' \
+     "${_stat_str}" "${_cmd_str}" "${_type}" "${_req_key}" \
+     "${_expect_int}" "${_expect_str}";
+     printf '%02i / %02i \n' "${_assert_idx}" "${_assert_count}";
     } >&2
 
-    if [ "${_tell_str}" = 'fail' ]; then
+    if [ "${_stat_str}" = 'fail' ]; then
       _cm2EchoFn "    Diagnostics: ${_err_str}";
       (( _fail_count++ ));
     fi

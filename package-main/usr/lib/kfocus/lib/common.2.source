@@ -329,7 +329,7 @@ _cm2EchoInstalledVersFn () {
 
 _cm2AssignExeVarsFn () {
   declare _var_list _line_str _bit_list _var_name \
-    _cmd_name _type _cmd_exe _return_int;
+    _cmd_name _type _solve_str _return_int _required_key;
 
   _var_list=("$@");
   _return_int=0;
@@ -337,52 +337,52 @@ _cm2AssignExeVarsFn () {
   ## Begin: Iterate over variable list {
   for _line_str in "${_var_list[@]}"; do
     IFS='|' read -r -a _bit_list <<< "${_line_str}";
-    if (( "${#_bit_list[@]}" < 2 || ${#_bit_list[@]} > 3 )); then
+    if (( "${#_bit_list[@]}" < 2 || ${#_bit_list[@]} > 4 )); then
       _cm2WarnStrFn "Bad input ${_line_str}";
       _return_int=1;
       continue;
     fi
     _var_name="${_bit_list[0]}";
     _cmd_name="${_bit_list[1]}";
-    _type="${_bit_list[2]:-}";
+    _type="${_bit_list[2]:-exe}";
+    _required_key="${_bit_list[3]:-required}";
 
     # Handle file assignment
     case "${_type}" in
-      '' )
-        _cmd_exe="$(command -v "${_cmd_name}" || true)";
-        if [ -z "${_cmd_exe}" ] || [ ! -x "${_cmd_exe}" ]; then
-          _cm2WarnStrFn "Command |${_cmd_name}| NOT EXECUTABLE as |${_cmd_exe}|";
-          _return_int=1;
-          continue;
+      'exe')
+        _solve_str="$(command -v "${_cmd_name}" || true)";
+        if [ -z "${_solve_str}" ] || [ ! -x "${_solve_str}" ]; then
+          _cm2WarnStrFn "Command |${_cmd_name}| NOT EXECUTABLE as |${_solve_str}|";
+          _solve_str='';
+          [ "${_required_key}" = 'required' ] && _return_int=1;
         fi
         ;;
-      'filero' )
+      'filero')
         if [ -r "${_cmd_name}" ]; then
-          _cmd_exe="${_cmd_name}";
+          _solve_str="${_cmd_name}";
         else
+          _solve_str='';
           _cm2WarnStrFn "File |${_cmd_name}| not readable";
-          _return_int=1;
-          continue;
+          [ "${_required_key}" = 'required' ] && _return_int=1;
         fi
         ;;
-      'filerw' )
+      'filerw')
         if [ -r "${_cmd_name}" ] && [ -w "${_cmd_name}" ]; then
-          _cmd_exe="${_cmd_name}";
+          _solve_str="${_cmd_name}";
         else
+          _solve_str='';
           _cm2WarnStrFn "File |${_cmd_name}| not read-writable";
-          _return_int=1;
-          continue;
+          [ "${_required_key}" = 'required' ] && _return_int=1;
         fi
         ;;
-        * )
-          _cm2WarnStrFn "Assignment type |$_type| not supported";
-          _return_int=1;
-          continue;
-          ;;
-      esac
+      *) _cm2WarnStrFn "Assignment type |${_type}| not supported";
+        _return_int=1;
+        _solve_str='';
+        ;;
+    esac
 
     # Assign to variable
-    printf -v "${_var_name}" '%s' "${_cmd_exe}";
+    printf -v "${_var_name}" '%s' "${_solve_str}";
     # TODO: This may be desirable: export "${_var_name}";
   done
   ## . End: iterate over variable list }
