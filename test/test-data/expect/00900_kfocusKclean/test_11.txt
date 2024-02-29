@@ -1,9 +1,13 @@
-.011 Installed Kernels are generic-hwe-20.04 (meta purged),
-  oem-20.04d-kfocus, and 5.14.0-1010-oem.
-Running kernel is oem-20.04d-kfocus (5.14.0-1011).
-/boot is NOT mounted with 1482M free. Run is forced by -f flag.
-Results in no action but presents report due to force flag.
-  generic-hwe-20.04 remnants (5.13.0-27) are preserved due to ample space.
+.011 Installed kernels are generic-hwe-22.04-kfocus (meta purged),
+  6.5.0-17-generic, and generic-hwe-22.04.
+- Running kernel is generic-hwe-22.04 (6.5.0-21-generic).
+- /boot is on root disk with 1482M free.
+- Run is forced by -f flag.
+- Results in no action BECAUSE:
+ -- Free space exceeds 5 * kernel unit size int (200MB).
+ -- Enough disk space is present to permit more than 8 kernels to be
+    installed.
+ -- HOWEVER, report is presented due to force flag.
 
 FocusRx: KERNEL CLEANER
 Doc: https://kfocus.org/wf/tools#kclean
@@ -13,22 +17,21 @@ The /boot directory has 1482M available.
 3 kernel images are installed.
 
 Packages to Keep
-linux-headers-5.13.0-27-generic
-linux-headers-5.14.0-1010-oem
-linux-headers-5.14.0-1011-oem
-linux-image-5.13.0-27-generic
-linux-image-5.14.0-1010-oem
-linux-image-5.14.0-1011-oem
-linux-modules-5.13.0-27-generic
-linux-modules-5.14.0-1010-oem
-linux-modules-5.14.0-1011-oem
-linux-modules-extra-5.13.0-27-generic
-linux-oem-5.14-headers-5.14.0-1010
-linux-oem-5.14-headers-5.14.0-1011
-linux-oem-5.14-tools-5.14.0-1010
-linux-oem-5.14-tools-5.14.0-1011
-linux-tools-5.14.0-1010-oem
-linux-tools-5.14.0-1011-oem
+linux-headers-6.5.0-14-generic
+linux-headers-6.5.0-17-generic
+linux-headers-6.5.0-21-generic
+linux-image-6.5.0-14-generic
+linux-image-6.5.0-17-generic
+linux-image-6.5.0-21-generic
+linux-modules-6.5.0-14-generic
+linux-modules-6.5.0-17-generic
+linux-modules-6.5.0-21-generic
+linux-modules-extra-6.5.0-14-generic
+linux-modules-extra-6.5.0-17-generic
+linux-modules-extra-6.5.0-21-generic
+linux-tools-6.5.0-14-generic
+linux-tools-6.5.0-17-generic
+linux-tools-6.5.0-21-generic
 
 Packages to Remove
 There are no unused kernels to purge.

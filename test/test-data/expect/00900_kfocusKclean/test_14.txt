@@ -1,8 +1,8 @@
-.014 Installed Kernels are generic-hwe-20.04, oem-20.04d-kfocus,
-   5.14.0-1010-oem, and 5.14.0-1013-oem.
-Running kernel is generic-hwe-2-20.04 (5.13.0-27-hwe).
-/boot is mounted with 0M free.
-Results in purge for 5.14.0-1010-oem and 5.14.10-1013-oem.
+.014 Installed kernels are generic-hwe-22.04-kfocus, 6.2.0-35-generic,
+  5.19.0-50-generic, and 5.15.0-97-generic.
+- Running kernel is 5.15.0-97-generic.
+- /boot is its own partition with 0M free.
+- Results in purge for 6.2.0-35-generic and 5.19.0-50-generic.
 
 FocusRX: Purge Unused Kernels?
 Doc: https://kfocus.org/wf/tools#kclean
@@ -15,31 +15,28 @@ Removing unused kernels prevents the system
 from running out of disk space in /boot.
 
 Packages to Keep
-linux-headers-5.13.0-27-generic
-linux-headers-5.14.0-1011-oem
-linux-image-5.13.0-27-generic
-linux-image-5.14.0-1011-oem
-linux-modules-5.13.0-27-generic
-linux-modules-5.14.0-1011-oem
-linux-modules-extra-5.13.0-27-generic
-linux-oem-5.14-headers-5.14.0-1011
-linux-oem-5.14-tools-5.14.0-1011
-linux-tools-5.13.0-27-generic
-linux-tools-5.14.0-1011-oem
+linux-headers-5.15.0-97-generic
+linux-headers-6.5.0-14-generic
+linux-image-5.15.0-97-generic
+linux-image-6.5.0-14-generic
+linux-modules-5.15.0-97-generic
+linux-modules-6.5.0-14-generic
+linux-modules-extra-5.15.0-97-generic
+linux-modules-extra-6.5.0-14-generic
+linux-tools-5.15.0-97-generic
+linux-tools-6.5.0-14-generic
 
 Packages to Remove
-linux-headers-5.14.0-1010-oem
-linux-headers-5.14.0-1013-oem
-linux-image-5.14.0-1010-oem
-linux-image-5.14.0-1013-oem
-linux-modules-5.14.0-1010-oem
-linux-modules-5.14.0-1013-oem
-linux-oem-5.14-headers-5.14.0-1010
-linux-oem-5.14-headers-5.14.0-1013
-linux-oem-5.14-tools-5.14.0-1010
-linux-oem-5.14-tools-5.14.0-1013
-linux-tools-5.14.0-1010-oem
-linux-tools-5.14.0-1013-oem
+linux-headers-5.19.0-50-generic
+linux-headers-6.2.0-35-generic
+linux-image-5.19.0-50-generic
+linux-image-6.2.0-35-generic
+linux-modules-5.19.0-50-generic
+linux-modules-6.2.0-35-generic
+linux-modules-extra-5.19.0-50-generic
+linux-modules-extra-6.2.0-35-generic
+linux-tools-5.19.0-50-generic
+linux-tools-6.2.0-35-generic
 
 Make sure your files are backed-up.
 
@@ -47,7 +44,7 @@ Do you wish to continue
 y
 
 Purge Package List:
-Purging packages apt-get purge -y linux-headers-5.14.0-1010-oem linux-headers-5.14.0-1013-oem linux-image-5.14.0-1010-oem linux-image-5.14.0-1013-oem linux-modules-5.14.0-1010-oem linux-modules-5.14.0-1013-oem linux-oem-5.14-headers-5.14.0-1010 linux-oem-5.14-headers-5.14.0-1013 linux-oem-5.14-tools-5.14.0-1010 linux-oem-5.14-tools-5.14.0-1013 linux-tools-5.14.0-1010-oem linux-tools-5.14.0-1013-oem
+Purging packages apt-get purge -y linux-headers-5.19.0-50-generic linux-headers-6.2.0-35-generic linux-image-5.19.0-50-generic linux-image-6.2.0-35-generic linux-modules-5.19.0-50-generic linux-modules-6.2.0-35-generic linux-modules-extra-5.19.0-50-generic linux-modules-extra-6.2.0-35-generic linux-tools-5.19.0-50-generic linux-tools-6.2.0-35-generic
 
 FocusRx: KERNEL CLEANER FINISHED
 

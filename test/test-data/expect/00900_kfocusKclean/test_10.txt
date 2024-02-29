@@ -1,6 +1,9 @@
-.010 Installed Kernels are generic-hwe-20.04 (meta purged),
-  oem-20.04d-kfocus, and 5.14.0-1010-oem.
-Running kernel is oem-20.04d-kfocus (5.14.0-1011).
-/boot is NOT mounted with 1482M free.
-Results in no action.
+.010 Installed kernels are generic-hwe-22.04-kfocus (meta purged),
+  6.5.0-17-generic, and generic-hwe-22.04.
+- Running kernel is generic-hwe-22.04 (6.5.0-21-generic).
+- /boot is on root disk with 1482M free.
+- Results in no action BECAUSE:
+ -- Free space exceeds 5 * kernel unit size int (200MB).
+ -- Enough disk space is present to permit more than 8 kernels to be
+    installed.
 

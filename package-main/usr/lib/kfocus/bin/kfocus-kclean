@@ -68,16 +68,20 @@ _echoInstKversListStrFn () {
 # Arguments: _str is the metapackage name to check
 #
 _echoMetaKversStrFn () {
-  declare _str
-  _str="$( apt-cache depends "${*}" \
-    | grep -E '^\s*Depends:' \
-    | sed  -E 's/^\s*Depends:\s*//' \
-    | grep -E '^\s*linux-image-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+$' \
-    | sed  -E 's/^\s*linux-image-([0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+)$/\1/' \
-    | sort -uV \
-    | tail -n1
-  )";
-  if [ -z "${_str}" ]; then _str='XXX_NOT_FOUND_XXX'; fi
+  declare _str;
+  if [[ "${_aptListStr}" =~ ${*} ]]; then
+    _str="$( apt-cache depends "${*}" \
+      | grep -E '^\s*Depends:' \
+      | sed  -E 's/^\s*Depends:\s*//' \
+      | grep -E '^\s*linux-image-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+$' \
+      | sed  -E 's/^\s*linux-image-([0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+)$/\1/' \
+      | sort -uV \
+      | tail -n1
+    )";
+    if [ -z "${_str}" ]; then _str='XXX_NOT_FOUND_XXX'; fi
+  else
+    _str='XXX_NOT_INSTALLED_XXX';
+  fi
   echo "${_str}";
 }
 ## . END _echoMetaKversStrFn }
@@ -524,19 +528,6 @@ Please see your system administrator to fix.";
     # Deprecated: grep -vE "^${_kversLlHweStr}-lowlatency$"
     # Deprecated: Previously just before the tr:
     #   | sed -E 's/-[[:alpha:]]+$//'
-
-
-    # TODO:
-    # 1. Pull out preferred flavors from currently installed kernels
-    #
-    # 2. In _inst_kvers_list_str, replace preferred flavor names with
-    #    sortable keys
-    #     -generic    => -000000a1
-    #     -lowlatency => -000000a2
-    # 3. After creation and sort, replace these with original strings
-    #     -000000a1   => -generic
-    #     -000000a2   => -lowlatency
-    # 4. Process as before
 
     _kversExtraKeepStr="$(
       echo -e "${_inst_kvers_list_str}"              \
