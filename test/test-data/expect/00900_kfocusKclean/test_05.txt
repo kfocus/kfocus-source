@@ -1,39 +1,46 @@
-.005 Installed Kernels are generic-hwe-20.04,
-  lowlatency-hwe-20.04, and oem-20.04d-kfocus.
-Running kernel is lowlatency-hwe-20.04 (5.13.0-27-lowlatency).
-/boot is mounted with 133M free.
-Results in no action but a warning for low disk space.
+.005 Installed kernels are generic-hwe-22.04-kfocus,
+lowlatency-hwe-22.04, and 6.2.0-35-generic.
+Running kernel is lowlatency-hwe-22.04 (6.5.0-21-lowlatency).
+/boot is its own partition with 133M free.
+Results in the removal of 6.2.0-35-generic.
 
-FocusRx: KERNEL CLEANER
+FocusRX: Purge Unused Kernels?
 Doc: https://kfocus.org/wf/tools#kclean
 
 Check forced: limited space.
 The /boot directory has 133M available.
 3 kernel images are installed.
 
-Disk space on /boot is critically low,
-but only supported kernels are installed.
-If you have a kernel you are not using,
-purge it to increase available space.
+Removing unused kernels prevents the system
+from running out of disk space in /boot.
 
 Packages to Keep
-linux-headers-5.13.0-27-generic
-linux-headers-5.13.0-27-lowlatency
-linux-headers-5.14.0-1011-oem
-linux-image-5.13.0-27-generic
-linux-image-5.13.0-27-lowlatency
-linux-image-5.14.0-1011-oem
-linux-modules-5.13.0-27-generic
-linux-modules-5.13.0-27-lowlatency
-linux-modules-5.14.0-1011-oem
-linux-modules-extra-5.13.0-27-generic
-linux-oem-5.14-headers-5.14.0-1011
-linux-oem-5.14-tools-5.14.0-1011
-linux-tools-5.13.0-27-generic
-linux-tools-5.13.0-27-lowlatency
-linux-tools-5.14.0-1011-oem
+linux-headers-6.5.0-14-generic
+linux-headers-6.5.0-21-lowlatency
+linux-image-6.5.0-14-generic
+linux-image-6.5.0-21-lowlatency
+linux-modules-6.5.0-14-generic
+linux-modules-6.5.0-21-lowlatency
+linux-modules-extra-6.5.0-14-generic
+linux-modules-extra-6.5.0-21-lowlatency
+linux-tools-6.5.0-14-generic
+linux-tools-6.5.0-21-lowlatency
 
 Packages to Remove
-There are no unused kernels to purge.
+linux-headers-6.2.0-35-generic
+linux-image-6.2.0-35-generic
+linux-modules-6.2.0-35-generic
+linux-modules-extra-6.2.0-35-generic
+linux-tools-6.2.0-35-generic
+
+Make sure your files are backed-up.
+
+Do you wish to continue
+y
+
+Purge Package List:
+Purging packages apt-get purge -y linux-headers-6.2.0-35-generic linux-image-6.2.0-35-generic linux-modules-6.2.0-35-generic linux-modules-extra-6.2.0-35-generic linux-tools-6.2.0-35-generic
+
+FocusRx: KERNEL CLEANER FINISHED
 
 Press <return> to continue.
