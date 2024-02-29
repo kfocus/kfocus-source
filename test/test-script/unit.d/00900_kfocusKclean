@@ -679,8 +679,8 @@ _overwriteWithMocksFn () {
   # shellcheck disable=SC2317
   _echoMetaKversStrFn () {
     case "${1:-}" in
-    'linux-image-generic-hwe-22.04-kfocus' ) echo '6.5.0-14' ;;
-    'linux-image-lowlatency-hwe-22.04'     ) echo '6.5.0-18' ;;
+    'linux-image-generic-hwe-22.04-kfocus' ) echo '6.5.0-14-generic' ;;
+    'linux-image-lowlatency-hwe-22.04'     ) echo '6.5.0-18-lowlatency' ;;
     esac
   }
 }

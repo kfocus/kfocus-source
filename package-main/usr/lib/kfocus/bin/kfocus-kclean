@@ -112,20 +112,30 @@ _echoPurgeableKversListStr () {
 # Purpose: Echo installed packages matching pattern
 _echoPkgStrFn () {
   declare _str="${*}";
-  grep -E "^${_str}" <<<"${_aptListStr}" | sed 's/$/<br>/g'
+  grep -E "^${_str}$" <<<"${_aptListStr}" | sed 's/$/<br>/g'
 }
 ## . END _echoPkgStrFn }
 
 ## BEGIN _echoInstKversPkgStrFn {
 _echoInstKversPkgStrFn () {
-  declare _vers_str _short_str _prefix;
+  declare _vers_str _short_str _kernel_flavor _prefix _is_azure_fde;
   _vers_str="${*}";
   _short_str="$(cut -f1-2 -d'.' <<< "${_vers_str}")";
+  _kernel_flavor="$(cut -f3 -d'-' <<< "${_vers_str}")";
   # TODO some kernel packages use the short_str, those should be
   # removed too. Add logic here.
 
-  for _prefix in 'headers' 'image' 'image-unsigned' 'modules' \
-    'modules-extra' 'tools'; do
+  _echoPkgStrFn "linux-image-${_vers_str}";
+  _echoPkgStrFn "linux-image-unsigned-${_vers_str}";
+
+  if [ "${_kernel_flavor}" = 'azure' ]; then
+    # Cut off the '-fde' at the end if it exists, the headers, modules,
+    # modules-extra, and tools don't have that suffix.
+    [ "$(cut -f4 -d'-' <<< "${_vers_str}")" == 'fde' ] && \
+      _vers_str="${_vers_str:0:-4}";
+  fi
+
+  for _prefix in 'headers' 'modules' 'modules-extra' 'tools'; do
     _echoPkgStrFn "linux-${_prefix}-${_vers_str}";
   done
 }
@@ -168,10 +178,31 @@ _cm2EchoFn "KVERS KEEP LIST POST >>>${_keep_list[*]}<<<";
 #  _kversFullRunStr _kversFullPrefStr _kversLlHweStr _kversExtraKeepStr
 #
 _echoPurgePkgListStrFn() {
-  declare _vers_str;
+  declare _vers_str _azure_check_kvers_str _azure_check_kver;
 _cm2EchoFn "PURGEABLE KVERS LIST >>>$(_echoPurgeableKversListStr)<<<";
+
+  # If the user has Azure kernels installed for whatever reason, and the
+  # kernel cleaner attempts to remove an azure kernel but keep an azure-fde
+  # kernel or vice versa, the kernel package sets will overlap and conflict.
+  # This is because the azure and azure-fde kernels differ only in image and
+  # otherwise share a package set. For this reason, we check for this
+  # conflict, and if we find it, we only add Azure kernel image to the purge
+  # string, not the whole kernel package set.
+
+  _azure_check_kvers_str="$(
+    sed "s/azure-fde/azure/" <<< "${_kversFullRunStr}";
+    sed "s/azure-fde/azure/" <<< "${_kversFullPrefStr}";
+    IFS=$'\n' sed "s/azure-fde/azure/; s/|/\n/g;" <<< "${_kversExtraKeepStr}";
+  )";
+
   while read -r _vers_str; do
-    _echoInstKversPkgStrFn "${_vers_str}";
+    _azure_check_kver="$(sed "s/azure-fde/azure/" <<< "${_vers_str}")";
+    if [[ "${_azure_check_kvers_str}" =~ ${_azure_check_kver} ]]; then
+      _echoPkgStrFn "linux-image-${_vers_str}";
+      _echoPkgStrFn "linux-image-unsigned-${_vers_str}";
+    else
+      _echoInstKversPkgStrFn "${_vers_str}";
+    fi
   done < <(_echoPurgeableKversListStr);
 }
 ## . END _echoPurgePkgListStrFn }
@@ -222,6 +253,92 @@ _echoBootMegsFn() {
 _printDebug01Fn() {
   printf 2>&1 "DEBUG %-20s :%6s\n" "${1:-}" "${2:-0}";
 }
+
+## BEGIN _echoPrioritizedKversExtraKeepStr {
+_echoPrioritiezedKversExtraKeepStr () {
+  declare _id_list _kernel_list _kernel_flavor_list_str _kernel_flavor_list \
+    _kernel_str _kernel_flavor_str _flavor_counter _kernel_counter \
+    _id_counter _id_list _unmarked_kernel_count _kernel_list_str;
+
+  # This rather involved algorithm does the following:
+  #
+  # * Obtains a list of all of the kernel flavors found in the provided kernel
+  #   string.
+  # * Sorts this list alphabetically, pulling the generic and lowlatency
+  #   flavors to the top of the list so that it goes generic -> lowlatency ->
+  #   everything else.
+  # * Walks through the provided list of kernels, marking each one with a
+  #   letter indicating how favorable they are to preserve. First a generic
+  #   kernel is selected, then a lowlatency kernel, then one of each of any
+  #   other present flavors. When all flavors have been walked through,
+  #   another round of kernels are selected, until all of them have a priority
+  #   marker.
+  # * Sorts the list, removes the priority markers, and echos it.
+
+  _id_list=( 'A' 'B' 'C' 'D' 'E' 'F' 'G' 'H' 'I' 'J' 'K' 'L' 'M' 'N' 'O' 'P' \
+    'Q' 'R' 'S' 'T' 'U' 'V' 'W' 'X' 'Y' 'Z' 'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' \
+    'i' 'j' 'k' 'l' 'm' 'n' 'o' 'p' 'q' 'r' 's' 't' 'u' 'v' 'w' 'x' 'y' 'z' );
+  _kernel_list=();
+  _kernel_flavor_list_str="";
+  _kernel_flavor_list=();
+
+  _kernel_list_str="${1:-}";
+  if [ -z "${_kernel_list_str}" ]; then
+    return 1;
+  fi
+
+  readarray -t _kernel_list <<< "${_kernel_list_str}";
+
+  for _kernel_str in "${_kernel_list[@]}"; do
+    _kernel_flavor_list_str+="$(cut -d'-' -f3 <<< "${_kernel_str}")"$'\n';
+  done
+
+  _kernel_flavor_list_str="$(
+    echo -n "${_kernel_flavor_list_str}" \
+      | sed "s/generic/aaaaaa001/; s/lowlatency/aaaaaa002/;" \
+      | sort -u \
+      | sed "s/aaaaaa001/generic/; s/aaaaaa002/lowlatency/;";
+  )";
+
+  readarray -t _kernel_flavor_list <<< "${_kernel_flavor_list_str}";
+
+  _flavor_counter=0;
+  _kernel_counter=0;
+  _id_counter=0;
+  _unmarked_kernel_count="${#_kernel_list[@]}";
+
+  while [ "${_unmarked_kernel_count}" != '0' ]; do
+    _kernel_flavor_str="${_kernel_flavor_list[_flavor_counter]}";
+
+    while [ "${_kernel_counter}" -lt "${#_kernel_list[@]}" ]; do
+      _kernel_str="${_kernel_list[_kernel_counter]}";
+      if [ "${_kernel_flavor_str}" = \
+        "$(cut -d'-' -f3 <<< "${_kernel_str}")" ]; then
+        if ! [[ "${_kernel_str}" =~ ^[a-zA-Z] ]]; then
+          _kernel_list[_kernel_counter]="${_id_list[_id_counter]}${_kernel_list[_kernel_counter]}";
+          ((_id_counter++));
+          ((_unmarked_kernel_count--));
+          break;
+        fi
+      fi
+      ((_kernel_counter++))
+    done
+
+    _kernel_counter=0;
+    ((_flavor_counter++));
+    if [ "${_flavor_counter}" -ge "${#_kernel_flavor_list[@]}" ]; then
+      _flavor_counter=0;
+    fi
+  done
+
+  IFS=$'\n'; _kernel_list_str="${_kernel_list[*]}";
+  _kernel_list_str="$(
+    sort <<< "${_kernel_list_str}" \
+      | sed "s/^.//";
+  )";
+  echo "${_kernel_list_str}";
+}
+## . END _echoPrioritizedKversExtraKeepStr }
 
 ## BEGIN _mainFn {
 # Example install group for linux meta-packages:
@@ -425,9 +542,13 @@ Please see your system administrator to fix.";
       echo -e "${_inst_kvers_list_str}"              \
         | grep -vE "^${_kversFullRunStr}$"           \
         | grep -vE "^${_kversFullPrefStr}$"          \
-        | sort -uV                                   \
-        | tail -n "${_reserve_kvers_count}"          \
-        | tr '\n' '|'                                \
+        | sort -uVr
+    )";
+
+    _kversExtraKeepStr="$(
+      _echoPrioritiezedKversExtraKeepStr "${_kversExtraKeepStr}" \
+        | head -n "${_reserve_kvers_count}" \
+        | tr '\n' '|' \
         | sed 's/|$//'
     )";
   fi
@@ -516,7 +637,7 @@ _EOW04
 
   ## Begin Purge packages {
   _end_msg_str='';
-  IFS=$'\n' read -r -d '' -a _purge_pkg_list < <(
+  readarray -t _purge_pkg_list < <(
     echo "${_purge_pkg_list_str}" | cut -f1 -d '<'
   );
 
