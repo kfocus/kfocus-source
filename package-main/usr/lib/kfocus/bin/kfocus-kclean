@@ -130,7 +130,8 @@ _echoInstKversPkgStrFn () {
   # removed too. Add logic here.
 
   _echoPkgStrFn "linux-image-${_vers_str}";
-  _echoPkgStrFn "linux-image-unsigned-${_vers_str}";
+  # TODO: linux-image-unsigned is not yet properly handled
+  # _echoPkgStrFn "linux-image-unsigned-${_vers_str}";
 
   if [ "${_kernel_flavor}" = 'azure' ]; then
     # Cut off the '-fde' at the end if it exists, the headers, modules,
@@ -203,7 +204,8 @@ _cm2EchoFn "PURGEABLE KVERS LIST >>>$(_echoPurgeableKversListStr)<<<";
     _azure_check_kver="$(sed "s/azure-fde/azure/" <<< "${_vers_str}")";
     if [[ "${_azure_check_kvers_str}" =~ ${_azure_check_kver} ]]; then
       _echoPkgStrFn "linux-image-${_vers_str}";
-      _echoPkgStrFn "linux-image-unsigned-${_vers_str}";
+      # TODO: linux-image-unsigned is not yet properly handled
+      # _echoPkgStrFn "linux-image-unsigned-${_vers_str}";
     else
       _echoInstKversPkgStrFn "${_vers_str}";
     fi
@@ -217,7 +219,7 @@ _cm2EchoFn "PURGEABLE KVERS LIST >>>$(_echoPurgeableKversListStr)<<<";
 # Mock this for tests
 #
 _echoAptListStrFn () {
-  dpkg -l | tail -n+5 | grep -E '^.[^n]' | awk '{print $2}';
+  apt list --installed 2>/dev/null | cut -d'/' -f1;
 }
 ## . END _echoAptListStrFn }
 
