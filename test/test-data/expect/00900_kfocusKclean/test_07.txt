@@ -17,6 +17,10 @@ from running out of disk space in /boot.
 Packages to Keep
 linux-headers-6.2.0-35-generic
 linux-headers-6.5.0-14-generic
+linux-hwe-6.2-headers-6.2.0-35
+linux-hwe-6.2-tools-6.2.0-35
+linux-hwe-6.5-headers-6.5.0-14
+linux-hwe-6.5-tools-6.5.0-14
 linux-image-6.2.0-35-generic
 linux-image-6.5.0-14-generic
 linux-modules-6.2.0-35-generic
@@ -28,6 +32,8 @@ linux-tools-6.5.0-14-generic
 
 Packages to Remove
 linux-headers-5.19.0-50-generic
+linux-hwe-5.19-headers-5.19.0-50
+linux-hwe-5.19-tools-5.19.0-50
 linux-image-5.19.0-50-generic
 linux-modules-5.19.0-50-generic
 linux-modules-extra-5.19.0-50-generic
@@ -39,7 +45,7 @@ Do you wish to continue
 y
 
 Purge Package List:
-Purging packages apt-get purge -y linux-headers-5.19.0-50-generic linux-image-5.19.0-50-generic linux-modules-5.19.0-50-generic linux-modules-extra-5.19.0-50-generic linux-tools-5.19.0-50-generic
+Purging packages apt-get purge -y linux-headers-5.19.0-50-generic linux-hwe-5.19-headers-5.19.0-50 linux-hwe-5.19-tools-5.19.0-50 linux-image-5.19.0-50-generic linux-modules-5.19.0-50-generic linux-modules-extra-5.19.0-50-generic linux-tools-5.19.0-50-generic
 
 FocusRx: KERNEL CLEANER FINISHED
 

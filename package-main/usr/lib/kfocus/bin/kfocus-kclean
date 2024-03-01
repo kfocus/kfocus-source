@@ -157,7 +157,7 @@ _echoInstKversPkgStrFn () {
     _kernel_alt_flavor="${_kernel_flavor}";
   fi
 
-  _cm2WarnStrFn ">>$(_echoPkgStrFn 'linux-'"${_kernel_alt_flavor}"'-.*-(headers|tools|cloud|cloud-tools)-'"${_short_str}")<<\n\n";
+  _echoPkgStrFn 'linux-'"${_kernel_alt_flavor}"'-.*-(headers|tools|cloud|cloud-tools)-'"${_short_str}";
 }
 ## . END _echoInstKversPkgStrFn }
 
