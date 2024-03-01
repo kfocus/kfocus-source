@@ -126,8 +126,6 @@ _echoInstKversPkgStrFn () {
   _vers_str="${*}";
   _short_str="$(cut -f1-2 -d'-' <<< "${_vers_str}")";
   _kernel_flavor="$(cut -f3 -d'-' <<< "${_vers_str}")";
-  # TODO some kernel packages use the short_str, those should be
-  # removed too. Add logic here.
 
   _echoPkgStrFn "linux-image-${_vers_str}";
   # TODO: linux-image-unsigned is not yet properly handled
