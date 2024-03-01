@@ -359,10 +359,9 @@ linux-tools-generic-hwe-22.04
   6.5.0-17-generic, and generic-hwe-22.04.
 - Running kernel is generic-hwe-22.04 (6.5.0-21-generic).
 - /boot is on root disk with 1482M free.
-- Results in no action BECAUSE:
- -- Free space exceeds 5 * kernel unit size int (200MB).
- -- Enough disk space is present to permit more than 8 kernels to be
-    installed.
+- Results in purge of generic-hwe-22.04-kfocus components (6.5.0-14-generic)
+  BECAUSE:
+ -- Free space is under 10GB, leaving effective space for only two kernels.
 ;;y;6.5.0-21-generic;n;1482,2048;0;
 linux-base
 linux-firmware
@@ -397,11 +396,10 @@ linux-tools-generic-hwe-22.04
 - Running kernel is generic-hwe-22.04 (6.5.0-21-generic).
 - /boot is on root disk with 1482M free.
 - Run is forced by -f flag.
-- Results in no action BECAUSE:
- -- Free space exceeds 5 * kernel unit size int (200MB).
- -- Enough disk space is present to permit more than 8 kernels to be
-    installed.
- -- HOWEVER, report is presented due to force flag.
+- Results in purge of generic-hwe-22.04-kfocus components (6.5.0-14-generic)
+  BECAUSE:
+ -- Free space is under 10GB, leaving effective space for only two kernels.
+ -- IN ADDITION, report is presented due to force flag.
 ;-f;y;6.5.0-21-generic;n;1482,2048;0;
 linux-base
 linux-firmware
@@ -436,11 +434,9 @@ linux-tools-generic-hwe-22.04
 - Running kernel is generic-hwe-22.04 (6.5.0-21-generic).
 - /boot is on root disk with 1482M free.
 - Run is forced by -f flag.
-- Results in no action BECAUSE:
- -- Free space exceeds 5 * kernel unit size int (200MB).
- -- Enough disk space is present to permit more than 8 kernels to be
-    installed.
- -- HOWEVER, report is presented due to force flag.
+- Results in purge of 6.5.0-17-generic BECAUSE:
+ -- Free space is under 10GB, leaving effective space for only two kernels.
+ -- IN ADDITION, report is presented due to force flag.
 ;-f;y;6.5.0-21-generic;n;1482,2048;0;
 linux-base
 linux-firmware
@@ -641,11 +637,11 @@ linux-tools-6.5.0-21-generic'
   '.016 Installed kernels are generic-hwe-22.04-kfocus,
   6.5.0-17-generic, and generic-hwe-22.04.
 - Running kernel is generic-hwe-22.04 (6.5.0-21-generic).
-- /boot is on root disk with 500M free.
+- /boot is on large root disk with 500M free.
 - Run is forced by -f flag.
 - Results in purge of 6.5.0-17-generic BECAUSE:
- -- Free space does not exceed 5 * kernel unit size int (200MB).
-;;y;6.5.0-21-generic;n;500,2048;0;
+ -- Free space does NOT exceed 5 * kernel unit size int (200MB).
+;;y;6.5.0-21-generic;n;500,102048;0;
 linux-base
 linux-firmware
 linux-generic-hwe-22.04

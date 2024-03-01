@@ -365,12 +365,12 @@ _echoPrioritiezedKversExtraKeepStr () {
 _mainFn() {
   declare _body_title _run_msg_str _brow_str _erow_str _table_str _do_force \
     _opt_str _prompt_str _is_boot_low _is_boot_mounted _boot_avail_int \
-    _boot_size_int _check_int _inst_kvers_list_str _inst_kvers_list_count \
-    _kernel_min_count _kernel_max_count _kernel_unit_size_int _do_check \
-    _keep_pkg_list_str _keep_kvers_list_count _reserve_kvers_count \
-    _purge_pkg_list_str _purge_msg _do_purge \
-    _end_msg_str _purge_pkg_list _purge_pkg _cmd_list _win_title \
-    _exit_str;
+    _boot_size_int _effective_size _check_int _inst_kvers_list_str \
+    _inst_kvers_list_count _kernel_min_count _kernel_max_count \
+    _kernel_unit_size_int _do_check _keep_pkg_list_str \
+    _keep_kvers_list_count _reserve_kvers_count _purge_pkg_list_str \
+    _purge_msg _do_purge _end_msg_str _purge_pkg_list _purge_pkg _cmd_list \
+    _win_title _exit_str;
 
   ## Begin Initialize {
   _aptListStr="$(_echoAptListStrFn)";
@@ -416,8 +416,16 @@ _mainFn() {
   _boot_size_int="$(_echoBootMegsFn 'size')";
   _is_boot_mounted="$(_echoIsBootMountPointFn)";
 
+  if [ "${_is_boot_mounted}" = 'y' ]; then
+    _effective_size="${_boot_size_int}";
+  elif [ "${_boot_avail_int}" -lt '10000' ]; then
+    _effective_size="((2 * _kernel_unit_size_int))";
+  else
+    _effective_size="((8 * _kernel_unit_size_int))";
+  fi
+
   # Adjust max allowable kernel count to space
-  _check_int=$(("${_boot_size_int}" / "${_kernel_unit_size_int}"));
+  _check_int=$(("${_effective_size}" / "${_kernel_unit_size_int}"));
   (("${_check_int}" < "${_kernel_max_count}")) &&
     _kernel_max_count="${_check_int}";
 
@@ -483,16 +491,6 @@ ${_inst_kvers_list_count} kernel images are installed.";
   # Deprecated
   # _kversLlHweStr="$(_echoMetaKversStrFn linux-image-lowlatency-hwe-22.04)";
   # _kversOemStr="$(_echoMetaKversStrFn linux-image-oem-22.04-kfocus)";
-
-  # Not desired: Hack to remove packages if top-level meta is not installed
-  # (see note above for long-term plan)
-  # if ! grep -qE '^linux-generic-hwe-22.04-kfocus$' <<<"${_aptListStr}"; then
-  #   _kversFullPrefStr='XXX_NOT_FOUND_XXX';
-  # fi
-  # Deprecated
-  # if ! grep -qe '^linux-lowlatency-hwe-22.04$' <<<"${_aptListStr}"; then
-  #   _kversLlHweStr='XXX_NOT_FOUND_XXX';
-  # fi
 
   # Report bad running kernel string
   if [ -z "${_kversFullRunStr}" ]; then

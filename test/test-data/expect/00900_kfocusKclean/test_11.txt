@@ -3,37 +3,48 @@
 - Running kernel is generic-hwe-22.04 (6.5.0-21-generic).
 - /boot is on root disk with 1482M free.
 - Run is forced by -f flag.
-- Results in no action BECAUSE:
- -- Free space exceeds 5 * kernel unit size int (200MB).
- -- Enough disk space is present to permit more than 8 kernels to be
-    installed.
- -- HOWEVER, report is presented due to force flag.
+- Results in purge of generic-hwe-22.04-kfocus components (6.5.0-14-generic)
+  BECAUSE:
+ -- Free space is under 10GB, leaving effective space for only two kernels.
+ -- IN ADDITION, report is presented due to force flag.
 
-FocusRx: KERNEL CLEANER
+FocusRX: Purge Unused Kernels?
 Doc: https://kfocus.org/wf/tools#kclean
 
 Check forced by flag.
 The /boot directory has 1482M available.
 3 kernel images are installed.
 
+Removing unused kernels prevents the system
+from running out of disk space in /boot.
+
 Packages to Keep
-linux-headers-6.5.0-14-generic
 linux-headers-6.5.0-17-generic
 linux-headers-6.5.0-21-generic
-linux-image-6.5.0-14-generic
 linux-image-6.5.0-17-generic
 linux-image-6.5.0-21-generic
-linux-modules-6.5.0-14-generic
 linux-modules-6.5.0-17-generic
 linux-modules-6.5.0-21-generic
-linux-modules-extra-6.5.0-14-generic
 linux-modules-extra-6.5.0-17-generic
 linux-modules-extra-6.5.0-21-generic
-linux-tools-6.5.0-14-generic
 linux-tools-6.5.0-17-generic
 linux-tools-6.5.0-21-generic
 
 Packages to Remove
-There are no unused kernels to purge.
+linux-headers-6.5.0-14-generic
+linux-image-6.5.0-14-generic
+linux-modules-6.5.0-14-generic
+linux-modules-extra-6.5.0-14-generic
+linux-tools-6.5.0-14-generic
+
+Make sure your files are backed-up.
+
+Do you wish to continue
+y
+
+Purge Package List:
+Purging packages apt-get purge -y linux-headers-6.5.0-14-generic linux-image-6.5.0-14-generic linux-modules-6.5.0-14-generic linux-modules-extra-6.5.0-14-generic linux-tools-6.5.0-14-generic
+
+FocusRx: KERNEL CLEANER FINISHED
 
 Press <return> to continue.
