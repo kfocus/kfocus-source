@@ -122,9 +122,9 @@ _echoPkgStrFn () {
 
 ## BEGIN _echoInstKversPkgStrFn {
 _echoInstKversPkgStrFn () {
-  declare _vers_str _short_str _kernel_flavor _prefix;
+  declare _vers_str _short_str _kernel_flavor _kernel_alt_flavor _prefix;
   _vers_str="${*}";
-  _short_str="$(cut -f1-2 -d'.' <<< "${_vers_str}")";
+  _short_str="$(cut -f1-2 -d'-' <<< "${_vers_str}")";
   _kernel_flavor="$(cut -f3 -d'-' <<< "${_vers_str}")";
   # TODO some kernel packages use the short_str, those should be
   # removed too. Add logic here.
@@ -144,9 +144,20 @@ _echoInstKversPkgStrFn () {
     _echoPkgStrFn "linux-${_prefix}-${_vers_str}";
   done
 
-  ## TODO: Output files that use short_str, something like this
-  # WARN: THIS IS NOT CURRENTLY WORKING!
-  # _cm2WarnStrFn ">>$(_echoPkgStrFn 'linux-.*'"${_short_str}"'-\(headers|tools|cloud|cloud-tools\)-'"${_vers_str}")<<\n\n";
+  # There are packages called linux-flavor-(headers|tools|cloud-tools), where
+  # flavor is either a normal flavor like azure, aws, etc., or it is `hwe`
+  # for generic or lowlatency kernels, or it is nvidia-something where
+  # something is optional and there may be more than one of them. We need to
+  # match those.
+  
+  if [ "${_kernel_flavor}" = 'generic' ] \
+    || [ "${_kernel_flavor}" = 'lowlatency' ]; then
+    _kernel_alt_flavor="hwe";
+  else
+    _kernel_alt_flavor="${_kernel_flavor}";
+  fi
+
+  _cm2WarnStrFn ">>$(_echoPkgStrFn 'linux-'"${_kernel_alt_flavor}"'-.*-(headers|tools|cloud|cloud-tools)-'"${_short_str}")<<\n\n";
 }
 ## . END _echoInstKversPkgStrFn }
 
