@@ -122,7 +122,7 @@ _echoPkgStrFn () {
 
 ## BEGIN _echoInstKversPkgStrFn {
 _echoInstKversPkgStrFn () {
-  declare _vers_str _short_str _kernel_flavor _prefix _is_azure_fde;
+  declare _vers_str _short_str _kernel_flavor _prefix;
   _vers_str="${*}";
   _short_str="$(cut -f1-2 -d'.' <<< "${_vers_str}")";
   _kernel_flavor="$(cut -f3 -d'-' <<< "${_vers_str}")";
@@ -143,6 +143,10 @@ _echoInstKversPkgStrFn () {
   for _prefix in 'headers' 'modules' 'modules-extra' 'tools'; do
     _echoPkgStrFn "linux-${_prefix}-${_vers_str}";
   done
+
+  ## TODO: Output files that use short_str, something like this
+  # WARN: THIS IS NOT CURRENTLY WORKING!
+  # _cm2WarnStrFn ">>$(_echoPkgStrFn 'linux-.*'"${_short_str}"'-\(headers|tools|cloud|cloud-tools\)-'"${_vers_str}")<<\n\n";
 }
 ## . END _echoInstKversPkgStrFn }
 
@@ -156,21 +160,23 @@ _echoInstKversPkgStrFn () {
 #  _kversFullRunStr _kversFullPrefStr _kversLlHweStr _kversExtraKeepStr
 #
 _echoKeepPkgListStrFn () {
-  declare _scratch_list _keep_list _append_list _vers_str ;
+  declare _scratch_list _keep_kvers_list _append_list _vers_str ;
 
   # Deprecated: "${_kversOemStr}" "${_kversLlHweStr}"
   _scratch_list=( "${_kversFullRunStr}" "${_kversFullPrefStr}" );
 
-  readarray -t _keep_list < <(IFS=$'\n'; uniq <<<"${_scratch_list[*]}");
-_cm2EchoFn "KVERS KEEP LIST PRE >>>${_keep_list[*]}<<<";
+  readarray -t _keep_kvers_list < <(IFS=$'\n'; uniq <<<"${_scratch_list[*]}");
+  # _cm2EchoFn "DEBUG: KVERS KEEP LIST PRE >>>${_keep_list[*]}<<<";
   if [ -n "${_kversExtraKeepStr}" ]; then
     IFS='|' read -r -a _append_list <<<"${_kversExtraKeepStr}";
-    _keep_list+=("${_append_list[@]}");
+    _keep_kvers_list+=("${_append_list[@]}");
   fi
-_cm2EchoFn "KVERS KEEP LIST POST >>>${_keep_list[*]}<<<";
+
+  # _cm2EchoFn "DEBUG: KVERS KEEP LIST POST >>>${_keep_list[*]}<<<";
   while read -r _vers_str; do
+    # Echo all matching packages that make up a kernel package set
     _echoInstKversPkgStrFn "${_vers_str}";
-  done < <(printf '%s\n' "${_keep_list[@]}" | grep -v '^XXX' | sort -uV);
+  done < <(printf '%s\n' "${_keep_kvers_list[@]}" | grep -v '^XXX' | sort -uV);
 }
 ## . END _echoKeepPkgListStrFn }
 
@@ -182,9 +188,10 @@ _cm2EchoFn "KVERS KEEP LIST POST >>>${_keep_list[*]}<<<";
 # Arguments: Requires package variables:
 #  _kversFullRunStr _kversFullPrefStr _kversLlHweStr _kversExtraKeepStr
 #
+# shellcheck disable=SC2001
 _echoPurgePkgListStrFn() {
-  declare _vers_str _azure_check_kvers_str _azure_check_kver;
-_cm2EchoFn "PURGEABLE KVERS LIST >>>$(_echoPurgeableKversListStr)<<<";
+  declare _vers_str _azure_check_kvers_str _azure_check_kvers;
+  # _cm2EchoFn "DEBUG PURGEABLE KVERS LIST >>>$(_echoPurgeableKversListStr)<<<";
 
   # If the user has Azure kernels installed for whatever reason, and the
   # kernel cleaner attempts to remove an azure kernel but keep an azure-fde
@@ -201,8 +208,8 @@ _cm2EchoFn "PURGEABLE KVERS LIST >>>$(_echoPurgeableKversListStr)<<<";
   )";
 
   while read -r _vers_str; do
-    _azure_check_kver="$(sed "s/azure-fde/azure/" <<< "${_vers_str}")";
-    if [[ "${_azure_check_kvers_str}" =~ ${_azure_check_kver} ]]; then
+    _azure_check_kvers="$(sed "s/azure-fde/azure/" <<< "${_vers_str}")";
+    if [[ "${_azure_check_kvers_str}" =~ ${_azure_check_kvers} ]]; then
       _echoPkgStrFn "linux-image-${_vers_str}";
       # TODO: linux-image-unsigned is not yet properly handled
       # _echoPkgStrFn "linux-image-unsigned-${_vers_str}";
@@ -261,14 +268,9 @@ _printDebug01Fn() {
 }
 
 ## BEGIN _echoPrioritizedKversExtraKeepStr {
-_echoPrioritiezedKversExtraKeepStr () {
-  declare _id_list _kernel_list _kernel_flavor_list_str _kernel_flavor_list \
-    _kernel_str _kernel_flavor_str _flavor_counter _kernel_counter \
-    _id_counter _id_list _unmarked_kernel_count _kernel_list_str;
-
-  # This rather involved algorithm does the following:
+  # Purpose:
   #
-  # * Obtains a list of all of the kernel flavors found in the provided kernel
+  # * Obtains a list of all the kernel flavors found in the provided kernel
   #   string.
   # * Sorts this list alphabetically, pulling the generic and lowlatency
   #   flavors to the top of the list so that it goes generic -> lowlatency ->
@@ -281,68 +283,88 @@ _echoPrioritiezedKversExtraKeepStr () {
   #   marker.
   # * Sorts the list, removes the priority markers, and echos it.
 
-  _id_list=( 'A' 'B' 'C' 'D' 'E' 'F' 'G' 'H' 'I' 'J' 'K' 'L' 'M' 'N' 'O' 'P' \
-    'Q' 'R' 'S' 'T' 'U' 'V' 'W' 'X' 'Y' 'Z' 'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' \
-    'i' 'j' 'k' 'l' 'm' 'n' 'o' 'p' 'q' 'r' 's' 't' 'u' 'v' 'w' 'x' 'y' 'z' );
-  _kernel_list=();
-  _kernel_flavor_list_str="";
+_echoPrioritizedKversExtraKeepStr () {
+  declare _kvers_list _kernel_flavor_list_str _kernel_flavor_list \
+    _kvers_str _kernel_flavor_str _flavor_idx _kvers_idx \
+    _id_idx _id_prefix _kvers_count _kvers_list_str _safety_idx \
+    _unmarked_kvers_count;
+
+  # Initialize variables
+  _kvers_list_str="${1:-}";
+  [ -z "${_kvers_list_str}" ] && return 1;
+
   _kernel_flavor_list=();
+  _kernel_flavor_list_str="";
+  _kvers_list=();
 
-  _kernel_list_str="${1:-}";
-  if [ -z "${_kernel_list_str}" ]; then
-    return 1;
-  fi
-
-  readarray -t _kernel_list <<< "${_kernel_list_str}";
-
-  for _kernel_str in "${_kernel_list[@]}"; do
-    _kernel_flavor_list_str+="$(cut -d'-' -f3 <<< "${_kernel_str}")"$'\n';
+  # Read list of kernel versions from string, extract flavors
+  readarray -t _kvers_list <<< "${_kvers_list_str}";
+  for _kvers_str in "${_kvers_list[@]}"; do
+    _kernel_flavor_list_str+="$(cut -d'-' -f3 <<< "${_kvers_str}")"$'\n';
   done
 
+  # Transform list of flavors to prefer generic and lowlatency first
+  # TODO: If we switch to OEM, generic must become oem; use a variable?
   _kernel_flavor_list_str="$(
     echo -n "${_kernel_flavor_list_str}" \
-      | sed "s/generic/aaaaaa001/; s/lowlatency/aaaaaa002/;" \
+      | sed "s/^generic$/000000001/; s/^lowlatency$/000000002/;" \
       | sort -u \
-      | sed "s/aaaaaa001/generic/; s/aaaaaa002/lowlatency/;";
+      | sed "s/^000000001$/generic/; s/^000000002$/lowlatency/;";
   )";
 
+  # Read flavor list and initialize loop variables
   readarray -t _kernel_flavor_list <<< "${_kernel_flavor_list_str}";
+  _flavor_idx=0;
+  _id_idx=0;
+  _unmarked_kvers_count="${#_kvers_list[@]}";
 
-  _flavor_counter=0;
-  _kernel_counter=0;
-  _id_counter=0;
-  _unmarked_kernel_count="${#_kernel_list[@]}";
+  ## BEGIN Loop to develop ORDERED list of <kvers>-<flavor> to keep.
+  # For example, if flavors are 'generic', 'aws, and 'bread',
+  #   and each has versions 6.5.0-14 and 6.2.0-35, the output
+  #   would be:
+  # ( '001_6.5.0-14-generic' '002_6.5.0-14-aws' '003_6.5.0-14-bread'
+  #   '004_6.2.0-35-generic' '005_6.2.0-35-aws' '006_6.2.0-35-bread' ...
+  # )
+  # This outer is limited to 100 iterations to prevent an unending process.
+  #
+  for _safety_idx in {1..100}; do
+    _kernel_flavor_str="${_kernel_flavor_list[_flavor_idx]}";
 
-  while [ "${_unmarked_kernel_count}" != '0' ]; do
-    _kernel_flavor_str="${_kernel_flavor_list[_flavor_counter]}";
-
-    while [ "${_kernel_counter}" -lt "${#_kernel_list[@]}" ]; do
-      _kernel_str="${_kernel_list[_kernel_counter]}";
+    _kvers_count="${#_kvers_list[@]}";
+    for (( _kvers_idx = 0; _kvers_idx < _kvers_count; _kvers_idx++ )); do
+      _kvers_str="${_kvers_list[_kvers_idx]}";
       if [ "${_kernel_flavor_str}" = \
-        "$(cut -d'-' -f3 <<< "${_kernel_str}")" ]; then
-        if ! [[ "${_kernel_str}" =~ ^[a-zA-Z] ]]; then
-          _kernel_list[_kernel_counter]="${_id_list[_id_counter]}${_kernel_list[_kernel_counter]}";
-          ((_id_counter++));
-          ((_unmarked_kernel_count--));
+        "$(cut -d'-' -f3 <<< "${_kvers_str}")" ]; then
+        if ! [[ "${_kvers_str}" =~ ^[[:digit:]]{3}_ ]]; then
+          _id_prefix="$(printf '%03i_' "${_id_idx}")";
+          _kvers_list[_kvers_idx]="${_id_prefix}${_kvers_list[_kvers_idx]}";
+          ((_id_idx++));
+          ((_unmarked_kvers_count--));
           break;
         fi
       fi
-      ((_kernel_counter++))
     done
 
-    _kernel_counter=0;
-    ((_flavor_counter++));
-    if [ "${_flavor_counter}" -ge "${#_kernel_flavor_list[@]}" ]; then
-      _flavor_counter=0;
+    ((_flavor_idx++));
+    if [ "${_flavor_idx}" -ge "${#_kernel_flavor_list[@]}" ]; then
+      _flavor_idx=0;
     fi
+
+    # Break once all versions are considered
+    if (( _unmarked_kvers_count < 1 )); then break; fi
   done
 
-  IFS=$'\n'; _kernel_list_str="${_kernel_list[*]}";
-  _kernel_list_str="$(
-    sort <<< "${_kernel_list_str}" \
-      | sed "s/^.//";
+  if (( _unmarked_kvers_count > 0 )); then
+    echo 'Unexpected data error.';
+    return 1;
+  fi
+
+  # Sort and then remove priority string, e.g 'A'.
+  IFS=$'\n'; _kvers_list_str="${_kvers_list[*]}";
+  _kvers_list_str="$(
+    sort <<< "${_kvers_list_str}" | sed -E 's/^[0-9]{3}_//';
   )";
-  echo "${_kernel_list_str}";
+  echo "${_kvers_list_str}";
 }
 ## . END _echoPrioritizedKversExtraKeepStr }
 
@@ -448,7 +470,7 @@ _mainFn() {
 
   # Determine installed kernel version
   _inst_kvers_list_str="$(_echoInstKversListStrFn)";
-_cm2EchoFn "INSTALLED KERNEL LIST VERSIONS >>>${_inst_kvers_list_str}<<<";
+  # _cm2EchoFn "DEBUG: INSTALLED KVERS LIST >>>${_inst_kvers_list_str}<<<";
   _inst_kvers_list_count="$(wc -l <<< "${_inst_kvers_list_str}")";
 
   _do_check='n';
@@ -537,7 +559,7 @@ Please see your system administrator to fix.";
     )";
 
     _kversExtraKeepStr="$(
-      _echoPrioritiezedKversExtraKeepStr "${_kversExtraKeepStr}" \
+      _echoPrioritizedKversExtraKeepStr "${_kversExtraKeepStr}" \
         | head -n "${_reserve_kvers_count}" \
         | tr '\n' '|' \
         | sed 's/|$//'
