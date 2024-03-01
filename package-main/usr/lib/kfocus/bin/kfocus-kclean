@@ -340,7 +340,7 @@ _echoPrioritizedKversExtraKeepStr () {
     _kernel_flavor_str="${_kernel_flavor_list[_flavor_idx]}";
 
     _kvers_count="${#_kvers_list[@]}";
-    for (( _kvers_idx = 0; _kvers_idx < _kvers_count; _kvers_idx++ )); do
+    for ((_kvers_idx = 0; _kvers_idx < _kvers_count; _kvers_idx++)); do
       _kvers_str="${_kvers_list[_kvers_idx]}";
       if [ "${_kernel_flavor_str}" = \
         "$(cut -d'-' -f3 <<< "${_kvers_str}")" ]; then
@@ -360,10 +360,10 @@ _echoPrioritizedKversExtraKeepStr () {
     fi
 
     # Break once all versions are considered
-    if (( _unmarked_kvers_count < 1 )); then break; fi
+    if ((_unmarked_kvers_count < 1)); then break; fi
   done
 
-  if (( _unmarked_kvers_count > 0 )); then
+  if ((_unmarked_kvers_count > 0)); then
     echo 'Unexpected data error.';
     return 1;
   fi
@@ -395,13 +395,13 @@ _echoPrioritizedKversExtraKeepStr () {
 
 _mainFn() {
   declare _body_title _run_msg_str _brow_str _erow_str _table_str _do_force \
-    _opt_str _prompt_str _is_boot_low _is_boot_mounted _boot_avail_int \
-    _boot_size_int _effective_size _check_int _inst_kvers_list_str \
-    _inst_kvers_list_count _kernel_min_count _kernel_max_count \
-    _kernel_unit_size_int _do_check _keep_pkg_list_str \
-    _keep_kvers_list_count _reserve_kvers_count _purge_pkg_list_str \
-    _purge_msg _do_purge _end_msg_str _purge_pkg_list _purge_pkg _cmd_list \
-    _win_title _exit_str;
+    _opt_str _prompt_str _is_boot_low _is_boot_partition _boot_avail_int \
+    _boot_size_int _effective_size_int _effective_avail_int _check_int \
+    _inst_kvers_list_str _inst_kvers_list_count _kernel_min_count \
+    _kernel_max_count  _kernel_unit_size_int _avail_count _do_check \
+    _keep_pkg_list_str _keep_kvers_list_count _reserve_kvers_count \
+    _purge_pkg_list_str _purge_msg _reply _end_msg_str _purge_pkg_list \
+    _purge_pkg _cmd_list _win_title _exit_str;
 
   ## Begin Initialize {
   _aptListStr="$(_echoAptListStrFn)";
@@ -413,7 +413,6 @@ _mainFn() {
   _brow_str='<tr><td style="padding:8px 32px 8px 0">';
   _erow_str='</td></tr>';
   _table_str='<table style="width:100%;margin-right:32px">';
-
   ## . End Initialize }
 
   ## Begin Process Options {
@@ -430,6 +429,9 @@ _mainFn() {
   ## . End Process Options }
 
   ## Begin Heuristics {
+  # Calculate effective boot size and available space.
+  #   - If boot is on its own partition, these values are actual
+  #
   # Suggest kernel purge if one of the following conditions is met:
   #  1. Boot is separate, small partition < _kernel_unit_size_int avail
   #     OR 5 x 200M if not a separate partition (see echoBootInfoStrFn)
@@ -439,48 +441,66 @@ _mainFn() {
 
   # Set defaults
   _kernel_unit_size_int=200;
-  _kernel_min_count=2;
   _kernel_max_count=8;
 
   # Read boot disk size
   _boot_avail_int="$(_echoBootMegsFn 'avail')";
   _boot_size_int="$(_echoBootMegsFn 'size')";
-  _is_boot_mounted="$(_echoIsBootMountPointFn)";
+  _is_boot_partition="$(_echoIsBootMountPointFn)";
 
-  if [ "${_is_boot_mounted}" = 'y' ]; then
-    _effective_size="${_boot_size_int}";
-  elif [ "${_boot_avail_int}" -lt '10000' ]; then
-    _effective_size="((2 * _kernel_unit_size_int))";
+  # Determine installed kernel versions and count
+  _inst_kvers_list_str="$(_echoInstKversListStrFn)";
+  _inst_kvers_list_count="$(wc -l <<< "${_inst_kvers_list_str}")";
+  # _cm2EchoFn "DEBUG: INSTALLED KVERS LIST >>>${_inst_kvers_list_str}<<<";
+
+  if [ "${_is_boot_partition}" = 'y' ]; then
+    _effective_size_int="${_boot_size_int}";
+    _effective_avail_int="${_boot_avail_int}";
   else
-    _effective_size="((8 * _kernel_unit_size_int))";
+    if ((_boot_size_int < 10000)); then
+      _effective_size_int="$((_boot_avail_int / 8))";
+    else
+      _effective_size_int="$((_kernel_unit_size_int * 8))";
+    fi
+    _effective_avail_int="$((_effective_size_int
+      - (_inst_kvers_list_count * _kernel_unit_size_int) ))";
   fi
+
+  _avail_count="$((_effective_avail_int / _kernel_unit_size_int))";
+  _is_boot_low='n'; ((_avail_count < 1 )) && _is_boot_low='y';
 
   # Adjust max allowable kernel count to space
-  _check_int=$(("${_effective_size}" / "${_kernel_unit_size_int}"));
-  (("${_check_int}" < "${_kernel_max_count}")) &&
+  _check_int="$((_effective_size_int / _kernel_unit_size_int))";
+  if ((_check_int < _kernel_max_count)); then
     _kernel_max_count="${_check_int}";
-
-  # Expand required available space by 5x if /boot is not a mount point
-  _printDebug01Fn 'Is boot mounted' "${_is_boot_mounted}";
-  _printDebug01Fn '/boot size      (M)' "${_boot_size_int}";
-  _printDebug01Fn '/boot available (M)' "${_boot_avail_int}";
-  _printDebug01Fn 'Target max kernels' "${_kernel_max_count}";
-
-  _is_boot_low='n';
-  if [ "${_is_boot_mounted}" = 'y' ]; then
-    if (("${_boot_avail_int}" < "${_kernel_unit_size_int}")); then
-      _is_boot_low='y';
-    fi
-  else
-    if (("${_boot_avail_int}" < 5 * "${_kernel_unit_size_int}")); then
-      _is_boot_low='y';
-    fi
   fi
 
-  # Determine installed kernel version
-  _inst_kvers_list_str="$(_echoInstKversListStrFn)";
-  # _cm2EchoFn "DEBUG: INSTALLED KVERS LIST >>>${_inst_kvers_list_str}<<<";
-  _inst_kvers_list_count="$(wc -l <<< "${_inst_kvers_list_str}")";
+  # Calculate _kernel_min_count, which must always be >=2
+  _kernel_min_count=2;
+  if ((_kernel_max_count >= 5)); then
+    _kernel_min_count="$((_kernel_max_count - 3))";
+  fi
+
+  # Expand required available space by 5x if /boot is not a mount point
+  _printDebug01Fn 'Is boot partition    ' "${_is_boot_partition}";
+  _printDebug01Fn '/boot size        (M)' "${_boot_size_int}";
+  _printDebug01Fn '/boot avail       (M)' "${_boot_avail_int}";
+  _printDebug01Fn '/boot size effective ' "${_effective_size_int}";
+  _printDebug01Fn '/boot avail effective' "${_effective_avail_int}"
+  _printDebug01Fn 'Target max kernels   ' "${_kernel_max_count}";
+  _printDebug01Fn 'Target min kernels   ' "${_kernel_min_count}";
+
+# TODO: Remove as no longer needed
+#  _is_boot_low='n';
+#  if [ "${_is_boot_partition}" = 'y' ]; then
+#    if (("${_boot_avail_int}" < "${_kernel_unit_size_int}")); then
+#      _is_boot_low='y';
+#    fi
+#  else
+#    if (("${_boot_avail_int}" < 5 * "${_kernel_unit_size_int}")); then
+#      _is_boot_low='y';
+#    fi
+#  fi
 
   _do_check='n';
   if [ "${_do_force}" = 'y' ]; then
@@ -510,14 +530,12 @@ ${_inst_kvers_list_count} kernel images are installed.";
   # a 'this is what I want to keep' GUI.
   #  Logic: List top-level metapackages like linux-generic-hwe-22.04:
   #    * If not found, do not reserve any associate kernel packages
-  #    * In installed, find related image package and use as below
+  #    * If installed, find related image package and use as below
   #    WE SHOULD KEEP 2 VERSION OF ANY META-LEVEL LIKE generic-hwe-22.04
   #
   _kversExtraKeepStr='';
   _kversFullRunStr="$(_echoKversFullRunStrFn)";
-  _kversFullPrefStr="$(
-    _echoMetaKversStrFn "${_preferredMetaPkg}";
-  )";
+  _kversFullPrefStr="$(_echoMetaKversStrFn "${_preferredMetaPkg}")";
 
   # Deprecated
   # _kversLlHweStr="$(_echoMetaKversStrFn linux-image-lowlatency-hwe-22.04)";
@@ -539,14 +557,6 @@ Please see your system administrator to fix.";
     | sort -u | wc -l
   )";
 
-  # Calculate how many more kernels to reserve
-  # TODO: This is a heuristic where we have a higher min if
-  #   we have lots of space. In the future, we would instead
-  #   use the keep-2-versions concept presented above.
-  #
-  if (("${_kernel_max_count}" >= 8)); then
-    _kernel_min_count=4;
-  fi
   _printDebug01Fn 'Target min kernels' "${_kernel_min_count}";
   _reserve_kvers_count=$(("${_kernel_min_count}" - "${_keep_kvers_list_count}"));
 
@@ -649,8 +659,8 @@ ${_cm2HtmEndStr}
 _EOW04
   )";
 
-  _do_purge="$(_cm2PromptUserFn "${_purge_msg}" "${_win_title}" 'w')";
-  if [ "${_do_purge}" = 'n' ]; then
+  _reply="$(_cm2PromptUserFn "${_purge_msg}" "${_win_title}" 'w')";
+  if [ "${_reply}" = 'n' ]; then
     _prompt_str='Exit without purge on user request';
     _cm2PromptUserFn "${_prompt_str}" "${_win_title}" 'p';
     return;
@@ -699,7 +709,8 @@ _EOW05
 ## . END _mainFn }
 
 ## BEGIN Declare global vars {
-declare _aptListStr _kversExtraKeepStr _kversFullPrefStr \
+declare _binName _binDir _baseDir _baseName _escExe \
+  _aptListStr _kversExtraKeepStr _kversFullPrefStr \
   _kversFullRunStr _preferredMetaPkg;
 
 _aptListStr='';
@@ -720,7 +731,6 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   # Get escalation exe
   _escExe="$(_cm2GetEscExeFn)" || exit;
-
   _mainFn "$@";
 fi
 ## . END Run main if script is not sourced }
