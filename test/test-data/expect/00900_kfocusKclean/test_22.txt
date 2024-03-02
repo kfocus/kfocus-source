@@ -1,11 +1,11 @@
-.012 Installed kernels are generic-hwe-22.04-kfocus,
+.022 Installed kernels are generic-hwe-22.04-kfocus,
   6.5.0-17-generic, and generic-hwe-22.04.
 - Running kernel is generic-hwe-22.04 (6.5.0-21-generic).
-- /boot is on root disk with 1482M free.
-- Run is forced by -f flag.
-- Results in purge of 6.5.0-17-generic BECAUSE:
- -- Free space is under 10GB, leaving effective space for only two kernels.
- -- IN ADDITION, report is presented due to force flag.
+- Blessed kernel is 6.5.0-14-generic (per Mock)
+- /boot is on large root disk but with 500M free.
+- Check forced: Very low system disk.
+- Results: PURGE all but two kernels
+-- ALSO WARN that system disk is low.
 
 FocusRX: Purge Unused Kernels?
 Doc: https://kfocus.org/wf/tools#kclean
@@ -14,7 +14,7 @@ Doc: https://kfocus.org/wf/tools#kclean
 The /boot dir shares the system disk.
 /boot values are calculated.
 MAKE ROOM TO ALLOW FOR MORE KERNELS.
-Check forced: Force flag used.
+Check forced: /boot space is low.
 
 Removing unused kernels prevents the system
 from running out of disk space in /boot.
