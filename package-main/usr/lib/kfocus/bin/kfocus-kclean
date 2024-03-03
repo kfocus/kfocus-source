@@ -537,17 +537,20 @@ _mainFn() {
   fi
 
   # Output debug
-  if [ "${_doDebug}" = 'y' ]; then
-    _echoDebugFn "$(cat << EOD;
-  Is boot partition   : ${_is_boot_partition}
-  /boot size          : MB ${_boot_size_int}
-  /boot free          : MB ${_boot_free_int}
-  /boot size effective: MB ${_eff_size_int}
-  /boot free effective: MB ${_eff_free_int}
-  Target max kernels  :  # ${_kernel_max_count}
-  Target min kernels  :  # ${_kernel_keep_count}
+  _kc2RtestDebugStr="$(cat << EOD;
+================================
+Is boot partition    : ${_is_boot_partition}
+/boot size           : ${_boot_size_int} MB
+/boot free           : ${_boot_free_int} MB
+/boot size effective : ${_eff_size_int} MB
+/boot free effective : ${_eff_free_int} MB
+Target max kernels   : ${_kernel_max_count}
+Target min kernels   : ${_kernel_keep_count}
+================================
 EOD
-    )";
+  )";
+  if [ "${_doDebug}" = 'y' ]; then
+    _echoDebugFn "${_kc2RtestDebugStr}";
   fi
 
   # Return if no check is triggered
@@ -761,7 +764,8 @@ _EOW05
 ## BEGIN Declare and assign global vars {
 declare _binName _binDir _baseDir _baseName _cStr \
   _doDebug _escExe _aptListStr _kversExtraKeepStr \
-  _kversFullPrefStr _kversFullRunStr _preferredMetaPkg;
+  _kversFullPrefStr _kversFullRunStr _preferredMetaPkg \
+  _kc2RtestDebugStr;
 
 _aptListStr='';
 _cStr=$'\n';

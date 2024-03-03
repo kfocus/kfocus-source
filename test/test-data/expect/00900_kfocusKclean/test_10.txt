@@ -1,10 +1,19 @@
-.010 Installed kernels are generic-hwe-22.04-kfocus (meta purged),
-  6.5.0-17-generic, and generic-hwe-22.04.
-- Running kernel is generic-hwe-22.04 (6.5.0-21-generic).
-- /boot is on root disk with 1482M free.
-- Results in purge of generic-hwe-22.04-kfocus components (6.5.0-14-generic)
-  BECAUSE:
- -- Free space is under 10GB, leaving effective space for only two kernels.
+_010 Installed kernels are:
+6.5.0-21-generic (generic-hwe-22.04),
+6.5.0-17-generic,
+6.5.0-14-generic (generic-hwe-22.04-kfocus) (meta purged).
+- Running kernel is 6.5.0-21-generic (generic-hwe-22.04) per assert.
+- Blessed kernel is NOT FOUND because meta not installed per assert.
+- /boot is NOT its own partition with 1482 free of 2048M.
+- Results in PURGE
+-- 6.5.0-21-generic is running, so retained.
+-- 6.5.0-17-generic is next version, so retained.
+-- 6.5.0-14-generic is PURGED because it is not bless
+--- generic-hwe-22.04-kfocus meta is not in package list.
+-- Root disk free space is under 10GB, so effective size is (1482/8) < 200
+-- Effective free size is free 185-(3*200) = -415
+--- There is NOT enough room for one more kernel (-415 < 200M).
+--- This is low space when total space only allows (-415/200 = -2) kernels.
 
 FocusRX: Purge Unused Kernels?
 Doc: https://kfocus.org/wf/tools#kclean
@@ -34,7 +43,7 @@ linux-modules-extra-6.5.0-21-generic
 linux-tools-6.5.0-17-generic
 linux-tools-6.5.0-21-generic
 
-Packages to Remove
+Packages to Purge
 linux-headers-6.5.0-14-generic
 linux-hwe-6.5-headers-6.5.0-14
 linux-hwe-6.5-tools-6.5.0-14
@@ -54,3 +63,12 @@ Purging packages apt-get purge -y linux-headers-6.5.0-14-generic linux-hwe-6.5-h
 FocusRx: KERNEL CLEANER FINISHED
 
 Press <return> to continue.
+================================
+Is boot partition    : n
+/boot size           : 2048 MB
+/boot free           : 1482 MB
+/boot size effective : 185 MB
+/boot free effective : -415 MB
+Target max kernels   : 0
+Target min kernels   : 2
+================================

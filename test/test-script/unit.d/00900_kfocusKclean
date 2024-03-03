@@ -419,7 +419,7 @@ linux-tools-6.5.0-21-generic
 linux-tools-common
 linux-tools-generic-hwe-22.04'
 
-  '_010 Installed kernels are
+  '_010 Installed kernels are:
 6.5.0-21-generic (generic-hwe-22.04),
 6.5.0-17-generic,
 6.5.0-14-generic (generic-hwe-22.04-kfocus) (meta purged).
@@ -432,7 +432,7 @@ linux-tools-generic-hwe-22.04'
 -- 6.5.0-14-generic is PURGED because it is not bless
 --- generic-hwe-22.04-kfocus meta is not in package list.
 -- Root disk free space is under 10GB, so effective size is (1482/8) < 200
--- Effective free size is 0 (it is actually negative 185-(3*200)=-415)
+-- Effective free size is free 185-(3*200) = -415
 --- There is NOT enough room for one more kernel (-415 < 200M).
 --- This is low space when total space only allows (-415/200 = -2) kernels.
 ;;y;6.5.0-21-generic;n;1482,2048;0;
@@ -1281,8 +1281,8 @@ _runTestFn () {
       if [ -z "${_str}" ]; then
         echo -e "${_assertDataList[0]}" >"${_runFile}";
       else
-        { echo -e "Update Disk      : ${_assertDataList[5]}"
-          echo -e "Updated Pkg List :${_assertDataList[7]}\n"
+        { echo -e "Update Disk      : ${_assertDataList[5]}";
+          echo -e "Updated Pkg List :${_assertDataList[7]}\n";
         } > "${_runFile}";
       fi
       # Run _mainFn from fixup_kernels with args using mocked functions
@@ -1290,6 +1290,9 @@ _runTestFn () {
       # https://unix.stackexchange.com/questions/233728
       export OPTIND=1;
       _mainFn "${_arg_list[@]}";
+
+      # Append debugging status
+      echo "${_kc2RtestDebugStr}" >> "${_runFile}";
 
       ## Begin Check diffs {
       if [ ! -f "${_expect_file}" ]; then touch "${_expect_file}"; fi
