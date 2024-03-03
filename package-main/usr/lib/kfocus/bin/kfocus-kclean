@@ -239,7 +239,7 @@ _echoPurgePkgListStrFn() {
 ## BEGIN _echoAptListStrFn {
 # Purpose: Return string with all packages
 #   that are fully or partially installed.
-# Mock this for tests
+#   Mock this for tests.
 #
 _echoAptListStrFn () {
   apt list --installed 2>/dev/null | cut -d'/' -f1;
@@ -401,14 +401,15 @@ _mainFn() {
   declare \
     _body_title _boot_free_int _boot_size_int \
     _brow_str _cmd_list _do_check _do_force _eff_free_int \
-    _eff_size_int _end_msg_str _erow_str _exit_str _inst_kvers_count \
+    _eff_size_int _end_msg_str _erow_str _exit_str \
+    _filtered_purge_list  _filtered_purge_list_str _inst_kvers_count \
     _inst_kvers_list_str _is_boot_low _is_boot_partition \
     _keep_kvers_list_count _keep_pkg_list_str _kernel_free_count \
     _kernel_keep_count _kernel_max_count _kernel_unit_size_int \
     _kversExtraKeepStr _kversFullPrefStr _kversFullRunStr \
     _opt_str _overfull_threshold_count _prompt_str _purge_msg \
-    _purge_pkg_list_str _purge_pkg_list _purge_pkg _reply \
-    _reserve_kvers_count _run_msg _table_str _win_title;
+    _purge_pkg_list_str _purge_pkg_list _purge_pkg \
+    _reply  _reserve_kvers_count _run_msg _table_str _win_title;
 
   ## Begin Initialize {
   _aptListStr="$(_echoAptListStrFn)";
@@ -626,17 +627,47 @@ Please see your system administrator to fix.";
   _purge_pkg_list_str="$(_echoPurgePkgListStrFn | sort -u)";
   ## . End Create strings for purge, keep, and dialogs }
 
+  ## BEGIN Filter purge list {
+  # shellcheck disable=SC2001
+  readarray -t _purge_pkg_list < <(
+    sed 's/<br>\s*$//' <<< "${_purge_pkg_list_str}"
+  );
+
+  _filtered_purge_list=();
+  _filtered_purge_list_str='';
+  for _purge_pkg in "${_purge_pkg_list[@]}"; do
+    # Skip empty lines
+    [[ "${_purge_pkg}" =~ ^[[:space:]]*$ ]] && continue;
+    if grep -qE "^${_purge_pkg}<br>$" <<< "${_keep_pkg_list_str}"; then
+      _cm2WarnStrFn "Purge package |${_purge_pkg}| is also in keep list";
+    else
+      if [ "${#_filtered_purge_list[@]}" -gt 0 ]; then
+        _filtered_purge_list_str+="${_cStr}";
+      fi
+      _filtered_purge_list+=("${_purge_pkg}");
+      _filtered_purge_list_str+="${_purge_pkg}<br>";
+    fi
+  done
+  _filtered_purge_list_str="${_filtered_purge_list_str/${_cStr}$//}";
+  ## . END Filter purge list }
+
   ## Begin Show dialog if there are no packages to purge {
-  if [ -z "${_purge_pkg_list_str}" ]; then
+  if [ -z "${_filtered_purge_list_str}" ]; then
     if [ "${_is_boot_low}" = 'y' ]; then
       _run_msg+="$(
         cat <<_EOW01
 
 
-<p>Disk space on /boot is critically low,<br>
-but only supported kernels are installed.<br>
-If you have a kernel you are not using,<br>
-purge it to increase available space.</p>
+<p>Disk space on <code>/boot</code> is low, but <br>
+only protected kernel are installed.<br></p>
+
+<p>If you have a kernel you are not using,<br>
+<b>purge it to increase available space.</b></p>
+
+<p>Otherwise, <code>/boot</code> could overfill during a <br>
+kernel upgrade which could prevent normal <br>
+booting of the system.</p>
+
 _EOW01
       )";
     fi
@@ -679,7 +710,7 @@ ${_brow_str}<h4 style="color:#f7941d">Packages to Keep</h4>${_erow_str}
 ${_brow_str}<code>${_keep_pkg_list_str}</code>${_erow_str}
 
 ${_brow_str}<h4 style="color:#f7941d">Packages to Remove</h4>${_erow_str}
-${_brow_str}<code>${_purge_pkg_list_str}</code>${_erow_str}
+${_brow_str}<code>${_filtered_purge_list_str}</code>${_erow_str}
 
 ${_brow_str}<b>Make sure your files are backed-up.</b>${_erow_str}
 
@@ -698,18 +729,7 @@ _EOW04
 
   ## Begin Purge packages {
   _end_msg_str='';
-  readarray -t _purge_pkg_list < <(
-    echo "${_purge_pkg_list_str}" | cut -f1 -d '<'
-  );
-
-  for _purge_pkg in "${_purge_pkg_list[@]}"; do
-    if [[ "${_keep_pkg_list_str}" =~ ^${_purge_pkg}\< ]]; then
-      _cm2ErrStrFn "Purge package |${_purge_pkg}| is also in keep list!";
-      exit 1;
-    fi
-  done
-  _cmd_list=('apt-get' 'purge' '-y' "${_purge_pkg_list[@]}");
-
+  _cmd_list=('apt-get' 'purge' '-y' "${_filtered_purge_list[@]}");
   if _exit_str="$(
     _cm2RunLongCmdFn 'Purging packages' "${_cmd_list[@]}"
   )"; then

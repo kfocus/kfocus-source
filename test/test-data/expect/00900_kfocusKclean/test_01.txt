@@ -1,9 +1,9 @@
-.001 Installed Kernels are generic-hwe-22.04-kfocus
-  version 6.5.0-14-generic and prior version 6.2.0-35-generic.
-- Running kernel is 6.5.0-14-generic.
-- /boot is its own partition with 139M free of 705M.
-- Results in no action BECAUSE
- -- kclean protects a minimum of 2 kernels.
+.001 Installed kernels are 6.5.0-14-generic, 6.2.0-35-generic.
+- Running kernel is 6.5.0-14-generic per this test.
+- Blessed kernel is 6.5.0-14-generic per mock.
+- /boot is its own partition with 139 free of 705M.
+- Check Forced: Low disk space (139 < 200 reserved for kernels)
+- Results in NO PURGE because a minimum of 2 kernels is preserved.
  -- HOWEVER, a warning for low disk should be shown.
 
 FocusRx: KERNEL CLEANER
@@ -13,10 +13,15 @@ Doc: https://kfocus.org/wf/tools#kclean
 The /boot directory has 139 of 705M available.
 Check forced: /boot space is low.
 
-Disk space on /boot is critically low,
-but only supported kernels are installed.
+Disk space on /boot is low, but 
+only protected kernel are installed.
+
 If you have a kernel you are not using,
 purge it to increase available space.
+
+Otherwise, /boot could overfill during a 
+kernel upgrade which could prevent normal 
+booting of the system.
 
 Packages to Keep
 linux-headers-6.2.0-35-generic

@@ -1,5 +1,8 @@
-.003 Installed Kernels are generic-hwe-22.04-kfocus and 6.2.0-35-generic.
-- Running kernel is generic-hwe-22.04-kfocus (6.5.0-14-generic).
-- /boot is its own partition with 297M free.
-- Results in no action.
+.003 Installed kernels are 6.5.0-14, 6.2.0-35-generic.
+- Running kernel is 6.5.0-14-generic per this test.
+- Blessed kernel is 6.5.0-14-generic per mock.
+- /boot is its own partition with 297 free of 705M.
+- Results in no action BECAUSE
+-- There is enough room for one more kernel (297M > 200M)
+-- This is NOT low space when total space allows (705/200 = 3) kernels
 
