@@ -33,8 +33,10 @@ _makeMockKernelListFn () {
 #   7. Value for _echoAptListStrFn
 
 _testDataTable=(
-  '.001 Installed kernels are 6.5.0-14-generic, 6.2.0-35-generic.
-- Running kernel is 6.5.0-14-generic per this test.
+  '.001 Installed kernels are
+6.5.0-14-generic (generic-hwe-22.04-kfocus),
+6.2.0-35-generic.
+- Running kernel is 6.5.0-14-generic per this assert.
 - Blessed kernel is 6.5.0-14-generic per mock.
 - /boot is its own partition with 139 free of 705M.
 - Check Forced: Low disk space (139 < 200 reserved for kernels)
@@ -66,12 +68,13 @@ linux-tools-common
 linux-tools-generic-hwe-22.04-kfocus'
 
   '.002 Installed kernels are
-6.5.0-14-generic, 6.2.0-35-generic, 6.2.0-21-generic.
-- Running kernel is 6.5.0-14-generic per this test.
+6.5.0-14-generic (generic-hwe-22.04-kfocus),
+6.2.0-35-generic, 6.2.0-21-generic.
+- Running kernel is 6.5.0-14-generic per this assert.
 - Blessed kernel is 6.5.0-14-generic per mock.
 - /boot is its own partition with 139 free of 705M.
 - Check Forced: Low disk space (139 < 200 reserved for kernels)
-- Results in purge of only 6.2.0-21-generic BECAUSE
+- Results in purge of only 6.2.0-21-generic BECAUSE:
 -- 6.5.0-14-generic is running and blessed, so retained
 -- 6.2.0-35-generic is retained because of the 2-kernel minimum
 ;;y;6.5.0-14-generic;y;139,705;0;
@@ -106,11 +109,12 @@ linux-tools-6.5.0-14-generic
 linux-tools-common
 linux-tools-generic-hwe-22.04-kfocus'
 
-  '.003 Installed kernels are 6.5.0-14, 6.2.0-35-generic.
-- Running kernel is 6.5.0-14-generic per this test.
+  '.003 Installed kernels are
+ 6.5.0-14 (generic-hwe-22.04-kfocus), 6.2.0-35-generic.
+- Running kernel is 6.5.0-14-generic per this assert.
 - Blessed kernel is 6.5.0-14-generic per mock.
 - /boot is its own partition with 297 free of 705M.
-- Results in no action BECAUSE
+- Results in no action BECAUSE:
 -- There is enough room for one more kernel (297M > 200M)
 -- This is NOT low space when total space allows (705/200 = 3) kernels
 ;;y;6.5.0-14-generic;y;297,705;0;
@@ -138,24 +142,16 @@ linux-tools-6.5.0-14-generic
 linux-tools-common
 linux-tools-generic-hwe-22.04-kfocus'
 
-#   '.003 Installed Kernels are 6.5.0-14, 6.2.0-35-generic.
-# - Running kernel is 6.5.0-14-generic per this test.
-# - Blessed kernel is 6.5.0-14-generic per mock.
-# - /boot is its own partition with 297 free of 705M.
-# - Results in no action BECAUSE
-# -- There is enough room for one more kernel (297M > 200M)
-# -- This is NOT low space when total space allows (705/200 = 3) kernels
-# ;;y;6.5.0-14-generic;y;297,705;0;
-#
-  '.004 Installed Kernels are 6.5.0-14, 6.2.0-35-generic.
-- Running kernel is 6.5.0-14-generic per this test.
+  '.004 Installed Kernels are
+6.5.0-14 (generic-hwe-22.04-kfocus), 6.2.0-35-generic.
+- Running kernel is 6.5.0-14-generic per this assert.
 - Blessed kernel is 6.5.0-14-generic per mock.
 - /boot is its own partition with 297 free of 705M.
 - Run is forced by -f flag.
-- Results in no action BECAUSE
+- Results in no purge offered BECAUSE:
 -- There is enough room for one more kernel (297M > 200M)
 -- This is NOT low space when total space allows (705/200 = 3) kernels
- -- HOWEVER, report is presented due to force flag.
+ -- HOWEVER, a report is presented due to force flag.
 ;-f;y;6.5.0-14-generic;y;297,705;0;
 linux-base
 linux-firmware
@@ -181,44 +177,52 @@ linux-tools-6.5.0-14-generic
 linux-tools-common
 linux-tools-generic-hwe-22.04-kfocus
 '
-#
-#   '.005 Installed kernels are generic-hwe-22.04-kfocus,
-#   lowlatency-hwe-22.04, and 6.2.0-35-generic.
-# - Running kernel is lowlatency-hwe-22.04 (6.5.0-21-lowlatency).
-# - /boot is its own partition with 133M free.
-# - Results in the removal of 6.2.0-35-generic.
-# ;;y;6.5.0-21-lowlatency;y;133,705;0;
-# linux-base
-# linux-firmware
-# linux-generic-hwe-22.04-kfocus
-# linux-headers-6.2.0-35-generic
-# linux-headers-6.5.0-14-generic
-# linux-headers-6.5.0-21-lowlatency
-# linux-headers-generic-hwe-22.04-kfocus
-# linux-hwe-6.2-headers-6.2.0-35
-# linux-hwe-6.2-tools-6.2.0-35
-# linux-hwe-6.5-headers-6.5.0-14
-# linux-hwe-6.5-headers-6.5.0-21
-# linux-hwe-6.5-tools-6.5.0-14
-# linux-hwe-6.5-tools-6.5.0-21
-# linux-image-6.2.0-35-generic
-# linux-image-6.5.0-14-generic
-# linux-image-6.5.0-21-lowlatency
-# linux-image-generic-hwe-22.04-kfocus
-# linux-libc-dev
-# linux-modules-6.2.0-35-generic
-# linux-modules-6.5.0-14-generic
-# linux-modules-6.5.0-21-lowlatency
-# linux-modules-extra-6.2.0-35-generic
-# linux-modules-extra-6.5.0-14-generic
-# linux-modules-extra-6.5.0-21-lowlatency
-# linux-sound-base
-# linux-tools-6.2.0-35-generic
-# linux-tools-6.5.0-14-generic
-# linux-tools-6.5.0-21-lowlatency
-# linux-tools-common
-# linux-tools-generic-hwe-22.04-kfocus
-# '
+  '.005 Installed kernels are
+6.5.0-14-generic (generic-hwe-22.04-kfocus),
+6.5.0-21-lowlatency (lowlatency-hwe-22.04),
+6.2.0-35-generic.
+- Running kernel is 6.5.0-21-lowlatency per this assert.
+- Blessed kernel is 6.5.0-14-generic per mock.
+- /boot is its own partition with 133 free of 705M.
+- Check Forced: Low disk space (133 < 200 reserved for kernels)
+- Results in purge of only 6.2.0-35-generic BECAUSE:
+-- 6.5.0-21-lowlatency is running, so retained.
+-- 6.2.0-14-generic is blessed, so retained.
+-- 6.2.0-35-generic IS PURGED because it is not protected, and...
+--- There is NOT enough room for one more kernel (133M > 200M).
+--- This is low space when total space only allows (705/200 = 3) kernels.
+;;y;6.5.0-21-lowlatency;y;133,705;0;
+linux-base
+linux-firmware
+linux-generic-hwe-22.04-kfocus
+linux-headers-6.2.0-35-generic
+linux-headers-6.5.0-14-generic
+linux-headers-6.5.0-21-lowlatency
+linux-headers-generic-hwe-22.04-kfocus
+linux-hwe-6.2-headers-6.2.0-35
+linux-hwe-6.2-tools-6.2.0-35
+linux-hwe-6.5-headers-6.5.0-14
+linux-hwe-6.5-headers-6.5.0-21
+linux-hwe-6.5-tools-6.5.0-14
+linux-hwe-6.5-tools-6.5.0-21
+linux-image-6.2.0-35-generic
+linux-image-6.5.0-14-generic
+linux-image-6.5.0-21-lowlatency
+linux-image-generic-hwe-22.04-kfocus
+linux-libc-dev
+linux-modules-6.2.0-35-generic
+linux-modules-6.5.0-14-generic
+linux-modules-6.5.0-21-lowlatency
+linux-modules-extra-6.2.0-35-generic
+linux-modules-extra-6.5.0-14-generic
+linux-modules-extra-6.5.0-21-lowlatency
+linux-sound-base
+linux-tools-6.2.0-35-generic
+linux-tools-6.5.0-14-generic
+linux-tools-6.5.0-21-lowlatency
+linux-tools-common
+linux-tools-generic-hwe-22.04-kfocus
+'
 #
 #   '.006 Installed kernels are generic-hwe-22.04-kfocus, generic-hwe-22.04,
 #   6.5.0-17-generic, and 6.2.0-35-generic.
