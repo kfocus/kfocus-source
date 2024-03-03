@@ -412,6 +412,7 @@ _mainFn() {
     _reply  _reserve_kvers_count _run_msg _table_str _win_title;
 
   ## Begin Initialize {
+  # IMPORTANT: Do not change this variable name, it is expected in rtests.
   _aptListStr="$(_echoAptListStrFn)";
   _body_title='FocusRx: KERNEL CLEANER';
   _win_title='FocusRx: Kernel Cleaner';

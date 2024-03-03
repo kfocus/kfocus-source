@@ -5,12 +5,12 @@
 - Running kernel is 6.5.0-21-lowlatency per this assert.
 - Blessed kernel is 6.5.0-14-generic per mock.
 - /boot is its own partition with 133 free of 705M.
-- Check Forced: Low disk space (133 < 200 reserved for kernels)
+- Check Forced: Low disk space
 - Results in purge of only 6.2.0-35-generic BECAUSE:
 -- 6.5.0-21-lowlatency is running, so retained.
 -- 6.2.0-14-generic is blessed, so retained.
 -- 6.2.0-35-generic IS PURGED because it is not protected, and...
---- There is NOT enough room for one more kernel (133M > 200M).
+--- There is NOT enough room for one more kernel (133M < 200M).
 --- This is low space when total space only allows (705/200 = 3) kernels.
 
 FocusRX: Purge Unused Kernels?

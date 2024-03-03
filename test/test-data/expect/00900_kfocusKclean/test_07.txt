@@ -1,7 +1,16 @@
-.007 Installed kernels are generic-hwe-22.04-kfocus,
-  6.2.0-35-generic, and 5.19.0-50-generic.
-- Running kernel is generic-hwe-22.04-kfocus (6.5.0-14-generic).
-- /boot is its own partition with 139M free.
+.007 Installed kernels are
+6.5.0-14-generic (generic-hwe-22.04-kfocus)
+6.2.0-35-generic, 5.19.0-50-generic.
+- Running kernel is 6.5.0-14-generic per this assert.
+- Blessed kernel is 6.5.0-14-generic per mock.
+- /boot is its own partition with 139 free of 705M.
+- Check Forced: Low disk space
+- Results in purge of 5.19.0-50-generic
+-- 6.5.0-14-generic is running and blessed, so retained.
+-- 6.2.0-35-generic is next latest remaining version, kept for 2 minimum.
+-- 5.19.0-50-generic IS PURGED because it is not protected
+--- There is NOT enough room for one more kernel (139 < 200M).
+--- This is low space when total space only allows (705/200 = 3) kernels.
 - Results in purge of 5.19.0-50-generic.
 
 FocusRX: Purge Unused Kernels?

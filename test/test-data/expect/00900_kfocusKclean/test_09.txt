@@ -1,8 +1,12 @@
-.009 Installed kernels are generic-hwe-22.04-kfocus (meta purged),
-  6.5.0-17-generic, and generic-hwe-22.04.
-- Running kernel is generic-hwe-22.04 (6.5.0-21-generic).
-- /boot is its own partition with 1482M free.
+.009 Installed kernels are
+6.5.0-21-generic (generic-hwe-22.04),
+6.5.0-17-generic,
+6.5.0-14-generic (generic-hwe-22.04-kfocus) (meta purged).
+- Running kernel is 6.5.0-21-generic per this assert.
+- Blessed kernel is NOT FOUND because meta not installed per this assert.
+- /boot is its own partition with 1482 free of 2048M.
 - Results in no action BECAUSE:
- -- Enough disk space is present to permit more than eight kernels to be
-    installed.
+-- There is enough room for many more kernels (1482 > 200M), around 7x
+-- Enough disk space is present to permit > 8 kernels to be installed.
+-- The target keep number is greater than installed, 5 > 3
 

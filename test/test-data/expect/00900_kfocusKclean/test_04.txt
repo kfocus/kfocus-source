@@ -3,11 +3,10 @@
 - Running kernel is 6.5.0-14-generic per this assert.
 - Blessed kernel is 6.5.0-14-generic per mock.
 - /boot is its own partition with 297 free of 705M.
-- Run is forced by -f flag.
+- Check Forced: Forced by -f flag.
 - Results in no purge offered BECAUSE:
 -- There is enough room for one more kernel (297M > 200M)
 -- This is NOT low space when total space allows (705/200 = 3) kernels
- -- HOWEVER, a report is presented due to force flag.
 
 FocusRx: KERNEL CLEANER
 Doc: https://kfocus.org/wf/tools#kclean
