@@ -21,7 +21,7 @@ _makeMockKernelListFn () {
   done
 }
 
-## BEGIN _testDataTable
+## BEGIN _assertDataTable
 # Values are delimited by ';'.
 #   0. Test description
 #   1. Flags for running _mainFn
@@ -32,8 +32,8 @@ _makeMockKernelListFn () {
 #   6. Return Int for _cm2RunLongCmdFn
 #   7. Value for _echoAptListStrFn
 
-_testDataTable=(
-  '.001 Installed kernels are
+_assertDataTable=(
+  '_001 Installed kernels are
 6.5.0-14-generic (generic-hwe-22.04-kfocus),
 6.2.0-35-generic.
 - Running kernel is 6.5.0-14-generic per this assert.
@@ -68,7 +68,7 @@ linux-tools-common
 linux-tools-generic-hwe-22.04-kfocus
 '
 
-  '.002 Installed kernels are
+  '_002 Installed kernels are
 6.5.0-14-generic (generic-hwe-22.04-kfocus),
 6.2.0-35-generic, 6.2.0-21-generic.
 - Running kernel is 6.5.0-14-generic per this assert.
@@ -111,7 +111,7 @@ linux-tools-common
 linux-tools-generic-hwe-22.04-kfocus
 '
 
-  '.003 Installed kernels are
+  '_003 Installed kernels are
  6.5.0-14 (generic-hwe-22.04-kfocus), 6.2.0-35-generic.
 - Running kernel is 6.5.0-14-generic per this assert.
 - Blessed kernel is 6.5.0-14-generic per mock.
@@ -146,7 +146,7 @@ linux-tools-common
 linux-tools-generic-hwe-22.04-kfocus
 '
 
-  '.004 Installed Kernels are
+  '_004 Installed Kernels are
 6.5.0-14 (generic-hwe-22.04-kfocus), 6.2.0-35-generic.
 - Running kernel is 6.5.0-14-generic per this assert.
 - Blessed kernel is 6.5.0-14-generic per mock.
@@ -181,7 +181,7 @@ linux-tools-common
 linux-tools-generic-hwe-22.04-kfocus
 '
 
-  '.005 Installed kernels are
+  '_005 Installed kernels are
 6.5.0-14-generic (generic-hwe-22.04-kfocus),
 6.5.0-21-lowlatency (lowlatency-hwe-22.04),
 6.2.0-35-generic.
@@ -228,7 +228,7 @@ linux-tools-common
 linux-tools-generic-hwe-22.04-kfocus
 '
 
-  '.006 Installed kernels are
+  '_006 Installed kernels are
 6.5.0-21-generic (generic-hwe-22.04)
 6.5.0-17-generic,
 6.5.0-14-generic (generic-hwe-22.04-kfocus),
@@ -289,7 +289,7 @@ linux-tools-generic-hwe-22.04-kfocus
 linux-tools-generic-hwe-22.04
 '
 
-  '.007 Installed kernels are
+  '_007 Installed kernels are
 6.5.0-14-generic (generic-hwe-22.04-kfocus)
 6.2.0-35-generic, 5.19.0-50-generic.
 - Running kernel is 6.5.0-14-generic per this assert.
@@ -336,7 +336,7 @@ linux-tools-common
 linux-tools-generic-hwe-22.04-kfocus
 '
 
-  '.008 Installed kernels are
+  '_008 Installed kernels are
 6.5.0-21-generic (generic-hwe-22.04),
 6.5.0-17-generic,
 6.5.0-14-generic (generic-hwe-22.04-kfocus) (meta purged).
@@ -384,7 +384,7 @@ linux-tools-common
 linux-tools-generic-hwe-22.04
 '
 
-  '.009 Installed kernels are
+  '_009 Installed kernels are
 6.5.0-21-generic (generic-hwe-22.04),
 6.5.0-17-generic,
 6.5.0-14-generic (generic-hwe-22.04-kfocus) (meta purged).
@@ -528,13 +528,13 @@ linux-tools-generic-hwe-22.04
 # linux-headers-6.5.0-21-generic
 # linux-headers-generic-hwe-22.04
 # linux-headers-generic-hwe-22.04-kfocus
-# linux-image-6.5.0-14-generic
 # linux-hwe-6.5-headers-6.5.0-14
 # linux-hwe-6.5-headers-6.5.0-17
 # linux-hwe-6.5-headers-6.5.0-21
 # linux-hwe-6.5-tools-6.5.0-14
 # linux-hwe-6.5-tools-6.5.0-17
 # linux-hwe-6.5-tools-6.5.0-21
+# linux-image-6.5.0-14-generic
 # linux-image-6.5.0-17-generic
 # linux-image-6.5.0-21-generic
 # linux-image-generic-hwe-22.04
@@ -772,7 +772,6 @@ linux-tools-generic-hwe-22.04
 #linux-base
 #linux-firmware
 #linux-headers-generic-hwe-22.04-kfocus
-#linux-image-generic-hwe-22.04-kfocus
 #linux-libc-dev
 #linux-sound-base
 #linux-oracle-6.5-headers-6.5.0-1014
@@ -805,6 +804,7 @@ linux-tools-generic-hwe-22.04
 #linux-image-6.5.0-17-lowlatency
 #linux-image-6.5.0-18-generic
 #linux-image-6.5.0-21-generic
+#linux-image-generic-hwe-22.04-kfocus
 #linux-modules-6.5.0-1014-gcp
 #linux-modules-6.5.0-1014-oracle
 #linux-modules-6.5.0-14-generic
@@ -843,7 +843,6 @@ linux-tools-generic-hwe-22.04
 # linux-base
 # linux-firmware
 # linux-headers-generic-hwe-22.04-kfocus
-# linux-image-generic-hwe-22.04-kfocus
 # linux-libc-dev
 # linux-sound-base
 # linux-gcp-6.5-headers-6.5.0-1014
@@ -868,6 +867,7 @@ linux-tools-generic-hwe-22.04
 # linux-image-6.5.0-17-lowlatency
 # linux-image-6.5.0-18-generic
 # linux-image-6.5.0-21-generic
+# linux-image-generic-hwe-22.04-kfocus
 # linux-modules-6.5.0-1014-gcp
 # linux-modules-6.5.0-14-generic
 # linux-modules-6.5.0-14-lowlatency
@@ -902,7 +902,6 @@ linux-tools-generic-hwe-22.04
 # linux-base
 # linux-firmware
 # linux-headers-generic-hwe-22.04-kfocus
-# linux-image-generic-hwe-22.04-kfocus
 # linux-libc-dev
 # linux-sound-base
 # linux-gcp-6.5-headers-6.5.0-1014
@@ -924,6 +923,7 @@ linux-tools-generic-hwe-22.04
 # linux-image-6.5.0-15-generic
 # linux-image-6.5.0-18-generic
 # linux-image-6.5.0-21-generic
+# linux-image-generic-hwe-22.04-kfocus
 # linux-modules-6.5.0-1014-gcp
 # linux-modules-6.5.0-14-generic
 # linux-modules-6.5.0-14-lowlatency
@@ -953,7 +953,6 @@ linux-tools-generic-hwe-22.04
 # linux-base
 # linux-firmware
 # linux-headers-generic-hwe-22.04-kfocus
-# linux-image-generic-hwe-22.04-kfocus
 # linux-libc-dev
 # linux-sound-base
 # linux-gcp-6.5-headers-6.5.0-1014
@@ -971,6 +970,7 @@ linux-tools-generic-hwe-22.04
 # linux-image-6.5.0-14-lowlatency
 # linux-image-6.5.0-15-generic
 # linux-image-6.5.0-18-generic
+# linux-image-generic-hwe-22.04-kfocus
 # linux-modules-6.5.0-1014-gcp
 # linux-modules-6.5.0-14-generic
 # linux-modules-6.5.0-14-lowlatency
@@ -999,7 +999,6 @@ linux-tools-generic-hwe-22.04
 # linux-base
 # linux-firmware
 # linux-headers-generic-hwe-22.04-kfocus
-# linux-image-generic-hwe-22.04-kfocus
 # linux-libc-dev
 # linux-sound-base
 # linux-hwe-6.5-headers-6.5.0-14
@@ -1018,6 +1017,7 @@ linux-tools-generic-hwe-22.04
 # linux-image-6.5.0-17-generic
 # linux-image-6.5.0-18-generic
 # linux-image-6.5.0-21-generic
+# linux-image-generic-hwe-22.04-kfocus
 # linux-modules-6.5.0-14-generic
 # linux-modules-6.5.0-17-generic
 # linux-modules-6.5.0-18-generic
@@ -1041,7 +1041,6 @@ linux-tools-generic-hwe-22.04
 # linux-base
 # linux-firmware
 # linux-headers-generic-hwe-22.04-kfocus
-# linux-image-generic-hwe-22.04-kfocus
 # linux-libc-dev
 # linux-sound-base
 # linux-hwe-6.5-headers-6.5.0-14
@@ -1060,6 +1059,7 @@ linux-tools-generic-hwe-22.04
 # linux-image-6.5.0-17-generic
 # linux-image-6.5.0-18-generic
 # linux-image-6.5.0-21-generic
+# linux-image-generic-hwe-22.04-kfocus
 # linux-modules-6.5.0-14-generic
 # linux-modules-6.5.0-17-generic
 # linux-modules-6.5.0-18-generic
@@ -1117,7 +1117,7 @@ linux-tools-generic-hwe-22.04
 # linux-tools-generic-hwe-22.04
 # linux-tools-generic-hwe-22.04-kfocus'
 );
-## . END _testDataTable
+## . END _assertDataTable
 
 ## BEGIN _overwriteWithMocksFn {
 # Purpose: Overwrite functions from sourced script before running tests
@@ -1128,7 +1128,7 @@ _overwriteWithMocksFn () {
     declare _prompt_str _query_type _ans_str;
     _prompt_str="${1:-Continue}";
     _query_type="${3:-}";
-    _ans_str="${_testAnsList[$_testAnsIdx]}";
+    _ans_str="${_assertAnsList[$_assertAnsIdx]}";
 
     case "${_query_type}" in
       [aw]) _prompt_str="$(_cm2StripTagsFn "${_prompt_str}" 'n')";;
@@ -1144,32 +1144,50 @@ _overwriteWithMocksFn () {
 
   # 2. (uname -r) for _echoKversRunStrFn and _echoKversFullRunStrFn
   # shellcheck disable=SC2317
-  function uname () { echo "${_testDataList[3]}"; }
+  function uname () { echo "${_assertDataList[3]}"; }
   # 3. _echoIsBootMountPointFn
   # shellcheck disable=SC2317
-  _echoIsBootMountPointFn () { echo "${_testDataList[4]}"; }
+  _echoIsBootMountPointFn () { echo "${_assertDataList[4]}"; }
   # 4. _echoBootMegsFn (used twice, 'size' and 'avail')
   # shellcheck disable=SC2317
   _echoBootMegsFn () {
     declare _idx=1
     [ "${1:-}" = 'size' ] && _idx=2;
-    cut -f"${_idx}" -d, <<<"${_testDataList[5]}";
+    cut -f"${_idx}" -d, <<<"${_assertDataList[5]}";
   }
   # 5. _cm2RunLongCmdFn (return) - this runs the purge
   # shellcheck disable=SC2317
   _cm2RunLongCmdFn () {
+    declare _pkg_list _pkg_name _purge_kernel_count _avail_int _size_int;
     echo -e "\nPurge Package List:\n${*:-}\n" >>"${_runFile}";
-    return "${_testDataList[6]}";
+    shift 4;
+    _pkg_list=("$@");
+    _purge_kernel_count=0;
+    for _pkg_name in "${_pkg_list[@]}"; do
+      _cm2WarnStrFn "_pkg_name = ${_pkg_name}";
+      if [[ "${_pkg_name}" =~ ^linux-image-[0-9] ]]; then
+        (( _purge_kernel_count++ ));
+      fi
+      _assertDataList[7]="$(
+        grep -v "^${_pkg_name}$" <<< "${_assertDataList[7]}"
+      )";
+    done
+    _avail_int="$(_echoBootMegsFn 'avail')";
+    _size_int="$(_echoBootMegsFn 'size')";
+    (( _avail_int += ( 200 * _purge_kernel_count ) ));
+    echo "${_avail_int},${_size_int}" > "${_updateStateFile}";
+    echo "${_assertDataList[7]}" >> "${_updateStateFile}";
+    return "${_assertDataList[6]}";
   }
   # 7. _echoAptListStrFn
   # shellcheck disable=SC2317
-  _echoAptListStrFn () { echo "${_testDataList[7]}"; }
+  _echoAptListStrFn () { echo "${_assertDataList[7]}"; }
 
   # shellcheck disable=SC2317
   _echoMetaKversStrFn () {
     # IMPORTANT: This _aptListStr comes from kfocus-kclean.
     # Be careful; if this changes there, this test will break.
-    if [[ "${_aptListStr}" =~ ${1:-} ]]; then
+    if [[ "${_assertDataList[7]}" =~ ${1:-} ]]; then
       case "${1:-}" in
         'linux-image-generic-hwe-22.04-kfocus' ) echo '6.5.0-14-generic' ;;
         *) echo 'XXX_NOT_INSTALLED_XXX';
@@ -1201,7 +1219,7 @@ _unsetMocksFn () {
   # 6. _echoAptListStrFn
   unset _cm2PromptUserFn uname _echoIsBootMountPointFn _echoBootMegsFn \
     _cm2RunLongCmdFn _attemptInstallRepairFn _echoAptListStrFn \
-    _testDataList _testAnsList testAnsIdx _runFile;
+    _assetDataList _assetAnsList _assertAnsIdx _runFile;
 }
 ## . END _unsetMocksFn }
 
@@ -1217,7 +1235,7 @@ _runTestFn () {
   if ! _t00CheckExpectDirFn; then return 1; fi
 
   # bashsupport disable=BP2001
-  # shellcheck disable=SC2154,SC2034
+  # shellcheck disable=SC2154,SC2034,SC2001,SC2001
   _exe_file="${_t00TopDir}";
   _exe_file+='/package-main/usr/lib/kfocus/bin/kfocus-kclean';
 
@@ -1237,45 +1255,64 @@ _runTestFn () {
 
   ## Begin Iterate through tests {
   _fail_count=0;
-  _assert_count="${#_testDataTable[@]}";
+  _assert_count="${#_assertDataTable[@]}";
   _assert_idx=1;
 
-  for _assert_line_str in "${_testDataTable[@]}"; do
+  for _assert_line_str in "${_assertDataTable[@]}"; do
     _cm2EchoFn "BEGIN Assert ${_assert_idx} of ${_assert_count}:";
 
-    # Extract _dataList, _ansList, and reset _testAnsIdx
-    IFS=';' read -r -d '' -a _testDataList< <(echo -n "${_assert_line_str}");
-    IFS=' ' read -r -d '' -a _arg_list    < <(echo -n "${_testDataList[1]}");
-    IFS=',' read -r -d '' -a _testAnsList < <(echo -n "${_testDataList[2]}");
-    _testAnsIdx=0;
+    # Extract _dataList, _ansList, and reset _assertAnsIdx
+    IFS=';' read -r -d '' -a _assertDataList< <(echo -n "${_assert_line_str}");
+    IFS=' ' read -r -d '' -a _arg_list      < <(echo -n "${_assertDataList[1]}");
+    IFS=',' read -r -d '' -a _assertAnsList < <(echo -n "${_assertDataList[2]}");
+    _assertAnsIdx=0;
 
-    # Calculate expect and run files
-    # shellcheck disable=SC2154
-    _expect_file="$(
-      printf '%s/test_%02d.txt' "${_t00ExpectDir}" "${_assert_idx}"
-    )";
-    # shellcheck disable=SC2154
-    _runFile="$(printf '%s/test_%02d.txt' "${_t00RunDir}" "${_assert_idx}")";
-    # Start file with description
-    echo -e "${_testDataList[0]}" >"${_runFile}";
+    for _str in '' 'a'; do
+      # Calculate expect and run files
+      _expect_file="$(
+        printf '%s/test_%02d%s.txt' "${_t00ExpectDir}" "${_assert_idx}" "${_str}"
+      )";
+      _runFile="$(
+        printf '%s/test_%02d%s.txt' "${_t00RunDir}" "${_assert_idx}" "${_str}"
+      )";
+      _updateStateFile="$(
+        printf '/tmp/kclean_state_%02d%s.txt' "${_assert_idx}" "${_str}"
+      )";
+      # Start file with description
+      if [ -z "${_str}" ]; then
+        echo -e "${_assertDataList[0]}" >"${_runFile}";
+      else
+        { echo -e "Update Disk     : ${_assertDataList[5]}"
+          echo -e "Updated Pkg List:\n${_assertDataList[7]}"
+        } > "${_runFile}";
+      fi
+      # Run _mainFn from fixup_kernels with args using mocked functions
+      # Reset getopts to work per
+      # https://unix.stackexchange.com/questions/233728
+      export OPTIND=1;
+      _mainFn "${_arg_list[@]}";
 
-    # Run _mainFn from fixup_kernels with args using mocked functions
-    # Reset getopts to work per
-    # https://unix.stackexchange.com/questions/233728
-    export OPTIND=1;
-    _mainFn "${_arg_list[@]}";
+      ## Begin Check diffs {
+      if [ ! -f "${_expect_file}" ]; then touch "${_expect_file}"; fi
+      _check_str="$(diff -r --brief "${_expect_file}" "${_runFile}" )";
+      if [ -z "${_check_str}" ]; then
+        _cm2EchoFn ". OK   assert ${_assert_idx}\n\n";
+      else
+        _cm2EchoFn 'Please compare expected to run file';
+        meld "${_expect_file}" "${_runFile}";
+        _cm2EchoFn ". FAIL assert ${_assert_idx}\n\n";
+        (( _fail_count++ ));
+      fi
 
-    ## Begin Check diffs {
-    if [ ! -f "${_expect_file}" ]; then touch "${_expect_file}"; fi
-    _check_str="$(diff -r --brief "${_expect_file}" "${_runFile}" )";
-    if [ -z "${_check_str}" ]; then
-      _cm2EchoFn ". OK   assert ${_assert_idx}\n\n";
-    else
-      _cm2EchoFn 'Please compare expected to run file';
-      meld "${_expect_file}" "${_runFile}";
-      _cm2EchoFn ". FAIL assert ${_assert_idx}\n\n";
-      (( _fail_count++ ));
-    fi
+      # Prepare data for next run, but only on first pass
+      if [ -z "${_str}" ] && [ -r "${_updateStateFile}" ]; then
+        _slurp_str="$(cat "${_updateStateFile}")";
+        # Assign new disk values
+        _assertDataList[5]="$(head -n1 <<< "${_slurp_str}")";
+        # Assign new modules list
+        _assertDataList[7]="$(tail -n+2 <<< "${_slurp_str}")";
+      fi
+    done
     ## . End Check diffs }
     (( _assert_idx++ ));
   done
