@@ -14,6 +14,7 @@
 --- linux-image-6.5.0-14-lowlatency
 --- linux-image-6.5.0-15-generic
 --- linux-image-6.5.0-15-lowlatency
+--- linux-image-6.5.0-18-generic
 
 FocusRX: Purge Unused Kernels?
 Doc: https://kfocus.org/wf/tools#kclean
@@ -72,10 +73,8 @@ linux-headers-6.5.0-14-lowlatency
 linux-headers-6.5.0-15-generic
 linux-headers-6.5.0-15-lowlatency
 linux-headers-6.5.0-18-generic
-linux-hwe-6.5-headers-6.5.0-14
 linux-hwe-6.5-headers-6.5.0-15
 linux-hwe-6.5-headers-6.5.0-18
-linux-hwe-6.5-tools-6.5.0-14
 linux-hwe-6.5-tools-6.5.0-15
 linux-hwe-6.5-tools-6.5.0-18
 linux-image-6.5.0-1014-gcp
@@ -127,7 +126,7 @@ Do you wish to continue
 y
 
 Purge Package List:
-Purging packages apt-get purge -y linux-gcp-6.5-headers-6.5.0-1014 linux-gcp-6.5-tools-6.5.0-1014 linux-headers-6.5.0-1014-gcp linux-headers-6.5.0-1014-oem linux-headers-6.5.0-1014-oracle linux-headers-6.5.0-1015-oracle linux-headers-6.5.0-1016-oracle linux-headers-6.5.0-14-lowlatency linux-headers-6.5.0-15-generic linux-headers-6.5.0-15-lowlatency linux-headers-6.5.0-18-generic linux-hwe-6.5-headers-6.5.0-14 linux-hwe-6.5-headers-6.5.0-15 linux-hwe-6.5-headers-6.5.0-18 linux-hwe-6.5-tools-6.5.0-14 linux-hwe-6.5-tools-6.5.0-15 linux-hwe-6.5-tools-6.5.0-18 linux-image-6.5.0-1014-gcp linux-image-6.5.0-1014-oem linux-image-6.5.0-1014-oracle linux-image-6.5.0-1015-azure linux-image-6.5.0-1015-oracle linux-image-6.5.0-1016-oracle linux-image-6.5.0-14-lowlatency linux-image-6.5.0-15-generic linux-image-6.5.0-15-lowlatency linux-image-6.5.0-18-generic linux-modules-6.5.0-1014-gcp linux-modules-6.5.0-1014-oem linux-modules-6.5.0-1014-oracle linux-modules-6.5.0-1015-oracle linux-modules-6.5.0-1016-oracle linux-modules-6.5.0-14-lowlatency linux-modules-6.5.0-15-generic linux-modules-6.5.0-15-lowlatency linux-modules-6.5.0-18-generic linux-modules-extra-6.5.0-1014-gcp linux-modules-extra-6.5.0-1014-oracle linux-modules-extra-6.5.0-1015-oracle linux-modules-extra-6.5.0-1016-oracle linux-modules-extra-6.5.0-15-generic linux-modules-extra-6.5.0-18-generic linux-oem-6.5-headers-6.5.0-1014 linux-oem-6.5-tools-6.5.0-1014 linux-oracle-6.5-headers-6.5.0-1014 linux-oracle-6.5-headers-6.5.0-1015 linux-oracle-6.5-headers-6.5.0-1016 linux-oracle-6.5-tools-6.5.0-1014 linux-oracle-6.5-tools-6.5.0-1015 linux-oracle-6.5-tools-6.5.0-1016 linux-tools-6.5.0-1014-gcp linux-tools-6.5.0-1014-oem linux-tools-6.5.0-1014-oracle linux-tools-6.5.0-1015-oracle linux-tools-6.5.0-1016-oracle linux-tools-6.5.0-14-lowlatency linux-tools-6.5.0-15-generic linux-tools-6.5.0-15-lowlatency linux-tools-6.5.0-18-generic
+Purging packages apt-get purge -y linux-gcp-6.5-headers-6.5.0-1014 linux-gcp-6.5-tools-6.5.0-1014 linux-headers-6.5.0-1014-gcp linux-headers-6.5.0-1014-oem linux-headers-6.5.0-1014-oracle linux-headers-6.5.0-1015-oracle linux-headers-6.5.0-1016-oracle linux-headers-6.5.0-14-lowlatency linux-headers-6.5.0-15-generic linux-headers-6.5.0-15-lowlatency linux-headers-6.5.0-18-generic linux-hwe-6.5-headers-6.5.0-15 linux-hwe-6.5-headers-6.5.0-18 linux-hwe-6.5-tools-6.5.0-15 linux-hwe-6.5-tools-6.5.0-18 linux-image-6.5.0-1014-gcp linux-image-6.5.0-1014-oem linux-image-6.5.0-1014-oracle linux-image-6.5.0-1015-azure linux-image-6.5.0-1015-oracle linux-image-6.5.0-1016-oracle linux-image-6.5.0-14-lowlatency linux-image-6.5.0-15-generic linux-image-6.5.0-15-lowlatency linux-image-6.5.0-18-generic linux-modules-6.5.0-1014-gcp linux-modules-6.5.0-1014-oem linux-modules-6.5.0-1014-oracle linux-modules-6.5.0-1015-oracle linux-modules-6.5.0-1016-oracle linux-modules-6.5.0-14-lowlatency linux-modules-6.5.0-15-generic linux-modules-6.5.0-15-lowlatency linux-modules-6.5.0-18-generic linux-modules-extra-6.5.0-1014-gcp linux-modules-extra-6.5.0-1014-oracle linux-modules-extra-6.5.0-1015-oracle linux-modules-extra-6.5.0-1016-oracle linux-modules-extra-6.5.0-15-generic linux-modules-extra-6.5.0-18-generic linux-oem-6.5-headers-6.5.0-1014 linux-oem-6.5-tools-6.5.0-1014 linux-oracle-6.5-headers-6.5.0-1014 linux-oracle-6.5-headers-6.5.0-1015 linux-oracle-6.5-headers-6.5.0-1016 linux-oracle-6.5-tools-6.5.0-1014 linux-oracle-6.5-tools-6.5.0-1015 linux-oracle-6.5-tools-6.5.0-1016 linux-tools-6.5.0-1014-gcp linux-tools-6.5.0-1014-oem linux-tools-6.5.0-1014-oracle linux-tools-6.5.0-1015-oracle linux-tools-6.5.0-1016-oracle linux-tools-6.5.0-14-lowlatency linux-tools-6.5.0-15-generic linux-tools-6.5.0-15-lowlatency linux-tools-6.5.0-18-generic
 
 FocusRx: KERNEL CLEANER FINISHED
 

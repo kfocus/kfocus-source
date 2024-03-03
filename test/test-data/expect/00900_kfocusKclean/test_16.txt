@@ -5,9 +5,9 @@
 - Check forced: Maximum number of installed kernels found (8)
 - Results in purge keeping 5 (8 - 3) kernels per heuristics
 -- PURGED kernels should be
---- linux-image-6.5.0-1014-oracle
---- linux-image-6.5.0-14-lowlatency
---- linux-image-6.5.0-17-lowlatency
+--- linux-modules-6.5.0-18-generic
+--- linux-modules-6.5.0-15-generic
+--- linux-modules-6.5.0-14-lowlatency
 
 FocusRX: Purge Unused Kernels?
 Doc: https://kfocus.org/wf/tools#kclean
@@ -58,10 +58,12 @@ linux-tools-6.5.0-17-lowlatency
 linux-tools-6.5.0-21-generic
 
 Packages to Remove
+linux-headers-6.5.0-14-lowlatency
+linux-headers-6.5.0-15-generic
 linux-headers-6.5.0-18-generic
-linux-hwe-6.5-headers-6.5.0-14
+linux-hwe-6.5-headers-6.5.0-15
 linux-hwe-6.5-headers-6.5.0-18
-linux-hwe-6.5-tools-6.5.0-14
+linux-hwe-6.5-tools-6.5.0-15
 linux-hwe-6.5-tools-6.5.0-18
 linux-image-6.5.0-14-lowlatency
 linux-image-6.5.0-15-generic
@@ -82,7 +84,7 @@ Do you wish to continue
 y
 
 Purge Package List:
-Purging packages apt-get purge -y linux-headers-6.5.0-18-generic linux-hwe-6.5-headers-6.5.0-14 linux-hwe-6.5-headers-6.5.0-18 linux-hwe-6.5-tools-6.5.0-14 linux-hwe-6.5-tools-6.5.0-18 linux-image-6.5.0-14-lowlatency linux-image-6.5.0-15-generic linux-image-6.5.0-18-generic linux-modules-6.5.0-14-lowlatency linux-modules-6.5.0-15-generic linux-modules-6.5.0-18-generic linux-modules-extra-6.5.0-14-lowlatency linux-modules-extra-6.5.0-15-generic linux-modules-extra-6.5.0-18-generic linux-tools-6.5.0-14-lowlatency linux-tools-6.5.0-15-generic linux-tools-6.5.0-18-generic
+Purging packages apt-get purge -y linux-headers-6.5.0-14-lowlatency linux-headers-6.5.0-15-generic linux-headers-6.5.0-18-generic linux-hwe-6.5-headers-6.5.0-15 linux-hwe-6.5-headers-6.5.0-18 linux-hwe-6.5-tools-6.5.0-15 linux-hwe-6.5-tools-6.5.0-18 linux-image-6.5.0-14-lowlatency linux-image-6.5.0-15-generic linux-image-6.5.0-18-generic linux-modules-6.5.0-14-lowlatency linux-modules-6.5.0-15-generic linux-modules-6.5.0-18-generic linux-modules-extra-6.5.0-14-lowlatency linux-modules-extra-6.5.0-15-generic linux-modules-extra-6.5.0-18-generic linux-tools-6.5.0-14-lowlatency linux-tools-6.5.0-15-generic linux-tools-6.5.0-18-generic
 
 FocusRx: KERNEL CLEANER FINISHED
 
