@@ -493,7 +493,7 @@ _mainFn() {
 
     _eff_free_int="$((_eff_size_int
       - _inst_kvers_count * _kernel_unit_size_int ))";
-    (( _eff_free_int < 0)) && _eff_free_int=0;
+  # (( _eff_free_int < 0)) && _eff_free_int=0;
   fi
 
   # 3. Determine max number of kernels that can fit in the full effective size,
@@ -683,7 +683,7 @@ ${_brow_str}${_run_msg}${_erow_str}
 ${_brow_str}<h4 style="color:#f7941d">Packages to Keep</h4>${_erow_str}
 ${_brow_str}<code>${_keep_pkg_list_str}</code>${_erow_str}
 
-${_brow_str}<h4 style="color:#f7941d">Packages to Remove</h4>${_erow_str}
+${_brow_str}<h4 style="color:#f7941d">Packages to Purge</h4>${_erow_str}
 ${_brow_str}There are no unused kernels to purge.${_erow_str}
 
 ${_brow_str}<b>Click OK to finish.</b>${_erow_str}</table>
@@ -710,7 +710,7 @@ from running out of disk space in <code>/boot</code>.${_erow_str}
 ${_brow_str}<h4 style="color:#f7941d">Packages to Keep</h4>${_erow_str}
 ${_brow_str}<code>${_keep_pkg_list_str}</code>${_erow_str}
 
-${_brow_str}<h4 style="color:#f7941d">Packages to Remove</h4>${_erow_str}
+${_brow_str}<h4 style="color:#f7941d">Packages to Purge</h4>${_erow_str}
 ${_brow_str}<code>${_filtered_purge_list_str}</code>${_erow_str}
 
 ${_brow_str}<b>Make sure your files are backed-up.</b>${_erow_str}
