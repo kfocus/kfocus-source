@@ -1,7 +1,38 @@
-.019 Installed Kernels 5 different 6.5.0 kernel variants.
-- Blessed kernel is 6.5.0-14-generic per mock.
-- Running kernel is 6.5.0-1014-gcp
-- /boot is on root disk. Sizes are 11610,16460 (avail,size).
-- Check not forced: installed 5 ! >= max (8) - thresholds (2)
-- Results: NO ACTION
 
+=== BEGIN Intention ==============
+_019 Installed Kernels 9 different 6.5.0 kernel variants.
+- Running kernel is 6.5.0-1014-gcp.
+- Blessed kernel is 6.5.0-14-generic because meta installed per assert.
+- /boot is on root disk. Sizes are 11610,16460 (avail,size).
+- Check NOT forced: free_count (3) > threshold (2) when space for 5+ kernels
+  is present
+- Results: NO ACTION
+=== . END Intention ==============
+
+=== BEGIN Diagnostics ============
+Installed Kernel List : 6.5.0-14-generic
+6.5.0-15-lowlatency
+6.5.0-17-lowlatency
+6.5.0-18-generic
+6.5.0-21-generic
+6.5.0-1014-gcp
+6.5.0-1014-oem
+6.5.0-1015-azure-fde
+6.5.0-1016-oracle
+Target Max Kernels    : 12
+Installed Kernel Count: 9
+Target Keep Kernels   : 9
+
+Running Kernel        : 6.5.0-1014-gcp
+Blessed Kernel        : 6.5.0-14-generic
+Is /boot a partition? : n
+/boot free,size       : 11610,16460 MB
+Effective free,size   : 600,2400 MB
+
+Do Force Flag?        : n
+Is /boot low?         : n
+Do Check Triggered?   : n
+Check Message         : 9 kernels are installed.<br>
+The /boot dir shares the system disk.<br>
+
+=== . END Diagnostics ============

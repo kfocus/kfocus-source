@@ -4,7 +4,7 @@ Doc: https://kfocus.org/wf/tools#kclean
 15 kernels are installed.
 The /boot dir shares the system disk.
 Check forced: Kernel count (15) exceeds 
-recommended max (12).
+recommended max (9).
 
 Removing unused kernels prevents the system
 from running out of disk space in /boot.
@@ -119,19 +119,15 @@ _015 Installed Kernels 15 different 6.5.0 kernel variants.
 - Running kernel is 6.5.0-17-generic.
 - Blessed kernel is 6.5.0-14-generic because meta installed per assert.
 /boot is on root disk. Sizes are 11610,16460 (avail,size).
-- Check forced: Maximum number of kernels found (12)
+- Check forced: Installed 15 >= max (12) - thresholds (2)
 - Results in purge keeping 9 (12 - 3) kernels per heuristics
 -- PURGED kernels should be
---- linux-image-6.5.0-1014-gcp
---- linux-image-6.5.0-1014-oem
 --- linux-image-6.5.0-1014-oracle
 --- linux-image-6.5.0-1015-azure
 --- linux-image-6.5.0-1015-oracle
---- linux-image-6.5.0-1016-oracle
 --- linux-image-6.5.0-14-lowlatency
 --- linux-image-6.5.0-15-generic
 --- linux-image-6.5.0-15-lowlatency
---- linux-image-6.5.0-18-generic
 === . END Intention ==============
 
 === BEGIN Diagnostics ============
@@ -166,5 +162,5 @@ Do Check Triggered?   : y
 Check Message         : 15 kernels are installed.<br>
 The /boot dir shares the system disk.<br>
 Check forced: Kernel count (15) exceeds <br>
-recommended max (12).
+recommended max (9).
 === . END Diagnostics ============

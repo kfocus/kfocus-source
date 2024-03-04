@@ -1,91 +1,144 @@
-.016 Installed Kernels 8 different 6.5.0 kernel variants.
-- Blessed kernel is 6.5.0-14-generic per mock.
-- Running kernel is 6.5.0-1014-gcp
-- /boot is on root disk. Sizes are 11610,16460 (avail,size).
-- Check forced: Maximum number of installed kernels found (8)
-- Results in purge keeping 5 (8 - 3) kernels per heuristics
--- PURGED kernels should be
---- linux-modules-6.5.0-18-generic
---- linux-modules-6.5.0-15-generic
---- linux-modules-6.5.0-14-lowlatency
-
-FocusRX: Purge Unused Kernels?
+FocusRX: Purge Older Kernels?
 Doc: https://kfocus.org/wf/tools#kclean
 
-8 kernels are installed.
+12 kernels are installed.
 The /boot dir shares the system disk.
-/boot values are calculated.
-Check forced: /boot space is low.
+Check forced: Kernel count (12) exceeds 
+recommended max (9).
 
 Removing unused kernels prevents the system
 from running out of disk space in /boot.
 
 Packages to Keep
+linux-azure-6.5-headers-6.5.0-1015
+linux-azure-6.5-tools-6.5.0-1015
 linux-gcp-6.5-headers-6.5.0-1014
 linux-gcp-6.5-tools-6.5.0-1014
 linux-headers-6.5.0-1014-gcp
-linux-headers-6.5.0-1014-oracle
+linux-headers-6.5.0-1014-oem
+linux-headers-6.5.0-1015-azure
+linux-headers-6.5.0-1016-oracle
 linux-headers-6.5.0-14-generic
+linux-headers-6.5.0-15-lowlatency
 linux-headers-6.5.0-17-lowlatency
+linux-headers-6.5.0-18-generic
 linux-headers-6.5.0-21-generic
 linux-hwe-6.5-headers-6.5.0-14
+linux-hwe-6.5-headers-6.5.0-15
 linux-hwe-6.5-headers-6.5.0-17
+linux-hwe-6.5-headers-6.5.0-18
 linux-hwe-6.5-headers-6.5.0-21
 linux-hwe-6.5-tools-6.5.0-14
+linux-hwe-6.5-tools-6.5.0-15
 linux-hwe-6.5-tools-6.5.0-17
+linux-hwe-6.5-tools-6.5.0-18
 linux-hwe-6.5-tools-6.5.0-21
 linux-image-6.5.0-1014-gcp
-linux-image-6.5.0-1014-oracle
+linux-image-6.5.0-1014-oem
+linux-image-6.5.0-1015-azure-fde
+linux-image-6.5.0-1016-oracle
 linux-image-6.5.0-14-generic
+linux-image-6.5.0-15-lowlatency
 linux-image-6.5.0-17-lowlatency
+linux-image-6.5.0-18-generic
 linux-image-6.5.0-21-generic
 linux-modules-6.5.0-1014-gcp
-linux-modules-6.5.0-1014-oracle
+linux-modules-6.5.0-1014-oem
+linux-modules-6.5.0-1015-azure
+linux-modules-6.5.0-1016-oracle
 linux-modules-6.5.0-14-generic
+linux-modules-6.5.0-15-lowlatency
 linux-modules-6.5.0-17-lowlatency
+linux-modules-6.5.0-18-generic
 linux-modules-6.5.0-21-generic
 linux-modules-extra-6.5.0-1014-gcp
-linux-modules-extra-6.5.0-1014-oracle
+linux-modules-extra-6.5.0-1015-azure
+linux-modules-extra-6.5.0-1016-oracle
 linux-modules-extra-6.5.0-14-generic
-linux-modules-extra-6.5.0-17-lowlatency
+linux-modules-extra-6.5.0-18-generic
 linux-modules-extra-6.5.0-21-generic
-linux-oracle-6.5-headers-6.5.0-1014
-linux-oracle-6.5-tools-6.5.0-1014
+linux-oem-6.5-headers-6.5.0-1014
+linux-oem-6.5-tools-6.5.0-1014
+linux-oracle-6.5-headers-6.5.0-1016
+linux-oracle-6.5-tools-6.5.0-1016
 linux-tools-6.5.0-1014-gcp
-linux-tools-6.5.0-1014-oracle
+linux-tools-6.5.0-1014-oem
+linux-tools-6.5.0-1015-azure
+linux-tools-6.5.0-1016-oracle
 linux-tools-6.5.0-14-generic
+linux-tools-6.5.0-15-lowlatency
 linux-tools-6.5.0-17-lowlatency
+linux-tools-6.5.0-18-generic
 linux-tools-6.5.0-21-generic
 
-Packages to Remove
-linux-headers-6.5.0-14-lowlatency
-linux-headers-6.5.0-15-generic
-linux-headers-6.5.0-18-generic
-linux-hwe-6.5-headers-6.5.0-15
-linux-hwe-6.5-headers-6.5.0-18
-linux-hwe-6.5-tools-6.5.0-15
-linux-hwe-6.5-tools-6.5.0-18
-linux-image-6.5.0-14-lowlatency
-linux-image-6.5.0-15-generic
-linux-image-6.5.0-18-generic
-linux-modules-6.5.0-14-lowlatency
-linux-modules-6.5.0-15-generic
-linux-modules-6.5.0-18-generic
-linux-modules-extra-6.5.0-14-lowlatency
-linux-modules-extra-6.5.0-15-generic
-linux-modules-extra-6.5.0-18-generic
-linux-tools-6.5.0-14-lowlatency
-linux-tools-6.5.0-15-generic
-linux-tools-6.5.0-18-generic
+Packages to Purge
+linux-headers-6.5.0-1014-oracle
+linux-headers-6.5.0-17-generic
+linux-image-6.5.0-1014-oracle
+linux-image-6.5.0-1015-azure
+linux-image-6.5.0-17-generic
+linux-modules-6.5.0-1014-oracle
+linux-modules-6.5.0-17-generic
+linux-modules-extra-6.5.0-1014-oracle
+linux-modules-extra-6.5.0-17-generic
+linux-oracle-6.5-headers-6.5.0-1014
+linux-oracle-6.5-tools-6.5.0-1014
+linux-tools-6.5.0-1014-oracle
+linux-tools-6.5.0-17-generic
 
 Make sure your files are backed-up.
 
-Do you wish to continue
+Do you wish to purge 3 of 12 kernels now
 y
 
 Purge Package List:
-Purging packages apt-get purge -y linux-headers-6.5.0-14-lowlatency linux-headers-6.5.0-15-generic linux-headers-6.5.0-18-generic linux-hwe-6.5-headers-6.5.0-15 linux-hwe-6.5-headers-6.5.0-18 linux-hwe-6.5-tools-6.5.0-15 linux-hwe-6.5-tools-6.5.0-18 linux-image-6.5.0-14-lowlatency linux-image-6.5.0-15-generic linux-image-6.5.0-18-generic linux-modules-6.5.0-14-lowlatency linux-modules-6.5.0-15-generic linux-modules-6.5.0-18-generic linux-modules-extra-6.5.0-14-lowlatency linux-modules-extra-6.5.0-15-generic linux-modules-extra-6.5.0-18-generic linux-tools-6.5.0-14-lowlatency linux-tools-6.5.0-15-generic linux-tools-6.5.0-18-generic
+Purging packages apt-get purge -y linux-headers-6.5.0-1014-oracle linux-headers-6.5.0-17-generic linux-image-6.5.0-1014-oracle linux-image-6.5.0-1015-azure linux-image-6.5.0-17-generic linux-modules-6.5.0-1014-oracle linux-modules-6.5.0-17-generic linux-modules-extra-6.5.0-1014-oracle linux-modules-extra-6.5.0-17-generic linux-oracle-6.5-headers-6.5.0-1014 linux-oracle-6.5-tools-6.5.0-1014 linux-tools-6.5.0-1014-oracle linux-tools-6.5.0-17-generic
 
 FocusRx: KERNEL CLEANER FINISHED
 
 Press <return> to continue.
+
+=== BEGIN Intention ==============
+_016 Installed Kernels 12 different 6.5.0 kernel variants.
+- Running kernel is 6.5.0-1014-gcp.
+- Blessed kernel is 6.5.0-14-generic because meta installed per assert.
+- /boot is on root disk. Sizes are 11610,16460 (avail,size).
+- Check forced: installed 12 >= max (12) - thresholds (2)
+- Results in purge keeping 9 (12 - 3) kernels per heuristics
+-- PURGED kernels should be
+--- linux-image-6.5.0-1014-oracle
+--- linux-image-6.5.0-1015-azure
+--- linux-image-6.5.0-17-generic
+=== . END Intention ==============
+
+=== BEGIN Diagnostics ============
+Installed Kernel List : 6.5.0-14-generic
+6.5.0-15-lowlatency
+6.5.0-17-generic
+6.5.0-17-lowlatency
+6.5.0-18-generic
+6.5.0-21-generic
+6.5.0-1014-gcp
+6.5.0-1014-oem
+6.5.0-1014-oracle
+6.5.0-1015-azure
+6.5.0-1015-azure-fde
+6.5.0-1016-oracle
+Target Max Kernels    : 12
+Installed Kernel Count: 12
+Target Keep Kernels   : 9
+
+Running Kernel        : 6.5.0-1014-gcp
+Blessed Kernel        : 6.5.0-14-generic
+Is /boot a partition? : n
+/boot free,size       : 11610,16460 MB
+Effective free,size   : 0,2400 MB
+
+Do Force Flag?        : n
+Is /boot low?         : y
+Do Check Triggered?   : y
+Check Message         : 12 kernels are installed.<br>
+The /boot dir shares the system disk.<br>
+Check forced: Kernel count (12) exceeds <br>
+recommended max (9).
+=== . END Diagnostics ============

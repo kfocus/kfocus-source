@@ -519,7 +519,8 @@ _mainFn() {
       _check_msg+="(${_boot_free_int} of ${_boot_size_int} MB).";
     elif ((_boot_free_int > _lowRootDiskInt)); then
       _check_msg+="Kernel count (${_inst_kvers_count}) exceeds <br>${_cStr}";
-      _check_msg+="recommended max (${_kernel_max_count}).";
+      _check_msg+="recommended max ($((_kernel_max_count - \
+        _overfull_threshold_count - 1))).";
     else
       _check_msg+="System disk is low (${_boot_free_int} MB).<br>${_cStr}";
       _check_msg+="<b>MAKE ROOM TO KEEP MORE KERNELS!</b>";
