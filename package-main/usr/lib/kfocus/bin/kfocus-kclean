@@ -401,14 +401,14 @@ _mainFn() {
   declare \
     _body_title _boot_free_int _boot_size_int \
     _brow_str _cmd_list _do_check _do_force _eff_free_int \
-    _eff_size_int _end_msg_str _erow_str _exit_str \
+    _check_msg _eff_size_int _end_msg _erow_str _exit_str \
     _filtered_purge_list  _filtered_purge_list_str _inst_kvers_count \
     _inst_kvers_list_str _is_boot_low _is_boot_partition \
     _keep_kvers_list_count _keep_pkg_list_str _kernel_free_count \
-    _kernel_keep_count _kernel_max_count _kernel_unit_size_int \
+    _kernel_keep_count _kernel_purge_count _kernel_max_count \
     _kversExtraKeepStr _kversFullPrefStr _kversFullRunStr \
-    _opt_str _overfull_threshold_count _prompt_str _purge_msg \
-    _purge_pkg_list_str _purge_pkg_list _purge_pkg \
+    _opt_str _overfull_threshold_count _prompt_str \
+    _purge_msg _purge_pkg_list_str _purge_pkg_list _purge_pkg \
     _reply  _reserve_kvers_count _run_msg _table_str _win_title;
 
   ## Begin Initialize {
@@ -437,71 +437,47 @@ _mainFn() {
   ## . End Process Options }
 
   ## Begin Heuristics {
-  # 1. Determine actual /boot size, free space, if /boot is a partition
-  # 2. Determine effective /boot size and effective free space
-  #   - If /boot is on its own partition, set values to actual
-  #   - If /boot is on root
-  #     - If /root df >= 10GB, _eff_size_int = 8 x _kernel_unit_size_int
-  #     - If /root df <  10GB, _eff_size_int = _boot_size_int / 8
-  #     - In both cases, effective available space is effective size
-  #       less the number of installed kernels time nominal kernel size.
-  #       = eff_size_int - (_inst_kvers_count * _kernel_unit_size_int)
+  # 1. Determine actual /boot size, free space, if /boot is a partition.
+  # 2. Determine effective /boot size and effective free space.
   # 3. Determine max number of kernels that can fit in the full effective size,
-  #    also how many more kernels can fit into the effective avail space:
-  #     _kernel_max_count  = _eff_size_int / _kernel_unit_size_int
-  #     _kernel_free_count = _eff_free_int / _kernel_unit_size_int
-  # 4. Determine the low-space trigger and target kernels to keep
-  #    - If _kernel_max_count <= 3, then
-  #        _overfull_threshold_count=0 and
-  #        _kernel_keep_count=2
-  #    - Otherwise _overfull_threshold_count=1
-  #      if kernel_max_count <= 5, then
-  #        _kernel_keep_count=3
-  #      otherwise
-  #        _kernel_keep_count=_kernel_max_count - 3
-  # 5. Determine if purge event should be triggerred:
-  #    - If available kernel space is below threshold, trigger _is_boot_low
-  #
+  #    also how many more kernels can fit into the effective avail space.
+  # 4. Determine the low-space trigger and target kernels to keep.
+  # 5. Determine if purge event should be triggerred.
 
-  # 1. Determine actual /boot size, free space, if /boot is a partition
+  # 1. Determine actual /boot size, free space, if /boot is a partition.
   _boot_free_int="$(_echoBootMegsFn 'avail')";
   _boot_size_int="$(_echoBootMegsFn 'size')";
   _is_boot_partition="$(_echoIsBootMountPointFn)";
 
-  # 2. Determine effective /boot size and effective free space
-  _kernel_unit_size_int=200;
+  # 2. Determine effective /boot size and effective free space.
   _inst_kvers_list_str="$(_echoInstKversListStrFn)";
   _inst_kvers_count="$(wc -l <<< "${_inst_kvers_list_str}")";
   _echoDebugFn "INSTALLED KVERS LIST >>>${_inst_kvers_list_str}<<<";
   _run_msg+="${_inst_kvers_count} kernels are installed.<br>${_cStr}";
 
-  # If /boot is on its own partition, set values to actual
+  # If /boot is on its own partition, set values to actual.
   if [ "${_is_boot_partition}" = 'y' ]; then
     _eff_size_int="${_boot_size_int}";
     _eff_free_int="${_boot_free_int}";
-    _run_msg+="The /boot directory has ${_boot_free_int} ";
-    _run_msg+="of ${_eff_size_int}M available.<br>${_cStr}";
+  # Otherwise, calculate effective free and size.
   else
     _run_msg+="The /boot dir shares the system disk.<br>${_cStr}";
-    _run_msg+="/boot values are calculated.<br>${_cStr}";
-    if ((_boot_free_int > 10240)); then
-      _eff_size_int="$((_kernel_unit_size_int * 8))";
+    if ((_boot_free_int > _lowRootDiskInt)); then
+      _eff_size_int="$((_kernelUnitSizeInt * _multiInt))";
     else
-      _run_msg+="<b>MAKE ROOM TO ALLOW FOR MORE KERNELS</b>.<br>${_cStr}";
-      _eff_size_int="$((_boot_free_int / 8))";
+      _eff_size_int="$((_boot_free_int / _divisorInt))";
     fi
-
+    # Calculate effective free disk (can be negative).
     _eff_free_int="$((_eff_size_int
-      - _inst_kvers_count * _kernel_unit_size_int ))";
-  # (( _eff_free_int < 0)) && _eff_free_int=0;
+      - _inst_kvers_count * _kernelUnitSizeInt ))";
   fi
 
   # 3. Determine max number of kernels that can fit in the full effective size,
-  #    also how many more kernels can fit into the effective avail space:
-  _kernel_max_count="$(( _eff_size_int / _kernel_unit_size_int))";
-  _kernel_free_count="$((_eff_free_int / _kernel_unit_size_int))";
+  #    also how many more kernels can fit into the effective avail space.
+  _kernel_max_count="$(( _eff_size_int / _kernelUnitSizeInt))";
+  _kernel_free_count="$((_eff_free_int / _kernelUnitSizeInt))";
 
-  # 4. Determine the overfull threshold and kernel keep count
+  # 4. Determine the low-space trigger and target kernels to keep.
   if ((_kernel_max_count <= 3 )); then
     _overfull_threshold_count=0;
     _kernel_keep_count=2;
@@ -514,39 +490,82 @@ _mainFn() {
       _kernel_keep_count="$((_kernel_max_count - 3))";
     fi
   fi
-  # Failsafe
+  # Failsafe to ensure 2 kernels remain
   if (( "${_kernel_keep_count}" < 2)); then
     _cm2ErrStrFn "Keep count |${_kernel_keep_count}| < 2";
     _cm2ErrStrFn 'Please investigate. This should not occur.';
     _kernel_keep_count=2;
   fi
 
-  # 5. Determine if purge event should be triggerred:
+  # 5. Determine if purge event should be triggerred.
   _do_check='n';
   _is_boot_low='n';
+  _check_msg='';
   if [ "${_do_force}" = 'y' ]; then
-    _run_msg+='Check forced: Force flag used.';
+    _check_msg+="Check forced: Force flag used.";
     _do_check='y';
-  elif ((_kernel_free_count <= _overfull_threshold_count)); then
-    _run_msg+='Check forced: /boot space is low.';
+  fi;
+
+  # _kernel_max_count is present in _kernel_keep_count
+  if ((_kernel_free_count <= _overfull_threshold_count)); then
     _is_boot_low='y';
     _do_check='y';
-  elif ((_inst_kvers_count >= _kernel_max_count)); then
-    _run_msg+="Check forced: More than ${_kernel_max_count} kernels found.";
+    # Create new or append as needed
+    if [ -z "${_check_msg}" ]; then
+      _check_msg="Check forced: "; else _check_msg+="<br>${_cStr}";
+    fi
+    if [ "${_is_boot_partition}" = 'y' ]; then
+      _check_msg+='/boot space is low ';
+      _check_msg+="(${_boot_free_int} of ${_boot_size_int} MB).";
+    elif ((_boot_free_int > _lowRootDiskInt)); then
+      _check_msg+="Kernel count (${_inst_kvers_count}) exceeds <br>${_cStr}";
+      _check_msg+="recommended max (${_kernel_max_count}).";
+    else
+      _check_msg+="System disk is low (${_boot_free_int} MB).<br>${_cStr}";
+      _check_msg+="<b>MAKE ROOM TO KEEP MORE KERNELS!</b>";
+    fi
+
+  # This should never be encountered, but we keep it here as
+  # a failsafe.
+  elif ((_inst_kvers_count > _kernel_max_count)); then
     _do_check='y';
+    # Create new or append as needed
+    if [ -z "${_run_msg}" ]; then
+      _check_msg="Check forced: "; else _check_msg+="<br>${_cStr}";
+    fi
+    _check_msg+="Kernel count (${_inst_kvers_count}) exceeds <br>${_cStr}";
+    _check_msg+="recommended max (${_kernel_max_count}).";
   fi
+
+  # Append check results
+  [ -n "${_check_msg}" ] && _run_msg+="${_check_msg}";
+
+  # Get Running and bless kernel strings.
+  _kversFullRunStr="$(_echoKversFullRunStrFn)";
+  _kversFullPrefStr="$(_echoMetaKversStrFn "${_preferredMetaPkg}")";
+  # Deprecated
+  # _kversFullLlHweStr="$(_echoMetaKversStrFn linux-image-lowlatency-hwe-22.04)";
+  # _kversFullOemStr="$(_echoMetaKversStrFn linux-image-oem-22.04-kfocus)";
 
   # Output debug
   _kc2RtestDebugStr="$(cat << EOD;
-================================
-Is boot partition    : ${_is_boot_partition}
-/boot size           : ${_boot_size_int} MB
-/boot free           : ${_boot_free_int} MB
-/boot size effective : ${_eff_size_int} MB
-/boot free effective : ${_eff_free_int} MB
-Target max kernels   : ${_kernel_max_count}
-Target min kernels   : ${_kernel_keep_count}
-================================
+=== BEGIN Diagnostics ============
+Installed Kernel List : ${_inst_kvers_list_str}
+Target Max Kernels    : ${_kernel_max_count}
+Installed Kernel Count: ${_inst_kvers_count}
+Target Keep Kernels   : ${_kernel_keep_count}
+
+Running Kernel        : ${_kversFullRunStr}
+Blessed Kernel        : ${_kversFullPrefStr}
+Is /boot a partition? : ${_is_boot_partition}
+/boot free,size       : ${_boot_free_int},${_boot_size_int} MB
+Effective free,size   : ${_eff_free_int},${_eff_size_int} MB
+
+Do Force Flag?        : ${_do_force}
+Is /boot low?         : ${_is_boot_low}
+Do Check Triggered?   : ${_do_check}
+Check Message         : ${_run_msg}
+=== . END Diagnostics ============
 EOD
   )";
   if [ "${_doDebug}" = 'y' ]; then
@@ -570,12 +589,6 @@ EOD
   #    WE SHOULD KEEP 2 VERSION OF ANY META-LEVEL LIKE generic-hwe-22.04
   #
   _kversExtraKeepStr='';
-  _kversFullRunStr="$(_echoKversFullRunStrFn)";
-  _kversFullPrefStr="$(_echoMetaKversStrFn "${_preferredMetaPkg}")";
-
-  # Deprecated
-  # _kversFullLlHweStr="$(_echoMetaKversStrFn linux-image-lowlatency-hwe-22.04)";
-  # _kversFullOemStr="$(_echoMetaKversStrFn linux-image-oem-22.04-kfocus)";
 
   # Report bad running kernel string
   if [ -z "${_kversFullRunStr}" ]; then
@@ -662,15 +675,11 @@ Please see your system administrator to fix.";
         cat <<_EOW01
 
 
-<p>Disk space on <code>/boot</code> is low, but <br>
-only protected kernel are installed.<br></p>
-
-<p>If you have a kernel you are not using,<br>
-<b>purge it to increase available space.</b></p>
-
-<p>Otherwise, <code>/boot</code> could overfill during a <br>
-kernel upgrade which could prevent normal <br>
-booting of the system.</p>
+<p>Disk space on <code>/boot</code> is low, but only protected <br>
+kernel are installed. If there is a kernel you <br>
+are NOT USING, we encourage you to purge it so <br>
+the <code>/boot</code> disk does not overfill and prevent the<br>
+system from booting.</p>
 
 _EOW01
       )";
@@ -699,10 +708,11 @@ _EOW02
   ## . End Show dialog if there are no packages to purge }
 
   ## Begin Show dialog with packages to purge {
+  _kernel_purge_count="$(( _inst_kvers_count - _kernel_keep_count ))";
   _purge_msg="$(
     cat <<_EOW04
 ${_cm2HtmBeginStr}${_table_str}
-${_brow_str}<h3 style="color:#f7941d">FocusRX: Purge Unused Kernels?</h3>${_erow_str}
+${_brow_str}<h3 style="color:#f7941d">FocusRX: Purge Older Kernels?</h3>${_erow_str}
 ${_brow_str}Doc: <a style="color:#1d99f3" href="https://kfocus.org/wf/tools#kclean">https://kfocus.org/wf/tools#kclean</a>${_erow_str}
 
 ${_brow_str}${_run_msg}${_erow_str}
@@ -718,7 +728,8 @@ ${_brow_str}<code>${_filtered_purge_list_str}</code>${_erow_str}
 
 ${_brow_str}<b>Make sure your files are backed-up.</b>${_erow_str}
 
-${_brow_str}Do you wish to continue?${_erow_str}</table>
+${_brow_str}Do you wish to purge ${_kernel_purge_count} of ${_inst_kvers_count} kernels now?${_erow_str}</table>
+
 ${_cm2HtmEndStr}
 _EOW04
   )";
@@ -732,16 +743,16 @@ _EOW04
   ## . End Show dialog with packages to purge }
 
   ## Begin Purge packages {
-  _end_msg_str='';
+  _end_msg='';
   _cmd_list=('apt-get' 'purge' '-y' "${_filtered_purge_list[@]}");
   if _exit_str="$(
     _cm2RunLongCmdFn 'Purging packages' "${_cmd_list[@]}"
   )"; then
-    _end_msg_str='Purge was successful.';
+    _end_msg='Purge was successful.';
   else
-    _end_msg_str='There was an issue purging packages';
+    _end_msg='There was an issue purging packages';
     if [ -n "${_exit_str}" ]; then
-      _end_msg_str+=":<br>${_exit_str}";
+      _end_msg+=":<br>${_exit_str}";
     fi
   fi
   ## . End Purge packages }
@@ -751,7 +762,7 @@ _EOW04
     cat <<_EOW05
 ${_cm2HtmBeginStr}${_table_str}
 ${_brow_str}<h3 style="color:#f7941d">${_body_title} FINISHED</h3>${_erow_str}
-${_brow_str}${_end_msg_str}${_erow_str}
+${_brow_str}${_end_msg}${_erow_str}
 </table>
 ${_cm2HtmEndStr}
 _EOW05
@@ -763,18 +774,29 @@ _EOW05
 
 ## BEGIN Declare and assign global vars {
 declare _binName _binDir _baseDir _baseName _cStr \
-  _doDebug _escExe _aptListStr _kversExtraKeepStr \
-  _kversFullPrefStr _kversFullRunStr _preferredMetaPkg \
-  _kc2RtestDebugStr;
+  _doDebug _escExe _aptListStr _kversExtraKeepStr _preferredMetaPkg \
+  _kversFullPrefStr _kversFullRunStr _kc2RtestDebugStr \
+  _divisorInt _kernelUnitSizeInt _lowDiskSizeInt _multiInt \
 
 _aptListStr='';
 _cStr=$'\n';
+_doDebug='y';
 _kversExtraKeepStr='';
 _kversFullPrefStr='';
 _kversFullRunStr='';
+# TODO: Revive as needed: _kversFullLlHweStr=''; _kversFullOemStr='';
+
+# Divisor for portion of root disk to consider reserved for kernels
+#   when space is low and /boot is on root disk.
+_divisorInt=8;
+# Nominal size in MB for a kernel on /boot partition
+_kernelUnitSizeInt=200;
+# Size in MB of what we consider a low root disk (10GB)
+_lowRootDiskInt=10240;
+# Max kernel count for unconstrained, large disks
+_multiInt=12;
+# Package where bless kernel comes from.
 _preferredMetaPkg='linux-image-generic-hwe-22.04-kfocus';
-_doDebug='y';
-# Deprecated _kversFullLlHweStr=''; _kversFullOemStr='';
 ## . END Declare and assign global vars }
 
 ## BEGIN Run main if script is not sourced {

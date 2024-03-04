@@ -1,4 +1,6 @@
-Update Disk      : 333,705
+
+=== BEGIN Update  ================
+Updated Disk     : 333,705
 Updated Pkg List :
 linux-base
 linux-firmware
@@ -23,13 +25,24 @@ linux-tools-6.5.0-14-generic
 linux-tools-6.5.0-21-lowlatency
 linux-tools-common
 linux-tools-generic-hwe-22.04-kfocus
+=== . END Update  ================
 
-================================
-Is boot partition    : y
-/boot size           : 705 MB
-/boot free           : 333 MB
-/boot size effective : 705 MB
-/boot free effective : 333 MB
-Target max kernels   : 3
-Target min kernels   : 2
-================================
+=== BEGIN Diagnostics ============
+Installed Kernel List : 6.5.0-14-generic
+6.5.0-21-lowlatency
+Target Max Kernels    : 3
+Installed Kernel Count: 2
+Target Keep Kernels   : 2
+
+Running Kernel        : 6.5.0-21-lowlatency
+Blessed Kernel        : 6.5.0-14-generic
+Is /boot a partition? : y
+/boot free,size       : 333,705 MB
+Effective free,size   : 333,705 MB
+
+Do Force Flag?        : n
+Is /boot low?         : n
+Do Check Triggered?   : n
+Check Message         : 2 kernels are installed.<br>
+
+=== . END Diagnostics ============

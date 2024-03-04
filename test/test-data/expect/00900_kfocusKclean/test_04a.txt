@@ -1,4 +1,32 @@
-Update Disk      : 297,705
+FocusRx: KERNEL CLEANER
+Doc: https://kfocus.org/wf/tools#kclean
+
+2 kernels are installed.
+Check forced: Force flag used.
+
+Packages to Keep
+linux-headers-6.2.0-35-generic
+linux-headers-6.5.0-14-generic
+linux-hwe-6.2-headers-6.2.0-35
+linux-hwe-6.2-tools-6.2.0-35
+linux-hwe-6.5-headers-6.5.0-14
+linux-hwe-6.5-tools-6.5.0-14
+linux-image-6.2.0-35-generic
+linux-image-6.5.0-14-generic
+linux-modules-6.2.0-35-generic
+linux-modules-6.5.0-14-generic
+linux-modules-extra-6.2.0-35-generic
+linux-modules-extra-6.5.0-14-generic
+linux-tools-6.2.0-35-generic
+linux-tools-6.5.0-14-generic
+
+Packages to Purge
+There are no unused kernels to purge.
+
+Press <return> to continue.
+
+=== BEGIN Update  ================
+Updated Disk     : 297,705
 Updated Pkg List :
 linux-base
 linux-firmware
@@ -23,40 +51,24 @@ linux-tools-6.2.0-35-generic
 linux-tools-6.5.0-14-generic
 linux-tools-common
 linux-tools-generic-hwe-22.04-kfocus
+=== . END Update  ================
 
-FocusRx: KERNEL CLEANER
-Doc: https://kfocus.org/wf/tools#kclean
+=== BEGIN Diagnostics ============
+Installed Kernel List : 6.2.0-35-generic
+6.5.0-14-generic
+Target Max Kernels    : 3
+Installed Kernel Count: 2
+Target Keep Kernels   : 2
 
-2 kernels are installed.
-The /boot directory has 297 of 705M available.
+Running Kernel        : 6.5.0-14-generic
+Blessed Kernel        : 6.5.0-14-generic
+Is /boot a partition? : y
+/boot free,size       : 297,705 MB
+Effective free,size   : 297,705 MB
+
+Do Force Flag?        : y
+Is /boot low?         : n
+Do Check Triggered?   : y
+Check Message         : 2 kernels are installed.<br>
 Check forced: Force flag used.
-
-Packages to Keep
-linux-headers-6.2.0-35-generic
-linux-headers-6.5.0-14-generic
-linux-hwe-6.2-headers-6.2.0-35
-linux-hwe-6.2-tools-6.2.0-35
-linux-hwe-6.5-headers-6.5.0-14
-linux-hwe-6.5-tools-6.5.0-14
-linux-image-6.2.0-35-generic
-linux-image-6.5.0-14-generic
-linux-modules-6.2.0-35-generic
-linux-modules-6.5.0-14-generic
-linux-modules-extra-6.2.0-35-generic
-linux-modules-extra-6.5.0-14-generic
-linux-tools-6.2.0-35-generic
-linux-tools-6.5.0-14-generic
-
-Packages to Purge
-There are no unused kernels to purge.
-
-Press <return> to continue.
-================================
-Is boot partition    : y
-/boot size           : 705 MB
-/boot free           : 297 MB
-/boot size effective : 705 MB
-/boot free effective : 297 MB
-Target max kernels   : 3
-Target min kernels   : 2
-================================
+=== . END Diagnostics ============

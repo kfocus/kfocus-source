@@ -1,20 +1,11 @@
-.012 Installed kernels are generic-hwe-22.04-kfocus,
-  6.5.0-17-generic, and generic-hwe-22.04.
-- Running kernel is generic-hwe-22.04 (6.5.0-21-generic).
-- /boot is on root disk with 1482M free.
-- Run is forced by -f flag.
-- Results in purge of 6.5.0-17-generic BECAUSE:
- -- Free space is under 10GB, leaving effective space for only two kernels.
- -- IN ADDITION, report is presented due to force flag.
-
-FocusRX: Purge Unused Kernels?
+FocusRX: Purge Older Kernels?
 Doc: https://kfocus.org/wf/tools#kclean
 
 3 kernels are installed.
 The /boot dir shares the system disk.
-/boot values are calculated.
-MAKE ROOM TO ALLOW FOR MORE KERNELS.
 Check forced: Force flag used.
+System disk is low (1482 MB).
+MAKE ROOM TO KEEP MORE KERNELS!
 
 Removing unused kernels prevents the system
 from running out of disk space in /boot.
@@ -35,7 +26,7 @@ linux-modules-extra-6.5.0-21-generic
 linux-tools-6.5.0-14-generic
 linux-tools-6.5.0-21-generic
 
-Packages to Remove
+Packages to Purge
 linux-headers-6.5.0-17-generic
 linux-hwe-6.5-headers-6.5.0-17
 linux-hwe-6.5-tools-6.5.0-17
@@ -46,7 +37,7 @@ linux-tools-6.5.0-17-generic
 
 Make sure your files are backed-up.
 
-Do you wish to continue
+Do you wish to purge 1 of 3 kernels now
 y
 
 Purge Package List:
@@ -55,3 +46,47 @@ Purging packages apt-get purge -y linux-headers-6.5.0-17-generic linux-hwe-6.5-h
 FocusRx: KERNEL CLEANER FINISHED
 
 Press <return> to continue.
+
+=== BEGIN Intention ==============
+_012 Installed kernels are:
+6.5.0-21-generic (generic-hwe-22.04),
+6.5.0-17-generic,
+6.5.0-14-generic (generic-hwe-22.04-kfocus) (meta purged).
+- Running kernel is 6.5.0-21-generic (generic-hwe-22.04) per assert.
+- Blessed kernel is 6.5.0-14-generic because meta installed per assert.
+- /boot is NOT its own partition with 1482 free of 2048M.
+- Check Forced: -f flag used.
+- Results in PURGE BECAUSE:
+-- 6.5.0-21-generic is running kernel, so retained.
+-- 6.5.0-14-generic is blessed kernel, so retained.
+-- 6.5.0-17-generic is not running or blessed, so purged.
+-- Root disk free space < 10GB, so effective size is 1482/8 = 185.
+-- Effective free size is free 185-(3*200) = -415
+--- There is NOT enough room for one more kernel (-415 < 200M).
+--- This is low space when total space only allows (-415/200 = -2) kernels.
+-- IN ADDITION, report is presented due to force flag.
+=== . END Intention ==============
+
+=== BEGIN Diagnostics ============
+Installed Kernel List : 6.5.0-14-generic
+6.5.0-17-generic
+6.5.0-21-generic
+Target Max Kernels    : 0
+Installed Kernel Count: 3
+Target Keep Kernels   : 2
+
+Running Kernel        : 6.5.0-21-generic
+Blessed Kernel        : 6.5.0-14-generic
+Is /boot a partition? : n
+/boot free,size       : 1482,2048 MB
+Effective free,size   : -415,185 MB
+
+Do Force Flag?        : y
+Is /boot low?         : y
+Do Check Triggered?   : y
+Check Message         : 3 kernels are installed.<br>
+The /boot dir shares the system disk.<br>
+Check forced: Force flag used.<br>
+System disk is low (1482 MB).<br>
+<b>MAKE ROOM TO KEEP MORE KERNELS!</b>
+=== . END Diagnostics ============

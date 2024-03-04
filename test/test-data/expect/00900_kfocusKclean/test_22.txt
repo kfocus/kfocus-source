@@ -1,20 +1,10 @@
-.022 Installed kernels are generic-hwe-22.04-kfocus,
-  6.5.0-17-generic, and generic-hwe-22.04.
-- Running kernel is generic-hwe-22.04 (6.5.0-21-generic).
-- Blessed kernel is 6.5.0-14-generic (per Mock)
-- /boot is on large root disk but with 500M free.
-- Check forced: Very low system disk.
-- Results: PURGE all but two kernels
--- ALSO WARN that system disk is low.
-
-FocusRX: Purge Unused Kernels?
+FocusRX: Purge Older Kernels?
 Doc: https://kfocus.org/wf/tools#kclean
 
 3 kernels are installed.
 The /boot dir shares the system disk.
-/boot values are calculated.
-MAKE ROOM TO ALLOW FOR MORE KERNELS.
-Check forced: /boot space is low.
+Check forced: System disk is low (500 MB).
+MAKE ROOM TO KEEP MORE KERNELS!
 
 Removing unused kernels prevents the system
 from running out of disk space in /boot.
@@ -35,7 +25,7 @@ linux-modules-extra-6.5.0-21-generic
 linux-tools-6.5.0-14-generic
 linux-tools-6.5.0-21-generic
 
-Packages to Remove
+Packages to Purge
 linux-headers-6.5.0-17-generic
 linux-hwe-6.5-headers-6.5.0-17
 linux-hwe-6.5-tools-6.5.0-17
@@ -46,7 +36,7 @@ linux-tools-6.5.0-17-generic
 
 Make sure your files are backed-up.
 
-Do you wish to continue
+Do you wish to purge 1 of 3 kernels now
 y
 
 Purge Package List:
@@ -55,3 +45,43 @@ Purging packages apt-get purge -y linux-headers-6.5.0-17-generic linux-hwe-6.5-h
 FocusRx: KERNEL CLEANER FINISHED
 
 Press <return> to continue.
+
+=== BEGIN Intention ==============
+_022 Installed kernels are
+6.5.0-14-generic (generic-hwe-22.04-kfocus),
+6.5.0-17-generic,
+6.5.0-21-generic.
+- Running kernel is 6.5.0-21-generic per assert.
+- Blessed kernel is 6.5.0-14-generic because meta installed per assert.
+- /boot is on large root disk but with 500M free.
+- Check forced: Low disk space
+- Results in purge of only 6.5.0-17-generic BECAUSE:
+-- 6.5.0-21-generic is running, so retained.
+-- 6.5.0-14-generic is blessed, so retained.
+-- 6.5.0-17 IS PURGED because it is not protected, and...
+--- There is NOT enough room for one more kernel (effective size is 62MB).
+-- ALSO WARN that kernel count exceeds recommended maximum.
+=== . END Intention ==============
+
+=== BEGIN Diagnostics ============
+Installed Kernel List : 6.5.0-14-generic
+6.5.0-17-generic
+6.5.0-21-generic
+Target Max Kernels    : 0
+Installed Kernel Count: 3
+Target Keep Kernels   : 2
+
+Running Kernel        : 6.5.0-21-generic
+Blessed Kernel        : 6.5.0-14-generic
+Is /boot a partition? : n
+/boot free,size       : 500,102048 MB
+Effective free,size   : -538,62 MB
+
+Do Force Flag?        : n
+Is /boot low?         : y
+Do Check Triggered?   : y
+Check Message         : 3 kernels are installed.<br>
+The /boot dir shares the system disk.<br>
+Check forced: System disk is low (500 MB).<br>
+<b>MAKE ROOM TO KEEP MORE KERNELS!</b>
+=== . END Diagnostics ============

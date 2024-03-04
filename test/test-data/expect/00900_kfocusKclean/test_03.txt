@@ -1,3 +1,5 @@
+
+=== BEGIN Intention ==============
 _003 Installed kernels are
  6.5.0-14 (generic-hwe-22.04-kfocus), 6.2.0-35-generic.
 - Running kernel is 6.5.0-14-generic per assert.
@@ -7,13 +9,24 @@ _003 Installed kernels are
 - Results in no action BECAUSE:
 -- There is enough room for one more kernel (297M > 200M)
 -- This is NOT low space when total space allows (705/200 = 3) kernels
+=== . END Intention ==============
 
-================================
-Is boot partition    : y
-/boot size           : 705 MB
-/boot free           : 297 MB
-/boot size effective : 705 MB
-/boot free effective : 297 MB
-Target max kernels   : 3
-Target min kernels   : 2
-================================
+=== BEGIN Diagnostics ============
+Installed Kernel List : 6.2.0-35-generic
+6.5.0-14-generic
+Target Max Kernels    : 3
+Installed Kernel Count: 2
+Target Keep Kernels   : 2
+
+Running Kernel        : 6.5.0-14-generic
+Blessed Kernel        : 6.5.0-14-generic
+Is /boot a partition? : y
+/boot free,size       : 297,705 MB
+Effective free,size   : 297,705 MB
+
+Do Force Flag?        : n
+Is /boot low?         : n
+Do Check Triggered?   : n
+Check Message         : 2 kernels are installed.<br>
+
+=== . END Diagnostics ============

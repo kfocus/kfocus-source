@@ -3,7 +3,8 @@ Doc: https://kfocus.org/wf/tools#kclean
 
 2 kernels are installed.
 The /boot dir shares the system disk.
-Check forced: System disk is low (1682 MB).
+Check forced: Force flag used.
+System disk is low (1682 MB).
 MAKE ROOM TO KEEP MORE KERNELS!
 
 Disk space on /boot is low, but only protected 
@@ -68,17 +69,18 @@ Target Max Kernels    : 1
 Installed Kernel Count: 2
 Target Keep Kernels   : 2
 
-Running Kernel        : 6.5.0-21-generic
+Running Kernel        : 6.5.0-17-generic
 Blessed Kernel        : XXX_NOT_INSTALLED_XXX
 Is /boot a partition? : n
 /boot free,size       : 1682,2048 MB
 Effective free,size   : -190,210 MB
 
-Do Force Flag?        : n
+Do Force Flag?        : y
 Is /boot low?         : y
 Do Check Triggered?   : y
 Check Message         : 2 kernels are installed.<br>
 The /boot dir shares the system disk.<br>
-Check forced: System disk is low (1682 MB).<br>
+Check forced: Force flag used.<br>
+System disk is low (1682 MB).<br>
 <b>MAKE ROOM TO KEEP MORE KERNELS!</b>
 === . END Diagnostics ============

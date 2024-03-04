@@ -1,24 +1,8 @@
-_007 Installed kernels are
-6.5.0-14-generic (generic-hwe-22.04-kfocus)
-6.2.0-35-generic, 5.19.0-50-generic.
-- Running kernel is 6.5.0-14-generic per assert.
-- Blessed kernel is 6.5.0-14-generic because meta installed per assert.
-- /boot is its own partition with 139 free of 705M.
-- Check Forced: Low disk space
-- Results in purge of 5.19.0-50-generic
--- 6.5.0-14-generic is running and blessed, so retained.
--- 6.2.0-35-generic is next latest remaining version, kept for 2 minimum.
--- 5.19.0-50-generic IS PURGED because it is not protected
---- There is NOT enough room for one more kernel (139 < 200M).
---- This is low space when total space only allows (705/200 = 3) kernels.
-- Results in purge of 5.19.0-50-generic.
-
-FocusRX: Purge Unused Kernels?
+FocusRX: Purge Older Kernels?
 Doc: https://kfocus.org/wf/tools#kclean
 
 3 kernels are installed.
-The /boot directory has 139 of 705M available.
-Check forced: /boot space is low.
+Check forced: /boot space is low (139 of 705 MB).
 
 Removing unused kernels prevents the system
 from running out of disk space in /boot.
@@ -50,7 +34,7 @@ linux-tools-5.19.0-50-generic
 
 Make sure your files are backed-up.
 
-Do you wish to continue
+Do you wish to purge 1 of 3 kernels now
 y
 
 Purge Package List:
@@ -59,12 +43,41 @@ Purging packages apt-get purge -y linux-headers-5.19.0-50-generic linux-hwe-5.19
 FocusRx: KERNEL CLEANER FINISHED
 
 Press <return> to continue.
-================================
-Is boot partition    : y
-/boot size           : 705 MB
-/boot free           : 139 MB
-/boot size effective : 705 MB
-/boot free effective : 139 MB
-Target max kernels   : 3
-Target min kernels   : 2
-================================
+
+=== BEGIN Intention ==============
+_007 Installed kernels are
+6.5.0-14-generic (generic-hwe-22.04-kfocus)
+6.2.0-35-generic, 5.19.0-50-generic.
+- Running kernel is 6.5.0-14-generic per assert.
+- Blessed kernel is 6.5.0-14-generic because meta installed per assert.
+- /boot is its own partition with 139 free of 705M.
+- Check Forced: Low disk space
+- Results in purge of 5.19.0-50-generic
+-- 6.5.0-14-generic is running and blessed, so retained.
+-- 6.2.0-35-generic is next latest remaining version, kept for 2 minimum.
+-- 5.19.0-50-generic IS PURGED because it is not protected
+--- There is NOT enough room for one more kernel (139 < 200M).
+--- This is low space when total space only allows (705/200 = 3) kernels.
+- Results in purge of 5.19.0-50-generic.
+=== . END Intention ==============
+
+=== BEGIN Diagnostics ============
+Installed Kernel List : 5.19.0-50-generic
+6.2.0-35-generic
+6.5.0-14-generic
+Target Max Kernels    : 3
+Installed Kernel Count: 3
+Target Keep Kernels   : 2
+
+Running Kernel        : 6.5.0-14-generic
+Blessed Kernel        : 6.5.0-14-generic
+Is /boot a partition? : y
+/boot free,size       : 139,705 MB
+Effective free,size   : 139,705 MB
+
+Do Force Flag?        : n
+Is /boot low?         : y
+Do Check Triggered?   : y
+Check Message         : 3 kernels are installed.<br>
+Check forced: /boot space is low (139 of 705 MB).
+=== . END Diagnostics ============

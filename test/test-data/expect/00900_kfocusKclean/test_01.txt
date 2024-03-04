@@ -1,29 +1,14 @@
-_001 Installed kernels are
-6.5.0-14-generic (generic-hwe-22.04-kfocus),
-6.2.0-35-generic.
-- Running kernel is 6.5.0-14-generic per assert.
-- Blessed kernel is 6.5.0-14-generic because meta installed per assert.
-- /boot is its own partition with 139 free of 705M.
-- Check Forced: Low disk space (139 < 200 reserved for kernels)
-- Results in NO PURGE because a minimum of 2 kernels is preserved.
- -- HOWEVER, a warning for low disk should be shown.
-
 FocusRx: KERNEL CLEANER
 Doc: https://kfocus.org/wf/tools#kclean
 
 2 kernels are installed.
-The /boot directory has 139 of 705M available.
-Check forced: /boot space is low.
+Check forced: /boot space is low (139 of 705 MB).
 
-Disk space on /boot is low, but 
-only protected kernel are installed.
-
-If you have a kernel you are not using,
-purge it to increase available space.
-
-Otherwise, /boot could overfill during a 
-kernel upgrade which could prevent normal 
-booting of the system.
+Disk space on /boot is low, but only protected 
+kernel are installed. If there is a kernel you 
+are NOT USING, we encourage you to purge it so 
+the /boot disk does not overfill and prevent the
+system from booting.
 
 Packages to Keep
 linux-headers-6.2.0-35-generic
@@ -45,12 +30,35 @@ Packages to Purge
 There are no unused kernels to purge.
 
 Press <return> to continue.
-================================
-Is boot partition    : y
-/boot size           : 705 MB
-/boot free           : 139 MB
-/boot size effective : 705 MB
-/boot free effective : 139 MB
-Target max kernels   : 3
-Target min kernels   : 2
-================================
+
+=== BEGIN Intention ==============
+_001 Installed kernels are
+6.5.0-14-generic (generic-hwe-22.04-kfocus),
+6.2.0-35-generic.
+- Running kernel is 6.5.0-14-generic per assert.
+- Blessed kernel is 6.5.0-14-generic because meta installed per assert.
+- /boot is its own partition with 139 free of 705M.
+- Check Forced: Low disk space (139 < 200 reserved for kernels)
+- Results in NO PURGE because a minimum of 2 kernels is preserved.
+ -- HOWEVER, a warning for low disk should be shown.
+=== . END Intention ==============
+
+=== BEGIN Diagnostics ============
+Installed Kernel List : 6.2.0-35-generic
+6.5.0-14-generic
+Target Max Kernels    : 3
+Installed Kernel Count: 2
+Target Keep Kernels   : 2
+
+Running Kernel        : 6.5.0-14-generic
+Blessed Kernel        : 6.5.0-14-generic
+Is /boot a partition? : y
+/boot free,size       : 139,705 MB
+Effective free,size   : 139,705 MB
+
+Do Force Flag?        : n
+Is /boot low?         : y
+Do Check Triggered?   : y
+Check Message         : 2 kernels are installed.<br>
+Check forced: /boot space is low (139 of 705 MB).
+=== . END Diagnostics ============

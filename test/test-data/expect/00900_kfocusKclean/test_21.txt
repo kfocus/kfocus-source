@@ -1,0 +1,32 @@
+
+=== BEGIN Intention ==============
+_021 Installed Kernels 4 different 6.5.0 kernel variants.
+- /boot is its own partition with 450M free of 1150M (avail,size).
+- Running kernel is 6.5.0-17-generic.
+- Blessed kernel is 6.5.0-14 per mock
+- Check NOT forced: free_count (2) <= threshold (1) when space for 4-5 kernels
+  is present
+- Results: NO ACTION
+=== . END Intention ==============
+
+=== BEGIN Diagnostics ============
+Installed Kernel List : 6.5.0-14-generic
+6.5.0-17-generic
+6.5.0-18-generic
+6.5.0-21-generic
+Target Max Kernels    : 5
+Installed Kernel Count: 4
+Target Keep Kernels   : 3
+
+Running Kernel        : 6.5.0-17-generic
+Blessed Kernel        : 6.5.0-14-generic
+Is /boot a partition? : y
+/boot free,size       : 450,1150 MB
+Effective free,size   : 450,1150 MB
+
+Do Force Flag?        : n
+Is /boot low?         : n
+Do Check Triggered?   : n
+Check Message         : 4 kernels are installed.<br>
+
+=== . END Diagnostics ============
