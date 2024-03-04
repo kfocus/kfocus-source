@@ -39,7 +39,7 @@ _assertDataTable=(
 - Running kernel is 6.5.0-14-generic per assert.
 - Blessed kernel is 6.5.0-14-generic because meta installed per assert.
 - /boot is its own partition with 139 free of 705M.
-- Check Forced: Low disk space (139 < 200 reserved for kernels)
+- Check Forced: Low disk space (139 < 230 reserved for kernels)
 - Results in NO PURGE because a minimum of 2 kernels is preserved.
  -- HOWEVER, a warning for low disk should be shown.
 ;;y;6.5.0-14-generic;y;139,705;0;
@@ -73,7 +73,7 @@ linux-tools-generic-hwe-22.04-kfocus'
 - Running kernel is 6.5.0-14-generic per assert.
 - Blessed kernel is 6.5.0-14-generic because meta installed per assert.
 - /boot is its own partition with 139 free of 705M.
-- Check Forced: Low disk space (139 < 200 reserved for kernels)
+- Check Forced: Low disk space (139 < 230 reserved for kernels)
 - Results in purge of only 6.2.0-21-generic BECAUSE:
 -- 6.5.0-14-generic is running and blessed, so retained
 -- 6.2.0-35-generic is retained because of the 2-kernel minimum
@@ -116,8 +116,8 @@ linux-tools-generic-hwe-22.04-kfocus'
 - /boot is its own partition with 297 free of 705M.
 - Check NOT Forced: Enough disk space
 - Results in no action BECAUSE:
--- There is enough room for one more kernel (297M > 200M)
--- This is NOT low space when total space allows (705/200 = 3) kernels
+-- There is enough room for one more kernel (297M > 230M)
+-- This is NOT low space when total space allows (705/230 = 3) kernels
 ;;y;6.5.0-14-generic;y;297,705;0;
 linux-base
 linux-firmware
@@ -150,8 +150,8 @@ linux-tools-generic-hwe-22.04-kfocus'
 - /boot is its own partition with 297 free of 705M.
 - Check Forced: -f flag used.
 - Results in no purge offered BECAUSE:
--- There is enough room for one more kernel (297M > 200M)
--- This is NOT low space when total space allows (705/200 = 3) kernels
+-- There is enough room for one more kernel (297M > 230M)
+-- This is NOT low space when total space allows (705/230 = 3) kernels
 ;-f;y;6.5.0-14-generic;y;297,705;0;
 linux-base
 linux-firmware
@@ -189,8 +189,8 @@ linux-tools-generic-hwe-22.04-kfocus'
 -- 6.5.0-21-lowlatency is running, so retained.
 -- 6.2.0-14-generic is blessed, so retained.
 -- 6.2.0-35-generic IS PURGED because it is not protected, and...
---- There is NOT enough room for one more kernel (133M < 200M).
---- This is low space when total space only allows (705/200 = 3) kernels.
+--- There is NOT enough room for one more kernel (133M < 230M).
+--- This is low space when total space only allows (705/230 = 3) kernels.
 ;;y;6.5.0-21-lowlatency;y;133,705;0;
 linux-base
 linux-firmware
@@ -237,8 +237,8 @@ linux-tools-generic-hwe-22.04-kfocus'
 -- 6.5.0-21-generic is latest remaining version, kept for 2 minimum.
 -- 6.2.0-35-generic IS PURGED because it is not protected
 -- 6.5.0-17-generic IS PURGED because it is not protected
---- There is NOT enough room for one more kernel (0 < 200M).
---- This is low space when total space only allows (705/200 = 3) kernels.
+--- There is NOT enough room for one more kernel (0 < 230M).
+--- This is low space when total space only allows (705/230 = 3) kernels.
 ;;y;6.5.0-14-generic;y;0,705;0;
 linux-base
 linux-firmware
@@ -294,8 +294,8 @@ linux-tools-generic-hwe-22.04'
 -- 6.5.0-14-generic is running and blessed, so retained.
 -- 6.2.0-35-generic is next latest remaining version, kept for 2 minimum.
 -- 5.19.0-50-generic IS PURGED because it is not protected
---- There is NOT enough room for one more kernel (139 < 200M).
---- This is low space when total space only allows (705/200 = 3) kernels.
+--- There is NOT enough room for one more kernel (139 < 230M).
+--- This is low space when total space only allows (705/230 = 3) kernels.
 - Results in purge of 5.19.0-50-generic.
 ;;y;6.5.0-14-generic;y;139,705;0;
 linux-base
@@ -342,8 +342,8 @@ linux-tools-generic-hwe-22.04-kfocus'
 -- 6.5.0-17-generic is next version, so retained.
 -- 6.5.0-14-generic IS PURGED because it is not blessed
    because the generic-hw-22.04-kfocus is purged.
---- There is NOT enough room for one more kernel (139 < 200M).
---- This is low space when total space only allows (705/200 = 3) kernels.
+--- There is NOT enough room for one more kernel (139 < 230M).
+--- This is low space when total space only allows (705/230 = 3) kernels.
 ;;y;6.5.0-21-generic;y;139,705;0;
 linux-base
 linux-firmware
@@ -384,8 +384,8 @@ linux-tools-generic-hwe-22.04'
 - Blessed kernel is NOT FOUND because meta not installed per assert.
 - /boot is its own partition with 1482 free of 2048M.
 - Results in no action BECAUSE:
--- There is enough room for many more kernels (1482 > 200M), around 7x
--- Enough disk space is present to permit > 8 kernels to be installed.
+-- There is enough room for many more kernels (1482 > 230M), around 6x
+-- Enough disk space is present to permit 8 kernels to be installed.
 -- The target keep number is greater than installed, 5 > 3
 ;;y;6.5.0-21-generic;y;1482,2048;0;
 linux-base
@@ -432,9 +432,9 @@ linux-tools-generic-hwe-22.04'
 -- 6.5.0-14-generic is PURGED because it is not bless
 --- generic-hwe-22.04-kfocus meta is not in package list.
 -- Root disk free space < 10GB, so effective size is 1482/8 = 185
--- Effective free size is free 185-(3*200) = -415
---- There is NOT enough room for one more kernel (-415 < 200M).
---- This is low space when total space only allows (-415/200 = -2) kernels.
+-- Effective free size is free 185-(3*230) = -505
+--- There is NOT enough room for one more kernel (-505 < 230M).
+--- This is low space when total space only allows (-505/230 = -2) kernels.
 ;;y;6.5.0-21-generic;n;1482,2048;0;
 linux-base
 linux-firmware
@@ -481,9 +481,9 @@ linux-tools-generic-hwe-22.04'
 -- 6.5.0-14-generic is PURGED because it is not blessed.
 --- generic-hwe-22.04-kfocus meta is not in package list.
 -- Root disk free space < 10GB, so effective size is 1482/8 = 185.
--- Effective free size is free 185-(3*200) = -415
---- There is NOT enough room for one more kernel (-415 < 200M).
---- This is low space when total space only allows (-415/200 = -2) kernels.
+-- Effective free size is free 185-(3*230) = -505
+--- There is NOT enough room for one more kernel (-505 < 230M).
+--- This is low space when total space only allows (-505/230 = -2) kernels.
 -- IN ADDITION, report is presented due to force flag.
 ;-f;y;6.5.0-17-generic;n;1482,2048;0;
 linux-base
@@ -530,9 +530,9 @@ linux-tools-generic-hwe-22.04'
 -- 6.5.0-14-generic is blessed kernel, so retained.
 -- 6.5.0-17-generic is not running or blessed, so purged.
 -- Root disk free space < 10GB, so effective size is 1482/8 = 185.
--- Effective free size is free 185-(3*200) = -415
---- There is NOT enough room for one more kernel (-415 < 200M).
---- This is low space when total space only allows (-415/200 = -2) kernels.
+-- Effective free size is free 185-(3*230) = -505
+--- There is NOT enough room for one more kernel (-505 < 230M).
+--- This is low space when total space only allows (-505/230 = -2) kernels.
 -- IN ADDITION, report is presented due to force flag.
 ;-f;y;6.5.0-21-generic;n;1482,2048;0;
 linux-base
@@ -579,7 +579,7 @@ linux-tools-generic-hwe-22.04-kfocus'
 - /boot is NOT its own partition with 101482 free of 102048M.
 - Check Forced: -f flag used.
 - Results in no action BECAUSE:
--- Root disk free space > 10GB, so effective size is 8 * 200.
+-- Root disk free space > 10GB, so effective size is 8 * 230.
 -- Threshold to offer purge is 8 - 3
 -- There are 3 kernels installed, so below threshold
  -- HOWEVER, report is presented due to force flag.
@@ -1150,13 +1150,13 @@ linux-tools-6.5.0-18-generic
 linux-tools-6.5.0-21-generic'
 
   '_021 Installed Kernels 4 different 6.5.0 kernel variants.
-- /boot is its own partition with 450M free of 1150M (avail,size).
+- /boot is its own partition with 500M free of 1150M (avail,size).
 - Running kernel is 6.5.0-17-generic.
 - Blessed kernel is 6.5.0-14 per mock
 - Check NOT forced: free_count (2) > threshold (1) when space for 4-5 kernels
   is present
 - Results: NO ACTION
-;;y;6.5.0-17-generic;y;450,1150;0;
+;;y;6.5.0-17-generic;y;500,1150;0;
 linux-base
 linux-firmware
 linux-headers-generic-hwe-22.04-kfocus
@@ -1295,7 +1295,7 @@ _overwriteWithMocksFn () {
     done
     _avail_int="$(_echoBootMegsFn 'avail')";
     _size_int="$(_echoBootMegsFn 'size')";
-    (( _avail_int += ( 200 * _purge_kernel_count ) ));
+    (( _avail_int += ( 230 * _purge_kernel_count ) ));
     echo "${_avail_int},${_size_int}" > "${_updateStateFile}";
     echo "${_assertDataList[7]}" >> "${_updateStateFile}";
     return "${_assertDataList[6]}";

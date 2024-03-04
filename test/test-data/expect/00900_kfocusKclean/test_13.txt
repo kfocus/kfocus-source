@@ -43,7 +43,7 @@ _013 Installed kernels are:
 - /boot is NOT its own partition with 101482 free of 102048M.
 - Check Forced: -f flag used.
 - Results in no action BECAUSE:
--- Root disk free space > 10GB, so effective size is 8 * 200.
+-- Root disk free space > 10GB, so effective size is 8 * 230.
 -- Threshold to offer purge is 8 - 3
 -- There are 3 kernels installed, so below threshold
  -- HOWEVER, report is presented due to force flag.
@@ -61,7 +61,7 @@ Running Kernel        : 6.5.0-21-generic
 Blessed Kernel        : 6.5.0-14-generic
 Is /boot a partition? : n
 /boot free,size       : 101482,102048 MB
-Effective free,size   : 1800,2400 MB
+Effective free,size   : 2070,2760 MB
 
 Do Force Flag?        : y
 Is /boot low?         : n
