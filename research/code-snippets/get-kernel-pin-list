@@ -1,6 +1,11 @@
 #!/bin/bash
 
-# Create list of kernel packages to hold given top-level kernel package name
+# Create list of kernel packages to hold given top-level kernel package name.
+# This is useful for support.
+#
+# TODO: Move to kfocus ops
+
+# This function is not currently used, but is kept since it may be useful.
 _echoPurgeListStrFn () {
   declare _pkg_name _skip_list _purge_list;
   _skip_list=();
@@ -66,8 +71,9 @@ _loadKfPkgListFn () {
 
 }
 
-declare _foundPkgList;
+declare _foundPkgList _preInstallPkgStr;
 _foundPkgList=( linux-generic-hwe-22.04-kfocus );
+_preInstallPkgStr="${_foundPkgList[0]}";
 
 _loadKfPkgListFn;
 ( IFS=$'\n';

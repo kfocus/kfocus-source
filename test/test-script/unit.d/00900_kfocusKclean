@@ -1390,9 +1390,11 @@ _runTestFn () {
 
     for _str in '' 'a'; do
       # Calculate expect and run files
+      # shellcheck disable=SC2154
       _expect_file="$(
         printf '%s/test_%02d%s.txt' "${_t00ExpectDir}" "${_assert_idx}" "${_str}"
       )";
+      # shellcheck disable=SC2154
       _runFile="$(
         printf '%s/test_%02d%s.txt' "${_t00RunDir}" "${_assert_idx}" "${_str}"
       )";
@@ -1426,6 +1428,7 @@ _runTestFn () {
         } >> "${_runFile}";
       fi
       # Append debug string for comparison
+      # shellcheck disable=SC2154
       echo "${_kc2RtestDebugStr}" >> "${_runFile}";
 
       ## Begin Check diffs {

@@ -46,17 +46,29 @@ _importCommonFn () {
  # Purpose: Read a _drop_file count.
  #   Increment that count and place in _drop_file.
  # Arguments: (positional)
+ #  _mode          (required) "check" or "inc" nag counter.
  #  _file_name     (required) Drop file relative to $HOME/.config/)
  #  _max_nag_count (optional) Max times to nag. Default is _maxNagCount.
+ # Returns:
+ #   0: _view_count is less than _nag_count.
+ #   1: _view_count is greater than or equal to _nag_count.
+ #   2: Other error.
+ #
 _testNagCountFn () {
-  declare _file_name _max_count _drop_file _view_count _left_count;
+  declare _mode _file_name _max_count _drop_file _view_count _left_count;
 
-  _file_name="${1:-}";
-  _max_count="${2:-${_maxNagCount}}";
+  _mode="${1:-}";
+  _file_name="${2:-}";
+  _max_count="${3:-${_maxNagCount}}";
 
   if [ -z "${_file_name}" ]; then
     _cm2WarnStrFn 'No file name provided';
-    return 1;
+    return 2;
+  fi
+
+  if ! [[ "${_mode}" =~ ^(check|inc)$ ]]; then
+    _cm2WarnStrFn 'Mode must be "check" or "inc".';
+    return 2;
   fi
 
   _drop_file="$HOME/.config/${_file_name}";
@@ -71,16 +83,26 @@ _testNagCountFn () {
     return 1;
   fi
 
-  (( _view_count++ ));
-  _left_count=$(( _max_count - _view_count ));
-  echo "${_view_count}" > "${_drop_file}" || true;
-  if (( _left_count == 0 )); then
-    echo 'warning will not be shown again';
-  elif (( _left_count == 1 )); then
-    echo 'warning will be shown for one more login';
-  else
-    echo "warning will be shown for ${_left_count} more logins";
-  fi
+  case "${_mode}" in
+    check)
+      _left_count=$(( _max_count - _view_count ));
+      if (( _left_count == 0 )); then
+        echo 'warning will not be shown again';
+      elif (( _left_count == 1 )); then
+        echo 'warning will be shown for one more login';
+      else
+        echo "warning will be shown for ${_left_count} more logins";
+      fi
+      ;;
+    inc)
+      (( _view_count++ ));
+      echo "${_view_count}" > "${_drop_file}" || true;
+      ;;
+    *)
+      _cm2WarnStrFn 'Unexpected mode';
+      return 2;
+      ;;
+  esac
 }
 ## . END _testNagCountFn }
 
@@ -227,7 +249,7 @@ _chkUpdateBiosFn () {
   _cm2SetMsgFn "${_title}";
   _win_title="${_rootTitle}: ${_title} ";
 
-  if ! _nag_msg="$(_testNagCountFn 'kfocus-bios-count')"; then
+  if ! _nag_msg="$(_testNagCountFn 'check' 'kfocus-bios-count')"; then
     _cm2SucStrFn 'View count limit reached.';
     _cm2SucFn;
     return;
@@ -268,6 +290,7 @@ _EOH05
     _cm2SucStrFn "${_check_msg}";
     _cm2SucStrFn 'Skipped on user request';
     _cm2SucFn;
+    _testNagCountFn 'inc' 'kfocus-bios-count';
     return;
  fi
 
@@ -687,9 +710,9 @@ _chkIbusConfigFn () {
   _cm2SetMsgFn "${_title}";
   _win_title="${_rootTitle}: ${_title} ";
 
-  # Set nag count to 1. This prevents this from being run again
+  # Nag count is set to 1. This prevents this from being run again
   # unless the user runs focusrx -f, like from the start menu.
-  if ! _nag_msg="$(_testNagCountFn 'kfocus-ibus-count' 1)"; then
+  if ! _nag_msg="$(_testNagCountFn 'check' 'kfocus-ibus-count' 1)"; then
     _cm2SucStrFn 'View count limit reached.';
     _cm2SucFn;
     return;
@@ -725,6 +748,8 @@ _EOH1
     _ans_str="$(
       _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'p';
     )";
+
+    _testNagCountFn 'inc' 'kfocus-ibus-count' 1
 
     if "${_fixIbusExe}" 'repair' 2>/dev/null; then
       _cm2PromptUserFn 'IBus configuration repaired.' "${_win_title}";
@@ -947,7 +972,7 @@ _chkExperRepoFn () {
   _cm2SetMsgFn "${_title}";
   _win_title="${_rootTitle}: ${_title} ";
 
-  if ! _nag_msg="$(_testNagCountFn 'kfocus-exper-count')"; then
+  if ! _nag_msg="$(_testNagCountFn 'check' 'kfocus-exper-count')"; then
     _cm2SucStrFn 'View count limit reached.';
     _cm2SucFn;
     return;
@@ -980,6 +1005,7 @@ _EOH17
       _ans_str="$(
         _cm2PromptUserFn "${_prompt_msg}" "${_win_title}"
       )";
+      _testNagCountFn 'inc' 'kfocus-exper-count'
     fi
   fi
   _cm2SucFn;
