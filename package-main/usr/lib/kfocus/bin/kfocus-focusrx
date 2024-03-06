@@ -1027,17 +1027,19 @@ _chkResetEffectsFn () {
   _title='Reset Desktop Effects';
   _cm2SetMsgFn "${_title}";
   _win_title="${_rootTitle}: ${_title} ";
-
+      
   _prompt_msg="$(cat <<_EOH17b
 ${_cm2HtmBeginStr}
-${_cm2HtmH3Str}${_title}?</h3>
+${_cm2HtmH3Str}SKIP ${_title}?</h3>
 
-${_cm2HtmPStr}You can run kfocus-desktop-effects <br>
+${_cm2HtmPStr}You can run kfocus-reset-effects <br>
 to reset effects and keyboard shortcuts, <br>
 power management settings, and file <br>
-associations to their defaults.</p>
+associations to their defaults. This is usually <br>
+unnecessary unless some settings or shortcuts <br>
+are not behaving as desired.</p>
 
-${_cm2HtmPStr}<b>Would you like to do this NOW?</b></p>
+${_cm2HtmPStr}<b>SKIP run kfocus-reset-effects?</b></p>
 ${_cm2HtmEndStr}
 _EOH17b
   )";
@@ -1046,7 +1048,7 @@ _EOH17b
     _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'a'
   )";
 
-  if [ "${_ans_str}" = 'y' ]; then
+  if [ "${_ans_str}" = 'n' ]; then
     if "${_resetEffectsExe}"; then
       _cm2SucFn; else _cm2WarnFn;
     fi
