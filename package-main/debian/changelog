@@ -1,3 +1,17 @@
+kfocus-main (22.04.57) jammy; urgency=medium
+
+  * kfocus-check-crypt: Use lsblk instead of blkid to find encrypted disks (#4066)
+  * kfocus-extra: Install packages directly rather than via kfocus-rest (#4062)
+  * kfocus-fix-ibus: Create to fix iBus for Plasma (#4027)
+  * kfocus-focusrx: Allow variable nag counts (#4027)
+  * kfocus-focusrx: Check for iBus on user login (#4027)
+  * kfocus-focusrx: Offer to run kfocus-reset-effects during forced fixup (#4093)
+  * kfocus-focusrx: Only increment nag counts when necessary (#4027)
+  * kfocus-kclean: Update for current kernels (#4041)
+  * kfocus-mime: Invoke ibus fix when installing Zoom (#4027)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Thu, 07 Mar 2024 11:35:24 -0800
+
 kfocus-main (22.04.56) jammy; urgency=medium
 
   * kfocus-firstrun-set  Integrate plasma-welcome (#3915)
