@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2020-2023 MindShare Inc.
+# Copyright 2020-2024 MindShare Inc.
 # Written for the Kubuntu Focus by:
 #   - Michael Mikowski
 #   - Vishwas Mruthyunjaya
@@ -169,7 +169,7 @@ _installEnvFn () {
   declare  _reply_str _conda_installed_exe _conda_oldstyle_vers \
    _conda_installed_vers _conda_expect_dir _conda_expect01_exe \
    _conda_expect02_exe _conda_pkg_str _conda_repo_url \
-   _conda_md5_str _is_new_conda _chk_str __conda_setup _msg;
+   _conda_md5_str _is_new_conda _chk_str __conda_setup;
 
   ## Begin Install GPU Libs
   _cm2SetMsgFn 'Check GPU and install libs if needed';

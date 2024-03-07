@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2020-2022 MindShare Inc.
+# Copyright 2020-2024 MindShare Inc.
 # Written for the Kubuntu Focus by:
 #   * Nicco Ve
 #   * Aaron Rainbolt
@@ -44,7 +44,7 @@ _mainFn () {
 
 ## BEGIN Declare global vars
 declare _binName _binDir _baseDir _baseName _assignList \
-  _qmlLibFile _qmlSceneExe;
+  _qmlLibFile _qmlSceneExe _kfocusPowerBinExe;
 ## . END Declare global vars
 
 ## BEGIN Run main if script is not sourced {

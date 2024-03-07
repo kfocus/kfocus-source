@@ -1,6 +1,35 @@
-.009 Installed Kernels are generic-hwe-20.04 (meta purged),
-  oem-20.04d-kfocus, and 5.14.0-1010-oem.
-Running kernel is oem-20.04d-kfocus (5.14.0-1011).
-/boot is mounted with 1482M free.
-Results in no action.
 
+=== BEGIN Intention ==============
+_009 Installed kernels are
+6.5.0-21-generic (generic-hwe-22.04),
+6.5.0-17-generic,
+6.5.0-14-generic (generic-hwe-22.04-kfocus) (meta purged).
+- Running kernel is 6.5.0-21-generic (generic-hwe-22.04) per assert.
+- Blessed kernel is NOT FOUND because meta not installed per assert.
+- /boot is its own partition with 1482 free of 2048M.
+- Results in no action BECAUSE:
+-- There is enough room for many more kernels (1482 > 230M), around 6x
+-- Enough disk space is present to permit 8 kernels to be installed.
+-- The target keep number is greater than installed, 5 > 3
+=== . END Intention ==============
+
+=== BEGIN Diagnostics ============
+Installed Kernel List : 6.5.0-14-generic
+6.5.0-17-generic
+6.5.0-21-generic
+Target Max Kernels    : 8
+Installed Kernel Count: 3
+Target Keep Kernels   : 5
+
+Running Kernel        : 6.5.0-21-generic
+Blessed Kernel        : XXX_NOT_INSTALLED_XXX
+Is /boot a partition? : y
+/boot free,size       : 1482,2048 MB
+Effective free,size   : 1482,2048 MB
+
+Do Force Flag?        : n
+Is /boot low?         : n
+Do Check Triggered?   : n
+Check Message         : 3 kernels are installed.<br>
+
+=== . END Diagnostics ============

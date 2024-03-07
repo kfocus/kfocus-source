@@ -1,5 +1,32 @@
-.003 Installed Kernels are generic-hwe-20.04 and oem-20.04d-kfocus.
-Running kernel is oem-20.04d-kfocus (5.14.0-1011-oem).
-/boot is mounted with 297M free.
-Results in no action.
 
+=== BEGIN Intention ==============
+_003 Installed kernels are
+ 6.5.0-14 (generic-hwe-22.04-kfocus), 6.2.0-35-generic.
+- Running kernel is 6.5.0-14-generic per assert.
+- Blessed kernel is 6.5.0-14-generic because meta installed per assert.
+- /boot is its own partition with 297 free of 705M.
+- Check NOT Forced: Enough disk space
+- Results in no action BECAUSE:
+-- There is enough room for one more kernel (297M > 230M)
+-- This is NOT low space when total space allows (705/230 = 3) kernels
+=== . END Intention ==============
+
+=== BEGIN Diagnostics ============
+Installed Kernel List : 6.2.0-35-generic
+6.5.0-14-generic
+Target Max Kernels    : 3
+Installed Kernel Count: 2
+Target Keep Kernels   : 2
+
+Running Kernel        : 6.5.0-14-generic
+Blessed Kernel        : 6.5.0-14-generic
+Is /boot a partition? : y
+/boot free,size       : 297,705 MB
+Effective free,size   : 297,705 MB
+
+Do Force Flag?        : n
+Is /boot low?         : n
+Do Check Triggered?   : n
+Check Message         : 2 kernels are installed.<br>
+
+=== . END Diagnostics ============

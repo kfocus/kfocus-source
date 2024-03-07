@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2019-2022 MindShare Inc.
+# Copyright 2019-2024 MindShare Inc.
 # Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
 #
 # Name    : kfocus-power-set
@@ -105,8 +105,12 @@ _readNoTurboFn () {
 }
 
 _setKbdEnableFn () {
+  # Only if tool found
   if [ -x "${_kbdColorSetExe}" ]; then
-    "${_kbdColorSetExe}" -E "${1:-}";
+    # Only if model has LEDs
+    if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
+      "${_kbdColorSetExe}" -E "${1:-}";
+    fi
   fi
 }
 
@@ -239,7 +243,7 @@ _chkInitCpuFn () {
     _cm2SucStrFn 'Drop file found.'; _cm2SucFn; return 0;
   fi
 
-  # Skip if not an m2g5 or m2g5p model (both share config_code m2g5)
+  # Skip if not the m2g5 or m2g5p model (both share config_code m2g5)
   if [ "$(_cm2EchoModelStrFn 'config_code')" != 'm2g5' ]; then
     touch "${_cpuDropFile}" || _cm2WarnStrFn 'Could not add drop file';
     _cm2SucFn;

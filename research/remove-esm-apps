@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# This list packages to replace esm ones that may have been installed.
+# Use apt-cache policy <pkg> to get missing versions.
+#
+mapfile -t _list < <(apt list --installed |grep 'esm[0-9]* ');
+_all_str="$(apt list|grep -v '.esm[0-9]*' |grep -v '\[installed,local\]')";
+
+for _line in "${_list[@]}"; do
+  _pkg="$(cut -f1 -d/ <<< "${_line}")";
+  _found="$(grep "^${_pkg}/" <<< "${_all_str}")";
+  if [ -z "${_found}" ]; then
+    echo "${_pkg} is missing";
+    echo "Use apt-cache policy ${_pkg} to get missing version."
+  else
+    _vers="$(cut -f2 -d' ' < <(head -n1 <<< "${_found}"))";
+    echo "${_pkg}=${_vers}";
+  fi
+done

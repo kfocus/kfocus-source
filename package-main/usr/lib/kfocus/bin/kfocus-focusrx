@@ -46,15 +46,29 @@ _importCommonFn () {
  # Purpose: Read a _drop_file count.
  #   Increment that count and place in _drop_file.
  # Arguments: (positional)
- #  _file_name is drop file relative to $HOME/.config/)
+ #  _mode          (required) "check" or "inc" nag counter.
+ #  _file_name     (required) Drop file relative to $HOME/.config/)
+ #  _max_nag_count (optional) Max times to nag. Default is _maxNagCount.
+ # Returns:
+ #   0: _view_count is less than _nag_count.
+ #   1: _view_count is greater than or equal to _nag_count.
+ #   2: Other error.
  #
 _testNagCountFn () {
-  declare _file_name _drop_file _view_count _left_count;
+  declare _mode _file_name _max_count _drop_file _view_count _left_count;
 
-  _file_name="${1:-}";
+  _mode="${1:-}";
+  _file_name="${2:-}";
+  _max_count="${3:-${_maxNagCount}}";
+
   if [ -z "${_file_name}" ]; then
     _cm2WarnStrFn 'No file name provided';
-    return 1;
+    return 2;
+  fi
+
+  if ! [[ "${_mode}" =~ ^(check|inc)$ ]]; then
+    _cm2WarnStrFn 'Mode must be "check" or "inc".';
+    return 2;
   fi
 
   _drop_file="$HOME/.config/${_file_name}";
@@ -65,20 +79,30 @@ _testNagCountFn () {
 
   if [ "${_doForce}" = 'y' ]; then
     _view_count=0;
-  elif (( _view_count >= "${_maxNagCount}" )); then
+  elif (( _view_count >= "${_max_count}" )); then
     return 1;
   fi
 
-  (( _view_count++ ));
-  _left_count=$(( _maxNagCount - _view_count ));
-  echo "${_view_count}" > "${_drop_file}" || true;
-  if (( _left_count == 0 )); then
-    echo 'warning will not be shown again';
-  elif (( _left_count == 1 )); then
-    echo 'warning will be shown for one more login';
-  else
-    echo "warning will be shown for ${_left_count} more logins";
-  fi
+  case "${_mode}" in
+    check)
+      _left_count=$(( _max_count - _view_count ));
+      if (( _left_count == 0 )); then
+        echo 'warning will not be shown again';
+      elif (( _left_count == 1 )); then
+        echo 'warning will be shown for one more login';
+      else
+        echo "warning will be shown for ${_left_count} more logins";
+      fi
+      ;;
+    inc)
+      (( _view_count++ ));
+      echo "${_view_count}" > "${_drop_file}" || true;
+      ;;
+    *)
+      _cm2WarnStrFn 'Unexpected mode';
+      return 2;
+      ;;
+  esac
 }
 ## . END _testNagCountFn }
 
@@ -112,11 +136,13 @@ _confirmInternetFn () {
   _prompt_msg="$(cat << _EOH01
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}Please Connect to Internet</h3>
+
 ${_cm2HtmPStr}FocusRx has detected that this system needs to be <br>
 configured for the hardware. However, it does not appear <br>
 to be connected to the internet.</p>
-${_cm2HtmPStr} Please click on the <b>Networks</b> icon in the System Tray <br>
-to connect, then click <b>OK</b>.<br></p>
+
+${_cm2HtmPStr}Please click on the <b>Networks</b> icon in the <br>
+System Tray to connect, then continue.<br></p>
 ${_cm2HtmEndStr}
 _EOH01
   )";
@@ -133,11 +159,12 @@ _EOH01
     _prompt_msg="$(cat << _EOH02
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}Try Connecting Again</h3>
+
 ${_cm2HtmPStr}This system still does not appear connected to the <br>
 to the Internet (attempt ${_count}).</p>
 
-${_cm2HtmPStr}Please click on the <b>Networks</b> icon in the System Tray <br>
-to try again, and then click <b>OK</b>.<br></p>
+${_cm2HtmPStr}Please click on the <b>Networks</b> icon in the <br>
+System Tray to try again, then continue.<br></p>
 ${_cm2HtmEndStr}
 _EOH02
    )";
@@ -146,6 +173,7 @@ _EOH02
   _prompt_msg="$(cat << _EOH03
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}Could Not Connect to Internet</h3>
+
 ${_cm2HtmPStr}While this system should be configured for the hardware, <br>
 we could not connect after 3 attempts. Please reboot <br>
 when you can establish a connection so this important <br>
@@ -168,14 +196,19 @@ _EOH03
 # Purpose:
 #   Announce the purpose of FocusRx and what it does when forced
 _announceStartFn () {
-  declare _win_title _prompt_msg _ans_str;
+  declare _title _win_title _prompt_msg _ans_str;
 
   if [ "${_doForce}" = 'n' ]; then return; fi
 
-  _win_title='System Diagnostics';
+  _title="System Diagnostics";
+  _cm2SetMsgFn "${_title}";
+  _win_title="${_rootTitle}: ${_title} ";
+
   _prompt_msg="$( cat <<_EOH04
-${_cm2HtmBeginStr}${_cm2HtmH3Str}SYSTEM DIAGNOSTICS</h3>
-<p>Doc: <a style="color:#1d99f3"
+${_cm2HtmBeginStr}
+${_cm2HtmH3Str}${_title}</h3>
+
+${_cm2HtmPStr}Doc: <a style="color:#1d99f3"
   href="https://kfocus.org/wf/tools#focusrx"
   >https://kfocus.org/wf/tools#focusrx</a></p>
 
@@ -188,16 +221,17 @@ you back up your data before <i>any</i> system maintenance.<br>
 You may always return to this utility later using <code>Start<br>
 Menu &gt; Kubuntu Focus &gt; FocusRx</code>.</p>
 
-${_cm2HtmPStr}<b>Continue with FocusRx System Diagnostics?</b><br></p>
+${_cm2HtmPStr}<b>Continue with ${_title}?</b><br></p>
 ${_cm2HtmEndStr}
 _EOH04
   )";
 
   _ans_str="$(
-    _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}" 'a'
+    _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'a'
   )";
 
-  if [ "${_ans_str}" = 'n' ]; then exit 0; fi
+  _cm2SucFn;
+  if [ "${_ans_str}" = 'n' ]; then exit; fi
 }
 ## . END _announceStartFn }
 
@@ -208,13 +242,17 @@ _chkUpdateBiosFn () {
   declare _win_title _nag_msg _cmd_list _check_msg \
     _prompt_msg _do_run_btool;
 
-  _cm2SetMsgFn 'Check BIOS version, run-tool if needed';
-  _win_title='BIOS Update';
+  # Skip if required tool not installed.
+  [ -z "${_btoolExe}" ] && return;
 
-  if ! _nag_msg="$(_testNagCountFn 'kfocus-bios-count')"; then
+  _title='Check BIOS Update';
+  _cm2SetMsgFn "${_title}";
+  _win_title="${_rootTitle}: ${_title} ";
+
+  if ! _nag_msg="$(_testNagCountFn 'check' 'kfocus-bios-count')"; then
     _cm2SucStrFn 'View count limit reached.';
     _cm2SucFn;
-    return 0;
+    return;
   fi
 
   _cmd_list=("${_escExe}" "${_focusRxSetExe}" 'chk-bios');
@@ -223,12 +261,12 @@ _chkUpdateBiosFn () {
   if _check_msg="$("${_cmd_list[@]}")"; then
     _cm2SucStrFn "${_check_msg}";
     _cm2SucFn;
-    return 0;
+    return;
   fi
 
   _prompt_msg="$(cat <<_EOH05
 ${_cm2HtmBeginStr}
-${_cm2HtmH3Str}Update the BIOS</h3>
+${_cm2HtmH3Str}${_title}</h3>
 
 ${_cm2HtmPStr}We recommend you update this system's BIOS.<p>
 
@@ -239,19 +277,21 @@ about 10 minutes and an empty, 8+ GB USB drive.</p>
 ${_cm2HtmPStr}If you skip this prompt, this <br>
 ${_nag_msg}.</p>
 
-${_cm2HtmPStr}<b>Run the BIOS-update wizard now?</b></p>${_cm2HtmEndStr}
+${_cm2HtmPStr}<b>Run the BIOS-update wizard NOW?</b></p>
+${_cm2HtmEndStr}
 _EOH05
   )";
 
   _do_run_btool="$(
-    _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}" 'a'
+    _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'a'
   )"
 
   if [ "${_do_run_btool}" = 'n' ]; then
     _cm2SucStrFn "${_check_msg}";
     _cm2SucStrFn 'Skipped on user request';
     _cm2SucFn;
-    return 0;
+    _testNagCountFn 'inc' 'kfocus-bios-count';
+    return;
  fi
 
   _cmd_list=();
@@ -259,7 +299,7 @@ _EOH05
     _cmd_list+=( '_runXtermCmdFn' );
   fi
 
-  _cmd_list+=( "${_escExe}" "${_focusRxBtoolExe}" );
+  _cmd_list+=( "${_escExe}" "${_btoolExe}" );
   if "${_cmd_list[@]}"; then
     _cm2SucFn; else _cm2WarnFn;
   fi
@@ -271,10 +311,11 @@ _EOH05
 #   'Restart the system for hardware mods to take effect' "${_baseName}" 'p';
 #
 _chkHwConfigFn () {
-  declare _win_title _reason_str _prompt_msg _ans_str _output_str;
+  declare _title _win_title _reason_str _prompt_msg _ans_str _output_str;
 
-  _win_title='Configure for Hardware';
-  _cm2SetMsgFn "${_win_title}";
+  _title='Configure for Hardware';
+  _cm2SetMsgFn "${_title}";
+  _win_title="${_rootTitle}: ${_title} ";
 
   # Check if reconfig is required
   _reason_str="$("${_escExe}" "${_focusRxSetExe}" 'chk-hw-config')";
@@ -288,7 +329,8 @@ _chkHwConfigFn () {
     else
       _prompt_msg="$(cat << _EOH06
 ${_cm2HtmBeginStr}
-${_cm2HtmH3Str}SKIP ${_win_title}?</h3>
+${_cm2HtmH3Str}SKIP ${_title}?</h3>
+
 ${_cm2HtmPStr}<b>The hardware signature already matches expected.</b><br>
 You can reconfigure for the hardware, but it takes <br>
 time and is usually not needed.</p>
@@ -298,7 +340,7 @@ ${_cm2HtmEndStr}
 _EOH06
       )";
       _ans_str="$(
-        _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}" 'a'
+        _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'a'
       )";
       if [ "${_ans_str}" = 'n' ]; then
         _reason_str="$("${_escExe}" "${_focusRxSetExe}" 'force-hw-config')";
@@ -307,7 +349,7 @@ _EOH06
   fi
   if [ -z "${_reason_str}" ]; then
     _cm2SucStrFn 'Configuration change not needed.';
-    _cm2sucFn;
+    _cm2SucFn;
     return;
   fi
 
@@ -318,7 +360,7 @@ _EOH06
     return 1;
   fi
 
-  _prompt_msg="${_win_title}: This only needs to be done once";
+  _prompt_msg="${_title}: This only needs to be done once";
   _reason_str="$(tr ' ' '_' <<< "${_reason_str}")";
   if _output_str="$(
     _cm2RunLongCmdFn "${_prompt_msg}" "${_focusRxSetExe}" \
@@ -327,14 +369,16 @@ _EOH06
     _prompt_msg="$(cat << _EOH07
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}Reboot Now?</h3>
+
 ${_cm2HtmPStr}Configuration for the hardware is complete.</p>
-${_cm2HtmPStr}<b>Click Yes to reboot now </b> to ensure optimal<br>
+
+${_cm2HtmPStr}<b>Reboot NOW</b> to ensure optimal <br>
 hardware support and stability.<br></p>
 ${_cm2HtmEndStr}
 _EOH07
     )";
     _ans_str="$(_cm2PromptUserFn \
-      "${_prompt_msg}" "${_rootTitle}: Reboot Now" 'w'
+      "${_prompt_msg}" "${_rootTitle}: Reboot NOW?" 'w'
     )";
     if [ "${_ans_str}" = 'y' ]; then reboot; fi
   else
@@ -364,14 +408,16 @@ _chkKbdLedFn () {
 
 ## BEGIN _chkKernelPkgFn {
 _chkKernelPkgFn() {
-  declare _win_title _kernel_pkg_name _installed_kernel_vers \
+  declare _title _win_title _kernel_pkg_name _installed_kernel_vers \
     _install_manifest _cmd_list _prompt_msg _ans_str _exit_str;
 
   # Assign initial vars and announce
-  _win_title='Check Kernel Packages';
+  _title='Upgrade Kernel Packages';
+  _cm2SetMsgFn "${_title}";
+  _win_title="${_rootTitle}: ${_title} ";
+
   _kernel_pkg_name='linux-oem-22.04a-kfocus';
   _installed_kernel_vers="$(_cm2EchoInstalledVersFn "${_kernel_pkg_name}")";
-  _cm2SetMsgFn "${_win_title}";
 
   # Skip upgrade if package is not installed
   if [ -z "${_installed_kernel_vers}" ]; then
@@ -390,7 +436,7 @@ _chkKernelPkgFn() {
 
   _prompt_msg="$(cat <<_EOH08
 ${_cm2HtmBeginStr}
-${_cm2HtmH3Str}${_win_title}?</h3>
+${_cm2HtmH3Str}${_title}?</h3>
 
 ${_cm2HtmPStr}The kernel packages need to be upgraded to <br>
 the latest tested version. You may be prompted to provide <br>
@@ -399,34 +445,34 @@ your password.</p>
 ${_cm2HtmPStr}This can take a few minutes. You will be alerted when<br>
 the process is finished.</p>
 
-${_cm2HtmPStr}<b>Upgrade now?</b></p>
+${_cm2HtmPStr}<b>Upgrade NOW?</b></p>
+${_cm2HtmEndStr}
 _EOH08
   )";
 
   # Confirm user intent
   _ans_str="$(
-    _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}" 'a'
+    _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'a'
   )";
 
   if [ "${_ans_str}" = 'n' ]; then
     _cm2PromptUserFn 'Upgrade Kernel cancelled on user request' \
-      "${_rootTitle}: ${_win_title}" 'p';
-    return 0;
+      "${_win_title}" 'p';
+    return;
   fi
 
   # Install kernel packages
   # Note: _cm2RunLongCmdFn prefixes commands with pkexec
   _cmd_list=('apt-get' 'install' '--reinstall' '-y' "${_install_manifest[@]}");
   if _exit_str="$(
-    _cm2RunLongCmdFn "${_rootTitle}: ${_win_title}" \
-      "${_cmd_list[@]}"
+    _cm2RunLongCmdFn "${_win_title}" "${_cmd_list[@]}"
   )"; then
     _prompt_msg='Upgrade is complete. Reboot to use the latest kernel.';
-    _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}" 'p';
+    _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'p';
     _cm2SucFn;
   else
     _cm2PromptUserFn "WARNING: Trouble installing latest kernel." \
-      "${_rootTitle}: ${_win_title}" 'p';
+      "${_win_title}" 'p';
     _cm2WarnFn;
   fi
 }
@@ -434,12 +480,14 @@ _EOH08
 
 ## BEGIN _chkNvidiaPkgFn {
 _chkNvidiaPkgFn () {
-  declare _win_title _nv_pkg_name _pin_pkg_name _installed_nv_vers \
+  declare _title _win_title _nv_pkg_name _pin_pkg_name _installed_nv_vers \
     _installed_pin_vers _cmd_list _prompt_msg _ans_str _exit_str;
 
-  _cm2SetMsgFn 'Check Nvidia Drivers';
 
-  _win_title='Upgrade Nvidia Drivers';
+  _title='Check Nvidia Drivers';
+  _cm2SetMsgFn "${_title}";
+  _win_title="${_rootTitle}: ${_title}";
+
   _nv_pkg_name='kfocus-nvidia';
   _pin_pkg_name='kfocus-nvidia-pinning';
 
@@ -465,7 +513,7 @@ _chkNvidiaPkgFn () {
 
   _prompt_msg="$(cat <<_EOH09
 ${_cm2HtmBeginStr}
-${_cm2HtmH3Str}${_win_title}?</h3>
+${_cm2HtmH3Str}${_title}?</h3>
 
 ${_cm2HtmPStr}The Nvidia driver packages need to be <br>
 upgraded to the latest Focus-tested version <br>
@@ -473,18 +521,18 @@ upgraded to the latest Focus-tested version <br>
 and can take a few minutes to complete. Please <br>
 allow the upgrade to finish before rebooting.</p>
 
-${_cm2HtmPStr}<b>Upgrade now?</b></p>
+${_cm2HtmPStr}<b>Upgrade NOW?</b></p>
 ${_cm2HtmEndStr}
 _EOH09
   )";
   _ans_str="$(
-    _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}" 'a'
+    _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'a'
   )";
 
   if [ "${_ans_str}" = 'n' ]; then
     _cm2PromptUserFn 'Upgrade Nvidia drivers cancelled on user request' \
-    "${_rootTitle}: ${_win_title}" 'p';
-    return 0;
+    "${_win_title}" 'p';
+    return;
   fi
 
   # Skip nv pin package upgrade if same or later version is already installed
@@ -501,7 +549,7 @@ _EOH09
       "${_cmd_list[@]}"
     )"; then
       _prompt_msg='Pin upgrade is complete.';
-      _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}" 'p';
+      _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'p';
     else
       _cm2PromptUserFn "WARNING: Trouble installing ${_pin_pkg_name}." \
         "${_rootTitle}: Upgrade Nvidia Pinning" 'p';
@@ -517,11 +565,11 @@ _EOH09
     "${_cmd_list[@]}"
   )"; then
     _prompt_msg='Upgrade is complete. Reboot to use the drivers.';
-    _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}" 'p';
+    _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'p';
     _cm2SucFn;
   else
     _cm2PromptUserFn "WARNING: Trouble installing ${_nv_pkg_name}." \
-      "${_rootTitle}: ${_win_title}" 'p';
+      "${_win_title}" 'p';
     _cm2WarnFn;
   fi
 }
@@ -533,14 +581,16 @@ _EOH09
 # User may opt out of future warnings.
 #
 _chkXorgConfigFn () {
-  declare _win_title _xorg_file _drop_file _explain_str \
+  declare _title _win_title _xorg_file _drop_file _explain_str \
     _warn_str _confirm_str _do_remove_file _cmd_list  \
     _do_show_again _prompt_msg;
 
-  _cm2SetMsgFn 'Check for xorg.conf'
+  _title='Check for xorg.conf';
+  _cm2SetMsgFn "${_title}";
+  _win_title="${_rootTitle}: ${_title} ";
+
   _drop_file="${HOME}/.config/kfocus-no-xorg-warn";
   _xorg_file='/etc/X11/xorg.conf';
-  _win_title='xorg.conf FILE';
 
   _explain_str="$(cat <<_EOH10
 ${_cm2HtmPStr}While an <code>xorg.conf</code> file may be beneficial in some<br>
@@ -573,8 +623,7 @@ ${_cm2HtmPStr}This system does not use an <code>xorg.conf</code> file.<br>
 <b>This is preferred as described below:</b></p>
 
 ${_explain_str}
-
-${_cm2HtmPStr}<b>Click OK to continue.</b></p>${_cm2HtmEndStr}
+${_cm2HtmEndStr}
 _EOH12
   )";
 
@@ -586,7 +635,7 @@ _EOH12
     # DEBUG _cm2EchoFn "xorg.conf exists";
     if ! [ -f "${_drop_file}" ]; then
       _do_remove_file="$(
-        _cm2PromptUserFn "${_warn_str}" "${_rootTitle}: ${_win_title}" 'a'
+        _cm2PromptUserFn "${_warn_str}" "${_win_title}" 'a'
       )";
 
       if [ "${_do_remove_file}" = 'y' ]; then
@@ -599,8 +648,7 @@ _EOH12
           127 ) _prompt_msg='xorg.conf deletion was cancelled' ;;
           *   ) _prompt_msg='xorg.conf was NOT deleted'   ;;
         esac
-        _win_title='xorg.conf';
-        _cm2PromptUserFn "FocusRx: ${_prompt_msg}" "${_rootTitle}: ${_win_title}";
+        _cm2PromptUserFn "FocusRx: ${_prompt_msg}" "${_win_title}";
       else
         _prompt_msg="$( cat <<_EOH13
 ${_cm2HtmBeginStr}
@@ -611,9 +659,8 @@ to show this warning again in the future?<br></p>
 ${_cm2HtmEndStr}
 _EOH13
         )";
-        _win_title='Show Prompt?';
         _do_show_again="$(
-          _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}" 'a'
+          _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'a'
         )";
         if [ "${_do_show_again}" = 'y' ]; then
           "${_cm2RmExe}" -f "${_drop_file}";
@@ -626,8 +673,7 @@ _EOH13
     fi
   else
     if [ "${_doForce}" = 'y' ]; then
-      _win_title='X11 Config';
-      _cm2PromptUserFn "${_confirm_str}" "${_rootTitle}: ${_win_title}" 'p';
+      _cm2PromptUserFn "${_confirm_str}" "${_win_title}" 'p';
     fi
   fi
   _cm2SucStrFn 'Xorg file considered.';
@@ -638,20 +684,83 @@ _EOH13
 ## BEGIN _runKernelCleanFn {
 _runKernelCleanFn () {
   declare _cmd_list;
+
+  # Skip if required tool not installed.
+  [ -z "${_kcleanExe}" ] && return;
+
   _cm2SetMsgFn 'Run Kernel Cleaner';
-  if [ -e "${_focusRxKcleanExe}" ]; then
-    _cmd_list=( "${_focusRxKcleanExe}" );
-    if [ "${_doForce}" = 'y' ]; then
-      _cmd_list+=( '-f' );
-    fi
-    if "${_cmd_list[@]}"; then
-      _cm2SucFn;
-      return 0;
-    fi
+  _cmd_list=( "${_kcleanExe}" );
+  if [ "${_doForce}" = 'y' ]; then
+    _cmd_list+=( '-f' );
   fi
-  _cm2WarnFn;
+  if "${_cmd_list[@]}"; then
+    _cm2SucFn; else _cm2WarnFn;
+  fi
 }
 ## . END _runKernelCleanFn }
+
+## BEGIN _checkIbusConfigFn {
+_chkIbusConfigFn () {
+  declare _title _win_title _prompt_msg _ans_str;
+
+  # Skip if required tool not installed.
+  [ -z "${_fixIbusExe}" ] && return;
+
+  _title='IBus Configuration Check';
+  _cm2SetMsgFn "${_title}";
+  _win_title="${_rootTitle}: ${_title} ";
+
+  # Nag count is set to 1. This prevents this from being run again
+  # unless the user runs focusrx -f, like from the start menu.
+  if ! _nag_msg="$(_testNagCountFn 'check' 'kfocus-ibus-count' 1)"; then
+    _cm2SucStrFn 'View count limit reached.';
+    _cm2SucFn;
+    return;
+  fi
+
+  # We can't properly check the IBus configuration if Plasmashell failed to
+  # start, because Plasma scripting is used as part of the detection
+  # mechanism.
+  if ! pgrep plasmashell > /dev/null; then
+    _cm2WarnFn;
+    return;
+  fi
+
+  if ! "${_fixIbusExe}" 'check' 2>/dev/null; then
+    _prompt_msg="$(cat <<_EOH1
+${_cm2HtmBeginStr}
+${_cm2HtmH3Str}${_title}</h3>
+
+${_cm2HtmPStr}IBus was found improperly configured to work with <br>
+the KDE Plasma desktop on this system. FocusRx will <br>
+apply the recommended settings.</p>
+
+${_cm2HtmPStr}To undo these changes, click IBus in the <b>System <br>
+Tray</b> hidden icons. Then uncheck <b>Use system keyboard <br>
+layout</b> in the <b>Advanced</b> tab. Use <b>System Tray <br>
+Settings</b> to make visible again.</p>
+${_cm2HtmEndStr}
+_EOH1
+    )";
+    _ans_str="$(
+      _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'p';
+    )";
+
+    _testNagCountFn 'inc' 'kfocus-ibus-count' 1
+
+    if "${_fixIbusExe}" 'repair' 2>/dev/null; then
+      _cm2PromptUserFn 'IBus configuration repaired.' "${_win_title}";
+      _cm2SucStrFn 'IBus configuration repaired.';
+    else
+      _cm2PromptUserFn 'IBus configuration repair failed!' "${_win_title}";
+      _cm2WarnFn;
+      return;
+    fi
+  fi
+
+  _cm2SucFn;
+}
+## . END _checkIbusConfigFn }
 
 ## BEGIN _runDropScriptsFn {
 # Summary : _runDropScriptsFn;
@@ -747,6 +856,7 @@ _runDropScriptsFn () {
           _prompt_msg="$(cat <<_EOH14
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}SKIP Running ${_loop_name}?</h3>
+
 ${_loop_check_str}
 
 ${_cm2HtmPStr}This script was run on this system in the past. You may<br>
@@ -853,15 +963,16 @@ _EOH15
  #   kubuntu-ppa-backports-extra installed
  #
 _chkExperRepoFn () {
-  declare _win_title _cache_str _prompt_str _nag_msg;
+  declare _title _win_title _cache_str _prompt_str _nag_msg;
 
-  _cm2SetMsgFn 'Check Experimental Repo';
-  _win_title='Remove Experimental Repo?';
+  _title='Check Experimental Repo';
+  _cm2SetMsgFn "${_title}";
+  _win_title="${_rootTitle}: ${_title} ";
 
-  if ! _nag_msg="$(_testNagCountFn 'kfocus-exper-count')"; then
+  if ! _nag_msg="$(_testNagCountFn 'check' 'kfocus-exper-count')"; then
     _cm2SucStrFn 'View count limit reached.';
     _cm2SucFn;
-    return 0;
+    return;
   fi
 
   _cache_str="$(
@@ -889,49 +1000,105 @@ ${_cm2HtmEndStr}
 _EOH17
   )";
       _ans_str="$(
-        _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}"
+        _cm2PromptUserFn "${_prompt_msg}" "${_win_title}"
       )";
+      _testNagCountFn 'inc' 'kfocus-exper-count'
     fi
   fi
+  _cm2SucFn;
 }
 ## . END _chkExperRepoFn }
+
+## BEGIN _chkResetEffectsFn {
+ # Purpose:
+ #   Announce the conclusion of a FocusRx run when forced
+ #
+_chkResetEffectsFn () {
+  declare _title _win_title _prompt_msg _ans_str;
+
+  # Always skip if not in force mode
+  [ "${_doForce}" = 'n' ] && return;
+  # Skip if required tool not installed
+  [ -z "${_resetEffectsExe}" ] && return;
+
+  _title='Reset Desktop Effects';
+  _cm2SetMsgFn "${_title}";
+  _win_title="${_rootTitle}: ${_title} ";
+      
+  _prompt_msg="$(cat <<_EOH17b
+${_cm2HtmBeginStr}
+${_cm2HtmH3Str}SKIP ${_title}?</h3>
+
+${_cm2HtmPStr}You can run kfocus-reset-effects <br>
+to reset effects and keyboard shortcuts, <br>
+power management settings, and file <br>
+associations to their defaults. This is usually <br>
+unnecessary unless some settings or shortcuts <br>
+are not behaving as desired.</p>
+
+${_cm2HtmPStr}<b>SKIP run kfocus-reset-effects?</b></p>
+${_cm2HtmEndStr}
+_EOH17b
+  )";
+
+  _ans_str="$(
+    _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'a'
+  )";
+
+  if [ "${_ans_str}" = 'n' ]; then
+    if "${_resetEffectsExe}"; then
+      _cm2SucFn; else _cm2WarnFn;
+    fi
+  else
+    _cm2SucFn;
+  fi
+}
+## . END _chkResetEffectsFn }
+
 
 ## BEGIN _announceEndFn {
  # Purpose:
  #   Announce the conclusion of a FocusRx run when forced
+ #
 _announceEndFn () {
-  declare _win_title _prompt_msg _ans_str;
+  declare _title _win_title _prompt_msg _ans_str;
 
   if [ "${_doForce}" = 'n' ]; then return; fi
 
-  _win_title='Guided Maintenance ';
+  _title='Diagnostics Complete';
+  _cm2SetMsgFn "${_title}";
+  _win_title="${_rootTitle}: ${_title} ";
+  
   _prompt_msg="$( cat <<_EOH18
 ${_cm2HtmBeginStr}
-${_cm2HtmH3Str}SYSTEM DIAGNOSTICS FINISHED</h3>
+${_cm2HtmH3Str}FocusRx Diagnostics Complete</h3>
 
-${_cm2HtmPStr}All diagnostics are complete.</p>
+${_cm2HtmPStr}All FocusRx diagnostics are complete.</p>
 ${_cm2HtmEndStr}
 _EOH18
   )";
 
   _ans_str="$(
-    _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_win_title}"
+    _cm2PromptUserFn "${_prompt_msg}" "${_win_title}"
   )";
 }
 ## . END _announceEndFn }
 
-## BEGIN _chkWelcomeFn {
+## BEGIN _chkFirstrunFn {
 # Purpose: Daisy-chain kfocus-firstrun
 #   IFF launched from /etc/xdg/autostart/kfocus-focusrx.desktop.
 #
-_chkWelcomeFn () {
+_chkFirstrunFn () {
+  # Skip if required tool not installed.
+  [ -z "${_firstrunExe}" ] && return;
+
   # Check if launched at login. 'plasma_session' is used by Plasma 5.24;
   # 'systemd' in Plasma 5.27
   if [[ "${_parentCmdStr}" =~ ^(plasma_session|systemd) ]]; then
-    "${_firstRunExe}";
+    "${_firstrunExe}";
   fi
 }
-## . END _chkWelcomeFn }
+## . END _chkFirstrunFn }
 ## == . END Check functions run by mainFn }
 
 ## BEGIN _mainFn {
@@ -940,7 +1107,7 @@ _mainFn () {
 
   # 1902 Bail if run as user 'kubuntu' which implies liveCD
   _who_str="$(whoami)";
-  if [ "${_who_str}" = 'kubuntu' ]; then return 0; fi
+  if [ "${_who_str}" = 'kubuntu' ]; then return; fi
 
   ## Begin Process options {
   _doForce='n';
@@ -965,14 +1132,16 @@ _mainFn () {
   _chkNvidiaPkgFn;
   _chkXorgConfigFn;
   _runKernelCleanFn;
+  _chkIbusConfigFn;
   _runDropScriptsFn;
   _chkExperRepoFn;
+  _chkResetEffectsFn;
   _announceEndFn;
   _cm2EchoFn "\n== . END : OK   ${_rootTitle}\n\n";
   ## . End Run focusrx steps }
 
   # Daisy-chain welcome wizard if available
-  _chkWelcomeFn;
+  _chkFirstrunFn;
 }
 ## . END _mainFn }
 
@@ -980,8 +1149,8 @@ _mainFn () {
 declare _gfxTgtVersStr _parentCmdStr _pingHost1Str _pingHost2Str \
   _maxNagCount _binName _binDir _baseDir _baseName _escExe \
   _focusRxDropDir _kbdColorSetExe _rootTitle _assignList \
-  _focusRxBtoolExe _focusRxKcleanExe _focusRxSetExe \
-  _focusRxVersExe _firstRunExe _sysVersStr;
+  _focusRxSetExe _focusRxVersExe _btoolExe _firstrunExe \
+  _fixIbusExe _kcleanExe _resetEffectsExe _sysVersStr;
 
 _gfxTgtVersStr='22.04.9';
 _parentCmdStr="$(ps -o comm= $PPID)";
@@ -1004,14 +1173,17 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _kbdColorSetExe="${_binDir}/kfocus-kb-color-set";
   _rootTitle='FocusRx';
   _assignList=(
-    "_firstRunExe|${_binDir}/kfocus-firstrun-bin"
-    "_focusRxBtoolExe|${_binDir}/kfocus-btool"
-    "_focusRxKcleanExe|${_binDir}/kfocus-kclean"
     "_focusRxSetExe|${_binDir}/kfocus-focusrx-set"
     "_focusRxVersExe|${_binDir}/kfocus-rx-version"
+
+    "_btoolExe|${_binDir}/kfocus-btool||optional"
+    "_firstrunExe|${_binDir}/kfocus-firstrun-bin||optional"
+    "_fixIbusExe|${_binDir}/kfocus-fix-ibus||optional"
+    "_kcleanExe|${_binDir}/kfocus-kclean||optional"
+    "_resetEffectsExe|${_binDir}/kfocus-reset-effects||optional"
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
-    _cm2WarnStrFn 'Could not assign variables';
+    _cm2ErrStrFn 'Could not assign variables';
     exit 1;
   fi
   _sysVersStr="$("${_focusRxVersExe}" -r)" || exit;

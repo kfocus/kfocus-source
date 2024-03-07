@@ -1,41 +1,64 @@
-.001 Installed Kernels are generic-hwe-20.04,
-oem-20.04d-kfocus, and 5.14.0-1018-oem.
-Running kernel is 5.14.0-1018-oem.
-/boot is mounted with 139M free.
-Results in no action but a warning for low disk space.
-
 FocusRx: KERNEL CLEANER
 Doc: https://kfocus.org/wf/tools#kclean
 
-Check forced: limited space.
-The /boot directory has 139M available.
-3 kernel images are installed.
+2 kernels are installed.
+Check forced: /boot space is low (139 of 705 MB).
 
-Disk space on /boot is critically low,
-but only supported kernels are installed.
-If you have a kernel you are not using,
-purge it to increase available space.
+Disk space on /boot is low, but only protected 
+kernel are installed. If there is a kernel you 
+are NOT USING, we encourage you to purge it so 
+the /boot disk does not overfill and prevent the
+system from booting.
 
 Packages to Keep
-linux-headers-5.13.0-27-generic
-linux-headers-5.14.0-1011-oem
-linux-headers-5.14.0-1018-oem
-linux-image-5.13.0-27-generic
-linux-image-5.14.0-1011-oem
-linux-image-5.14.0-1018-oem
-linux-modules-5.13.0-27-generic
-linux-modules-5.14.0-1011-oem
-linux-modules-5.14.0-1018-oem
-linux-modules-extra-5.13.0-27-generic
-linux-oem-5.14-headers-5.14.0-1011
-linux-oem-5.14-headers-5.14.0-1018
-linux-oem-5.14-tools-5.14.0-1011
-linux-oem-5.14-tools-5.14.0-1018
-linux-tools-5.13.0-27-generic
-linux-tools-5.14.0-1011-oem
-linux-tools-5.14.0-1018-oem
+linux-headers-6.2.0-35-generic
+linux-headers-6.5.0-14-generic
+linux-hwe-6.2-headers-6.2.0-35
+linux-hwe-6.2-tools-6.2.0-35
+linux-hwe-6.5-headers-6.5.0-14
+linux-hwe-6.5-tools-6.5.0-14
+linux-image-6.2.0-35-generic
+linux-image-6.5.0-14-generic
+linux-modules-6.2.0-35-generic
+linux-modules-6.5.0-14-generic
+linux-modules-extra-6.2.0-35-generic
+linux-modules-extra-6.5.0-14-generic
+linux-tools-6.2.0-35-generic
+linux-tools-6.5.0-14-generic
 
-Packages to Remove
+Packages to Purge
 There are no unused kernels to purge.
 
 Press <return> to continue.
+
+=== BEGIN Intention ==============
+_001 Installed kernels are
+6.5.0-14-generic (generic-hwe-22.04-kfocus),
+6.2.0-35-generic.
+- Running kernel is 6.5.0-14-generic per assert.
+- Blessed kernel is 6.5.0-14-generic because meta installed per assert.
+- /boot is its own partition with 139 free of 705M.
+- Check Forced: Low disk space (139 < 230 reserved for kernels)
+- Results in NO PURGE because a minimum of 2 kernels is preserved.
+ -- HOWEVER, a warning for low disk should be shown.
+=== . END Intention ==============
+
+=== BEGIN Diagnostics ============
+Installed Kernel List : 6.2.0-35-generic
+6.5.0-14-generic
+Target Max Kernels    : 3
+Installed Kernel Count: 2
+Target Keep Kernels   : 2
+
+Running Kernel        : 6.5.0-14-generic
+Blessed Kernel        : 6.5.0-14-generic
+Is /boot a partition? : y
+/boot free,size       : 139,705 MB
+Effective free,size   : 139,705 MB
+
+Do Force Flag?        : n
+Is /boot low?         : y
+Do Check Triggered?   : y
+Check Message         : 2 kernels are installed.<br>
+Check forced: /boot space is low (139 of 705 MB).
+=== . END Diagnostics ============

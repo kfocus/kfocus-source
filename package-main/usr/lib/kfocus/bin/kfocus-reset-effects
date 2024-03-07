@@ -46,8 +46,9 @@ _importCommonFn () {
 
 ## BEGIN _resetEffectsFn {
 _resetEffectsFn () {
-  declare _model_code _plasma_version _config_list _line _bit_list \
-    _key _apply_str _log_list _name_file _config_file _opt_list;
+  declare _model_code _plasma_version _config_list _fixup_list _line \
+    _bit_list _key _apply_str _log_list _name_file _config_file _opt_list \
+    _fixup_orig_str _fixup_new_str;
 
   _model_code="$(_cm2EchoModelStrFn 'code')";
   _plasma_version="$(
@@ -110,6 +111,34 @@ _resetEffectsFn () {
     # Reverted to Ctrl+F8 as this is the default again in 5.27.9
     'scut|kwin|Show Desktop Grid|none,Meta+F8,Show Desktop Grid'
     'scut|kwin|ShowDesktopGrid|Ctrl+F8,Ctrl+F8,Show Desktop Grid'
+    'scut|kwin|Switch to Desktop 1|Ctrl+F1,Ctrl+F1,Switch to Desktop 1'
+    'scut|kwin|Switch to Desktop 2|Ctrl+F2,Ctrl+F2,Switch to Desktop 2'
+    'scut|kwin|Switch to Desktop 3|Ctrl+F3,Ctrl+F3,Switch to Desktop 3'
+    'scut|kwin|Switch to Desktop 4|Ctrl+F4,Ctrl+F4,Switch to Desktop 4'
+    'scut|kwin|Walk Through Windows|Alt+Tab,Alt+Tab,Walk Through Windows'
+    'scut|kwin|Walk Through Windows (Reverse)|Alt+Shift+Backtab,Alt+Shift+Backtab,Walk Through Windows (Reverse)'
+    'scut|kwin|Suspend Compositing|Alt+Shift+F12,Alt+Shift+F12,Suspend Compositing'
+    'scut|org.kde.krunner.desktop|_launch|Alt+Space\tAlt+F2\tSearch,Alt+Space\tAlt+F2\tSearch,KRunner'
+    'scut|kwin|Show Desktop|Meta+D,Meta+D,Peek at Desktop'
+    'scut|kwin|view_actual_size|Meta+0,Meta+0,Zoom to Actual Size'
+    'scut|kwin|view_zoom_in|Meta+=,Meta++\tMeta+=,Zoom In'
+    'scut|kwin|view_zoom_out|Meta+-,Meta+-,Zoom Out'
+    'scut|org.kde.plasma.emojier.desktop|_launch|Meta+.,Meta+.,Emoji Selector'
+    'scut|ksmserver|Lock Session|Meta+L\tCtrl+Alt+L\tScreensaver,Meta+L\tScreensaver,Lock Session'
+    'scut|kwin|Edit Tiles|Meta+T,Meta+T,Toggle Tiles Editor'
+    'scut|kwin|Window Minimize|Meta+PgDown,Meta+PgDown,Minimize Window'
+    'scut|kwin|Window Maximize|Meta+PgUp,Meta+PgUp,Maximize Window'
+    'scut|kwin|Window Quick Tile Top|Meta+Up,Meta+Up,Quick Tile Window to the Top'
+    'scut|kwin|Window Quick Tile Left|Meta+Left,Meta+Left,Quick Tile Window to the Left'
+    'scut|kwin|Window Quick Tile Right|Meta+Right,Meta+Right,Quick Tile Window to the Right'
+    'scut|kwin|Window Quick Tile Bottom|Meta+Down,Meta+Down,Quick Tile Window to the Bottom'
+
+    # Reset all things mouse tracking to defaults
+    'scut|kwin|TrackMouse|'
+    'kwin|Effect-trackmouse|Alt|'
+    'kwin|Effect-trackmouse|Control|'
+    'kwin|Effect-trackmouse|Meta|'
+    'kwin|Effect-trackmouse|Shift|'
 
     # Setup scale factor based on device and clear old settings.
     # Clear all values first.
@@ -127,6 +156,12 @@ _resetEffectsFn () {
     # It is presented in first-run wizard.
     "plwc|General|LastSeenVersion|${_plasma_version:-5.27.9}"
     'plwc|General|ShouldShow|false'
+  );
+
+  _fixup_list=(
+    'scut|_launch=Alt+Space\\tAlt+F2\\tSearch,Alt+Space\\tAlt+F2\\tSearch,KRunner|_launch=Alt+Space\tAlt+F2\tSearch,Alt+Space\tAlt+F2\tSearch,KRunner'
+    'scut|view_zoom_in=Meta+=,Meta++\\tMeta+=,Zoom In|view_zoom_in=Meta+=,Meta++\tMeta+=,Zoom In'
+    'scut|Lock Session=Meta+L\\tCtrl+Alt+L\\tScreensaver,Meta+L\\tScreensaver,Lock Session|Lock Session=Meta+L\tCtrl+Alt+L\tScreensaver,Meta+L\tScreensaver,Lock Session'
   );
 
   _log_list=();
@@ -195,7 +230,31 @@ _resetEffectsFn () {
     "${_kwriteconfig5Exe}" "${_opt_list[@]}";
   done
 
-  ( IFS=$'\n'; _cm2EchoFn "Reset values:\n${_log_list[*]}" )
+  # TODO: This fixup routine is probably more complicated than it
+  # needs to be. Intead, replace special characters in strings
+  # like so: Alt+Space\\tAlt+F2\\t => Alt+Space_XtabX_Alt+F2_XtabX_ ...
+  # and then replace them above.
+  #
+  for _line in "${_fixup_list[@]}"; do
+    IFS='|' read -r -a _bit_list <<<"${_line}";
+    _key="${_bit_list[0]:-}";
+    _name_file="${_fileMap[$_key]}";
+    if [ -z "${_name_file}" ]; then
+      _log_list+=("WARN: Config key |${_key}| is not supported.");
+      continue;
+    fi
+
+    _config_file="${_configDir}/${_name_file}";
+    _fixup_orig_str="$(_cm2EscapeRxCharsFn "${_bit_list[1]}")";
+    _fixup_new_str="$(_cm2EscapeRxCharsFn "${_bit_list[2]}")";
+    _apply_str="${_line}";
+
+    sed -E -i "s/${_fixup_orig_str}/${_fixup_new_str}/" "${_config_file}";
+
+    _log_list+=("Fixup ${_apply_str}");
+  done
+
+  ( IFS=$'\n'; echo "Reset values:"; echo "${_log_list[*]}" )
 }
 ## . END _resetEffects }
 

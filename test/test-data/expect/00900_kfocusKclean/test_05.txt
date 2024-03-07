@@ -1,39 +1,83 @@
-.005 Installed Kernels are generic-hwe-20.04,
-  lowlatency-hwe-20.04, and oem-20.04d-kfocus.
-Running kernel is lowlatency-hwe-20.04 (5.13.0-27-lowlatency).
-/boot is mounted with 133M free.
-Results in no action but a warning for low disk space.
-
-FocusRx: KERNEL CLEANER
+FocusRX: Purge Older Kernels?
 Doc: https://kfocus.org/wf/tools#kclean
 
-Check forced: limited space.
-The /boot directory has 133M available.
-3 kernel images are installed.
+3 kernels are installed.
+Check forced: /boot space is low (133 of 705 MB).
 
-Disk space on /boot is critically low,
-but only supported kernels are installed.
-If you have a kernel you are not using,
-purge it to increase available space.
+Removing unused kernels prevents the system
+from running out of disk space in /boot.
 
 Packages to Keep
-linux-headers-5.13.0-27-generic
-linux-headers-5.13.0-27-lowlatency
-linux-headers-5.14.0-1011-oem
-linux-image-5.13.0-27-generic
-linux-image-5.13.0-27-lowlatency
-linux-image-5.14.0-1011-oem
-linux-modules-5.13.0-27-generic
-linux-modules-5.13.0-27-lowlatency
-linux-modules-5.14.0-1011-oem
-linux-modules-extra-5.13.0-27-generic
-linux-oem-5.14-headers-5.14.0-1011
-linux-oem-5.14-tools-5.14.0-1011
-linux-tools-5.13.0-27-generic
-linux-tools-5.13.0-27-lowlatency
-linux-tools-5.14.0-1011-oem
+linux-headers-6.5.0-14-generic
+linux-headers-6.5.0-21-lowlatency
+linux-hwe-6.5-headers-6.5.0-14
+linux-hwe-6.5-headers-6.5.0-21
+linux-hwe-6.5-tools-6.5.0-14
+linux-hwe-6.5-tools-6.5.0-21
+linux-image-6.5.0-14-generic
+linux-image-6.5.0-21-lowlatency
+linux-modules-6.5.0-14-generic
+linux-modules-6.5.0-21-lowlatency
+linux-modules-extra-6.5.0-14-generic
+linux-modules-extra-6.5.0-21-lowlatency
+linux-tools-6.5.0-14-generic
+linux-tools-6.5.0-21-lowlatency
 
-Packages to Remove
-There are no unused kernels to purge.
+Packages to Purge
+linux-headers-6.2.0-35-generic
+linux-hwe-6.2-headers-6.2.0-35
+linux-hwe-6.2-tools-6.2.0-35
+linux-image-6.2.0-35-generic
+linux-modules-6.2.0-35-generic
+linux-modules-extra-6.2.0-35-generic
+linux-tools-6.2.0-35-generic
+
+Make sure your files are backed-up.
+
+Do you wish to purge 1 of 3 kernels now
+y
+
+Purge Package List:
+Purging packages apt-get purge -y linux-headers-6.2.0-35-generic linux-hwe-6.2-headers-6.2.0-35 linux-hwe-6.2-tools-6.2.0-35 linux-image-6.2.0-35-generic linux-modules-6.2.0-35-generic linux-modules-extra-6.2.0-35-generic linux-tools-6.2.0-35-generic
+
+FocusRx: KERNEL CLEANER FINISHED
 
 Press <return> to continue.
+
+=== BEGIN Intention ==============
+_005 Installed kernels are
+6.5.0-14-generic (generic-hwe-22.04-kfocus),
+6.5.0-21-lowlatency (lowlatency-hwe-22.04),
+6.2.0-35-generic.
+- Running kernel is 6.5.0-21-lowlatency (lowlatency-hwe-22.04) per assert.
+- Blessed kernel is 6.5.0-14-generic because meta installed per assert.
+- /boot is its own partition with 133 free of 705M.
+- Check Forced: Low disk space
+- Results in purge of only 6.2.0-35-generic BECAUSE:
+-- 6.5.0-21-lowlatency is running, so retained.
+-- 6.2.0-14-generic is blessed, so retained.
+-- 6.2.0-35-generic IS PURGED because it is not protected, and...
+--- There is NOT enough room for one more kernel (133M < 230M).
+--- This is low space when total space only allows (705/230 = 3) kernels.
+=== . END Intention ==============
+
+=== BEGIN Diagnostics ============
+Installed Kernel List : 6.2.0-35-generic
+6.5.0-14-generic
+6.5.0-21-lowlatency
+Target Max Kernels    : 3
+Installed Kernel Count: 3
+Target Keep Kernels   : 2
+
+Running Kernel        : 6.5.0-21-lowlatency
+Blessed Kernel        : 6.5.0-14-generic
+Is /boot a partition? : y
+/boot free,size       : 133,705 MB
+Effective free,size   : 133,705 MB
+
+Do Force Flag?        : n
+Is /boot low?         : y
+Do Check Triggered?   : y
+Check Message         : 3 kernels are installed.<br>
+Check forced: /boot space is low (133 of 705 MB).
+=== . END Diagnostics ============

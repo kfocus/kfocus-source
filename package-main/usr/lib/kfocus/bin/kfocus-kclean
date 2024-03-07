@@ -24,6 +24,13 @@ _EOW00
 }
 ## . END _echoHelpFn }
 
+## BEGIN _echoDebugFn {
+_echoDebugFn () {
+  [ "${_doDebug}" = 'n' ] && return;
+  _cm2EchoFn "DEBUG: ${*}";
+}
+## . END _echoDebugFn }
+
 ## BEGIN _importCommonFn {
 # Imports: _cm2EchoFn _cm2HtmBeginStr _cm2HtmEndStr _cm2IsTty
 # _cm2PromptUserFn _cm2StripTagsFn
@@ -43,23 +50,9 @@ _importCommonFn () {
 }
 ## . END _importCommonFn }
 
-## BEGIN _echoPkgStrFn {
-# Purpose  : Echo to STDOUT the provided package string
-#   IFF it is found installed
-# Example  : _echoPkgStrFn 'linux-image-5.13.0-1010-oem'
-# Arguments: _str is the package string to match
-#
-_echoPkgStrFn () {
-  declare _str="${*}"
-  if grep -qE "^${_str}$" <<<"${_aptListStr}"; then
-    echo "${_str}<br>"
-  fi
-}
-## . END _echoPkgStrFn }
-
 ## BEGIN _echoInstKversListStrFn {
 # Purpose  : Echo to STDOUT all kernel versions found in installed packages.
-#   Versions are in the <number-type> format, e.g. '5.13.0-1010-oem'.
+#   Versions are in the <number-type> format, e.g. '6.5.0-14-generic'.
 #   Fields are newline delimited, sorted, and deduped.
 # Example  : _inst_kvers_list_str="$(_echoInstKversListStrFn)";
 # Arguments: Requires _aptListStr pkg variable
@@ -75,95 +68,108 @@ _echoInstKversListStrFn () {
 ## BEGIN _echoMetaKversStrFn {
 # Purpose  : Prints to STDOUT any linux-image version DEPENDED upon by the
 #   named metapackage.
-#   The version is in the <number> format, e.g. '5.13.0-1010'.
+#   The version is in the <number> format, e.g. '6.5.0-14'.
 #   WARNING: This routine expect only one image metapackage.
 # Example  :
-# _kversHweStr="$( _echoMetaKversStrFn linux-image-generic-hwe-20.04 )";
+# _kversFullPrefStr="$( _echoMetaKversStrFn linux-image-generic-hwe-22.04 )";
 # Arguments: _str is the metapackage name to check
 #
 _echoMetaKversStrFn () {
-  declare _str
-  _str="$( apt-cache depends "${*}" \
-    | grep -E '^\s*Depends:' \
-    | sed  -E 's/^\s*Depends:\s*//' \
-    | grep -E '^\s*linux-image-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+$' \
-    | sed  -E 's/^\s*linux-image-([0-9]+\.[0-9]+\.[0-9]+-[0-9]+)-[a-z-]+$/\1/' \
-    | sort -uV \
-    | tail -n1
-  )";
-  if [ -z "${_str}" ]; then _str='XXX_NOT_FOUND_XXX'; fi
+  declare _str;
+  if [[ "${_aptListStr}" =~ ${*} ]]; then
+    _str="$( apt-cache depends "${*}" \
+      | grep -E '^\s*Depends:' \
+      | sed  -E 's/^\s*Depends:\s*//' \
+      | grep -E '^\s*linux-image-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+$' \
+      | sed  -E 's/^\s*linux-image-([0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+)$/\1/' \
+      | sort -uV \
+      | tail -n1
+    )";
+    if [ -z "${_str}" ]; then _str='XXX_NOT_FOUND_XXX'; fi
+  else
+    _str='XXX_NOT_INSTALLED_XXX';
+  fi
   echo "${_str}";
 }
 ## . END _echoMetaKversStrFn }
 
 ## BEGIN _echoPurgeableKversListStr {
-# Purpose  : Print to STDOUT all the kernel versions we think can be removed.
-#   Versions are in the <number> format, e.g. '5.13.0-1010'.
+# Purpose  : Print to STDOUT all the kernel versions that can be removed.
+#   Versions are in the <number> format, e.g. '6.5.0-14'.
 #   Fields are newline delimited, sorted, and deduped.
 #
 #   This string EXCLUDES all versions we have already determined we are going
-#   to keep as found in _kversRunStr and similar.
-
+#   to keep as found in _kversFullRunStr and similar.
+#
 # Example  : _echoPurgeableKversListStr;
-# Arguments: Requires _aptListStr pkg variable
-#   _kversRunStr _kversOemStr _kversHweStr _kversLlHweStr _kversExtraKeepStr
-
+# Arguments: Requires _aptListStr, _kversFullRunStr,
+#   _kversFullPrefStr, _kversExtraKeepStr
+#   Deprecated: grep -vE "^${_kversFullOemStr}$"
+#   Deprecated: grep -vE "^${_kversFullLlHweStr}$"
+#
 _echoPurgeableKversListStr () {
   echo -e "${_aptListStr}" \
     | grep -E '^linux-(image|modules|modules-extra|headers|tools)-[0-9]' \
     | grep -E '^linux-[a-z]+-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+$' \
-    | sed  -E 's/^linux-[a-z]+-([0-9]+\.[0-9]+\.[0-9]+-[0-9]+)-[a-z-]+$/\1/' \
-    | grep -vE "^${_kversRunStr}$" \
-    | grep -vE "^${_kversOemStr}$" \
-    | grep -vE "^${_kversHweStr}$" \
-    | grep -vE "^${_kversLlHweStr}$" \
+    | sed  -E 's/^linux-[a-z]+-([0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+)$/\1/' \
+    | grep -vE "^${_kversFullRunStr}$"     \
+    | grep -vE "^${_kversFullPrefStr}$"    \
     | grep -vE "^(${_kversExtraKeepStr})$" \
     | sort -uV;
 }
 ## . END _echoPurgeableKversListStr }
 
+## BEGIN _echoPkgStrFn {
+# Purpose: Echo installed packages matching pattern
+_echoPkgStrFn () {
+  declare _str="${*}";
+  grep -E "^${_str}$" <<<"${_aptListStr}" | sed 's/$/<br>/g'
+}
+## . END _echoPkgStrFn }
+
 ## BEGIN _echoInstKversPkgStrFn {
 # Purpose  : Print to STDOUT all packages installed that are match the
 #   provided kernel version string. For example, if version
-#   '5.13.0-1010' is provided, we might find these packages installed:
+#   '5.13.0-1010-oem' is provided, we might find these packages installed:
 #   'linux-image-5.13.0-1010-oem', 'linux-headers-5.13.0-1010-oem', etc.
-# Example  : _echoInstKversPkgStrFn '5.13.0-1010';
+# Example  : _echoInstKversPkgStrFn '5.13.0-1010-oem';
 # Arguments: _vers_str
 #
 _echoInstKversPkgStrFn () {
-  declare _vers_str _short_str;
+  declare _vers_str _short_str _kernel_flavor _kernel_alt_flavor _prefix;
   _vers_str="${*}";
-  _short_str="$(cut -f1-2 -d'.' <<< "${_vers_str}")";
+  _short_str="$(cut -f1-2 -d'-' <<< "${_vers_str}")";
+  _kernel_flavor="$(cut -f3 -d'-' <<< "${_vers_str}")";
 
-  # Headers
-  _echoPkgStrFn "linux-headers-${_vers_str}";
-  _echoPkgStrFn "linux-headers-${_vers_str}-lowlatency";
-  _echoPkgStrFn "linux-headers-${_vers_str}-generic";
-  _echoPkgStrFn "linux-headers-${_vers_str}-oem";
-  _echoPkgStrFn "linux-oem-${_short_str}-headers-${_vers_str}";
+  _echoPkgStrFn "linux-image-${_vers_str}";
+  # TODO: linux-image-unsigned is not yet properly handled
+  # _echoPkgStrFn "linux-image-unsigned-${_vers_str}";
 
-  # Images
-  _echoPkgStrFn "linux-image-${_vers_str}-generic";
-  _echoPkgStrFn "linux-image-unsigned-${_vers_str}-generic";
-  _echoPkgStrFn "linux-image-${_vers_str}-lowlatency";
-  _echoPkgStrFn "linux-image-unsigned-${_vers_str}-lowlatency";
-  _echoPkgStrFn "linux-image-unsigned-${_vers_str}-oem";
-  _echoPkgStrFn "linux-image-${_vers_str}-oem";
+  if [ "${_kernel_flavor}" = 'azure' ]; then
+    # Cut off the '-fde' at the end if it exists, the headers, modules,
+    # modules-extra, and tools don't have that suffix.
+    [ "$(cut -f4 -d'-' <<< "${_vers_str}")" == 'fde' ] && \
+      _vers_str="${_vers_str:0:-4}";
+  fi
 
-  # Modules
-  _echoPkgStrFn "linux-modules-${_vers_str}-generic";
-  _echoPkgStrFn "linux-modules-extra-${_vers_str}-generic";
-  _echoPkgStrFn "linux-modules-${_vers_str}-lowlatency";
-  _echoPkgStrFn "linux-modules-extra-${_vers_str}-lowlatency";
-  _echoPkgStrFn "linux-modules-${_vers_str}-oem";
-  _echoPkgStrFn "linux-modules-extra-${_vers_str}-oem";
+  for _prefix in 'headers' 'modules' 'modules-extra' 'tools'; do
+    _echoPkgStrFn "linux-${_prefix}-${_vers_str}";
+  done
 
-  # Tools
-  _echoPkgStrFn "linux-tools-${_vers_str}";
-  _echoPkgStrFn "linux-tools-${_vers_str}-lowlatency";
-  _echoPkgStrFn "linux-tools-${_vers_str}-generic";
-  _echoPkgStrFn "linux-tools-${_vers_str}-oem";
-  _echoPkgStrFn "linux-oem-${_short_str}-tools-${_vers_str}";
+  # There are packages called linux-flavor-(headers|tools|cloud-tools), where
+  # flavor is either a normal flavor like azure, aws, etc., or it is `hwe`
+  # for generic or lowlatency kernels, or it is nvidia-something where
+  # something is optional and there may be more than one of them. We need to
+  # match those.
+
+  if [ "${_kernel_flavor}" = 'generic' ] \
+    || [ "${_kernel_flavor}" = 'lowlatency' ]; then
+    _kernel_alt_flavor="hwe";
+  else
+    _kernel_alt_flavor="${_kernel_flavor}";
+  fi
+
+  _echoPkgStrFn 'linux-'"${_kernel_alt_flavor}"'-.*-(headers|tools|cloud|cloud-tools)-'"${_short_str}";
 }
 ## . END _echoInstKversPkgStrFn }
 
@@ -174,23 +180,26 @@ _echoInstKversPkgStrFn () {
 #   kernel-related packages.
 # Example  :  _keep_pkg_list_str="$( _echoKeepPkgListStrFn )";
 # Arguments: Requires package variables:
-#  _kversRunStr _kversOemStr _kversHweStr _kversLlHweStr _kversExtraKeepStr
+#  _kversFullRunStr _kversFullPrefStr _kversLlHweStr _kversExtraKeepStr
 #
 _echoKeepPkgListStrFn () {
-  declare _keep_list _append_list _vers_str;
-  _keep_list=(
-    "${_kversRunStr}" "${_kversOemStr}"
-    "${_kversHweStr}" "${_kversLlHweStr}"
-  );
+  declare _scratch_list _keep_kvers_list _append_list _vers_str ;
 
+  # Deprecated: "${_kversFullOemStr}"
+  _scratch_list=( "${_kversFullRunStr}" "${_kversFullPrefStr}" );
+
+  readarray -t _keep_kvers_list < <(IFS=$'\n'; uniq <<<"${_scratch_list[*]}");
+  _echoDebugFn "KVERS KEEP LIST PRE >>>${_keep_kvers_list[*]}<<<";
   if [ -n "${_kversExtraKeepStr}" ]; then
-    IFS='|' read -r -a _append_list <<<"${_kversExtraKeepStr}"
-    _keep_list+=("${_append_list[@]}")
+    IFS='|' read -r -a _append_list <<<"${_kversExtraKeepStr}";
+    _keep_kvers_list+=("${_append_list[@]}");
   fi
 
+  _echoDebugFn "KVERS KEEP LIST POST >>>${_keep_kvers_list[*]}<<<";
   while read -r _vers_str; do
+    # Echo all matching packages that make up a kernel package set
     _echoInstKversPkgStrFn "${_vers_str}";
-  done < <(printf '%s\n' "${_keep_list[@]}" | grep -v '^XXX' | sort -uV);
+  done < <(printf '%s\n' "${_keep_kvers_list[@]}" | grep -v '^XXX' | sort -uV);
 }
 ## . END _echoKeepPkgListStrFn }
 
@@ -200,42 +209,71 @@ _echoKeepPkgListStrFn () {
 #   version strings and finding matching kernel-related packages.
 # Example  :  _purgePkgListStr="$( _echoPurgePkgListStrFn )";
 # Arguments: Requires package variables:
-#  _kversRunStr _kversOemStr _kversHweStr _kversLlHweStr _kversExtraKeepStr
+#  _kversFullRunStr _kversFullPrefStr _kversLlHweStr _kversExtraKeepStr
 #
+# shellcheck disable=SC2001
 _echoPurgePkgListStrFn() {
-  declare _vers_str
+  declare _vers_str _azure_check_kvers_str _azure_check_kvers;
+  _echoDebugFn "PURGEABLE KVERS LIST >>>$(_echoPurgeableKversListStr)<<<";
+
+  # If the user has Azure kernels installed for whatever reason, and the
+  # kernel cleaner attempts to remove an azure kernel but keep an azure-fde
+  # kernel or vice versa, the kernel package sets will overlap and conflict.
+  # This is because the azure and azure-fde kernels differ only in image and
+  # otherwise share a package set. For this reason, we check for this
+  # conflict, and if we find it, we only add Azure kernel image to the purge
+  # string, not the whole kernel package set.
+
+  _azure_check_kvers_str="$(
+    sed "s/azure-fde/azure/" <<< "${_kversFullRunStr}";
+    sed "s/azure-fde/azure/" <<< "${_kversFullPrefStr}";
+    IFS=$'\n' sed "s/azure-fde/azure/; s/|/\n/g;" <<< "${_kversExtraKeepStr}";
+  )";
+
   while read -r _vers_str; do
-    _echoInstKversPkgStrFn "${_vers_str}"
-  done < <(_echoPurgeableKversListStr)
+    _azure_check_kvers="$(sed "s/azure-fde/azure/" <<< "${_vers_str}")";
+    if [[ "${_azure_check_kvers_str}" =~ ${_azure_check_kvers} ]]; then
+      _echoPkgStrFn "linux-image-${_vers_str}";
+      # TODO: linux-image-unsigned is not yet properly handled
+      # _echoPkgStrFn "linux-image-unsigned-${_vers_str}";
+    else
+      _echoInstKversPkgStrFn "${_vers_str}";
+    fi
+  done < <(_echoPurgeableKversListStr);
 }
 ## . END _echoPurgePkgListStrFn }
 
 ## BEGIN _echoAptListStrFn {
-# Mock this for tests
+# Purpose: Return string with all packages
+#   that are fully or partially installed.
+#   Mock this for tests.
 #
 _echoAptListStrFn () {
-  dpkg -l | tail -n+5 | grep -E '^.[^n]' | awk '{print $2}';
+  apt list --installed 2>/dev/null | cut -d'/' -f1;
 }
 ## . END _echoAptListStrFn }
 
 ## BEGIN _echoKversRunStrFn {
 # Mock this for tests
 #
+# Purpose: Echo numeric version string, e.g. 6.5.0-14
 _echoKversRunStrFn () {
   uname -r | sed -E 's/^([0-9]+\.[0-9]+\.[0-9]+-[0-9]+)-[a-z-]+$/\1/';
 }
-_echoKversFrunStrFn() {
-  uname -r | sed -E 's/^([0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-])+$/\1/'
+
+# Purpose: Echo full version string, e.g. 6.5.0-14-generic
+_echoKversFullRunStrFn () {
+  uname -r | sed -E 's/^([0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-])+$/\1/';
 }
 ## . END _echoKversRunStrFn }
 
-## BEGIN _echoIsBootMountedFn (
+## BEGIN _echoIsBootMountPointFn (
 # Mock this for tests
 #
-_echoIsBootMountedFn () {
+_echoIsBootMountPointFn () {
   if mountpoint /boot 1>/dev/null; then echo 'y'; else echo 'n'; fi
 }
-## . END _echoIsBootMountedFn }
+## . END _echoIsBootMountPointFn }
 
 ## BEGIN _echoBootMegsFn {
 # Mock this for tests
@@ -248,197 +286,357 @@ _echoBootMegsFn() {
 }
 ## . END _echoBootMegsFn }
 
-_printDebug01Fn() {
-  printf 2>&1 "DEBUG %-20s :%6s\n" "${1:-}" "${2:-0}";
+## BEGIN _echoPrioritizedKversExtraKeepStr {
+  # Purpose:
+  # * Obtain a list of all the flavors found _kvers_list_str ($1).
+  #   _kvers_list_str contains line-delimited <version>-<flavor> strings.
+  # * Extract a flavor-only list from _kvers_list_str and then sort it
+  #   to favor generic and lowlatency with the others alpha sorted, e.g:
+  #     ( 'generic' 'lowlatency' 'aws' 'beta' ... 'oem' ... )
+  # * Iterate through _kvers_list and add a prefix indicating desired sort
+  #   order. This uses the flavor-only list.
+  #   letter indicating how favorable they are to preserve. First a generic
+  #   kernel is selected, then a lowlatency kernel, then one of each of any
+  #   other present flavors. When all flavors have been walked through,
+  #   another round of kernels are selected, until all of them have a priority
+  #   marker.
+  # * Sorts the list, removes the priority markers, and echos it.
+
+_echoPrioritizedKversExtraKeepStr () {
+  declare _kvers_list _kernel_flavor_list_str _kernel_flavor_list \
+    _kvers_str _kernel_flavor_str _flavor_idx _kvers_idx \
+    _id_idx _id_prefix _kvers_count _kvers_list_str _safety_idx \
+    _unmarked_kvers_count;
+
+  # Initialize variables
+  _kvers_list_str="${1:-}";
+  [ -z "${_kvers_list_str}" ] && return 1;
+
+  _kernel_flavor_list=();
+  _kernel_flavor_list_str="";
+  _kvers_list=();
+
+  # Read list of kernel versions from string, extract flavors
+  readarray -t _kvers_list <<< "${_kvers_list_str}";
+  for _kvers_str in "${_kvers_list[@]}"; do
+    _kernel_flavor_list_str+="$(cut -d'-' -f3 <<< "${_kvers_str}")${_cStr}";
+  done
+
+  # Transform list of flavors to prefer generic and lowlatency first
+  # TODO: If we switch to OEM, generic must become oem; use a variable?
+  _kernel_flavor_list_str="$(
+    echo -n "${_kernel_flavor_list_str}" \
+      | sed "s/^generic$/000000001/; s/^lowlatency$/000000002/;" \
+      | sort -u \
+      | sed "s/^000000001$/generic/; s/^000000002$/lowlatency/;";
+  )";
+
+  # Read flavor list and initialize loop variables
+  readarray -t _kernel_flavor_list <<< "${_kernel_flavor_list_str}";
+  _flavor_idx=0;
+  _id_idx=0;
+  _unmarked_kvers_count="${#_kvers_list[@]}";
+
+  ## BEGIN Loop to develop ORDERED list of <kvers>-<flavor> to keep.
+  # For example, if flavors are 'generic', 'aws, and 'bread',
+  #   and each has versions 6.5.0-14 and 6.2.0-35, the output
+  #   would be:
+  # ( '001_6.5.0-14-generic' '002_6.5.0-14-aws' '003_6.5.0-14-bread'
+  #   '004_6.2.0-35-generic' '005_6.2.0-35-aws' '006_6.2.0-35-bread' ...
+  # )
+  # This outer is limited to 100 iterations to prevent an unending process.
+  #
+  for _safety_idx in {1..100}; do
+    _kernel_flavor_str="${_kernel_flavor_list[_flavor_idx]}";
+
+    _kvers_count="${#_kvers_list[@]}";
+    for ((_kvers_idx = 0; _kvers_idx < _kvers_count; _kvers_idx++)); do
+      _kvers_str="${_kvers_list[_kvers_idx]}";
+      if [ "${_kernel_flavor_str}" = \
+        "$(cut -d'-' -f3 <<< "${_kvers_str}")" ]; then
+        if ! [[ "${_kvers_str}" =~ ^[[:digit:]]{3}_ ]]; then
+          _id_prefix="$(printf '%03i_' "${_id_idx}")";
+          _kvers_list[_kvers_idx]="${_id_prefix}${_kvers_list[_kvers_idx]}";
+          ((_id_idx++));
+          ((_unmarked_kvers_count--));
+          break;
+        fi
+      fi
+    done
+
+    ((_flavor_idx++));
+    if [ "${_flavor_idx}" -ge "${#_kernel_flavor_list[@]}" ]; then
+      _flavor_idx=0;
+    fi
+
+    # Break once all versions are considered
+    if ((_unmarked_kvers_count < 1)); then break; fi
+  done
+
+  if ((_unmarked_kvers_count > 0)); then
+    _cm2EchoFn 'Unexpected data error.';
+    _cm2EchoStackFn;
+    return 1;
+  fi
+
+  # Sort and then remove priority string, e.g 'A'.
+  IFS=$'\n'; _kvers_list_str="${_kvers_list[*]}";
+  _kvers_list_str="$(
+    sort <<< "${_kvers_list_str}" | sed -E 's/^[0-9]{3}_//';
+  )";
+  echo "${_kvers_list_str}";
 }
+## . END _echoPrioritizedKversExtraKeepStr }
 
 ## BEGIN _mainFn {
 # Example install group for linux meta-packages:
-#   sudo apt install linux-image-lowlatency-hwe-20.04 \
-#   linux-headers-lowlatency-hwe-20.04 linux-tools-lowlatency-hwe-20.04
-# Example install for non-meta oem group:
-#   sudo apt install linux-image-5.14.0-1010-oem linux-tools-5.14.0-1010-oem \
-#   linux-headers-5.14.0-1010-oem linux-modules-5.14.0-1010-oem
-#
+#   sudo apt install \
+#     linux-generic-hwe-22.04-kfocus         \
+#     linux-headers-generic-hwe-22.04-kfocus \
+#     linux-image-generic-hwe-22.04-kfocus   \
+#     linux-tools-generic-hwe-22.04-kfocus;
+
+# Example install for non-meta hwe group:
+#   sudo apt install \
+#    linux-headers-6.5.0-14-generic          \
+#    linux-image-6.5.0-14-generic            \
+#    linux-modules-6.5.0-14-generic          \
+#    linux-modules-extra-6.5.0-14-generic    \
+#    linux-tools-6.5.0-14-generic;
+
 _mainFn() {
-  declare _body_title _run_msg_str _brow_str _erow_str _table_str _do_force \
-    _opt_str _prompt_str _is_boot_low _is_boot_mounted _boot_avail_int \
-    _boot_size_int _check_int _inst_kvers_list_str _inst_kvers_list_count \
-    _kernel_min_count _kernel_max_count _kernel_unit_size_int _do_check \
-    _keep_pkg_list_str _keep_kvers_list_count _reserve_kvers_count \
-    _kvers_full_run_str _purge_pkg_list_str _purge_msg _do_purge _exit_str \
-    _end_msg_str _purge_pkg_list _cmd_list
+  declare \
+    _body_title _boot_free_int _boot_size_int \
+    _brow_str _cmd_list _do_check _do_force _eff_free_int \
+    _check_msg _eff_size_int _end_msg _erow_str _exit_str \
+    _filtered_purge_list  _filtered_purge_list_str _inst_kvers_count \
+    _inst_kvers_list_str _is_boot_low _is_boot_partition \
+    _keep_kvers_list_count _keep_pkg_list_str _kernel_free_count \
+    _kernel_keep_count _kernel_purge_count _kernel_max_count \
+    _kversExtraKeepStr _kversFullPrefStr _kversFullRunStr \
+    _opt_str _overfull_threshold_count _prompt_str \
+    _purge_msg _purge_pkg_list_str _purge_pkg_list _purge_pkg \
+    _reply  _reserve_kvers_count _run_msg _table_str _win_title;
 
   ## Begin Initialize {
   _aptListStr="$(_echoAptListStrFn)";
-  _windowTitle='FocusRx: Kernel Cleaner';
-
   _body_title='FocusRx: KERNEL CLEANER';
-  _run_msg_str=''
+  _win_title='FocusRx: Kernel Cleaner';
 
   _brow_str='<tr><td style="padding:8px 32px 8px 0">';
   _erow_str='</td></tr>';
+  _run_msg='';
   _table_str='<table style="width:100%;margin-right:32px">';
-
   ## . End Initialize }
 
   ## Begin Process Options {
   _do_force='n';
   while getopts ':fh' _opt_str; do
     case "${_opt_str}" in
-    h)
-      _echoHelpFn
-      return 0
-      ;;
-    f) _do_force='y' ;;
-    *)
-      _cm2EchoFn "\nInvalid option: ${_opt_str} \n"
-      _echoHelpFn
-      return 1
-      ;;
+    h) _echoHelpFn; return 0;;
+    f) _do_force='y';;
+    *) _cm2EchoFn "\nInvalid option: ${_opt_str} \n";
+      _echoHelpFn;
+      return 1;;
     esac
   done
   ## . End Process Options }
 
   ## Begin Heuristics {
-  # Suggest kernel purge if one of the following conditions is met:
-  #  1. Boot is separate, small partition < _kernel_unit_size_int avail
-  #     OR 5 x 200M if not a separate partition (see echoBootInfoStrFn)
-  #  2. On forced run, target number _kernel_max_count will be two
-  #     less than the maximum kernel capacity determined by dividing
-  #     /boot size by _kernel_unit_size_int.
+  # 1. Determine actual /boot size, free space, if /boot is a partition.
+  # 2. Determine effective /boot size and effective free space.
+  # 3. Determine max number of kernels that can fit in the full effective size,
+  #    also how many more kernels can fit into the effective avail space.
+  # 4. Determine the low-space trigger and target kernels to keep.
+  # 5. Determine if purge event should be triggerred.
 
-  # Set defaults
-  _kernel_unit_size_int=200;
-  _kernel_min_count=2;
-  _kernel_max_count=8;
-
-  # Read boot disk size
-  _boot_avail_int="$(_echoBootMegsFn 'avail')";
+  # 1. Determine actual /boot size, free space, if /boot is a partition.
+  _boot_free_int="$(_echoBootMegsFn 'avail')";
   _boot_size_int="$(_echoBootMegsFn 'size')";
-  _is_boot_mounted="$(_echoIsBootMountedFn)";
+  _is_boot_partition="$(_echoIsBootMountPointFn)";
 
-  # Adjust max allowable kernel count to space
-  _check_int=$((("${_boot_size_int}" / "${_kernel_unit_size_int}")));
-  (("${_check_int}" < "${_kernel_max_count}")) &&
-    _kernel_max_count="${_check_int}";
+  # 2. Determine effective /boot size and effective free space.
+  _inst_kvers_list_str="$(_echoInstKversListStrFn)";
+  _inst_kvers_count="$(wc -l <<< "${_inst_kvers_list_str}")";
+  _echoDebugFn "INSTALLED KVERS LIST >>>${_inst_kvers_list_str}<<<";
+  _run_msg+="${_inst_kvers_count} kernels are installed.<br>${_cStr}";
 
-  # Expand required available space by 5x if /boot is not a mount point
-  _printDebug01Fn 'Is boot mounted' "${_is_boot_mounted}"
-  _printDebug01Fn '/boot size      (M)' "${_boot_size_int}"
-  _printDebug01Fn '/boot available (M)' "${_boot_avail_int}"
-  _printDebug01Fn 'Target max kernels' "${_kernel_max_count}"
-
-  _is_boot_low='n'
-  if [ "${_is_boot_mounted}" = 'y' ]; then
-    if (("${_boot_avail_int}" < "${_kernel_unit_size_int}")); then
-      _is_boot_low='y'
-    fi
+  # If /boot is on its own partition, set values to actual.
+  if [ "${_is_boot_partition}" = 'y' ]; then
+    _eff_size_int="${_boot_size_int}";
+    _eff_free_int="${_boot_free_int}";
+  # Otherwise, calculate effective free and size.
   else
-    if (("${_boot_avail_int}" < 5 * "${_kernel_unit_size_int}")); then
-      _is_boot_low='y'
+    _run_msg+="The /boot dir shares the system disk.<br>${_cStr}";
+    if ((_boot_free_int > _lowRootDiskInt)); then
+      _eff_size_int="$((_kernelUnitSizeInt * _multiInt))";
+    else
+      _eff_size_int="$((_boot_free_int / _divisorInt))";
+    fi
+    # Calculate effective free disk (can be negative).
+    _eff_free_int="$((_eff_size_int
+      - _inst_kvers_count * _kernelUnitSizeInt ))";
+  fi
+
+  # 3. Determine max number of kernels that can fit in the full effective size,
+  #    also how many more kernels can fit into the effective avail space.
+  _kernel_max_count="$(( _eff_size_int / _kernelUnitSizeInt))";
+  _kernel_free_count="$((_eff_free_int / _kernelUnitSizeInt))";
+
+  # 4. Determine the low-space trigger and target kernels to keep.
+  if ((_kernel_max_count <= 3 )); then
+    _overfull_threshold_count=0;
+    _kernel_keep_count=2;
+  else
+    if ((_kernel_max_count <= 5)); then
+      _overfull_threshold_count=1;
+      _kernel_keep_count=3;
+    else
+      _overfull_threshold_count=2;
+      _kernel_keep_count="$((_kernel_max_count - 3))";
     fi
   fi
-
-  # Determine installed kernel version
-  _inst_kvers_list_str="$(_echoInstKversListStrFn)"
-  _inst_kvers_list_count="$(echo -e "${_inst_kvers_list_str}" | wc -l)"
-
-  _do_check='n'
-  if [ "${_do_force}" = 'y' ]; then
-    _run_msg_str='Check forced by flag.';
-    _do_check='y';
-  elif [ "${_is_boot_low}" = 'y' ]; then
-    _run_msg_str='Check forced: limited space.';
-    _do_check='y';
-  elif [ "${_inst_kvers_list_count}" -ge "${_kernel_max_count}" ]; then
-    _run_msg_str="Check forced: &gt; ${_kernel_max_count} kernels found."
-    _do_check='y'
+  # Failsafe to ensure 2 kernels remain
+  if (( "${_kernel_keep_count}" < 2)); then
+    _cm2ErrStrFn "Keep count |${_kernel_keep_count}| < 2";
+    _cm2ErrStrFn 'Please investigate. This should not occur.';
+    _kernel_keep_count=2;
   fi
-  _run_msg_str+="<br>
-The /boot directory has ${_boot_avail_int}M available.<br>
-${_inst_kvers_list_count} kernel images are installed.";
 
-  # Return if everything appears ok
+  # 5. Determine if purge event should be triggerred.
+  _do_check='n';
+  _is_boot_low='n';
+  _check_msg='';
+  if [ "${_do_force}" = 'y' ]; then
+    _check_msg+="Check forced: Force flag used.";
+    _do_check='y';
+  fi
+
+  # _kernel_max_count is present in _kernel_keep_count
+  if ((_kernel_free_count <= _overfull_threshold_count)); then
+    _is_boot_low='y';
+    _do_check='y';
+    # Create new or append as needed
+    if [ -z "${_check_msg}" ]; then
+      _check_msg="Check forced: "; else _check_msg+="<br>${_cStr}";
+    fi
+    if [ "${_is_boot_partition}" = 'y' ]; then
+      _check_msg+='/boot space is low ';
+      _check_msg+="(${_boot_free_int} of ${_boot_size_int} MB).";
+    elif ((_boot_free_int > _lowRootDiskInt)); then
+      _check_msg+="Kernel count (${_inst_kvers_count}) exceeds <br>${_cStr}";
+      _check_msg+="recommended max ($((_kernel_max_count - \
+        _overfull_threshold_count - 1))).";
+    else
+      _check_msg+="System disk is low (${_boot_free_int} MB).<br>${_cStr}";
+      _check_msg+="<b>MAKE ROOM TO KEEP MORE KERNELS!</b>";
+    fi
+
+  # This should never be encountered, but we keep it here as
+  # a failsafe.
+  elif ((_inst_kvers_count > _kernel_max_count)); then
+    _do_check='y';
+    # Create new or append as needed
+    if [ -z "${_run_msg}" ]; then
+      _check_msg="Check forced: "; else _check_msg+="<br>${_cStr}";
+    fi
+    _check_msg+="Kernel count (${_inst_kvers_count}) exceeds <br>${_cStr}";
+    _check_msg+="recommended max (${_kernel_max_count}).";
+  fi
+
+  # Append check results
+  [ -n "${_check_msg}" ] && _run_msg+="${_check_msg}";
+
+  # Get Running and bless kernel strings.
+  _kversFullRunStr="$(_echoKversFullRunStrFn)";
+  _kversFullPrefStr="$(_echoMetaKversStrFn "${_preferredMetaPkg}")";
+  # Deprecated
+  # _kversFullLlHweStr="$(_echoMetaKversStrFn linux-image-lowlatency-hwe-22.04)";
+  # _kversFullOemStr="$(_echoMetaKversStrFn linux-image-oem-22.04-kfocus)";
+
+  # Output debug
+  _kc2RtestDebugStr="$(cat << EOD;
+=== BEGIN Diagnostics ============
+Installed Kernel List : ${_inst_kvers_list_str}
+Target Max Kernels    : ${_kernel_max_count}
+Installed Kernel Count: ${_inst_kvers_count}
+Target Keep Kernels   : ${_kernel_keep_count}
+
+Running Kernel        : ${_kversFullRunStr}
+Blessed Kernel        : ${_kversFullPrefStr}
+Is /boot a partition? : ${_is_boot_partition}
+/boot free,size       : ${_boot_free_int},${_boot_size_int} MB
+Effective free,size   : ${_eff_free_int},${_eff_size_int} MB
+
+Do Force Flag?        : ${_do_force}
+Is /boot low?         : ${_is_boot_low}
+Do Check Triggered?   : ${_do_check}
+Check Message         : ${_run_msg}
+=== . END Diagnostics ============
+EOD
+  )";
+  if [ "${_doDebug}" = 'y' ]; then
+    _echoDebugFn "${_kc2RtestDebugStr}";
+  fi
+
+  # Return if no check is triggered
   if [ "${_do_check}" = 'n' ]; then
-    _run_msg_str="$(_cm2StripTagsFn "${_body_title}: ${_run_msg_str}")";
-    _cm2EchoFn "${_run_msg_str}";
+    _run_msg+="$(_cm2StripTagsFn "${_body_title}: ${_run_msg}")";
+    _cm2EchoFn "${_run_msg}";
     return;
   fi
   ## . End Heuristics }
 
   ## Begin Create Keeper Versions {
-  # linux-image-oem-20.04d-kfocus tracks
-  # the 5.14.x oem kernel with security updates
-  #
-  # TODO: Revise logic to pull from list from config file popluated by
+  # TODO: Revise logic to pull from list from config file populated by
   # a 'this is what I want to keep' GUI.
-  #  Logic: List top-level metapackages like linux-generic-oem-20.04:
+  #  Logic: List top-level metapackages like linux-generic-hwe-22.04:
   #    * If not found, do not reserve any associate kernel packages
-  #    * In installed, find related image package and use as below
-  #    We should keep 2 version of any meta-level like generic-oem-20.04
+  #    * If installed, find related image package and use as below
+  #    WE SHOULD KEEP 2 VERSION OF ANY META-LEVEL LIKE generic-hwe-22.04
   #
   _kversExtraKeepStr='';
-  _kversRunStr="$(_echoKversRunStrFn)";
-  _kversHweStr="$(_echoMetaKversStrFn linux-image-generic-hwe-20.04)";
-  _kversLlHweStr="$(_echoMetaKversStrFn linux-image-lowlatency-hwe-20.04)";
-  _kversOemStr="$(_echoMetaKversStrFn linux-image-oem-20.04d-kfocus)";
-
-  # Hack to remove packages if top-level meta is not installed
-  # (see note above for long-term plan)
-  if ! grep -qE '^linux-generic-hwe-20.04$' <<<"${_aptListStr}"; then
-    _kversHweStr='XXX_NOT_FOUND_XXX';
-  fi
-  if ! grep -qe '^linux-lowlatency-hwe-20.04$' <<<"${_aptListStr}"; then
-    _kversLlHweStr='XXX_NOT_FOUND_XXX';
-  fi
 
   # Report bad running kernel string
-  if [ -z "${_kversRunStr}" ]; then
-    _run_msg_str="${_body_title}: Internal error:<br>
+  if [ -z "${_kversFullRunStr}" ]; then
+    _run_msg="${_body_title}: Internal error:<br>
 Unexpected empty running-kernel string (uname -r).<br>
 Please see your system administrator to fix.";
-    _cm2PromptUserFn "${_run_msg_str}" "${_windowTitle}" 'p';
+    _cm2PromptUserFn "${_run_msg}" "${_win_title}" 'p';
     return 1;
   fi
 
   # Get preliminary package list and count of kernels
   _keep_pkg_list_str="$(_echoKeepPkgListStrFn | sort -u)";
-  _keep_kvers_list_count="$(echo -e "${_keep_pkg_list_str}" \
+  _keep_kvers_list_count="$(
+    echo -e "${_keep_pkg_list_str}" \
     | grep -E '^linux-image-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+(\W|$)' \
     | sort -u | wc -l
   )";
 
-  # Calculate how many more kernels to reserve
-  # TODO: This is a hueristic where we have a higher min if
-  #   we have lots of space. In the future, we would instead
-  #   use the keep-2-versions concept presented above.
-  #
-  if (("${_kernel_max_count}" >= 5)); then
-    _kernel_min_count=3
-  fi
-  _printDebug01Fn 'Target min kernels' "${_kernel_min_count}"
-  _reserve_kvers_count=$((\
-    "${_kernel_min_count}" - "${_keep_kvers_list_count}"))
+  _echoDebugFn "Target min kernels >>>${_kernel_keep_count}<<<";
+  _reserve_kvers_count=$(("${_kernel_keep_count}" - "${_keep_kvers_list_count}"));
 
   # Create regex string to match more kernel versions to keep ignoring
   # the other exclusions we've already created. This is used to ensure
   # we always have the minimum number of kernels (usually >= 2) installed.
   #
-  if [ "${_reserve_kvers_count}" -gt '0' ]; then
-    _kvers_full_run_str="$(_echoKversFrunStrFn)"
+  if ((_reserve_kvers_count > 0)); then
+    # Deprecated: grep -vE "^${_kversFullOemStr}$"
+    # Deprecated: grep -vE "^${_kversFullLlHweStr}$"
     _kversExtraKeepStr="$(
-      echo -e "${_inst_kvers_list_str}" |
-        grep -vE "^${_kvers_full_run_str}$" |
-        grep -vE "^${_kversOemStr}-oem$" |
-        grep -vE "^${_kversHweStr}-generic$" |
-        grep -vE "^${_kversLlHweStr}-lowlatency$" |
-        sort -uV |
-        tail -n "${_reserve_kvers_count}" |
-        sed -E 's/-[[:alpha:]]+$//' |
-        tr '\n' '|' |
-        sed 's/|$//'
-    )"
+      echo -e "${_inst_kvers_list_str}"     \
+        | grep -vE "^${_kversFullRunStr}$"  \
+        | grep -vE "^${_kversFullPrefStr}$" \
+        | sort -uVr
+    )";
+
+    _kversExtraKeepStr="$(
+      _echoPrioritizedKversExtraKeepStr "${_kversExtraKeepStr}" \
+        | head -n "${_reserve_kvers_count}" \
+        | tr '\n' '|' \
+        | sed 's/|$//'
+    )";
   fi
   ## . End Create Keeper Versions }
 
@@ -450,21 +648,46 @@ Please see your system administrator to fix.";
   else
     _kversExtraKeepStr='XXX_NOT_FOUND_XXX';
   fi
-
   _purge_pkg_list_str="$(_echoPurgePkgListStrFn | sort -u)";
   ## . End Create strings for purge, keep, and dialogs }
 
+  ## BEGIN Filter purge list {
+  # shellcheck disable=SC2001
+  readarray -t _purge_pkg_list < <(
+    sed 's/<br>\s*$//' <<< "${_purge_pkg_list_str}"
+  );
+
+  _filtered_purge_list=();
+  _filtered_purge_list_str='';
+  for _purge_pkg in "${_purge_pkg_list[@]}"; do
+    # Skip empty lines
+    [[ "${_purge_pkg}" =~ ^[[:space:]]*$ ]] && continue;
+    if grep -qE "^${_purge_pkg}<br>$" <<< "${_keep_pkg_list_str}"; then
+      _cm2WarnStrFn "Purge package |${_purge_pkg}| is also in keep list";
+    else
+      if [ "${#_filtered_purge_list[@]}" -gt 0 ]; then
+        _filtered_purge_list_str+="${_cStr}";
+      fi
+      _filtered_purge_list+=("${_purge_pkg}");
+      _filtered_purge_list_str+="${_purge_pkg}<br>";
+    fi
+  done
+  _filtered_purge_list_str="${_filtered_purge_list_str/${_cStr}$//}";
+  ## . END Filter purge list }
+
   ## Begin Show dialog if there are no packages to purge {
-  if [ -z "${_purge_pkg_list_str}" ]; then
+  if [ -z "${_filtered_purge_list_str}" ]; then
     if [ "${_is_boot_low}" = 'y' ]; then
-      _run_msg_str+="$(
+      _run_msg+="$(
         cat <<_EOW01
 
 
-<p>Disk space on /boot is critically low,<br>
-but only supported kernels are installed.<br>
-If you have a kernel you are not using,<br>
-purge it to increase available space.</p>
+<p>Disk space on <code>/boot</code> is low, but only protected <br>
+kernel are installed. If there is a kernel you <br>
+are NOT USING, we encourage you to purge it so <br>
+the <code>/boot</code> disk does not overfill and prevent the<br>
+system from booting.</p>
+
 _EOW01
       )";
     fi
@@ -474,31 +697,32 @@ ${_cm2HtmBeginStr}${_table_str}
 ${_brow_str}<h3 style="color:#f7941d">${_body_title}</h3>${_erow_str}
 ${_brow_str}Doc: <a style="color:#1d99f3" href="https://kfocus.org/wf/tools#kclean">https://kfocus.org/wf/tools#kclean</a>${_erow_str}
 
-${_brow_str}${_run_msg_str}${_erow_str}
+${_brow_str}${_run_msg}${_erow_str}
 
 ${_brow_str}<h4 style="color:#f7941d">Packages to Keep</h4>${_erow_str}
 ${_brow_str}<code>${_keep_pkg_list_str}</code>${_erow_str}
 
-${_brow_str}<h4 style="color:#f7941d">Packages to Remove</h4>${_erow_str}
+${_brow_str}<h4 style="color:#f7941d">Packages to Purge</h4>${_erow_str}
 ${_brow_str}There are no unused kernels to purge.${_erow_str}
 
 ${_brow_str}<b>Click OK to finish.</b>${_erow_str}</table>
 ${_cm2HtmEndStr}
 _EOW02
     )";
-    _cm2PromptUserFn "${_purge_msg}" "${_windowTitle}" 'p'
-    return 0
+    _cm2PromptUserFn "${_purge_msg}" "${_win_title}" 'p';
+    return;
   fi
   ## . End Show dialog if there are no packages to purge }
 
   ## Begin Show dialog with packages to purge {
+  _kernel_purge_count="$(( _inst_kvers_count - _kernel_keep_count ))";
   _purge_msg="$(
     cat <<_EOW04
 ${_cm2HtmBeginStr}${_table_str}
-${_brow_str}<h3 style="color:#f7941d">FocusRX: Purge Unused Kernels?</h3>${_erow_str}
+${_brow_str}<h3 style="color:#f7941d">FocusRX: Purge Older Kernels?</h3>${_erow_str}
 ${_brow_str}Doc: <a style="color:#1d99f3" href="https://kfocus.org/wf/tools#kclean">https://kfocus.org/wf/tools#kclean</a>${_erow_str}
 
-${_brow_str}${_run_msg_str}${_erow_str}
+${_brow_str}${_run_msg}${_erow_str}
 
 ${_brow_str}Removing unused kernels prevents the system<br>
 from running out of disk space in <code>/boot</code>.${_erow_str}
@@ -506,39 +730,36 @@ from running out of disk space in <code>/boot</code>.${_erow_str}
 ${_brow_str}<h4 style="color:#f7941d">Packages to Keep</h4>${_erow_str}
 ${_brow_str}<code>${_keep_pkg_list_str}</code>${_erow_str}
 
-${_brow_str}<h4 style="color:#f7941d">Packages to Remove</h4>${_erow_str}
-${_brow_str}<code>${_purge_pkg_list_str}</code>${_erow_str}
+${_brow_str}<h4 style="color:#f7941d">Packages to Purge</h4>${_erow_str}
+${_brow_str}<code>${_filtered_purge_list_str}</code>${_erow_str}
 
 ${_brow_str}<b>Make sure your files are backed-up.</b>${_erow_str}
 
-${_brow_str}Do you wish to continue?${_erow_str}</table>
+${_brow_str}Do you wish to purge ${_kernel_purge_count} of ${_inst_kvers_count} kernels now?${_erow_str}</table>
+
 ${_cm2HtmEndStr}
 _EOW04
   )";
 
-  _do_purge="$(_cm2PromptUserFn "${_purge_msg}" "${_windowTitle}" 'w')"
-  if [ "${_do_purge}" = 'n' ]; then
+  _reply="$(_cm2PromptUserFn "${_purge_msg}" "${_win_title}" 'w')";
+  if [ "${_reply}" = 'n' ]; then
     _prompt_str='Exit without purge on user request';
-    _cm2PromptUserFn "${_prompt_str}" "${_windowTitle}" 'p';
+    _cm2PromptUserFn "${_prompt_str}" "${_win_title}" 'p';
     return;
   fi
   ## . End Show dialog with packages to purge }
 
   ## Begin Purge packages {
-  _end_msg_str='';
-  IFS=$'\n' read -r -d '' -a _purge_pkg_list < <(
-    echo "${_purge_pkg_list_str}" | cut -f1 -d '<'
-  );
-  _cmd_list=('apt-get' 'purge' '-y' "${_purge_pkg_list[@]}");
-
+  _end_msg='';
+  _cmd_list=('apt-get' 'purge' '-y' "${_filtered_purge_list[@]}");
   if _exit_str="$(
     _cm2RunLongCmdFn 'Purging packages' "${_cmd_list[@]}"
   )"; then
-    _end_msg_str='Purge was successful.';
+    _end_msg='Purge was successful.';
   else
-    _end_msg_str='There was an issue purging packages';
+    _end_msg='There was an issue purging packages';
     if [ -n "${_exit_str}" ]; then
-      _end_msg_str+=":<br>${_exit_str}";
+      _end_msg+=":<br>${_exit_str}";
     fi
   fi
   ## . End Purge packages }
@@ -548,24 +769,42 @@ _EOW04
     cat <<_EOW05
 ${_cm2HtmBeginStr}${_table_str}
 ${_brow_str}<h3 style="color:#f7941d">${_body_title} FINISHED</h3>${_erow_str}
-${_brow_str}${_end_msg_str}${_erow_str}
+${_brow_str}${_end_msg}${_erow_str}
 </table>
 ${_cm2HtmEndStr}
 _EOW05
   )";
-  _cm2PromptUserFn "${_purge_msg}" "${_windowTitle}" 'p'
+  _cm2PromptUserFn "${_purge_msg}" "${_win_title}" 'p';
   ## . End Report purge results }
 }
 ## . END _mainFn }
 
-## BEGIN Declare global vars {
+## BEGIN Declare and assign global vars {
+declare _binName _binDir _baseDir _baseName _cStr \
+  _doDebug _escExe _aptListStr _kversExtraKeepStr _preferredMetaPkg \
+  _kversFullPrefStr _kversFullRunStr _kc2RtestDebugStr \
+  _divisorInt _kernelUnitSizeInt _lowDiskSizeInt _multiInt \
+
 _aptListStr='';
+_cStr=$'\n';
+_doDebug='y';
 _kversExtraKeepStr='';
-_kversHweStr='';
-_kversLlHweStr='';
-_kversOemStr='';
-_kversRunStr='';
-## . END Declare global vars }
+_kversFullPrefStr='';
+_kversFullRunStr='';
+# TODO: Revive as needed: _kversFullLlHweStr=''; _kversFullOemStr='';
+
+# Divisor for portion of root disk to consider reserved for kernels
+#   when space is low and /boot is on root disk.
+_divisorInt=8;
+# Nominal size in MB for a kernel on /boot partition
+_kernelUnitSizeInt=230;
+# Size in MB of what we consider a low root disk (10GB)
+_lowRootDiskInt=10240;
+# Max kernel count for unconstrained, large disks
+_multiInt=12;
+# Package where bless kernel comes from.
+_preferredMetaPkg='linux-image-generic-hwe-22.04-kfocus';
+## . END Declare and assign global vars }
 
 ## BEGIN Run main if script is not sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
@@ -577,7 +816,6 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   # Get escalation exe
   _escExe="$(_cm2GetEscExeFn)" || exit;
-
   _mainFn "$@";
 fi
 ## . END Run main if script is not sourced }

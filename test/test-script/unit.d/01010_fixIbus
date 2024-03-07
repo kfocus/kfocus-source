@@ -1,0 +1,398 @@
+#!/bin/bash
+#All of our nested mock functions are showing up as unreachable, silence it
+#shellcheck disable=SC2317
+#
+# Test for default kfocus-fan on mocked hardware
+#
+# set -u is set in _runUnitTests (the test harness)
+#
+
+## BEGIN _overwriteWithMocksFn {
+# Purpose: Source and overwrite function with mocks
+# The global declares are on purpose for modifying global vars.
+# bashsupport disable=BP2001
+_overwriteWithMocksFn () {
+  declare _exe_file;
+  # shellcheck disable=SC2154
+  _exe_file="${_t00TopDir}";
+  _exe_file+='/package-main/usr/lib/kfocus/bin/kfocus-fix-ibus';
+  # shellcheck disable=SC1090
+  source "${_exe_file}" || exit 1;
+  # Override executables with functions
+  declare -g _dconfExe="_dconfExe";
+  declare -g _qdbusExe="_qdbusExe";
+}
+## . END _overwriteWithMocksFn }
+
+## BEGIN _unsetMocksFn {
+# Purpose : Unset mocked functions and other globals to prevent
+#   pollution of namespaces. Mocked functions from commons.2.source are not
+#   reset here; instead they are re-source after every test in runUnitTests.
+#   See more notes in 00900.
+_unsetMocksFn () { unset _qdbusExe; }
+## . END _unsetMocksFn }
+_mockWithIbusStr="$(cat << 'EOT';
+:1.0
+ org.freedesktop.systemd1
+:1.15
+ org.a11y.Bus
+:1.16
+ org.kde.kappmenu
+ org.kde.kcookiejar5
+ org.kde.kded5
+:1.8
+:1.9
+org.freedesktop.IBus
+org.freedesktop.DBus
+EOT
+)";
+_mockNoIbusStr="$(cat << 'EOT';
+:1.0
+ org.freedesktop.systemd1
+:1.15
+ org.a11y.Bus
+:1.16
+ org.kde.kappmenu
+ org.kde.kcookiejar5
+ org.kde.kded5
+:1.8
+:1.9
+org.freedesktop.DBus
+EOT
+)";
+_mockQdbusRepairScript="$(cat << 'EOT';
+// Copyright: 2024 MindShare Inc., 2024 KDE Contributors
+// License: GPLv3
+// Copied and adapted for the Kubuntu Focus from the example shown at
+// https://develop.kde.org/docs/plasma/scripting/
+
+panelIds.forEach((panel) => {
+    panel = panelById(panel);
+    if (!panel) {
+        return;
+    }
+    panel.widgetIds.forEach((myWidget) => {
+        myWidget = panel.widgetById(myWidget);
+        if (myWidget.type === "org.kde.plasma.systemtray") {
+            systrayId = myWidget.readConfig("SystrayContainmentId");
+            if (systrayId) {
+                const systray = desktopById(systrayId);
+                systray.currentConfigGroup = ["General"];
+                const hiddenItems = systray.readConfig("hiddenItems")
+                  .split(",");
+                if (hiddenItems.indexOf("ibus-ui-gtk3") === -1) {
+                    hiddenItems.push("ibus-ui-gtk3");
+                    systray.writeConfig("hiddenItems", hiddenItems);
+                    systray.reloadConfig();
+                }
+            }
+        }
+    });
+});
+EOT
+)";
+_mockQdbusCheckScript="$(cat <<'EOT';
+// Copyright: 2024 MindShare Inc., 2024 KDE Contributors
+// License: GPLv3
+// Copied and adapted for the Kubuntu Focus from the example shown at
+// https://develop.kde.org/docs/plasma/scripting/
+
+isIbusIconFound=false;
+
+panelIds.forEach((panel) => {
+    panel = panelById(panel);
+    if (!panel) {
+        return;
+    }
+    panel.widgetIds.forEach((myWidget) => {
+        myWidget = panel.widgetById(myWidget);
+        if (myWidget.type === "org.kde.plasma.systemtray") {
+            systrayId = myWidget.readConfig("SystrayContainmentId");
+            if (systrayId) {
+                const systray = desktopById(systrayId);
+                systray.currentConfigGroup = ["General"];
+                const hiddenItems = systray.readConfig("hiddenItems")
+                  .split(",");
+                if (hiddenItems.indexOf("ibus-ui-gtk3") === -1) {
+                    isIbusIconFound=true;
+                }
+            }
+        }
+    });
+});
+
+if (isIbusIconFound) {
+    print('true');
+} else {
+    print ('false');
+}
+EOT
+)";
+
+# These are dynamically changed by the Dconf mocks.
+_mockIbusSystray='';
+_mockIbusSystemKeyboard='';
+
+_mockPackageNoIbusGoodConfFn () {
+  _chkInstalledPkgFn () { return 1; }
+  _mockIbusSystray='false';
+  _mockIbusSystemKeyboard='true';
+}
+_mockPackageNoIbusBadConfFn () {
+  _chkInstalledPkgFn () { return 1; }
+  _mockIbusSystray='true';
+  _mockIbusSystemKeyboard='false';
+}
+_mockPackageWithIbusGoodConfFn () {
+  _chkInstalledPkgFn () { return 0; }
+  _mockIbusSystray='false';
+  _mockIbusSystemKeyboard='true';
+}
+_mockPackageWithIbusBadConfFn () {
+  _chkInstalledPkgFn () { return 0; }
+  _mockIbusSystray='true';
+  _mockIbusSystemKeyboard='false';
+}
+_mockDconfActiveFn () {
+  _dconfExe () {
+    if [ "${1:-}" = 'read' ]; then
+      case "${2:-}" in
+        /desktop/ibus/general/use-system-keyboard-layout)
+          echo "${_mockIbusSystemKeyboard}";
+          ;;
+        *)
+          return 1;
+          ;;
+      esac
+    elif [ "${1:-}" = 'write' ]; then
+      case "${2:-}" in
+        /desktop/ibus/general/use-system-keyboard-layout)
+          _mockIbusSystemKeyboard="${3:-}";
+          ;;
+        *)
+          return 1;
+          ;;
+      esac
+    else
+      return 1;
+    fi
+  }
+}
+_mockQdbusActiveFn () {
+  _qdbusExe () {
+    if [ "$1" = 'org.kde.plasmashell' ] && \
+      [ "$2" = '/PlasmaShell' ] && \
+      [ "$3" = 'org.kde.PlasmaShell.evaluateScript' ]; then
+      if [ "$4" = "${_mockQdbusCheckScript}" ]; then
+        echo "${_mockIbusSystray}";
+      elif [ "$4" = "${_mockQdbusRepairScript}" ]; then
+        _mockIbusSystray='false';
+      else
+        return 1;
+      fi
+    fi
+  }
+}
+_mockNoIbusFn () {
+  _mockIbusSystray='';
+  _mockIbusSystemKeyboard='';
+  _mockDconfActiveFn;
+  _mockQdbusActiveFn;
+}
+_mockNoIbusFailFn () {
+  _mockIbusSystray='';
+  _mockIbusSystemKeyboard='';
+  _dconfExe () {
+    echo '';
+    return 1;
+  }
+  _qdbusExe () {
+    echo '';
+    return 1;
+  }
+}
+_mockWithIbusBadConfFn () {
+  _mockIbusSystray='true';
+  _mockIbusSystemKeyboard='false';
+  _mockDconfActiveFn;
+  _mockQdbusActiveFn;
+}
+_mockWithIbusGoodConfFn () {
+  _mockIbusSystray='false';
+  _mockIbusSystemKeyboard='true';
+  _mockDconfActiveFn;
+  _mockQdbusActiveFn;
+}
+_mockWithIbusBadConfReadonlyFn () {
+  _mockIbusSystray='true';
+  _mockIbusSystemKeyboard='false';
+  _dconfExe () {
+    if [ "${1:-}" = 'read' ]; then
+      case "${2:-}" in
+        /desktop/ibus/general/use-system-keyboard-layout)
+          echo "${_mockIbusSystemKeyboard}";
+          ;;
+        *)
+          return 1;
+          ;;
+      esac
+    else
+      # this will return 1 even if a valid write command is passed
+      return 1;
+    fi
+  }
+  _qdbusExe () {
+    if [ "$1" = 'org.kde.plasmashell' ] && \
+      [ "$2" = '/PlasmaShell' ] && \
+      [ "$3" = 'org.kde.PlasmaShell.evaluateScript' ]; then
+      if [ "$4" = "${_mockQdbusCheckScript}" ]; then
+        echo "${_mockIbusSystray}";
+      else
+        # ditto
+        return 1;
+      fi
+    fi
+  }
+}
+
+## BEGIN _repairIbusConfigFn {
+# Summary   : _repairIbusConfigFn
+# Purpose   : Reconfigures IBus to be compatible with Plasma.
+# Example   : _repairIbusConfigFn
+# Arguments : none
+# Globals   : none
+# Outputs   : none
+# Returns   : 0 on success, 1 if a DConf key cannot be written to
+## . END _repairIbusConfigFn }
+
+## BEGIN _checkIbusConfigFn {
+# Summary   : _checkIbusConfigFn
+# Purpose   : Checks IBus config for compatibility with Plasma.
+# Example   : _checkIbusConfigFn
+# Arguments : none
+# Globals   : none
+# Outputs   : none
+# Returns   : 0 if IBus configuration is Plasma-compatible or IBus is not
+#             running, 1 otherwise
+## . END _checkIbusConfigFn }
+
+## BEGIN _runTestFn {
+# This MUST be called '_runTestFn' for use by the _runUnitTests
+_runTestFn () {
+  declare _fail_count _assert_table _assert_count _assert_idx _assert_line \
+    _file _expect_file _msg _check_str _count_str _cr _testfn_str _arg_str \
+    _set_exe _run_file _bit_list ;
+
+  # Use function from _runUnitTests: clear out run dir and check expect dir
+  if ! _t00ClearRunDirFn;    then return 1; fi
+  if ! _t00CheckExpectDirFn; then return 1; fi
+
+  # WE DO NOT NEED TO IMPORT COMMON FOR sourced scripts, as the common lib
+  #   is already imported by _runUnitTests.
+  # _importCommonFn;
+
+  # Source and overwrite functions with mocks
+  _overwriteWithMocksFn;
+
+  # Shift off header from _cm2ModelTable to create _assert_table.
+  # This will grow with model support.
+  _assert_table=(
+    'checkIbusConfigFn||PackageNoIbusGoodConf'
+    'checkIbusConfigFn||PackageNoIbusBadConf'
+    'checkIbusConfigFn||PackageWithIbusGoodConf'
+    'checkIbusConfigFn||PackageWithIbusBadConf'
+
+    'checkIbusConfigFn||NoIbus'
+    'checkIbusConfigFn||NoIbusFail'
+
+    'repairIbusConfigFn||WithIbusBadConf'
+    'repairIbusConfigFn||WithIbusGoodConf'
+    'repairIbusConfigFn||WithIbusBadConfReadonly'
+
+    'mainFn|check|WithIbusGoodConf'
+    'mainFn|check|WithIbusBadConf'
+    'mainFn|repair|WithIbusBadConf'
+    'mainFn|repair|WithIbusBadConfReadonly'
+    'mainFn||WithIbusBadConf'
+    'mainFn||WithIbusGoodConf'
+    'mainFn||WithIbusBadConfReadonly'
+  );
+
+  # Reset 
+
+  ## Begin Iterate through assertions {
+  _cr=$'\n';
+  _fail_count=0;
+  _assert_count="${#_assert_table[@]}";
+  _assert_idx=1;
+
+  _mockWithIbusGoodConfFn;
+  for _assert_line in "${_assert_table[@]}"; do
+    IFS='|' read -r -d '' -a _bit_list < <(echo -n "${_assert_line}");
+    _testfn_str="${_bit_list[0]}";
+    _arg_str="${_bit_list[1]}";
+    # Mock qdbus using function
+    _set_exe="_mock${_bit_list[2]}Fn";
+    "${_set_exe}";
+
+    # Calculate expect and run files
+    # bashsupport disable=BP2001
+    _file="$( printf '%s_%s_%s.txt' "${_bit_list[0]}" "${_bit_list[1]}" "${_bit_list[2]}" )";
+
+    # shellcheck disable=SC2154
+    _expect_file="${_t00ExpectDir}/${_file}";
+    # shellcheck disable=SC2154
+    _run_file="${_t00RunDir}/${_file}";
+
+    _msg="$(cat << EOT
+Check kfocus-fix-ibus
+Function Call: _${_testfn_str} '${_arg_str}';
+Panel Indicator State: ${_mockIbusSystray}
+Keyboard Follows System: ${_mockIbusSystemKeyboard}
+EOT
+    )";
+
+    echo "${_msg}" > "${_run_file}";
+    echo -e "\n_${_testfn_str} ${_arg_str} OUTPUT:" >> "${_run_file}";
+    "_${_testfn_str}" "${_arg_str}" >> "${_run_file}" 2>&1
+
+    _msg="$(cat << EOT
+Check kfocus-fix-ibus changes
+Panel Indicator State: ${_mockIbusSystray}
+Keyboard Follows System: ${_mockIbusSystemKeyboard}
+Return Value: $?
+EOT
+    )";
+    echo '' >> "${_run_file}";
+    echo "${_msg}" >> "${_run_file}";
+
+    # shellcheck disable=SC2154
+    _count_str="$(_t00MakeCountStrFn "${_assert_idx}" "${_assert_count}")";
+
+    ## Begin Check diffs
+    if [ ! -f "${_expect_file}" ]; then touch "${_expect_file}"; fi
+    _check_str="$(diff -r --brief "${_expect_file}" "${_run_file}" )";
+    if [ -z "${_check_str}" ]; then
+      _cm2EchoFn "  ok  : ${_count_str} ${_msg}";
+    else
+      _cm2EchoFn "  fail: ${_count_str} ${_msg}";
+      _cm2EchoFn '    Please compare expected to run file';
+      meld "${_expect_file}" "${_run_file}";
+      (( _fail_count++ ));
+    fi
+    ## . End Check diffs }
+      (( _assert_idx++ ));
+  done
+  ## End Iterate through assertions }
+
+  if [ "${_fail_count}" -gt 0 ]; then
+    _cm2EchoFn "FAIL: ${_fail_count} of ${_assert_count} asserts failed.";
+  else
+    _cm2EchoFn 'OK  : Results match expected';
+  fi
+
+  _unsetMocksFn;
+
+  return "${_fail_count}";
+}
+## . END _runTestFn }
