@@ -128,6 +128,13 @@ _echoPkgStrFn () {
 ## . END _echoPkgStrFn }
 
 ## BEGIN _echoInstKversPkgStrFn {
+# Purpose  : Print to STDOUT all packages installed that are match the
+#   provided kernel version string. For example, if version
+#   '5.13.0-1010-oem' is provided, we might find these packages installed:
+#   'linux-image-5.13.0-1010-oem', 'linux-headers-5.13.0-1010-oem', etc.
+# Example  : _echoInstKversPkgStrFn '5.13.0-1010-oem';
+# Arguments: _vers_str
+#
 _echoInstKversPkgStrFn () {
   declare _vers_str _short_str _kernel_flavor _kernel_alt_flavor _prefix;
   _vers_str="${*}";
@@ -412,7 +419,6 @@ _mainFn() {
     _reply  _reserve_kvers_count _run_msg _table_str _win_title;
 
   ## Begin Initialize {
-  # IMPORTANT: Do not change this variable name, it is expected in rtests.
   _aptListStr="$(_echoAptListStrFn)";
   _body_title='FocusRx: KERNEL CLEANER';
   _win_title='FocusRx: Kernel Cleaner';
@@ -504,7 +510,7 @@ _mainFn() {
   if [ "${_do_force}" = 'y' ]; then
     _check_msg+="Check forced: Force flag used.";
     _do_check='y';
-  fi;
+  fi
 
   # _kernel_max_count is present in _kernel_keep_count
   if ((_kernel_free_count <= _overfull_threshold_count)); then

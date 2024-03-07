@@ -230,6 +230,11 @@ _resetEffectsFn () {
     "${_kwriteconfig5Exe}" "${_opt_list[@]}";
   done
 
+  # TODO: This fixup routine is probably more complicated than it
+  # needs to be. Intead, replace special characters in strings
+  # like so: Alt+Space\\tAlt+F2\\t => Alt+Space_XtabX_Alt+F2_XtabX_ ...
+  # and then replace them above.
+  #
   for _line in "${_fixup_list[@]}"; do
     IFS='|' read -r -a _bit_list <<<"${_line}";
     _key="${_bit_list[0]:-}";
