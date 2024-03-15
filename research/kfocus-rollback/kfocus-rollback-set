@@ -150,7 +150,7 @@ _mainFn () {
       _restoreSnapshotStage2Fn;
       ;;
     *)
-      # This should never happen
+      _cm2WarnStrFn 'Invalid mode specified.';
       exit 1;
       ;;
   esac

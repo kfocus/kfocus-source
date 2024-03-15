@@ -15,6 +15,9 @@
 #
 set -u;
 
+# TODO: This needs to be CLI-accessible. Create a routine for emulating a
+#   dropdown list in text.
+
 ## BEGIN _importCommonFn {
 # Summary   : _importCommonFn
 # Purpose   : Load common routines, prefer relative dir
@@ -75,7 +78,8 @@ _chooseSnapshotFn () {
     _cm2WarnStrFn 'No action provided to _chooseSnapshotFn!';
   fi
 
-  cd /btrfs_root/@kfocus-rollback-snapshots || exit 1;
+  cd "${_snapshotDir}" || exit 1;
+  # TODO: BSP may complain about this.
   _snapshot_list=(*);
   _snapshot_disp_list=();
 
@@ -93,10 +97,11 @@ _chooseSnapshotFn () {
     _snapshot_idx++ )); do
     if [ "${_snapshot_disp_list[_snapshot_idx]}" = "${_answer}" ]; then
       echo "${_snapshot_list[_snapshot_idx]}";
+      return;
     fi
   done
 
-  # This should be unreachable
+  _cm2WarnStrFn 'Invalid snapshot selected.';
   exit 1;
 }
 ## . END _chooseSnapshotFn }
@@ -108,25 +113,25 @@ _mainFn () {
 
   _answer="$("${_kdiagExe}" --combobox 'What would you like to do?' \
     'Create a snapshot' 'Restore a snapshot' 'Delete a snapshot' \
-    'Finish restoration operation' )" || exit 1;
+    'Finish restoration operation' )" || exit;
 
   case "${_answer}" in
     'Create a snapshot')
       _createSnapshotFn;
       ;;
     'Restore a snapshot')
-      _answer="$(_chooseSnapshotFn 'restore')";
+      _answer="$(_chooseSnapshotFn 'restore')" || exit;
       _restoreSnapshotFn "${_answer}";
       ;;
     'Delete a snapshot')
-      _answer="$(_chooseSnapshotFn 'delete')";
+      _answer="$(_chooseSnapshotFn 'delete')" || exit;
       _deleteSnapshotFn "${_answer}";
       ;;
     'Finish restoration operation')
       _restoreSnapshotStage2Fn;
       ;;
     *)
-      # This should be unreachable
+      _cm2WarnStrFn 'Invalid snapshot operation.';
       exit 1;
       ;;
   esac
@@ -134,7 +139,10 @@ _mainFn () {
 ## . END _mainFn }
 
 ## BEGIN Declare and assign global vars {
-declare _binName _binDir _baseName _baseDir _kdiagExe _escExe _assignList;
+declare _binName _binDir _baseName _baseDir _kdiagExe _escExe _assignList \
+  _snapshotDir;
+
+_snapshotDir='/btrfs_root/@kfocus-rollback-snapshots';
 ## . END Declare and assign global vars }
 
 ## BEGIN Run mainFn when script is NOT sourced {
