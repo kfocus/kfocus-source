@@ -74,9 +74,7 @@ _restoreSnapshotStage2Fn () {
 ## BEGIN _chooseSnapshotFn {
 #
 _chooseSnapshotFn () {
-  declare _action_str _hide_old_snapshots _orig_snapshot_list \
-    _current_snapshot_timestamp _snapshot_disp_list _trimmed_snapshot_list \
-    _snapshot_idx _snapshot_timestamp;
+  declare _msg _action_str _snapshot_list _snapshot_disp_list _snapshot_idx;
       
   if [ -e '/btrfs_root/@kfocus-rollback-working' ] || \
     [ -e '/btrfs_boot/@kfocus-rollback-working-boot' ]; then
@@ -91,7 +89,6 @@ EOF
   fi
 
   _action_str="${1:-}";
-  _hide_old_snapshots="${2:-}";
 
   if [ -z "${_action_str}" ]; then
     _cm2WarnStrFn 'No action provided to _chooseSnapshotFn!';
@@ -99,27 +96,13 @@ EOF
 
   cd "${_snapshotDir}" || exit 1;
   # TODO: BSP may complain about this.
-  _orig_snapshot_list=(*);
-  _current_snapshot_timestamp="$(cat /var/lib/kfocus/kfocus_rollback_snapshot_id \
-    2>/dev/null)";
-  if [ -z "${_current_snapshot_timestamp}" ]; then
-    _current_snapshot_timestamp=0;
-  fi
+  _snapshot_list=(*);
   _snapshot_disp_list=();
-  _trimmed_snapshot_list=();
 
-  for (( _snapshot_idx=0; _snapshot_idx < ${#_orig_snapshot_list[@]}; \
+  for (( _snapshot_idx=0; _snapshot_idx < ${#_snapshot_list[@]}; \
     _snapshot_idx++ )); do
-    _snapshot_timestamp="$(tail -c+2 <<< \
-      "${_orig_snapshot_list[_snapshot_idx]}")";
-    if [ "${_snapshot_timestamp}" -gt "${_current_snapshot_timestamp}" ] && \
-      [ "${_hide_old_snapshots}" = 'y' ]; then
-      true;
-    else
-      _snapshot_disp_list[_snapshot_idx]="$(date -d \
-        "${_orig_snapshot_list[_snapshot_idx]}")";
-      _trimmed_snapshot_list[_snapshot_idx]="${_orig_snapshot_list[_snapshot_idx]}";
-    fi
+    _snapshot_disp_list[_snapshot_idx]="$(date -d \
+      "${_snapshot_list[_snapshot_idx]}")";
   done
 
   _answer="$("${_kdiagExe}" --combobox \
@@ -131,10 +114,10 @@ EOF
     exit 1;
   fi
 
-  for (( _snapshot_idx=0; _snapshot_idx < ${#_orig_snapshot_list[@]}; \
+  for (( _snapshot_idx=0; _snapshot_idx < ${#_snapshot_list[@]}; \
     _snapshot_idx++ )); do
     if [ "${_snapshot_disp_list[_snapshot_idx]}" = "${_answer}" ]; then
-      echo "${_trimmed_snapshot_list[_snapshot_idx]}";
+      echo "${_snapshot_list[_snapshot_idx]}";
       return;
     fi
   done
@@ -157,50 +140,48 @@ _mainFn () {
   _boot_space="$(LC_ALL=C btrfs fi usage -b /btrfs_boot \
     | awk '/Free \(estimated\)/{ print $3 }')";
 
-  if (( _root_space < _root_min_space )); then
-    _msg="$(cat <<EOF
+  if [ -d '/btrfs_root' ]; then
+    if (( _root_space < _root_min_space )); then
+      _msg="$(cat <<EOF
 Your root partition's space is critically low! You should clear some space
 on your root disk ASAP.
 EOF
-    )";
-    "${_kdiagExe}" --error "${_msg}";
-  fi
+      )";
+      "${_kdiagExe}" --error "${_msg}";
+    fi
 
-  if (( _boot_space < _boot_min_space )); then
-    _msg="$(cat <<EOF
+    if (( _boot_space < _boot_min_space )); then
+      _msg="$(cat <<EOF
 Your boot partition's space is critically low! You should clear some space
 by removing old snapshots and purging kernels ASAP.
 EOF
-    )";
-    "${_kdiagExe}" --error "${_msg}";
+      )";
+      "${_kdiagExe}" --error "${_msg}";
+    fi
   fi
 
   _answer="$("${_kdiagExe}" --combobox 'What would you like to do?' \
     'Prepare system for snapshotting' 'Create a snapshot' \
-    'Restore a snapshot' 'Restore a snapshot (roll forward enabled)' \
-    'Delete a snapshot' 'Finish restoration operation')" || exit;
+    'Restore a snapshot' 'Delete a snapshot' 'Finish restoration operation' \
+    )" || exit;
 
   case "${_answer}" in
     'Prepare system for snapshotting')
-      _prepareSystemFn;
+      _prepareSystemFn || exit;
       ;;
     'Create a snapshot')
-      _createSnapshotFn;
+      _createSnapshotFn || exit;
       ;;
     'Restore a snapshot')
-      _answer="$(_chooseSnapshotFn 'restore' 'y')" || exit;
-      _restoreSnapshotFn "${_answer}";
-      ;;
-    'Restore a snapshot (roll forward enabled)')
-      _answer="$(_chooseSnapshotFn 'restore' 'n')" || exit;
-      _restoreSnapshotFn "${_answer}";
+      _answer="$(_chooseSnapshotFn 'restore')" || exit;
+      _restoreSnapshotFn "${_answer}" || exit;
       ;;
     'Delete a snapshot')
-      _answer="$(_chooseSnapshotFn 'delete' 'n')" || exit;
-      _deleteSnapshotFn "${_answer}";
+      _answer="$(_chooseSnapshotFn 'delete')" || exit;
+      _deleteSnapshotFn "${_answer}" || exit;
       ;;
     'Finish restoration operation')
-      _restoreSnapshotStage2Fn;
+      _restoreSnapshotStage2Fn || exit;
       # Sometimes stale application cache data is left after a snapshot
       # restore, this fixes it:
       kbuildsycoca5;

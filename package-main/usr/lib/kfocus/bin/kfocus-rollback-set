@@ -59,6 +59,14 @@ _importCommonFn () {
 }
 ## . END _importCommonFn }
 
+_checkSnapshotsEnabledFn () {
+  if ! [ -d '/btrfs_root' ]; then
+    _cm2WarnStrFn 'This system does not appear ready for snapshotting.';
+    _cm2WarnStrFn 'Please use "Prepare system for snapshotting" first.';
+    exit 1;
+  fi
+}
+
 _prepareSystemFn () {
   declare _root_mount_id _boot_mount_id _btrfs_defaults_str;
 
@@ -145,6 +153,8 @@ _prepareSystemFn () {
 _createSnapshotFn () {
   declare _timestamp_str _snapshot_path _boot_snapshot_path;
 
+  _checkSnapshotsEnabledFn;
+
   _timestamp_str="$(date +%s)";
   _snapshot_path="/btrfs_root/@kfocus-rollback-snapshots/@${_timestamp_str}";
   _boot_snapshot_path="/btrfs_boot/@kfocus-rollback-boot-snapshots/@${_timestamp_str}";
@@ -159,9 +169,6 @@ _createSnapshotFn () {
     exit 1;
   fi
 
-  mkdir -p /var/lib/kfocus || exit 1;
-  echo "${_timestamp_str}" > /var/lib/kfocus/kfocus_rollback_snapshot_id;
-
   btrfs subvolume snapshot -r '/btrfs_root/@' "${_snapshot_path}" || exit 4;
   btrfs subvolume snapshot -r '/btrfs_boot/@boot' "${_boot_snapshot_path}" \
     || exit 4;
@@ -169,6 +176,8 @@ _createSnapshotFn () {
 
 _restoreSnapshotFn () {
   declare _target_snapshot _snapshot_path _boot_snapshot_path;
+
+  _checkSnapshotsEnabledFn;
 
   _target_snapshot="${1:-}";
   _snapshot_path="/btrfs_root/@kfocus-rollback-snapshots/${_target_snapshot}";
@@ -201,6 +210,8 @@ _restoreSnapshotFn () {
 _deleteSnapshotFn () {
   declare _target_snapshot _snapshot_path _boot_snapshot_path;
 
+  _checkSnapshotsEnabledFn;
+
   _target_snapshot="${1:-}";
   # This intentionally does not have the @ before ${_target_snapshot} because
   # the function is passed a snapshot name, not just a timestamp.
@@ -219,12 +230,18 @@ _deleteSnapshotFn () {
 }
 
 _restoreSnapshotStage2Fn () {
+  _checkSnapshotsEnabledFn;
+
   if [ -z "$(mount | grep 'btrfs' | grep '@kfocus-rollback-working')" ]; then
-    btrfs subvolume delete '/btrfs_root/@kfocus-rollback-working' || exit 4;
+    if [ -d '/btrfs_root/@kfocus-rollback-working' ]; then
+      btrfs subvolume delete '/btrfs_root/@kfocus-rollback-working' || exit 4;
+    fi
   fi
   if [ -z "$(mount | grep 'btrfs' | grep '@kfocus-rollback-working-boot')" ]; then
-    btrfs subvolume delete '/btrfs_boot/@kfocus-rollback-working-boot' \
-      || exit 4;
+    if [ -d '/btrfs_boot/@kfocus-rollback-working-boot' ]; then
+      btrfs subvolume delete '/btrfs_boot/@kfocus-rollback-working-boot' \
+        || exit 4;
+    fi
   fi
 }
 
