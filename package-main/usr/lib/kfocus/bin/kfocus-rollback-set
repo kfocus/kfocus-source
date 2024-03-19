@@ -15,6 +15,17 @@
 #
 set -u;
 
+# Exit codes and their meanings:
+# 0:  Success
+# 1:  Non-critical failure without drive modification (reserved for sanity
+#     check failures)
+# 2:  Easily recoverable failure with drive modification
+# 3:  Difficult-to-recover failure with drive modification, system could break
+#     upon reboot
+# 4:  Total disaster, rescue data ASAP or all will likely be lost if it isn't
+#     lost already
+# 5+: Internal subroutine issue
+
 ## BEGIN _importCommonFn {
 # Summary   : _importCommonFn
 # Purpose   : Load common routines, prefer relative dir
@@ -66,22 +77,29 @@ _prepareSystemFn () {
     fi
   fi
 
-  mkdir -p /btrfs_root;
-  mkdir -p /btrfs_boot;
-  mkdir -p /etc/libvirt;
-  mkdir -p /var/lib/libvirt;
+  if [ -e '/btrfs_root' ] || [ -e '/btrfs_boot' ]; then
+    _cm2WarnStrFn 'This system appears to be snapshot-enabled already.';
+    exit 1;
+  fi
+
+  mkdir -p /btrfs_root || exit 2;
+  mkdir -p /btrfs_boot || exit 2;
+  mkdir -p /etc/libvirt || exit 2;
+  mkdir -p /var/lib/libvirt || exit 2;
 
   #####
   # STAGE 2: fstab adjustment
 
   _root_mount_id="$(LC_ALL=C mount | grep ' on / ' | cut -d' ' -f1)";
-  _boot_mount_id="UUID=$(LC_ALL=C lsblk -f | grep -P '/boot$' | awk '{ print $4 }')";
+  _boot_mount_id="UUID=$(LC_ALL=C lsblk -f | grep -P '/boot$' \
+    | awk '{ print $4 }')";
   _btrfs_defaults_str="defaults,noatime,autodefrag 0 0";
 
-  echo "${_root_mount_id} /btrfs_root btrfs subvolid=5,${_btrfs_defaults_str}" >> /etc/fstab;
-  echo "${_boot_mount_id} /btrfs_boot btrfs subvolid=5,${_btrfs_defaults_str}" >> /etc/fstab;
-  echo "${_root_mount_id} /etc/libvirt btrfs subvol=@libvirt-machines/@etc-libvirt,${_btrfs_defaults_str}" >> /etc/fstab;
-  echo "${_root_mount_id} /var/lib/libvirt btrfs subvol=@libvirt-machines/@var-lib-libvirt,${_btrfs_defaults_str}" >> /etc/fstab;
+  echo "${_root_mount_id} /btrfs_root btrfs subvolid=5,${_btrfs_defaults_str}" >> /etc/fstab || exit 2;
+  echo "${_boot_mount_id} /btrfs_boot btrfs subvolid=5,${_btrfs_defaults_str}" >> /etc/fstab || exit 2;
+  echo "${_root_mount_id} /etc/libvirt btrfs subvol=@libvirt-machines/@etc-libvirt,${_btrfs_defaults_str}" >> /etc/fstab || exit 2;
+  echo "${_root_mount_id} /var/lib/libvirt btrfs subvol=@libvirt-machines/@var-lib-libvirt,${_btrfs_defaults_str}" >> /etc/fstab || exit 2;
+  echo "${_root_mount_id} /srv subvol=@srv,${_btrfs_defaults_str}" >> /etc/fstab || exit 2;
 
   #####
   # STAGE 3: /boot preparation
@@ -90,32 +108,36 @@ _prepareSystemFn () {
   umount /boot/efi || true;
   umount /boot || true;
   # Point fstab at a soon-to-be-created @boot subvolume.
-  sed -i '/\/boot /s/defaults/subvol=\/@boot,defaults/' /etc/fstab;
+  sed -i '/\/boot /s/defaults/subvol=\/@boot,defaults/' /etc/fstab || exit 3;
   # Load all of the tons of fstab changes we've made
   systemctl daemon-reload;
   # Morph the layout of the boot partition
-  mount /btrfs_boot;
-  btrfs subvolume create /btrfs_boot/@boot;
+  mount /btrfs_boot || exit 3;
+  btrfs subvolume create /btrfs_boot/@boot || exit 4;
   # This will always throw a warning about not being able to move a directory
   # into itself, therefore we have to ignore it.
   mv /btrfs_boot/* /btrfs_boot/@boot/ 2>/dev/null || true;
   # We can mount /boot again now
-  mount /boot;
-  mount /boot/efi;
+  mount /boot || exit 3;
+  mount /boot/efi || exit 3;
   # Point the primary grub.cfg at the new boot files
-  update-grub;
+  update-grub || exit 3;
   # Make sure GRUB can find the primary grub.cfg at its new location
-  sed -i "s/'\/grub'/'\/@boot\/grub'/" /boot/efi/EFI/ubuntu/grub.cfg;
+  sed -i "s/'\/grub'/'\/@boot\/grub'/" /boot/efi/EFI/ubuntu/grub.cfg \
+    || exit 3;
 
   #####
   # STAGE 4: Snapshot repo creation
-  mount /btrfs_root;
+  mount /btrfs_root || exit 3;
   # mount /btrfs_boot # this is unnecessary, we mounted it earlier
-  btrfs subvolume create /btrfs_root/@kfocus-rollback-snapshots;
-  btrfs subvolume create /btrfs_boot/@kfocus-rollback-boot-snapshots;
-  btrfs subvolume create /btrfs_root/@libvirt-machines;
-  btrfs subvolume create /btrfs_root/@libvirt-machines/@etc-libvirt;
-  btrfs subvolume create /btrfs_root/@libvirt-machines/@var-lib-libvirt;
+  btrfs subvolume create /btrfs_root/@kfocus-rollback-snapshots || exit 4;
+  btrfs subvolume create /btrfs_boot/@kfocus-rollback-boot-snapshots \
+    || exit 4;
+  btrfs subvolume create /btrfs_root/@libvirt-machines || exit 4;
+  btrfs subvolume create /btrfs_root/@libvirt-machines/@etc-libvirt || exit 4;
+  btrfs subvolume create /btrfs_root/@libvirt-machines/@var-lib-libvirt \
+    || exit 4;
+  btrfs subvolume create /btrfs_root/@srv || exit 4;
 
   set +e;
 }
@@ -137,10 +159,12 @@ _createSnapshotFn () {
     exit 1;
   fi
 
-  btrfs subvolume snapshot -r '/btrfs_root/@' "${_snapshot_path}";
-  if [ -n "$(lsblk -f | grep /boot | grep btrfs)" ]; then
-    btrfs subvolume snapshot -r '/btrfs_boot/@boot' "${_boot_snapshot_path}";
-  fi
+  mkdir -p /var/lib/kfocus || exit 1;
+  echo "${_timestamp_str}" > /var/lib/kfocus/kfocus_rollback_snapshot_id;
+
+  btrfs subvolume snapshot -r '/btrfs_root/@' "${_snapshot_path}" || exit 4;
+  btrfs subvolume snapshot -r '/btrfs_boot/@boot' "${_boot_snapshot_path}" \
+    || exit 4;
 }
 
 _restoreSnapshotFn () {
@@ -150,21 +174,28 @@ _restoreSnapshotFn () {
   _snapshot_path="/btrfs_root/@kfocus-rollback-snapshots/${_target_snapshot}";
   _boot_snapshot_path="/btrfs_boot/@kfocus-rollback-boot-snapshots/${_target_snapshot}";
 
+  if [ -e '/btrfs_root/@kfocus-rollback-working' ] || \
+    [ -e '/btrfs_boot/@kfocus-rollback-working-boot' ]; then
+    _cm2WarnStrFn 'Temporary restore subvols found, cannot continue.';
+    _cm2WarnStrFn 'Please reboot, then run "Finish restoration operation".';
+    exit 1; # can't restore while mid-restore!
+  fi
+
   if ! [ -e "${_snapshot_path}" ]; then
     exit 1;
   fi
 
-  mv '/btrfs_root/@' '/btrfs_root/@kfocus-rollback-working' || exit 1;
-  btrfs subvolume snapshot "${_snapshot_path}" '/btrfs_root/@';
-  if [ -n "$(lsblk -f | grep /boot | grep btrfs)" ]; then
-    # Failing to unmount /boot/efi before attempting to move the old subvol
-    # will result in the subvol not being moved, which will result in the
-    # whole @boot subvol being nuked except for the contents of /boot/efi.
-    umount /boot/efi;
-    mv '/btrfs_boot/@boot' '/btrfs_boot/@kfocus-rollback-working-boot' || exit 1;
-    btrfs subvolume snapshot "${_boot_snapshot_path}" '/btrfs_boot/@boot';
-    mount /boot/efi;
-  fi
+  mv '/btrfs_root/@' '/btrfs_root/@kfocus-rollback-working' || exit 2;
+  btrfs subvolume snapshot "${_snapshot_path}" '/btrfs_root/@' || exit 4;
+  # Failing to unmount /boot/efi before attempting to move the old subvol
+  # will result in the subvol not being moved, which will result in the
+  # whole @boot subvol being nuked except for the contents of /boot/efi.
+  umount /boot/efi || exit 3;
+  mv '/btrfs_boot/@boot' '/btrfs_boot/@kfocus-rollback-working-boot' \
+    || exit 3;
+  btrfs subvolume snapshot "${_boot_snapshot_path}" '/btrfs_boot/@boot' \
+    || exit 4;
+  mount /boot/efi || exit 3;
 }
 
 _deleteSnapshotFn () {
@@ -179,22 +210,21 @@ _deleteSnapshotFn () {
   if ! [ -e "${_snapshot_path}" ]; then
     exit 1;
   fi
-
-  if [ -n "$(lsblk -f | grep /boot | grep btrfs)" ]; then
-    if ! [ -e "${_boot_snapshot_path}" ]; then
-      exit 1;
-    fi
-    btrfs subvolume delete "${_boot_snapshot_path}";
+  if ! [ -e "${_boot_snapshot_path}" ]; then
+    exit 1;
   fi
-  btrfs subvolume delete "${_snapshot_path}";
+  
+  btrfs subvolume delete "${_snapshot_path}" || exit 4;
+  btrfs subvolume delete "${_boot_snapshot_path}" || exit 4;
 }
 
 _restoreSnapshotStage2Fn () {
   if [ -z "$(mount | grep 'btrfs' | grep '@kfocus-rollback-working')" ]; then
-    btrfs subvolume delete '/btrfs_root/@kfocus-rollback-working';
+    btrfs subvolume delete '/btrfs_root/@kfocus-rollback-working' || exit 4;
   fi
   if [ -z "$(mount | grep 'btrfs' | grep '@kfocus-rollback-working-boot')" ]; then
-    btrfs subvolume delete '/btrfs_boot/@kfocus-rollback-working-boot';
+    btrfs subvolume delete '/btrfs_boot/@kfocus-rollback-working-boot' \
+      || exit 4;
   fi
 }
 

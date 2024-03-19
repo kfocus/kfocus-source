@@ -74,9 +74,24 @@ _restoreSnapshotStage2Fn () {
 ## BEGIN _chooseSnapshotFn {
 #
 _chooseSnapshotFn () {
-  declare _action_str _snapshot_list _snapshot_disp_list _snapshot_idx;
+  declare _action_str _hide_old_snapshots _orig_snapshot_list \
+    _current_snapshot_timestamp _snapshot_disp_list _trimmed_snapshot_list \
+    _snapshot_idx _snapshot_timestamp;
+      
+  if [ -e '/btrfs_root/@kfocus-rollback-working' ] || \
+    [ -e '/btrfs_boot/@kfocus-rollback-working-boot' ]; then
+    _msg="$(cat <<EOF
+It looks like you have a restore operation in progress. Please reboot, then
+run kfocus-rollback and select "Finish restoration operation" to complete
+the current restore process.
+EOF
+    )";
+    "${_kdiagExe}" --error "${_msg}";
+    exit 1; # can't restore while mid-restore!
+  fi
 
   _action_str="${1:-}";
+  _hide_old_snapshots="${2:-}";
 
   if [ -z "${_action_str}" ]; then
     _cm2WarnStrFn 'No action provided to _chooseSnapshotFn!';
@@ -84,23 +99,42 @@ _chooseSnapshotFn () {
 
   cd "${_snapshotDir}" || exit 1;
   # TODO: BSP may complain about this.
-  _snapshot_list=(*);
+  _orig_snapshot_list=(*);
+  _current_snapshot_timestamp="$(cat /var/lib/kfocus/kfocus_rollback_snapshot_id \
+    2>/dev/null)";
+  if [ -z "${_current_snapshot_timestamp}" ]; then
+    _current_snapshot_timestamp=0;
+  fi
   _snapshot_disp_list=();
+  _trimmed_snapshot_list=();
 
-  for (( _snapshot_idx=0; _snapshot_idx < ${#_snapshot_list[@]}; \
+  for (( _snapshot_idx=0; _snapshot_idx < ${#_orig_snapshot_list[@]}; \
     _snapshot_idx++ )); do
-    _snapshot_disp_list[_snapshot_idx]="$(date -d \
-      "${_snapshot_list[_snapshot_idx]}")";
+    _snapshot_timestamp="$(tail -c+2 <<< \
+      "${_orig_snapshot_list[_snapshot_idx]}")";
+    if [ "${_snapshot_timestamp}" -gt "${_current_snapshot_timestamp}" ] && \
+      [ "${_hide_old_snapshots}" = 'y' ]; then
+      true;
+    else
+      _snapshot_disp_list[_snapshot_idx]="$(date -d \
+        "${_orig_snapshot_list[_snapshot_idx]}")";
+      _trimmed_snapshot_list[_snapshot_idx]="${_orig_snapshot_list[_snapshot_idx]}";
+    fi
   done
 
   _answer="$("${_kdiagExe}" --combobox \
     "Which snapshot would you like to ${_action_str}?" \
     "${_snapshot_disp_list[@]}")" || exit 1;
 
-  for (( _snapshot_idx=0; _snapshot_idx < ${#_snapshot_list[@]}; \
+  if [ -z "${_answer}" ]; then
+    _cm2WarnStrFn 'No snapshot selected.';
+    exit 1;
+  fi
+
+  for (( _snapshot_idx=0; _snapshot_idx < ${#_orig_snapshot_list[@]}; \
     _snapshot_idx++ )); do
     if [ "${_snapshot_disp_list[_snapshot_idx]}" = "${_answer}" ]; then
-      echo "${_snapshot_list[_snapshot_idx]}";
+      echo "${_trimmed_snapshot_list[_snapshot_idx]}";
       return;
     fi
   done
@@ -113,12 +147,38 @@ _chooseSnapshotFn () {
 ## BEGIN _mainFn {
 #
 _mainFn () {
-  declare _answer;
+  declare _root_min_space _boot_min_space _root_space _boot_space _answer \
+    _msg;
+  
+  _root_min_space=21474836480 # 20 GiB
+  _boot_min_space=1073741824 # 1 GiB
+  _root_space="$(LC_ALL=C btrfs fi usage -b /btrfs_root \
+    | awk '/Free \(estimated\)/{ print $3 }')";
+  _boot_space="$(LC_ALL=C btrfs fi usage -b /btrfs_boot \
+    | awk '/Free \(estimated\)/{ print $3 }')";
+
+  if (( _root_space < _root_min_space )); then
+    _msg="$(cat <<EOF
+Your root partition's space is critically low! You should clear some space
+on your root disk ASAP.
+EOF
+    )";
+    "${_kdiagExe}" --error "${_msg}";
+  fi
+
+  if (( _boot_space < _boot_min_space )); then
+    _msg="$(cat <<EOF
+Your boot partition's space is critically low! You should clear some space
+by removing old snapshots and purging kernels ASAP.
+EOF
+    )";
+    "${_kdiagExe}" --error "${_msg}";
+  fi
 
   _answer="$("${_kdiagExe}" --combobox 'What would you like to do?' \
     'Prepare system for snapshotting' 'Create a snapshot' \
-    'Restore a snapshot' 'Delete a snapshot' 'Finish restoration operation' \
-    )" || exit;
+    'Restore a snapshot' 'Restore a snapshot (roll forward enabled)' \
+    'Delete a snapshot' 'Finish restoration operation')" || exit;
 
   case "${_answer}" in
     'Prepare system for snapshotting')
@@ -128,11 +188,15 @@ _mainFn () {
       _createSnapshotFn;
       ;;
     'Restore a snapshot')
-      _answer="$(_chooseSnapshotFn 'restore')" || exit;
+      _answer="$(_chooseSnapshotFn 'restore' 'y')" || exit;
+      _restoreSnapshotFn "${_answer}";
+      ;;
+    'Restore a snapshot (roll forward enabled)')
+      _answer="$(_chooseSnapshotFn 'restore' 'n')" || exit;
       _restoreSnapshotFn "${_answer}";
       ;;
     'Delete a snapshot')
-      _answer="$(_chooseSnapshotFn 'delete')" || exit;
+      _answer="$(_chooseSnapshotFn 'delete' 'n')" || exit;
       _deleteSnapshotFn "${_answer}";
       ;;
     'Finish restoration operation')
