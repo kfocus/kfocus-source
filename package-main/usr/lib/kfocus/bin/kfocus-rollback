@@ -51,6 +51,10 @@ _importCommonFn () {
 }
 ## . END _importCommonFn }
 
+_prepareSystemFn () {
+  "${_escExe}" "${_setExe}" 'prepareSystem';
+}
+
 _createSnapshotFn () {
   "${_escExe}" "${_setExe}" 'createSnapshot';
 }
@@ -112,10 +116,14 @@ _mainFn () {
   declare _answer;
 
   _answer="$("${_kdiagExe}" --combobox 'What would you like to do?' \
-    'Create a snapshot' 'Restore a snapshot' 'Delete a snapshot' \
-    'Finish restoration operation' )" || exit;
+    'Prepare system for snapshotting' 'Create a snapshot' \
+    'Restore a snapshot' 'Delete a snapshot' 'Finish restoration operation' \
+    )" || exit;
 
   case "${_answer}" in
+    'Prepare system for snapshotting')
+      _prepareSystemFn;
+      ;;
     'Create a snapshot')
       _createSnapshotFn;
       ;;
@@ -129,6 +137,9 @@ _mainFn () {
       ;;
     'Finish restoration operation')
       _restoreSnapshotStage2Fn;
+      # Sometimes stale application cache data is left after a snapshot
+      # restore, this fixes it:
+      kbuildsycoca5;
       ;;
     *)
       _cm2WarnStrFn 'Invalid snapshot operation.';

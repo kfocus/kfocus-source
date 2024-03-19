@@ -1,0 +1,258 @@
+#!/bin/bash
+#
+# Copyright 2019-2024 MindShare Inc.
+#
+# Written for the Kubuntu Focus by M. Mikowski and A. Rainbolt
+#
+# Name     : kfocus-rollback-set
+# Summary  : kfocus-rollback-set
+# Purpose  : Does the actual snapshot create and restore operations
+# Example  : kfocus-rollback-set restoreSnapshot @2024-01-01:01:23:45
+# License  : GPLv2
+# Run By   : Developers only
+# Spec     : 4013
+# Note     : WORK IN PROGRESS, DO NOT USE IN PRODUCTION
+#
+set -u;
+
+## BEGIN _importCommonFn {
+# Summary   : _importCommonFn
+# Purpose   : Load common routines, prefer relative dir
+# Example   : _importCommonFn;
+# Arguments : none
+# Globals   : Package vars _baseDir _baseName
+# Outputs   : none
+# Returns   : none
+#
+_importCommonFn () {
+  declare _lib_list _is_loaded _lib_file;
+  _lib_list=(
+    "${_binDir}/common.2.source"
+    '/usr/lib/kfocus/lib/common.2.source'
+  );
+  _is_loaded='n';
+  for _lib_file in "${_lib_list[@]}"; do
+    if [ -r "${_lib_file}" ]; then
+      # shellcheck source=/usr/lib/kfocus/lib/common.2.source
+      if source "${_lib_file}"; then
+        _is_loaded='y';
+        break;
+      fi
+    fi
+  done
+
+  if [ "${_is_loaded}" = 'n' ]; then
+    echo 1>&2 "${_baseName}: ABORT - Cannot source common lib";
+    exit 202;
+  fi
+}
+## . END _importCommonFn }
+
+_prepareSystemFn () {
+  declare _root_mount_id _boot_mount_id _btrfs_defaults_str;
+
+  set -e;
+
+  #####
+  # STAGE 1: Sanity checks and filesystem prep
+
+  if [ -d '/etc/libvirt' ] || [ -d '/var/lib/libvirt' ]; then
+    # If both directories are empty, we don't care, it's only a problem if
+    # either/both of them have contents
+    if [ -n "$(ls -A /etc/libvirt 2>/dev/null)" ] || \
+      [ -n "$(ls -A /var/lib/libvirt 2>/dev/null)" ]; then
+      _cm2WarnStrFn 'Cannot create libvirt subvols, libvirt is installed!';
+      exit 1;
+    fi
+  fi
+
+  mkdir -p /btrfs_root;
+  mkdir -p /btrfs_boot;
+  mkdir -p /etc/libvirt;
+  mkdir -p /var/lib/libvirt;
+
+  #####
+  # STAGE 2: fstab adjustment
+
+  _root_mount_id="$(LC_ALL=C mount | grep ' on / ' | cut -d' ' -f1)";
+  _boot_mount_id="UUID=$(LC_ALL=C lsblk -f | grep -P '/boot$' | awk '{ print $4 }')";
+  _btrfs_defaults_str="defaults,noatime,autodefrag 0 0";
+
+  echo "${_root_mount_id} /btrfs_root btrfs subvolid=5,${_btrfs_defaults_str}" >> /etc/fstab;
+  echo "${_boot_mount_id} /btrfs_boot btrfs subvolid=5,${_btrfs_defaults_str}" >> /etc/fstab;
+  echo "${_root_mount_id} /etc/libvirt btrfs subvol=@libvirt-machines/@etc-libvirt,${_btrfs_defaults_str}" >> /etc/fstab;
+  echo "${_root_mount_id} /var/lib/libvirt btrfs subvol=@libvirt-machines/@var-lib-libvirt,${_btrfs_defaults_str}" >> /etc/fstab;
+
+  #####
+  # STAGE 3: /boot preparation
+
+  # We need these unmounted so we can shuffle things around
+  umount /boot/efi || true;
+  umount /boot || true;
+  # Point fstab at a soon-to-be-created @boot subvolume.
+  sed -i '/\/boot /s/defaults/subvol=\/@boot,defaults/' /etc/fstab;
+  # Load all of the tons of fstab changes we've made
+  systemctl daemon-reload;
+  # Morph the layout of the boot partition
+  mount /btrfs_boot;
+  btrfs subvolume create /btrfs_boot/@boot;
+  # This will always throw a warning about not being able to move a directory
+  # into itself, therefore we have to ignore it.
+  mv /btrfs_boot/* /btrfs_boot/@boot/ 2>/dev/null || true;
+  # We can mount /boot again now
+  mount /boot;
+  mount /boot/efi;
+  # Point the primary grub.cfg at the new boot files
+  update-grub;
+  # Make sure GRUB can find the primary grub.cfg at its new location
+  sed -i "s/'\/grub'/'\/@boot\/grub'/" /boot/efi/EFI/ubuntu/grub.cfg;
+
+  #####
+  # STAGE 4: Snapshot repo creation
+  mount /btrfs_root;
+  # mount /btrfs_boot # this is unnecessary, we mounted it earlier
+  btrfs subvolume create /btrfs_root/@kfocus-rollback-snapshots;
+  btrfs subvolume create /btrfs_boot/@kfocus-rollback-boot-snapshots;
+  btrfs subvolume create /btrfs_root/@libvirt-machines;
+  btrfs subvolume create /btrfs_root/@libvirt-machines/@etc-libvirt;
+  btrfs subvolume create /btrfs_root/@libvirt-machines/@var-lib-libvirt;
+
+  set +e;
+}
+
+_createSnapshotFn () {
+  declare _timestamp_str _snapshot_path _boot_snapshot_path;
+
+  _timestamp_str="$(date +%s)";
+  _snapshot_path="/btrfs_root/@kfocus-rollback-snapshots/@${_timestamp_str}";
+  _boot_snapshot_path="/btrfs_boot/@kfocus-rollback-boot-snapshots/@${_timestamp_str}";
+
+  if [ -e "${_snapshot_path}" ] || [ -e "${_boot_snapshot_path}" ]; then
+    # This should theoretically never happen, but there's a non-zero chance
+    # that it could if the user changes their clock backwards.
+    #
+    # TODO: There's a time-of-check to time-of-use bug here, I don't *think*
+    # we care but review and see if this is important enough to find a way
+    # around.
+    exit 1;
+  fi
+
+  btrfs subvolume snapshot -r '/btrfs_root/@' "${_snapshot_path}";
+  if [ -n "$(lsblk -f | grep /boot | grep btrfs)" ]; then
+    btrfs subvolume snapshot -r '/btrfs_boot/@boot' "${_boot_snapshot_path}";
+  fi
+}
+
+_restoreSnapshotFn () {
+  declare _target_snapshot _snapshot_path _boot_snapshot_path;
+
+  _target_snapshot="${1:-}";
+  _snapshot_path="/btrfs_root/@kfocus-rollback-snapshots/${_target_snapshot}";
+  _boot_snapshot_path="/btrfs_boot/@kfocus-rollback-boot-snapshots/${_target_snapshot}";
+
+  if ! [ -e "${_snapshot_path}" ]; then
+    exit 1;
+  fi
+
+  mv '/btrfs_root/@' '/btrfs_root/@kfocus-rollback-working' || exit 1;
+  btrfs subvolume snapshot "${_snapshot_path}" '/btrfs_root/@';
+  if [ -n "$(lsblk -f | grep /boot | grep btrfs)" ]; then
+    # Failing to unmount /boot/efi before attempting to move the old subvol
+    # will result in the subvol not being moved, which will result in the
+    # whole @boot subvol being nuked except for the contents of /boot/efi.
+    umount /boot/efi;
+    mv '/btrfs_boot/@boot' '/btrfs_boot/@kfocus-rollback-working-boot' || exit 1;
+    btrfs subvolume snapshot "${_boot_snapshot_path}" '/btrfs_boot/@boot';
+    mount /boot/efi;
+  fi
+}
+
+_deleteSnapshotFn () {
+  declare _target_snapshot _snapshot_path _boot_snapshot_path;
+
+  _target_snapshot="${1:-}";
+  # This intentionally does not have the @ before ${_target_snapshot} because
+  # the function is passed a snapshot name, not just a timestamp.
+  _snapshot_path="/btrfs_root/@kfocus-rollback-snapshots/${_target_snapshot}";
+  _boot_snapshot_path="/btrfs_root/@kfocus-rollback-boot-snapshots/${_target_snapshot}";
+
+  if ! [ -e "${_snapshot_path}" ]; then
+    exit 1;
+  fi
+
+  if [ -n "$(lsblk -f | grep /boot | grep btrfs)" ]; then
+    if ! [ -e "${_boot_snapshot_path}" ]; then
+      exit 1;
+    fi
+    btrfs subvolume delete "${_boot_snapshot_path}";
+  fi
+  btrfs subvolume delete "${_snapshot_path}";
+}
+
+_restoreSnapshotStage2Fn () {
+  if [ -z "$(mount | grep 'btrfs' | grep '@kfocus-rollback-working')" ]; then
+    btrfs subvolume delete '/btrfs_root/@kfocus-rollback-working';
+  fi
+  if [ -z "$(mount | grep 'btrfs' | grep '@kfocus-rollback-working-boot')" ]; then
+    btrfs subvolume delete '/btrfs_boot/@kfocus-rollback-working-boot';
+  fi
+}
+
+## BEGIN _mainFn {
+#
+_mainFn () {
+  declare _mode _target_snapshot;
+
+  _mode="${1:-}";
+
+  case "${_mode}" in
+    'prepareSystem')
+      _prepareSystemFn;
+      ;;
+    'createSnapshot')
+      _createSnapshotFn;
+      ;;
+    'restoreSnapshot')
+      _target_snapshot="${2:-}";
+      if [ -z "${_target_snapshot}" ]; then
+        _cm2WarnStrFn 'No snapshot name provided to restore!';
+        exit 1;
+      fi
+      _restoreSnapshotFn "${_target_snapshot}";
+      ;;
+    'deleteSnapshot')
+      _target_snapshot="${2:-}";
+      if [ -z "${_target_snapshot}" ]; then
+        _cm2WarnStrFn 'No snapshot name provided to delete!';
+        exit 1;
+      fi
+      _deleteSnapshotFn "${_target_snapshot}";
+      ;;
+    'restoreSnapshotStage2')
+      _restoreSnapshotStage2Fn;
+      ;;
+    *)
+      _cm2WarnStrFn 'Invalid mode specified.';
+      exit 1;
+      ;;
+  esac
+}
+## . END _mainFn }
+
+## BEGIN Declare and assign global vars {
+declare _binName _binDir _baseName _baseDir;
+## . END Declare and assign global vars }
+
+## BEGIN Run mainFn when script is NOT sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+
+  # Import libs and assign more global vars
+  _importCommonFn;
+
+  _mainFn "$@";
+fi
+## . END Run mainFn when script is NOT sourced }
