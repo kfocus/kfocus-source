@@ -174,7 +174,7 @@ _deleteSnapshotFn () {
   # This intentionally does not have the @ before ${_target_snapshot} because
   # the function is passed a snapshot name, not just a timestamp.
   _snapshot_path="/btrfs_root/@kfocus-rollback-snapshots/${_target_snapshot}";
-  _boot_snapshot_path="/btrfs_root/@kfocus-rollback-boot-snapshots/${_target_snapshot}";
+  _boot_snapshot_path="/btrfs_boot/@kfocus-rollback-boot-snapshots/${_target_snapshot}";
 
   if ! [ -e "${_snapshot_path}" ]; then
     exit 1;
