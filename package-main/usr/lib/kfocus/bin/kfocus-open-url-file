@@ -1,0 +1,22 @@
+#!/bin/bash
+## BEGIN _mainFn {
+_mainFn () {
+  declare _url_file _solve_url _open_exe;
+  _url_file="${1:-}";
+  if [ -z "${_url_file}" ]; then exit 1; fi
+  _solve_url="$(grep '^URL=' "${_url_file}" | tail -n1 | cut -f2 -d'=')";
+  if [ -z "${_solve_url}" ]; then exit 2; fi
+  _open_exe="$(command -v 'xdg-open')";
+  if [ -n "${_open_exe}" ]; then
+    exec "${_open_exe}" "${_solve_url}";
+  else
+    echo 'Could not run xdg-open' 1>&2 ;
+  fi
+}
+## . END _mainFn }
+
+## BEGIN Run main if script is not sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _mainFn "$@";
+fi
+## . END Run main if script is not sourced }
