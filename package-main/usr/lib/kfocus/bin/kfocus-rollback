@@ -132,7 +132,7 @@ EOF
 _mainFn () {
   declare _root_min_space _boot_min_space _root_space _boot_space _answer \
     _msg;
-  
+
   _root_min_space=21474836480 # 20 GiB
   _boot_min_space=1073741824 # 1 GiB
   _root_space="$(LC_ALL=C btrfs fi usage -b /btrfs_root \
@@ -175,6 +175,15 @@ EOF
     'Restore a snapshot')
       _answer="$(_chooseSnapshotFn 'restore')" || exit;
       _restoreSnapshotFn "${_answer}" || exit;
+      _msg="$(cat <<EOF
+Snapshot activated.<br>
+<br>
+<b>You MUST reboot as soon as possible to finish the restore process.</b>
+After reboot, please use "Finish restoration operation" to finalize the
+restore operation.
+EOF
+      )";
+      "${_kdiagExe}" --msgbox "${_msg}";
       ;;
     'Delete a snapshot')
       _answer="$(_chooseSnapshotFn 'delete')" || exit;

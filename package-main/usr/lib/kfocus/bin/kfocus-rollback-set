@@ -107,7 +107,6 @@ _prepareSystemFn () {
   echo "${_boot_mount_id} /btrfs_boot btrfs subvolid=5,${_btrfs_defaults_str}" >> /etc/fstab || exit 2;
   echo "${_root_mount_id} /etc/libvirt btrfs subvol=@libvirt-machines/@etc-libvirt,${_btrfs_defaults_str}" >> /etc/fstab || exit 2;
   echo "${_root_mount_id} /var/lib/libvirt btrfs subvol=@libvirt-machines/@var-lib-libvirt,${_btrfs_defaults_str}" >> /etc/fstab || exit 2;
-  echo "${_root_mount_id} /srv subvol=@srv,${_btrfs_defaults_str}" >> /etc/fstab || exit 2;
 
   #####
   # STAGE 3: /boot preparation
@@ -145,7 +144,13 @@ _prepareSystemFn () {
   btrfs subvolume create /btrfs_root/@libvirt-machines/@etc-libvirt || exit 4;
   btrfs subvolume create /btrfs_root/@libvirt-machines/@var-lib-libvirt \
     || exit 4;
-  btrfs subvolume create /btrfs_root/@srv || exit 4;
+
+  #####
+  # STAGE 5: Finish additional mounts
+  # At this point, /boot, /boot/efi, /btrfs_root, and /btrfs_boot are mounted.
+  # /etc/libvirt and /var/lib/libvirt are not mounted.
+  mount /etc/libvirt || exit 3;
+  mount /var/lib/libvirt || exit 3;
 
   set +e;
 }
@@ -225,8 +230,8 @@ _deleteSnapshotFn () {
     exit 1;
   fi
   
-  btrfs subvolume delete "${_snapshot_path}" || exit 4;
-  btrfs subvolume delete "${_boot_snapshot_path}" || exit 4;
+  btrfs subvolume delete --commit-after "${_snapshot_path}" || exit 4;
+  btrfs subvolume delete --commit-after "${_boot_snapshot_path}" || exit 4;
 }
 
 _restoreSnapshotStage2Fn () {
@@ -234,12 +239,12 @@ _restoreSnapshotStage2Fn () {
 
   if [ -z "$(mount | grep 'btrfs' | grep '@kfocus-rollback-working')" ]; then
     if [ -d '/btrfs_root/@kfocus-rollback-working' ]; then
-      btrfs subvolume delete '/btrfs_root/@kfocus-rollback-working' || exit 4;
+      btrfs subvolume delete --commit-after '/btrfs_root/@kfocus-rollback-working' || exit 4;
     fi
   fi
   if [ -z "$(mount | grep 'btrfs' | grep '@kfocus-rollback-working-boot')" ]; then
     if [ -d '/btrfs_boot/@kfocus-rollback-working-boot' ]; then
-      btrfs subvolume delete '/btrfs_boot/@kfocus-rollback-working-boot' \
+      btrfs subvolume delete --commit-after '/btrfs_boot/@kfocus-rollback-working-boot' \
         || exit 4;
     fi
   fi
