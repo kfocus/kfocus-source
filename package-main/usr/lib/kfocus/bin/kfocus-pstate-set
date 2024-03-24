@@ -1,16 +1,13 @@
 #!/bin/bash
 #
-# Copyright 2021 MindShare Inc.
-# Written for the Kubuntu Focus by
-#
-# - Michael Mikowski
-# - Erich Eickmeyer
+# Copyright 2021-2024 MindShare Inc.
+# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
 #
 # Name   : kfocus-pstate-set
 # Purpose: Take actions to optimize battery life.
 # License: GPL v2
 # Run by : kfocus-pstate
-# Spec   : 1690, 2558
+# Spec   : 1690, 2558, 4128
 # Test   : power-system-check.md
 #
 set -u;
@@ -163,8 +160,9 @@ _mainFn() {
 }
 ## . END _mainFn }
 
-## BEGIN Set global vars {
-## . END Set global vars }
+## BEGIN Declare and assign global vars {
+declare _binName _binDir _baseDir _baseName;
+## . END Declare and assign global vars }
 
 ## BEGIN Run main if script is not sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then

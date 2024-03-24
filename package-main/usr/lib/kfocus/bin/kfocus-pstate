@@ -1,13 +1,18 @@
 #!/bin/bash
 #
-# Copyright 2020-2022 MindShare Inc.
+# Copyright 2020-2024 MindShare Inc.
 # Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
 #
 # Name   : kfocus-pstate
-# Purpose: Test GPU in use and warn user if battery life can be improved
+# Purpose: 
+#   - As in kfocus-power, set Power Profile, Brightness, Frequency Profile,
+#   and Fan Profile when device is plugged or unplugged.
+#   - In Battery model, check if dGPU is in-use and warn user to switch to
+#     Intel to save power.
+# 
 # License: GPL v2
 # Run by : Power manager on switch to battery
-# Spec   : 1690, 2558, 3404
+# Spec   : 1690, 2558, 3404, 4128
 # Test   : power-system-check.md
 #
 set -u;
@@ -95,7 +100,7 @@ _setPlasmaPowerProfileFn () {
     return;
   fi
 
-  _mode_list=()
+  _mode_list=();
   while read -r _line; do
     IFS=$' :\n' read -ra _bit_list <<<"${_line}";
     if [ "${_bit_list[0]}" = '*' ]; then
@@ -103,7 +108,7 @@ _setPlasmaPowerProfileFn () {
       _bit_list=("${_bit_list[@]:1}");
     fi
     _mode_list+=("$(xargs <<<"${_bit_list[0]}")");
-  done < <("${_powerctl_exe}" list | grep -Ev '^\s*$|^\s*Driver')
+  done < <("${_powerctl_exe}" list | grep -Ev '^\s*$|^\s*Driver');
 
   _search_str="$(printf '%s\n' "${_mode_list[@]}")";
   if grep -Fxq "${_target_key}" <<<"${_search_str}"; then
@@ -136,7 +141,7 @@ _mainFn () {
     _prime_exe _gpu_mode_str _nvidia_list_str;
 
   _warn_dgpu_msg=$(
-    cat <<_HERE
+    cat <<_EOH01
 <html>
   <style>
     table{width:100%;margin:0}
@@ -164,11 +169,11 @@ _mainFn () {
   </tr></td>
   </table>
 </html>
-_HERE
+_EOH01
   );
 
   _ask_disable_msg=$(
-    cat <<_HERE2
+    cat <<_EOH02
 <html>
   <style>
     table{width:100%;margin:0}
@@ -188,11 +193,11 @@ _HERE
   </td></tr>
   </table>
 </html>
-_HERE2
+_EOH02
   );
 
   _ask_reboot_msg=$(
-    cat <<_HERE3
+    cat <<_EOH03
 <html>
   <style>
     table{width:100%;margin:0}
@@ -209,7 +214,7 @@ _HERE2
   </td></tr>
   </table>
 </html>
-_HERE3
+_EOH03
   );
 
   # Set flock or exit on dup run
@@ -223,13 +228,14 @@ _HERE3
   fi
 
   ## Begin Assign other values after common import {
-  declare _lspci_exe _upower_exe _pstate_set_exe _power_set_exe;
+  declare _lspci_exe _upower_exe _fan_set_exe _pstate_set_exe _power_set_exe;
 
   _assign_exe_list=(
     '_lspci_exe|lspci'
     '_upower_exe|upower'
-    "_pstate_set_exe|${_binDir}/kfocus-pstate-set"
-    "_power_set_exe|${_binDir}/kfocus-power-set"
+    "_fan_set_exe|${_binDir}/kfocus-fan-set||optional"
+    "_pstate_set_exe|${_binDir}/kfocus-pstate-set||optional"
+    "_power_set_exe|${_binDir}/kfocus-power-set||optional"
   );
 
   if ! _cm2AssignExeVarsFn "${_assign_exe_list[@]}"; then
@@ -283,30 +289,54 @@ _HERE3
     _setPlasmaPowerProfileFn "${_is_on_ac}";
   fi
 
-  # Set Powersave on battery
+  # Warn of missing helpers
+  [ -z "${_power_set_exe}"  ] && _cm2WarnStrFn 'kfocus-power-set not found';
+  [ -z "${_pstate_set_exe}" ] && _cm2WarnStrFn 'kfocus-pstate-set not found';
+  [ -z "${_fan_set_exe}"    ] && _cm2WarnStrFn 'kfocus-fan-set not found';
+
+  # Invoke on-battery settings
   if [ "${_is_on_ac}" = 'n' ]; then
     _cm2SetMsgFn 'Set CPU power mode to Low on battery';
-    if "${_escExe}" "${_power_set_exe}" 'Low'; then
+    if [ -n "${_power_set_exe}" ] \
+      && "${_escExe}" "${_power_set_exe}" 'Low'; then
       _cm2SucFn; else _cm2WarnFn;
     fi
+
     _cm2SetMsgFn 'Set writeback for battery use';
-    if "${_escExe}" "${_pstate_set_exe}" 'writeback-battery'; then
+    if [ -n "${_pstate_set_exe}" ] \
+      && "${_escExe}" "${_pstate_set_exe}" 'writeback-battery'; then
       _cm2SucFn; else _cm2WarnFn;
     fi
-  # Set normal on AC
+
+    _cm2SetMsgFn 'Set fan to Linear on battery';
+    if [ -n "${_fan_set_exe}" ] \
+      && "${_escExe}" "${_fan_set_exe}" 'Linear'; then
+      _cm2SucFn; else _cm2WarnFn;
+    fi
+
+  # Invoke on-AC settings
   else
     _cm2SetMsgFn 'Set CPU power mode to Normal on AC';
-    if "${_escExe}" "${_power_set_exe}" 'Normal'; then
+    if [ -n "${_power_set_exe}" ] \
+      && "${_escExe}" "${_power_set_exe}" 'Normal'; then
       _cm2SucFn; else _cm2WarnFn;
     fi
-    _cm2SetMsgFn 'Set writeback for AC use'
-    if "${_escExe}" "${_pstate_set_exe}" 'writeback-ac'; then
+
+    _cm2SetMsgFn 'Set writeback for AC use';
+    if [ -n "${_pstate_set_exe}" ] \
+      && "${_escExe}" "${_pstate_set_exe}" 'writeback-ac'; then
+      _cm2SucFn; else _cm2WarnFn;
+    fi
+
+    _cm2SetMsgFn 'Set fan to Soft on AC';
+    if [ -n "${_fan_set_exe}" ] \
+      && "${_escExe}" "${_fan_set_exe}" 'Soft'; then
       _cm2SucFn; else _cm2WarnFn;
     fi
   fi
 
   # Sniff gpu in use
-  _gpu_mode_str='intel'
+  _gpu_mode_str='intel';
   if _cm2AssignExeVarsFn '_prime_exe|prime-select'; then
     _gpu_mode_str="$("$_prime_exe" query)";
   else
@@ -315,7 +345,8 @@ _HERE3
   _nvidia_list_str="$("${_lspci_exe}" -m | grep -i 'nvidia')";
 
   # Handle Nvidia mode
-  if [ "${_gpu_mode_str}" = 'nvidia' ] || [ "${_gpu_mode_str}" = 'on-demand' ]; then
+  if [ "${_gpu_mode_str}" = 'nvidia' ] \
+    || [ "${_gpu_mode_str}" = 'on-demand' ]; then
     if [ -z "${_nvidia_list_str}" ]; then
       _cm2SetMsgFn 'Warn user if using iGPU when dGPU requested';
       if "${_cm2KdiagExe}" --warningyesno "${_ask_reboot_msg}"; then
@@ -323,7 +354,7 @@ _HERE3
       fi
       _cm2SucFn;
     else
-      _cm2SetMsgFn 'Warn user if using dGPU on battery'
+      _cm2SetMsgFn 'Warn user if using dGPU on battery';
       if [ "${_is_on_ac}" = 'n' ]; then
         "${_cm2KdiagExe}" --msgbox "${_warn_dgpu_msg}" &
         _cm2SucFn;
@@ -340,7 +371,8 @@ _HERE3
       _cm2SetMsgFn 'Give user option to disable dGPU when on battery';
       if [ -n "${_nvidia_list_str}" ]; then
         if "${_cm2KdiagExe}" --yesno "${_ask_disable_msg}"; then
-          if "${_escExe}" "${_pstate_set_exe}" 'disable-nvidia'; then
+          if [ -n "${_pstate_set_exe}" ] \
+            && "${_escExe}" "${_pstate_set_exe}" 'disable-nvidia'; then
             echo 'Discrete GPU disable successfully.';
             _cm2SucFn;
           else
