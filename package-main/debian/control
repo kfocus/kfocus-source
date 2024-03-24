@@ -3,7 +3,10 @@ Section:           misc
 Priority:          optional
 Maintainer:        Kubuntu Focus Team <support@kfocus.org>
 Standards-Version: 4.6.0
-Build-Depends:     debhelper-compat (=13)
+Build-Depends:     cmake,
+                   debhelper-compat (=13),
+                   qtbase5-dev,
+                   qtbase5-dev-tools
 
 Package:      kfocus-001-main
 Architecture: all
@@ -14,7 +17,7 @@ Description:  Transitional Dummy Package for kfocus-main
  It can be safely removed.
 
 Package:      kfocus-main
-Architecture: all
+Architecture: any
 Pre-Depends:  kfocus-apt-source (>> 22.04.7)
 Depends:      ${misc:Depends}, ${shlibs:Depends},
               build-essential (>= 12.4),
