@@ -19,13 +19,13 @@ void KDialogLauncher::launchDialog(const KDialogType &type, const QString &msg) 
     proc->setProgram("/usr/bin/kdialog");
     switch(type) {
         case Info:
-            proc->setArguments(QStringList() << "--msgbox" << msg);
+            proc->setArguments(QStringList() << "--title" << "FocusRx" << "--msgbox" << msg);
             break;
         case Warning:
-            proc->setArguments(QStringList() << "--sorry" << msg);
+            proc->setArguments(QStringList() << "--title" << "FocusRx" << "--sorry" << msg);
             break;
         case Error:
-            proc->setArguments(QStringList() << "--error" << msg);
+            proc->setArguments(QStringList() << "--title" << "FocusRx" << "--error" << msg);
             break;
     }
     proc->start();

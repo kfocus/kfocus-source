@@ -14,7 +14,7 @@ int main(int argc, char* argv[])
     auto connection = QDBusConnection::sessionBus();
     connection.registerObject("/", &obj);
 
-    if (!connection.registerService("org.kfocus.KDialogLauncher.launcher")) {
+    if (!connection.registerService("org.kfocus.FocusRxNotifier.launcher")) {
         return 1;
     }
     return QCoreApplication::exec();

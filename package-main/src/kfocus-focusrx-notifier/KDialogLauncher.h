@@ -7,7 +7,7 @@
 
 class KDialogLauncher : public QDBusAbstractAdaptor {
     Q_OBJECT
-    Q_CLASSINFO("D-Bus Interface", "org.kfocus.KDialogLauncher.launcher")
+    Q_CLASSINFO("D-Bus Interface", "org.kfocus.FocusRxNotifier.launcher")
 
     enum KDialogType {
         Info,
