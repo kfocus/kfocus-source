@@ -1,0 +1,10 @@
+[Unit]
+Description=Check if timed kfocus-rollback snapshots need to be taken regular intervals
+
+[Timer]
+OnBootSec=0
+OnUnitActiveSec=30min
+Unit=kfocus-rollback-timed-snapshot.service
+
+[Install]
+WantedBy=multi-user.target

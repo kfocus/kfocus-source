@@ -1,0 +1,7 @@
+[Unit]
+Description=FocusRx Rollback Timed Service
+
+[Service]
+Type=oneshot
+RemainAfterExit=no
+ExecStart=/usr/lib/kfocus/bin/kfocus-focusrx-system -s

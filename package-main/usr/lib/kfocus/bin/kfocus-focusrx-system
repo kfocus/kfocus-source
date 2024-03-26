@@ -68,7 +68,8 @@ _initCpuFn () {
 # Purpose   : Handle all system-level snapshot-related operations
 #
 _manageSnapshotsFn () {
-  true;
+  "${_snapshotSetExe}" 'restoreSnapshotStage2';
+  "${_snapshotSetExe}" 'createSnapshot' 'Timed';
 }
 # . END _manageSnapshotsFn }
 
