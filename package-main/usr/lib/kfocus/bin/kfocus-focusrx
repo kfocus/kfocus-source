@@ -353,6 +353,12 @@ _EOH06
     return;
   fi
 
+  # Prepare system for snapshotting (this should be done whether Internet is
+  # present or not)
+  if [ -n "${_snapshotSetExe}" ]; then
+    "${_snapshotSetExe}" 'prepareSystem' || exit;
+  fi
+
   # Bail if internet connection appears hopeless
   if ! _confirmInternetFn; then
     _cm2WarnStrFn 'Could not connect to internet';
@@ -1181,6 +1187,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     "_fixIbusExe|${_binDir}/kfocus-fix-ibus||optional"
     "_kcleanExe|${_binDir}/kfocus-kclean||optional"
     "_resetEffectsExe|${_binDir}/kfocus-reset-effects||optional"
+    "_snapshotSetExe|${_binDir}/kfocus-rollback-set||optional"
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2ErrStrFn 'Could not assign variables';

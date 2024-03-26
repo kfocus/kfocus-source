@@ -9,7 +9,7 @@
 # Purpose  : Does the actual snapshot create and restore operations
 # Example  : kfocus-rollback-set restoreSnapshot @2024-01-01:01:23:45
 # License  : GPLv2
-# Run By   : Developers only
+# Run By   : kfocus-rollback, kfocus-snapshot, system processes
 # Spec     : 4013
 # Note     : WORK IN PROGRESS, DO NOT USE IN PRODUCTION
 #
@@ -311,12 +311,11 @@ _deleteSnapshotFn () {
 _restoreSnapshotStage2Fn () {
   _checkSystemStateSetUpFn;
   
-  if [ -z "$(mount | grep 'btrfs' | grep '@kfocus-rollback-working')" ]; then
+  if [ -z "$(mount | grep 'btrfs' | grep '@kfocus-rollback-working')" ] \
+    && [ -z "$(mount | grep 'btrfs' | grep '@kfocus-rollback-working-boot')" ]; then
     if [ -d '/btrfs_main/@kfocus-rollback-working' ]; then
       btrfs subvolume delete --commit-after '/btrfs_main/@kfocus-rollback-working' || "${_exitDEATH}";
     fi
-  fi
-  if [ -z "$(mount | grep 'btrfs' | grep '@kfocus-rollback-working-boot')" ]; then
     if [ -d '/btrfs_boot/@kfocus-rollback-working-boot' ]; then
       btrfs subvolume delete --commit-after '/btrfs_boot/@kfocus-rollback-working-boot' \
         || "${_exitDEATH}";
@@ -344,13 +343,36 @@ _trimSnapshotsFn () {
 }
 
 _createSnapshotFn () {
-  declare _timestamp_str _snapshot_path _boot_snapshot_path;
+  declare _snapshot_event_type _timestamp_str _prev_timestamp_str \
+    _snapshot_path _boot_snapshot_path _hour_seconds _week_seconds;
   
   _checkSystemStateSetUpFn;
+
+  _hour_seconds=3600;
+  _week_seconds=604800;
 
   _timestamp_str="$(date +%s)";
   _snapshot_path="/btrfs_main/@kfocus-rollback-snapshots/@${_timestamp_str}";
   _boot_snapshot_path="/btrfs_boot/@kfocus-rollback-boot-snapshots/@${_timestamp_str}";
+  _prev_timestamp_str="$(ls ${_snapshot_path} | sed 's/@//' | sort -n \
+    | tail -n1)";
+  _snapshot_event_type="${1:-}"
+
+  case "${_snapshot_event_type}" in
+    'Apt')
+      if (( (${_timestamp_str} - ${_prev_timestamp_str}) \
+        < ${_hour_seconds} )); then
+        "${_exitOK}";
+      fi
+      ;;
+    'Timed')
+      if (( (${_timestamp_str} - ${_prev_timestamp_str}) \
+        < ${_week_seconds} )); then
+        "${_exitOK}";
+      fi
+      ;;
+    'User') true;; # always make snapshots if the user says so
+  esac
 
   if [ -e "${_snapshot_path}" ] || [ -e "${_boot_snapshot_path}" ]; then
     # This should theoretically never happen, but there's a non-zero chance
@@ -366,7 +388,28 @@ _createSnapshotFn () {
   btrfs subvolume snapshot -r '/btrfs_boot/@boot' "${_boot_snapshot_path}" \
     || "${_exitDEATH}";
 
+  if [ "${_snapshot_event_type}" != 'Apt' ]; then
+    echo "${_snapshot_event_type}" \
+      > '/var/lib/kfocus/kfocus_rollback_last_snapshot_reason';
+  fi
+
   _trimSnapshotsFn;
+}
+
+_labelAptSnapshotFn () {
+  declare _apt_history_str _history_line _event_str;
+
+  _apt_history_str="$(cat '/var/log/apt/history.log')";
+
+  while IFS= read -r _history_line || [[ -n "${_history_line}" ]]; do
+    if [[ "${_history_line}" =~ ^Install|Upgrade|Remove|Purge ]]; then
+      _event_str="$(cut -d':' -f1 <<< "${_history_line}")";
+      break;
+    fi
+  done < <(printf '%2' "${_apt_history_str}");
+
+  echo "Apt${_event_str}" \
+      > '/var/lib/kfocus/kfocus_rollback_last_snapshot_reason';
 }
 
 ## BEGIN _mainFn {
@@ -405,7 +448,7 @@ _mainFn () {
       _prepareSystemFn;
       ;;
     'createSnapshot')
-      _createSnapshotFn;
+      _createSnapshotFn "${2:-}";
       ;;
     'restoreSnapshot')
       _target_snapshot="${2:-}";
@@ -422,6 +465,9 @@ _mainFn () {
         "${_exitFAIL}";
       fi
       _deleteSnapshotFn "${_target_snapshot}";
+      ;;
+    'labelAptSnapshot')
+      _labelAptSnapshotFn;
       ;;
     'restoreSnapshotStage2')
       _restoreSnapshotStage2Fn;
@@ -480,7 +526,10 @@ ${_browStr}<h3 style="color:#f7941d">Low Disk Space</h3>${_erowStr}
 
 ${_browStr}Your system is running low on disk space. This could result in
 filesystem corruption if not corrected. Please clear some space
-by removing files or moving them to other drives.${_erowStr}</table>
+by removing files or moving them to other drives.${_erowStr}
+
+${_browStr}For your safety, no snapshot-related actions have been
+performed.${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
