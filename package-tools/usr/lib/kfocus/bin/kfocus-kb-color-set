@@ -441,18 +441,18 @@ _toggleEnableFn () {
 # Arguments : Some options take values.
 #   Hex colors have the form '<rrggbb>'.
 #   Rgb color have the form '<0-255> <0-255> <0-255>'.
-#   -c '<hex>' : Convert hex color to rgb (debug).
-#   -C  : Convert rgb color to hex (debug).
-#   -e 0|1  : Enable keyboard OFF or ON.
-#   -E 0|1  : Enable keyboard OFF or ON, ignore other state.
-#   -a  : print active state from keyboard <int:0-10>;<hex>;<0-1>.
-#   -p  : Read and print state from file <int:0-10>;<hex>;<0-1>.
-#   -r  : Read, print, apply state from file.
-#   -s '<0-10>;<hex>' : Set brightness and color; enable is set to 1.
-#   -t  : Toggle keyboard OFF/ON.
-# Globals   : OPTIND is reset to local for arg processing.
-# Outputs   : Prints diagnostics to stderr.
-# Returns   : 0 on success; no-zero on failure.
+#   -c <hex> : Convert hex color to rgb (debug).
+#   -C <rgb> : Convert rgb color to hex (debug).
+#   -e 0|1   : Enable keyboard OFF or ON.
+#   -E 0|1   : Enable keyboard OFF or ON, ignore other state.
+#   -l       : print active state from keyboard <int:0-10>;<hex>;<0-1>.
+#   -p       : Read and print state from file <int:0-10>;<hex>;<0-1>.
+#   -r       : Read, print, apply state from file.
+#   -s       : '<0-10>;<hex>' : Set brightness and color; enable is set to 1.
+#   -t       : Toggle keyboard OFF/ON.
+# Globals    : OPTIND is reset to local for arg processing.
+# Outputs    : Prints diagnostics to stderr.
+# Returns    : 0 on success; no-zero on failure.
 #
 _mainFn () {
   declare _opt_str;
