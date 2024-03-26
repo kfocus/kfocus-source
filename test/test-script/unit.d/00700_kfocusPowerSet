@@ -22,12 +22,11 @@
 # }
 
 _makeRunStrFn () {
-  declare _core_root_dir _noturbo_file _kbd_state_file \
+  declare _core_root_dir _noturbo_file \
     _core_count _str _core_idx _core_loop_dir;
 
   _core_root_dir='/sys/devices/system/cpu';
   _noturbo_file="${_core_root_dir}/intel_pstate/no_turbo";
-  _kbd_state_file='/sys/devices/platform/tuxedo_keyboard/state';
   _core_count="$(nproc)";
   _str='';
 
@@ -52,11 +51,10 @@ _makeRunStrFn () {
   _str+="\n  NoTurboInt: ";
   _str+="$(cat ${_noturbo_file})";
 
-  if [ -r "${_kbd_state_file}" ]; then
+  if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
     _str+="\n  KbdState  : ";
-    _str+="$(cat "${_kbd_state_file}")";
+    _str+="$("${_kbColorSetExe}" -l | cut -f3 -d';')";
   fi
-
   echo -e "${_str}";
 }
 
@@ -77,10 +75,11 @@ _makeRunStrFn () {
 #
 _normalizeCompareStrFn () {
   declare _str _end_str _line_list _line _bit_list;
-
   _str="${1:-}";
   _end_str="$(echo "${_str}" | tail -n-4)";
-  _str="$(echo "${_str}" | head -n-4 | tail -n+2 | sed '/^\s*$/d' | tr $'\n' '|')"
+  _str="$(
+    echo "${_str}" | head -n-4 | tail -n+2 | sed '/^\s*$/d' | tr $'\n' '|'
+  )";
   _str="$(echo "${_str//CORE/$'\n'}" |sed -E 's/\s*//g;/^$/d')";
   mapfile -t _line_list <<< "${_str}";
 
@@ -114,21 +113,14 @@ _echoCpuModelNameFn () {
 
 ## BEGIN _runAssertsFn {
 _runAssertsFn () {
-  declare _cr _cpu_name _pick_list _pick_str _power_exe _model_code \
-    _assert_count _assert_idx _fail_count _mode_str _expect_file _run_file \
+  declare _cr _pick_list _pick_str _assert_count _assert_idx \
+    _fail_count _mode_str _expect_file _run_file \
     _descr_str _expect_str _run_str _expect_normalized_str \
     _run_normalized_str _check_str _count_str;
 
   _cr=$'\n';
-  _cpu_name="$(_echoCpuModelNameFn)";
-
   _pick_list=( "$@" );
 
-  # shellcheck disable=SC1090,SC2154
-  _power_exe="${_t00TopDir}/package-tools/usr/lib/kfocus/";
-  _power_exe+='bin/kfocus-power-set';
-
-  _model_code="$(_cm2EchoModelStrFn 'code')";
   _assert_count="$(echo "${#_pick_list[@]}*2"|bc)";
   _assert_idx=0;
   _fail_count=0;
@@ -140,17 +132,17 @@ _runAssertsFn () {
     # shellcheck disable=SC2154
     _expect_file="$(
       printf '%s/%s_%s_%s.txt' "${_t00ExpectDir}" \
-        "${_model_code}" "${_cpu_name}" "${_mode_str}"
+        "${_modelCode}" "${_cpuName}" "${_mode_str}"
     )";
     # shellcheck disable=SC2154
     _run_file="$(
       printf '%s/%s_%s_%s.txt' "${_t00RunDir}" \
-        "${_model_code}" "${_cpu_name}" "${_mode_str}"
+        "${_modelCode}" "${_cpuName}" "${_mode_str}"
     )";
     if [ ! -f "${_expect_file}" ]; then touch "${_expect_file}"; fi
     if [ ! -f "${_run_file}"    ]; then touch "${_run_file}";    fi
 
-    sudo "${_power_exe}" "${_mode_str}";
+    sudo "${_powerSetExe}" "${_mode_str}";
     _expect_str="$(cat "${_expect_file}")";
     sleep 1;
 
@@ -174,7 +166,7 @@ _runAssertsFn () {
       meld "${_expect_file}" "${_run_file}";
     fi
 
-    _check_str="$("${_power_exe}" -r)";
+    _check_str="$("${_powerSetExe}" -r)";
     ((_assert_idx++));
     # shellcheck disable=SC2154
     _count_str="$(_t00MakeCountStrFn "${_assert_idx}" "${_assert_count}")";
@@ -195,15 +187,13 @@ _runAssertsFn () {
 
 ## BEGIN _testApiFn {
 _testApiFn () {
-  declare _pick_list _api_mode _model_code _cpu_name _field_list \
-    _expect_file _run_file _expect_str _run_str
+  declare _pick_list _api_mode _field_list \
+    _expect_file _run_file _expect_str _run_str;
 
   _pick_list=( "$@" );
   _api_mode="${_pick_list[0]}";
   _pick_list=("${_pick_list[@]:1}"); # Remove the API mode argument
-  _model_code="$(_cm2EchoModelStrFn 'code')";
-  _cpu_name="$(_echoCpuModelNameFn)";
-  _field_list=( "${_model_code}" "${_cpu_name}" "api_str_${_api_mode}" );
+  _field_list=( "${_modelCode}" "${_cpuName}" "api_str_${_api_mode}" );
 
   _expect_file="$(
     printf '%s/%s_%s_%s.txt' "${_t00ExpectDir}" "${_field_list[@]}"
@@ -227,26 +217,38 @@ _testApiFn () {
 }
 ## . END _testApiFn }
 
+## BEGIN Declare and assign globals {
+declare _modelCode _cpuName _toolDir _kbColorSetExe _powerSetExe _assignList;
+_modelCode="$(_cm2EchoModelStrFn 'code')";
+_cpuName="$(_echoCpuModelNameFn)";
+_toolDir="${_t00TopDir}/package-tools/usr/lib/kfocus/bin";
+
+_assign_list=(
+  "_kbColorSetExe|${_toolDir}/kfocus-kb-color-set"
+  "_powerSetExe|${_toolDir}/kfocus-power-set"
+);
+if ! _cm2AssignExeVarsFn "${_assign_list[@]}"; then
+  _cm2WarnStrFn 'ABORT: Required commands not found';
+  exit 1;
+fi
+## . END Declare and assign globals }
+
 ## BEGIN _runTestFn {
 _runTestFn () {
-  declare _power_exe _current_mode_str _pick_str _pick_list _fail_count \
+  declare _current_mode_str _pick_str _pick_list _fail_count \
     _assert_count _total_fail_count;
 
   # Use function from _runUnitTests: clear out run dir and check expect dir
   if ! _t00ClearRunDirFn;    then return 1; fi
   if ! _t00CheckExpectDirFn; then return 1; fi
-  
-  # shellcheck disable=SC1090,SC2154
-  _power_exe="${_t00TopDir}/package-tools/usr/lib/kfocus/";
-  _power_exe+='bin/kfocus-power-set';
 
   ## Important: First call needs sudo to set mode
-  _current_mode_str="$(sudo "${_power_exe}" -r)";
-  _total_fail_count=0
+  _current_mode_str="$(sudo "${_powerSetExe}" -r)";
+  _total_fail_count=0;
 
   ##
   _cm2EchoFn "BEGIN SUITE 1: kfocus-power-set -p API check\n";
-  _pick_str="$("${_power_exe}" -p)";
+  _pick_str="$("${_powerSetExe}" -p)";
   IFS=$'\n' read -r -d '' -a _pick_list <<<"${_pick_str}";
 
   _testApiFn 'p' "${_pick_list[@]}";
@@ -275,7 +277,7 @@ _runTestFn () {
 
   ##
   _cm2EchoFn "BEGIN SUITE 3: kfocus-power-set -x API check\n"
-  _pick_str="$("${_power_exe}" -x)";
+  _pick_str="$("${_powerSetExe}" -x)";
   IFS=$'\n' read -r -d '' -a _pick_list <<<"${_pick_str}";
  
   _testApiFn 'x' "${_pick_list[@]}";
@@ -311,7 +313,7 @@ _runTestFn () {
     _cm2EchoFn "  Reverting to initial power mode ${_current_mode_str}";
   fi
 
-  sudo "${_power_exe}" "${_current_mode_str}";
+  sudo "${_powerSetExe}" "${_current_mode_str}";
 
   return "${_total_fail_count}";
 }
