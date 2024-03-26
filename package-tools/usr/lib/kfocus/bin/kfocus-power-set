@@ -436,6 +436,7 @@ _mainFn () {
     '-p') _printOptionsFn 'p';;
     '-x') _printOptionsFn 'x';;
     '-r') _readModeFn;;
+    '-i') true;; # does CPU init only, and that's already done
       '') _cm2ErrStrFn 'Argument or flag required'; exit 1;;
        *) _setModeFn "${_arg_str}";
   esac

@@ -239,6 +239,11 @@ _cleanUpFn () {
   2>/dev/null deb-systemd-helper unmask kfocus-dm.service || true;
   _cmXSucFn;
 
+  # Ensure system-level FocusRx subsystem is functioning
+  _cmXSetMsgFn 'Install services';
+  2>/dev/null deb-systemd-helper enable kfocus-focusrx-system.service || true;
+  _cmXSucFn;
+
   # See https://askubuntu.com/questions/1018576
   # This allows boot work faster before network is enabled
   # 2551 Disabled to prevent breaking network file systems

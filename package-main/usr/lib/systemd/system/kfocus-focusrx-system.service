@@ -1,0 +1,8 @@
+[Unit]
+Description=FocusRx System-Level Services
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/lib/kfocus/bin/kfocus-focusrx-system -b
+[Install]
+WantedBy=multi-user.target

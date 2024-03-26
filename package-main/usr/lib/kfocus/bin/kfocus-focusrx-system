@@ -1,0 +1,126 @@
+#!/bin/bash
+#
+# Copyright 2019-2024 MindShare Inc.
+#
+# Written for the Kubuntu Focus by M. Mikowski and A. Rainbolt
+#
+# Name     : kfocus-focusrx-system
+# Summary  : kfocus-focusrx-system
+# Purpose  : Contains and runs system maintenance components that should not
+#            run in userspace.
+# Example  : kfocus-focusrx-systen
+# License  : GPLv2
+# Run By   : systemd
+# Spec     : 3476
+#
+set -u;
+
+## BEGIN _importCommonFn {
+# Summary   : _importCommonFn
+# Purpose   : Load common routines, prefer relative dir
+# Example   : _importCommonFn;
+# Arguments : none
+# Globals   : Package vars _baseDir _baseName
+# Outputs   : none
+# Returns   : none
+#
+_importCommonFn () {
+  declare _lib_list _is_loaded _lib_file;
+  _lib_list=(
+    "${_baseDir}/lib/common.2.source"
+    '/usr/lib/kfocus/lib/common.2.source'
+  );
+  _is_loaded='n';
+  for _lib_file in "${_lib_list[@]}"; do
+    if [ -r "${_lib_file}" ]; then
+      # shellcheck source=/usr/lib/kfocus/lib/common.2.source
+      if source "${_lib_file}"; then
+        _is_loaded='y';
+        break;
+      fi
+    fi
+  done
+
+  if [ "${_is_loaded}" = 'n' ]; then
+    echo 1>&2 "${_baseName}: ABORT - Cannot source common lib";
+    exit 202;
+  fi
+}
+## . END _importCommonFn }
+
+## BEGIN _initCpuFn {
+# Purpose   : Initialize CPU for 2023+ systems
+#
+_initCpuFn () {
+  declare _title;
+
+  _title='Initialize CPU';
+  _cm2SetMsgFn "${_title}";
+  if "${_powerSetExe}" -i; then
+    _cm2SucFn;
+    return;
+  fi
+  _cm2WarnFn;
+}
+## . END _initCpuFn }
+
+## BEGIN _manageSnapshotsFn {
+# Purpose   : Handle all system-level snapshot-related operations
+#
+_manageSnapshotsFn () {
+  true;
+}
+# . END _manageSnapshotsFn }
+
+## BEGIN _mainFn {
+#
+_mainFn () {
+  declare _opt_str;
+
+  while getopts ':sb' _opt_str; do
+    case "${_opt_str}" in
+    b) # Bootup tasks
+      _cm2EchoFn "== BEGIN :     ${_rootTitle}\n";
+      _initCpuFn;
+      _manageSnapshotsFn;
+      _cm2EchoFn "\n==. END : OK   ${_rootTitle}\n\n";
+      ;;
+    s) # Regular snapshot maintenance
+      _manageSnapshotsFn;
+      ;;
+    *) _cm2EchoFN "\nInvalid option: -$OPTARG} \n";
+      _exit 1;;
+    esac
+  done
+}
+## . END _mainFn }
+
+## BEGIN Declare and assign global vars {
+#
+declare _binName _binDir _baseName _baseDir _rootTitle _assignList;
+## . END Declare and assign global vars }
+
+## BEGIN Run mainFn when script is NOT sourced {
+#
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+  _rootTitle='FocusRx System-Level'
+
+  # Import libs and assign more global vars
+  _importCommonFn;
+  _assignList=(
+    '_powerSetExe|kfocus-power-set'
+    '_snapshotSetExe|kfocus-rollback-set'
+  );
+  if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
+    _cm2WarnStrFn 'ABORT: Required commands not found';
+    exit 1;
+  fi
+
+  _mainFn "$@";
+fi
+## . END Run mainFn when script is NOT sourced }
+
