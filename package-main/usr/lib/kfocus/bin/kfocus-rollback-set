@@ -120,7 +120,6 @@ _setSystemStateFn () {
 
   if [ -d '/btrfs_main' ] && [ -d '/btrfs_boot' ]; then
     if [ -d '/btrfs_main/@' ] \
-      && [ -d '/btrfs_main/@home' ] \
       && [ -d '/btrfs_main/@kfocus-rollback-snapshots' ] \
       && [ -d '/btrfs_boot/@boot' ] \
       && [ -d '/btrfs_boot/@kfocus-rollback-boot-snapshots' ]; then
@@ -138,8 +137,8 @@ _setSystemStateFn () {
         && [ "${_main_fs}" != "${_boot_fs}" ]; then
         _main_subvols_str="$(btrfs subvolume list / | awk '{ print $9 }' | sort)";
         _boot_subvols_str="$(btrfs subvolume list /boot | awk '{ print $9 }' | sort)";
-        if [ "${_main_subvols_str}" = $'@\n@home\n@swap' ] \
-          || [ "${_main_subvols_str}" = $'@\n@home' ]; then
+        if grep -E '^@$' <<< "${_main_subvols_str}" && \
+          LC_ALL='C' mount | grep -q ' on /home '; then
           if [ -z "${_boot_subvols_str}" ]; then
             _systemState='SUPPORTED, NOT SET UP';
           else
