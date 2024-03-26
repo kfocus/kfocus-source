@@ -79,7 +79,7 @@ _direWarningFn () {
     sudo -u "${_user_list[_xserver_idx]}" \
       DISPLAY="${_xserver_list[_xserver_idx]}" \
       DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${_uid_list[_xserver_idx]}/bus" \
-      qdbus org.kfocus.FocusRxNotifier.launcher / "${_mode}" "${_msg}";
+      qdbus org.kfocus.FocusRxDispatch.launcher / "${_mode}" "${_msg}";
   done
 }
 ## . END _direWarningFn }
