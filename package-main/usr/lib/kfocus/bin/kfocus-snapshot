@@ -1,0 +1,270 @@
+#!/bin/bash
+#
+# Copyright 2019-2023 MindShare Inc.
+#
+# Written for the Kubuntu Focus by M. Mikowski and A. Rainbolt.
+#
+# Name     : kfocus-snapshot
+# Summary  : kfocus-snapshot
+# Purpose  : Provides a UI for creating new BTRFS snapshots
+# Example  : kfocus-snapshot
+# License  : GPLv2
+# Run By   : Users
+# Spec     : 4013
+#
+set -u;
+
+## BEGIN _importCommonFn {
+# Summary   : _importCommonFn
+# Purpose   : Load common routines, prefer relative dir
+# Example   : _importCommonFn;
+# Arguments : none
+# Globals   : Package vars _baseDir _baseName
+# Outputs   : none
+# Returns   : none
+#
+_importCommonFn () {
+  declare _lib_list _is_loaded _lib_file;
+  _lib_list=(
+    "${_baseDir}/lib/common.2.source"
+    '/usr/lib/kfocus/lib/common.2.source'
+  );
+  _is_loaded='n';
+  for _lib_file in "${_lib_list[@]}"; do
+    if [ -r "${_lib_file}" ]; then
+      # shellcheck source=/usr/lib/kfocus/lib/common.2.source
+      if source "${_lib_file}"; then
+        _is_loaded='y';
+        break;
+      fi
+    fi
+  done
+
+  if [ "${_is_loaded}" = 'n' ]; then
+    echo 1>&2 "${_baseName}: ABORT - Cannot source common lib";
+    exit 202;
+  fi
+}
+## . END _importCommonFn }
+
+## BEGIN _infoWindowFn {
+#
+_infoWindowFn () {
+  if [ "${_cm2IsTty}" = 'n' ]; then
+    "${_kdiagExe}" --title "${_winTitle}" --msgbox "${1:-}";
+  else
+    "${_whiptailExe}" --title "${_winTitle}" --msgbox \
+      "$(_cm2StripTagsFn "${1:-}")" 0 0;
+  fi
+}
+## . END _infoWindowFn }
+
+## BEGIN _ynWindowFn {
+#
+_ynWindowFn () {
+  if [ "${_cm2IsTty}" = 'n' ]; then
+    "${_kdiagExe}" --title "${_winTitle}" --yesno "${1:-}";
+  else
+    # See https://www.redhat.com/sysadmin/use-whiptail section 'Generate a
+    # query' for context on the funky redirection trick here.
+    "${_whiptailExe}" --title "${_winTitle}" --yesno \
+      "$(_cm2StripTagsFn "${1:-}")" 0 0 3>&1 1>&2 2>&3;
+  fi
+}
+## . END _ynWindowFn }
+
+## BEGIN _errorWindowFn {
+#
+_errorWindowFn () {
+  if [ "${_cm2IsTty}" = 'n' ]; then
+    "${_kdiagExe}" --title "${_winTitle}" --error "${1:-}";
+  else
+    "${_whiptailExe}" --title "${_winTitle}" --msgbox \
+      "$(_cm2StripTagsFn "${1:-}")" 0 0;
+  fi
+}
+## . END _errorWindowFn }
+
+_getSystemStateFn () {
+  "${_snapshotSetExe}" 'getSystemState';
+}
+
+_createSnapshotFn () {
+  "${_escExe}" "${_snapshotSetExe}" 'createSnapshot' 'User';
+}
+
+## BEGIN _mainFn {
+#
+_mainFn () {
+  declare _system_state_str _ans _fail_int;
+
+  # This function will exit with LOCK if the lockfile cannot be grabbed, so we
+  # wait until the lock is released before showing the UI (since we have to in
+  # order to get the state of the system).
+  while true; do
+    _system_state_str="$(_getSystemStateFn)"
+    if [ "$?" = "${_LOCK}" ]; then
+      sleep 1;
+    elif [ "$?" != '0' ]; then
+      exit;
+    fi
+  done
+
+  if [ "${_system_state_str}" != 'SUPPORTED, SET UP' ]; then
+    _infoWindowFn "${_systemUnsupportedMsg}";
+    exit "${_OK}";
+  fi
+
+  _ans="$(_ynWindowFn "${_createSnapshotMsg}")";
+
+  if [ "${_ans}" = 'y' ]; then
+    if _createSnapshotFn; then
+      _infoWindowFn "${_snapshotCreatedMsg}";
+    else
+      if [ "$?" = "${_FAIL}" ]; then
+        _infoWindowFn "${_snapshotCreationFailedMsg}";
+      else
+        _fail_int="$?";
+        _errorWindowFn "${_criticalErrorMsg}";
+        exit "${_fail_int}";
+      fi
+    fi
+  fi
+
+  exit "${_OK}";
+}
+## . END _mainFn }
+
+## BEGIN Declare and assign global vars {
+declare _binName _binDir _baseName _baseDir _assignList _kdiagExe \
+  _snapshotSetExe _escExe _winTitle _browStr _erowStr _tableStr \
+  _createSnapshotMsg _systemUnsupportedMsg _snapshotCreatedMsg \
+  _snapshotCreationFailedMsg _criticalErrorMsg _OK _FAIL _RECFAIL _CRITFAIL \
+  _DEATH _LOCK;
+## . END Declare and assign global vars }
+
+## BEGIN Run mainFn when script is NOT sourced {
+#
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+
+  _assignList=(
+    '_kdiagExe|/usr/bin/kdialog'
+    '_whiptailExe|/usr/bin/whiptail'
+    "_snapshotSetExe|${_binDir}/kfocus-rollback-set"
+  );
+
+  _escExe="$(_cm2GetEscExeFn)" || exit;
+
+  # Import libs and assign more global vars
+  _importCommonFn;
+  if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
+    _cm2ErrStrFn 'Could not assign variable';
+    exit 1;
+  fi
+
+  # Set UI messages
+  _winTitle='FocusRx: Snapshot';
+  _browStr='<tr><td style="padding:8px 32px 8px 0">';
+  _erowStr='</td></tr>';
+  _tableStr='<table style="width:100%;margin-right:32px">';
+
+  _createSnapshotMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}<h3 style="color:#f7941d">FocusRx: Snapshot</h3>${_erowStr}
+
+${_browStr}Doc: <a style="color:#1d99f3"
+  href="https://kfocus.org/wf/tools#snapshot"
+  >https://kfocus.org/wf/tools#snapshot</a>${_erowStr}
+
+${_browStr}This snapshot utility allows you to create a restore point for
+your system files. You can restore this snapshot using System
+Rollback.${_erowStr}
+
+${_browStr}This process is generally safe, however we recommend you back up
+your data before any system maintenance. You may always return to
+this utility later using
+<code>Start Menu > Kubuntu Focus > System Snapshot</code>.${_erowStr}
+
+${_browStr}<b>Create Snapshot Now?</b>${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _systemUnsupportedMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}<h3 style="color:#f7941d">System Unsupported</h3>${_erowStr}
+
+${_browStr}Doc: <a style="color:#1d99f3"
+  href="https://kfocus.org/wf/tools#snapshot"
+  >https://kfocus.org/wf/tools#snapshot</a>${_erowStr}
+
+${_browStr}This snapshot utility allows you to create a restore point for
+your system files. You can restore this snapshot using System
+Rollback.${_erowStr}
+
+${_browStr}This system does not appear to support snapshotting and rollback.
+Please see
+<a style="color:#1d99f3" href="https://kfocus.org/wf/recovery"
+>https://kfocus.org/wf/recovery</a>
+for other recovery steps you can take.${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _snapshotCreatedMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}<h3 style="color:#f7941d">Snapshot Created</h3>${_erowStr}
+
+${_browStr}A system file snapshot has been successfully
+created.${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _snapshotCreationFailedMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}<h3 style="color:#f7941d">Snapshot Creation Failed</h3>${_erowStr}
+
+${_browStr}Something went wrong and FocusRx was unable to create a system file
+snapshot. No changes have been made to your system.${_erowStr}
+
+${_browStr}Please try to create a snapshot again. You are encouraged to
+contact technical support if this issue is persistent.${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _criticalErrorMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}<h3 style="color:#f7941d">Critical Error</h3>${_erowStr}
+
+${_browStr}FocusRx was interrupted while attempting to snapshot system files.
+This incident may be the result of failing hardware or a software
+conflict.${_erowStr}
+
+${_browStr}<b>Please do NOT reboot. Back up your data as soon as possible.</b>
+Failure to do so may result in data loss. See
+<a style="color:#1d99f3"
+href="https://kfocus.org/wf/backup#bkm_take_a_snapshot"
+>https://kfocus.org/wf/backup#bkm_take_a_snapshot</a>
+for instructions on how to safeguard your data.${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  # Set meaningful names for error codes
+  _OK='0';
+  _FAIL='1';
+  _RECFAIL='2';
+  _CRITFAIL='3';
+  _DEATH='4';
+  _LOCK='20';
+
+  _mainFn "$@";
+fi
+## . END Run mainFn when script is NOT sourced }
+

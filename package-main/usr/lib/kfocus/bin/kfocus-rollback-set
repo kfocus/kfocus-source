@@ -5,9 +5,12 @@
 # Written for the Kubuntu Focus by M. Mikowski and A. Rainbolt
 #
 # Name     : kfocus-rollback-set
-# Summary  : kfocus-rollback-set
+# Summary  : kfocus-rollback-set (createSnapshot <Apt|Timed|User>
+#              | restoreSnapshot @<timestamp> | deleteSnapshot @<timestamp>
+#              | labelAptSnapshot | restoreSnapshotStage2 | prepareSystem
+#              | getSystemState)
 # Purpose  : Does the actual snapshot create and restore operations
-# Example  : kfocus-rollback-set restoreSnapshot @2024-01-01:01:23:45
+# Example  : kfocus-rollback-set restoreSnapshot @1234
 # License  : GPLv2
 # Run By   : kfocus-rollback, kfocus-snapshot, system processes
 # Spec     : 4013
@@ -452,6 +455,9 @@ _mainFn () {
   _mode="${1:-}";
 
   case "${_mode}" in
+    'getSystemState')
+      echo "${_systemState}";
+      ;;
     'prepareSystem')
       _prepareSystemFn;
       ;;
@@ -505,7 +511,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binDir="$(   dirname  "${_binName}" )" || exit 101;
   _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
   _baseName="$( basename "${_binName}" )" || exit 101;
-  _lockFile="/tmp/${_baseName}.lock";
+  _lockFile="/tmp/kfocus-rollback-backend.lock";
   _systemState='';
 
   # Import libs and assign more global vars
