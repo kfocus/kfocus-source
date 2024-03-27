@@ -65,6 +65,9 @@ _mainFn () {
   # order to get the state of the system).
   while true; do
     _system_state_str="$(_getSystemStateFn)"
+
+    # Override false positive due to complex exit code handling
+    # shellcheck disable=SC2181
     if [ "$?" = "${_LOCK}" ]; then
       sleep 1;
     elif [ "$?" != '0' ]; then

@@ -108,7 +108,7 @@ _chkSetFlockFn () {
   exec 211>"${_lockFile}" || exit 21;
   if ! flock -n -e 211; then
     1>&2 echo "Cannot get lock on ${_lockFile}";
-    ${_exitLOCK};
+    _exitLOCK;
   fi
   # Trap unexpected exits to clean up lock file
   trap _trapExitFn EXIT;
@@ -293,7 +293,7 @@ _restoreSnapshotFn () {
   mv '/btrfs_boot/@boot' '/btrfs_boot/@kfocus-rollback-working-boot' \
     || _exitCRITFAIL;
   btrfs subvolume snapshot "${_boot_snapshot_path}" '/btrfs_boot/@boot' \
-    || exit _exitDEATH;
+    || _exitDEATH;
   mount /boot/efi || _exitCRITFAIL;
 }
 
@@ -322,8 +322,8 @@ _deleteSnapshotFn () {
 _restoreSnapshotStage2Fn () {
   _checkSystemStateSetUpFn;
   
-  if [ -z "$(mount | grep 'btrfs' | grep '@kfocus-rollback-working')" ] \
-    && [ -z "$(mount | grep 'btrfs' | grep '@kfocus-rollback-working-boot')" ]; then
+  if ! mount | grep 'btrfs' | grep -q '@kfocus-rollback-working' \
+    && ! mount | grep 'btrfs' | grep -q '@kfocus-rollback-working-boot'; then
     if [ -d '/btrfs_main/@kfocus-rollback-working' ]; then
       btrfs subvolume delete --commit-after '/btrfs_main/@kfocus-rollback-working' || _exitDEATH;
     fi
@@ -371,14 +371,14 @@ _createSnapshotFn () {
 
   case "${_snapshot_event_type}" in
     'Apt')
-      if (( (${_timestamp_str} - ${_prev_timestamp_str}) \
-        < ${_hour_seconds} )); then
+      if (( (_timestamp_str - _prev_timestamp_str) \
+        < _hour_seconds )); then
         _exitOK;
       fi
       ;;
     'Timed')
-      if (( (${_timestamp_str} - ${_prev_timestamp_str}) \
-        < ${_week_seconds} )); then
+      if (( (_timestamp_str - _prev_timestamp_str) \
+        < _week_seconds )); then
         _exitOK;
       fi
       ;;
@@ -439,9 +439,9 @@ _mainFn () {
 
   _main_min_space=21474836480 # 20 GiB
   _boot_min_space=1073741824 # 1 GiB
-  _main_space="$(LC_ALL=C btrfs fi usage -b /btrfs_main \
+  _main_space="$(LC_ALL=C btrfs filesystem usage -b /btrfs_main \
     | awk '/Free \(estimated\)/{ print $3 }')";
-  _boot_space="$(LC_ALL=C btrfs fi usage -b /btrfs_boot \
+  _boot_space="$(LC_ALL=C btrfs filesystem usage -b /btrfs_boot \
     | awk '/Free \(estimated\)/{ print $3 }')";
 
   if [ -d '/btrfs_main' ] && [ -d '/btrfs_boot' ]; then

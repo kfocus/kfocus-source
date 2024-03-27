@@ -51,16 +51,84 @@ _getSystemStateFn () {
   "${_snapshotSetExe}" 'getSystemState';
 }
 
+_restoreSnapshotFn () {
+  "${_escExe}" "${_snapshotSetExe}" 'restoreSnapshot' "${1:-}";
+}
+
+_getSnapshotListStrFn () {
+   find '/btrfs_main/@kfocus-rollback-working' -maxdepth 1 \
+     | sed 's?/btrfs_main/@kfocus-rollback-working/@??' \
+     | sort -n -r \
+     | sed 's/^/@/';
+}
+
+_chooseSnapshotFn () {
+  declare _snapshot_list_str _snapshot_list _snapshot_disp_list _radio_list \
+    _snapshot_idx _answer;
+
+  _snapshot_list_str="$(_getSnapshotListStrFn)";
+  readarray -t _snapshot_list <<< "${_snapshot_list_str}";
+  _snapshot_disp_list=();
+  _radio_list=();
+
+  for (( _snapshot_idx=0; _snapshot_idx < ${#_snapshot_list[@]}; \
+    _snapshot_idx++ )); do
+    _snapshot_disp_list[_snapshot_idx]="$(date -d \
+      "${_snapshot_list[_snapshot_idx]}")";
+    _radio_list+=( "${_snapshot_idx}" \
+      "${_snapshot_disp_list[_snapshot_idx]}" 'off' );
+  done
+
+  _answer="$(_cm2PromptUserFn "${_winTitle}" "${_chooseSnapshotMsg}" 'r' \
+    "${_radio_list[@]}")";
+
+  if [ "${_answer}" = 'cancelled' ]; then
+    echo 'cancelled';
+    return;
+  fi
+
+  for (( _snapshot_idx=0; _snapshot_idx < ${#_snapshot_list[@]}; \
+    _snapshot_idx++ )); do
+    if [ "${_snapshot_disp_list[_snapshot_idx]}" = "${_answer}" ]; then
+      echo "${_snapshot_list[_snapshot_idx]}";
+      return;
+    fi
+  done
+
+  _cm2WarnStrFn 'Invalid snapshot selected.';
+  exit 1;
+}
+
+_handleRestoreExitIntFn () {
+  declare _exit_int;
+
+  _exit_int="${1:-}";
+
+  if [ "${_exit_int}" = '0' ]; then
+    _cm2PromptUserFn "${_winTitle}" "${_rebootMsg}";
+    exit "${_OK}";
+  elif [ "${_exit_int}" = '1' ]; then
+    _cm2PromptUserFn "${_winTitle}" "${_restoreFailedMsg}";
+    exit "${_FAIL}";
+  else
+    _cm2PromptUserFn "${_winTitle}" "${_criticalErrorMsg}";
+    exit "${_exit_int}";
+  fi
+}
+
 ## BEGIN _mainFn {
 #
 _mainFn () {
-  declare _system_state_str _ans _fail_int;
+  declare _system_state_str _snapshot_id;
 
   # This function will exit with LOCK if the lockfile cannot be grabbed, so we
   # wait until the lock is released before showing the UI (since we have to in
   # order to get the state of the system).
   while true; do
     _system_state_str="$(_getSystemStateFn)"
+    
+    # Override false positive due to complex exit code handling
+    # shellcheck disable=SC2181
     if [ "$?" = "${_LOCK}" ]; then
       sleep 1;
     elif [ "$?" != '0' ]; then
@@ -73,6 +141,42 @@ _mainFn () {
     exit "${_OK}";
   fi
 
+  if mount | grep 'btrfs' | grep -q '@kfocus-rollback-working' \
+    || mount | grep 'btrfs' | grep -q '@kfocus-rollback-working-boot'; then
+    _cm2PromptUserFn "${_winTitle}" "${_restoreIncompleteMsg}" 's';
+    exit "${_OK}";
+  fi
+
+  if [ -z "$(ls '/btrfs_main/@kfocus-rollback-snapshots')" ]; then
+    _cm2PromptUserFn "${_winTitle}" "${_noSnapshotsFoundMsg}";
+    exit "${_OK}";
+  fi
+
+  if [ "$(_cm2PromptUserFn "${_winTitle}" "${_welcomeMsg}" 'a')" = 'n' ]; then
+    exit "${_OK}";
+  fi
+
+  if [ -e '/btrfs_main/@kfocus-rollback-working' ] \
+    || [ -e '/btrfs_boot/@kfocus-rollback-working-boot' ]; then
+    _cm2PromptUserFn "${_winTitle}" "${_strangeSubvolsMsg}" 's';
+    exit "${_FAIL}"
+  fi
+
+  if [ "$(_cm2PromptUserFn "${_winTitle}" "${_oneTouchMsg}" 'a')" = 'y' ]; then
+    _restoreSnapshotFn "$(_getSnapshotListStrFn | head -n1)"
+    _handleRestoreExitIntFn "$?";
+  fi
+
+  _snapshot_id="$(_chooseSnapshotFn)";
+
+  if [ "${_snapshot_id}" = 'cancelled' ]; then
+    _cm2PromptUserFn "${_winTitle}" "${_restoreCancelledMsg}";
+    exit "${_OK}";
+  fi
+
+  _restoreSnapshotFn "${_snapshot_id}";
+  _handleRestoreExitIntFn "$?";
+
   exit "${_OK}";
 }
 ## . END _mainFn }
@@ -82,8 +186,8 @@ declare _binName _binDir _baseName _baseDir _assignList _kdiagExe \
   _whiptailExe _snapshotSetExe _escExe _winTitle _browStr _erowStr _tableStr \
   _welcomeMsg _systemUnsupportedMsg _restoreIncompleteMsg \
   _noSnapshotsFoundMsg _strangeSubvolsMsg _oneTouchMsg _rebootMsg \
-  _restoreFailedMsg _criticalErrorMsg _OK _FAIL _RECFAIL _CRITFAIL _DEATH \
-  _LOCK;
+  _restoreFailedMsg _criticalErrorMsg _chooseSnapshotMsg \
+  _restoreCancelledMsg _OK _FAIL _RECFAIL _CRITFAIL _DEATH _LOCK;
 ## . END Declare and assign global vars }
 
 ## BEGIN Run mainFn when script is NOT sourced {
@@ -116,38 +220,179 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _tableStr='<table style="width:100%;margin-right:32px">';
 
   _welcomeMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}<h3 style="color:#f7941d">FocusRx: Rollback</h3>${_erowStr}
+
+${_browStr}Doc: <a style="color:#1d99f3"
+  href="https://kfocus.org/wf/tools#rollback"
+  >https://kfocus.org/wf/tools#rollback</a>${_erowStr}
+
+${_browStr}This rollback utility will guide you through restoring your system
+to an earlier working state. This is useful for recovering from a
+failed or otherwise problematic software update.${_erowStr}
+
+${_browStr}This process is generally save, however we recommend you back up
+your data before any system maintenance. You may always return to
+this utility later using
+<code>Start Menu > Kubuntu Focus > System Rollback.</code>${_erowStr}
+
+${_browStr}<b>Continue with Rollback?</b>${_erowStr}</table>
+${_cm2HtmEndStr}
 EOF
   )";
 
   _systemUnsupportedMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}<h3 style="color:#f7941d">System Unsupported</h3>${_erowStr}
+
+${_browStr}Doc: <a style="color:#1d99f3"
+  href="https://kfocus.org/wf/tools#rollback"
+  >https://kfocus.org/wf/tools#rollback</a>${_erowStr}
+
+${_browStr}This rollback utility will guide you through restoring your system
+to an earlier working state. This is useful for recovering from a
+failed or otherwise problematic software update.${_erowStr}
+
+${_browStr}This system does not appear to support snapshotting and rollback.
+Please see
+<a style="color:#1d99f3" href="https://kfocus.org/wf/recovery"
+>https://kfocus.org/wf/recovery</a>
+for other recovery steps you can take.${_erowStr}</table>
+${_cm2HtmEndStr}
 EOF
   )";
 
   _restoreIncompleteMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}<h3 style="color:#f7941d">Restore Incomplete</h3>${_erowStr}
+
+${_browStr}Doc: <a style="color:#1d99f3"
+  href="https://kfocus.org/wf/tools#rollback"
+  >https://kfocus.org/wf/tools#rollback</a>${_erowStr}
+
+${_browStr}This rollback utility will guide you through restoring your system
+to an earlier working state. This is useful for recovering from a
+failed or otherwise problematic software update.${_erowStr}
+
+${_browStr}You appear to have restored a snapshot, but have not yet rebooted
+after this. Please reboot to finalize the restore process. If this
+does not fix your system, you can attempt another rollback.${_erowStr}</table>
+${_cm2HtmEndStr}
 EOF
   )";
 
   _noSnapshotsFoundMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}<h3 style="color:#f7941d">Restore Incomplete</h3>${_erowStr}
+
+${_browStr}Doc: <a style="color:#1d99f3"
+  href="https://kfocus.org/wf/tools#rollback"
+  >https://kfocus.org/wf/tools#rollback</a>${_erowStr}
+
+${_browStr}This rollback utility will guide you through restoring your system
+to an earlier working state. This is useful for recovering from a
+failed or otherwise problematic software update.${_erowStr}
+
+${_browStr}There do not appear to be any snapshots available to roll back to.
+Please see
+<a style="color:#1d99f3" href="https://kfocus.org/wf/recovery"
+>https://kfocus.org/wf/recovery</a>
+for other recovery steps you can take.${_erowStr}</table>
+${_cm2HtmEndStr}
 EOF
   )";
 
   _strangeSubvolsMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}<h3 style="color:#f7941d">Strange BTRFS Subvols</h3>${_erowStr}
+
+${_browStr}Your system appears to have a BTRFS subvolume
+(either <code>/btrfs_main/@kfocus-rollback-working</code> or
+<code>/btrfs_boot/@kfocus-rollback-working-boot</code) that shouldn't 
+normally exist. The restore operation cannot proceed with either of
+these subvolumes present.${_erowStr}
+
+${_browStr}Please ensure neither subvolume contains any important data, and
+remove them with <code>sudo btrfs subvolume delete</code>.${_erowStr}</table>
+${_cm2HtmEndStr}
 EOF
   )";
 
   _oneTouchMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}<h3 style="color:#f7941d">One-Touch Rollback?</h3>${_erowStr}
+
+${_browStr}If the problem you're encountering onlyl surfaced recently, you may
+be able to resolve it by rolling back to the most recent snapshot.
+This will usuallly roll back to before the last system software
+update.${_erowStr}
+
+${_browStr}<b>Initiate One-Touch Rollback?</b>${_erowStr}</table>
+${_cm2HtmEndStr}
 EOF
   )";
 
   _rebootMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}<h3 style="color:#f7941d">Reboot Now</h3>${_erowStr}
+
+${_browStr}FocusRx has successfully restored your system to an earlier state.
+<b>Please reboot as soon as possible to finalize the restore
+process.</b>${_erowStr}</table>
+${_cm2HtmEndStr}
 EOF
   )";
 
   _restoreFailedMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}<h3 style="color:#f7941d">Restore Failed</h3>${_erowStr}
+
+${_browStr}Something went wrong and FocusRx was unable to restore the system
+to an earlier state. No changes have been made.${_erowStr}
+
+${_browStr}Please try to restore again. If this fails, see
+<a style="color:#1d99f3" href="https://kfocus.org/wf/recovery"
+>https://kfocus.org/wf/recovery</a>
+for other recovery options. You are encouraged to contact technical
+support of this issue is persistent.${_erowStr}</table>
 EOF
   )";
 
   _criticalErrorMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}<h3 style="color:#f7941d">Critical Error</h3>${_erowStr}
+
+${_browStr}FocusRx was interrupted while attempting to restore your system.
+This incident may be the result of failing hardware or a software
+conflict.${_erowStr}
+
+${_browStr}<b>Please do NOT reboot. Back up your data as soon as possible.</b>
+Failure to do so may result in data loss. See
+<a style="color:#1d99f3"
+href="https://kfocus.org/wf/backup#bkm_take_a_snapshot"
+>https://kfocus.org/wf/backup#bkm_take_a_snapshot</a>
+for instructions on how to safeguard your data.${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _chooseSnapshotMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}<h3 style="color:#f7941d">Choose Snapshot</h3>${_erowStr}
+
+${_browStr}Select the snapshot you would like to restore. Snapshots are ordered
+from newest to oldest.${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _restoreCancelledMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}<h3 style="color:#f7941d">Restore Cancelled</h3>${_erowStr}
+
+${_browStr}Restore operation cancelled. No changes have been made to the
+system.${_erowStr}</table>
+${_cm2HtmEndStr}
 EOF
   )";
 
