@@ -48,6 +48,15 @@ _importCommonFn () {
 }
 ## . END _importCommonFn }
 
+## BEGIN Set meaningful names for exit codes {
+_exitOK () { exit 0; }
+_exitFAIL () { exit 1; }
+_exitRECFAIL () { exit 2; }
+_exitCRITFAIL () { exit 3; }
+_exitDEATH () { exit 4; }
+_exitLOCK () { exit 20; }
+## . END Set meaningful names for exit codes }
+
 ## BEGIN _direWarningFn {
 # See https://stackoverflow.com/a/49533938
 #
@@ -159,7 +168,7 @@ _setSystemStateFn () {
 
 _checkSystemStateSetUpFn () {
   if ! [ "${_systemState}" = 'SUPPORTED, SET UP' ]; then
-    "${_exitOK}";
+    _exitOK;
   fi
 }
 
@@ -174,7 +183,7 @@ _prepareSystemFn () {
   if [ "${_systemState}" = 'SUPPORTED, SET UP' ] \
     || [ "${_systemState}" = 'UNSUPPORTED' ]; then
     _cm2WarnStrFn 'This system appears to be snapshot-enabled already.';
-    "${_exitOK}";
+    _exitOK;
   fi
 
   if [ -d '/etc/libvirt' ] || [ -d '/var/lib/libvirt' ]; then
@@ -183,27 +192,27 @@ _prepareSystemFn () {
     if [ -n "$(ls -A /etc/libvirt 2>/dev/null)" ] || \
       [ -n "$(ls -A /var/lib/libvirt 2>/dev/null)" ]; then
       _cm2WarnStrFn 'Cannot create libvirt subvols, libvirt is installed!';
-      "${_exitFAIL}";
+      _exitFAIL;
     fi
   fi
 
-  mkdir -p /btrfs_main || "${_exitRECFAIL}";
-  mkdir -p /btrfs_boot || "${_exitRECFAIL}";
-  mkdir -p /etc/libvirt || "${_exitRECFAIL}";
-  mkdir -p /var/lib/libvirt || "${_exitRECFAIL}";
+  mkdir -p /btrfs_main || _exitRECFAIL;
+  mkdir -p /btrfs_boot || _exitRECFAIL;
+  mkdir -p /etc/libvirt || _exitRECFAIL;
+  mkdir -p /var/lib/libvirt || _exitRECFAIL;
 
   #####
   # STAGE 2: fstab adjustment
 
   _root_mount_id="$(LC_ALL=C mount | grep ' on / ' | cut -d' ' -f1)";
-  _boot_mount_id="UUID=$(LC_ALL=C lsblk -f | grep -P '/boot$' \
-    | awk '{ print $4 }')";
+  _boot_mount_id="UUID=$(LC_ALL=C lsblk -o NAME,FSTYPE,UUID,MOUNTPOINTS | grep -P '/boot$' \
+    | awk '{ print $3 }')";
   _btrfs_defaults_str="defaults,noatime,autodefrag 0 0";
 
-  echo "${_root_mount_id} /btrfs_main btrfs subvolid=5,${_btrfs_defaults_str}" >> /etc/fstab || "${_exitRECFAIL}";
-  echo "${_boot_mount_id} /btrfs_boot btrfs subvolid=5,${_btrfs_defaults_str}" >> /etc/fstab || "${_exitRECFAIL}";
-  echo "${_root_mount_id} /etc/libvirt btrfs subvol=@libvirt-machines/@etc-libvirt,${_btrfs_defaults_str}" >> /etc/fstab || "${_exitRECFAIL}";
-  echo "${_root_mount_id} /var/lib/libvirt btrfs subvol=@libvirt-machines/@var-lib-libvirt,${_btrfs_defaults_str}" >> /etc/fstab || "${_exitRECFAIL}";
+  echo "${_root_mount_id} /btrfs_main btrfs subvolid=5,${_btrfs_defaults_str}" >> /etc/fstab || _exitRECFAIL;
+  echo "${_boot_mount_id} /btrfs_boot btrfs subvolid=5,${_btrfs_defaults_str}" >> /etc/fstab || _exitRECFAIL;
+  echo "${_root_mount_id} /etc/libvirt btrfs subvol=@libvirt-machines/@etc-libvirt,${_btrfs_defaults_str}" >> /etc/fstab || _exitRECFAIL;
+  echo "${_root_mount_id} /var/lib/libvirt btrfs subvol=@libvirt-machines/@var-lib-libvirt,${_btrfs_defaults_str}" >> /etc/fstab || _exitRECFAIL;
 
   #####
   # STAGE 3: /boot preparation
@@ -212,42 +221,42 @@ _prepareSystemFn () {
   umount /boot/efi || true;
   umount /boot || true;
   # Point fstab at a soon-to-be-created @boot subvolume.
-  sed -i '/\/boot /s/defaults/subvol=\/@boot,defaults/' /etc/fstab || "${_exitCRITFAIL}";
+  sed -i '/\/boot /s/defaults/subvol=\/@boot,defaults/' /etc/fstab || _exitCRITFAIL;
   # Load all of the tons of fstab changes we've made
   systemctl daemon-reload;
   # Morph the layout of the boot partition
-  mount /btrfs_boot || "${_exitCRITFAIL}";
-  btrfs subvolume create /btrfs_boot/@boot || "${_exitDEATH}";
+  mount /btrfs_boot || _exitCRITFAIL;
+  btrfs subvolume create /btrfs_boot/@boot || _exitDEATH;
   # This will always throw a warning about not being able to move a directory
   # into itself, therefore we have to ignore it.
   mv /btrfs_boot/* /btrfs_boot/@boot/ 2>/dev/null || true;
   # We can mount /boot again now
-  mount /boot || "${_exitCRITFAIL}";
-  mount /boot/efi || "${_exitCRITFAIL}";
+  mount /boot || _exitCRITFAIL;
+  mount /boot/efi || _exitCRITFAIL;
   # Point the primary grub.cfg at the new boot files
-  update-grub || "${_exitCRITFAIL}";
+  update-grub || _exitCRITFAIL;
   # Make sure GRUB can find the primary grub.cfg at its new location
   sed -i "s/'\/grub'/'\/@boot\/grub'/" /boot/efi/EFI/ubuntu/grub.cfg \
-    || "${_exitCRITFAIL}";
+    || _exitCRITFAIL;
 
   #####
   # STAGE 4: Snapshot repo creation
-  mount /btrfs_main || "${_exitCRITFAIL}";
+  mount /btrfs_main || _exitCRITFAIL;
   # mount /btrfs_boot # this is unnecessary, we mounted it earlier
-  btrfs subvolume create /btrfs_main/@kfocus-rollback-snapshots || "${_exitDEATH}";
+  btrfs subvolume create /btrfs_main/@kfocus-rollback-snapshots || _exitDEATH;
   btrfs subvolume create /btrfs_boot/@kfocus-rollback-boot-snapshots \
-    || "${_exitDEATH}";
-  btrfs subvolume create /btrfs_main/@libvirt-machines || "${_exitDEATH}";
-  btrfs subvolume create /btrfs_main/@libvirt-machines/@etc-libvirt || "${_exitDEATH}";
+    || _exitDEATH;
+  btrfs subvolume create /btrfs_main/@libvirt-machines || _exitDEATH;
+  btrfs subvolume create /btrfs_main/@libvirt-machines/@etc-libvirt || _exitDEATH;
   btrfs subvolume create /btrfs_main/@libvirt-machines/@var-lib-libvirt \
-    || "${_exitDEATH}";
+    || _exitDEATH;
 
   #####
   # STAGE 5: Finish additional mounts
   # At this point, /boot, /boot/efi, /btrfs_main, and /btrfs_boot are mounted.
   # /etc/libvirt and /var/lib/libvirt are not mounted.
-  mount /etc/libvirt || "${_exitCRITFAIL}";
-  mount /var/lib/libvirt || "${_exitCRITFAIL}";
+  mount /etc/libvirt || _exitCRITFAIL;
+  mount /var/lib/libvirt || _exitCRITFAIL;
 
   _preparingSystemYn='n';
 }
@@ -265,24 +274,24 @@ _restoreSnapshotFn () {
     [ -e '/btrfs_boot/@kfocus-rollback-working-boot' ]; then
     _cm2WarnStrFn 'Temporary restore subvols found, cannot continue.';
     _cm2WarnStrFn 'Please reboot, then run "Finish restoration operation".';
-    "${_exitFAIL}"; # can't restore while mid-restore!
+    _exitFAIL; # can't restore while mid-restore!
   fi
 
   if ! [ -e "${_snapshot_path}" ]; then
-    "${_exitFAIL}";
+    _exitFAIL;
   fi
 
-  mv '/btrfs_main/@' '/btrfs_main/@kfocus-rollback-working' || "${_exitRECFAIL}";
-  btrfs subvolume snapshot "${_snapshot_path}" '/btrfs_main/@' || "${_exitDEATH}";
+  mv '/btrfs_main/@' '/btrfs_main/@kfocus-rollback-working' || _exitRECFAIL;
+  btrfs subvolume snapshot "${_snapshot_path}" '/btrfs_main/@' || _exitDEATH;
   # Failing to unmount /boot/efi before attempting to move the old subvol
   # will result in the subvol not being moved, which will result in the
   # whole @boot subvol being nuked except for the contents of /boot/efi.
-  umount /boot/efi || "${_exitCRITFAIL}";
+  umount /boot/efi || _exitCRITFAIL;
   mv '/btrfs_boot/@boot' '/btrfs_boot/@kfocus-rollback-working-boot' \
-    || "${_exitCRITFAIL}";
+    || _exitCRITFAIL;
   btrfs subvolume snapshot "${_boot_snapshot_path}" '/btrfs_boot/@boot' \
-    || exit "${_exitDEATH}";
-  mount /boot/efi || "${_exitCRITFAIL}";
+    || exit _exitDEATH;
+  mount /boot/efi || _exitCRITFAIL;
 }
 
 _deleteSnapshotFn () {
@@ -297,14 +306,14 @@ _deleteSnapshotFn () {
   _boot_snapshot_path="/btrfs_boot/@kfocus-rollback-boot-snapshots/${_target_snapshot}";
 
   if ! [ -e "${_snapshot_path}" ]; then
-    "${_exitFAIL}";
+    _exitFAIL;
   fi
   if ! [ -e "${_boot_snapshot_path}" ]; then
-    "${_exitFAIL}";
+    _exitFAIL;
   fi
   
-  btrfs subvolume delete --commit-after "${_snapshot_path}" || "${_exitDEATH}";
-  btrfs subvolume delete --commit-after "${_boot_snapshot_path}" || "${_exitDEATH}";
+  btrfs subvolume delete --commit-after "${_snapshot_path}" || _exitDEATH;
+  btrfs subvolume delete --commit-after "${_boot_snapshot_path}" || _exitDEATH;
 }
 
 _restoreSnapshotStage2Fn () {
@@ -313,11 +322,11 @@ _restoreSnapshotStage2Fn () {
   if [ -z "$(mount | grep 'btrfs' | grep '@kfocus-rollback-working')" ] \
     && [ -z "$(mount | grep 'btrfs' | grep '@kfocus-rollback-working-boot')" ]; then
     if [ -d '/btrfs_main/@kfocus-rollback-working' ]; then
-      btrfs subvolume delete --commit-after '/btrfs_main/@kfocus-rollback-working' || "${_exitDEATH}";
+      btrfs subvolume delete --commit-after '/btrfs_main/@kfocus-rollback-working' || _exitDEATH;
     fi
     if [ -d '/btrfs_boot/@kfocus-rollback-working-boot' ]; then
       btrfs subvolume delete --commit-after '/btrfs_boot/@kfocus-rollback-working-boot' \
-        || "${_exitDEATH}";
+        || _exitDEATH;
     fi
   fi
 }
@@ -333,7 +342,7 @@ _trimSnapshotsFn () {
 
   if [ "${#_snapshot_list[@]}" -gt '5' ]; then
     _snapshot_remove_list=();
-    _snapshot_remove_count=((${#_snapshot_list[@]} - 5));
+    _snapshot_remove_count=$((${#_snapshot_list[@]} - 5));
     for ((_snapshot_idx = 0; _snapshot_idx < _snapshot_remove_count; \
       _snapshot_idx++)); do
       _deleteSnapshotFn "${_snapshot_list[_snapshot_idx]}";
@@ -353,7 +362,7 @@ _createSnapshotFn () {
   _timestamp_str="$(date +%s)";
   _snapshot_path="/btrfs_main/@kfocus-rollback-snapshots/@${_timestamp_str}";
   _boot_snapshot_path="/btrfs_boot/@kfocus-rollback-boot-snapshots/@${_timestamp_str}";
-  _prev_timestamp_str="$(ls ${_snapshot_path} | sed 's/@//' | sort -n \
+  _prev_timestamp_str="$(ls '/btrfs_main/@kfocus-rollback-snapshots' | sed 's/@//' | sort -n \
     | tail -n1)";
   _snapshot_event_type="${1:-}"
 
@@ -361,13 +370,13 @@ _createSnapshotFn () {
     'Apt')
       if (( (${_timestamp_str} - ${_prev_timestamp_str}) \
         < ${_hour_seconds} )); then
-        "${_exitOK}";
+        _exitOK;
       fi
       ;;
     'Timed')
       if (( (${_timestamp_str} - ${_prev_timestamp_str}) \
         < ${_week_seconds} )); then
-        "${_exitOK}";
+        _exitOK;
       fi
       ;;
     'User') true;; # always make snapshots if the user says so
@@ -380,12 +389,12 @@ _createSnapshotFn () {
     # TODO: There's a time-of-check to time-of-use bug here, I don't *think*
     # we care but review and see if this is important enough to find a way
     # around.
-    "${_exitFAIL}";
+    _exitFAIL;
   fi
 
-  btrfs subvolume snapshot -r '/btrfs_main/@' "${_snapshot_path}" || "${_exitDEATH}";
+  btrfs subvolume snapshot -r '/btrfs_main/@' "${_snapshot_path}" || _exitDEATH;
   btrfs subvolume snapshot -r '/btrfs_boot/@boot' "${_boot_snapshot_path}" \
-    || "${_exitDEATH}";
+    || _exitDEATH;
 
   if [ "${_snapshot_event_type}" != 'Apt' ]; then
     echo "${_snapshot_event_type}" \
@@ -422,7 +431,7 @@ _mainFn () {
 
   if [ "${_systemState}" = 'INCONSISTENT' ]; then
     _direWarningFn 'warning' "${_inconsistentMsg}";
-    "${_exitFAIL}";
+    _exitFAIL;
   fi
 
   _main_min_space=21474836480 # 20 GiB
@@ -436,7 +445,7 @@ _mainFn () {
     if (( _main_space < _main_min_space )) \
       || (( _boot_space < _boot_min_space )); then
       _direWarningFn 'info' "${_lowDiskMsg}";
-      "${_exitFAIL}";
+      _exitFAIL;
     fi
   fi
 
@@ -453,7 +462,7 @@ _mainFn () {
       _target_snapshot="${2:-}";
       if [ -z "${_target_snapshot}" ]; then
         _cm2WarnStrFn 'No snapshot name provided to restore!';
-        "${_exitFAIL}";
+        _exitFAIL;
       fi
       _restoreSnapshotFn "${_target_snapshot}";
       ;;
@@ -461,7 +470,7 @@ _mainFn () {
       _target_snapshot="${2:-}";
       if [ -z "${_target_snapshot}" ]; then
         _cm2WarnStrFn 'No snapshot name provided to delete!';
-        "${_exitFAIL}";
+        _exitFAIL;
       fi
       _deleteSnapshotFn "${_target_snapshot}";
       ;;
@@ -473,7 +482,7 @@ _mainFn () {
       ;;
     *)
       _cm2WarnStrFn 'Invalid mode specified.';
-      "${_exitFAIL}";
+      _exitFAIL;
       ;;
   esac
 
@@ -484,8 +493,7 @@ _mainFn () {
 ## BEGIN Declare and assign global vars {
 declare _binName _binDir _baseName _baseDir _lockFile _systemState _browStr \
   _erowStr _tableStr _prepareFailMsg _lowDiskMsg _inconsistentMsg \
-  _preparingSystemYn _snapshotMainDir _snapshotBootDir _exitOK _exitFAIL \
-  _exitRECFAIL _exitCRITFAIL _exitDEATH _exitLOCK;
+  _preparingSystemYn _snapshotMainDir _snapshotBootDir;
 
 _snapshotMainDir='/btrfs_main/@kfocus-rollback-snapshots';
 _snapshotBootDir='/btrfs_main/@kfocus-rollback-boot-snapshots';
@@ -499,6 +507,9 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _baseName="$( basename "${_binName}" )" || exit 101;
   _lockFile="/tmp/${_baseName}.lock";
   _systemState='';
+
+  # Import libs and assign more global vars
+  _importCommonFn;
 
   # Set error messages
   _browStr='<tr><td style="padding:8px 32px 8px 0">';
@@ -549,17 +560,6 @@ EOF
 
   # Set flag for error reporting
   _preparingSystemYn='n';
-
-  # Set meaningful names for exit codes
-  _exitOK='exit 0';
-  _exitFAIL='exit 1';
-  _exitRECFAIL='exit 2';
-  _exitCRITFAIL='exit 3';
-  _exitDEATH='exit 4';
-  _exitLOCK='exit 20';
-
-  # Import libs and assign more global vars
-  _importCommonFn;
 
   _mainFn "$@";
 fi
