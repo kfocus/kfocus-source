@@ -607,11 +607,14 @@ _audit_cm2AssignExeVarsFn () {
 #           :   In GUI mode, opens a kdialog;
 #           :   Echos answer to STDOUT for 'a' or 'w' prompts.
 # Returns   : none
+# TODO      : Document new modes and whiptail functionality
 ## . END _cm2PromptUserFn }
 #
 _audit_cm2PromptUserFn () {
   declare _assert_table _exit_int _is_tty_save _is_tty _loop_line \
     _bit_list _type_str _prompt_str _ans_str;
+
+  # TODO: Test whiptail mode!
 
   _assert_table=( 'a|y' 'a|n' 'w|y' 'w|n' 'p|' );
   _exit_int=0;

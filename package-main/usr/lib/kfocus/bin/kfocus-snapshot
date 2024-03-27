@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2019-2023 MindShare Inc.
+# Copyright 2019-2024 MindShare Inc.
 #
 # Written for the Kubuntu Focus by M. Mikowski and A. Rainbolt.
 #
@@ -47,44 +47,6 @@ _importCommonFn () {
 }
 ## . END _importCommonFn }
 
-## BEGIN _infoWindowFn {
-#
-_infoWindowFn () {
-  if [ "${_cm2IsTty}" = 'n' ]; then
-    "${_kdiagExe}" --title "${_winTitle}" --msgbox "${1:-}";
-  else
-    "${_whiptailExe}" --title "${_winTitle}" --msgbox \
-      "$(_cm2StripTagsFn "${1:-}")" 0 0;
-  fi
-}
-## . END _infoWindowFn }
-
-## BEGIN _ynWindowFn {
-#
-_ynWindowFn () {
-  if [ "${_cm2IsTty}" = 'n' ]; then
-    "${_kdiagExe}" --title "${_winTitle}" --yesno "${1:-}";
-  else
-    # See https://www.redhat.com/sysadmin/use-whiptail section 'Generate a
-    # query' for context on the funky redirection trick here.
-    "${_whiptailExe}" --title "${_winTitle}" --yesno \
-      "$(_cm2StripTagsFn "${1:-}")" 0 0 3>&1 1>&2 2>&3;
-  fi
-}
-## . END _ynWindowFn }
-
-## BEGIN _errorWindowFn {
-#
-_errorWindowFn () {
-  if [ "${_cm2IsTty}" = 'n' ]; then
-    "${_kdiagExe}" --title "${_winTitle}" --error "${1:-}";
-  else
-    "${_whiptailExe}" --title "${_winTitle}" --msgbox \
-      "$(_cm2StripTagsFn "${1:-}")" 0 0;
-  fi
-}
-## . END _errorWindowFn }
-
 _getSystemStateFn () {
   "${_snapshotSetExe}" 'getSystemState';
 }
@@ -111,21 +73,21 @@ _mainFn () {
   done
 
   if [ "${_system_state_str}" != 'SUPPORTED, SET UP' ]; then
-    _infoWindowFn "${_systemUnsupportedMsg}";
+    _cm2PromptUserFn "${_winTitle}" "${_systemUnsupportedMsg}";
     exit "${_OK}";
   fi
 
-  _ans="$(_ynWindowFn "${_createSnapshotMsg}")";
+  _ans="$(_cm2PromptUserFn "${_winTitle}" "${_createSnapshotMsg}" 'a')";
 
   if [ "${_ans}" = 'y' ]; then
     if _createSnapshotFn; then
-      _infoWindowFn "${_snapshotCreatedMsg}";
+      _cm2PromptUserFn "${_winTitle}" "${_snapshotCreatedMsg}"
     else
       if [ "$?" = "${_FAIL}" ]; then
-        _infoWindowFn "${_snapshotCreationFailedMsg}";
+        _cm2PromptUserFn "${_winTitle}" "${_snapshotCreationFailedMsg}" 's';
       else
         _fail_int="$?";
-        _errorWindowFn "${_criticalErrorMsg}";
+        _cm2PromptUserFn "${_winTitle}" "${_criticalErrorMsg}" 'e';
         exit "${_fail_int}";
       fi
     fi
@@ -137,7 +99,7 @@ _mainFn () {
 
 ## BEGIN Declare and assign global vars {
 declare _binName _binDir _baseName _baseDir _assignList _kdiagExe \
-  _snapshotSetExe _escExe _winTitle _browStr _erowStr _tableStr \
+  _whiptailExe _snapshotSetExe _escExe _winTitle _browStr _erowStr _tableStr \
   _createSnapshotMsg _systemUnsupportedMsg _snapshotCreatedMsg \
   _snapshotCreationFailedMsg _criticalErrorMsg _OK _FAIL _RECFAIL _CRITFAIL \
   _DEATH _LOCK;

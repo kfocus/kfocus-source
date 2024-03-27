@@ -449,35 +449,81 @@ _cm2PromptUserFn () {
     case "${_query_type}" in
       a) _cmd_list+=('--yesno') ;;
       w) _cmd_list+=('--warningyesno') ;;
+      s) _cmd_list+=('--sorry') ;;
+      e) _cmd_list+=('--error') ;;
+      r) _cmd_list+=('--radiolist') ;;
       *) _cmd_list+=('--msgbox') ;;
     esac
 
     _cmd_list+=("${_prompt_str}");
-    if "${_cmd_list[@]}"; then _ans_str='y'; else _ans_str='n'; fi
+    if [ "${_query_type}" = 'r' ]; then
+      shift 3;
+      _cmd_list+=( "$@" );
+    fi
+    if [ "${_query_type}" = 'r' ]; then
+      _ans_str="$("${_cmd_list[@]}" || echo 'cancelled')";
+    else
+      if "${_cmd_list[@]}"; then _ans_str='y'; else _ans_str='n'; fi
+    fi
 
   # Handle TTY presentation
   else
-    case "${_query_type}" in
-    [aw])
-      _prompt_str="$(_cm2StripTagsFn "${_prompt_str}")";
-      _cmd_list=('_cm2ReadPromptYnFn' "${_prompt_str}" 'y');
-      ;;
-    p)
-      # bashsupport disable=BP2002
-      _prompt_str="$(_cm2StripTagsFn "${_prompt_str}" 'y')";
-      _cm2EchoFn "${_prompt_str}\n";
-      _cmd_list=('read' '-rp' 'Press <return> to continue. ');
-      ;;
-    *)
-      _prompt_str="$(_cm2StripTagsFn "${_prompt_str}")";
-      _cmd_list=('_cm2EchoFn' "${_prompt_str}");
-      ;;
-    esac
-    _ans_str="$("${_cmd_list[@]}")";
-    _cm2EchoFn "\n";
+    if [ "${_cm2CliType}" = 'cli' ]; then
+      case "${_query_type}" in
+      [aw])
+        _prompt_str="$(_cm2StripTagsFn "${_prompt_str}")";
+        _cmd_list=('_cm2ReadPromptYnFn' "${_prompt_str}" 'y');
+        ;;
+      p)
+        # bashsupport disable=BP2002
+        _prompt_str="$(_cm2StripTagsFn "${_prompt_str}" 'y')";
+        _cm2EchoFn "${_prompt_str}\n";
+        _cmd_list=('read' '-rp' 'Press <return> to continue. ');
+        ;;
+      r)
+        _cm2WarnStrFn 'ERROR: Radio lists not supported in CLI mode';
+        return 1;
+        ;;
+      *)
+        _prompt_str="$(_cm2StripTagsFn "${_prompt_str}")";
+        _cmd_list=('_cm2EchoFn' "${_prompt_str}");
+        ;;
+      esac
+      _ans_str="$("${_cmd_list[@]}")";
+      _cm2EchoFn "\n";
+
+    else
+      _cmd_list=(
+        "${_cm2WhiptailExe}" '--title' "${_window_title}"
+      );
+
+      case "${_query_type}" in
+        [aw]) _cmd_list+=('--yesno') ;;
+        r) _cmd_list+=('--radiolist') ;;
+        *) _cmd_list+=('--msgbox') ;;
+      esac
+
+      # whiptail accepts arguments for setting window and list sizes, but we
+      # want all of these to be automatically set as appropriate. To do that
+      # we set the various size arguments to 0 as necessary, thus the strange
+      # 0s here.
+      _cmd_list+=("${_prompt_str}" '0' '0' );
+      if [ "${_query_type}" = 'r' ]; then
+        shift 3;
+        _cmd_list+=( '0' "$@" );
+      fi
+
+      if [ "${_query_type}" = 'r' ]; then
+        # See https://www.redhat.com/sysadmin/use-whiptail section 'Generate a
+        # query' for context on the funky redirection trick here.
+        _ans_str="$("${_cmd_list[@]}" 3>&1 1>&2 2>&3 || echo 'cancelled')";
+      else
+        if "${_cmd_list[@]}"; then _ans_str='y'; else _ans_str='n'; fi
+      fi
+    fi
   fi
 
-  if [[ "${_query_type}" =~ [aw] ]]; then
+  if [[ "${_query_type}" =~ [awr] ]]; then
     echo "${_ans_str}";
   fi
 }
@@ -492,6 +538,14 @@ _cm2TestVersFn () {
   _v1="${1:-}"; _v2="${2:-}";
   [ "$_v1" = "$_v2" ] && return 1;
   [ "$_v1" = "$(echo -e "$_v1\n$_v2" |sort -rV |head -n1)" ];
+}
+
+_cm2SetCliTypeFn () {
+  case "${1}" in
+    'cli') _cm2CliType='cli';;
+    'whiptail') _cm2CliType='whiptail';;
+    *) return 1;;
+  esac
 }
 
 # Regression tests only
@@ -553,11 +607,14 @@ _cm2HtmEndStr='</body></html>';
 _cm2HtmH3Str='<h3 style="color:#f7941d">FocusRx: ';
 # shellcheck disable=SC2089
 _cm2HtmPStr='<p style="margin-right:32px">';
+_cm2CliType='cli';
+_cm2WhiptailExe="$(command -v whiptail)";
 
 # Export String
 # shellcheck disable=2090 # Disable complaining about html vars
 export _cm2Arg01 _cm2Arg02 _cm2BlockMsg _cm2HtmBeginStr _cm2HtmEndStr \
-  _cm2HtmH3Str _cm2HtmPStr _cm2IsTty _cm2KdiagExe _cm2ModelCode _cm2RmExe;
+  _cm2HtmH3Str _cm2HtmPStr _cm2IsTty _cm2KdiagExe _cm2ModelCode _cm2RmExe\
+  _cm2CliType _cm2WhiptailExe;
 
 # Export Functions
 export -f _cm2AskExitFn _cm2AssignExeVarsFn _cm2CatStripEchoFn               \
@@ -567,5 +624,6 @@ export -f _cm2AskExitFn _cm2AssignExeVarsFn _cm2CatStripEchoFn               \
   _cm2GetEscExeFn _cm2InterruptFn _cm2MkTmpFileFn _cm2MkTmpDirFn _cm2NechoFn \
   _cm2PromptUserFn _cm2ReadPromptYnFn _cm2RunLongCmdFn _cm2SetMsgFn          \
   _cm2StripTagsFn _cm2SucFn _cm2SucStrFn _cm2TestVersFn _cm2TrapErrorFn      \
-  _cm2TrapExitFn _cm2TrapInterruptFn _cm2WarnFn _cm2WarnStrFn _cm2SetIsTtyFn ;
+  _cm2TrapExitFn _cm2TrapInterruptFn _cm2WarnFn _cm2WarnStrFn _cm2SetIsTtyFn \
+  _cm2SetCliTypeFn                                                           ;
 ## . END Execute on source }

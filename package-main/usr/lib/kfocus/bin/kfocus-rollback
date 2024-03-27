@@ -1,0 +1,165 @@
+#!/bin/bash
+#
+# Copyright 2019-2024 MindShare Inc.
+#
+# Written for the Kubuntu Focus by M. Mikowski and A. Rainbolt.
+#
+# Name     : kfocus-rollback
+# Summary  : kfocus-rollback
+# Purpose  : Provides a UI for restoring BTRFS snapshots
+# Example  : kfocus-snapshot
+# License  : GPLv2
+# Run By   : Users
+# Spec     : 4013
+#
+set -u;
+
+## BEGIN _importCommonFn {
+# Summary   : _importCommonFn
+# Purpose   : Load common routines, prefer relative dir
+# Example   : _importCommonFn;
+# Arguments : none
+# Globals   : Package vars _baseDir _baseName
+# Outputs   : none
+# Returns   : none
+#
+_importCommonFn () {
+  declare _lib_list _is_loaded _lib_file;
+  _lib_list=(
+    "${_baseDir}/lib/common.2.source"
+    '/usr/lib/kfocus/lib/common.2.source'
+  );
+  _is_loaded='n';
+  for _lib_file in "${_lib_list[@]}"; do
+    if [ -r "${_lib_file}" ]; then
+      # shellcheck source=/usr/lib/kfocus/lib/common.2.source
+      if source "${_lib_file}"; then
+        _is_loaded='y';
+        break;
+      fi
+    fi
+  done
+
+  if [ "${_is_loaded}" = 'n' ]; then
+    echo 1>&2 "${_baseName}: ABORT - Cannot source common lib";
+    exit 202;
+  fi
+}
+## . END _importCommonFn }
+
+_getSystemStateFn () {
+  "${_snapshotSetExe}" 'getSystemState';
+}
+
+## BEGIN _mainFn {
+#
+_mainFn () {
+  declare _system_state_str _ans _fail_int;
+
+  # This function will exit with LOCK if the lockfile cannot be grabbed, so we
+  # wait until the lock is released before showing the UI (since we have to in
+  # order to get the state of the system).
+  while true; do
+    _system_state_str="$(_getSystemStateFn)"
+    if [ "$?" = "${_LOCK}" ]; then
+      sleep 1;
+    elif [ "$?" != '0' ]; then
+      exit;
+    fi
+  done
+
+  if [ "${_system_state_str}" != 'SUPPORTED, SET UP' ]; then
+    _cm2PromptUserFn "${_winTitle}" "${_systemUnsupportedMsg}";
+    exit "${_OK}";
+  fi
+
+  exit "${_OK}";
+}
+## . END _mainFn }
+
+## BEGIN Declare and assign global vars {
+declare _binName _binDir _baseName _baseDir _assignList _kdiagExe \
+  _whiptailExe _snapshotSetExe _escExe _winTitle _browStr _erowStr _tableStr \
+  _welcomeMsg _systemUnsupportedMsg _restoreIncompleteMsg \
+  _noSnapshotsFoundMsg _strangeSubvolsMsg _oneTouchMsg _rebootMsg \
+  _restoreFailedMsg _criticalErrorMsg _OK _FAIL _RECFAIL _CRITFAIL _DEATH \
+  _LOCK;
+## . END Declare and assign global vars }
+
+## BEGIN Run mainFn when script is NOT sourced {
+#
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+
+  _assignList=(
+    '_kdiagExe|/usr/bin/kdialog'
+    '_whiptailExe|/usr/bin/whiptail'
+    "_snapshotSetExe|${_binDir}/kfocus-rollback-set"
+  );
+
+  _escExe="$(_cm2GetEscExeFn)" || exit;
+
+  # Import libs and assign more global vars
+  _importCommonFn;
+  if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
+    _cm2ErrStrFn 'Could not assign variable';
+    exit 1;
+  fi
+
+  # Set UI messages
+  _winTitle='FocusRx: Rollback';
+  _browStr='<tr><td style="padding:8px 32px 8px 0">';
+  _erowStr='</td></tr>';
+  _tableStr='<table style="width:100%;margin-right:32px">';
+
+  _welcomeMsg="$(cat <<EOF
+EOF
+  )";
+
+  _systemUnsupportedMsg="$(cat <<EOF
+EOF
+  )";
+
+  _restoreIncompleteMsg="$(cat <<EOF
+EOF
+  )";
+
+  _noSnapshotsFoundMsg="$(cat <<EOF
+EOF
+  )";
+
+  _strangeSubvolsMsg="$(cat <<EOF
+EOF
+  )";
+
+  _oneTouchMsg="$(cat <<EOF
+EOF
+  )";
+
+  _rebootMsg="$(cat <<EOF
+EOF
+  )";
+
+  _restoreFailedMsg="$(cat <<EOF
+EOF
+  )";
+
+  _criticalErrorMsg="$(cat <<EOF
+EOF
+  )";
+
+  # Set meaningful names for error codes
+  _OK='0';
+  _FAIL='1';
+  _RECFAIL='2';
+  _CRITFAIL='3';
+  _DEATH='4';
+  _LOCK='20';
+
+  _mainFn "$@";
+fi
+## . END Run mainFn when script is NOT sourced }
+
