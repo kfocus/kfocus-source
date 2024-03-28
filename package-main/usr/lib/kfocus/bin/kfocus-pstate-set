@@ -7,7 +7,7 @@
 # Purpose: Take actions to optimize battery life.
 # License: GPL v2
 # Run by : kfocus-pstate
-# Spec   : 1690, 2558, 4128
+# Spec   : 1690, 2558, 4138
 # Test   : power-system-check.md
 #
 set -u;
@@ -160,9 +160,9 @@ _mainFn() {
 }
 ## . END _mainFn }
 
-## BEGIN Declare and assign global vars {
+## BEGIN Declare global vars {
 declare _binName _binDir _baseDir _baseName;
-## . END Declare and assign global vars }
+## . END Declare global vars }
 
 ## BEGIN Run main if script is not sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
