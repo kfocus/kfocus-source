@@ -1886,7 +1886,7 @@ Kirigami.ApplicationWindow {
 
             pageTitleText   = 'KDE Welcome';
             topImage.source = imgDir + 'kde.svg';
-            topHeading.text = 'Explore KDE Featues';
+            topHeading.text = 'Explore KDE Features';
             primaryText.text
               = '<p><b>The KDE Welcome Center</b> guides you through '
               + 'the important features and concepts of the KDE desktop. '
