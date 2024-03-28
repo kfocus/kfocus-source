@@ -10,7 +10,8 @@ _mainFn () {
   if [ -n "${_open_exe}" ]; then
     exec "${_open_exe}" "${_solve_url}";
   else
-    echo 'Could not run xdg-open' 1>&2 ;
+    echo 'Could not run xdg-open' 1>&2;
+    exit 3;
   fi
 }
 ## . END _mainFn }
