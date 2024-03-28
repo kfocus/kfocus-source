@@ -14,6 +14,12 @@ if has('syntax') && has('eval')
   packadd! matchit
 endif
 
+" ====[ Git Configs ]=================================================
+" Keep All HEAD content in merge
+map ;g1 :%s?^<<<\+ HEAD\s*\n\(\_.\{-}\)\n===\+\n\(\_.\{-}\)>>>\+.*$?\1?gc<CR>
+" Discard All HEAD content in merge
+map ;g2 :%s?^<<<\+ HEAD\s*\n\(\_.\{-}\)\n===\+\n\(\_.\{-}\)>>>\+.*$?\2?gc<CR>
+
 " ====[ Backup and undo ]=============================================
 " See https://stackoverflow.com/questions/743150
 set undofile
