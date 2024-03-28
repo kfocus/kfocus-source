@@ -27,6 +27,7 @@ _importCommonFn () {
   declare _lib_list _is_loaded _lib_file;
   _lib_list=(
     "${_baseDir}/lib/common.2.source"
+    "${_binDir}/common.2.source"
     '/usr/lib/kfocus/lib/common.2.source'
   );
   _is_loaded='n';
@@ -58,40 +59,44 @@ _createSnapshotFn () {
 ## BEGIN _mainFn {
 #
 _mainFn () {
-  declare _system_state_str _ans _fail_int;
+  declare _system_state_str _ans _exit_int;
 
   # This function will exit with LOCK if the lockfile cannot be grabbed, so we
   # wait until the lock is released before showing the UI (since we have to in
   # order to get the state of the system).
   while true; do
     _system_state_str="$(_getSystemStateFn)"
+    _exit_int="$?";
 
     # Override false positive due to complex exit code handling
     # shellcheck disable=SC2181
-    if [ "$?" = "${_LOCK}" ]; then
+    if [ "${_exit_int}" = "${_LOCK}" ]; then
       sleep 1;
-    elif [ "$?" != '0' ]; then
-      exit;
+    elif [ "${_exit_int}" = "${_OK}" ]; then
+      break;
+    else
+      exit "${_exit_int}";
     fi
   done
 
   if [ "${_system_state_str}" != 'SUPPORTED, SET UP' ]; then
-    _cm2PromptUserFn "${_winTitle}" "${_systemUnsupportedMsg}";
+    _cm2PromptUserFn "${_systemUnsupportedMsg}" "${_winTitle}";
     exit "${_OK}";
   fi
 
-  _ans="$(_cm2PromptUserFn "${_winTitle}" "${_createSnapshotMsg}" 'a')";
+  _ans="$(_cm2PromptUserFn "${_createSnapshotMsg}" "${_winTitle}" 'a')";
 
   if [ "${_ans}" = 'y' ]; then
-    if _createSnapshotFn; then
-      _cm2PromptUserFn "${_winTitle}" "${_snapshotCreatedMsg}"
+    _createSnapshotFn;
+    _exit_int="$?";
+    if [ "${_exit_int}" = "${_OK}" ]; then
+      _cm2PromptUserFn "${_snapshotCreatedMsg}" "${_winTitle}";
     else
-      if [ "$?" = "${_FAIL}" ]; then
-        _cm2PromptUserFn "${_winTitle}" "${_snapshotCreationFailedMsg}" 's';
+      if [ "${_exit_int}" = "${_FAIL}" ]; then
+        _cm2PromptUserFn "${_snapshotCreationFailedMsg}" "${_winTitle}" 's';
       else
-        _fail_int="$?";
-        _cm2PromptUserFn "${_winTitle}" "${_criticalErrorMsg}" 'e';
-        exit "${_fail_int}";
+        _cm2PromptUserFn "${_criticalErrorMsg}" "${_winTitle}" 'e';
+        exit "${_exit_int}";
       fi
     fi
   fi
@@ -122,14 +127,14 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     "_snapshotSetExe|${_binDir}/kfocus-rollback-set"
   );
 
-  _escExe="$(_cm2GetEscExeFn)" || exit;
-
   # Import libs and assign more global vars
   _importCommonFn;
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2ErrStrFn 'Could not assign variable';
     exit 1;
   fi
+
+  _escExe="$(_cm2GetEscExeFn)" || exit;
 
   # Set UI messages
   _winTitle='FocusRx: Snapshot';

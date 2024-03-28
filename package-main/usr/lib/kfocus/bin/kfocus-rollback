@@ -27,6 +27,7 @@ _importCommonFn () {
   declare _lib_list _is_loaded _lib_file;
   _lib_list=(
     "${_baseDir}/lib/common.2.source"
+    "${_binDir}/common.2.source"
     '/usr/lib/kfocus/lib/common.2.source'
   );
   _is_loaded='n';
@@ -56,47 +57,43 @@ _restoreSnapshotFn () {
 }
 
 _getSnapshotListStrFn () {
-   find '/btrfs_main/@kfocus-rollback-working' -maxdepth 1 \
-     | sed 's?/btrfs_main/@kfocus-rollback-working/@??' \
+   find '/btrfs_main/@kfocus-rollback-snapshots' -maxdepth 1 \
+     | sed 's?/btrfs_main/@kfocus-rollback-snapshots/@??' \
      | sort -n -r \
      | sed 's/^/@/';
 }
 
 _chooseSnapshotFn () {
   declare _snapshot_list_str _snapshot_list _snapshot_disp_list _radio_list \
-    _snapshot_idx _answer;
+    _reason_location _snapshot_reason _snapshot_datetime _snapshot_idx \
+    _answer;
 
   _snapshot_list_str="$(_getSnapshotListStrFn)";
   readarray -t _snapshot_list <<< "${_snapshot_list_str}";
   _snapshot_disp_list=();
   _radio_list=();
+  _reason_location='/var/lib/kfocus/kfocus_rollback_last_snapshot_reason';
 
   for (( _snapshot_idx=0; _snapshot_idx < ${#_snapshot_list[@]}; \
     _snapshot_idx++ )); do
-    _snapshot_disp_list[_snapshot_idx]="$(date -d \
-      "${_snapshot_list[_snapshot_idx]}")";
+    _snapshot_reason="$(cat "${_reason_location}")";
+    _snapshot_datetime="$(date -d \
+      "${_snapshot_list[_snapshot_idx]}" '+%a %H:%M %F')";
+    _snapshot_disp_list[_snapshot_idx]="${_snapshot_datetime} | ${_snapshot_reason}";
     _radio_list+=( "${_snapshot_idx}" \
       "${_snapshot_disp_list[_snapshot_idx]}" 'off' );
+    _reason_location="/btrfs_main/${_snapshot_list[_snapshot_idx]}/var/lib/kfocus/kfocus_rollback_last_snapshot_reason";
   done
 
-  _answer="$(_cm2PromptUserFn "${_winTitle}" "${_chooseSnapshotMsg}" 'r' \
+  _answer="$(_cm2PromptUserFn "${_chooseSnapshotMsg}" "${_winTitle}" 'r' \
     "${_radio_list[@]}")";
 
-  if [ "${_answer}" = 'cancelled' ]; then
-    echo 'cancelled';
+  if [ -z "${_answer}" ]; then
     return;
   fi
 
-  for (( _snapshot_idx=0; _snapshot_idx < ${#_snapshot_list[@]}; \
-    _snapshot_idx++ )); do
-    if [ "${_snapshot_disp_list[_snapshot_idx]}" = "${_answer}" ]; then
-      echo "${_snapshot_list[_snapshot_idx]}";
-      return;
-    fi
-  done
-
-  _cm2WarnStrFn 'Invalid snapshot selected.';
-  exit 1;
+  echo "${_snapshot_disp_list[_answer]}";
+  return;
 }
 
 _handleRestoreExitIntFn () {
@@ -105,13 +102,13 @@ _handleRestoreExitIntFn () {
   _exit_int="${1:-}";
 
   if [ "${_exit_int}" = '0' ]; then
-    _cm2PromptUserFn "${_winTitle}" "${_rebootMsg}";
+    _cm2PromptUserFn "${_rebootMsg}" "${_winTitle}";
     exit "${_OK}";
   elif [ "${_exit_int}" = '1' ]; then
-    _cm2PromptUserFn "${_winTitle}" "${_restoreFailedMsg}";
+    _cm2PromptUserFn "${_restoreFailedMsg}" "${_winTitle}";
     exit "${_FAIL}";
   else
-    _cm2PromptUserFn "${_winTitle}" "${_criticalErrorMsg}";
+    _cm2PromptUserFn "${_criticalErrorMsg}" "${_winTitle}" 'e';
     exit "${_exit_int}";
   fi
 }
@@ -119,58 +116,62 @@ _handleRestoreExitIntFn () {
 ## BEGIN _mainFn {
 #
 _mainFn () {
-  declare _system_state_str _snapshot_id;
+  declare _system_state_str _snapshot_id _exit_int;
 
   # This function will exit with LOCK if the lockfile cannot be grabbed, so we
   # wait until the lock is released before showing the UI (since we have to in
   # order to get the state of the system).
   while true; do
     _system_state_str="$(_getSystemStateFn)"
+    _exit_int="$?";
     
     # Override false positive due to complex exit code handling
     # shellcheck disable=SC2181
-    if [ "$?" = "${_LOCK}" ]; then
+    if [ "${_exit_int}" = "${_LOCK}" ]; then
       sleep 1;
-    elif [ "$?" != '0' ]; then
-      exit;
+    elif [ "${_exit_int}" = "${_OK}" ]; then
+      break;
+    else
+      exit "${_exit_int}";
     fi
   done
 
   if [ "${_system_state_str}" != 'SUPPORTED, SET UP' ]; then
-    _cm2PromptUserFn "${_winTitle}" "${_systemUnsupportedMsg}";
+    _cm2PromptUserFn "${_systemUnsupportedMsg}" "${_winTitle}";
     exit "${_OK}";
   fi
 
   if mount | grep 'btrfs' | grep -q '@kfocus-rollback-working' \
     || mount | grep 'btrfs' | grep -q '@kfocus-rollback-working-boot'; then
-    _cm2PromptUserFn "${_winTitle}" "${_restoreIncompleteMsg}" 's';
+    _cm2PromptUserFn "${_restoreIncompleteMsg}" "${_winTitle}" 's';
     exit "${_OK}";
   fi
 
   if [ -z "$(ls '/btrfs_main/@kfocus-rollback-snapshots')" ]; then
-    _cm2PromptUserFn "${_winTitle}" "${_noSnapshotsFoundMsg}";
+    _cm2PromptUserFn "${_noSnapshotsFoundMsg}" "${_winTitle}";
     exit "${_OK}";
   fi
 
-  if [ "$(_cm2PromptUserFn "${_winTitle}" "${_welcomeMsg}" 'a')" = 'n' ]; then
+  if [ "$(_cm2PromptUserFn "${_welcomeMsg}" "${_winTitle}" 'a')" = 'n' ]; then
     exit "${_OK}";
   fi
 
   if [ -e '/btrfs_main/@kfocus-rollback-working' ] \
     || [ -e '/btrfs_boot/@kfocus-rollback-working-boot' ]; then
-    _cm2PromptUserFn "${_winTitle}" "${_strangeSubvolsMsg}" 's';
+    _cm2PromptUserFn "${_strangeSubvolsMsg}" "${_winTitle}" 's';
     exit "${_FAIL}"
   fi
 
-  if [ "$(_cm2PromptUserFn "${_winTitle}" "${_oneTouchMsg}" 'a')" = 'y' ]; then
+  if [ "$(_cm2PromptUserFn "${_oneTouchMsg}" "${_winTitle}" 'a')" = 'y' ]; then
     _restoreSnapshotFn "$(_getSnapshotListStrFn | head -n1)"
     _handleRestoreExitIntFn "$?";
   fi
 
   _snapshot_id="$(_chooseSnapshotFn)";
+  echo "${_snapshot_id}";
 
-  if [ "${_snapshot_id}" = 'cancelled' ]; then
-    _cm2PromptUserFn "${_winTitle}" "${_restoreCancelledMsg}";
+  if [ -z "${_snapshot_id}" ]; then
+    _cm2PromptUserFn "${_restoreCancelledMsg}" "${_winTitle}";
     exit "${_OK}";
   fi
 
@@ -204,14 +205,14 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     "_snapshotSetExe|${_binDir}/kfocus-rollback-set"
   );
 
-  _escExe="$(_cm2GetEscExeFn)" || exit;
-
   # Import libs and assign more global vars
   _importCommonFn;
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2ErrStrFn 'Could not assign variable';
     exit 1;
   fi
+
+  _escExe="$(_cm2GetEscExeFn)" || exit;
 
   # Set UI messages
   _winTitle='FocusRx: Rollback';
@@ -283,7 +284,7 @@ EOF
 
   _noSnapshotsFoundMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browStr}<h3 style="color:#f7941d">Restore Incomplete</h3>${_erowStr}
+${_browStr}<h3 style="color:#f7941d">No Snapshots Found</h3>${_erowStr}
 
 ${_browStr}Doc: <a style="color:#1d99f3"
   href="https://kfocus.org/wf/tools#rollback"
@@ -380,8 +381,8 @@ EOF
 ${_cm2HtmBeginStr}${_tableStr}
 ${_browStr}<h3 style="color:#f7941d">Choose Snapshot</h3>${_erowStr}
 
-${_browStr}Select the snapshot you would like to restore. Snapshots are ordered
-from newest to oldest.${_erowStr}</table>
+${_browStr}Select the snapshot you would like to restore.<br>
+Snapshots are ordered from newest to oldest.${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";

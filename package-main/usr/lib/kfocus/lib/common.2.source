@@ -461,7 +461,7 @@ _cm2PromptUserFn () {
       _cmd_list+=( "$@" );
     fi
     if [ "${_query_type}" = 'r' ]; then
-      _ans_str="$("${_cmd_list[@]}" || echo 'cancelled')";
+      _ans_str="$("${_cmd_list[@]}")";
     else
       if "${_cmd_list[@]}"; then _ans_str='y'; else _ans_str='n'; fi
     fi
@@ -516,7 +516,7 @@ _cm2PromptUserFn () {
       if [ "${_query_type}" = 'r' ]; then
         # See https://www.redhat.com/sysadmin/use-whiptail section 'Generate a
         # query' for context on the funky redirection trick here.
-        _ans_str="$("${_cmd_list[@]}" 3>&1 1>&2 2>&3 || echo 'cancelled')";
+        _ans_str="$("${_cmd_list[@]}" 3>&1 1>&2 2>&3)";
       else
         if "${_cmd_list[@]}"; then _ans_str='y'; else _ans_str='n'; fi
       fi
