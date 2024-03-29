@@ -417,7 +417,7 @@ _labelAptSnapshotFn () {
       _event_str="$(cut -d':' -f1 <<< "${_history_line}")";
       break;
     fi
-  done < <(printf '%2' "${_apt_history_str}");
+  done < <(printf '%s' "${_apt_history_str}");
 
   echo "Apt${_event_str}" \
       > '/var/lib/kfocus/kfocus_rollback_last_snapshot_reason';

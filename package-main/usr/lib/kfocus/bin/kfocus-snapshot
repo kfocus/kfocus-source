@@ -234,6 +234,9 @@ EOF
   _DEATH='4';
   _LOCK='20';
 
+  # Make sure TTY mode looks nice
+  _cm2SetCliTypeFn 'whiptail'
+
   _mainFn "$@";
 fi
 ## . END Run mainFn when script is NOT sourced }

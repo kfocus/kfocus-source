@@ -1061,6 +1061,14 @@ _EOH17b
 }
 ## . END _chkResetEffectsFn }
 
+## BEGIN _fixSycocaCacheFn {
+#
+_fixSycocaCacheFn () {
+  # Skip if required tool not installed
+  [ -z "${_kBuildSycocaExe}" ] && return;
+  "${_kBuildSycocaExe}";
+}
+## . END _fixSycocaCacheFn }
 
 ## BEGIN _announceEndFn {
  # Purpose:
@@ -1142,6 +1150,7 @@ _mainFn () {
   _runDropScriptsFn;
   _chkExperRepoFn;
   _chkResetEffectsFn;
+  _fixSycocaCacheFn;
   _announceEndFn;
   _cm2EchoFn "\n== . END : OK   ${_rootTitle}\n\n";
   ## . End Run focusrx steps }
@@ -1188,6 +1197,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     "_kcleanExe|${_binDir}/kfocus-kclean||optional"
     "_resetEffectsExe|${_binDir}/kfocus-reset-effects||optional"
     "_snapshotSetExe|${_binDir}/kfocus-rollback-set||optional"
+    "_kBuildSyscocaExe|/usr/bin/kbuildsycoca5||optional"
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2ErrStrFn 'Could not assign variables';

@@ -113,8 +113,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   # Import libs and assign more global vars
   _importCommonFn;
   _assignList=(
-    '_powerSetExe|kfocus-power-set'
-    '_snapshotSetExe|kfocus-rollback-set'
+    "_powerSetExe|${_binDir}/kfocus-power-set"
+    "_snapshotSetExe|${_binDir}/kfocus-rollback-set"
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2WarnStrFn 'ABORT: Required commands not found';

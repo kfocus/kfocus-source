@@ -58,9 +58,9 @@ _restoreSnapshotFn () {
 
 _getSnapshotListStrFn () {
    find '/btrfs_main/@kfocus-rollback-snapshots' -maxdepth 1 \
-     | sed 's?/btrfs_main/@kfocus-rollback-snapshots/@??' \
+     | cut -d'@' -f3 \
      | sort -n -r \
-     | sed 's/^/@/';
+     | sed '/^$/d; s/^/@/;';
 }
 
 _chooseSnapshotFn () {
@@ -92,7 +92,7 @@ _chooseSnapshotFn () {
     return;
   fi
 
-  echo "${_snapshot_disp_list[_answer]}";
+  echo "${_snapshot_list[_answer]}";
   return;
 }
 
@@ -404,6 +404,9 @@ EOF
   _CRITFAIL='3';
   _DEATH='4';
   _LOCK='20';
+
+  # Make sure TTY mode looks nice
+  _cm2SetCliTypeFn 'whiptail';
 
   _mainFn "$@";
 fi
