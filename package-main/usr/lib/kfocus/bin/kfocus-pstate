@@ -12,7 +12,7 @@
 # 
 # License: GPL v2
 # Run by : Power manager on switch to battery
-# Spec   : 1690, 2558, 3404, 4128
+# Spec   : 1690, 2558, 3404, 4138
 # Test   : power-system-check.md
 #
 set -u;
@@ -138,7 +138,7 @@ _mainFn () {
   ## Begin Initialize {
   declare _warn_dgpu_msg _ask_disable_msg _ask_reboot_msg \
     _assign_exe_list _pstate_arg_str _opt_str _is_on_ac _pid_str \
-    _prime_exe _gpu_mode_str _nvidia_list_str;
+    _gpu_mode_str _nvidia_list_str;
 
   _warn_dgpu_msg=$(
     cat <<_EOH01
@@ -228,18 +228,21 @@ _EOH03
   fi
 
   ## Begin Assign other values after common import {
-  declare _lspci_exe _upower_exe _fan_set_exe _pstate_set_exe _power_set_exe;
+  declare _lspci_exe _upower_exe _pstate_set_exe \
+    _power_set_exe _prime_exe;
 
   _assign_exe_list=(
     '_lspci_exe|lspci'
     '_upower_exe|upower'
     "_fan_set_exe|${_binDir}/kfocus-fan-set||optional"
-    "_pstate_set_exe|${_binDir}/kfocus-pstate-set||optional"
+    # "_pstate_set_exe|${_binDir}/kfocus-pstate-set||optional"
     "_power_set_exe|${_binDir}/kfocus-power-set||optional"
+    '_prime_exe|prime-select||optional'
   );
 
+  # Exit if required executables are not available
   if ! _cm2AssignExeVarsFn "${_assign_exe_list[@]}"; then
-    _cm2WarnStrFn 'Abort: Required commands not found.';
+    _cm2ErrStrFn 'Required commands not found.';
     _exitEarlyFn;
   fi
   ## . End Assign other values after common import }
@@ -289,11 +292,6 @@ _EOH03
     _setPlasmaPowerProfileFn "${_is_on_ac}";
   fi
 
-  # Warn of missing helpers
-  [ -z "${_power_set_exe}"  ] && _cm2WarnStrFn 'kfocus-power-set not found';
-  [ -z "${_pstate_set_exe}" ] && _cm2WarnStrFn 'kfocus-pstate-set not found';
-  [ -z "${_fan_set_exe}"    ] && _cm2WarnStrFn 'kfocus-fan-set not found';
-
   # Invoke on-battery settings
   if [ "${_is_on_ac}" = 'n' ]; then
     _cm2SetMsgFn 'Set CPU power mode to Low on battery';
@@ -308,11 +306,12 @@ _EOH03
       _cm2SucFn; else _cm2WarnFn;
     fi
 
-    _cm2SetMsgFn 'Set fan to Linear on battery';
-    if [ -n "${_fan_set_exe}" ] \
-      && "${_escExe}" "${_fan_set_exe}" 'Linear'; then
-      _cm2SucFn; else _cm2WarnFn;
-    fi
+    # TODO 2024-03-25: Held because fan changes worry users
+    # _cm2SetMsgFn 'Set fan to Linear on battery';
+    # if [ -n "${_fan_set_exe}" ] \
+    #   && "${_escExe}" "${_fan_set_exe}" 'Linear'; then
+    #   _cm2SucFn; else _cm2WarnFn;
+    # fi
 
   # Invoke on-AC settings
   else
@@ -328,16 +327,17 @@ _EOH03
       _cm2SucFn; else _cm2WarnFn;
     fi
 
-    _cm2SetMsgFn 'Set fan to Soft on AC';
-    if [ -n "${_fan_set_exe}" ] \
-      && "${_escExe}" "${_fan_set_exe}" 'Soft'; then
-      _cm2SucFn; else _cm2WarnFn;
-    fi
+    # TODO 2024-03-25: Held because fan changes worry users
+    # _cm2SetMsgFn 'Set fan to Soft on AC';
+    # if [ -n "${_fan_set_exe}" ] \
+    #   && "${_escExe}" "${_fan_set_exe}" 'Soft'; then
+    #   _cm2SucFn; else _cm2WarnFn;
+    # fi
   fi
 
   # Sniff gpu in use
   _gpu_mode_str='intel';
-  if _cm2AssignExeVarsFn '_prime_exe|prime-select'; then
+ if [ -n "${_prime_exe}" ]; then
     _gpu_mode_str="$("$_prime_exe" query)";
   else
     _cm2WarnStrFn 'Please install nvidia-prime for maximum capability';

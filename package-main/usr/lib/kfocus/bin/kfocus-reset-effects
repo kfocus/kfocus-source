@@ -107,7 +107,7 @@ _resetEffectsFn () {
     # Keyboard shortcuts
     'scut|kwin|Switch to Previous Desktop|Meta+Ctrl+Up,,Switch to Previous Desktop'
     'scut|kwin|Switch to Next Desktop|Meta+Ctrl+Down,,Switch to Next Desktop'
-    'scut|kwin|Window Fullscreen|Meta+F,,Make Window Fullscreen'
+    'scut|kwin|Window Fullscreen|Meta+F,none,Make Window Fullscreen'
     # Reverted to Ctrl+F8 as this is the default again in 5.27.9
     'scut|kwin|Show Desktop Grid|none,Meta+F8,Show Desktop Grid'
     'scut|kwin|ShowDesktopGrid|Ctrl+F8,Ctrl+F8,Show Desktop Grid'
@@ -231,7 +231,7 @@ _resetEffectsFn () {
   done
 
   # TODO: This fixup routine is probably more complicated than it
-  # needs to be. Intead, replace special characters in strings
+  # needs to be. Instead, replace special characters in strings
   # like so: Alt+Space\\tAlt+F2\\t => Alt+Space_XtabX_Alt+F2_XtabX_ ...
   # and then replace them above.
   #
@@ -260,15 +260,13 @@ _resetEffectsFn () {
 
 ## BEGIN _mainFn {
 _mainFn () {
-  declare _prompt_msg _reply_str _power_file _mime_file;
+  declare _notify_str _prompt_msg _reply_str _power_file _mime_file;
 
   # Immediately apply effects and return if -d option provided.
   if [ "${1:-}" = '-d' ]; then
     if [ -n "${2:-}" ]; then
       _configDir="$(readlink -f "${2:-}")";
-      if [ -d "${_configDir}" ]; then
-        _resetEffectsFn;
-      fi
+      if [ -d "${_configDir}" ]; then _resetEffectsFn; fi
     fi
     return;
   fi
@@ -280,6 +278,17 @@ _mainFn () {
   fi
   _configDir="${HOME:-}/.config";
 
+  _notify_str='';
+
+  if [ -n "${_settingsExe}" ] \
+    && pgrep -xf "${_settingsExe}" > /dev/null; then
+    _notify_str="$(cat <<_EOH00
+${_cm2HtmPStr}Continuing will close <b>System Settings</b> to <br>
+to minimize conflicts.</p>
+_EOH00
+    )";
+  fi
+
   # Notify user
   _prompt_msg="$(
     cat <<_EOH01
@@ -287,19 +296,27 @@ ${_cm2HtmBeginStr}
 <h3 style="color:#f7941d">RESET KFOCUS DESKTOP UX</h3>
 
 ${_cm2HtmPStr}This app resets keyboard shortcuts and desktop<br>
-effects to Kubuntu Focus defaults. Please close <br>
-<b>System Settings</b> before proceeding.</p>
+effects to Kubuntu Focus defaults.</p>
+${_notify_str}
+
+${_cm2HtmPStr}Continue with Reset?</p>
 ${_cm2HtmEndStr}
 _EOH01
   )";
-  _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}";
+
+  _reply_str="$(_cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}" 'a')";
+  if [ "${_reply_str}" = 'n' ]; then exit 0; fi
+
+
+  if [ -n "${_settingsExe}" ] \
+    && pgrep -xf "${_settingsExe}" > /dev/null; then
+    pkill -xf "${_settingsExe}" || true;
+  fi
 
   # Request to reset effects and keyboard shortcuts
   _prompt_msg='Reset effects and keyboard shortcuts';
   _reply_str="$(_cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}" 'a')";
-  if [ "${_reply_str}" = 'y' ]; then
-    _resetEffectsFn;
-  fi
+  if [ "${_reply_str}" = 'y' ]; then _resetEffectsFn; fi
 
   # Request to reset power management
   _power_file="${_configDir}/powermanagementprofilesrc";
@@ -322,20 +339,44 @@ _EOH01
   fi
 
   # Confirm application of settings
+  # shellcheck disable=SC2181
   _prompt_msg="$(cat <<_EOH02
 ${_cm2HtmBeginStr}
 <h3 style="color:#f7941d">RESET KFOCUS UX COMPLETE</h3>
-${_cm2HtmPStr}To ensure all changes are applied, you <br>
-should immediately log out and back in.</p>
+${_cm2HtmPStr}To apply effects, we will reload the plasma <br>
+shell, window manager, and keyboard shortcuts.<br></p>
+
+${_cm2HtmPStr}To ensure all changes are applied, please log <br>
+out and back in.</p>
 ${_cm2HtmEndStr}
 _EOH02
   )";
   _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}";
+
+  # Rerun global hot keys
+  killall kglobalaccel5 && nohup kglobalaccel5 > /dev/null 2>&1 &
+  # shellcheck disable=SC2181
+  if [ "$?" = '0' ]; then disown "$!"; sleep 1; fi
+  sleep 2;
+
+  # Replace window manager
+  nohup kwin --replace > /dev/null 2>&1 &
+  # shellcheck disable=SC2181
+  if [ "$?" = '0' ]; then disown "$!"; sleep 2; fi
+  sleep 2;
+
+  # Replace plasma shell
+  nohup plasmashell --replace > /dev/null 2>&1 &
+  # shellcheck disable=SC2181
+  if [ "$?" = '0' ]; then disown "$!"; sleep 2; fi
+
+  # Rebuild desktop cache
+  kbuildsycoca5 || true;
 }
 ## . END _mainFn }
 
 ## BEGIN Declare and assign global vars {
-declare _rootTitle _assignList _kwriteconfig5Exe _configDir;
+declare _rootTitle _assignList _kwriteconfig5Exe _configDir _settingsExe;
 declare -A _fileMap=(
   ['font']=kcmfonts
   ['glob']=kdeglobals
@@ -343,8 +384,9 @@ declare -A _fileMap=(
   ['plwc']=plasma-welcomerc
   ['scut']=kglobalshortcutsrc
 );
-_rootTitle='Kubuntu Focus Reset Effects';
 _configDir='';
+_settingsExe="$(command -v systemsettings)";
+_rootTitle='Kubuntu Focus Reset Effects';
 ## . END Declare and assign global vars }
 
 ## BEGIN Run main if script is not sourced {
