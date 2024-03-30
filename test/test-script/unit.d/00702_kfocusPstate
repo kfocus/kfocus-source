@@ -1,0 +1,215 @@
+#!/bin/bash
+#
+# Test for default kfocus-fan on mocked hardware
+#
+# set -u is set in _runUnitTests (the test harness)
+#
+
+# bashsupport disable=BP2001,BP2001,BP2001
+## BEGIN _setMocksFn {
+# Purpose: Overwrite functions from sourced script before running assertions
+# shellcheck disable=SC2317
+_setMocksFn () {
+  declare _user_name;
+  _cm2KdiagExeFn () {
+    echo "REQUEST kdialog $*" >>"${_runFile}"
+  }
+  _lspciExeFn () {
+    # Echo _bitList[3] should be 'intel' or 'nvidia'
+    if [ "${_bitList[2]:-}" = 'nvidia' ]; then
+      echo '0000:02:00.0 VGA compatible controller: NVIDIA AD104M...'
+    else
+      echo '0000:00:02.0 VGA compatible controller: Intel ...'
+    fi
+  }
+  _powerSetExeFn () {
+    echo "REQUEST power-set $*" >>"${_runFile}"
+  }
+  _primeExeFn () {
+    # Echo _bitList[3] for call 'prime-select query'
+    echo "${_bitList[3]}"
+  }
+  _profilesCtlExeFn () {
+    if [ "$1" = 'set' ]; then
+      echo "REQUEST powerprofilesctl $*" >> "${_runFile}";
+      return;
+    fi
+    if [ "${_udevPowerStateKey}" = 'AC' ]; then
+      cat <<'_EOT';
+  performance:
+    Driver:     intel_pstate
+    Degraded:   no
+
+* balanced:
+    Driver:     intel_pstate
+
+  power-saver:
+    Driver:     intel_pstate
+_EOT
+    else
+      cat <<'_EOT';
+  performance:
+    Driver:     intel_pstate
+    Degraded:   no
+
+  balanced:
+    Driver:     intel_pstate
+
+* power-saver:
+    Driver:     intel_pstate
+_EOT
+    fi
+  }
+  _pstateSetExeFn () {
+    echo "REQUEST pstate-set $*" >>"${_runFile}";
+  }
+  _qdbusExeFn () {
+    echo "REQUEST qbus $*" >>"${_runFile};"
+  }
+  _upowerExeFn () {
+    # Mock upower commands
+    case "$1" in
+    '-e') echo '/battery'; return;;
+    '-i') if [ "${_udevPowerStateKey}" = 'AC' ]; then
+        echo '  online:  yes'; else echo '  online:  no'; fi;;
+    esac
+  }
+
+  declare -g _baseName _cm2KdiagExe _escExe _lockFile _lspciExe \
+    _powerSetExe _primeExe _profilesCtlExe _pstateSetExe _qdbusExe \
+    _upowerExe _userName;
+
+  _user_name="$(id -un)";
+
+  _baseName='kfocus-pstate';
+  _lockFile="/tmp/${_user_name}-kfocus-pstate.lock";
+
+  _cm2KdiagExe='_cm2KdiagExeFn';
+  _escExe='';
+  _lspciExe='_lspciExeFn';
+  _powerSetExe='_powerSetExeFn';
+  _primeExe='_primeExeFn';
+  _profilesCtlExe='_profilesCtlExeFn';
+  _pstateSetExe='_pstateSetExeFn';
+  _qdbusExe='_qdbusExeFn';
+  _upowerExe='_upowerExeFn';
+
+  # shellcheck source=../../../package-main/usr/lib/kfocus/bin/kfocus-pstate
+  source "${_t00TopDir}/package-main/usr/lib/kfocus/bin/kfocus-pstate";
+}
+## . END _setMocksFn }
+
+## BEGIN _unsetMocksFn {
+# Purpose : Unset mocked functions and other globals to prevent
+#   pollution of namespaces. Mocked functions from commons.2.source are not
+#   reset here; instead they are re-source after every test in runUnitTests.
+#   See more notes in 00900.
+_unsetMocksFn () {
+  unset _baseName _cm2KdiagExe _escExe _lockFile _lspciExe \
+    _primeExe _powerSetExe _pstateSetExe _qdbusExe _upowerExe _userName;
+}
+## . END _unsetMocksFn }
+
+## BEGIN _runTestFn {
+# This MUST be called '_runTestFn' for use by the _runUnitTests
+_runTestFn () {
+  declare _cr _fail_count _assert_table _assert_count _assert_idx \
+    _assert_line _lspci_str _prime_select_str _file _expect_file \
+    _msg _check_str _count_str _wrap_str;
+
+  # Use function from _runUnitTests: clear out run dir and check expect dir
+  if ! _t00ClearRunDirFn;    then return 1; fi
+  if ! _t00CheckExpectDirFn; then return 1; fi
+
+  # WE DO NOT NEED TO IMPORT COMMON FOR sourced scripts, as the common lib
+  # Overwrite functions with mocks
+  _cr=$'\n';
+  _setMocksFn;
+
+  # Shift off header from _cm2ModelTable to create _assert_table.
+  # This will grow with model support.
+  _assert_table=(
+    # _cli_option | _cli_set_mode (AC|Battery|LowBattery)
+    'h|none|'
+    's|AC|'
+    's|Battery|'
+    's|LowBattery|'
+    's|bad_label|'
+    'k|bad_option|'
+    '|AC|'
+    '|Battery|'
+  );
+
+  ## Begin Iterate through assertions {
+  _assert_count=$(("${#_assert_table[@]}" * 6));
+  _assert_idx=1;
+  _fail_count=0;
+  for _assert_line in "${_assert_table[@]}"; do
+    # Extract _bitList used by Mocks above
+    readarray -td'|' _bitList <<< "${_assert_line}";
+    for _lspci_str in 'nvidia' 'intel'; do
+      _bitList[2]="${_lspci_str}";
+      for _prime_select_str in 'intel' 'nvidia' 'on-demand'; do
+        _bitList[3]="${_prime_select_str}";
+        _file="$(
+          printf '%02d_%s_%s_%s_%s.txt' "${_assert_idx}" "${_bitList[@]}"
+        )";
+        # shellcheck disable=SC2154
+        _expect_file="${_t00ExpectDir}/${_file}";
+        # shellcheck disable=SC2154
+        _runFile="${_t00RunDir}/${_file}";
+
+        # Start file with description
+        _cmd_list=( '_mainFn' );
+        case "${_bitList[0]}" in
+          '') true;;
+          'h') _cmd_list+=( '-h' );;
+          *) _cmd_list+=( "-${_bitList[0]}" "${_bitList[1]}" );;
+        esac
+
+        _msg="Check kfocus-pstate ${_cmd_list[*]:1}${_cr}";
+        _udevPowerStateKey='AC';
+        if [ -z "${_bitList[0]}" ]; then
+          _udevPowerStateKey="${_bitList[1]}";
+          _msg+="udev power state is |${_udevPowerStateKey}|${_cr}";
+        fi
+        _msg+="lspci GPU is ${_bitList[2]}${_cr}";
+        _msg+="prime-select query returns |${_bitList[3]}|${_cr}";
+        echo "${_msg}" > "${_runFile}";
+
+        _wrap_str="$("${_cmd_list[@]}" 2>&1)";
+        echo "${_wrap_str}" >> "${_runFile}";
+
+        ## Begin Check diffs {
+        # shellcheck disable=SC2154
+        _count_str="$(_t00MakeCountStrFn "${_assert_idx}" "${_assert_count}")";
+        if [ ! -f "${_expect_file}" ]; then touch "${_expect_file}"; fi
+        _check_str="$(diff -r --brief "${_expect_file}" "${_runFile}" )";
+        if [ -z "${_check_str}" ]; then
+          _cm2EchoFn "  ok  : ${_count_str} ${_msg}";
+        else
+          _cm2EchoFn "  fail: ${_count_str} ${_msg}";
+          _cm2EchoFn '    Please compare expected to run file';
+          meld "${_expect_file}" "${_runFile}";
+          (( _fail_count++ ));
+        fi
+        ## End Check diffs }
+
+        (( _assert_idx++ ));
+      done
+    done
+  done
+  ## End Iterate through assertions }
+
+  if [ "${_fail_count}" -gt 0 ]; then
+    _cm2EchoFn "FAIL: ${_fail_count} of ${_assert_count} asserts failed.";
+  else
+    _cm2EchoFn 'OK  : Results match expected';
+  fi
+
+  _unsetMocksFn;
+  return "${_fail_count}";
+}
+## . END _runTestFn }
+
+declare _runFile _bitList _udevPowerStateKey;

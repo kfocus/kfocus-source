@@ -1,0 +1,10 @@
+Check kfocus-pstate -k bad_option
+lspci GPU is nvidia
+prime-select query returns |on-demand|
+
+./runUnitTests: illegal option -- k
+warn: Invalid option |?|
+
+Usage: kfocus-pstate [-h|-s <key>]
+   -h: This help message
+   -s: Specify power state AC | Battery | LowBattery

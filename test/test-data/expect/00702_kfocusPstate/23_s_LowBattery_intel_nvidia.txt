@@ -1,0 +1,38 @@
+Check kfocus-pstate -s LowBattery
+lspci GPU is intel
+prime-select query returns |nvidia|
+
+REQUEST powerprofilesctl set power-saver
+REQUEST power-set Low
+REQUEST pstate-set writeback-battery
+REQUEST kdialog --warningyesno <html>
+  <style>
+    table{width:100%;margin:0}
+    td{padding:4px 16px 4px 0;}
+    .prompt{text-align:center;padding16px 0 8px 0;font-weight:800}
+  </style>
+  <h3 style="color:#1d99f3;text-align:center">Discrete GPU Power Off</h3>
+  <table align="center">
+  <tr><td>Despite being set to use the discrete GPU, the system is<br>
+  only using the integrated GPU. In order to use the discrete<br>
+  GPU, the system must reboot.
+  </td></tr>
+  <tr><td>Do you wish to reboot now?
+  </td></tr>
+  </table>
+</html>
+== BEGIN : Set preferred mode for Battery power
+ok  : Set profile to |power-saver|.
+== . END : OK   Set preferred mode for Battery power
+
+
+== BEGIN : Set CPU power mode to Low on battery
+== . END : OK   Set CPU power mode to Low on battery
+
+
+== BEGIN : Set writeback for battery use
+== . END : OK   Set writeback for battery use
+
+
+== BEGIN : Warn user if using iGPU when dGPU requested
+== . END : OK   Warn user if using iGPU when dGPU requested
