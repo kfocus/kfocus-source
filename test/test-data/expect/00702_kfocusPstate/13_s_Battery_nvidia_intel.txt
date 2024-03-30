@@ -2,7 +2,6 @@ Check kfocus-pstate -s Battery
 lspci GPU is nvidia
 prime-select query returns |intel|
 
-REQUEST powerprofilesctl set power-saver
 REQUEST power-set Low
 REQUEST pstate-set writeback-battery
 REQUEST kdialog --yesno <html>
@@ -25,11 +24,6 @@ REQUEST kdialog --yesno <html>
   </table>
 </html>
 REQUEST pstate-set disable-nvidia
-== BEGIN : Set preferred mode for Battery power
-ok  : Set profile to |power-saver|.
-== . END : OK   Set preferred mode for Battery power
-
-
 == BEGIN : Set CPU power mode to Low on battery
 == . END : OK   Set CPU power mode to Low on battery
 
