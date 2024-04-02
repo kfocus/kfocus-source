@@ -48,6 +48,53 @@ _importCommonFn () {
 }
 ## . END _importCommonFn }
 
+## BEGIN _getSnapshotListStrFn {
+#
+_getSnapshotListStrFn () {
+   find '/btrfs_main/@kfocus-rollback-snapshots' -maxdepth 1 \
+     | cut -d'@' -f3 \
+     | sort -n -r \
+     | sed '/^$/d; s/^/@/;';
+}
+## . END _getSnapshotListStrFn }
+
+## BEGIN _makeSnapshotDispIdFn {
+#
+_makeSnapshotDispIdFn () {
+  declare _snapshot_id _snapshot_reason_loc _snapshot_reason_raw \
+    _snapshot_reason _snapshot_datetime _snapshot_disp_id;
+
+  _snapshot_id="${1:-}";
+  _snapshot_reason_loc="${2:-}";
+
+  if [ -z "${_snapshot_id}" ] || [ -z "${_snapshot_reason_loc}" ]; then
+    _cm2WarnStrFn 'Invalid arguments, cannot generate snapshot display ID';
+    return 1;
+  fi
+
+  _snapshot_reason_raw="$(cat "${_snapshot_reason_loc}")";
+  case "${_snapshot_reason_raw}" in
+    'Apt')
+      _snapshot_reason='Before Package Change';
+      ;;
+    'Timed')
+      _snapshot_reason='System Schedule';
+      ;;
+    'Pre-Rollback')
+      _snapshot_reason='Pre-Rollback';
+      ;;
+    *) # must be user-generated
+      _snapshot_reason="Created by ${_snapshot_reason_raw}";
+      ;;
+  esac
+
+  _snapshot_datetime="$(date -d "${_snapshot_id}" '+%a %F %H:%M')";
+
+  _snapshot_disp_id="${_snapshot_datetime} | ${_snapshot_reason}";
+  echo "${_snapshot_disp_id}";
+}
+## . END _makeSnapshotDispIdFn }
+
 _getSystemStateFn () {
   "${_snapshotSetExe}" 'getSystemState';
 }
@@ -56,10 +103,18 @@ _createSnapshotFn () {
   "${_escExe}" "${_snapshotSetExe}" 'createSnapshot' 'User';
 }
 
+_trimSnapshotsFn () {
+  "${_escExe}" "${_snapshotSetExe}" 'trimSnapshots';
+}
+
+_labelUserSnapshotFn () {
+  "${_escExe}" "${_snapshotSetExe}" 'labelUserSnapshot' "${1:-}";
+}
+
 ## BEGIN _mainFn {
 #
 _mainFn () {
-  declare _system_state_str _ans _exit_int;
+  declare _system_state_str _ans _exit_int _snapshot_id _snapshot_disp_id;
 
   # This function will exit with LOCK if the lockfile cannot be grabbed, so we
   # wait until the lock is released before showing the UI (since we have to in
@@ -88,17 +143,24 @@ _mainFn () {
 
   if [ "${_ans}" = 'y' ]; then
     _createSnapshotFn;
+    _labelUserSnapshotFn "$USER";
     _exit_int="$?";
     if [ "${_exit_int}" = "${_OK}" ]; then
+      _snapshot_id="$(_getSnapshotListStrFn | head -n1)";
+      _snapshot_disp_id="$(_makeSnapshotDispIdFn "${_snapshot_id}" \
+        "/btrfs_main/@kfocus-rollback-snapshots/${_snapshot_id}/var/lib/kfocus/kfocus_rollback_snapshot_reason")";
+      _snapshotCreatedMsg="${_snapshotCreatedMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
       _cm2PromptUserFn "${_snapshotCreatedMsg}" "${_winTitle}";
     else
       if [ "${_exit_int}" = "${_FAIL}" ]; then
         _cm2PromptUserFn "${_snapshotCreationFailedMsg}" "${_winTitle}" 's';
+        exit "${_FAIL}";
       else
         _cm2PromptUserFn "${_criticalErrorMsg}" "${_winTitle}" 'e';
         exit "${_exit_int}";
       fi
     fi
+    _trimSnapshotsFn;
   fi
 
   exit "${_OK}";
@@ -150,14 +212,14 @@ ${_browStr}Doc: <a style="color:#1d99f3"
   href="https://kfocus.org/wf/tools#snapshot"
   >https://kfocus.org/wf/tools#snapshot</a>${_erowStr}
 
-${_browStr}This snapshot utility allows you to create a restore point for
-your system files. You can restore this snapshot using System
-Rollback.${_erowStr}
+${_browStr}Use this tool to create a snapshot of the root filesystem.
+${_erowStr}
 
-${_browStr}This process is generally safe, however we recommend you back up
-your data before any system maintenance. You may always return to
-this utility later using
-<code>Start Menu > Kubuntu Focus > System Snapshot</code>.${_erowStr}
+${_browStr}<b style="color:#f7941d"
+>IMPORTANT: libvirt virtual machine data will NOT be included in
+the snapshot.</b>${_erowStr}
+
+${_browStr}Use the "FocusRx: Rollback" app to restore snapshots.${_erowStr}
 
 ${_browStr}<b>Create Snapshot Now?</b>${_erowStr}</table>
 ${_cm2HtmEndStr}
@@ -172,10 +234,6 @@ ${_browStr}Doc: <a style="color:#1d99f3"
   href="https://kfocus.org/wf/tools#snapshot"
   >https://kfocus.org/wf/tools#snapshot</a>${_erowStr}
 
-${_browStr}This snapshot utility allows you to create a restore point for
-your system files. You can restore this snapshot using System
-Rollback.${_erowStr}
-
 ${_browStr}This system does not appear to support snapshotting and rollback.
 Please see
 <a style="color:#1d99f3" href="https://kfocus.org/wf/recovery"
@@ -189,8 +247,11 @@ EOF
 ${_cm2HtmBeginStr}${_tableStr}
 ${_browStr}<h3 style="color:#f7941d">Snapshot Created</h3>${_erowStr}
 
-${_browStr}A system file snapshot has been successfully
-created.${_erowStr}</table>
+${_browStr}A snapshot of the root filesystem called${_erowStr}
+
+${_browStr}"XXX_SNAPSHOT_NAME_XXX"${_erowStr}
+
+${_browStr}has been created.${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";

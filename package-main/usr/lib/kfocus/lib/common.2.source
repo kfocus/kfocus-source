@@ -446,8 +446,14 @@ _cm2PromptUserFn () {
       '--title' "${_window_title}"
     );
 
+    # These arguments *must* be inserted before the actual '--yesno' argument
+    # below, or KDialog glitches badly (at least on Kubuntu 22.04).
+    if [ "${_query_type}" = 'o' ]; then
+      _cmd_list+=("--yes-label='OK'" "--no-label='Cancel'");
+    fi
+
     case "${_query_type}" in
-      a) _cmd_list+=('--yesno') ;;
+      [ao]) _cmd_list+=('--yesno') ;;
       w) _cmd_list+=('--warningyesno') ;;
       s) _cmd_list+=('--sorry') ;;
       e) _cmd_list+=('--error') ;;
@@ -498,10 +504,14 @@ _cm2PromptUserFn () {
       );
 
       case "${_query_type}" in
-        [aw]) _cmd_list+=('--yesno') ;;
+        [aow]) _cmd_list+=('--yesno') ;;
         r) _cmd_list+=('--radiolist') ;;
         *) _cmd_list+=('--msgbox') ;;
       esac
+
+      if [ "${_query_type}" = 'o' ]; then
+        _cmd_list+=("--yes-button='OK'" "--no-button='Cancel'");
+      fi
 
       # whiptail accepts arguments for setting window and list sizes, but we
       # want all of these to be automatically set as appropriate. To do that

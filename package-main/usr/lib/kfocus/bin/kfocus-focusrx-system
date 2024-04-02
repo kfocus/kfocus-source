@@ -70,6 +70,7 @@ _initCpuFn () {
 _manageSnapshotsFn () {
   "${_snapshotSetExe}" 'restoreSnapshotStage2';
   "${_snapshotSetExe}" 'createSnapshot' 'Timed';
+  "${_snapshotSetExe}" 'trimSnapshots';
 }
 # . END _manageSnapshotsFn }
 

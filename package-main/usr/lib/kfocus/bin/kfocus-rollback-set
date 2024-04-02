@@ -5,9 +5,11 @@
 # Written for the Kubuntu Focus by M. Mikowski and A. Rainbolt
 #
 # Name     : kfocus-rollback-set
-# Summary  : kfocus-rollback-set (createSnapshot <Apt|Timed|User>
+# Summary  : kfocus-rollback-set (createSnapshot
+#              <Apt|Timed|Pre-Rollback|(username)>
 #              | restoreSnapshot @<timestamp> | deleteSnapshot @<timestamp>
-#              | labelAptSnapshot | restoreSnapshotStage2 | prepareSystem
+#              | labelAptSnapshot | labelUserSnapshot <username>
+#              | restoreSnapshotStage2 | trimSnapshots | prepareSystem
 #              | getSystemState)
 # Purpose  : Does the actual snapshot create and restore operations
 # Example  : kfocus-rollback-set restoreSnapshot @1234
@@ -369,10 +371,15 @@ _createSnapshotFn () {
     | tail -n1)";
   _snapshot_event_type="${1:-}"
 
+  rm '/tmp/kfocus-rollback-set-noaptlabel' 2>/dev/null;
+  # Don't let a directory fake this out unless it has contents
+  rmdir '/tmp/kfocus-rollback-set-noaptlabel' 2>/dev/null;
+
   case "${_snapshot_event_type}" in
     'Apt')
       if (( (_timestamp_str - _prev_timestamp_str) \
         < _hour_seconds )); then
+        touch '/tmp/kfocus-rollback-set-noaptlabel';
         _exitOK;
       fi
       ;;
@@ -382,8 +389,10 @@ _createSnapshotFn () {
         _exitOK;
       fi
       ;;
-    'User') true;; # always make snapshots if the user says so
   esac
+
+  echo "${_snapshot_event_type}" \
+    > '/var/lib/kfocus/kfocus_rollback_snapshot_reason';
 
   if [ -e "${_snapshot_path}" ] || [ -e "${_boot_snapshot_path}" ]; then
     # This should theoretically never happen, but there's a non-zero chance
@@ -398,29 +407,6 @@ _createSnapshotFn () {
   btrfs subvolume snapshot -r '/btrfs_main/@' "${_snapshot_path}" || _exitDEATH;
   btrfs subvolume snapshot -r '/btrfs_boot/@boot' "${_boot_snapshot_path}" \
     || _exitDEATH;
-
-  if [ "${_snapshot_event_type}" != 'Apt' ]; then
-    echo "${_snapshot_event_type}" \
-      > '/var/lib/kfocus/kfocus_rollback_last_snapshot_reason';
-  fi
-
-  _trimSnapshotsFn;
-}
-
-_labelAptSnapshotFn () {
-  declare _apt_history_str _history_line _event_str;
-
-  _apt_history_str="$(cat '/var/log/apt/history.log')";
-
-  while IFS= read -r _history_line || [[ -n "${_history_line}" ]]; do
-    if [[ "${_history_line}" =~ ^Install|Upgrade|Remove|Purge ]]; then
-      _event_str="$(cut -d':' -f1 <<< "${_history_line}")";
-      break;
-    fi
-  done < <(printf '%s' "${_apt_history_str}");
-
-  echo "Apt${_event_str}" \
-      > '/var/lib/kfocus/kfocus_rollback_last_snapshot_reason';
 }
 
 ## BEGIN _mainFn {
@@ -483,8 +469,14 @@ _mainFn () {
     'labelAptSnapshot')
       _labelAptSnapshotFn;
       ;;
+    'labelUserSnapshot')
+      _labelUserSnapshotFn "${2:-}";
+      ;;
     'restoreSnapshotStage2')
       _restoreSnapshotStage2Fn;
+      ;;
+    'trimSnapshots')
+      _trimSnapshotsFn;
       ;;
     *)
       _cm2WarnStrFn 'Invalid mode specified.';
