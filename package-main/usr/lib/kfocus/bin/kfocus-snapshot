@@ -99,16 +99,8 @@ _getSystemStateFn () {
   "${_snapshotSetExe}" 'getSystemState';
 }
 
-_createSnapshotFn () {
-  "${_escExe}" "${_snapshotSetExe}" 'createSnapshot' 'User';
-}
-
-_trimSnapshotsFn () {
-  "${_escExe}" "${_snapshotSetExe}" 'trimSnapshots';
-}
-
-_labelUserSnapshotFn () {
-  "${_escExe}" "${_snapshotSetExe}" 'labelUserSnapshot' "${1:-}";
+_focusRxSnapshotFn () {
+  "${_escExe}" "${_snapshotSetExe}" 'focusRxSnapshot' "${1:-}";
 }
 
 ## BEGIN _mainFn {
@@ -142,8 +134,7 @@ _mainFn () {
   _ans="$(_cm2PromptUserFn "${_createSnapshotMsg}" "${_winTitle}" 'a')";
 
   if [ "${_ans}" = 'y' ]; then
-    _createSnapshotFn;
-    _labelUserSnapshotFn "$USER";
+    _focusRxSnapshotFn "$USER";
     _exit_int="$?";
     if [ "${_exit_int}" = "${_OK}" ]; then
       _snapshot_id="$(_getSnapshotListStrFn | head -n1)";
@@ -160,7 +151,6 @@ _mainFn () {
         exit "${_exit_int}";
       fi
     fi
-    _trimSnapshotsFn;
   fi
 
   exit "${_OK}";
@@ -216,8 +206,8 @@ ${_browStr}Use this tool to create a snapshot of the root filesystem.
 ${_erowStr}
 
 ${_browStr}<b style="color:#f7941d"
->IMPORTANT: libvirt virtual machine data will NOT be included in
-the snapshot.</b>${_erowStr}
+>IMPORTANT: libvirt virtual machine data will NOT be<br>
+included in the snapshot.</b>${_erowStr}
 
 ${_browStr}Use the "FocusRx: Rollback" app to restore snapshots.${_erowStr}
 
@@ -234,10 +224,10 @@ ${_browStr}Doc: <a style="color:#1d99f3"
   href="https://kfocus.org/wf/tools#snapshot"
   >https://kfocus.org/wf/tools#snapshot</a>${_erowStr}
 
-${_browStr}This system does not appear to support snapshotting and rollback.
-Please see
+${_browStr}This system does not appear to support snapshotting<br>
+and rollback. Please see
 <a style="color:#1d99f3" href="https://kfocus.org/wf/recovery"
->https://kfocus.org/wf/recovery</a>
+>https://kfocus.org/wf/recovery</a><br>
 for other recovery steps you can take.${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
@@ -260,11 +250,13 @@ EOF
 ${_cm2HtmBeginStr}${_tableStr}
 ${_browStr}<h3 style="color:#f7941d">Snapshot Creation Failed</h3>${_erowStr}
 
-${_browStr}Something went wrong and FocusRx was unable to create a system file
-snapshot. No changes have been made to your system.${_erowStr}
+${_browStr}Something went wrong and FocusRx was unable to<br>
+create a root filesystem snapshot. No changes have<br>
+been made to your system.${_erowStr}
 
-${_browStr}Please try to create a snapshot again. You are encouraged to
-contact technical support if this issue is persistent.${_erowStr}</table>
+${_browStr}Please try to create a snapshot again. You are<br>
+encouraged to contact technical support if this<br>
+issue is persistent.${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
@@ -273,15 +265,17 @@ EOF
 ${_cm2HtmBeginStr}${_tableStr}
 ${_browStr}<h3 style="color:#f7941d">Critical Error</h3>${_erowStr}
 
-${_browStr}FocusRx was interrupted while attempting to snapshot system files.
-This incident may be the result of failing hardware or a software
+${_browStr}FocusRx was interrupted while attempting to<br>
+snapshot the root filesystem. This incident may<br>
+be the result of failing hardware or a software<br>
 conflict.${_erowStr}
 
-${_browStr}<b>Please do NOT reboot. Back up your data as soon as possible.</b>
-Failure to do so may result in data loss. See
+${_browStr}<b>Please do NOT reboot. Back up your data as<br>
+soon as possible.</b> Failure to do so may result in<br>
+data loss. See<br>
 <a style="color:#1d99f3"
 href="https://kfocus.org/wf/backup#bkm_take_a_snapshot"
->https://kfocus.org/wf/backup#bkm_take_a_snapshot</a>
+>https://kfocus.org/wf/backup#bkm_take_a_snapshot</a><br>
 for instructions on how to safeguard your data.${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF

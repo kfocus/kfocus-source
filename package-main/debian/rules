@@ -4,11 +4,11 @@
 	dh $@
 
 override_dh_auto_build:
-	mkdir src/kfocus-focusrx-notifier/build
-	cmake -S src/kfocus-focusrx-notifier -B src/kfocus-focusrx-notifier/build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=$(CURDIR)/debian/kfocus-main/usr/
-	(cd src/kfocus-focusrx-notifier/build && $(MAKE))
+	mkdir src/kfocus-focusrx-dbus-dispatch/build
+	cmake -S src/kfocus-focusrx-dbus-dispatch -B src/kfocus-focusrx-dbus-dispatch/build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=$(CURDIR)/debian/kfocus-main/usr/
+	(cd src/kfocus-focusrx-dbus-dispatch/build && $(MAKE))
 	dh_auto_build
 
 override_dh_auto_install:
-	(cd src/kfocus-focusrx-notifier/build && $(MAKE) install)
+	(cd src/kfocus-focusrx-dbus-dispatch/build && $(MAKE) install)
 	dh_auto_install

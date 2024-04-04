@@ -356,7 +356,7 @@ _EOH06
   # Prepare system for snapshotting (this should be done whether Internet is
   # present or not)
   if [ -n "${_snapshotSetExe}" ]; then
-    "${_snapshotSetExe}" 'prepareSystem' || exit;
+    "${_escExe}" "${_focusRxSetExe}" 'prep-snapshot' || exit;
   fi
 
   # Bail if internet connection appears hopeless

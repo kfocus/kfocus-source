@@ -10,7 +10,8 @@
 #              | restoreSnapshot @<timestamp> | deleteSnapshot @<timestamp>
 #              | labelAptSnapshot | labelUserSnapshot <username>
 #              | restoreSnapshotStage2 | trimSnapshots | prepareSystem
-#              | getSystemState)
+#              | getSystemState | focusRxRollback (snapshot_id)
+#              | focuxRxSnapshot)
 # Purpose  : Does the actual snapshot create and restore operations
 # Example  : kfocus-rollback-set restoreSnapshot @1234
 # License  : GPLv2
@@ -175,6 +176,13 @@ _checkSystemStateSetUpFn () {
   if ! [ "${_systemState}" = 'SUPPORTED, SET UP' ]; then
     _exitOK;
   fi
+}
+
+_getSnapshotListStrFn () {
+  find '/btrfs_main/@kfocus-rollback-snapshots' -maxdepth 1 \
+    | cut -d'@' -f3 \
+    | sort -n -r \
+    | sed '/^$/d; s/^/@/;';
 }
 
 _prepareSystemFn () {
@@ -409,6 +417,28 @@ _createSnapshotFn () {
     || _exitDEATH;
 }
 
+_focusRxRollbackFn () {
+  declare _older_snapshots_str _restore_snapshot_str;
+
+  # Any snapshots that are at number 5 or older will end up trimmed if we
+  # don't purposefully exclude them, so get the list of all but the four
+  # newest snapshots and exclude them a bit later.
+  _older_snapshots_str="$(_getSnapshotListStrFn | tail -n+5)";
+  _restore_snapshot_str="${1:-}";
+
+  _createSnapshotFn 'Pre-Rollback' || exit;
+  # Now do the exclude.
+  if ! [[ "${_older_snapshots_str}" =~ ${_restore_snapshot_str} ]]; then
+    _trimSnapshotsFn || exit;
+  fi
+  _restoreSnapshotFn "${1:-}" || exit;
+}
+
+_focusRxSnapshotFn () {
+  _createSnapshotFn "${1:-}" || exit;
+  _trimSnapshotsFn || exit;
+}
+
 ## BEGIN _mainFn {
 #
 _mainFn () {
@@ -477,6 +507,12 @@ _mainFn () {
       ;;
     'trimSnapshots')
       _trimSnapshotsFn;
+      ;;
+    'focusRxSnapshot')
+      _focusRxSnapshotFn "${2:-}";
+      ;;
+    'focusRxRollback')
+      _focusRxRollbackFn "${2:-}";
       ;;
     *)
       _cm2WarnStrFn 'Invalid mode specified.';

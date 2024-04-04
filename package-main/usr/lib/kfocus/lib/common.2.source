@@ -449,7 +449,7 @@ _cm2PromptUserFn () {
     # These arguments *must* be inserted before the actual '--yesno' argument
     # below, or KDialog glitches badly (at least on Kubuntu 22.04).
     if [ "${_query_type}" = 'o' ]; then
-      _cmd_list+=("--yes-label='OK'" "--no-label='Cancel'");
+      _cmd_list+=("--yes-label=OK" "--no-label=Cancel");
     fi
 
     case "${_query_type}" in
@@ -510,7 +510,7 @@ _cm2PromptUserFn () {
       esac
 
       if [ "${_query_type}" = 'o' ]; then
-        _cmd_list+=("--yes-button='OK'" "--no-button='Cancel'");
+        _cmd_list+=("--yes-button=OK" "--no-button=Cancel");
       fi
 
       # whiptail accepts arguments for setting window and list sizes, but we
@@ -523,17 +523,21 @@ _cm2PromptUserFn () {
         _cmd_list+=( '0' "$@" );
       fi
 
-      if [ "${_query_type}" = 'r' ]; then
+      if [[ "${_query_type}" =~ [r] ]]; then
         # See https://www.redhat.com/sysadmin/use-whiptail section 'Generate a
         # query' for context on the funky redirection trick here.
         _ans_str="$("${_cmd_list[@]}" 3>&1 1>&2 2>&3)";
       else
-        if "${_cmd_list[@]}"; then _ans_str='y'; else _ans_str='n'; fi
+        if "${_cmd_list[@]}" 3>&1 1>&2 2>&3; then
+          _ans_str='y';
+        else
+          _ans_str='n';
+        fi
       fi
     fi
   fi
 
-  if [[ "${_query_type}" =~ [awr] ]]; then
+  if [[ "${_query_type}" =~ [aowr] ]]; then
     echo "${_ans_str}";
   fi
 }

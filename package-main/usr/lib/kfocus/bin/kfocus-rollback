@@ -52,10 +52,6 @@ _getSystemStateFn () {
   "${_snapshotSetExe}" 'getSystemState';
 }
 
-_totalRestoreSnapshotFn () {
-  "${_escExe}" "${_snapshotSetExe}" 'restoreSnapshot' "${1:-}";
-}
-
 _selectiveRestoreSnapshotFn () {
   declare _snapshot_id;
 
@@ -65,12 +61,9 @@ _selectiveRestoreSnapshotFn () {
     return 1;
   fi
 
-  "${_dolphinExe}" --split "admin:///btrfs_main/${_snapshot_id}/" \
+  "${_dolphinExe}" --split \
+    "admin:///btrfs_main/@kfocus-rollback-snapshots/${_snapshot_id}/" \
     'admin:///' & disown;
-}
-
-_createSnapshotFn () {
-  "${_escExe}" "${_snapshotSetExe}" 'createSnapshot' "${1:-}";
 }
 
 _getSnapshotListStrFn () {
@@ -155,6 +148,10 @@ _chooseSnapshotFn () {
   return;
 }
 
+_focusRxRollbackFn () {
+  "${_escExe}" "${_snapshotSetExe}" 'focusRxRollback' "${1:-}";
+}
+
 _handleRestoreExitIntFn () {
   declare _exit_int;
 
@@ -162,7 +159,10 @@ _handleRestoreExitIntFn () {
 
   if [ "${_exit_int}" = '0' ]; then
     systemctl reboot -i;
-  elif [ "${_exit_int}" = '1' ]; then
+  # 1 = FAIL, failure without modification. 127 = auth failure, this is what
+  # pkexec spits out if you click 'Cancel' on the auth window or provide a
+  # wrong password too many times.
+  elif [ "${_exit_int}" = '1' ] || [ "${_exit_int}" = '127' ]; then
     _cm2PromptUserFn "${_restoreFailedMsg}" "${_winTitle}";
     exit "${_FAIL}";
   else
@@ -245,9 +245,9 @@ _mainFn () {
 
   if [ "${_restore_mode}" = 'totalRestore' ]; then
     _doTotalRestoreMsg="${_doTotalRestoreMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
-    if _cm2PromptUserFn "${_doTotalRestoreMsg}" "${_winTitle}" 'o'; then
-      _createSnapshotFn 'Pre-Rollback';
-      _totalRestoreSnapshotFn "${_snapshot_id}";
+    if [ "$(_cm2PromptUserFn "${_doTotalRestoreMsg}" "${_winTitle}" \
+      'o')" = 'y' ]; then
+      _focusRxRollbackFn "${_snapshot_id}";
       _handleRestoreExitIntFn "$?";
     else
       _cm2PromptUserFn "${_restoreCancelledMsg}" "${_winTitle}";
@@ -255,7 +255,8 @@ _mainFn () {
     fi
   elif [ "${_restore_mode}" = 'selectiveRestore' ]; then
     _doSelectiveRestoreMsg="${_doSelectiveRestoreMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
-    if _cm2PromptUserFn "${_doSelectiveRestoreMsg}" "${_winTitle}" 'o'; then
+    if [ "$(_cm2PromptUserFn "${_doSelectiveRestoreMsg}" "${_winTitle}" \
+      'o')" = 'y' ]; then
       _selectiveRestoreSnapshotFn "${_snapshot_id}";
     else
       _cm2PromptUserFn "${_restoreCancelledMsg}" "${_winTitle}";
@@ -316,10 +317,10 @@ ${_browThickStr}Doc: <a style="color:#1d99f3"
   href="https://kfocus.org/wf/tools#rollback"
   >https://kfocus.org/wf/tools#rollback</a>${_erowStr}
 
-${_browThickStr}This system does not appear to support snapshotting and rollback.
-Please see
+${_browThickStr}This system does not appear to support snapshotting<br>
+and rollback. Please see
 <a style="color:#1d99f3" href="https://kfocus.org/wf/recovery"
->https://kfocus.org/wf/recovery</a>
+>https://kfocus.org/wf/recovery</a><br>
 for other recovery steps you can take.${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
@@ -333,9 +334,10 @@ ${_browThickStr}Doc: <a style="color:#1d99f3"
   href="https://kfocus.org/wf/tools#rollback"
   >https://kfocus.org/wf/tools#rollback</a>${_erowStr}
 
-${_browThickStr}You appear to have restored a snapshot, but have not yet rebooted
-after this. Please reboot to finalize the restore process. If this
-does not fix your system, you can attempt another rollback.${_erowStr}</table>
+${_browThickStr}You appear to have restored a snapshot, but have<br>
+not yet rebooted after this. Please reboot to<br>
+finalize the restore process. If this does not fix<br>
+your system, you can attempt another rollback.${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
@@ -348,11 +350,12 @@ ${_browThickStr}Doc: <a style="color:#1d99f3"
   href="https://kfocus.org/wf/tools#rollback"
   >https://kfocus.org/wf/tools#rollback</a>${_erowStr}
 
-${_browThickStr}There do not appear to be any snapshots available to roll back to.
-Please see
+${_browThickStr}There do not appear to be any snapshots<br>
+available to roll back to. Please see<br>
 <a style="color:#1d99f3" href="https://kfocus.org/wf/recovery"
 >https://kfocus.org/wf/recovery</a>
-for other recovery steps you can take.${_erowStr}</table>
+for other<br>
+recovery steps you can take.${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
@@ -365,13 +368,14 @@ ${_browThickStr}Doc: <a style="color:#1d99f3"
   href="https://kfocus.org/wf/tools#rollback"
   >https://kfocus.org/wf/tools#rollback</a>${_erowStr}
 
-${_browThickStr}The BTRFS subvolume at <code>XXX_SUBVOL_NAME_XXX</code>
-should not exist, but does. The restore operation cannot proceed
-with this subvolume present.${_erowStr}
+${_browThickStr}The BTRFS subvolume at<br>
+<code>XXX_SUBVOL_NAME_XXX</code><br>
+should not exist, but does. The restore operation<br>
+cannot proceed with this subvolume present.${_erowStr}
 
-${_browThickStr}Please ensure this subvolume does not contain any important data,
-then remove it with <code>sudo btrfs subvolume
-delete</code>.${_erowStr}</table>
+${_browThickStr}Please ensure this subvolume does not contain any<br>
+important data, then remove it with<br>
+<code>sudo btrfs subvolume delete</code>.${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
@@ -431,13 +435,13 @@ snapshot:${_erowStr}
 ${_browThickStr}<b style="color:#f7941d"
 >"XXX_SNAPSHOT_NAME_XXX"</b>${_erowStr}
 
-${_browThickStr}WARNING: PROCEED WITH CAUTION! You will be restoring system files
-as root!${_erowStr}
+${_browThickStr}WARNING: PROCEED WITH CAUTION! You will be restoring<br>
+system files as root!${_erowStr}
 
-${_browThickStr}Click on OK below to open a file manager with the snapshot on the
-LEFT and the current root filesystem on the right. When you are
-done copying files and directories, simply close the file
-manager.${_erowStr}</table>
+${_browThickStr}Click on OK below to open a file manager with the snapshot<br>
+on the LEFT and the current root filesystem on the right.<br>
+When you are done copying files and directories, simply<br>
+close the file manager.${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
@@ -451,8 +455,8 @@ ${_browThickStr}The following snapshot is now ready to be restored:${_erowStr}
 ${_browThickStr}<b style="color:#f7941d"
 >"XXX_SNAPSHOT_NAME_XXX"</b>${_erowStr}
 
-${_browThickStr}Please save any open work. Click OK to snapshot your current root
-filesystem, finalize the restore, and reboot.${_erowStr}</table>
+${_browThickStr}Please save any open work. Click OK to snapshot your<br>
+current root filesystem, finalize the restore, and reboot.${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
@@ -461,14 +465,16 @@ EOF
 ${_cm2HtmBeginStr}${_tableStr}
 ${_browThickStr}<h3 style="color:#f7941d">Restore Failed</h3>${_erowStr}
 
-${_browThickStr}Something went wrong and FocusRx was unable to restore the system
-to an earlier state. No changes have been made.${_erowStr}
+${_browThickStr}Something went wrong and FocusRx was unable to<br>
+restore the system to an earlier state. No changes<br>
+have been made.${_erowStr}
 
-${_browThickStr}Please try to restore again. If this fails, see
+${_browThickStr}Please try to restore again. If this fails, see<br>
 <a style="color:#1d99f3" href="https://kfocus.org/wf/recovery"
 >https://kfocus.org/wf/recovery</a>
-for other recovery options. You are encouraged to contact technical
-support of this issue is persistent.${_erowStr}</table>
+for other recovery<br>
+options. You are encouraged to contact technical<br>
+support if this issue is persistent.${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
@@ -477,15 +483,16 @@ EOF
 ${_cm2HtmBeginStr}${_tableStr}
 ${_browThickStr}<h3 style="color:#f7941d">Critical Error</h3>${_erowStr}
 
-${_browThickStr}FocusRx was interrupted while attempting to restore your system.
-This incident may be the result of failing hardware or a software
-conflict.${_erowStr}
+${_browThickStr}FocusRx was interrupted while attempting to<br>
+restore your system. This incident may be the<br>
+result of failing hardware or a software conflict.${_erowStr}
 
-${_browThickStr}<b>Please do NOT reboot. Back up your data as soon as possible.</b>
-Failure to do so may result in data loss. See
+${_browThickStr}<b>Please do NOT reboot. Back up your data as<br>
+soon as possible.</b> Failure to do so may result in<br>
+data loss. See<br>
 <a style="color:#1d99f3"
 href="https://kfocus.org/wf/backup#bkm_take_a_snapshot"
->https://kfocus.org/wf/backup#bkm_take_a_snapshot</a>
+>https://kfocus.org/wf/backup#bkm_take_a_snapshot</a><br>
 for instructions on how to safeguard your data.${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
@@ -495,8 +502,8 @@ EOF
 ${_cm2HtmBeginStr}${_tableStr}
 ${_browThickStr}<h3 style="color:#f7941d">Restore Cancelled</h3>${_erowStr}
 
-${_browThickStr}Restore operation cancelled. No changes have been made to the
-system.${_erowStr}</table>
+${_browThickStr}Restore operation cancelled. No changes have been<br>
+made to the system.${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
