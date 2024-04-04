@@ -337,7 +337,14 @@ _fixHwConfigFn () {
 _prepareSnapshotFn () {
   "${_snapshotSetExe}" 'prepareSystem';
 }
-# . END _prepareSnapshotFn }
+## . END _prepareSnapshotFn }
+
+## BEGIN _clearRestoreFn () {
+#
+_clearRestoreFn () {
+  rm '/var/lib/kfocus/kfocus_rollback_restore_complete';
+}
+## . END _clearRestoreFn () }
 
 ## BEGIN _mainFn {
 _mainFn () {
@@ -349,6 +356,7 @@ _mainFn () {
     'force-hw-config' ) _chkHwConfigFn 'y';;
     'fix-hw-config'   ) _fixHwConfigFn "${2:-}";;
     'prep-snapshot'   ) _prepareSnapshotFn;;
+    'clear-restore'   ) _clearRestoreFn;;
     *) _cm2WarnStrFn "Unrecognized directive |${_arg_str}|";;
   esac
 }

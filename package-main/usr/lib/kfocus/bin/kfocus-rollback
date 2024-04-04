@@ -63,7 +63,7 @@ _selectiveRestoreSnapshotFn () {
 
   "${_dolphinExe}" --split \
     "admin:///btrfs_main/@kfocus-rollback-snapshots/${_snapshot_id}/" \
-    'admin:///' & disown;
+    'admin:///';
 }
 
 _getSnapshotListStrFn () {
@@ -175,7 +175,7 @@ _handleRestoreExitIntFn () {
 #
 _mainFn () {
   declare _system_state_str _snapshot_id _restore_mode _exit_int \
-    _working_subvol_loc _working_boot_subvol_loc;
+    _working_subvol_loc _working_boot_subvol_loc _arg;
 
   _working_subvol_loc='/btrfs_main/@kfocus-rollback-working';
   _working_boot_subvol_loc='/btrfs_boot/@kfocus-rollback-working-boot';
@@ -209,11 +209,6 @@ _mainFn () {
     exit "${_OK}";
   fi
 
-  if [ -z "$(ls '/btrfs_main/@kfocus-rollback-snapshots')" ]; then
-    _cm2PromptUserFn "${_noSnapshotsFoundMsg}" "${_winTitle}";
-    exit "${_OK}";
-  fi
-
   if [ -e "${_working_subvol_loc}" ]; then
     _strangeSubvolsMsg="${_strangeSubvolsMsg//XXX_SUBVOL_NAME_XXX/${_working_subvol_loc}}";
     _cm2PromptUserFn "${_strangeSubvolsMsg}" "${_winTitle}" 's';
@@ -222,6 +217,26 @@ _mainFn () {
     _strangeSubvolsMsg="${_strangeSubvolsMsg//XXX_SUBVOL_NAME_XXX/${_working_boot_subvol_loc}}";
     _cm2PromptUserFn "${_strangeSubvolsMsg}" "${_winTitle}" 's';
     exit "${_FAIL}"
+  fi
+
+  _arg="${1:-}";
+  if [ "${_arg}" = 'afterRestore' ]; then
+    _snapshot_id="$(_getSnapshotListStrFn | head -n1)";
+    _snapshot_disp_id="$(_makeSnapshotDispIdFn "${_snapshot_id}" \
+      "/btrfs_main/@kfocus-rollback-snapshots/${_snapshot_id}/var/lib/kfocus/kfocus_rollback_snapshot_reason")";
+    _rollbackSuccessfulMsg="${_rollbackSuccessfulMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
+    if [ "$(_cm2PromptUserFn "${_rollbackSuccessfulMsg}" "${_winTitle}" \
+      'a')" = 'y' ]; then
+      _selectiveRestoreSnapshotFn "${_snapshot_id}";
+      exit "${_OK}";
+    else
+      exit "${_OK}";
+    fi
+  fi
+
+  if [ -z "$(ls '/btrfs_main/@kfocus-rollback-snapshots')" ]; then
+    _cm2PromptUserFn "${_noSnapshotsFoundMsg}" "${_winTitle}";
+    exit "${_OK}";
   fi
 
   IFS=$'\n'; read -r -d '' _snapshot_id _snapshot_disp_id \
@@ -274,7 +289,8 @@ declare _binName _binDir _baseName _baseDir _assignList _kdiagExe \
   _erowStr _tableStr _systemUnsupportedMsg _restoreIncompleteMsg \
   _noSnapshotsFoundMsg _strangeSubvolsMsg _chooseSnapshotMsg \
   _chooseRestoreTypeMsg _doSelectiveRestoreMsg _doTotalRestoreMsg \
-  _restoreFailedMsg _criticalErrorMsg _restoreCancelledMsg _OK _FAIL \
+  _restoreFailedMsg _criticalErrorMsg _restoreCancelledMsg \
+  _rollbackSuccessfulMsg _OK _FAIL \
   _RECFAIL _CRITFAIL _DEATH _LOCK;
 ## . END Declare and assign global vars }
 
@@ -504,6 +520,32 @@ ${_browThickStr}<h3 style="color:#f7941d">Restore Cancelled</h3>${_erowStr}
 
 ${_browThickStr}Restore operation cancelled. No changes have been<br>
 made to the system.${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _rollbackSuccessfulMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browThickStr}<h3 style="color:#f7941d">Rollback Successful</h3>${_erowStr} 
+
+${_browThickStr}Doc: <a style="color:#1d99f3"
+  href="https://kfocus.org/wf/tools#rollback"
+  >https://kfocus.org/wf/tools#rollback</a>${_erowStr}
+
+${_browThickStr}Files from the snapshot${_erowStr}
+
+${_browThickStr}<b style="color:#f7941d"
+>"XXX_SNAPSHOT_NAME_XXX"</b>${_erowStr}
+
+${_browThickStr}have been restored to the root filesystem.${_erowStr}
+
+${_browThickStr}If you desire, you may compare to the files<br>
+as they existed prior to the rollback. This is<br>
+advanced, and is not recommended for most users.<br>
+However, it can be useful for restoring database<br>
+files, for instance.${_erowStr}
+
+${_browThickStr}Would you like to compare now?${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";

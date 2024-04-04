@@ -72,18 +72,18 @@ _direWarningFn () {
   _mode="${1:-info}";
   _msg="${2:-blank}";
 
-  readarray _xserver_list <<< "$(
+  readarray -t _xserver_list <<< "$(
     ls /tmp/.X11-unix/* | sed 's?/tmp/.X11-unix/X??';
   )";
 
-  readarray _user_list <<< "$(
+  readarray -t _user_list <<< "$(
     for _item in "${_xserver_list[@]}"; do
       who | grep "(:${_item})" | (awk '{ print $1 }' || echo 'nobody') \
         | head -n1;
     done
   )";
 
-  readarray _uid_list <<< "$(
+  readarray -t _uid_list <<< "$(
     for _item in "${_user_list[@]}"; do
       id -u "${_item}";
     done
@@ -91,7 +91,7 @@ _direWarningFn () {
 
   for ((_xserver_idx = 0; _xserver_idx < ${#_xserver_list[@]}; \
     _xserver_idx++)); do
-    sudo -u "${_user_list[_xserver_idx]}" \
+    sudo -u "#${_uid_list[_xserver_idx]}" \
       DISPLAY="${_xserver_list[_xserver_idx]}" \
       DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${_uid_list[_xserver_idx]}/bus" \
       qdbus org.kfocus.FocusRxDispatch.launcher / "${_mode}" "${_msg}";
@@ -305,6 +305,10 @@ _restoreSnapshotFn () {
   btrfs subvolume snapshot "${_boot_snapshot_path}" '/btrfs_boot/@boot' \
     || _exitDEATH;
   mount /boot/efi || _exitCRITFAIL;
+
+  # Let the user know that a restore has completed
+  touch /btrfs_main/@/var/lib/kfocus/kfocus_rollback_restore_complete \
+    || _exitCRITFAIL;
 }
 
 _deleteSnapshotFn () {

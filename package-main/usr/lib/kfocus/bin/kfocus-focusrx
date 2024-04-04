@@ -1063,10 +1063,14 @@ _EOH17b
 
 ## BEGIN _fixSycocaCacheFn {
 #
-_fixSycocaCacheFn () {
+_postRollbackHandlerFn () {
   # Skip if required tool not installed
-  [ -z "${_kBuildSycocaExe}" ] && return;
-  "${_kBuildSycocaExe}";
+  if [ -n "${_kBuildSycocaExe}" ]; then "${_kBuildSycocaExe}"; fi
+
+  if [ -e '/var/lib/kfocus/kfocus_rollback_restore_complete' ]; then
+    "${_escExe}" "${_focusRxSetExe}" 'clear-restore';
+    "${_kfocusRollbackExe}" 'afterRestore';
+  fi
 }
 ## . END _fixSycocaCacheFn }
 
@@ -1150,7 +1154,7 @@ _mainFn () {
   _runDropScriptsFn;
   _chkExperRepoFn;
   _chkResetEffectsFn;
-  _fixSycocaCacheFn;
+  _postRollbackHandlerFn;
   _announceEndFn;
   _cm2EchoFn "\n== . END : OK   ${_rootTitle}\n\n";
   ## . End Run focusrx steps }
@@ -1197,7 +1201,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     "_kcleanExe|${_binDir}/kfocus-kclean||optional"
     "_resetEffectsExe|${_binDir}/kfocus-reset-effects||optional"
     "_snapshotSetExe|${_binDir}/kfocus-rollback-set||optional"
-    "_kBuildSyscocaExe|/usr/bin/kbuildsycoca5||optional"
+    "_kBuildSycocaExe|/usr/bin/kbuildsycoca5||optional"
+    "_kfocusRollbackExe|${_binDir}/kfocus-rollback"
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2ErrStrFn 'Could not assign variables';
