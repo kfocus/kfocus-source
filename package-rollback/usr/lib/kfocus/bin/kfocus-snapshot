@@ -95,8 +95,8 @@ _makeSnapshotDispIdFn () {
 }
 ## . END _makeSnapshotDispIdFn }
 
-_getSystemStateFn () {
-  "${_snapshotSetExe}" 'getSystemState';
+_getBtrfsStatusFn () {
+  "${_snapshotSetExe}" 'getBtrfsStatus';
 }
 
 _focusRxSnapshotFn () {
@@ -106,29 +106,29 @@ _focusRxSnapshotFn () {
 ## BEGIN _mainFn {
 #
 _mainFn () {
-  declare _system_state_str _ans _exit_int _snapshot_id _snapshot_disp_id;
+  declare _btrfs_status_str _ans _exit_int _snapshot_id _snapshot_disp_id;
 
   # This function will exit with LOCK if the lockfile cannot be grabbed, so we
   # wait until the lock is released before showing the UI (since we have to in
   # order to get the state of the system).
   while true; do
-    _system_state_str="$(_getSystemStateFn)"
+    _btrfs_status_str="$(_getBtrfsStatusFn)"
     _exit_int="$?";
 
     # Override false positive due to complex exit code handling
     # shellcheck disable=SC2181
     if [ "${_exit_int}" = "${_LOCK}" ]; then
       sleep 1;
-    elif [ "${_exit_int}" = "${_OK}" ]; then
+    elif [ "${_exit_int}" = "${_NOTICE}" ]; then
       break;
     else
       exit "${_exit_int}";
     fi
   done
 
-  if [ "${_system_state_str}" != 'SUPPORTED, SET UP' ]; then
+  if [ "${_btrfs_status_str}" != 'SUPPORTED, SET UP' ]; then
     _cm2PromptUserFn "${_systemUnsupportedMsg}" "${_winTitle}";
-    exit "${_OK}";
+    exit "${_NOTICE}";
   fi
 
   _ans="$(_cm2PromptUserFn "${_createSnapshotMsg}" "${_winTitle}" 'a')";
@@ -136,16 +136,16 @@ _mainFn () {
   if [ "${_ans}" = 'y' ]; then
     _focusRxSnapshotFn "$USER";
     _exit_int="$?";
-    if [ "${_exit_int}" = "${_OK}" ]; then
+    if [ "${_exit_int}" = "${_NOTICE}" ]; then
       _snapshot_id="$(_getSnapshotListStrFn | head -n1)";
       _snapshot_disp_id="$(_makeSnapshotDispIdFn "${_snapshot_id}" \
         "/btrfs_main/@kfocus-rollback-snapshots/${_snapshot_id}/var/lib/kfocus/kfocus_rollback_snapshot_reason")";
       _snapshotCreatedMsg="${_snapshotCreatedMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
       _cm2PromptUserFn "${_snapshotCreatedMsg}" "${_winTitle}";
     else
-      if [ "${_exit_int}" = "${_FAIL}" ]; then
+      if [ "${_exit_int}" = "${_ERR}" ]; then
         _cm2PromptUserFn "${_snapshotCreationFailedMsg}" "${_winTitle}" 's';
-        exit "${_FAIL}";
+        exit "${_ERR}";
       else
         _cm2PromptUserFn "${_criticalErrorMsg}" "${_winTitle}" 'e';
         exit "${_exit_int}";
@@ -153,7 +153,7 @@ _mainFn () {
     fi
   fi
 
-  exit "${_OK}";
+  exit "${_NOTICE}";
 }
 ## . END _mainFn }
 
@@ -161,8 +161,8 @@ _mainFn () {
 declare _binName _binDir _baseName _baseDir _assignList _kdiagExe \
   _whiptailExe _snapshotSetExe _escExe _winTitle _browStr _erowStr _tableStr \
   _createSnapshotMsg _systemUnsupportedMsg _snapshotCreatedMsg \
-  _snapshotCreationFailedMsg _criticalErrorMsg _OK _FAIL _RECFAIL _CRITFAIL \
-  _DEATH _LOCK;
+  _snapshotCreationFailedMsg _criticalErrorMsg _NOTICE _ERR _CRIT _ALERT \
+  _EMERG _LOCK;
 ## . END Declare and assign global vars }
 
 ## BEGIN Run mainFn when script is NOT sourced {
@@ -283,11 +283,11 @@ EOF
   )";
 
   # Set meaningful names for error codes
-  _OK='0';
-  _FAIL='1';
-  _RECFAIL='2';
-  _CRITFAIL='3';
-  _DEATH='4';
+  _NOTICE='0';
+  _ERR='1';
+  _CRIT='2';
+  _ALERT='3';
+  _EMERG='4';
   _LOCK='20';
 
   # Make sure TTY mode looks nice

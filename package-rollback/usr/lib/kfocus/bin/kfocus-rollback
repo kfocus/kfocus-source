@@ -48,8 +48,8 @@ _importCommonFn () {
 }
 ## . END _importCommonFn }
 
-_getSystemStateFn () {
-  "${_snapshotSetExe}" 'getSystemState';
+_getBtrfsStatusFn () {
+  "${_snapshotSetExe}" 'getBtrfsStatus';
 }
 
 _selectiveRestoreSnapshotFn () {
@@ -157,16 +157,16 @@ _handleRestoreExitIntFn () {
 
   _exit_int="${1:-}";
 
-  if [ "${_exit_int}" = "${_OK}" ]; then
+  if [ "${_exit_int}" = "${_NOTICE}" ]; then
     systemctl reboot -i;
-  elif [ "${_exit_int}" = "${_FAIL}" ]; then
+  elif [ "${_exit_int}" = "${_ERR}" ]; then
     _cm2PromptUserFn "${_restoreFailedMsg}" "${_winTitle}";
-    exit "${_FAIL}";
+    exit "${_ERR}";
   # 127 = auth failure, this is what pkexec spits out if you click 'Cancel' on
   # the auth window or provide a wrong password too many times.
   elif [ "${_exit_int}" = '127' ]; then
     _cm2PromptUserFn "${_restoreCancelledMsg}" "${_winTitle}";
-    exit "${_OK}";
+    exit "${_NOTICE}";
   else
     _cm2PromptUserFn "${_criticalErrorMsg}" "${_winTitle}" 'e';
     exit "${_exit_int}";
@@ -176,7 +176,7 @@ _handleRestoreExitIntFn () {
 ## BEGIN _mainFn {
 #
 _mainFn () {
-  declare _system_state_str _snapshot_id _restore_mode _exit_int \
+  declare _btrfs_status_str _snapshot_id _restore_mode _exit_int \
     _working_subvol_loc _working_boot_subvol_loc _arg;
 
   _working_subvol_loc='/btrfs_main/@kfocus-rollback-working';
@@ -186,39 +186,39 @@ _mainFn () {
   # wait until the lock is released before showing the UI (since we have to in
   # order to get the state of the system).
   while true; do
-    _system_state_str="$(_getSystemStateFn)"
+    _btrfs_status_str="$(_getBtrfsStatusFn)"
     _exit_int="$?";
     
     # Override false positive due to complex exit code handling
     # shellcheck disable=SC2181
     if [ "${_exit_int}" = "${_LOCK}" ]; then
       sleep 1;
-    elif [ "${_exit_int}" = "${_OK}" ]; then
+    elif [ "${_exit_int}" = "${_NOTICE}" ]; then
       break;
     else
       exit "${_exit_int}";
     fi
   done
 
-  if [ "${_system_state_str}" != 'SUPPORTED, SET UP' ]; then
+  if [ "${_btrfs_status_str}" != 'SUPPORTED, SET UP' ]; then
     _cm2PromptUserFn "${_systemUnsupportedMsg}" "${_winTitle}";
-    exit "${_OK}";
+    exit "${_NOTICE}";
   fi
 
   if mount | grep 'btrfs' | grep -q '@kfocus-rollback-working' \
     || mount | grep 'btrfs' | grep -q '@kfocus-rollback-working-boot'; then
     _cm2PromptUserFn "${_restoreIncompleteMsg}" "${_winTitle}" 's';
-    exit "${_OK}";
+    exit "${_NOTICE}";
   fi
 
   if [ -e "${_working_subvol_loc}" ]; then
     _strangeSubvolsMsg="${_strangeSubvolsMsg//XXX_SUBVOL_NAME_XXX/${_working_subvol_loc}}";
     _cm2PromptUserFn "${_strangeSubvolsMsg}" "${_winTitle}" 's';
-    exit "${_FAIL}"
+    exit "${_ERR}"
   elif [ -e "${_working_boot_subvol_loc}" ]; then
     _strangeSubvolsMsg="${_strangeSubvolsMsg//XXX_SUBVOL_NAME_XXX/${_working_boot_subvol_loc}}";
     _cm2PromptUserFn "${_strangeSubvolsMsg}" "${_winTitle}" 's';
-    exit "${_FAIL}"
+    exit "${_ERR}"
   fi
 
   _arg="${1:-}";
@@ -230,15 +230,15 @@ _mainFn () {
     if [ "$(_cm2PromptUserFn "${_rollbackSuccessfulMsg}" \
       "FocusRx: System Rollback" 'a')" = 'y' ]; then
       _selectiveRestoreSnapshotFn "${_snapshot_id}";
-      exit "${_OK}";
+      exit "${_NOTICE}";
     else
-      exit "${_OK}";
+      exit "${_NOTICE}";
     fi
   fi
 
   if [ -z "$(ls '/btrfs_main/@kfocus-rollback-snapshots')" ]; then
     _cm2PromptUserFn "${_noSnapshotsFoundMsg}" "${_winTitle}";
-    exit "${_OK}";
+    exit "${_NOTICE}";
   fi
 
   IFS=$'\n'; read -r -d '' _snapshot_id _snapshot_disp_id \
@@ -246,7 +246,7 @@ _mainFn () {
 
   if [ -z "${_snapshot_id}" ]; then
     _cm2PromptUserFn "${_restoreCancelledMsg}" "${_winTitle}";
-    exit "${_OK}";
+    exit "${_NOTICE}";
   fi
   
   _chooseRestoreTypeMsg="${_chooseRestoreTypeMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
@@ -257,7 +257,7 @@ _mainFn () {
 
   if [ -z "${_restore_mode}" ]; then
     _cm2PromptUserFn "${_restoreCancelledMsg}" "${_winTitle}";
-    exit "${_OK}";
+    exit "${_NOTICE}";
   fi
 
   if [ "${_restore_mode}" = 'totalRestore' ]; then
@@ -268,7 +268,7 @@ _mainFn () {
       _handleRestoreExitIntFn "$?";
     else
       _cm2PromptUserFn "${_restoreCancelledMsg}" "${_winTitle}";
-      exit "${_OK}";
+      exit "${_NOTICE}";
     fi
   elif [ "${_restore_mode}" = 'selectiveRestore' ]; then
     _doSelectiveRestoreMsg="${_doSelectiveRestoreMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
@@ -277,11 +277,11 @@ _mainFn () {
       _selectiveRestoreSnapshotFn "${_snapshot_id}";
     else
       _cm2PromptUserFn "${_restoreCancelledMsg}" "${_winTitle}";
-      exit "${_OK}";
+      exit "${_NOTICE}";
     fi
   fi
 
-  exit "${_OK}";
+  exit "${_NOTICE}";
 }
 ## . END _mainFn }
 
@@ -292,8 +292,8 @@ declare _binName _binDir _baseName _baseDir _assignList _kdiagExe \
   _noSnapshotsFoundMsg _strangeSubvolsMsg _chooseSnapshotMsg \
   _chooseRestoreTypeMsg _doSelectiveRestoreMsg _doTotalRestoreMsg \
   _restoreFailedMsg _criticalErrorMsg _restoreCancelledMsg \
-  _rollbackSuccessfulMsg _OK _FAIL \
-  _RECFAIL _CRITFAIL _DEATH _LOCK;
+  _rollbackSuccessfulMsg _NOTICE _ERR \
+  _CRIT _ALERT _EMERG _LOCK;
 ## . END Declare and assign global vars }
 
 ## BEGIN Run mainFn when script is NOT sourced {
@@ -559,11 +559,11 @@ EOF
   )";
 
   # Set meaningful names for error codes
-  _OK='0';
-  _FAIL='1';
-  _RECFAIL='2';
-  _CRITFAIL='3';
-  _DEATH='4';
+  _NOTICE='0';
+  _ERR='1';
+  _CRIT='2';
+  _ALERT='3';
+  _EMERG='4';
   _LOCK='20';
 
   # Make sure TTY mode looks nice
