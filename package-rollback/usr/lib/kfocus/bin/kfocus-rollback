@@ -227,8 +227,8 @@ _mainFn () {
     _snapshot_disp_id="$(_makeSnapshotDispIdFn "${_snapshot_id}" \
       "/btrfs_main/@kfocus-rollback-snapshots/${_snapshot_id}/var/lib/kfocus/kfocus_rollback_snapshot_reason")";
     _rollbackSuccessfulMsg="${_rollbackSuccessfulMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
-    if [ "$(_cm2PromptUserFn "${_rollbackSuccessfulMsg}" "${_winTitle}" \
-      'a')" = 'y' ]; then
+    if [ "$(_cm2PromptUserFn "${_rollbackSuccessfulMsg}" \
+      "FocusRx: System Rollback" 'a')" = 'y' ]; then
       _selectiveRestoreSnapshotFn "${_snapshot_id}";
       exit "${_OK}";
     else
@@ -321,7 +321,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _escExe="$(_cm2GetEscExeFn)" || exit;
 
   # Set UI messages
-  _winTitle='FocusRx: Rollback';
+  _winTitle='System Rollback';
   _browThickStr='<tr><td style="padding:8px 32px 8px 0">';
   _browThinStr='<tr><td style="padding:8px 0 8px 0">';
   _erowStr='</td></tr>';
@@ -400,7 +400,7 @@ EOF
 
   _chooseSnapshotMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browThinStr}<h3 style="color:#f7941d">FocusRx: Rollback (1 of 3)</h3>${_erowStr}
+${_browThinStr}<h3 style="color:#f7941d">System Rollback (1 of 3)</h3>${_erowStr}
 
 ${_browThinStr}Doc: <a style="color:#1d99f3"
   href="https://kfocus.org/wf/tools#rollback"
@@ -424,7 +424,7 @@ EOF
 
   _chooseRestoreTypeMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browThinStr}<h3 style="color:#f7941d">FocusRx: Rollback (2 of 3)</h3>${_erowStr}
+${_browThinStr}<h3 style="color:#f7941d">System Rollback (2 of 3)</h3>${_erowStr}
 
 ${_browThinStr}You have selected the following snapshot to restore:${_erowStr}
 
@@ -445,7 +445,7 @@ EOF
 
   _doSelectiveRestoreMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browThickStr}<h3 style="color:#f7941d">FocusRx: Rollback (3 of 3)</h3>${_erowStr}
+${_browThickStr}<h3 style="color:#f7941d">System Rollback (3 of 3)</h3>${_erowStr}
 
 ${_browThickStr}You can now selectively restore files from this
 snapshot:${_erowStr}
@@ -467,7 +467,7 @@ EOF
 
   _doTotalRestoreMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browThickStr}<h3 style="color:#f7941d">FocusRx: Rollback (3 of 3)</h3>${_erowStr}
+${_browThickStr}<h3 style="color:#f7941d">System Rollback (3 of 3)</h3>${_erowStr}
 
 ${_browThickStr}The following snapshot is now ready to be restored:${_erowStr}
 

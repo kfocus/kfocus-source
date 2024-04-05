@@ -189,14 +189,14 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _escExe="$(_cm2GetEscExeFn)" || exit;
 
   # Set UI messages
-  _winTitle='FocusRx: Snapshot';
+  _winTitle='System Snapshot';
   _browStr='<tr><td style="padding:8px 32px 8px 0">';
   _erowStr='</td></tr>';
   _tableStr='<table style="width:100%;margin-right:32px">';
 
   _createSnapshotMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browStr}<h3 style="color:#f7941d">FocusRx: Snapshot</h3>${_erowStr}
+${_browStr}<h3 style="color:#f7941d">System Snapshot</h3>${_erowStr}
 
 ${_browStr}Doc: <a style="color:#1d99f3"
   href="https://kfocus.org/wf/tools#snapshot"
