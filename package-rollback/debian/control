@@ -1,0 +1,17 @@
+Source:            kfocus-rollback
+Section:           misc
+Priority:          optional
+Maintainer:        Kubuntu Focus Team <support@kfocus.org>
+Standards-Version: 4.6.0
+Build-Depends:     debhelper-compat (=13)
+
+Package:      kfocus-rollback
+Architecture: all
+Depends:      ${misc:Depends}, ${shlibs:Depends},
+              kdialog,
+              kfocus-main,
+              kio-admin,
+              whiptail
+Description:  Kubuntu Focus Hardware Optimizations
+ This package provides advanced, user-friendly system snapshotting and
+ rollback tools for Kubuntu Focus computers.

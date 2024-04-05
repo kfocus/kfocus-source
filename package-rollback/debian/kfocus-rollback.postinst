@@ -1,0 +1,25 @@
+#!/bin/bash
+# kfocus-rollback postinst
+# This must be run as root. Use set -u to debug.
+#
+set -e;
+
+## BEGIN Declare common.2.source symbols {
+#  IMPORT 2022-03-23 EXCERPT from test/test-scripts/common.2.source
+_cmXBlockMsg='';
+_cmXEchoFn    () { 1>&2 echo -e "$*";  }
+_cmXSetMsgFn  () { _cmXBlockMsg="$*"; _cmXEchoFn "== BEGIN : ${_cmXBlockMsg}"; }
+_cmXSucFn     () { _cmXEchoFn "== . END : OK   ${_cmXBlockMsg}\n\n"; }
+## . END Declare common.2.source symbols }
+ 
+## BEGIN Enable scheduled snapshotting {
+#
+_cmXSetMsgFn 'Enable scheduled snapshotting';
+2>/dev/null deb-systemd-helper enable kfocus-rollback-timed-snapshot.timer.service || true;
+_cmXSucFn;
+## . END Enable scheduled snapshotting }
+
+# Tag to allow some debhelper commands to inject relevant code
+#DEBHELPER#
+
+exit 0;

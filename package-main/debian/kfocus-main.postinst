@@ -239,10 +239,9 @@ _cleanUpFn () {
   2>/dev/null deb-systemd-helper unmask kfocus-dm.service || true;
   _cmXSucFn;
 
-  # Ensure system-level FocusRx subsystem is functioning
-  _cmXSetMsgFn 'Install services';
+  # Enable system-level FocusRx
+  _cmXSetMsgFn 'Enable services';
   2>/dev/null deb-systemd-helper enable kfocus-focusrx-system.service || true;
-  2>/dev/null deb-systemd-helper enable kfocus-rollback-timed-snapshot.timer || true;
   _cmXSucFn;
 
   # See https://askubuntu.com/questions/1018576

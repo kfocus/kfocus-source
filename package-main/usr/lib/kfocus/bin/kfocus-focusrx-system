@@ -54,6 +54,8 @@ _importCommonFn () {
 _initCpuFn () {
   declare _title;
 
+  [ -z "${_powerSetExe}" ] && return;
+
   _title='Initialize CPU';
   _cm2SetMsgFn "${_title}";
   if "${_powerSetExe}" -i; then
@@ -68,9 +70,17 @@ _initCpuFn () {
 # Purpose   : Handle all system-level snapshot-related operations
 #
 _manageSnapshotsFn () {
+  declare _title;
+
+  [ -z "${_snapshotSetExe}" ] && return;
+
+  _title='Maintain Snapshots';
+  _cm2SetMsgFn "${_title}";
+  # TODO: If any of these fail, do we care?
   "${_snapshotSetExe}" 'restoreSnapshotStage2';
   "${_snapshotSetExe}" 'createSnapshot' 'Timed';
   "${_snapshotSetExe}" 'trimSnapshots';
+  _cm2SucFn;
 }
 # . END _manageSnapshotsFn }
 
@@ -114,8 +124,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   # Import libs and assign more global vars
   _importCommonFn;
   _assignList=(
-    "_powerSetExe|${_binDir}/kfocus-power-set"
-    "_snapshotSetExe|${_binDir}/kfocus-rollback-set"
+    "_powerSetExe|${_binDir}/kfocus-power-set||optional"
+    "_snapshotSetExe|${_binDir}/kfocus-rollback-set||optional"
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2WarnStrFn 'ABORT: Required commands not found';

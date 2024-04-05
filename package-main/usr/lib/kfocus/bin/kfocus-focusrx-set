@@ -335,6 +335,8 @@ _fixHwConfigFn () {
 ## BEGIN _prepareSnapshotFn {
 #
 _prepareSnapshotFn () {
+  [ -z "${_snapshotSetExe}" ] && return;
+
   "${_snapshotSetExe}" 'prepareSystem';
 }
 ## . END _prepareSnapshotFn }
@@ -381,7 +383,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   _assignList=(
     "_focusRxVersExe|${_binDir}/kfocus-rx-version"
-    "_snapshotSetExe|${_binDir}/kfocus-rollback-set"
+    "_snapshotSetExe|${_binDir}/kfocus-rollback-set||optional"
   );
   if ! _cm2AssignExeVarsFn  "${_assignList[@]}"; then
     _cm2ErrStrFn 'Could not assign variable';
