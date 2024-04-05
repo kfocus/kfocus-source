@@ -157,14 +157,16 @@ _handleRestoreExitIntFn () {
 
   _exit_int="${1:-}";
 
-  if [ "${_exit_int}" = '0' ]; then
+  if [ "${_exit_int}" = "${_OK}" ]; then
     systemctl reboot -i;
-  # 1 = FAIL, failure without modification. 127 = auth failure, this is what
-  # pkexec spits out if you click 'Cancel' on the auth window or provide a
-  # wrong password too many times.
-  elif [ "${_exit_int}" = '1' ] || [ "${_exit_int}" = '127' ]; then
+  elif [ "${_exit_int}" = "${_FAIL}" ]; then
     _cm2PromptUserFn "${_restoreFailedMsg}" "${_winTitle}";
     exit "${_FAIL}";
+  # 127 = auth failure, this is what pkexec spits out if you click 'Cancel' on
+  # the auth window or provide a wrong password too many times.
+  elif [ "${_exit_int}" = '127' ]; then
+    _cm2PromptUserFn "${_restoreCancelledMsg}" "${_winTitle}";
+    exit "${_OK}";
   else
     _cm2PromptUserFn "${_criticalErrorMsg}" "${_winTitle}" 'e';
     exit "${_exit_int}";
@@ -405,7 +407,7 @@ ${_browThinStr}Doc: <a style="color:#1d99f3"
   >https://kfocus.org/wf/tools#rollback</a>${_erowStr}
 
 ${_browThinStr}
-Use this tool to restore some or all files in a snapshot<br>
+Use this tool to restore all or some files in a snapshot<br>
 to the root filesystem. <b style="color:#f7941d">This tool will NOT
 restore files<br>
 in the /home filesystem.</b> For that, click "Cancel" and<br>
@@ -435,8 +437,8 @@ avoid data consistency problems. As with any system<br>
 maintenance, it is best practice to back up any critical<br>
 data first. See <a style="color:#1d99f3"
 href="https://kfocus.org/wf/backup"
->https://kfocus.org/wf/backup</a> for<br>
-guidance.${_erowStr}</table>
+>https://kfocus.org/wf/backup</a><br>
+for guidance.${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
@@ -451,11 +453,12 @@ snapshot:${_erowStr}
 ${_browThickStr}<b style="color:#f7941d"
 >"XXX_SNAPSHOT_NAME_XXX"</b>${_erowStr}
 
-${_browThickStr}WARNING: PROCEED WITH CAUTION! You will be restoring<br>
+${_browThickStr}<b style="color:#da4453"
+>WARNING: PROCEED WITH CAUTION!</b> You will be restoring<br>
 system files as root!${_erowStr}
 
 ${_browThickStr}Click on OK below to open a file manager with the snapshot<br>
-on the LEFT and the current root filesystem on the right.<br>
+on the LEFT and the current root filesystem on the RIGHT.<br>
 When you are done copying files and directories, simply<br>
 close the file manager.${_erowStr}</table>
 ${_cm2HtmEndStr}
@@ -471,8 +474,10 @@ ${_browThickStr}The following snapshot is now ready to be restored:${_erowStr}
 ${_browThickStr}<b style="color:#f7941d"
 >"XXX_SNAPSHOT_NAME_XXX"</b>${_erowStr}
 
-${_browThickStr}Please save any open work. Click OK to snapshot your<br>
-current root filesystem, finalize the restore, and reboot.${_erowStr}</table>
+${_browThickStr}<b style="color:#da4453"
+>This will immediately reboot the system!</b> Please save<br>
+any open work. Click OK to snapshot your current<br>
+root filesystem, finalize the restore, and reboot.${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
@@ -540,10 +545,13 @@ ${_browThickStr}<b style="color:#f7941d"
 ${_browThickStr}have been restored to the root filesystem.${_erowStr}
 
 ${_browThickStr}If you desire, you may compare to the files<br>
-as they existed prior to the rollback. This is<br>
-advanced, and is not recommended for most users.<br>
-However, it can be useful for restoring database<br>
-files, for instance.${_erowStr}
+as they existed prior to the rollback. The<br>
+snapshot will appear on the LEFT, while the<br>
+current root filesystem will be shown on the<br>
+RIGHT. This is advanced, and is not<br>
+recommended for most users. However, it<br>
+can be useful for restoring database files,<br>
+for instance.${_erowStr}
 
 ${_browThickStr}Would you like to compare now?${_erowStr}</table>
 ${_cm2HtmEndStr}

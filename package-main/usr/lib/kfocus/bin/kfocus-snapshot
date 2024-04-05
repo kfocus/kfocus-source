@@ -206,10 +206,10 @@ ${_browStr}Use this tool to create a snapshot of the root filesystem.
 ${_erowStr}
 
 ${_browStr}<b style="color:#f7941d"
->IMPORTANT: libvirt virtual machine data will NOT be<br>
+>IMPORTANT: Virtual machine data (libvirt) will NOT be<br>
 included in the snapshot.</b>${_erowStr}
 
-${_browStr}Use the "FocusRx: Rollback" app to restore snapshots.${_erowStr}
+${_browStr}Use the "System Rollback" app to restore snapshots.${_erowStr}
 
 ${_browStr}<b>Create Snapshot Now?</b>${_erowStr}</table>
 ${_cm2HtmEndStr}
@@ -239,7 +239,8 @@ ${_browStr}<h3 style="color:#f7941d">Snapshot Created</h3>${_erowStr}
 
 ${_browStr}A snapshot of the root filesystem called${_erowStr}
 
-${_browStr}"XXX_SNAPSHOT_NAME_XXX"${_erowStr}
+${_browStr}<b style="color:#f7941d"
+>"XXX_SNAPSHOT_NAME_XXX"</b>${_erowStr}
 
 ${_browStr}has been created.${_erowStr}</table>
 ${_cm2HtmEndStr}
