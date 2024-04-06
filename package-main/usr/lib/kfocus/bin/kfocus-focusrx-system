@@ -77,7 +77,7 @@ _manageSnapshotsFn () {
   _title='Maintain Snapshots';
   _cm2SetMsgFn "${_title}";
   # TODO: If any of these fail, do we care?
-  "${_snapshotSetExe}" 'restoreSnapshotStage2';
+  "${_snapshotSetExe}" 'finalizeRestore';
   "${_snapshotSetExe}" 'createSnapshot' 'Timed';
   "${_snapshotSetExe}" 'trimSnapshots';
   _cm2SucFn;

@@ -28,6 +28,15 @@ _cm2WarnStrFn () { _cm2EchoFn "warn: ${*}"; }
 _cm2MkTmpFileFn () { mktemp -t    'kf.XXXXXX' || return 203; }
 _cm2MkTmpDirFn  () { mktemp -t -d 'kf.XXXXXX' || return 203; }
 
+# Emulate ls, but with better non-alpha character support
+_cm2LsFn () {
+  declare _dir="${1:-}";
+  if [ -n "${_dir}" ]; then
+    find "${1:-/}" -maxdepth 1 -mindepth 1 -printf '%f\n' \
+      | grep -v '^\.' | sort;
+  fi
+}
+
 ## BEGIN Error Control Section {
 _cm2EchoStackFn () {
   declare _start_idx _stack_list _idx _str _bit_list;

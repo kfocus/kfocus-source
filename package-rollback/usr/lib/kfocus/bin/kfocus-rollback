@@ -112,8 +112,7 @@ _makeSnapshotDispIdFn () {
 
 _chooseSnapshotFn () {
   declare _snapshot_list_str _snapshot_list _snapshot_disp_list _radio_list \
-    _reason_loc _snapshot_reason _snapshot_datetime _snapshot_idx \
-    _answer _select_str;
+    _reason_loc _snapshot_idx _answer _select_str;
 
   _snapshot_list_str="$(_getSnapshotListStrFn)";
   readarray -t _snapshot_list <<< "${_snapshot_list_str}";
@@ -176,9 +175,10 @@ _handleRestoreExitIntFn () {
 ## BEGIN _mainFn {
 #
 _mainFn () {
-  declare _btrfs_status_str _snapshot_id _restore_mode _exit_int \
-    _working_subvol_loc _working_boot_subvol_loc _arg;
+  declare _arg_str _btrfs_status_str _snapshot_id _restore_mode _exit_int \
+    _working_subvol_loc _working_boot_subvol_loc _snapshot_disp_id;
 
+  _arg_str="${1:-}";
   _working_subvol_loc='/btrfs_main/@kfocus-rollback-working';
   _working_boot_subvol_loc='/btrfs_boot/@kfocus-rollback-working-boot';
 
@@ -221,8 +221,7 @@ _mainFn () {
     exit "${_ERR}"
   fi
 
-  _arg="${1:-}";
-  if [ "${_arg}" = 'afterRestore' ]; then
+  if [ "${_arg_str}" = 'afterRestore' ]; then
     _snapshot_id="$(_getSnapshotListStrFn | head -n1)";
     _snapshot_disp_id="$(_makeSnapshotDispIdFn "${_snapshot_id}" \
       "/btrfs_main/@kfocus-rollback-snapshots/${_snapshot_id}/var/lib/kfocus/kfocus_rollback_snapshot_reason")";

@@ -99,8 +99,8 @@ _getBtrfsStatusFn () {
   "${_snapshotSetExe}" 'getBtrfsStatus';
 }
 
-_focusRxSnapshotFn () {
-  "${_escExe}" "${_snapshotSetExe}" 'focusRxSnapshot' "${1:-}";
+_takeSnapshotFn () {
+  "${_escExe}" "${_snapshotSetExe}" 'takeSnapshot' "${1:-}";
 }
 
 ## BEGIN _mainFn {
@@ -134,7 +134,7 @@ _mainFn () {
   _ans="$(_cm2PromptUserFn "${_createSnapshotMsg}" "${_winTitle}" 'a')";
 
   if [ "${_ans}" = 'y' ]; then
-    _focusRxSnapshotFn "$USER";
+    _takeSnapshotFn "$USER";
     _exit_int="$?";
     if [ "${_exit_int}" = "${_NOTICE}" ]; then
       _snapshot_id="$(_getSnapshotListStrFn | head -n1)";
