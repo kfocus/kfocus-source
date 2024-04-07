@@ -1,3 +1,13 @@
+kfocus-main (22.04.58) jammy; urgency=medium
+
+  * debian/kfocus-main.install: Add open-url files (#4128)
+  * kfocus-open-url-file: Add support for x-mswinurl files (#4128)
+  * share/applications/kfocus-open-url-file.desktop (#4128)
+  * kfocus-pstate, kfocus-pstate-set: Refine logic (#4138,4163)
+  * kfocus-reset-effects: Reload GUI (#4160)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Thu, 04 Apr 2024 19:59:18 -0700
+
 kfocus-main (22.04.57) jammy; urgency=medium
 
   * kfocus-check-crypt: Use lsblk instead of blkid to find encrypted disks (#4066)

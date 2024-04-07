@@ -1,0 +1,17 @@
+Check kfocus-pstate -s LowBattery
+lspci GPU is intel
+prime-select query returns |intel|
+
+REQUEST power-set Low
+REQUEST pstate-set writeback-battery
+== BEGIN : Set CPU power mode to Low on battery
+== . END : OK   Set CPU power mode to Low on battery
+
+
+== BEGIN : Set writeback for battery use
+== . END : OK   Set writeback for battery use
+
+
+== BEGIN : Give user option to disable dGPU when on battery
+ok  : dGPU already off or nonexistent
+== . END : OK   Give user option to disable dGPU when on battery

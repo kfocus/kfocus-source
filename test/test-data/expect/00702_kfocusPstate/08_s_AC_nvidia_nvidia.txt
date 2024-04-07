@@ -1,0 +1,17 @@
+Check kfocus-pstate -s AC
+lspci GPU is nvidia
+prime-select query returns |nvidia|
+
+REQUEST power-set Normal
+REQUEST pstate-set writeback-ac
+== BEGIN : Set CPU power mode to Normal on AC
+== . END : OK   Set CPU power mode to Normal on AC
+
+
+== BEGIN : Set writeback for AC use
+== . END : OK   Set writeback for AC use
+
+
+== BEGIN : Warn user if using dGPU on battery
+ok  : Using AC Power, no action needed
+== . END : OK   Warn user if using dGPU on battery

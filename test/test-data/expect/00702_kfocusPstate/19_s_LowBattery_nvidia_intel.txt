@@ -1,0 +1,37 @@
+Check kfocus-pstate -s LowBattery
+lspci GPU is nvidia
+prime-select query returns |intel|
+
+REQUEST power-set Low
+REQUEST pstate-set writeback-battery
+REQUEST kdialog --yesno <html>
+  <style>
+    table{width:100%;margin:0}
+    td{padding:4px 16px 4px 0;}
+    .prompt{text-align:center;padding16px 0 8px 0;font-weight:800}
+  </style>
+  <h3 style="color:#1d99f3;text-align:center">GPU Power Warning</h3>
+  <table align="center">
+  <tr><td>The system is using the integrated GPU, but the discrete GPU is<br>
+    still powered-on.
+  </td></tr>
+  <tr><td>Would you like to power-down the discrete GPU to gain an<br>
+    additional 1-2 hours of battery life?
+  </td></tr>
+  <tr><td><b>NOTE:</b> To use the discrete GPU again, a system reboot will<br>
+    be required if you choose to power-down the dGPU.
+  </td></tr>
+  </table>
+</html>
+REQUEST pstate-set disable-nvidia
+== BEGIN : Set CPU power mode to Low on battery
+== . END : OK   Set CPU power mode to Low on battery
+
+
+== BEGIN : Set writeback for battery use
+== . END : OK   Set writeback for battery use
+
+
+== BEGIN : Give user option to disable dGPU when on battery
+ok  : Discrete GPU disable successfully.
+== . END : OK   Give user option to disable dGPU when on battery

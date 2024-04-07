@@ -1,0 +1,50 @@
+Check kfocus-pstate 
+udev power state is |Battery|
+lspci GPU is nvidia
+prime-select query returns |on-demand|
+
+REQUEST power-set Low
+REQUEST pstate-set writeback-battery
+REQUEST kdialog --msgbox <html>
+  <style>
+    table{width:100%;margin:0}
+    td{padding:4px 16px 4px 0;}
+    .prompt{text-align:center;padding:16px 0 8px 0;font-weight:800}
+  </style>
+  <h3 style="color:#1d99f3;text-align:center">GPU Power Warning</h3>
+  <table align="center">
+  <tr><td>The system is using the discrete GPU on battery power.<br>
+    To increase battery life up to 75%, follow these steps:
+  </td></tr>
+  <tr><td>
+    <ol style="margin:16px 32px;">
+      <li>Click the Nvidia Icon in the system tray</li>
+      <li>Click 'Switch to: Intel (Power Saving)'</li>
+      <li>When prompted, click 'Log Out' and enter password.</li>
+    </ol>
+  </tr></td>
+  <tr><td>To use the discrete GPU again:
+    <ol style="margin:16px 32px;">
+      <li>Click on the Intel icon in the system tray</li>
+      <li>Select 'Switch to: NVIDIA (Performance Mode)'</li>
+      <li>When prompted, click 'Log Out' and enter password.</li>
+    </ol>
+  </tr></td>
+  </table>
+</html>
+warn: Called without arguments from: /bin/bash
+== BEGIN : Set preferred mode for Battery power
+ok  : Set key |power-saver| matches current.
+== . END : OK   Set preferred mode for Battery power
+
+
+== BEGIN : Set CPU power mode to Low on battery
+== . END : OK   Set CPU power mode to Low on battery
+
+
+== BEGIN : Set writeback for battery use
+== . END : OK   Set writeback for battery use
+
+
+== BEGIN : Warn user if using dGPU on battery
+== . END : OK   Warn user if using dGPU on battery

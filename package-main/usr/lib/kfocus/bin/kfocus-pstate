@@ -4,12 +4,12 @@
 # Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
 #
 # Name   : kfocus-pstate
-# Purpose: 
+# Purpose:
 #   - As in kfocus-power, set Power Profile, Brightness, Frequency Profile,
 #   and Fan Profile when device is plugged or unplugged.
 #   - In Battery model, check if dGPU is in-use and warn user to switch to
 #     Intel to save power.
-# 
+#
 # License: GPL v2
 # Run by : Power manager on switch to battery
 # Spec   : 1690, 2558, 3404, 4138
@@ -41,7 +41,7 @@ _importCommonFn () {
     # shellcheck source=../lib/common.2.source
     source "${_lib_file}" || exit 202;
   else
-    echo 1>&2 "${_baseName}: ABORT - Cannot source lib |${_lib_file}|";
+    1>&2 echo "${_baseName}: ABORT - Cannot source lib |${_lib_file}|";
     exit 202;
   fi
 }
@@ -71,14 +71,30 @@ _exitEarlyFn () {
 }
 
 _exitCleanFn () {
+  declare _exit_int="${1:-0}";
   trap '' EXIT;
   rm "${_lockFile}" || true;
-  exit 0;
+  exit "${_exit_int}";
+}
+
+# Escalate privileges if set
+_runEscFn () {
+  if [ -z "${_escExe}" ]; then
+    "$@"; return;
+  fi
+
+  "${_escExe}" "$@";
 }
 
 _setPlasmaPowerProfileFn () {
-  declare _is_on_ac _target_key _msg _powerctl_exe _current_key \
+  declare _is_on_ac _target_key _msg _current_key \
     _mode_list _line _bit_list _search_str _set_key;
+
+  if [ -z "${_profilesCtlExe}" ]; then
+    _cm2WarnStrFn 'Optional power control tool not found. Skipped.';
+    _cm2SucFn;
+    return;
+  fi
 
   _is_on_ac="${1:-y}";
 
@@ -92,14 +108,6 @@ _setPlasmaPowerProfileFn () {
   fi
   _cm2SetMsgFn "${_msg}";
 
-  _powerctl_exe="$(command -v powerprofilesctl || true)";
-
-  if [ -z "${_powerctl_exe}" ]; then
-    _cm2WarnStrFn 'Optional power control tool not found. Skipped.';
-    _cm2SucFn;
-    return;
-  fi
-
   _mode_list=();
   while read -r _line; do
     IFS=$' :\n' read -ra _bit_list <<<"${_line}";
@@ -108,7 +116,7 @@ _setPlasmaPowerProfileFn () {
       _bit_list=("${_bit_list[@]:1}");
     fi
     _mode_list+=("$(xargs <<<"${_bit_list[0]}")");
-  done < <("${_powerctl_exe}" list | grep -Ev '^\s*$|^\s*Driver');
+  done < <("${_profilesCtlExe}" list | grep -Ev '^\s*$|^\s*Driver');
 
   _search_str="$(printf '%s\n' "${_mode_list[@]}")";
   if grep -Fxq "${_target_key}" <<<"${_search_str}"; then
@@ -125,7 +133,7 @@ _setPlasmaPowerProfileFn () {
     return;
   fi
 
-  if "${_powerctl_exe}" set "${_set_key}"; then
+  if "${_profilesCtlExe}" set "${_set_key}"; then
     _cm2SucStrFn "Set profile to |${_set_key}|.";
   else
     _cm2WarnStrFn "Could not set profile |${_set_key}|. Skipped.";
@@ -136,9 +144,8 @@ _setPlasmaPowerProfileFn () {
 ## BEGIN _mainFn {
 _mainFn () {
   ## Begin Initialize {
-  declare _warn_dgpu_msg _ask_disable_msg _ask_reboot_msg \
-    _assign_exe_list _pstate_arg_str _opt_str _is_on_ac _pid_str \
-    _gpu_mode_str _nvidia_list_str;
+  declare _warn_dgpu_msg _ask_disable_msg _ask_reboot_msg _pstate_arg_str \
+    _opt_str _is_on_ac _pid_str _gpu_mode_str _nvidia_list_str;
 
   _warn_dgpu_msg=$(
     cat <<_EOH01
@@ -222,33 +229,13 @@ _EOH03
   ## . End Initialize }
 
   # Exit if missing kdialog (provided by common.2.source)
-  if ! [ -x "${_cm2KdiagExe}" ]; then
+  if [ -z "${_cm2KdiagExe}" ]; then
     _cm2WarnStrFn 'ABORT: kdialog executable missing.';
     _cm2ErrFn;
   fi
 
-  ## Begin Assign other values after common import {
-  declare _lspci_exe _upower_exe _pstate_set_exe \
-    _power_set_exe _prime_exe;
-
-  _assign_exe_list=(
-    '_lspci_exe|lspci'
-    '_upower_exe|upower'
-    "_fan_set_exe|${_binDir}/kfocus-fan-set||optional"
-    # "_pstate_set_exe|${_binDir}/kfocus-pstate-set||optional"
-    "_power_set_exe|${_binDir}/kfocus-power-set||optional"
-    '_prime_exe|prime-select||optional'
-  );
-
-  # Exit if required executables are not available
-  if ! _cm2AssignExeVarsFn "${_assign_exe_list[@]}"; then
-    _cm2ErrStrFn 'Required commands not found.';
-    _exitEarlyFn;
-  fi
-  ## . End Assign other values after common import }
-
   # Check for power /battery, not mouse or kbd batteries
-  if ! grep -q '/battery' < <("${_upower_exe}" -e); then
+  if ! grep -q '/battery' < <("${_upowerExe}" -e); then
     _cm2EchoFn 'Exit: System does not appear to have battery.';
     _exitCleanFn;
   fi
@@ -257,10 +244,10 @@ _EOH03
   _pstate_arg_str='';
   while getopts 'hs:' _opt_str; do
     case "${_opt_str}" in
-      h) _echoHelpFn; exit;;
+      h) _echoHelpFn; _exitCleanFn;;
       s) _pstate_arg_str="${OPTARG:-}"; shift;;
-      *) 1>&2 echo -e "\nInvalid option: -${_opt_str} \n";
-        _echoHelpFn; exit 1;;
+      *) _cm2WarnStrFn "Invalid option |${_opt_str}|";
+        _echoHelpFn; _exitCleanFn 1;;
     esac
   done
   ## . End Process options }
@@ -271,7 +258,10 @@ _EOH03
     AC)         _is_on_ac='y';;
     Battery)    _is_on_ac='n';;
     LowBattery) _is_on_ac='n';;
-    *) true;;
+    '') true;;
+    *) _cm2ErrStrFn "Unsupported Power Mode |${_pstate_arg_str}|";
+      _cm2ErrStrFn 'Please specify AC, Battery, or LowBattery.';
+      _exitCleanFn 1;;
   esac
 
   # If _is_on_ac flag NOT set, pause and read from udev
@@ -284,65 +274,67 @@ _EOH03
     # Pause to let udev catch up
     sleep 3;
     _is_on_ac="$(
-      ( "${_upower_exe}" -i '/org/freedesktop/UPower/devices/line_power_AC' \
+      ( "${_upowerExe}" -i '/org/freedesktop/UPower/devices/line_power_AC' \
        | grep '^\s*online:' | awk '{print $2}' | cut -c1 ) || echo 'n'
     )";
 
     # Set kde power profile if available based on freshly-set _is_on_ac
+    # IMPORTANT: This is handled by the plasma power management widget
+    # and therefore is NOT included in the settings below.
     _setPlasmaPowerProfileFn "${_is_on_ac}";
   fi
 
   # Invoke on-battery settings
   if [ "${_is_on_ac}" = 'n' ]; then
     _cm2SetMsgFn 'Set CPU power mode to Low on battery';
-    if [ -n "${_power_set_exe}" ] \
-      && "${_escExe}" "${_power_set_exe}" 'Low'; then
+    if [ -n "${_powerSetExe}" ] \
+      && _runEscFn "${_powerSetExe}" 'Low'; then
       _cm2SucFn; else _cm2WarnFn;
     fi
 
     _cm2SetMsgFn 'Set writeback for battery use';
-    if [ -n "${_pstate_set_exe}" ] \
-      && "${_escExe}" "${_pstate_set_exe}" 'writeback-battery'; then
+    if [ -n "${_pstateSetExe}" ] \
+      && _runEscFn "${_pstateSetExe}" 'writeback-battery'; then
       _cm2SucFn; else _cm2WarnFn;
     fi
 
     # TODO 2024-03-25: Held because fan changes worry users
     # _cm2SetMsgFn 'Set fan to Linear on battery';
-    # if [ -n "${_fan_set_exe}" ] \
-    #   && "${_escExe}" "${_fan_set_exe}" 'Linear'; then
+    # if [ -n "${_fanSetExe}" ] \
+    #   && _runEscFn "${_fanSetExe}" 'Linear'; then
     #   _cm2SucFn; else _cm2WarnFn;
     # fi
 
   # Invoke on-AC settings
   else
     _cm2SetMsgFn 'Set CPU power mode to Normal on AC';
-    if [ -n "${_power_set_exe}" ] \
-      && "${_escExe}" "${_power_set_exe}" 'Normal'; then
+    if [ -n "${_powerSetExe}" ] \
+      && _runEscFn "${_powerSetExe}" 'Normal'; then
       _cm2SucFn; else _cm2WarnFn;
     fi
 
     _cm2SetMsgFn 'Set writeback for AC use';
-    if [ -n "${_pstate_set_exe}" ] \
-      && "${_escExe}" "${_pstate_set_exe}" 'writeback-ac'; then
+    if [ -n "${_pstateSetExe}" ] \
+      && _runEscFn "${_pstateSetExe}" 'writeback-ac'; then
       _cm2SucFn; else _cm2WarnFn;
     fi
 
     # TODO 2024-03-25: Held because fan changes worry users
     # _cm2SetMsgFn 'Set fan to Soft on AC';
-    # if [ -n "${_fan_set_exe}" ] \
-    #   && "${_escExe}" "${_fan_set_exe}" 'Soft'; then
+    # if [ -n "${_fanSetExe}" ] \
+    #   && runEscFn "${_fanSetExe}" 'Soft'; then
     #   _cm2SucFn; else _cm2WarnFn;
     # fi
   fi
 
   # Sniff gpu in use
   _gpu_mode_str='intel';
- if [ -n "${_prime_exe}" ]; then
-    _gpu_mode_str="$("$_prime_exe" query)";
+  if [ -n "${_primeExe}" ]; then
+    _gpu_mode_str="$("$_primeExe" query)";
   else
     _cm2WarnStrFn 'Please install nvidia-prime for maximum capability';
   fi
-  _nvidia_list_str="$("${_lspci_exe}" -m | grep -i 'nvidia')";
+  _nvidia_list_str="$("${_lspciExe}" -m | grep -i 'nvidia')";
 
   # Handle Nvidia mode
   if [ "${_gpu_mode_str}" = 'nvidia' ] \
@@ -350,7 +342,7 @@ _EOH03
     if [ -z "${_nvidia_list_str}" ]; then
       _cm2SetMsgFn 'Warn user if using iGPU when dGPU requested';
       if "${_cm2KdiagExe}" --warningyesno "${_ask_reboot_msg}"; then
-        qdbus org.kde.Shutdown /Shutdown logoutAndReboot;
+        "${_qdbusExe}" org.kde.Shutdown /Shutdown logoutAndReboot;
       fi
       _cm2SucFn;
     else
@@ -371,9 +363,9 @@ _EOH03
       _cm2SetMsgFn 'Give user option to disable dGPU when on battery';
       if [ -n "${_nvidia_list_str}" ]; then
         if "${_cm2KdiagExe}" --yesno "${_ask_disable_msg}"; then
-          if [ -n "${_pstate_set_exe}" ] \
-            && "${_escExe}" "${_pstate_set_exe}" 'disable-nvidia'; then
-            echo 'Discrete GPU disable successfully.';
+          if [ -n "${_pstateSetExe}" ] \
+            && _runEscFn "${_pstateSetExe}" 'disable-nvidia'; then
+            _cm2SucStrFn 'Discrete GPU disable successfully.';
             _cm2SucFn;
           else
             "${_cm2KdiagExe}" \
@@ -386,16 +378,20 @@ _EOH03
           _cm2SucFn;
         fi
       else
-        echo 'dGPU already off or nonexistent';
+        _cm2SucStrFn 'dGPU already off or nonexistent';
         _cm2SucFn;
       fi
     fi
   fi
+  _exitCleanFn;
 }
 ## . END _mainFn }
 
 ## BEGIN Declare and set global vars {
-declare _binName _binDir _baseName _lockFile _escExe;
+declare _binName _binDir _baseName _lockFile _userName \
+  _assignExeList _lspciExe _powerSetExe _primeExe _profilesCtlExe \
+  _pstateSetExe _qdbusExe _pstateSetExe _upowerExe _escExe;
+
 ## . END Declare and set global vars }
 
 ## BEGIN Run main if script is not sourced {
@@ -404,15 +400,29 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binDir="$(dirname "${_binName}")"    || exit 101;
   _baseDir="$(dirname "${_binDir}")"    || exit 101;
   _baseName="$(basename "${_binName}")" || exit 101;
-  _lockFile="/tmp/${_baseName}.lock"
+
+  _userName="$(id -un)";
+  _lockFile="/tmp/${_baseName}-${_userName}.lock";
 
   # Import libs and assign more global vars
   _importCommonFn;
-  _escExe="$(_cm2GetEscExeFn)" || exit;
+  _assign_exe_list=(
+    # "_fanSetExe|${_binDir}/kfocus-fan-set||optional"
+    "_lspciExe|lspci"
+    "_powerSetExe|${_binDir}/kfocus-power-set||optional"
+    "_primeExe|prime-select||optional"
+    "_profilesCtlExe|powerprofilesctl||optional"
+    "_pstateSetExe|${_binDir}/kfocus-pstate-set||optional"
+    "_qdbusExe|qdbus"
+    "_upowerExe|upower"
+  );
+  if ! _cm2AssignExeVarsFn "${_assign_exe_list[@]}"; then
+    _cm2ErrStrFn 'Required commands not found.';
+    _exitEarlyFn;
+  fi
+  _escExe="$(_cm2GetEscExeFn)" || exit 1;
 
   _mainFn "$@";
 fi
 ## . END Run main if script is not sourced }
 
-# Exit cleanly
-_exitCleanFn;
