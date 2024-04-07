@@ -19,6 +19,12 @@ Depends:      ${misc:Depends},
               policykit-1,
               qml-module-org-kde-kirigami2,
               plasma-framework
+Conflicts:    kfocus-power         (<< ${binary:Version}),
+              kfocus-fan           (<< ${binary:Version}),
+              kfocus-power-scripts (<< ${binary:Version})
+Replaces:     kfocus-power         (<< ${binary:Version}),
+              kfocus-fan           (<< ${binary:Version}),
+              kfocus-power-scripts (<< ${binary:Version})
 Description: Utility to change power and fan settings
  This utility is available to switch between several power profiles, processor
  frequency settings, and fan settings.
