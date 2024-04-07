@@ -5,21 +5,10 @@ Maintainer:        Kubuntu Focus Team <support@kfocus.org>
 Standards-Version: 4.6.0
 Build-Depends:     debhelper-compat (=13)
 
-Package:      kfocus-001-rest
+Package:      kfocus-rest
 Architecture: all
 Depends:      ${misc:Depends}, ${shlibs:depends},
-              kfocus-rest (>= ${binary:Version})
+              kfocus-main (>= ${binary:Version})
 Description:  Transitional Dummy Package for kfocus-rest
  This is a transitional dummy package.
  It can be safely removed.
-
-Package:      kfocus-rest
-Architecture: all
-Depends:      ${misc:Depends}, kfocus-main,
-Recommends:   kubuntu-restricted-extras,
-              virtualbox-ext-pack
-Conflicts:    kfocus-001-rest (<< ${binary:Version})
-Replaces:     kfocus-001-rest (<< ${binary:Version})
-Description: kfocus restricted metapackage
- This package installs restricted (non-free) software
- for Kubuntu Focus laptops.

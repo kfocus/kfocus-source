@@ -35,6 +35,8 @@ Recommends:   backintime-qt,
               pcmemtest,
               xserver-xorg-input-evdev,
               xserver-xorg-input-synaptics
+Conflicts:    kfocus-rest (<< ${binary:Version})
+Replaces:     kfocus-rest (<< ${binary:Version})
 Description:  Kubuntu Focus Hardware Optimizations
  This package provides hardware optimizations and requirements
  for Kubuntu Focus computers. This also includes the Welcome
@@ -131,7 +133,6 @@ Recommends:   unattended-upgrades,
               winff-qt,
               x264,
               xsel
-Suggests:     kfocus-rest
 Description:  Kubuntu Focus Curated Apps Metapackage
  This metapackage provides curated apps for Kubuntu Focus laptops.
 
