@@ -8,22 +8,12 @@ Homepage: https://launchpad.net/ubuntustudio-default-settings
 Vcs-Git: https://git.launchpad.net/ubuntustudio-default-settings
 Vcs-Browser: https://git.launchpad.net/ubuntustudio-default-settings/tree/
 
-Package:      kfocus-001-settings
-Architecture: all
-Depends:      ${misc:Depends}, ${shlibs:depends},
-              kfocus-settings (>= 20.04.0~)
-Description:  Transitional Dummy Package for kfocus-settings
- This is a transitional dummy package.
- It can be safely removed.
-
 Package: kfocus-settings
 Architecture: all
 Pre-Depends: dpkg (>= 1.15.7.2~), kubuntu-settings-desktop
 Depends: ${misc:Depends}, kfocus-main (>> 22.0.54),
          kfocus-power-scripts
 Recommends: plasma-desktop
-Conflicts: kfocus-001-main (<= 20.04.74), kfocus-001-settings (<< ${binary:Version})
-Replaces:  kfocus-001-settings (<< ${binary:Version})
 Description: default settings for the Kubuntu Focus laptop computers
  This package contains the default settings used by the Kubuntu Focus.
  It sets the default sddm theme and the theme and layout for the
