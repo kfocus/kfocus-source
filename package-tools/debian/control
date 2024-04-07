@@ -11,10 +11,9 @@ Depends:      ${misc:Depends},
               kfocus-power-fan,
               kfocus-keyboard
 Recommends:   kfocus-conda,
-              kfocus-fan,
               kfocus-kb-color,
               kfocus-pick-gcc,
-              kfocus-power,
+              kfocus-power-bin,
               kfocus-vidsync
 Breaks:       kfocus-tools-nxg1,
               kfocus-tools-other
@@ -25,10 +24,9 @@ Package:      kfocus-tools-nxg1
 Architecture: all
 Depends:      ${misc:Depends}
 Recommends:   kfocus-conda,
-              kfocus-fan,
               kfocus-kb-color,
               kfocus-pick-gcc,
-              kfocus-power,
+              kfocus-power-bin,
               kfocus-vidsync
 Breaks:       kfocus-power-fan,
               kfocus-keyboard,
@@ -42,10 +40,9 @@ Package:      kfocus-tools-other
 Architecture: all
 Depends:      ${misc:Depends}
 Recommends:   kfocus-conda,
-              kfocus-fan,
               kfocus-kb-color,
               kfocus-pick-gcc,
-              kfocus-power,
+              kfocus-power-bin,
               kfocus-vidsync
 Breaks:       kfocus-power-fan,
               kfocus-keyboard,
@@ -91,23 +88,6 @@ Description:  Change default GCC Version
  than the system default. This utility allows you to change the
  system default GCC version pending availability in the repository.
 
-Package:      kfocus-power
-Architecture: all
-Depends:      ${misc:Depends},
-              kfocus-common,
-              cpufrequtils,
-              hicolor-icon-theme,
-              kdialog,
-              policykit-1,
-              kfocus-power-bin
-Suggests:     kfocus-fan
-Description:  Utility to change power profile temporarily
- This utility is available to switch between three power
- profiles: Low, Normal, and High. The Kubuntu Focus computers
- automatically go to Low when unplugged from AC power, and
- automatically go to Normal when plugged-in. The High profile
- should be used for extra performance needs.
-
 Package:      kfocus-vidsync
 Architecture: all
 Depends:      ${misc:Depends},
@@ -121,17 +101,18 @@ Description:  Utility to help with vertical sync on Nvidia hardware
  the composition pipeline and full composition pipeline. Enabling
  this can cause performance issues.
 
+Package:      kfocus-power
+Architecture: all
+Depends:      ${misc:Depends}, ${shlibs:Depends},
+              kfocus-power-bin
+Description:  Transitional Dummy Package for kfocus-power-bin
+ This is a transitional dummy package.
+ It can be safely removed.
+
 Package:      kfocus-fan
 Architecture: all
-Depends:      ${misc:Depends},
-              kfocus-common,
-              hicolor-icon-theme,
-              kdialog,
-              policykit-1
-Suggests:     kfocus-power,
-              kfocus-power-fan
-Description:  Kubuntu Focus fan profile controller
- This is a small utility to switch between fan profiles
- on a Kubuntu Focus laptop computer. At this time it has
- two profiles: the default linear profile and the quieter
- logarithmic fan curve profile.
+Depends:      ${misc:Depends}, ${shlibs:Depends},
+              kfocus-power-bin
+Description:  Transitional Dummy Package for kfocus-power-bin
+ This is a transitional dummy package.
+ It can be safely removed.

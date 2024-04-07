@@ -35,7 +35,7 @@ Depends:      ${misc:Depends}, ${shlibs:Depends},
               zenity
 Recommends:   backintime-qt,
               kfocus-meta,
-              kfocus-power-scripts,
+              kfocus-power-bin,
               kfocus-tools-other | kfocus-tools | kfocus-tools-nxg1,
               kio-admin,
               linux-generic-hwe-22.04-kfocus,
@@ -159,15 +159,8 @@ Description:  Kubuntu Focus Common Libraries
 
 Package:      kfocus-power-scripts
 Architecture: all
-Depends:      ${misc:Depends},
-              kfocus-power,
-              kfocus-common,
-              kdialog
-Breaks:       kfocus-001-main (<= 20.04.96.1),
-              tlp
-Replaces:     kfocus-001-main (<= 20.04.96.1),
-              tlp
-Description:  Automatic power management scripts for Kubuntu Focus
- Power management scripts to be run automatically upon power
- unplug/replug to optimize battery usage and suggest manual
- power management actions.
+Depends:      ${misc:Depends}, ${shlibs:Depends}.
+              kfocus-power-bin
+Description:  Transitional Dummy Package for kfocus-power-bin
+ This is a transitional dummy package.
+ It can be safely removed.
