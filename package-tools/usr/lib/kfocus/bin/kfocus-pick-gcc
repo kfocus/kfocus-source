@@ -102,6 +102,7 @@ fi
 
 _gccVersStr='';
 case "${_osId}" in
+  '24.04') _osID='Ubuntu 24.04 LTS'; _gccVersStr='13';;
   '22.04') _osId='Ubuntu 22.04 LTS'; _gccVersStr='11';;
   '20.04') _osId='Ubuntu 20.04 LTS'; _gccVersStr='9';;
   *) _osId="Unsupported ${_osId}"; _gccVersStr='<unknown>';;
