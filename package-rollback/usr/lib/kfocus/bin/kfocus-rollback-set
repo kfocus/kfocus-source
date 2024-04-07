@@ -447,7 +447,7 @@ _createSnapshotFn () {
     || _exitEMERG "Could not create boot snapshot |${_boot_snapshot_path}|";
 }
 
-_focusRxRollbackFn () {
+_systemRollbackFn () {
   declare _older_snapshot_list_str _restore_snapshot_str;
 
   # Any snapshots that are at number 5 or older will end up trimmed if we
@@ -503,14 +503,14 @@ _mainFn () {
   case "${_mode}" in
     'createSnapshot')    _createSnapshotFn    "${2:-}";;
     'deleteSnapshot')    _deleteSnapshotFn    "${2:-}";;
-    'finalizeRestore')  _finalizeRestoreFn;;
-    'focusRxRollback')   _focusRxRollbackFn   "${2:-}";;
-    'focusRxSnapshot')   _focusRxSnapshotFn   "${2:-}";;
+    'finalizeRestore')   _finalizeRestoreFn;;
     'getBtrfsStatus')    echo "${_btrfsStatus}";;
     'labelAptSnapshot')  _labelAptSnapshotFn;;
     'labelUserSnapshot') _labelUserSnapshotFn "${2:-}";;
     'prepareSystem')     _prepareSystemFn;;
     'restoreSnapshot')   _restoreSnapshotFn   "${2:-}";;
+    'systemRollback')    _systemRollbackFn    "${2:-}";;
+    'systemSnapshot')    _systemSnapshotFn    "${2:-}";;
     'trimSnapshots')     _trimSnapshotsFn;;
     *)
       _cm2WarnStrFn 'Invalid mode specified.';

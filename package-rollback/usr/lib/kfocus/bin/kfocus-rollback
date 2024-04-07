@@ -147,8 +147,8 @@ _chooseSnapshotFn () {
   return;
 }
 
-_focusRxRollbackFn () {
-  "${_escExe}" "${_snapshotSetExe}" 'focusRxRollback' "${1:-}";
+_systemRollbackFn () {
+  "${_escExe}" "${_snapshotSetExe}" 'systemRollback' "${1:-}";
 }
 
 _handleRestoreExitIntFn () {
@@ -263,7 +263,7 @@ _mainFn () {
     _doTotalRestoreMsg="${_doTotalRestoreMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
     if [ "$(_cm2PromptUserFn "${_doTotalRestoreMsg}" "${_winTitle}" \
       'o')" = 'y' ]; then
-      _focusRxRollbackFn "${_snapshot_id}";
+      _systemRollbackFn "${_snapshot_id}";
       _handleRestoreExitIntFn "$?";
     else
       _cm2PromptUserFn "${_restoreCancelledMsg}" "${_winTitle}";
