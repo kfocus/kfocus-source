@@ -1069,8 +1069,10 @@ _postRollbackHandlerFn () {
   if [ -n "${_kBuildSycocaExe}" ]; then "${_kBuildSycocaExe}"; fi
 
   if [ -e '/var/lib/kfocus/kfocus_rollback_restore_complete' ]; then
-    "${_escExe}" "${_focusRxSetExe}" 'clear-restore';
+    # Run _kfocusRollbackExe first so it can use the contents of the restore
+    # drop file to display the name of the restored snapshot to the user.
     "${_kfocusRollbackExe}" 'afterRestore';
+    "${_escExe}" "${_focusRxSetExe}" 'clear-restore';
   fi
 }
 ## . END _fixSycocaCacheFn }

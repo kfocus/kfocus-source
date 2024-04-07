@@ -11,7 +11,7 @@
 #              | labelAptSnapshot | labelUserSnapshot <username>
 #              | finalizeRestore  | trimSnapshots | prepareSystem
 #              | getBtrfsStatus   | restoreSnapshot (snapshot_id)
-#              | takeSnapshot
+#              | systemSnapshot
 # Purpose  : Performs snapshot management operations
 # Example  : kfocus-rollback-set restoreSnapshot @1234
 # License  : GPLv2
@@ -21,38 +21,60 @@
 #
 set -u;
 
-## BEGIN _importCommonFn {
-# Summary   : _importCommonFn
-# Purpose   : Load common routines, prefer relative dir
-# Example   : _importCommonFn;
-# Arguments : none
-# Globals   : Package vars _baseDir _baseName
-# Outputs   : none
-# Returns   : none
+_stderrFn () {
+  2>&1 echo "${_baseName} $*";
+}
+## BEGIN _loadLibTableFn {
+# Summary : _loadLibTableFn <lib_str1> <lib_str2> ...
+# Example : _loadLibTableFn "lib01:/usr/lib/lib01" "lib02";
+# Purpose :
+#   Import table of libs, one arg per lib.
+#     * Each arg can have alternates delimited by colons ':'
+#     * Fails if all alternates for a lib fails.
+#     * Starting lib string '#:' means the following libs are optional.
+#     * Diagnostics are sent to STDERR.
+#     * Libs without a directory use ${_binDir} as the path
 #
-_importCommonFn () {
-  declare _lib_list _is_loaded _lib_file;
-  _lib_list=(
-    "${_binDir}/common.2.source"
-    '/usr/lib/kfocus/lib/common.2.source'
-  );
-  _is_loaded='n';
-  for _lib_file in "${_lib_list[@]}"; do
-    if [ -r "${_lib_file}" ]; then
-      # shellcheck source=/usr/lib/kfocus/lib/common.2.source
-      if source "${_lib_file}"; then
+_loadLibTableFn () {
+  declare _lib_table _lib_list _lib_line _raw_path _lib_file _is_loaded;
+  _lib_table=("$@");
+
+  ## Begin: Iterate over lib lines.
+  for _lib_line in "${_lib_table[@]}"; do
+    # Split line into alternates.
+    #   Note: Echo removes trailing newline.
+    readarray -d: -t _lib_list < <(echo -n "${_lib_line}");
+    _is_loaded='n';
+
+    ## Begin: Iterate over alternates.
+    for _raw_path in "${_lib_list[@]}"; do
+      [ -z "$(dirname "${_raw_path}")" ] \
+        && _lib_file="${_binDir}/${_raw_path}" \
+        || _lib_file="${_raw_path}";
+
+      # shellcheck disable=SC1090
+      if ! [ -r "${_lib_file}" ]; then
+        _stderrFn "warn: source |${_lib_file}| not readable.";
+      elif source "${_lib_file}"; then
         _is_loaded='y';
         break;
-      fi
-    fi
-  done
+      else
+        _stderrFn "${_baseName} Error: source |${_lib_file}| is non-zero.";
+        return 1;
+      fi  
+    done
+    ## . End: Iterate over alternates.
 
-  if [ "${_is_loaded}" = 'n' ]; then
-    echo 1>&2 "${_baseName}: ABORT - Cannot source common lib";
-    exit 202;
-  fi
+    if [ "${_is_loaded}" != 'y' ]; then
+      _stderrFn "${_baseName} error: no lib loaded";
+      return 1;
+    fi  
+  done
+  ## . End: Iterate over lib lines.
+
+  return;
 }
-## . END _importCommonFn }
+## . END _loadLibTableFn }
 
 ## BEGIN Define error and exit handling {
 _trapExitFn () {
@@ -291,7 +313,8 @@ _prepareSystemFn () {
 }
 
 _restoreSnapshotFn () {
-  declare _target_snapshot _snapshot_path _boot_snapshot_path;
+  declare _target_snapshot _snapshot_path _boot_snapshot_path \
+    _snapshot_disp_id;
 
   _target_snapshot="${1:-}";
   if [ -z "${_target_snapshot}" ]; then
@@ -312,6 +335,8 @@ _restoreSnapshotFn () {
     _exitERR 'Expected snapshot path does not exist';
   fi
 
+  _snapshot_disp_id="$(_rb2MakeSnapshotDispIdFn "${_target_snapshot}")";
+
   mv '/btrfs_main/@' '/btrfs_main/@kfocus-rollback-working' || _exitCRIT;
   btrfs subvolume snapshot "${_snapshot_path}" '/btrfs_main/@' || _exitEMERG;
   # Failing to unmount /boot/efi before attempting to move the old subvol
@@ -325,7 +350,8 @@ _restoreSnapshotFn () {
   mount /boot/efi || _exitALERT;
 
   # Let the user know that a restore has completed
-  touch /btrfs_main/@/var/lib/kfocus/kfocus_rollback_restore_complete \
+  echo "${_snapshot_disp_id}" \
+    > /btrfs_main/@/var/lib/kfocus/kfocus_rollback_restore_complete \
     || _exitALERT;
 }
 
@@ -464,7 +490,7 @@ _systemRollbackFn () {
   _restoreSnapshotFn "${1:-}" || exit;
 }
 
-_takeSnapshotFn () {
+_systemSnapshotFn () {
   _createSnapshotFn "${1:-}" || _exitERR 'Could not create snapshot';
   _trimSnapshotsFn           || _exitERR 'Could not trim snapshots';
 }
@@ -523,8 +549,8 @@ _mainFn () {
 ## . END _mainFn }
 
 ## BEGIN Declare and assign global vars {
-declare _binName _binDir _baseName _baseDir _lockFile _btrfsStatus _browStr \
-  _erowStr _tableStr _prepareFailMsg _lowDiskMsg _inconsistentMsg \
+declare _binName _binDir _baseName _baseDir _lockFile _btrfsStatus _libTable \
+  _browStr _erowStr _tableStr _prepareFailMsg _lowDiskMsg _inconsistentMsg \
   _isPreparingSystem _snapshotMainDir _snapshotBootDir;
 
 _snapshotMainDir='/btrfs_main/@kfocus-rollback-snapshots';
@@ -543,8 +569,13 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _lockFile="/tmp/kfocus-rollback-backend.lock";
   _btrfsStatus='';
 
-  # Import libs and assign more global vars
-  _importCommonFn;
+  # Import libs
+  _libTable=(
+    '/usr/lib/kfocus/lib/common.2.source'
+    '/usr/lib/kfocus/lib/rollback.2.source'
+  );
+
+  _loadLibTableFn "${_libTable[@]}" || exit 1;
 
   # Set error messages
   _browStr='<tr><td style="padding:8px 32px 8px 0">';

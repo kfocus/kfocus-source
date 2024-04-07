@@ -14,43 +14,60 @@
 #
 set -u;
 
-## BEGIN _importCommonFn {
-# Summary   : _importCommonFn
-# Purpose   : Load common routines, prefer relative dir
-# Example   : _importCommonFn;
-# Arguments : none
-# Globals   : Package vars _baseDir _baseName
-# Outputs   : none
-# Returns   : none
+_stderrFn () {
+  2>&1 echo "${_baseName} $*";
+}
+## BEGIN _loadLibTableFn {
+# Summary : _loadLibTableFn <lib_str1> <lib_str2> ...
+# Example : _loadLibTableFn "lib01:/usr/lib/lib01" "lib02";
+# Purpose :
+#   Import table of libs, one arg per lib.
+#     * Each arg can have alternates delimited by colons ':'
+#     * Fails if all alternates for a lib fails.
+#     * Starting lib string '#:' means the following libs are optional.
+#     * Diagnostics are sent to STDERR.
+#     * Libs without a directory use ${_binDir} as the path
 #
-_importCommonFn () {
-  declare _lib_list _is_loaded _lib_file;
-  _lib_list=(
-    "${_baseDir}/lib/common.2.source"
-    "${_binDir}/common.2.source"
-    '/usr/lib/kfocus/lib/common.2.source'
-  );
-  _is_loaded='n';
-  for _lib_file in "${_lib_list[@]}"; do
-    if [ -r "${_lib_file}" ]; then
-      # shellcheck source=/usr/lib/kfocus/lib/common.2.source
-      if source "${_lib_file}"; then
+_loadLibTableFn () {
+  declare _lib_table _lib_list _lib_line _raw_path _lib_file _is_loaded;
+  _lib_table=("$@");
+
+  ## Begin: Iterate over lib lines.
+  for _lib_line in "${_lib_table[@]}"; do
+    # Split line into alternates.
+    #   Note: Echo removes trailing newline.
+    readarray -d: -t _lib_list < <(echo -n "${_lib_line}");
+    _is_loaded='n';
+
+    ## Begin: Iterate over alternates.
+    for _raw_path in "${_lib_list[@]}"; do
+      [ -z "$(dirname "${_raw_path}")" ] \
+        && _lib_file="${_binDir}/${_raw_path}" \
+        || _lib_file="${_raw_path}";
+
+      # shellcheck disable=SC1090
+      if ! [ -r "${_lib_file}" ]; then
+        _stderrFn "warn: source |${_lib_file}| not readable.";
+      elif source "${_lib_file}"; then
         _is_loaded='y';
         break;
+      else
+        _stderrFn "${_baseName} Error: source |${_lib_file}| is non-zero.";
+        return 1;
       fi
+    done
+    ## . End: Iterate over alternates.
+
+    if [ "${_is_loaded}" != 'y' ]; then
+      _stderrFn "${_baseName} error: no lib loaded";
+      return 1;
     fi
   done
+  ## . End: Iterate over lib lines.
 
-  if [ "${_is_loaded}" = 'n' ]; then
-    echo 1>&2 "${_baseName}: ABORT - Cannot source common lib";
-    exit 202;
-  fi
+  return;
 }
-## . END _importCommonFn }
-
-_getBtrfsStatusFn () {
-  "${_snapshotSetExe}" 'getBtrfsStatus';
-}
+## . END _loadLibTableFn }
 
 _selectiveRestoreSnapshotFn () {
   declare _snapshot_id;
@@ -66,55 +83,11 @@ _selectiveRestoreSnapshotFn () {
     'admin:///';
 }
 
-_getSnapshotListStrFn () {
-   find '/btrfs_main/@kfocus-rollback-snapshots' -maxdepth 1 \
-     | cut -d'@' -f3 \
-     | sort -n -r \
-     | sed '/^$/d; s/^/@/;';
-}
-
-## BEGIN _makeSnapshotDispIdFn {
-#
-_makeSnapshotDispIdFn () {
-  declare _snapshot_id _snapshot_reason_loc _snapshot_reason_raw \
-    _snapshot_reason _snapshot_datetime _snapshot_disp_id;
-
-  _snapshot_id="${1:-}";
-  _snapshot_reason_loc="${2:-}";
-
-  if [ -z "${_snapshot_id}" ] || [ -z "${_snapshot_reason_loc}" ]; then
-    _cm2WarnStrFn 'Invalid arguments, cannot generate snapshot display ID';
-    return 1;
-  fi
-
-  _snapshot_reason_raw="$(cat "${_snapshot_reason_loc}")";
-  case "${_snapshot_reason_raw}" in
-    'Apt')
-      _snapshot_reason='Before Package Change';
-      ;;
-    'Timed')
-      _snapshot_reason='System Schedule';
-      ;;
-    'Pre-Rollback')
-      _snapshot_reason='Pre-Rollback';
-      ;;
-    *) # must be user-generated
-      _snapshot_reason="Created by ${_snapshot_reason_raw}";
-      ;;
-  esac
-
-  _snapshot_datetime="$(date -d "${_snapshot_id}" '+%a %F %H:%M')";
-
-  _snapshot_disp_id="${_snapshot_datetime} | ${_snapshot_reason}";
-  echo "${_snapshot_disp_id}";
-}
-## . END _makeSnapshotDispIdFn }
-
 _chooseSnapshotFn () {
   declare _snapshot_list_str _snapshot_list _snapshot_disp_list _radio_list \
-    _reason_loc _snapshot_idx _answer _select_str;
+    _snapshot_idx _answer _select_str;
 
-  _snapshot_list_str="$(_getSnapshotListStrFn)";
+  _snapshot_list_str="$(_rb2GetSnapshotListStrFn)";
   readarray -t _snapshot_list <<< "${_snapshot_list_str}";
   _snapshot_disp_list=();
   _radio_list=();
@@ -122,10 +95,8 @@ _chooseSnapshotFn () {
 
   for (( _snapshot_idx=0; _snapshot_idx < ${#_snapshot_list[@]}; \
     _snapshot_idx++ )); do
-    _reason_loc="/btrfs_main/@kfocus-rollback-snapshots/${_snapshot_list[_snapshot_idx]}/var/lib/kfocus/kfocus_rollback_snapshot_reason";
     _snapshot_disp_list[_snapshot_idx]="$(
-      _makeSnapshotDispIdFn "${_snapshot_list[_snapshot_idx]}" \
-        "${_reason_loc}";
+      _rb2MakeSnapshotDispIdFn "${_snapshot_list[_snapshot_idx]}";
     )";
     _radio_list+=( "${_snapshot_idx}" \
       "${_snapshot_disp_list[_snapshot_idx]}" "${_select_str}" );
@@ -145,10 +116,6 @@ _chooseSnapshotFn () {
   echo "${_snapshot_list[_answer]}";
   echo "${_snapshot_disp_list[_answer]}";
   return;
-}
-
-_systemRollbackFn () {
-  "${_escExe}" "${_snapshotSetExe}" 'systemRollback' "${1:-}";
 }
 
 _handleRestoreExitIntFn () {
@@ -176,29 +143,14 @@ _handleRestoreExitIntFn () {
 #
 _mainFn () {
   declare _arg_str _btrfs_status_str _snapshot_id _restore_mode _exit_int \
-    _working_subvol_loc _working_boot_subvol_loc _snapshot_disp_id;
+    _working_subvol_loc _working_boot_subvol_loc _restored_snapshot_disp_id \
+    _snapshot_disp_id;
 
   _arg_str="${1:-}";
   _working_subvol_loc='/btrfs_main/@kfocus-rollback-working';
   _working_boot_subvol_loc='/btrfs_boot/@kfocus-rollback-working-boot';
 
-  # This function will exit with LOCK if the lockfile cannot be grabbed, so we
-  # wait until the lock is released before showing the UI (since we have to in
-  # order to get the state of the system).
-  while true; do
-    _btrfs_status_str="$(_getBtrfsStatusFn)"
-    _exit_int="$?";
-    
-    # Override false positive due to complex exit code handling
-    # shellcheck disable=SC2181
-    if [ "${_exit_int}" = "${_LOCK}" ]; then
-      sleep 1;
-    elif [ "${_exit_int}" = "${_NOTICE}" ]; then
-      break;
-    else
-      exit "${_exit_int}";
-    fi
-  done
+  _btrfs_status_str="$(_rb2GetBtrfsStatusFn)"
 
   if [ "${_btrfs_status_str}" != 'SUPPORTED, SET UP' ]; then
     _cm2PromptUserFn "${_systemUnsupportedMsg}" "${_winTitle}";
@@ -222,10 +174,11 @@ _mainFn () {
   fi
 
   if [ "${_arg_str}" = 'afterRestore' ]; then
-    _snapshot_id="$(_getSnapshotListStrFn | head -n1)";
-    _snapshot_disp_id="$(_makeSnapshotDispIdFn "${_snapshot_id}" \
-      "/btrfs_main/@kfocus-rollback-snapshots/${_snapshot_id}/var/lib/kfocus/kfocus_rollback_snapshot_reason")";
-    _rollbackSuccessfulMsg="${_rollbackSuccessfulMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
+    _snapshot_id="$(_rb2GetSnapshotListStrFn | head -n1)";
+    _restored_snapshot_disp_id="$(
+      cat /var/lib/kfocus/kfocus_rollback_restore_complete
+    )";
+    _rollbackSuccessfulMsg="${_rollbackSuccessfulMsg//XXX_SNAPSHOT_NAME_XXX/${_restored_snapshot_disp_id}}";
     if [ "$(_cm2PromptUserFn "${_rollbackSuccessfulMsg}" \
       "FocusRx: System Rollback" 'a')" = 'y' ]; then
       _selectiveRestoreSnapshotFn "${_snapshot_id}";
@@ -263,7 +216,7 @@ _mainFn () {
     _doTotalRestoreMsg="${_doTotalRestoreMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
     if [ "$(_cm2PromptUserFn "${_doTotalRestoreMsg}" "${_winTitle}" \
       'o')" = 'y' ]; then
-      _systemRollbackFn "${_snapshot_id}";
+      _rb2SystemRollbackFn "${_snapshot_id}";
       _handleRestoreExitIntFn "$?";
     else
       _cm2PromptUserFn "${_restoreCancelledMsg}" "${_winTitle}";
@@ -285,14 +238,13 @@ _mainFn () {
 ## . END _mainFn }
 
 ## BEGIN Declare and assign global vars {
-declare _binName _binDir _baseName _baseDir _assignList _kdiagExe \
+declare _binName _binDir _baseName _baseDir _libTable _assignList _kdiagExe \
   _whiptailExe _snapshotSetExe _dolphinExe _escExe _winTitle _browThickStr \
   _erowStr _tableStr _systemUnsupportedMsg _restoreIncompleteMsg \
   _noSnapshotsFoundMsg _strangeSubvolsMsg _chooseSnapshotMsg \
   _chooseRestoreTypeMsg _doSelectiveRestoreMsg _doTotalRestoreMsg \
   _restoreFailedMsg _criticalErrorMsg _restoreCancelledMsg \
-  _rollbackSuccessfulMsg _NOTICE _ERR \
-  _CRIT _ALERT _EMERG _LOCK;
+  _rollbackSuccessfulMsg;
 ## . END Declare and assign global vars }
 
 ## BEGIN Run mainFn when script is NOT sourced {
@@ -303,6 +255,14 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
   _baseName="$( basename "${_binName}" )" || exit 101;
 
+  # Import libs and assign more global vars
+  _libTable=(
+    '/usr/lib/kfocus/lib/common.2.source'
+    '/usr/lib/kfocus/lib/rollback.2.source'
+  );
+
+  _loadLibTableFn "${_libTable[@]}" || exit 1;
+
   _assignList=(
     '_kdiagExe|/usr/bin/kdialog'
     '_whiptailExe|/usr/bin/whiptail'
@@ -310,8 +270,6 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     '_dolphinExe|/usr/bin/dolphin'
   );
 
-  # Import libs and assign more global vars
-  _importCommonFn;
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2ErrStrFn 'Could not assign variable';
     exit 1;
@@ -556,14 +514,6 @@ ${_browThickStr}Would you like to compare now?${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
-
-  # Set meaningful names for error codes
-  _NOTICE='0';
-  _ERR='1';
-  _CRIT='2';
-  _ALERT='3';
-  _EMERG='4';
-  _LOCK='20';
 
   # Make sure TTY mode looks nice
   _cm2SetCliTypeFn 'whiptail';

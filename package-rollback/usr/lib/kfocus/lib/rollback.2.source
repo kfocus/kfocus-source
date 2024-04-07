@@ -1,0 +1,122 @@
+#!/bin/bash
+#
+# Copyright 2024 MindShare Inc.
+# Written for the Kubuntu Focus by Michael Mikowski and Aaron Rainbolt
+#
+# Name   : rollback.2.source
+# Purpose: Common functions for use by kfocus-rollback components
+# License: GPL v2
+# Example: source rollback.2.source
+# Run By : Scripts that source this file
+# Package: kfocus-rollback
+#
+# NOTICE: common.2.source must be sourced before sourcing this library!
+# NOTICE: _snapshotSetExe is expected to be set to the path to the executable
+#         script kfocus-rollback-set or a mock of it.
+# NOTICE: _escExe is expected to be set to the path to a privilege escalation
+#         program or a mock of it.
+
+## BEGIN kfocus-rollback-set bindings {
+#
+_rb2GetBtrfsStatusInternalFn () {
+  "${_snapshotSetExe}" 'getBtrfsStatus';
+}
+_rb2SystemRollbackFn () {
+  "${_escExe}" "${_snapshotSetExe}" 'systemRollback' "${1:-}";
+}
+_rb2SystemSnapshotFn () {
+  "${_escExe}" "${_snapshotSetExe}" 'systemSnapshot' "${1:-}";
+}
+## . END kfocus-rollback-set bindings }
+
+## BEGIN _rb2MakeSnapshotDispIdFn {
+#
+_rb2MakeSnapshotDispIdFn () {
+  declare _snapshot_id _snapshot_reason_loc _snapshot_reason_raw \
+    _snapshot_reason _snapshot_datetime _snapshot_disp_id;
+
+  _snapshot_id="${1:-}";
+  _snapshot_reason_loc="/btrfs_main/@kfocus-rollback-snapshots/${_snapshot_id}/var/lib/kfocus/kfocus_rollback_snapshot_reason";
+
+  if [ -z "${_snapshot_id}" ] || [ -z "${_snapshot_reason_loc}" ]; then
+    _cm2WarnStrFn 'Invalid arguments, cannot generate snapshot display ID';
+    return 1;
+  fi  
+
+  _snapshot_reason_raw="$(cat "${_snapshot_reason_loc}")";
+  case "${_snapshot_reason_raw}" in
+    'Apt')
+      _snapshot_reason='Before Package Change';
+      ;;  
+    'Timed')
+      _snapshot_reason='System Schedule';
+      ;;  
+    'Pre-Rollback')
+      _snapshot_reason='Pre-Rollback';
+      ;;  
+    *) # must be user-generated
+      _snapshot_reason="Created by ${_snapshot_reason_raw}";
+      ;;  
+  esac
+
+  _snapshot_datetime="$(date -d "${_snapshot_id}" '+%a %F %H:%M')";
+
+  _snapshot_disp_id="${_snapshot_datetime} | ${_snapshot_reason}";
+  echo "${_snapshot_disp_id}";
+}
+## . END _rb2MakeSnapshotDispIdFn }
+
+## BEGIN _rb2GetSnapshotListStrFn {
+#
+_rb2GetSnapshotListStrFn () {
+  find '/btrfs_main/@kfocus-rollback-snapshots' -maxdepth 1 \
+     | cut -d'@' -f3 \
+     | sort -n -r \
+     | sed '/^$/d; s/^/@/;';
+}
+## . END _rb2GetSnapshotListStrFn }
+
+## BEGIN _rb2GetBtrfsStatusFn {
+#
+_rb2GetBtrfsStatusFn () {
+  declare _btrfs_status_str _exitInt;
+
+  while true; do
+    _btrfs_status_str="$(_rb2GetBtrfsStatusInternalFn)"
+    _exit_int="$?";
+
+    # Override false positive due to complex exit code handling
+    # shellcheck disable=SC2181
+    if [ "${_exit_int}" = "${_LOCK}" ]; then
+      sleep 1;
+    elif [ "${_exit_int}" = "${_NOTICE}" ]; then
+      break;
+    else
+      exit "${_exit_int}";
+    fi
+  done
+
+  echo "${_btrfs_status_str}";
+}
+## . END _rb2GetBtrfsStatusFn }
+
+## BEGIN Execute on source {
+#
+
+# Set exit code definitions
+_NOTICE='0';
+_ERR='1';
+_CRIT='2';
+_ALERT='3';
+_EMERG='4';
+_LOCK='20';
+
+# Export String
+export _NOTICE _ERR _CRIT _ALERT _EMERG _LOCK;
+
+# Export Functions
+export -f _rb2GetBtrfsStatusInternalFn _rb2SystemRollbackFn \
+  _rb2SystemSnapshotFn _rb2MakeSnapshotDispIdFn _rb2GetSnapshotListStrFn \
+  _rb2GetBtrfsStatusFn;
+
+## . END Execute on source }
