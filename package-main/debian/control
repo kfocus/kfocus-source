@@ -8,14 +8,6 @@ Build-Depends:     cmake,
                    qtbase5-dev,
                    qtbase5-dev-tools
 
-Package:      kfocus-001-main
-Architecture: all
-Depends:      ${misc:Depends}, ${shlibs:depends},
-              kfocus-main (>= ${binary:Version})
-Description:  Transitional Dummy Package for kfocus-main
- This is a transitional dummy package.
- It can be safely removed.
-
 Package:      kfocus-main
 Architecture: any
 Pre-Depends:  kfocus-apt-source (>> 22.04.7)
@@ -43,8 +35,6 @@ Recommends:   backintime-qt,
               pcmemtest,
               xserver-xorg-input-evdev,
               xserver-xorg-input-synaptics
-Conflicts:    kfocus-001-main (<< ${binary:Version})
-Replaces:     kfocus-001-main (<< ${binary:Version})
 Description:  Kubuntu Focus Hardware Optimizations
  This package provides hardware optimizations and requirements
  for Kubuntu Focus computers. This also includes the Welcome
@@ -142,8 +132,6 @@ Recommends:   unattended-upgrades,
               x264,
               xsel
 Suggests:     kfocus-rest
-Replaces:     kfocus-001-main (<= 20.04.75),
-Breaks:       kfocus-001-main (<= 20.04.75)
 Description:  Kubuntu Focus Curated Apps Metapackage
  This metapackage provides curated apps for Kubuntu Focus laptops.
 
@@ -151,8 +139,6 @@ Package:      kfocus-common
 Architecture: all
 Depends:      ${misc:Depends},
               kdialog
-Replaces:     kfocus-001-main (<= 20.04.89)
-Breaks:       kfocus-001-main (<= 20.04.89)
 Description:  Kubuntu Focus Common Libraries
  This package provides the common libraries and custom menu
  for Kubuntu Focus Tools.
