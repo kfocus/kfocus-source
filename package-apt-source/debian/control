@@ -9,17 +9,6 @@ Package: kfocus-apt-source
 Architecture: all
 Depends: ${misc:Depends}, gnupg
 Recommends: kfocus-nvidia-pinning
-Conflicts: kfocus-repo (<< 20.04.13),
-           kfocus-001-apt-source (<< ${binary:Version})
-Replaces:  kfocus-001-apt-source (<< ${binary:Version})
 Description: Kubuntu Focus Recommended Repositories
  This package adds the Kubuntu Focus repositories as prescribed for
  Kubuntu Focus laptops.
-
-Package:      kfocus-001-apt-source
-Architecture: all
-Depends:      ${misc:Depends}, ${shlibs:depends},
-              kfocus-apt-source (>= ${binary:Version})
-Description:  Transitional Dummy Package for kfocus-apt-source
- This is a transitional dummy package.
- It can be safely removed.

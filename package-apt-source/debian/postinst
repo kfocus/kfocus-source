@@ -78,11 +78,8 @@ _installReposFn () {
   _top_msg='Add recommended 3rd-party repos';
   _cm2SetMsgFn "${_top_msg}";
   _ppa_table=(
-    'bit-team-ubuntu-stable-jammy.list|2022-04-02|ppa:bit-team/stable|BackInTime'
-    'kubuntu-ppa-ubuntu-backports-jammy.list|2022-04-02|ppa:kubuntu-ppa/backports|Kubuntu Backports'
-    'kubuntu-ppa-ubuntu-backports-extra-jammy.list|2023-11-01|ppa:kubuntu-ppa/backports-extra|Kubuntu Backports Extra'
-    'phoerious-ubuntu-keepassxc-jammy.list|2022-04-02|ppa:phoerious/keepassxc|KeePassXC'
-    'ubuntustudio-ppa-ubuntu-backports-jammy.list|2022-04-02|ppa:ubuntustudio-ppa/backports|Ubuntu Studio Backports'
+    'phoerious-ubuntu-keepassxc-noble.list|2024-04-07|ppa:phoerious/keepassxc|KeePassXC'
+#    'ubuntustudio-ppa-ubuntu-backports-noble.list|2022-04-02|ppa:ubuntustudio-ppa/backports|Ubuntu Studio Backports'
   );
 
   for _line in "${_ppa_table[@]}"; do
@@ -218,12 +215,13 @@ _addGcloudSdkKeyFn () {
 
 ## BEGIN _rmObsoleteReposFn {
 _rmObsoleteReposFn () {
-  if [ -e /etc/apt/sources.list.d/tuxedocomputers.list ]; then
-    "${_cm2RmExe}" /etc/apt/sources.list.d/tuxedocomputers.list
-  fi
-  if [ -e /etc/apt/preferences.d/kfocus-package-pinning ]; then
-    "${_cm2RmExe}" /etc/apt/preferences.d/kfocus-package-pinning
-  fi
+  true;
+#  if [ -e /etc/apt/sources.list.d/tuxedocomputers.list ]; then
+#    "${_cm2RmExe}" /etc/apt/sources.list.d/tuxedocomputers.list
+#  fi
+#  if [ -e /etc/apt/preferences.d/kfocus-package-pinning ]; then
+#    "${_cm2RmExe}" /etc/apt/preferences.d/kfocus-package-pinning
+#  fi
 }
 ## . END _rmObsoleteReposFn }
 
