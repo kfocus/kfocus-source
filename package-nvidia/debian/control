@@ -5,14 +5,6 @@ Maintainer:        Kubuntu Focus Team <support@kfocus.org>
 Standards-Version: 4.6.0
 Build-Depends:     debhelper-compat (=13)
 
-Package:      kfocus-001-nvidia
-Architecture: all
-Depends:      ${misc:Depends}, ${shlibs:depends},
-              kfocus-nvidia (>= ${binary:Version})
-Description:  Transitional Dummy Package for kfocus-nvidia
- This is a transitional dummy package.
- It can be safely removed.
-
 Package:      kfocus-nvidia
 Architecture: all
 Pre-Depends:  kfocus-nvidia-pinning
@@ -20,8 +12,6 @@ Depends:      ${misc:Depends}, kfocus-main,
               nvidia-driver-535
 Recommends:   nvidia-modprobe,
               plasma-optimus
-Conflicts:    kfocus-001-nvidia (<< ${binary:Version})
-Replaces:     kfocus-001-nvidia (<< ${binary:Version})
 Description:  Nvidia Driver metapackage for Kubuntu Focus
  This package installs Nvida proprietary drivers
  for Kubuntu Focus laptops.
