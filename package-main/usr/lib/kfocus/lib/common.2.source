@@ -456,7 +456,7 @@ _cm2PromptUserFn () {
     );
 
     # These arguments *must* be inserted before the actual '--yesno' argument
-    # below, or KDialog glitches badly (at least on Kubuntu 22.04).
+    # below, or KDialog glitches badly (at least on Kubuntu 24.04).
     if [ "${_query_type}" = 'o' ]; then
       _cmd_list+=("--yes-label=OK" "--no-label=Cancel");
     fi
@@ -474,8 +474,6 @@ _cm2PromptUserFn () {
     if [ "${_query_type}" = 'r' ]; then
       shift 3;
       _cmd_list+=( "$@" );
-    fi
-    if [ "${_query_type}" = 'r' ]; then
       _ans_str="$("${_cmd_list[@]}")";
     else
       if "${_cmd_list[@]}"; then _ans_str='y'; else _ans_str='n'; fi
@@ -631,7 +629,7 @@ _cm2HtmH3Str='<h3 style="color:#f7941d">FocusRx: ';
 # shellcheck disable=SC2089
 _cm2HtmPStr='<p style="margin-right:32px">';
 _cm2CliType='cli';
-_cm2WhiptailExe="$(command -v whiptail)";
+_cm2WhiptailExe="$(command -v whiptail || true)";
 
 # Export Strings
 # shellcheck disable=2090 # Disable complaining about html vars
