@@ -4,7 +4,7 @@
 ## BEGIN Scrub beginning and trailing whitespace
 # Works like sed 's/^\s\+//' <<< "$*" | sed 's/\s\+//';
 _echoScrubStrFn () { xargs <<< "$*"; }
-_echoFormatFn   () { printf '  %-4s : %-14s %-2s %-14s ' "$@"; }
+_echoFormatFn   () { printf '  %-4.4s : %-14.14s %-2.2s %-14.14s ' "$@"; }
 ## . END Scrub beginning and trailing whitespace
 
 # Common symbols and functions for kfocus bash scripts
@@ -118,12 +118,12 @@ _audit_cm2EchoStackFn () {
   # shellcheck disable=SC2001
   _solve_str="$(  sed 's/[0-9]\+/xxx/g' <<< "${_solve_str}"  )";
 
-  printf '  %-40s\n' "Assert for ${_asset_fn_str}";
+  printf '  %-.40s\n' "Assert for ${_asset_fn_str}";
   if [ "${_solve_str}" = "${_expect_str}" ]; then
     _cm2EchoFn "  ok   : Solved matches expected";
     return 0;
   else
-    _cm2EchoFn "  FAIL : Solved |${_solve_str}|
+    _cm2EchoFn "  fail : Solved |${_solve_str}|
       !~ expect |${_expect_str}|";
     return 1;
   fi
@@ -285,7 +285,7 @@ _audit_cm2EchoModelStrFn () {
     echo "${_bit_list[4]:-}" > "${_cm2DmiProductSkuFile}";
 
     # Compare
-    {  printf '  %-40s' "Assert for ${_name_str} ";
+    {  printf '  %-40.40s' "Assert for ${_name_str} ";
        printf '%02i / %02i \n' "${_assert_idx}" "${_assert_count}"
     } >&2
 
@@ -294,9 +294,11 @@ _audit_cm2EchoModelStrFn () {
       _expect_str="${_bit_list[${_col_idx}]}";
       _found_str="$(_cm2EchoModelStrFn ${_col_key})";
       if [ "${_expect_str}" = "${_found_str}"  ]; then
-        _cm2EchoFn "  ok   : Col key ${_col_key} matches |${_expect_str}|";
+        printf '  ok   : Col key | %-12.12s | matches | %-12.12s |\n' \
+          "${_col_key}" "${_expect_str}";
       else
-        _cm2EchoFn "  FAIL : Col key ${_col_key} nomatch |${_expect_str}|";
+        printf '  fail : Col key | %-12.12s | NOMATCH | %-12.12s |\n' \
+          "${_col_key}" "${_expect_str}";
         _cm2EchoFn "    Found string is |${_found_str}|";
         _did_assert_fail='y';
       fi
@@ -306,7 +308,7 @@ _audit_cm2EchoModelStrFn () {
     if [ "${_bit_list[1]}" = "$(_cm2CalcModelCodeFn)" ]; then
       _cm2EchoFn "  ok   : Code matches |${_expect_str}|";
     else
-      _cm2EchoFn "  FAIL : Code nomatch |${_expect_str}|";
+      _cm2EchoFn "  fail : Code nomatch |${_expect_str}|";
       _did_assert_fail='y';
     fi
 
@@ -351,28 +353,28 @@ _audit_cm2EchoModelStrFn () {
 _audit_cm2ChkInstalledPkgFn () {
   declare _ret_int _skip_count _loop_pkg_name ;
   _ret_int=0;
-  _skip_count=0;
+  _skip_count=0
   for _loop_pkg_name in $(apt list --installed |grep -v Listing |sed 's|/.*$||g'); do
     (( _skip_count++ ));
-    if [ "${_skip_count}" -lt 25 ]; then
+    if (( _skip_count < 25 )); then
       # _cm2EchoFn "${_skip_count} SKIPPING ${_loop_pkg_name}";
       continue;
     fi
     # _cm2EchoFn "Processing ${_loop_pkg_name}";
     _skip_count=0;
-    printf '  %-40s' "Assert for ${_loop_pkg_name}";
+    printf '  %-40.40s' "Assert for ${_loop_pkg_name}";
     if _cm2ChkInstalledPkgFn "${_loop_pkg_name}"; then
       _cm2EchoFn "  ok   : Found pkg";
     else
-      _cm2EchoFn "  FAIL : Not found";
+      _cm2EchoFn "  fail : Not found";
       _ret_int=1;
     fi
   done
 
   for _loop_pkg_name in fake-package-name to-not-be-found; do
-    printf '  %-40s' "Assert for ${_loop_pkg_name}";
+    printf '  %-40.40s' "Assert for ${_loop_pkg_name}";
     if _cm2ChkInstalledPkgFn "${_loop_pkg_name}"; then
-      _cm2EchoFn "  FAIL : found";
+      _cm2EchoFn "  fail : found";
       _ret_int=1;
     else
       _cm2EchoFn "  ok   : Not found";
@@ -419,7 +421,7 @@ _audit_cm2ChkPkgFn () {
 
   for _loop_line in "${_assert_table[@]}"; do
     IFS='|' read -r -a _bit_list <<< "${_loop_line}";
-    printf '  %-40s' "Assert for ${_bit_list[0]}";
+    printf '  %-40.40s' "Assert for ${_bit_list[0]}";
 
     _cm2ChkPkgFn "${_bit_list[0]}";
     _chk_int="$?";
@@ -427,19 +429,19 @@ _audit_cm2ChkPkgFn () {
     if [ "${_chk_int}" = "${_bit_list[1]}" ]; then
       _cm2EchoFn "  ok   : pkg find match";
     else
-      _cm2EchoFn "  FAIL : ${_chk_int} != ${_bit_list[1]}";
+      _cm2EchoFn "  fail : ${_chk_int} != ${_bit_list[1]}";
       _ret_int=1;
     fi
 
     _chk_str="$(_cm2EchoInstalledVersFn "${_bit_list[0]}")";
-    printf '  %-40s' "Assert ${_bit_list[0]} v${_chk_str}";
+    printf '  %-40.40s' "Assert ${_bit_list[0]} v${_chk_str}";
 
     _chk_int=0;
     if [ -z "${_chk_str}" ]; then _chk_int=1; fi
     if [ "${_chk_int}" = "${_bit_list[1]}" ]; then
       _cm2EchoFn "  ok   : pkg version find match";
     else
-      _cm2EchoFn "  FAIL : ${_chk_int} != ${_bit_list[1]} |${_chk_str}|";
+      _cm2EchoFn "  fail : ${_chk_int} != ${_bit_list[1]} |${_chk_str}|";
       _ret_int=1;
     fi
   done
@@ -459,7 +461,7 @@ _audit_cm2ChkPkgFn () {
 #     if any path lookup fails.
 #   If <required> = 'optional', the value is '', and the return value
 #     is not affected.
-#     
+#
 # Example   : declare _lscpiExe _printfExe;
 #           : _cm2AssignExeVarsFn '_lspciExe|lspci' '_printfExe|printf';
 # Arguments : One delimited string per variable
@@ -500,7 +502,7 @@ _audit_cm2AssignExeVarsFn () {
   _assert_idx=1;
   _fail_count=0;
 
-  { printf '  %-4s : %-17s|%-8s|%-8s|%-1s|%-17s\n' \
+  { printf '  %-4.4s : %-17.17s|%-8.8s|%-8.8s|%-1.1s|%-17.17s\n' \
     "Stat" "Command/path" "Type" "Required" " " "Expect Value";
   } >&2;
   for _loop_line in "${_assert_table[@]}"; do
@@ -549,7 +551,7 @@ _audit_cm2AssignExeVarsFn () {
       _stat_str='fail';
     fi
 
-    { printf '  %-4s : %-17s|%-8s|%-8s|%-1s|%-17s|' \
+    { printf '  %-4.4s : %-17.17s|%-8.8s|%-8.8s|%-1.1s|%-17.17s|' \
      "${_stat_str}" "${_cmd_str}" "${_type}" "${_req_key}" \
      "${_expect_int}" "${_expect_str}";
      printf '%02i / %02i \n' "${_assert_idx}" "${_assert_count}";
@@ -562,7 +564,7 @@ _audit_cm2AssignExeVarsFn () {
     (( _assert_idx++ ));
   done
 
-  if [ "${_fail_count}" -gt 0 ]; then
+  if (( _fail_count > 0 )); then
     _cm2EchoFn "  ${_fail_count} of ${_assert_count} asserts failed.";
   fi
   return "${_fail_count}";
@@ -578,16 +580,133 @@ _audit_cm2AssignExeVarsFn () {
 #   * Remove any <tag> or </tag> (but retain content)
 #   * Convert HTML entities &lt; and &gt; to < and >.
 #   * Remove leading and trailing new lines
-#   * Remove last line of text IF _do_strip_last is set AND the string
-#     is more than one line. This is so text like 'Press OK to continue'
-#     can be removed and replaced with 'Press <return> to continue'.
-#     This is used with the 'p' option in cm2PromptUserFn.
+#   * If _do_strip_last to
+#     y) If more than one line, remove the last line.
+#        This is so final lines like 'Press OK to continue'
+#        can be removed and replaced line like
+#        'Press <return> to continue' when converted to CLI.
+#        This is used with the 'p' option in cm2PromptUserFn.
+#     w) Leave the string along (without changes)
+#     n) (default) Same as w, except remove trailing '?'
+#
 # Example   : _cm2StripTagsFn "${_prompt_html}";
 # Arguments : $1 = _prompt_html
 # Globals   : none
 # Outputs   : Echos stripped string to STDOUT
 # Returns   : none
 ## . END _cm2StripTagsFn }
+
+_audit_cm2StripTagsFn () {
+  declare _input_multi_str   _expect_multi_w_str        \
+    _expect_multi_n_str      _expect_multi_y_str        \
+    _input_single_str        _expect_single_w_str       \
+    _expect_single_n_str     _expect_single_y_str       \
+    _input_multi_noq_str     _expect_multi_noq_w_str    \
+    _expect_multi_noq_n_str  _expect_multi_noq_y_str    \
+    _input_single_noq_str    _expect_single_noq_w_str   \
+    _expect_single_noq_n_str _expect_single_noq_y_str   \
+    _assert_table _loop_line _assert_count _assert_idx  \
+    _fail_count _bit_list _input_str _cmd_list          \
+    _expect_str _parse_key _output_str _stat_str;
+
+  _input_multi_str='<html>
+<h1>Resistance Is Futile</h1>
+<p style="margin-left:30px">Or is it?<br></p>
+
+<p style="margin-left:30px">Continue now?</p>
+</html>
+';
+  _expect_multi_w_str='Resistance Is Futile
+Or is it?
+
+Continue now?';
+  _expect_multi_n_str="$(sed '$ s|\?\s*$||g' <<< "${_expect_multi_w_str}")";
+  _expect_multi_y_str="$(head -n-1 <<< "${_expect_multi_w_str}")";
+
+  _input_single_str='<p class="brute" style="foo">Shall we continue?</p>';
+  _expect_single_w_str='Shall we continue?';
+  _expect_single_y_str="${_expect_single_w_str}";
+  _expect_single_n_str='Shall we continue';
+
+  _input_multi_noq_str='<html>
+<h1>Join the Boating Party</h1>
+
+<p style="margin-left:30px">Do not underestimate
+all the fun?<br></p>
+
+<p>Bring a friend? Or a buddy!</p>
+
+<p style="margin-left:30px">Press OK to continue.</p>
+</html>
+';
+  _expect_multi_noq_w_str='Join the Boating Party
+
+Do not underestimate
+all the fun?
+
+Bring a friend? Or a buddy!
+
+Press OK to continue.';
+  _expect_multi_noq_n_str="${_expect_multi_noq_w_str}";
+  _expect_multi_noq_y_str="$(head -n-1 <<<"${_expect_multi_noq_w_str}")";
+
+  _input_single_noq_str='<p class="fred">Press OK to continue</p>';
+  _expect_single_noq_w_str='Press OK to continue';
+  _expect_single_noq_n_str="${_expect_single_noq_w_str}";
+  _expect_single_noq_y_str="${_expect_single_noq_w_str}";
+
+  _assert_table=(
+    "${_input_multi_str}|${_expect_multi_w_str}|w"
+    "${_input_multi_str}|${_expect_multi_n_str}|n"
+    "${_input_multi_str}|${_expect_multi_y_str}|y"
+    "${_input_multi_str}|${_expect_multi_n_str}"
+
+    "${_input_single_str}|${_expect_single_w_str}|w"
+    "${_input_single_str}|${_expect_single_n_str}|n"
+    "${_input_single_str}|${_expect_single_y_str}|y"
+    "${_input_single_str}|${_expect_single_n_str}"
+
+    "${_input_multi_noq_str}|${_expect_multi_noq_w_str}|w"
+    "${_input_multi_noq_str}|${_expect_multi_noq_n_str}|n"
+    "${_input_multi_noq_str}|${_expect_multi_noq_y_str}|y"
+    "${_input_multi_noq_str}|${_expect_multi_noq_n_str}|"
+
+    "${_input_single_noq_str}|${_expect_single_noq_w_str}|w"
+    "${_input_single_noq_str}|${_expect_single_noq_n_str}|n"
+    "${_input_single_noq_str}|${_expect_single_noq_y_str}|y"
+    "${_input_single_noq_str}|${_expect_single_noq_n_str}"
+  );
+
+  _assert_count="${#_assert_table[@]}";
+  _assert_idx=1;
+  _fail_count=0;
+  for _loop_line in "${_assert_table[@]}"; do
+    readarray -td '|' _bit_list < <( echo -n "${_loop_line}" );
+    _input_str="${_bit_list[0]}";
+    _expect_str="${_bit_list[1]}";
+    _cmd_list=('_cm2StripTagsFn' "${_input_str}");
+    _parse_key="${_bit_list[2]:-}";
+    if [ -n "${_parse_key}" ]; then _cmd_list+=("${_parse_key}"); fi
+    _output_str="$("${_cmd_list[@]}")";
+
+    if [ "${_output_str}" = "${_expect_str}" ]; then
+      _stat_str='ok'; else _stat_str='fail';
+    fi
+    {  printf '  %-4.4s : %-.02s %-23.23s %-2.2s %-23.23s %02i / %02i \n' \
+      "${_stat_str}" "${_parse_key:- }" \
+      "${_output_str}" '==' "${_expect_str}" \
+      "${_assert_idx}" "${_assert_count}";
+    } >&2
+
+    if [ "${_stat_str}" = 'fail' ]; then (( _fail_count++ )); fi
+    (( _assert_idx++ ));
+  done
+
+  if (( _fail_count > 0 )); then
+    _cm2EchoFn "  ${_fail_count} of ${_assert_count} asserts failed.";
+  fi
+  return "${_fail_count}";
+}
 
 # 0v_A
 ## BEGIN _cm2PromptUserFn {
@@ -624,9 +743,9 @@ _audit_cm2PromptUserFn () {
   for _is_tty in n y; do
     _cm2SetIsTtyFn "${_is_tty}";
     if [ "${_is_tty}" = 'n' ]; then
-      printf '  %-72s\n\n' 'Please answer in GUI'
+      printf '  %-.72s\n\n' 'Please answer in GUI'
     else
-      printf '  %-72s\n\n' 'Please answer in terminal'
+      printf '  %-.72s\n\n' 'Please answer in terminal'
     fi
 
     for _loop_line in "${_assert_table[@]}"; do
@@ -652,7 +771,7 @@ _audit_cm2PromptUserFn () {
         fi
       fi
       if [ "${_is_tty}" = 'n' ]; then
-        printf '  %-72s\n' "Assert $(_cm2StripTagsFn "${_prompt_str}")";
+        printf '  %-.72s\n' "Assert $(_cm2StripTagsFn "${_prompt_str}")";
       fi
       _ans_str="$(
         _cm2PromptUserFn "${_prompt_str}" "${_type_str}" "${_bit_list[0]}"
@@ -660,7 +779,7 @@ _audit_cm2PromptUserFn () {
       if [ "${_ans_str}" = "${_bit_list[1]:-}" ]; then
         _cm2EchoFn '  ok   : pass';
       else
-        _cm2EchoFn '  FAIL : not as expected';
+        _cm2EchoFn '  fail : not as expected';
       fi
     done
   done
@@ -695,7 +814,7 @@ _audit_cm2PromptUserFn () {
 ## BEGIN _audit_cm2TestVersFn {
 _audit_cm2TestVersFn () {
   declare _assert_table _loop_line _assert_count _assert_idx _fail_count \
-    _bit_list _v1_str _v2_str _chk_str _tell_str _op_str;
+    _bit_list _v1_str _v2_str _chk_str _stat_str _op_str;
 
   _assert_table=(
    '     2.5.10 |      2.5.10 |  false'
@@ -734,23 +853,23 @@ _audit_cm2TestVersFn () {
     if [ "${_chk_str}" = 'true' ]; then
       _op_str='>';
       if _cm2TestVersFn "${_v1_str}" "${_v2_str}"; then
-        _tell_str='ok'; else _tell_str='fail';
+        _stat_str='ok'; else _stat_str='fail';
       fi
     else
       _op_str='<=';
       if _cm2TestVersFn "${_v1_str}" "${_v2_str}"; then
-        _tell_str='fail'; else _tell_str='ok';
+        _stat_str='fail'; else _stat_str='ok';
       fi
     fi
-    {  _echoFormatFn "${_tell_str}" "${_v1_str}" "${_op_str}" "${_v2_str}";
+    {  _echoFormatFn "${_stat_str}" "${_v1_str}" "${_op_str}" "${_v2_str}";
        printf '%02i / %02i \n' "${_assert_idx}" "${_assert_count}";
     } >&2
 
-    if [ "${_tell_str}" = 'fail' ]; then (( _fail_count++ )); fi
+    if [ "${_stat_str}" = 'fail' ]; then (( _fail_count++ )); fi
     (( _assert_idx++ ));
   done
 
-  if [ "${_fail_count}" -gt 0 ]; then
+  if (( _fail_count > 0 )); then
     _cm2EchoFn "  ${_fail_count} of ${_assert_count} asserts failed.";
   fi
   return "${_fail_count}";
@@ -761,6 +880,7 @@ _runTestFn () {
 
   _ret_int=0;
   _audit_fn_list=(
+    '_audit_cm2StripTagsFn'
     '_audit_cm2AssignExeVarsFn'
     '_audit_cm2EchoStackFn'
     '_audit_cm2EchoModelStrFn'
