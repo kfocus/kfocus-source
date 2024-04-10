@@ -1,0 +1,3 @@
+#!/bin/bash
+setxkbmap -query | awk '/layout/{ print $2 }' > /dev/shm/fixconkeys-layout
+cp /usr/libexec/fixconkeys-part2 ${1}/usr/libexec/fixconkeys-part2

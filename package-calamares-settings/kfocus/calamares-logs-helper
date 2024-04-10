@@ -1,0 +1,24 @@
+#!/bin/sh
+
+set -ex
+
+root=$1
+install_dir=$root/var/log/installer
+[ -d $install_dir ] || mkdir -p $install_dir
+
+cp $HOME/.cache/calamares/session.log $install_dir/debug
+
+cp /cdrom/.disk/info $install_dir/media-info
+cp /var/log/casper.log $install_dir/casper.log
+cp /var/log/syslog $install_dir/syslog
+
+gzip --stdout $root/var/lib/dpkg/status > $install_dir/initial-status.gz
+
+# OEM id isn't a thing, when in OEM mode ubiquity would also archive that.
+# https://github.com/calamares/calamares/issues/943
+
+chmod -v 600 $install_dir/*
+# Make these world readable, they can absolutely not contain anything relevant
+# to security.
+chmod -v 644 $install_dir/initial-status.gz
+chmod -v 644 $install_dir/media-info

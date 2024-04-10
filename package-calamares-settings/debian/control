@@ -1,0 +1,45 @@
+Source:              kfocus-calamares-settings
+Section:             devel
+Priority:            optional
+Maintainer:          Kubuntu Focus Team <support@kfocus.org>
+Standards-Version:   4.6.2
+Rules-Requires-Root: no
+Build-Depends:       calamares (>= 3.3.5),
+                     cmake,
+                     debhelper-compat (= 13),
+                     extra-cmake-modules,
+                     golang-github-snapcore-snapd-dev (>= 2.62),
+                     golang-go,
+                     golang-gopkg-yaml.v2-dev,
+                     intltool,
+                     libkf5coreaddons-dev,
+                     libqt5svg5-dev,
+                     libyaml-cpp-dev,
+                     qtbase5-dev,
+                     qtdeclarative5-dev,
+                     qttools5-dev,
+                     qttools5-dev-tools
+
+Package: kfocus-calamares-settings
+Architecture: all
+Depends: calamares (>= 3.2.14~),
+         cryptsetup,
+         kdialog,
+         keyutils,
+         python3,
+         python3-distro,
+         qml-module-qtquick-window2,
+         qml-module-qtquick2,
+         squashfs-tools,
+         sudo,
+         ${misc:Depends},
+         ${shlibs:Depends}
+Conflicts: calamares-settings-ubuntu-flavor,
+           calamares-settings-ubuntu-common
+Provides: calamares-settings-ubuntu-flavor,
+          calamares-settings-ubuntu-common
+Description: Kubuntu Focus Calamares Settings and Branding
+ This package contains the Calamares settings and branding for Kubuntu Focus.
+ As part of the branding the installer slideshow is contained within. The
+ settings ensure a proper Kubuntu desktop is installed with the KDE Plasma
+ desktop environment.

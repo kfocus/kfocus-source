@@ -1,0 +1,11 @@
+# sudo will always be present in the target system
+kfocus-calamares-settings: desktop-command-not-in-package sudo *
+# there will be no manpage for any of this in the foreseeable future
+kfocus-calamares-settings: no-manual-page *
+# We're just extracting a log file and preserving it for the user to look at
+# after the installation, this is normal.
+kfocus-calamares-settings: uses-dpkg-database-directly [usr/bin/calamares-logs-helper]
+# this is an internal implementation detail, no manpage needed
+kfocus-calamares-settings: no-manual-page [usr/bin/calamares_snap_install]
+# this is normal and not a problem
+kfocus-calamares-settings: executable-in-usr-lib [usr/lib/x86_64-linux-gnu/calamares/modules/automirror/main.py]

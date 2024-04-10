@@ -1,0 +1,44 @@
+#!/bin/bash
+#
+# Enables OEM installaiton mode in Calamares.
+
+if [ -e '/etc/calamares/OEM_MODE_ACTIVATED' ]; then
+  export BROWSER='sudo -H -u kubuntu firefox'
+  calamares -D8;
+  exit;
+fi
+
+msg="$(cat <<EOL
+You are about to install the OS in OEM mode. This will prepare the system for
+distribution to an end user, providing them with an account setup wizard. If
+you do not need this capability, please cancel and use the normal install
+method.
+
+Are you sure you want to continue?
+EOL
+)";
+
+if kdialog --warningyesno "${msg}"; then
+  # Tweak branding to make it clear that OEM installation mode is active
+  cp /etc/calamares/branding/kubuntu/welcome-oem.png /etc/calamares/branding/kubuntu/welcome.png;
+
+  # Don't remove Calamares from the installed system.
+  sed -i '/- calamares$/d' /etc/calamares/modules/packages.conf;
+
+  # Enable oemid module, backslashes are needed for proper indentation
+  sed -i "/- welcome$/a \ \ - oemid" /etc/calamares/settings.conf;
+
+  # Enable OEM prep module
+  sed -i "/- packages$/a \ \ - shellprocess@oemprep" /etc/calamares/settings.conf;
+
+  # Force the user of an OEM configuration user
+  cp /etc/calamares/modules/users.conf.oem /etc/calamares/modules/users.conf;
+
+  # Drop a file so that it can be seen that OEM installation mode is already
+  # active
+  touch /etc/calamares/OEM_MODE_ACTIVATED;
+
+  # Launch Calamares
+  export BROWSER='sudo -H -u kubuntu firefox'
+  calamares -D8;
+fi

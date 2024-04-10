@@ -1,0 +1,5 @@
+#!/bin/bash
+loadkeys "$(cat /dev/shm/fixconkeys-layout)"
+setupcon --save-only
+update-initramfs -c -k all
+rm /usr/libexec/fixconkeys-part2

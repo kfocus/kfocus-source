@@ -1,0 +1,20 @@
+#!/bin/bash
+
+msg="$(cat <<EOL
+You are about to disable OEM configuration mode. The system will boot into the
+account setup wizard the next time it is started.
+
+Are you sure you want to continue?
+EOL
+)";
+
+if kdialog --warningyesno "${msg}"; then
+  sddm_file="$(cat <<EOL
+[Autologin]
+Session=kubuntu-oem-environment
+User=oem
+EOL
+)"
+  echo "$sddm_file" | sudo tee /etc/sddm.conf
+  kdialog --msgbox 'Done. The account setup wizard will run on next bootup.'
+fi
