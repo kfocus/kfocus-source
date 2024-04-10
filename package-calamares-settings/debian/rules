@@ -7,26 +7,17 @@ export GO111MODULE=off
 export GOCACHE=$(CURDIR)/.gocache
 
 DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
-PKGSELECT = "common/modules/pkgselect"
 MODULES_DIR = "debian/kfocus-calamares-settings/usr/lib/$(DEB_HOST_MULTIARCH)/calamares/modules"
 
 %:
 	dh $@
 
-override_dh_auto_configure:
-	(cd $(PKGSELECT) && mkdir build && cd build && cmake ..)
-
 override_dh_auto_build:
 	make;
-	(cd $(PKGSELECT)/build && $(MAKE))
-	(cd common/snap-seed-glue && go build -gcflags="all=-N -l" -ldflags="-compressdwarf=false" -o snap-seed-glue main.go)
 
 override_dh_auto_clean:
 	dh_auto_clean
 	rm -rf $(GOCACHE)
-
-override_dh_auto_install:
-	(cd $(PKGSELECT)/build && $(MAKE) DESTDIR=$(CURDIR)/debian/kfocus-calamares-settings/ install)
 
 override_dh_missing:
 	dh_missing
@@ -37,10 +28,7 @@ override_dh_missing:
 	chmod -R 755 debian/kfocus-calamares-settings/usr/lib/
 	chmod 644 $(MODULES_DIR)/automirror/automirror.conf
 	chmod 644 $(MODULES_DIR)/automirror/module.desc
-	chmod 644 $(MODULES_DIR)/pkgselect/libcalamares_viewmodule_pkgselect.so
-	chmod 644 $(MODULES_DIR)/pkgselect/module.desc
 	mkdir -pv debian/kfocus-calamares-settings/usr/bin/
-	cp -v common/snap-seed-glue/snap-seed-glue debian/kfocus-calamares-settings/usr/bin/snap-seed-glue
 	mkdir -pv debian/kfocus-calamares-settings/usr/libexec/
 	cp -v common/fixconkeys-part1 debian/kfocus-calamares-settings/usr/libexec/fixconkeys-part1
 	cp -v common/fixconkeys-part2 debian/kfocus-calamares-settings/usr/libexec/fixconkeys-part2

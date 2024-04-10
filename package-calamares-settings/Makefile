@@ -18,11 +18,11 @@ all:
 	(cp kfocus/oem/settings.conf kfocus/oemconfig/etc/calamares/)
 	(cp kfocus/oem/kubuntu-oem-env/kubuntu-oem-environment.desktop kfocus/oemconfig/usr/share/xsessions/)
 	(cp kfocus/oem/kubuntu-oem-env/start-kubuntu-oem-env kfocus/oemconfig/usr/libexec/)
-	(cp kfocus/basicwallpaper/build/basicwallpaper kfocus/oemconfig/usr/bin/)
+	(cp common/basicwallpaper/build/basicwallpaper kfocus/oemconfig/usr/bin/)
 	(fakeroot bash -c "chown -R root:root kfocus/oemconfig && tar cvzf kfocus/oemconfig.tar.gz kfocus/oemconfig")
 	# Get rid of the unnecessary files
 	find kfocus/ -type f -iname "*.in" | xargs rm -f
 	find kfocus/ -type f -iname "Makefile" | xargs rm -f
 	rm -rf kfocus/oemconfig
-	rm -rf kfocus/basicwallpaper/build
+	rm -rf common/basicwallpaper/build
 # vim:ts=4
