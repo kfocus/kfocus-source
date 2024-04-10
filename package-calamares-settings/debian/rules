@@ -1,0 +1,34 @@
+#!/usr/bin/make -f
+
+export LC_ALL=C.UTF-8
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+export GOPATH=/usr/share/gocode
+export GO111MODULE=off
+export GOCACHE=$(CURDIR)/.gocache
+
+DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
+MODULES_DIR = "debian/kfocus-calamares-settings/usr/lib/$(DEB_HOST_MULTIARCH)/calamares/modules"
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	make;
+
+override_dh_auto_clean:
+	dh_auto_clean
+	rm -rf $(GOCACHE)
+
+override_dh_missing:
+	dh_missing
+	mkdir -pv $(MODULES_DIR)
+	cp -vr common/modules/automirror $(MODULES_DIR)
+	mkdir -pv debian/kfocus-calamares-settings/etc/calamares/modules
+	cp -vr common/modules/*.conf debian/kfocus-calamares-settings/etc/calamares/modules
+	chmod -R 755 debian/kfocus-calamares-settings/usr/lib/
+	chmod 644 $(MODULES_DIR)/automirror/automirror.conf
+	chmod 644 $(MODULES_DIR)/automirror/module.desc
+	mkdir -pv debian/kfocus-calamares-settings/usr/bin/
+	mkdir -pv debian/kfocus-calamares-settings/usr/libexec/
+	cp -v common/fixconkeys-part1 debian/kfocus-calamares-settings/usr/libexec/fixconkeys-part1
+	cp -v common/fixconkeys-part2 debian/kfocus-calamares-settings/usr/libexec/fixconkeys-part2

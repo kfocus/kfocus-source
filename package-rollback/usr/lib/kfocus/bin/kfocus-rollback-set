@@ -152,6 +152,17 @@ _promptAllUsersFn () {
 _checkBtrfsStatusFn () {
   declare _main_fs _boot_fs _main_subvols_str _boot_subvols_str;
 
+  # The presence of /var/lib/portables or /var/lib/machines subvolumes will
+  # interfere with snapshotting. These subvolumes may be created automatically
+  # by systemd if it is not configured otherwise.
+  if grep -q 'var/lib/portables' < <(btrfs subvolume list /) || \
+     grep -q 'var/lib/machines' < <(btrfs subvolume list /); then
+    if [ -n "$(ls -A /var/lib/portables)" ] || \
+       [ -n "$(ls -A /var/lib/machines )" ]; then
+      _btrfsStatus='UNSUPPORTED';
+    fi
+  fi
+
   if [ -d '/btrfs_main' ] && [ -d '/btrfs_boot' ]; then
     if [ -d '/btrfs_main/@' ] \
       && [ -d "${_snapshotMainDir}" ] \
@@ -220,13 +231,19 @@ _prepareSystemFn () {
     _exitERR 'This system does not support snapshotting.';
   fi
 
-  # Check libvirt dirs, if they have content do not proceed.
+  # Check libvirt dirs, if they have content do not proceed
   if [ -d '/etc/libvirt' ] || [ -d '/var/lib/libvirt' ]; then
     if [ -n "$(ls -A /etc/libvirt     2>/dev/null)" ] || \
        [ -n "$(ls -A /var/lib/libvirt 2>/dev/null)" ]; then
       _exitERR 'Cannot create libvirt subvols, libvirt is installed!';
     fi
   fi
+
+  # systemd may create /var/lib/portables and /var/lib/machines BTRFS
+  # subvolumes of its own accord if not configured otherwise. Ensure that
+  # these are not present.
+  btrfs subvolume delete --commit-after '/var/lib/portables' || true;
+  btrfs subvolume delete --commit-after '/var/lib/machines'  || true;
 
   # Create directories
   for _dir in '/btrfs_boot' '/btrfs_main' '/etc/libvirt' '/var/lib/libvirt'; do
