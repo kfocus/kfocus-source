@@ -1,0 +1,6 @@
+# wslu causes all sorts of problems when installed on KFocus systems,
+# including sound issues, desktop shortcut issues, and syslog errors. Don't
+# prevent the user from intentionally installing it, but keep it from being
+# unintentionally installed.
+Package: wslu
+Pin-Priority: 50

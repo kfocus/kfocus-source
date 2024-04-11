@@ -44,6 +44,9 @@ Description:  Kubuntu Focus Hardware Optimizations
 
 Package:      kfocus-meta
 Architecture: all
+# To keep wslu from getting installed, see
+# https://bugs.launchpad.net/ubuntu/+source/wslu/+bug/2060898
+Pre-Depends:  w3m
 Depends:      ${misc:Depends},
               kfocus-common
 Recommends:   unattended-upgrades,
