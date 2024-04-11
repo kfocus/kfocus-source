@@ -80,6 +80,7 @@ _installReposFn () {
   _ppa_table=(
     'phoerious-ubuntu-keepassxc-noble.list|2024-04-07|ppa:phoerious/keepassxc|KeePassXC'
 #    'ubuntustudio-ppa-ubuntu-backports-noble.list|2022-04-02|ppa:ubuntustudio-ppa/backports|Ubuntu Studio Backports'
+    'mozilla-team-noble.list|2024-04-11|ppa:mozillateam/ppa|Mozilla Team'
   );
 
   for _line in "${_ppa_table[@]}"; do
