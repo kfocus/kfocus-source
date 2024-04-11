@@ -1,8 +1,10 @@
 kfocus-apt-source (24.04.1~beta2) UNRELEASED; urgency=medium
 
   * Add Google Chrome key. (#4120)
+  * Remove preinst script, as it is no longer relevant and is broken by the
+    deb822 package sources format.
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 10 Apr 2024 14:01:14 -0500
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 10 Apr 2024 19:59:31 -0500
 
 kfocus-apt-source (24.04.1~beta1) noble; urgency=medium
 
