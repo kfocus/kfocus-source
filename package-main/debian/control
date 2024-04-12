@@ -42,6 +42,13 @@ Description:  Kubuntu Focus Hardware Optimizations
  for Kubuntu Focus computers. This also includes the Welcome
  Wizard and FocusRx.
 
+# Replacements 2024-04-11
+# exfat-utils => exfatprogs
+#   exfat-fuse is no longer needed as of kernel 5.7
+#   https://askubuntu.com/questions/1403900
+# vulkan-utils => vulkan-tools
+#   https://answers.launchpad.net/ubuntu/+question/696491
+#
 Package:      kfocus-meta
 Architecture: all
 # To keep wslu from getting installed, see
@@ -61,8 +68,7 @@ Recommends:   unattended-upgrades,
               dia,
               diffpdf,
               dolphin-plugins,
-              exfat-fuse,
-              exfat-utils,
+              exfatprogs,
               ffmpeg,
               gimp,
               gimp-data-extras,
@@ -130,7 +136,7 @@ Recommends:   unattended-upgrades,
               vim-syntax-gtk,
               libvulkan1,
               libvulkan1:i386,
-              vulkan-utils,
+              vulkan-tools,
               wajig,
               webcamoid,
               winff-qt,
