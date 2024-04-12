@@ -112,7 +112,7 @@ launcher_list = [
   'applications:org.kde.konsole.desktop',
   'applications:org.kde.dolphin.desktop',
   'applications:google-chrome.desktop',
-  'applications:firefox_firefox.desktop'
+  'applications:firefox.desktop'
 ];
 icontasks_obj.writeConfig( 'launchers', launcher_list );
 
