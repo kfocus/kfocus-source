@@ -1,0 +1,154 @@
+#!/bin/bash
+#
+# Copyright 2019-2024 MindShare Inc.
+#
+# Written for the Kubuntu Focus by M. Mikowski and A. Rainbolt
+#
+# Name     : kfocus-btrfs-optimize
+# Summary  : kfocus-btrfs-optimize [purgeSnapshots]
+# Purpose  : Balances both main and boot BTRFS partitions and reclaims
+#            unallocated space on the root partition. If run as root, it can
+#            also delete all snapshots to reclaim disk space.
+# Example  : kfocus-btrfs-optimize
+# License  : GPLv2
+# Run By   : kfocus-focusrx, kfocus-focusrx-system
+# Spec     : 4201
+#
+set -u;
+
+## BEGIN _loadLibTableFn {
+# Summary : _loadLibTableFn <lib_str1> <lib_str2> ...
+# Example : _loadLibTableFn "lib01:/usr/lib/lib01" "lib02";
+# Purpose :
+#   Import table of libs, one arg per lib.
+#     * Each arg can have alternates delimited by colons ':'
+#     * Fails if all alternates for a lib fails.
+#     * Starting lib string '#:' means the following libs are optional.
+#     * Diagnostics are sent to STDERR.
+#     * Libs without a directory use ${_binDir} as the path
+#
+_loadLibTableFn () {
+  declare _lib_table _lib_list _lib_line _raw_path _lib_file _is_loaded;
+  _lib_table=("$@");
+
+  ## Begin: Iterate over lib lines.
+  for _lib_line in "${_lib_table[@]}"; do
+    # Split line into alternates.
+    #   Note: Echo removes trailing newline.
+    readarray -d: -t _lib_list < <(echo -n "${_lib_line}");
+    _is_loaded='n';
+
+    ## Begin: Iterate over alternates.
+    for _raw_path in "${_lib_list[@]}"; do
+      [ -z "$(dirname "${_raw_path}")" ] \
+        && _lib_file="${_binDir}/${_raw_path}" \
+        || _lib_file="${_raw_path}";
+
+      # shellcheck disable=SC1090
+      if ! [ -r "${_lib_file}" ]; then
+        _stderrFn "warn: source |${_lib_file}| not readable.";
+      elif source "${_lib_file}"; then
+        _is_loaded='y';
+        break;
+      else
+        _stderrFn "${_baseName} Error: source |${_lib_file}| is non-zero.";
+        return 1;
+      fi
+    done
+    ## . End: Iterate over alternates.
+
+    if [ "${_is_loaded}" != 'y' ]; then
+      _stderrFn "${_baseName} error: no lib loaded";
+      return 1;
+    fi
+  done
+  ## . End: Iterate over lib lines.
+
+  return;
+}
+## . END _loadLibTableFn }
+
+## BEGIN _setMainBalancePercentage {
+#
+_setMainBalancePercentage () {
+  declare _main_used _main_allocd _main_free _main_spare;
+
+  true;
+}
+## . END _setMainBalancePercentage }
+
+## BEGIN _setBootBalancePercentage {
+#
+_setBootBalancePercentage () {
+  true;
+}
+## . END _setBootBalancePercentage }
+
+## BEGIN _setSpaceReclaimFileList {
+#
+_setSpaceReclaimFileList () {
+  true;
+}
+## . END _setSpaceReclaimFileList }
+
+## BEGIN _setDefragmentFileList {
+#
+_setDefragmentFileList () {
+  true;
+}
+## . END _setDefragmentFileList }
+
+## BEGIN _deleteAllSnapshotsFn {
+# NOTICE: You must run kfocus-btrfs-optimize AS ROOT for this function to
+# succeed. For security purposes, this is intentionally NOT part of
+# kfocus-btrfs-optimize-set.
+#
+_deleteAllSnapshotsFn () {
+  true;
+}
+
+## BEGIN _mainFn {
+#
+_mainFn () {
+  true;
+}
+## . END _mainFn }
+
+## BEGIN Declare and assign global vars {
+declare _userId _binName _binDir _baseName _baseDir _escExe \
+  _mainBalancePercentage _bootBalancePercentage _spaceReclaimFileList \
+  _defragmentFileList;
+## . END Declare and assign global vars }
+
+## BEGIN Run mainFn when script is NOT sourced {
+#
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+
+  # Import libs and assign more global vars
+  _libTable=(
+    '/usr/lib/kfocus/lib/common.2.source'
+    '/usr/lib/kfocus/lib/rollback.2.source'
+  );
+
+  _loadLibTableFn "${_libTable[@]}" || exit 1;
+
+  _assignList=(
+    "_snapshotSetExe|${_binDir}/kfocus-rollback-set"
+    "_optimizeSetExe|${_binDir}/kfocus-btrfs-optimize-set"
+  );
+
+  if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
+    _cm2ErrStrFn 'Could not assign variable';
+    exit 1;
+  fi
+
+  _escExe="$(_cm2GetEscExeFn)" || exit;
+
+  _mainFn "$@";
+fi
+## . END Run mainFn when script is NOT sourced }
+

@@ -3,7 +3,7 @@ Description=Check if timed kfocus-rollback snapshots need to be taken regular in
 
 [Timer]
 OnBootSec=0
-OnUnitActiveSec=30min
+OnUnitActiveSec=6h
 Unit=kfocus-rollback-timed-snapshot.service
 
 [Install]

@@ -1,0 +1,187 @@
+#!/bin/bash
+#
+# Copyright 2019-2024 MindShare Inc.
+#
+# Written for the Kubuntu Focus by M. Mikowski and A. Rainbolt
+#
+# Name     : kfocus-btrfs-optimize-set
+# Summary  : kfocus-btrfs-optimize-set (getMainUsageReport|getMainBtduReport|
+#              getMainFragReport|doMainBalance <percentage>|
+#              doBootBalance <percentage>|doSpaceReclaim <file1 [file2...]>|
+#              doDefragment <file1 [file2...]>)
+# Purpose  : Runs filesystem optimization operations that require root access.
+# Example  : kfocus-btrfs-optimize-set getMainUsageReport
+# License  : GPLv2
+# Run By   : kfocus-btrfs-optimize
+# Spec     : 4201
+#
+set -u;
+
+## BEGIN _loadLibTableFn {
+# Summary : _loadLibTableFn <lib_str1> <lib_str2> ...
+# Example : _loadLibTableFn "lib01:/usr/lib/lib01" "lib02";
+# Purpose :
+#   Import table of libs, one arg per lib.
+#     * Each arg can have alternates delimited by colons ':'
+#     * Fails if all alternates for a lib fails.
+#     * Starting lib string '#:' means the following libs are optional.
+#     * Diagnostics are sent to STDERR.
+#     * Libs without a directory use ${_binDir} as the path
+#
+_loadLibTableFn () {
+  declare _lib_table _lib_list _lib_line _raw_path _lib_file _is_loaded;
+  _lib_table=("$@");
+
+  ## Begin: Iterate over lib lines.
+  for _lib_line in "${_lib_table[@]}"; do
+    # Split line into alternates.
+    #   Note: Echo removes trailing newline.
+    readarray -d: -t _lib_list < <(echo -n "${_lib_line}");
+    _is_loaded='n';
+
+    ## Begin: Iterate over alternates.
+    for _raw_path in "${_lib_list[@]}"; do
+      [ -z "$(dirname "${_raw_path}")" ] \
+        && _lib_file="${_binDir}/${_raw_path}" \
+        || _lib_file="${_raw_path}";
+
+      # shellcheck disable=SC1090
+      if ! [ -r "${_lib_file}" ]; then
+        _stderrFn "warn: source |${_lib_file}| not readable.";
+      elif source "${_lib_file}"; then
+        _is_loaded='y';
+        break;
+      else
+        _stderrFn "${_baseName} Error: source |${_lib_file}| is non-zero.";
+        return 1;
+      fi
+    done
+    ## . End: Iterate over alternates.
+
+    if [ "${_is_loaded}" != 'y' ]; then
+      _stderrFn "${_baseName} error: no lib loaded";
+      return 1;
+    fi
+  done
+  ## . End: Iterate over lib lines.
+
+  return;
+}
+## . END _loadLibTableFn }
+
+## BEGIN Define error and exit handling {
+#
+_exitNOTICE () { _exitWithCodeFn  0 "$@"; }
+_exitERR ()    { _exitWithCodeFn  1 "$@"; }
+_exitCRIT ()   { _exitWithCodeFn  2 "$@"; }
+_exitALERT ()  { _exitWithCodeFn  3 "$@"; }
+_exitEMERG ()  { _exitWithCodeFn  4 "$@"; }
+_exitLOCK ()   { _exitWithCodeFn 20 "$@"; }
+## . END Define error and exit handling }
+
+## BEGIN _getMainUsageReportFn {
+#
+_getMainUsageReportFn () {
+  "${_btrfsExe}" fi usage '/btrfs_main';
+}
+## . END _getMainUsageReportFn }
+
+## BEGIN _getMainBtduReportFn {
+#
+_getMainBtduReportFn () {
+  "${_btduExe}" --du --min-resolution=1M --headless '/btrfs_main'
+}
+## . END _getMainBtduReportFn }
+
+## BEGIN _getMainFragReportFn {
+#
+_getMainFragReportFn () {
+  "${_filefragExe}" '/btrfs_main/@';
+}
+## . END _getMainFragReportFn }
+
+## BEGIN _doMainBalanceFn {
+#
+_doMainBalanceFn () {
+  true;
+}
+## . END _doMainBalanceFn }
+
+## BEGIN _doBootBalanceFn {
+#
+_doBootBalanceFn () {
+  true;
+}
+## . END _doBootBalanceFn }
+
+## BEGIN _doSpaceReclaimFn {
+#
+_doSpaceReclaimFn () {
+  true;
+}
+## . END _doSpaceReclaimFn }
+
+## BEGIN _doDefragmentFn {
+#
+_doDefragmentFn () {
+  true;
+}
+## . END _doDefragmentFn }
+
+## BEGIN _mainFn {
+#
+_mainFn () {
+  declare _mode;
+
+  _mode="${1:-}";
+
+  case "${_mode}" in
+    'getMainUsageReport') _getMainUsageReportFn;
+    'getMainBtduReport' ) _getMainBtduReportFn;
+    'getMainFragReport' ) _getMainFragReportFn;
+    'doMainBalance'     ) _doMainBalanceFn         "${2:-}";
+    'doBootBalance'     ) _doBootBalanceFn         "${2:-}";
+    'doSpaceReclaim'    ) shift; _doSpaceReclaimFn "$@";
+    'doDefragment'      ) shift; _doDefragmentFn   "$@";
+    *)
+      _cm2WarnStrFn 'Invalid mode specified';
+      _exitERR;
+  esac
+}
+## . END _mainFn }
+
+## BEGIN Declare and assign global vars {
+declare _userId _binName _binDir _baseName _baseDir;
+## . END Declare and assign global vars }
+
+## BEGIN Run mainFn when script is NOT sourced {
+#
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+
+  # Import libs and assign more global vars
+  _libTable=(
+    '/usr/lib/kfocus/lib/common.2.source'
+  );
+
+  _loadLibTableFn "${_libTable[@]}" || exit 1;
+
+  _assignList=(
+    "_btrfsExe|/usr/bin/btrfs"
+    "_btduExe|/usr/bin/btdu"
+    "_reclaimExe|${_binDir}/kfocus-btrfs-reclaim-space"
+    "_filefragExe|${_binDir}/kfocus-report-filefrag"
+  );
+
+  if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
+    _cm2ErrStrFn 'Could not assign variable';
+    exit 1;
+  fi
+
+  _mainFn "$@";
+fi
+## . END Run mainFn when script is NOT sourced }
+
