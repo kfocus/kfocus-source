@@ -154,7 +154,31 @@ _getMainFragReportFn () {
 ## BEGIN _balanceMainFn {
 #
 _balanceMainFn () {
-  "${_btrfsBalanceExe}" -u 85 '/btrfs_main';
+  declare _main_report _main_unallocd _main_free _old_report _last_unallocd \
+    _last_free _trigger_threshold
+
+  _trigger_threshold=1073741824; # 1 GiB
+
+  _main_report="$(_getMainUsageReportFn)";
+  _main_unallocd="$(grep $'Device unallocated:\t' <<< "${_main_report}" \
+    | awk '{ print $3 }')";
+  _main_free="$(grep $'Free (estimated):\t' <<< "${_main_report}" \
+    | awk '{ print $3 }')";
+  _last_unallocd=-1;
+  _last_free=0;
+
+  if [ -f "${_optimizeStatePath}" ]; then
+    _old_report="$(cat "${_optimizeStatePath}")";
+    _last_unallocd="$(grep 'unallocd' <<< "${_old_report}" | cut -d'|' -f2)";
+    _last_free="$(grep 'free' <<< "${_old_report}" | cut -d'|' -f2)";
+  fi
+
+  if (( (_last_unallocd - _main_unallocd) >= "${_trigger_threshold}" )) \
+    || (( (_main_free - _last_free) >= "${_trigger_threshold}" )); then
+    "${_btrfsBalanceExe}" -u 85 '/btrfs_main';
+    echo "unallocd|${_main_unallocd}" > "${_optimizeStatePath}";
+    echo "free|${_main_free}" >> "${_optimizeStatePath}";
+  fi
 }
 ## . END _balanceMainFn }
 
@@ -322,7 +346,8 @@ _mainFn () {
 ## . END _mainFn }
 
 ## BEGIN Declare and assign global vars {
-declare _userId _binName _binDir _baseName _baseDir _lockFile;
+declare _userId _binName _binDir _baseName _baseDir _lockFile \
+  _optimizeStatePath;
 ## . END Declare and assign global vars }
 
 ## BEGIN Run mainFn when script is NOT sourced {
@@ -333,6 +358,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
   _baseName="$( basename "${_binName}" )" || exit 101;
   _lockFile='/tmp/kfocus-btrfs-optimize.lock';
+  _optimizeStatePath='/var/lib/kfocus/last_optimize_state';
 
   # Import libs and assign more global vars
   _libTable=(
