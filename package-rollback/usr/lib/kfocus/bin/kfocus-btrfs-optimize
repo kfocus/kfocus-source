@@ -154,82 +154,14 @@ _getMainFragReportFn () {
 ## BEGIN _balanceMainFn {
 #
 _balanceMainFn () {
-  declare _unallocd_crit_threshold _deep_clean_yn _usage_report _main_size \
-    _main_used _main_allocd _main_unallocd _main_free _main_spare \
-    _balance_percent;
-
-  _unallocd_crit_threshold=16106127360 # 15 GiB
-  _deep_clean_yn="${1:-n}";
-  
-  _usage_report="$(_getMainUsageReportFn)";
-  _main_size="$(grep $'Device size:\t' <<< "${_usage_report}" \
-    | awk '{ print $3 }')";
-  _main_used="$(grep $'Used:\t' <<< "${_usage_report}" \
-    | awk '{ print $2 }')";
-  _main_allocd="$(grep $'Device allocated:\t' <<< "${_usage_report}" \
-    | awk '{ print $3 }')";
-  _main_unallocd="$(grep $'Device unallocated:\t' <<< "${_usage_report}" \
-    | awk '{ print $3 }')";
-  _main_free="$(grep $'Free (estimated):\t' <<< "${_usage_report}" \
-    | awk '{ print $3 }')";
-  _main_spare=$(( _main_allocd - _main_used ));
-
-  if (( _main_unallocd < _unallocd_crit_threshold )); then
-    true; # print a low disk warning here
-    return 1;
-  fi
-
-  if [ "${_deep_clean_yn}" = 'y' ]; then
-    _balance_percent=70;
-  else
-    if [ "$(bc -l <<< "scale=2; (${_main_allocd} / ${_main_size}) > 0.20")" \
-      = '1' ]; then
-      _balance_percent=2;
-    else
-      _balance_percent="$(
-        bc -l <<< "scale=2; (${_main_spare} / ${_main_free}) * 100" \
-          | cut -d'.' -f1
-      )";
-    fi
-  fi
-
-  "${_btrfsExe}" balance start "-dusage=${_balance_percent}" '/btrfs_main/'
+  "${_btrfsBalanceExe}" -u 85 '/btrfs_main';
 }
 ## . END _balanceMainFn }
 
 ## BEGIN _balanceBootFn {
 #
 _balanceBootFn () {
-  declare _unallocd_low_threshold _spare_reclaim_threshold _usage_report \
-    _boot_unallocd _boot_used _boot_free _balance_percent;
-
-  _unallocd_low_threshold=1073741824 # 1 GiB
-  _spare_reclaim_threshold=536870912 # 512 MiB
-  _unallocd_crit_threshold=268435456 # 256 MiB
-
-  _usage_report="$(_getBootUsageReportFn)";
-  _boot_unallocd="$(grep $'Device unallocated:\t' <<< "${_usage_report}" \
-    | awk '{ print $3 }')";
-  _boot_used="$(grep $'Used:\t' <<< "${_usage_report}" \
-    | awk '{ print $2 }')";
-  _boot_free="$(grep $'Free (estimated):\t' <<< "${_usage_report}" \
-    | awk '{ print $3 }')";
-
-  if (( _boot_unallocd < _unallocd_crit_threshold )); then
-    true; # display a low disk warning here
-  fi
-
-  if (( _boot_unallocd > _unallocd_low_threshold )); then
-    _balance_percent='2';
-  else
-    if (( (_boot_free - _boot_unallocd) < _spare_reclaim_threshold )); then
-      _balance_percent='70';
-    else
-      _balance_percent='2';
-    fi
-  fi
-
-  "${_btrfsExe}" balance start "-dusage=${_balance_percent}" '/btrfs_boot/'
+  "${_btrfsBalanceExe}" -u 85 '/btrfs_boot';
 }
 ## . END _balanceBootFn }
 
@@ -411,9 +343,10 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _loadLibTableFn "${_libTable[@]}" || exit 1;
 
   _assignList=(
+    '_btrfsExe|/usr/bin/btrfs'
+    '_btrfsBalanceExe|/usr/bin/btrfs-balance-least-used'
+    '_btduExe|/usr/bin/btdu'
     "_snapshotSetExe|${_binDir}/kfocus-rollback-set"
-    "_btrfsExe|/usr/bin/btrfs"
-    "_btduExe|/usr/bin/btdu"
     "_reclaimExe|${_binDir}/kfocus-btrfs-reclaim-space"
     "_filefragExe|${_binDir}/kfocus-report-filefrag"
   );
