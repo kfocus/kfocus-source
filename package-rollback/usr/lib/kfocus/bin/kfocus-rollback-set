@@ -94,11 +94,6 @@ _chkSetFlockFn () {
   trap _trapExitFn EXIT;
 }
 
-_exitEarlyFn () {
-  1>&2 echo 'An unexpected error has occurred';
-  exit 21;
-}
-
 _exitCleanFn () {
   declare _int;
   _int="$(_cm2EchoIntFn "${1:-0}")";

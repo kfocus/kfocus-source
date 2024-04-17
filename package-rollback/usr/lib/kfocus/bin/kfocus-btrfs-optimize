@@ -6,9 +6,8 @@
 #
 # Name     : kfocus-btrfs-optimize
 # Summary  : kfocus-btrfs-optimize (maintain | deepClean)
-# Purpose  : Balances both main and boot BTRFS partitions and reclaims
-#            unallocated space on the root partition. If run as root, it can
-#            also delete all snapshots to reclaim disk space.
+# Purpose  : Performs maintenance and disk cleanup for KFocus systems using
+#            BTRFS.
 # Example  : kfocus-btrfs-optimize
 # License  : GPLv2
 # Run By   : kfocus-focusrx, kfocus-focusrx-system
@@ -68,6 +67,53 @@ _loadLibTableFn () {
 }
 ## . END _loadLibTableFn }
 
+## BEGIN Define error and exit handling {
+#
+_trapExitFn () {
+  1>&2 echo "${_baseName} was interrupted";
+  if [ "${_isPreparingSystem}" = 'y' ]; then
+    _promptAllUsersFn 'error' "${_prepareFailMsg}";
+  fi
+  rm "${_lockFile}" || true;
+}
+
+_chkSetFlockFn () {
+  exec 211>"${_lockFile}" || exit 21;
+  if ! flock -n -e 211; then
+    _exitLOCK "Cannot get lock on ${_lockFile}";
+  fi
+  # Trap unexpected exits to clean up lock file
+  trap _trapExitFn EXIT;
+}
+
+_exitCleanFn () {
+  declare _int;
+  _int="$(_cm2EchoIntFn "${1:-0}")";
+  trap '' EXIT;
+  rm "${_lockFile}" || true;
+  exit "${_int}";
+}
+
+_exitWithCodeFn () {
+  declare _int _msg;
+
+  _int="$(_cm2EchoIntFn "${1:-0}")";
+  _msg="${2:-}";
+
+  if [ -n "${_msg}" ]; then
+    1>&2 echo "${_msg}";
+  fi
+  _exitCleanFn "${_int}";
+}
+
+_exitNOTICE () { _exitWithCodeFn  0 "$@"; }
+_exitERR ()    { _exitWithCodeFn  1 "$@"; }
+_exitCRIT ()   { _exitWithCodeFn  2 "$@"; }
+_exitALERT ()  { _exitWithCodeFn  3 "$@"; }
+_exitEMERG ()  { _exitWithCodeFn  4 "$@"; }
+_exitLOCK ()   { _exitWithCodeFn 20 "$@"; }
+## . END Define error and exit handling }
+
 ## BEGIN _checkRootFn {
 #
 _checkRootFn () {
@@ -80,6 +126,34 @@ _checkRootFn () {
 }
 ## . END _checkRootFn }
 
+## BEGIN _getMainUsageReportFn {
+#
+_getMainUsageReportFn () {
+  LC_ALL='C' "${_btrfsExe}" filesystem usage -b '/btrfs_main';
+}
+## . END _getMainUsageReportFn }
+
+## BEGIN _getBootUsageReportFn {
+#
+_getBootUsageReportFn () {
+  LC_ALL='C' "${_btrfsExe}" filesystem usage -b '/btrfs_boot';
+}
+## . END _getBootUsageReportFn }
+
+## BEGIN _getMainBtduReportFn {
+#
+_getMainBtduReportFn () {
+  LC_ALL='C' "${_btduExe}" --du --min-resolution=1M --headless '/btrfs_main'
+}
+## . END _getMainBtduReportFn }
+
+## BEGIN _getMainFragReportFn {
+#
+_getMainFragReportFn () {
+  "${_filefragExe}" '/btrfs_main/@';
+}
+## . END _getMainFragReportFn }
+
 ## BEGIN _balanceMainFn {
 #
 _balanceMainFn () {
@@ -90,7 +164,7 @@ _balanceMainFn () {
   _unallocd_crit_threshold=16106127360 # 15 GiB
   _deep_clean_yn="${1:-n}";
   
-  _usage_report="$("${_escExe}" "${_optimizeSetExe}" getMainUsageReport)";
+  _usage_report="$(_getMainUsageReportFn)";
   _main_size="$(grep $'Device size:\t' <<< "${_usage_report}" \
     | awk '{ print $3 }')";
   _main_used="$(grep $'Used:\t' <<< "${_usage_report}" \
@@ -101,9 +175,9 @@ _balanceMainFn () {
     | awk '{ print $3 }')";
   _main_free="$(grep $'Free (estimated):\t' <<< "${_usage_report}" \
     | awk '{ print $3 }')";
-  _main_spare=(( _main_allocd - _main_used ));
+  _main_spare=$(( _main_allocd - _main_used ));
 
-  if [ "${_main_unallocd}" < "${_unallocd_crit_threshold}" ]; then
+  if (( _main_unallocd < _unallocd_crit_threshold )); then
     true; # print a low disk warning here
     return 1;
   fi
@@ -122,7 +196,7 @@ _balanceMainFn () {
     fi
   fi
 
-  "${_escExe}" "${_optimizeSetExe}" doMainBalance "${_balance_percent}";
+  "${_btrfsExe}" balance start "-dusage=${_balance_percent}" '/btrfs_main/'
 }
 ## . END _balanceMainFn }
 
@@ -136,7 +210,7 @@ _balanceBootFn () {
   _spare_reclaim_threshold=536870912 # 512 MiB
   _unallocd_crit_threshold=268435456 # 256 MiB
 
-  _usage_report="$("${_escExe}" "${_optimizeSetExe}" getBootUsageReport)";
+  _usage_report="$(_getBootUsageReportFn)";
   _boot_unallocd="$(grep $'Device unallocated:\t' <<< "${_usage_report}" \
     | awk '{ print $3 }')";
   _boot_used="$(grep $'Used:\t' <<< "${_usage_report}" \
@@ -144,11 +218,11 @@ _balanceBootFn () {
   _boot_free="$(grep $'Free (estimated):\t' <<< "${_usage_report}" \
     | awk '{ print $3 }')";
 
-  if [ "${_boot_unallocd}" < "${_unallocd_crit_threshold}" ]; then
+  if (( _boot_unallocd < _unallocd_crit_threshold )); then
     true; # display a low disk warning here
   fi
 
-  if [ "${_boot_unallocd}" > "${_unallocd_low_threshold}" ]; then
+  if (( _boot_unallocd > _unallocd_low_threshold )); then
     _balance_percent='2';
   else
     if (( (_boot_free - _boot_unallocd) < _spare_reclaim_threshold )); then
@@ -158,7 +232,7 @@ _balanceBootFn () {
     fi
   fi
 
-  "${_escExe}" "${_optimizeSetExe}" doBootBalance "${_balance_percent}";
+  "${_btrfsExe}" balance start "-dusage=${_balance_percent}" '/btrfs_boot/'
 }
 ## . END _balanceBootFn }
 
@@ -172,7 +246,7 @@ _spaceReclaimFn () {
   _deep_clean_yn="${1:-n}";
 
   _btdu_report="$(
-    "${_escExe}" "${_optimizeSetExe}" getMainBtduReport \
+    _getMainBtduReportFn \
       | grep '<UNREACHABLE>' \
       | sort -nr \
       | sed 's|/<SINGLE>/<DATA>/<UNREACHABLE>||; /<ERROR>/d'
@@ -215,16 +289,16 @@ _spaceReclaimFn () {
   done
 
   if [ "${_deep_clean_yn}" = 'y' ]; then
-    if [ "${#_clean_file_list[@]}" > '50' ]; then
+    if (( ${#_clean_file_list[@]} > 50 )); then
       _clean_file_list=( "${_clean_file_list[@]:0:50}" );
     fi
   else
-    if [ "${#_clean_file_list[@]}" > '10' ]; then
+    if (( ${#_clean_file_list[@]} > 10 )); then
       _clean_file_list=( "${_clean_file_list[@]:0:10}" );
     fi
   fi
 
-  "${_escExe}" "${_optimizeSetExe}" doSpaceReclaim "${_clean_file_list[@]}";
+  "${_reclaimExe}" "${_clean_file_list[@]}";
 }
 ## . END _spaceReclaimFn }
 
@@ -235,7 +309,7 @@ _defragmentFn () {
     _defrag_file_list _report_idx;
 
   _frag_report="$(
-    "${_escExe}" "${_optimizeSetExe}" getMainFragReport \
+    _getMainFragReportFn \
     | sort -nr;
   )";
   
@@ -249,18 +323,18 @@ _defragmentFn () {
     _current_file="${_file_list[_report_idx]}";
 
     if [ -f "${_current_file}" ]; then
-      if [ "${_frag_count_list[_target_idx]}" > \
-        "${_target_frag_list[_target_idx]}" ]; then
+      if (( _frag_count_list[_report_idx] > \
+        _target_frag_list[_report_idx] )); then
         _defrag_file_list+=( "${_current_file}" );
       fi
     fi
   done
 
-  if [ "${#_defrag_file_list[@]}" > '50' ]; then
+  if (( ${#_defrag_file_list[@]} > 50 )); then
     _defrag_file_list=( "${_defrag_file_list[@]:0:50}" );
   fi
 
-  "${_escExe}" "${_optimizeSetExe}" doDefragment "${_defrag_file_list[@]}";
+  "${_btrfsExe}" filesystem defragment "${_defrag_file_list[@]}";
 }
 ## . END _defragmentFn }
 
@@ -291,6 +365,8 @@ _deleteAllSnapshotsFn () {
 _mainFn () {
   declare _mode;
 
+  _chkSetFlockFn;
+
   _mode="${1:-}";
   case "${_mode}" in
     'maintain')
@@ -308,14 +384,14 @@ _mainFn () {
       _deleteAllSnapshotsFn;
       ;;
     *) _cm2WarnStrFn  'Invalid mode specified.';;
+
   esac
+  _exitCleanFn;
 }
 ## . END _mainFn }
 
 ## BEGIN Declare and assign global vars {
-declare _userId _binName _binDir _baseName _baseDir _escExe \
-  _mainBalancePercentage _bootBalancePercentage _spaceReclaimFileList \
-  _defragmentFileList;
+declare _userId _binName _binDir _baseName _baseDir;
 ## . END Declare and assign global vars }
 
 ## BEGIN Run mainFn when script is NOT sourced {
@@ -336,15 +412,16 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   _assignList=(
     "_snapshotSetExe|${_binDir}/kfocus-rollback-set"
-    "_optimizeSetExe|${_binDir}/kfocus-btrfs-optimize-set"
+    "_btrfsExe|/usr/bin/btrfs"
+    "_btduExe|/usr/bin/btdu"
+    "_reclaimExe|${_binDir}/kfocus-btrfs-reclaim-space"
+    "_filefragExe|${_binDir}/kfocus-report-filefrag"
   );
 
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2ErrStrFn 'Could not assign variable';
     exit 1;
   fi
-
-  _escExe="$(_cm2GetEscExeFn)" || exit;
 
   _mainFn "$@";
 fi
