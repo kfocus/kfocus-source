@@ -8,6 +8,7 @@ Build-Depends:     debhelper-compat (=13)
 Package:      kfocus-rollback
 Architecture: all
 Depends:      ${misc:Depends}, ${shlibs:Depends},
+              btdu,
               kdialog,
               kfocus-main,
               kio-admin,
