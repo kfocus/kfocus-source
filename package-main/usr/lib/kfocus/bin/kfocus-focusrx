@@ -1079,10 +1079,10 @@ _btrfsDeepCleanFn () {
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}SKIP ${_title}?</h3>
 
-${_cm2HtmPStr}You can run kfocus-btrfs-optimize <br>
-to keep your filesystem performing well and <br>
-avoid unexpectedly running out of free space. <br>
-This is usually unnecessary unless you're noticing <br>
+${_cm2HtmPStr}You can run kfocus-btrfs-optimize to keep <br>
+your filesystem performing well and avoid <br>
+unexpectedly running out of free space. This <br>
+is usually unnecessary unless you're noticing <br>
 degraded performance or you recently cleared <br>
 a large amount of unused data from your disk.</p>
 
@@ -1096,7 +1096,8 @@ _EOH18
   )";
 
   if [ "${_ans_str}" = 'n' ]; then
-    if "${_escExe}" "${_btrfsOptimizeExe}" 'deepClean'; then
+    if _cm2RunLongCmdFn 'Optimizing filesystems...' "${_escExe}" \
+      "${_btrfsOptimizeExe}" 'deepClean'; then
       _cm2SucFn; else _cm2WarnFn;
     fi
   else
