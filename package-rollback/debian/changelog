@@ -1,3 +1,23 @@
+kfocus-rollback (24.04.1~beta5) noble; urgency=medium
+
+  * Depend on btdu.
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 17 Apr 2024 17:28:28 -0500
+
+kfocus-rollback (24.04.1~beta4) noble; urgency=medium
+
+  * Revise balancing algorithm for drive optimization script. (#4201)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 17 Apr 2024 17:07:52 -0500
+
+kfocus-rollback (24.04.1~beta3) noble; urgency=medium
+
+  * Implement drive optimization script and accompanying utilities. (#4201)
+  * Do maintenance of snapshots and the filesystem six times a day rather than
+    every thirty minutes.
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Sun, 14 Apr 2024 18:26:14 -0500
+
 kfocus-rollback (24.04.1~beta2) noble; urgency=medium
 
   * Work around systemd's creation of /var/lib/portables and

@@ -84,6 +84,20 @@ _manageSnapshotsFn () {
 }
 # . END _manageSnapshotsFn }
 
+## BEGIN _maintainBtrfsFn {
+#
+_maintainBtrfsFn () {
+  declare _title;
+
+  [ -z "${_optimizeExe}" ] && return;
+
+  _title='Maintain BTRFS';
+  _cm2SetMsgFn "${_title}";
+  "${_optimizeExe}" 'maintain';
+  _cm2SucFn;
+}
+## . END _maintainBtrfsFn }
+
 ## BEGIN _mainFn {
 #
 _mainFn () {
@@ -97,8 +111,9 @@ _mainFn () {
       _manageSnapshotsFn;
       _cm2EchoFn "\n==. END : OK   ${_rootTitle}\n\n";
       ;;
-    s) # Regular snapshot maintenance
+    s) # Regular BTRFS maintenance
       _manageSnapshotsFn;
+      _maintainBtrfsFn;
       ;;
     *) _cm2EchoFN "\nInvalid option: -$OPTARG} \n";
       _exit 1;;
@@ -126,6 +141,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _assignList=(
     "_powerSetExe|${_binDir}/kfocus-power-set||optional"
     "_snapshotSetExe|${_binDir}/kfocus-rollback-set||optional"
+    "_optimizeExe|${_binDir}/kfocus-btrfs-optimize||optional"
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2WarnStrFn 'ABORT: Required commands not found';

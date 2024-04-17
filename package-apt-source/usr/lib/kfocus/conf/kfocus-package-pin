@@ -7,10 +7,18 @@ Pin-Priority: 50
 
 # Use Thunderbird from the Mozilla Team PPA.
 Package: thunderbird
-Pin: release o=LP-PPA-mozillateam-ppa
+Pin: release o=LP-PPA-mozillateam
 Pin-Priority: 1000
+
+Package: thunderbird
+Pin: release o=Ubuntu
+Pin-Priority: 50
 
 # Use Firefox from the official Mozilla repositories.
 Package: *
 Pin: origin packages.mozilla.org
 Pin-Priority: 1000
+
+Package: firefox
+Pin: release o=Ubuntu
+Pin-Priority: 50

@@ -1061,6 +1061,51 @@ _EOH17b
 }
 ## . END _chkResetEffectsFn }
 
+## BEGIN _btrfsDeepCleanFn {
+#
+_btrfsDeepCleanFn () {
+  declare _title _win_title _prompt_msg _ans_str;
+
+  # Always skip if not in force mode
+  [ "${_doForce}" = 'n' ] && return;
+  # Skip if required tool not installed
+  [ -z "${_btrfsOptimizeExe}" ] && return;
+
+  _title='Deep Clean Filesystem';
+  _cm2SetMsgFn "${_title}";
+  _win_title="${_rootTitle}: ${_title}";
+
+  _prompt_msg="$(cat <<_EOH18
+${_cm2HtmBeginStr}
+${_cm2HtmH3Str}SKIP ${_title}?</h3>
+
+${_cm2HtmPStr}You can run kfocus-btrfs-optimize to keep <br>
+your filesystem performing well and avoid <br>
+unexpectedly running out of free space. This <br>
+is usually unnecessary unless you're noticing <br>
+degraded performance or you recently cleared <br>
+a large amount of unused data from your disk.</p>
+
+${_cm2HtmPStr}<b>SKIP run kfocus-btrfs-optimize?</b></p>
+${_cm2HtmEndStr}
+_EOH18
+  )";
+
+  _ans_str="$(
+    _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'a'
+  )";
+
+  if [ "${_ans_str}" = 'n' ]; then
+    if _cm2RunLongCmdFn 'Optimizing filesystems...' "${_escExe}" \
+      "${_btrfsOptimizeExe}" 'deepClean'; then
+      _cm2SucFn; else _cm2WarnFn;
+    fi
+  else
+    _cm2SucFn;
+  fi
+}
+## . END _btrfsDeepCleanFn }
+
 ## BEGIN _fixSycocaCacheFn {
 #
 _postRollbackHandlerFn () {
@@ -1157,6 +1202,7 @@ _mainFn () {
   _runDropScriptsFn;
   _chkExperRepoFn;
   _chkResetEffectsFn;
+  _btrfsDeepCleanFn;
   _postRollbackHandlerFn;
   _announceEndFn;
   _cm2EchoFn "\n== . END : OK   ${_rootTitle}\n\n";
@@ -1206,6 +1252,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     "_snapshotSetExe|${_binDir}/kfocus-rollback-set||optional"
     "_kBuildSycocaExe|/usr/bin/kbuildsycoca5||optional"
     "_kfocusRollbackExe|${_binDir}/kfocus-rollback||optional"
+    "_btrfsOptimizeExe|${_binDir}/kfocus-btrfs-optimize||optional"
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2ErrStrFn 'Could not assign variables';

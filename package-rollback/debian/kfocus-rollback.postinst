@@ -15,7 +15,7 @@ _cmXSucFn     () { _cmXEchoFn "== . END : OK   ${_cmXBlockMsg}\n\n"; }
 ## BEGIN Enable scheduled snapshotting {
 #
 _cmXSetMsgFn 'Enable scheduled snapshotting';
-2>/dev/null deb-systemd-helper enable kfocus-rollback-timed-snapshot.timer.service || true;
+2>/dev/null deb-systemd-helper enable kfocus-rollback-btrfs-maintain.timer || true;
 _cmXSucFn;
 ## . END Enable scheduled snapshotting }
 

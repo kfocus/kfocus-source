@@ -8,9 +8,11 @@ Build-Depends:     debhelper-compat (=13)
 Package:      kfocus-rollback
 Architecture: all
 Depends:      ${misc:Depends}, ${shlibs:Depends},
+              btdu,
               kdialog,
               kfocus-main,
               kio-admin,
+              python3-btrfs,
               whiptail
 Description:  Kubuntu Focus Hardware Optimizations
  This package provides advanced, user-friendly system snapshotting and

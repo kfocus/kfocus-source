@@ -2,3 +2,7 @@
 
 %:
 	dh $@
+
+override_dh_auto_build:
+	(cd src/kfocus-btrfs-reclaim-space && ./build.sh)
+	dh_auto_build
