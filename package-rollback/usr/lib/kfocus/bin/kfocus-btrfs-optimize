@@ -68,35 +68,167 @@ _loadLibTableFn () {
 }
 ## . END _loadLibTableFn }
 
-## BEGIN _setMainBalancePercentage {
+## BEGIN _balanceMainFn {
 #
-_setMainBalancePercentage () {
-  declare _main_used _main_allocd _main_free _main_spare;
+_balanceMainFn () {
+  declare _unallocd_crit_threshold _usage_report _main_size _main_used \
+    _main_allocd _main_unallocd _main_free _main_spare _balance_percent;
 
-  true;
+  _unallocd_crit_threshold=16106127360 # 15 GiB
+
+  _usage_report="$("${_escExe}" "${_optimizeSetExe}" getMainUsageReport)";
+  _main_size="$(grep $'Device size:\t' <<< "${_usage_report}" \
+    | awk '{ print $3 }')";
+  _main_used="$(grep $'Used:\t' <<< "${_usage_report}" \
+    | awk '{ print $2 }')";
+  _main_allocd="$(grep $'Device allocated:\t' <<< "${_usage_report}" \
+    | awk '{ print $3 }')";
+  _main_unallocd="$(grep $'Device unallocated:\t' <<< "${_usage_report}" \
+    | awk '{ print $3 }')";
+  _main_free="$(grep $'Free (estimated):\t' <<< "${_usage_report}" \
+    | awk '{ print $3 }')";
+  _main_spare=(( _main_allocd - _main_used ));
+
+  if [ "${_main_unallocd}" < "${_unallocd_crit_threshold}" ]; then
+    true; # print a low disk warning here
+  fi
+
+  if [ "$(bc -l <<< "scale=2; (${_main_allocd} / ${_main_size}) > 0.20")" \
+    = '1' ]; then
+    _balance_percent='2';
+  else
+    _balance_percent="$(
+      bc -l <<< "scale=2; (${_main_spare} / ${_main_free}) * 100" \
+        | cut -d'.' -f1
+    )";
+  fi
+
+  "${_escExe}" "${_optimizeSetExe}" doMainBalance "${_balance_percent}";
 }
-## . END _setMainBalancePercentage }
+## . END _balanceMainFn }
 
-## BEGIN _setBootBalancePercentage {
+## BEGIN _balanceBootFn {
 #
-_setBootBalancePercentage () {
-  true;
-}
-## . END _setBootBalancePercentage }
+_balanceBootFn () {
+  declare _unallocd_low_threshold _spare_reclaim_threshold _usage_report \
+    _boot_unallocd _boot_used _boot_free _balance_percent;
 
-## BEGIN _setSpaceReclaimFileList {
-#
-_setSpaceReclaimFileList () {
-  true;
-}
-## . END _setSpaceReclaimFileList }
+  _unallocd_low_threshold=1073741824 # 1 GiB
+  _spare_reclaim_threshold=536870912 # 512 MiB
+  _unallocd_crit_threshold=268435456 # 256 MiB
 
-## BEGIN _setDefragmentFileList {
-#
-_setDefragmentFileList () {
-  true;
+  _usage_report="$("${_escExe}" "${_optimizeSetExe}" getBootUsageReport)";
+  _boot_unallocd="$(grep $'Device unallocated:\t' <<< "${_usage_report}" \
+    | awk '{ print $3 }')";
+  _boot_used="$(grep $'Used:\t' <<< "${_usage_report}" \
+    | awk '{ print $2 }')";
+  _boot_free="$(grep $'Free (estimated):\t' <<< "${_usage_report}" \
+    | awk '{ print $3 }')";
+
+  if [ "${_boot_unallocd}" < "${_unallocd_crit_threshold}" ]; then
+    true; # display a low disk warning here
+  fi
+
+  if [ "${_boot_unallocd}" > "${_unallocd_low_threshold}" ]; then
+    _balance_percent='2';
+  else
+    if (( (_boot_free - _boot_unallocd) < _spare_reclaim_threshold )); then
+      _balance_percent='70';
+    else
+      _balance_percent='2';
+    fi
+  fi
+
+  "${_escExe}" "${_optimizeSetExe}" doBootBalance "${_balance_percent}";
 }
-## . END _setDefragmentFileList }
+## . END _balanceBootFn }
+
+## BEGIN _spaceReclaimFn {
+#
+_spaceReclaimFn () {
+  declare _big_threshold _btdu_report _report_val_list _report_file_list \
+    _clean_file_list _report_idx _current_file _file_size;
+
+  _big_threshold=10737418240; # 10 GiB
+
+  _btdu_report="$(
+    "${_escExe}" "${_optimizeSetExe}" getMainBtduReport \
+      | grep '<UNREACHABLE>' \
+      | sort -nr \
+      | sed 's|/<SINGLE>/<DATA>/<UNREACHABLE>||; /<ERROR>/d'
+  )";
+
+  readarray -t _report_val_list  < <(cut -f1 <<< "${_btdu_report}");
+  readarray -t _report_file_list < <(cut -f2 <<< "${_btdu_report}");
+
+  _clean_file_list=();
+  for (( _report_idx=0; _report_idx < ${#_report_val_list[@]}; \
+    _report_idx++ )); do
+    _current_file="${_report_file_list[_report_idx]}"
+
+    if [ -f "${_current_file}" ]; then
+      _file_size="$(du -b "${_current_file}" | cut -f1)";
+      _unreachable_size="${_report_val_list[_report_idx]}";
+      
+      if (( _file_size < _big_threshold )); then
+        if [ "$(bc -l <<< "scale=2; \
+           (${_unreachable_size} / ${_file_size}) > 0.15")" \
+           = '1' ]; then
+          _clean_file_list+=( "${_current_file}" );
+        fi
+      else
+        if [ "$(bc -l <<< "scale=2; \
+           (${_unreachable_size} / ${_file_size}) > 0.30")" \
+           = '1' ]; then
+          _clean_file_list+=( "${_current_file}" );
+        fi
+      fi
+    fi
+  done
+
+  if [ "${#_clean_file_list[@]}" > '10' ]; then
+    _clean_file_list=( "${_clean_file_list[@]:0:10}" );
+  fi
+
+  "${_escExe}" "${_optimizeSetExe}" doSpaceReclaim "${_clean_file_list[@]}";
+}
+## . END _spaceReclaimFn }
+
+## BEGIN _defragmentFn {
+#
+_defragmentFn () {
+  declare _frag_report _frag_count_list _target_frag_list _file_list \
+    _defrag_file_list _report_idx;
+
+  _frag_report="$(
+    "${_escExe}" "${_optimizeSetExe}" getMainFragReport \
+    | sort -nr;
+  )";
+  
+  readarray -t _frag_count_list  < <(cut -d'|' -f2 <<< "${_frag_report}");
+  readarray -t _target_frag_list < <(cut -d'|' -f3 <<< "${_frag_report}");
+  readarray -t _file_list        < <(cut -d'|' -f4 <<< "${_frag_report}");
+
+  _defrag_file_list=();
+  for (( _report_idx=0; _report_idx < ${#_file_list[@]}; \
+    _report_idx++ )); do
+    _current_file="${_file_list[_report_idx]}";
+
+    if [ -f "${_current_file}" ]; then
+      if [ "${_frag_count_list[_target_idx]}" > \
+        "${_target_frag_list[_target_idx]}" ]; then
+        _defrag_file_list+=( "${_current_file}" );
+      fi
+    fi
+  done
+
+  if [ "${#_defrag_file_list[@]}" > '50' ]; then
+    _defrag_file_list=( "${_defrag_file_list[@]:0:50}" );
+  fi
+
+  "${_escExe}" "${_optimizeSetExe}" doDefragment "${_defrag_file_list[@]}";
+}
+## . END _defragmentFn }
 
 ## BEGIN _deleteAllSnapshotsFn {
 # NOTICE: You must run kfocus-btrfs-optimize AS ROOT for this function to
@@ -104,7 +236,20 @@ _setDefragmentFileList () {
 # kfocus-btrfs-optimize-set.
 #
 _deleteAllSnapshotsFn () {
-  true;
+  declare _snapshot_list _current_snapshot;
+
+  readarray -t _snapshot_list < <(
+    _cm2LsFn '/btrfs_main/@kfocus-rollback-snapshots' 2>/dev/null
+  );
+
+  if [ -z "${_snapshot_list[0]}" ]; then
+    _cm2WarnStrFn 'No snapshots found.';
+    return 1;
+  fi
+
+  for _current_snapshot in "${_snapshot_list[@]}"; do
+    "${_snapshotSetExe}" deleteSnapshot "${_current_snapshot}";
+  done
 }
 
 ## BEGIN _mainFn {
@@ -151,4 +296,3 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _mainFn "$@";
 fi
 ## . END Run mainFn when script is NOT sourced }
-

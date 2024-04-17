@@ -5,10 +5,11 @@
 # Written for the Kubuntu Focus by M. Mikowski and A. Rainbolt
 #
 # Name     : kfocus-btrfs-optimize-set
-# Summary  : kfocus-btrfs-optimize-set (getMainUsageReport|getMainBtduReport|
-#              getMainFragReport|doMainBalance <percentage>|
-#              doBootBalance <percentage>|doSpaceReclaim <file1 [file2...]>|
-#              doDefragment <file1 [file2...]>)
+# Summary  : kfocus-btrfs-optimize-set (getMainUsageReport
+#              | getBootUsageReport | getMainBtduReport | getMainFragReport
+#              | doMainBalance <percentage> | doBootBalance <percentage>
+#              | doSpaceReclaim <file1 [file2...]>
+#              | doDefragment <file1 [file2...]>)
 # Purpose  : Runs filesystem optimization operations that require root access.
 # Example  : kfocus-btrfs-optimize-set getMainUsageReport
 # License  : GPLv2
@@ -82,14 +83,21 @@ _exitLOCK ()   { _exitWithCodeFn 20 "$@"; }
 ## BEGIN _getMainUsageReportFn {
 #
 _getMainUsageReportFn () {
-  "${_btrfsExe}" fi usage '/btrfs_main';
+  LC_ALL='C' "${_btrfsExe}" fi usage -b '/btrfs_main';
 }
 ## . END _getMainUsageReportFn }
+
+## BEGIN _getBootUsageReportFn {
+#
+_getBootUsageReportFn () {
+  LC_ALL='C' "${_btrfsExe}" fi usage -b '/btrfs_boot';
+}
+## . END _getBootUsageReportFn }
 
 ## BEGIN _getMainBtduReportFn {
 #
 _getMainBtduReportFn () {
-  "${_btduExe}" --du --min-resolution=1M --headless '/btrfs_main'
+  LC_ALL='C' "${_btduExe}" --du --min-resolution=1M --headless '/btrfs_main'
 }
 ## . END _getMainBtduReportFn }
 
@@ -103,28 +111,72 @@ _getMainFragReportFn () {
 ## BEGIN _doMainBalanceFn {
 #
 _doMainBalanceFn () {
-  true;
+  declare _balance_percent;
+
+  _balance_percent="$(_cm2EchoIntFn ${1:-})";
+  if [ "${_balance_percent}" = '0' ] \
+    || (( _balance_percent > 100 )); then
+    _cm2WarnStrFn 'Invalid balance percentage provided.';
+    return 1;
+  fi
+
+  "${_btrfsExe}" balance start "-dusage=${_balance_percent}" '/btrfs_main/'
 }
 ## . END _doMainBalanceFn }
 
 ## BEGIN _doBootBalanceFn {
 #
 _doBootBalanceFn () {
-  true;
+  declare _balance_percent;
+
+  _balance_percent="$(_cm2EchoIntFn ${1:-})";
+  if [ "${_balance_percent}" = '0' ] \
+    || (( _balance_percent > 100 )); then
+    _cm2WarnStrFn 'Invalid balance percentage provided.';
+    return 1;
+  fi
+
+  "${_btrfsExe}" balance start "-dusage=${_balance_percent}" '/btrfs_boot/'
 }
 ## . END _doBootBalanceFn }
 
 ## BEGIN _doSpaceReclaimFn {
 #
 _doSpaceReclaimFn () {
-  true;
+  if [ -z "$@" ]; then
+    _cm2WarnStrFn 'No list of files provided to unreachable space reclaimer.';
+    return 1;
+  fi
+
+  for _check_file in "$@"; do
+    if ! [[ -f "${_check_file}" ]]; then
+      _cm2WarnStrFn "File |${_check_file}| is not a regular file.";
+      return 1;
+    fi
+  done
+
+  "${_reclaimExe}" "$@";
 }
 ## . END _doSpaceReclaimFn }
 
 ## BEGIN _doDefragmentFn {
 #
 _doDefragmentFn () {
-  true;
+  declare _check_file;
+
+  if [ -z "$@" ]; then
+    _cm2WarnStrFn 'No list of files provided to defragment.';
+    return 1;
+  fi
+
+  for _check_file in "$@"; do
+    if ! [[ -f "${_check_file}" ]]; then
+      _cm2WarnStrFn "File |${_check_file}| is not a regular file.";
+      return 1;
+    fi
+  done
+
+  "${_btrfsExe}" fi defragment "$@";
 }
 ## . END _doDefragmentFn }
 
@@ -136,13 +188,14 @@ _mainFn () {
   _mode="${1:-}";
 
   case "${_mode}" in
-    'getMainUsageReport') _getMainUsageReportFn;
-    'getMainBtduReport' ) _getMainBtduReportFn;
-    'getMainFragReport' ) _getMainFragReportFn;
-    'doMainBalance'     ) _doMainBalanceFn         "${2:-}";
-    'doBootBalance'     ) _doBootBalanceFn         "${2:-}";
-    'doSpaceReclaim'    ) shift; _doSpaceReclaimFn "$@";
-    'doDefragment'      ) shift; _doDefragmentFn   "$@";
+    'getMainUsageReport')        _getMainUsageReportFn                  ;;
+    'getBootUsageReport')        _getBootUsageReportFn                  ;;
+    'getMainBtduReport' )        _getMainBtduReportFn                   ;;
+    'getMainFragReport' )        _getMainFragReportFn                   ;;
+    'doMainBalance'     )        _doMainBalanceFn      "${2:-}" || exit ;;
+    'doBootBalance'     )        _doBootBalanceFn      "${2:-}" || exit ;;
+    'doSpaceReclaim'    ) shift; _doSpaceReclaimFn     "$@"     || exit ;;
+    'doDefragment'      ) shift; _doDefragmentFn       "$@"     || exit ;;
     *)
       _cm2WarnStrFn 'Invalid mode specified';
       _exitERR;
@@ -184,4 +237,3 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _mainFn "$@";
 fi
 ## . END Run mainFn when script is NOT sourced }
-
