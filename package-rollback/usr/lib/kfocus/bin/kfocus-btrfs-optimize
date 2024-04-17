@@ -5,7 +5,7 @@
 # Written for the Kubuntu Focus by M. Mikowski and A. Rainbolt
 #
 # Name     : kfocus-btrfs-optimize
-# Summary  : kfocus-btrfs-optimize [purgeSnapshots]
+# Summary  : kfocus-btrfs-optimize (maintain | deepClean)
 # Purpose  : Balances both main and boot BTRFS partitions and reclaims
 #            unallocated space on the root partition. If run as root, it can
 #            also delete all snapshots to reclaim disk space.
@@ -68,14 +68,28 @@ _loadLibTableFn () {
 }
 ## . END _loadLibTableFn }
 
+## BEGIN _checkRootFn {
+#
+_checkRootFn () {
+  if [ "$UID" = '0' ]; then
+    return 0;
+  else
+    _cm2WarnStrFn 'This action requires root privileges.';
+    return 1;
+  fi
+}
+## . END _checkRootFn }
+
 ## BEGIN _balanceMainFn {
 #
 _balanceMainFn () {
-  declare _unallocd_crit_threshold _usage_report _main_size _main_used \
-    _main_allocd _main_unallocd _main_free _main_spare _balance_percent;
+  declare _unallocd_crit_threshold _deep_clean_yn _usage_report _main_size \
+    _main_used _main_allocd _main_unallocd _main_free _main_spare \
+    _balance_percent;
 
   _unallocd_crit_threshold=16106127360 # 15 GiB
-
+  _deep_clean_yn="${1:-n}";
+  
   _usage_report="$("${_escExe}" "${_optimizeSetExe}" getMainUsageReport)";
   _main_size="$(grep $'Device size:\t' <<< "${_usage_report}" \
     | awk '{ print $3 }')";
@@ -91,16 +105,21 @@ _balanceMainFn () {
 
   if [ "${_main_unallocd}" < "${_unallocd_crit_threshold}" ]; then
     true; # print a low disk warning here
+    return 1;
   fi
 
-  if [ "$(bc -l <<< "scale=2; (${_main_allocd} / ${_main_size}) > 0.20")" \
-    = '1' ]; then
-    _balance_percent='2';
+  if [ "${_deep_clean_yn}" = 'y' ]; then
+    _balance_percent=70;
   else
-    _balance_percent="$(
-      bc -l <<< "scale=2; (${_main_spare} / ${_main_free}) * 100" \
-        | cut -d'.' -f1
-    )";
+    if [ "$(bc -l <<< "scale=2; (${_main_allocd} / ${_main_size}) > 0.20")" \
+      = '1' ]; then
+      _balance_percent=2;
+    else
+      _balance_percent="$(
+        bc -l <<< "scale=2; (${_main_spare} / ${_main_free}) * 100" \
+          | cut -d'.' -f1
+      )";
+    fi
   fi
 
   "${_escExe}" "${_optimizeSetExe}" doMainBalance "${_balance_percent}";
@@ -146,10 +165,11 @@ _balanceBootFn () {
 ## BEGIN _spaceReclaimFn {
 #
 _spaceReclaimFn () {
-  declare _big_threshold _btdu_report _report_val_list _report_file_list \
-    _clean_file_list _report_idx _current_file _file_size;
+  declare _big_threshold _deep_clean_yn _btdu_report _report_val_list \
+    _report_file_list _clean_file_list _report_idx _current_file _file_size;
 
   _big_threshold=10737418240; # 10 GiB
+  _deep_clean_yn="${1:-n}";
 
   _btdu_report="$(
     "${_escExe}" "${_optimizeSetExe}" getMainBtduReport \
@@ -170,24 +190,38 @@ _spaceReclaimFn () {
       _file_size="$(du -b "${_current_file}" | cut -f1)";
       _unreachable_size="${_report_val_list[_report_idx]}";
       
-      if (( _file_size < _big_threshold )); then
+      if [ "${_deep_clean_yn}" = 'y' ]; then
         if [ "$(bc -l <<< "scale=2; \
-           (${_unreachable_size} / ${_file_size}) > 0.15")" \
+           (${_unreachable_size} / ${_file_size}) > 0.05")" \
            = '1' ]; then
           _clean_file_list+=( "${_current_file}" );
         fi
       else
-        if [ "$(bc -l <<< "scale=2; \
-           (${_unreachable_size} / ${_file_size}) > 0.30")" \
-           = '1' ]; then
-          _clean_file_list+=( "${_current_file}" );
+        if (( _file_size < _big_threshold )); then
+          if [ "$(bc -l <<< "scale=2; \
+             (${_unreachable_size} / ${_file_size}) > 0.15")" \
+             = '1' ]; then
+            _clean_file_list+=( "${_current_file}" );
+          fi
+        else
+          if [ "$(bc -l <<< "scale=2; \
+             (${_unreachable_size} / ${_file_size}) > 0.30")" \
+             = '1' ]; then
+            _clean_file_list+=( "${_current_file}" );
+          fi
         fi
       fi
     fi
   done
 
-  if [ "${#_clean_file_list[@]}" > '10' ]; then
-    _clean_file_list=( "${_clean_file_list[@]:0:10}" );
+  if [ "${_deep_clean_yn}" = 'y' ]; then
+    if [ "${#_clean_file_list[@]}" > '50' ]; then
+      _clean_file_list=( "${_clean_file_list[@]:0:50}" );
+    fi
+  else
+    if [ "${#_clean_file_list[@]}" > '10' ]; then
+      _clean_file_list=( "${_clean_file_list[@]:0:10}" );
+    fi
   fi
 
   "${_escExe}" "${_optimizeSetExe}" doSpaceReclaim "${_clean_file_list[@]}";
@@ -255,7 +289,26 @@ _deleteAllSnapshotsFn () {
 ## BEGIN _mainFn {
 #
 _mainFn () {
-  true;
+  declare _mode;
+
+  _mode="${1:-}";
+  case "${_mode}" in
+    'maintain')
+      _checkRootFn   || exit;
+      _balanceMainFn || exit;
+      _balanceBootFn || exit;
+      _spaceReclaimFn;
+      ;;
+    'deepClean')
+      _checkRootFn       || exit;
+      _balanceMainFn 'y' || exit;
+      _balanceBootFn     || exit;
+      _spaceReclaimFn 'y';
+      _defragmentFn;
+      _deleteAllSnapshotsFn;
+      ;;
+    *) _cm2WarnStrFn  'Invalid mode specified.';;
+  esac
 }
 ## . END _mainFn }
 
