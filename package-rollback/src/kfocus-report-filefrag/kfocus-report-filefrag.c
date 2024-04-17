@@ -302,7 +302,7 @@ static int frag_report(const char *filename)
     goto out_close;
   }
   /* target is 100 extents per gibibyte */
-  targetfrag = (fileinfo.st_size / (1024 * 1024 * 1024)) * 100;
+  targetfrag = ((fileinfo.st_size / (1024 * 1024 * 1024)) * 100) + 100;
 
   printf("%ld|%d|%ld|%s\n", num_extents - targetfrag, num_extents, targetfrag, filename);
 out_close:
@@ -345,9 +345,9 @@ int main(int argc, char**argv)
   }
   infolistlen = 0;
   filelistlen = 0;
+  infolistloc = 0;
   infolistcap = 100;
   filelistcap = 100;
-  infolist[0] = targetdirname;
 
   for (int i = 1;i < argc;i++) {
     if (infolistlen == infolistcap) {

@@ -71,9 +71,6 @@ _loadLibTableFn () {
 #
 _trapExitFn () {
   1>&2 echo "${_baseName} was interrupted";
-  if [ "${_isPreparingSystem}" = 'y' ]; then
-    _promptAllUsersFn 'error' "${_prepareFailMsg}";
-  fi
   rm "${_lockFile}" || true;
 }
 
@@ -334,7 +331,9 @@ _defragmentFn () {
     _defrag_file_list=( "${_defrag_file_list[@]:0:50}" );
   fi
 
-  "${_btrfsExe}" filesystem defragment "${_defrag_file_list[@]}";
+  if [ "${#_defrag_file_list[@]}" -gt 0 ]; then
+    "${_btrfsExe}" filesystem defragment "${_defrag_file_list[@]}";
+  fi
 }
 ## . END _defragmentFn }
 
@@ -350,7 +349,7 @@ _deleteAllSnapshotsFn () {
     _cm2LsFn '/btrfs_main/@kfocus-rollback-snapshots' 2>/dev/null
   );
 
-  if [ -z "${_snapshot_list[0]}" ]; then
+  if [ "${#_snapshot_list[@]}" = '0' ] || [ -z "${_snapshot_list[0]}" ]; then
     _cm2WarnStrFn 'No snapshots found.';
     return 1;
   fi
@@ -380,8 +379,8 @@ _mainFn () {
       _balanceMainFn 'y' || exit;
       _balanceBootFn     || exit;
       _spaceReclaimFn 'y';
-      _defragmentFn;
       _deleteAllSnapshotsFn;
+      _defragmentFn;
       ;;
     *) _cm2WarnStrFn  'Invalid mode specified.';;
 
@@ -391,7 +390,7 @@ _mainFn () {
 ## . END _mainFn }
 
 ## BEGIN Declare and assign global vars {
-declare _userId _binName _binDir _baseName _baseDir;
+declare _userId _binName _binDir _baseName _baseDir _lockFile;
 ## . END Declare and assign global vars }
 
 ## BEGIN Run mainFn when script is NOT sourced {
@@ -401,6 +400,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binDir="$(   dirname  "${_binName}" )" || exit 101;
   _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
   _baseName="$( basename "${_binName}" )" || exit 101;
+  _lockFile='/tmp/kfocus-btrfs-optimize.lock';
 
   # Import libs and assign more global vars
   _libTable=(
