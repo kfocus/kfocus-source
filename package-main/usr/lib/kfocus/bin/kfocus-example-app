@@ -55,15 +55,26 @@ _importCommonFn () {
 # Example   : _incCountFn;
 # Arguments : none
 # Globals   : none
-# Outputs   : Prints 0 through 2 to stderr
+# Outputs   : Prints 0 through 10 to stderr
 # Returns   : none
 #
 _incCountFn () {
-  declare _count_idx;
+  declare _count_idx _final_val;
   for (( _count_idx = 0; _count_idx < 10; _count_idx++ )); do
     _cm2EchoFn "${_count_idx}";
-    if [[ "${_count_idx}" == 2 ]]; then return; fi
+    # Use ((...)) when making mathematical comparisons, only use [ ... ] and
+    # [[ ... ]] when working with strings.
+    if (( _count_idx == 2 )); then return; fi
   done
+
+  # Use `printf -v` when copying one variable to another, do not use
+  # constructs like `_var="$(echo ...)"`.
+  printf -v _final_val '%s' "${_count_idx}";
+
+  # When assigning the results of an algorithm to a variable, do the
+  # assignment within (( ... )), rather than using a subshell like
+  # `_var=$(( ... ))`.
+  (( _final_idx += val ));
 }
 ## . END _incCountFn }
 
