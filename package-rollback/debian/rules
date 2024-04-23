@@ -5,4 +5,5 @@
 
 override_dh_auto_build:
 	(cd src/kfocus-btrfs-reclaim-space && ./build.sh)
+	(cd src/kfocus-report-filefrag && ./build.sh)
 	dh_auto_build

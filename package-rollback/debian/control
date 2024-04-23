@@ -3,10 +3,11 @@ Section:           misc
 Priority:          optional
 Maintainer:        Kubuntu Focus Team <support@kfocus.org>
 Standards-Version: 4.6.0
-Build-Depends:     debhelper-compat (=13)
+Build-Depends:     debhelper-compat (=13),
+                   libext2fs-dev
 
 Package:      kfocus-rollback
-Architecture: all
+Architecture: any
 Depends:      ${misc:Depends}, ${shlibs:Depends},
               btdu,
               kdialog,
