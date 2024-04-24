@@ -88,7 +88,8 @@ _trapExitFn () {
 _chkSetFlockFn () {
   exec 211>"${_lockFile}" || exit 21;
   if ! flock -n -e 211; then
-    _exitLOCK "Cannot get lock on ${_lockFile}";
+    1>&2 echo "Cannot get lock on ${_lockFile}";
+    exit 20;
   fi
   # Trap unexpected exits to clean up lock file
   trap _trapExitFn EXIT;
@@ -119,7 +120,6 @@ _exitERR ()    { _exitWithCodeFn  1 "$@"; }
 _exitCRIT ()   { _exitWithCodeFn  2 "$@"; }
 _exitALERT ()  { _exitWithCodeFn  3 "$@"; }
 _exitEMERG ()  { _exitWithCodeFn  4 "$@"; }
-_exitLOCK ()   { _exitWithCodeFn 20 "$@"; }
 ## . END Define error and exit handling }
 
 ## BEGIN _promptAllUsersFn {
@@ -521,7 +521,11 @@ _mainFn () {
     _exitERR;
   fi
 
-  _main_min_space=21474836480 # 20 GiB
+  (( _main_min_space = ( ( $(
+      LC_ALL='C' df / \
+        | tail -n1 \
+        | awk '{ print $2 }'
+    ) * 1024 ) / 100 ) * 15 ));
   _boot_min_space=1073741824 # 1 GiB
   _main_space="$(LC_ALL=C btrfs filesystem usage -b /btrfs_main \
     | awk '/Free \(estimated\)/{ print $3 }')";
@@ -613,8 +617,11 @@ ${_cm2HtmBeginStr}${_tableStr}
 ${_browStr}<h3 style="color:#f7941d">Low Disk Space</h3>${_erowStr}
 
 ${_browStr}Your system is running low on disk space. This could result in
-filesystem corruption if not corrected. Please clear some space
-by removing files or moving them to other drives.${_erowStr}
+filesystem corruption if not corrected. It is highly recommended
+that you use the Drive Optimizer to clear some space. You may also
+need to delete excess files or move them to other drives. You can
+access the Drive Optimizer by clicking <code>Start Menu >
+Kubuntu Focus Tools > Drive Optimizer</code>.${_erowStr}
 
 ${_browStr}For your safety, no snapshot-related actions have been
 performed.${_erowStr}</table>

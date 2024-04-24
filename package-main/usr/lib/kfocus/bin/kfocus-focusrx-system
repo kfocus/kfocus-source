@@ -48,6 +48,27 @@ _importCommonFn () {
 }
 ## . END _importCommonFn }
 
+## BEGIN _promptAllUsersFn {
+# See https://stackoverflow.com/a/49533938
+_promptAllUsersFn () {
+  declare _mode _msg _xserver_id _user_name;
+  _mode="${1:-info}";
+  _msg="${2:-blank}";
+
+  while read -r _xserver_id; do
+    _user_name="$(
+      who | grep "(:${_xserver_id})" | head -n1 | awk '{ print $1 }'
+    )";
+    if [ -z "${_user_name}" ]; then continue; fi
+
+    sudo -u "${_user_name}" \
+      DISPLAY="${_xserver_id}" \
+      DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$(id -u "${_user_name}")/bus" \
+      qdbus org.kfocus.FocusRxDispatch.launcher / "${_mode}" "${_msg}";
+  done < <(_cm2LsFn '/tmp/.X11-unix/' | sed 's?/tmp/.X11-unix/X??')
+}
+## . END _promptAllUsersFn }
+
 ## BEGIN _initCpuFn {
 # Purpose   : Initialize CPU for 2023+ systems
 #
@@ -73,9 +94,30 @@ _manageSnapshotsFn () {
   declare _title;
 
   [ -z "${_snapshotSetExe}" ] && return;
+  [ -z "${_btrfsExe}"       ] && return;
 
   _title='Maintain Snapshots';
   _cm2SetMsgFn "${_title}";
+
+  (( _main_min_space = ( ( $(
+      LC_ALL='C' df / \
+        | tail -n1 \
+        | awk '{ print $2 }'
+    ) * 1024 ) / 100 ) * 15 ));
+  _boot_min_space=1073741824 # 1 GiB
+  _main_space="$(LC_ALL=C "${_btrfsExe}" filesystem usage -b /btrfs_main \
+    | awk '/Free \(estimated\)/{ print $3 }')";
+  _boot_space="$(LC_ALL=C "${_btrfsExe}" filesystem usage -b /btrfs_boot \
+    | awk '/Free \(estimated\)/{ print $3 }')";
+
+  if [ -d '/btrfs_main' ] && [ -d '/btrfs_boot' ]; then
+    if (( _main_space < _main_min_space )) \
+      || (( _boot_space < _boot_min_space )); then
+      _promptAllUsersFn 'info' "${_lowDiskMsg}";
+      return;
+    fi
+  fi
+
   # TODO: If any of these fail, do we care?
   "${_snapshotSetExe}" 'finalizeRestore';
   "${_snapshotSetExe}" 'createSnapshot' 'Timed';
@@ -124,7 +166,7 @@ _mainFn () {
 
 ## BEGIN Declare and assign global vars {
 #
-declare _binName _binDir _baseName _baseDir _rootTitle _assignList;
+declare _binName _binDir _baseName _baseDir _rootTitle _assignList _lowDiskMsg;
 ## . END Declare and assign global vars }
 
 ## BEGIN Run mainFn when script is NOT sourced {
@@ -141,12 +183,31 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _assignList=(
     "_powerSetExe|${_binDir}/kfocus-power-set||optional"
     "_snapshotSetExe|${_binDir}/kfocus-rollback-set||optional"
-    "_optimizeExe|${_binDir}/kfocus-btrfs-optimize||optional"
+    "_optimizeExe|${_binDir}/kfocus-btrfs-optimize-set||optional"
+    '_btrfsExe|/usr/bin/btrfs'
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2WarnStrFn 'ABORT: Required commands not found';
     exit 1;
   fi
+
+  _browStr='<tr><td style="padding:8px 32px 8px 0">';
+  _erowStr='</td></tr>';
+  _tableStr='<table style="width:100%;margin-right:32px">';
+
+  _lowDiskMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}<h3 style="color:#f7941d">Low Disk Space</h3>${_erowStr}
+
+${_browStr}Your system is running low on disk space. This could result in
+filesystem corruption if not corrected. It is highly recommended
+that you use the Drive Optimizer to clear some space. You may also
+need to delete excess files or move them to other drives. You can
+access the Drive Optimizer by clicking <code>Start Menu >
+Kubuntu Focus Tools > Drive Optimizer</code>.${_erowStr}
+${_cm2HtmEndStr}
+EOF
+  )";
 
   _mainFn "$@";
 fi

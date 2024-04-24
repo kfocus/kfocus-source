@@ -1069,7 +1069,7 @@ _btrfsDeepCleanFn () {
   # Always skip if not in force mode
   [ "${_doForce}" = 'n' ] && return;
   # Skip if required tool not installed
-  [ -z "${_btrfsOptimizeExe}" ] && return;
+  [ -z "${_btrfsOptimizeSetExe}" ] && return;
 
   _title='Deep Clean Filesystem';
   _cm2SetMsgFn "${_title}";
@@ -1079,14 +1079,14 @@ _btrfsDeepCleanFn () {
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}SKIP ${_title}?</h3>
 
-${_cm2HtmPStr}You can run kfocus-btrfs-optimize to keep <br>
-your filesystem performing well and avoid <br>
+${_cm2HtmPStr}You can run a filesystem deep-clean to keep <br>
+your system performing well and avoid <br>
 unexpectedly running out of free space. This <br>
 is usually unnecessary unless you're noticing <br>
 degraded performance or you recently cleared <br>
 a large amount of unused data from your disk.</p>
 
-${_cm2HtmPStr}<b>SKIP run kfocus-btrfs-optimize?</b></p>
+${_cm2HtmPStr}<b>SKIP run filesystem deep clean?</b></p>
 ${_cm2HtmEndStr}
 _EOH18
   )";
@@ -1097,7 +1097,7 @@ _EOH18
 
   if [ "${_ans_str}" = 'n' ]; then
     if _cm2RunLongCmdFn 'Optimizing filesystems...' "${_escExe}" \
-      "${_btrfsOptimizeExe}" 'deepClean'; then
+      "${_btrfsOptimizeSetExe}" 'deepClean'; then
       _cm2SucFn; else _cm2WarnFn;
     fi
   else
@@ -1252,7 +1252,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     "_snapshotSetExe|${_binDir}/kfocus-rollback-set||optional"
     "_kBuildSycocaExe|/usr/bin/kbuildsycoca5||optional"
     "_kfocusRollbackExe|${_binDir}/kfocus-rollback||optional"
-    "_btrfsOptimizeExe|${_binDir}/kfocus-btrfs-optimize||optional"
+    "_btrfsOptimizeSetExe|${_binDir}/kfocus-btrfs-optimize-set||optional"
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2ErrStrFn 'Could not assign variables';
