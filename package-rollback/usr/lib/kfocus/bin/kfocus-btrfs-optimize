@@ -122,10 +122,10 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _assignList=(
     '_kdiagExe|/usr/bin/kdialog'
     '_whiptailExe|/usr/bin/whiptail'
+    "_snapshotSetExe|${_binDir}/kfocus-rollback-set"
     "_optimizeSetExe|${_binDir}/kfocus-btrfs-optimize-set"
   );
 
-  _importCommonFn;
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2ErrStrFn 'Could not assign variable';
     exit 1;
