@@ -262,8 +262,7 @@ _defragmentFn () {
       _file_size="$(du -b "${_current_file}" | cut -f1)";
       (( _unreachable_size = _btdu_val_list[_report_idx] * 1024 ));
       
-      if [ "$(bc -l <<< "scale=2; \
-        (${_unreachable_size} / ${_file_size}) > 0.15")" \
+      if [ "$(bc -l <<< "scale=2; (${_unreachable_size} / ${_file_size}) > 0.15")" \
         = '1' ]; then
         _clean_file_list+=( "${_current_file}" );
       fi
@@ -291,7 +290,7 @@ _defragmentFn () {
     fi
   done
 
-  if [ "${#_defrag_file_list[@]}" -gt 0 ]; then
+  if (( ${#_defrag_file_list[@]} > 0 )); then
     "${_btrfsExe}" filesystem defragment -clzo "${_clean_file_list[@]}";
   fi
 }
