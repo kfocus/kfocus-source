@@ -200,7 +200,7 @@ _cm2CalcModelCodeFn () {
 
     # Use ${var,,} syntax to convert to lowercase
     if [[ "${_dmi_name,,}" =~ ^iridium.*$ ]]; then
-      # Ex: LCS14-12i5
+      # Ex: LCS14-12i5, LCS16-13i7G
       _dmi_name="$(_cm2CatStripEchoFn "${_cm2DmiProductSkuFile}")";
     fi
   else
@@ -209,19 +209,20 @@ _cm2CalcModelCodeFn () {
 
   shopt -s nocasematch;
   case "${_dmi_name}" in
-    LCS14-12i*)       _code='ir14g1';;
-    X370SN*)          _code='m2g5p';;
-    PD5x_7xSNC_*)     _code='m2g5';;
-    PD5x_7xPNP_*)     _code='m2g4';;
-    PC5x_7xHP_HR_HS*) _code='m2g3';;
-    PC5*)             _code='m2g2';;
-    PCX0DX*)          _code='m2g1';;
-    P95_96_97Ex,Rx*)  _code='m1g1';;
-    NV4XMB,ME,MZ*)    _code='xeg1';;
-    NV4xPZ*)          _code='xeg2';;
-    NUC11PAHi*)       _code='nxg1';;
-    NUC12WSHi*)       _code='nxg2';;
-    other|*)          _code='other';;
+    LCS16-13i*|LCS14-13i*) _code='ir14g2';;
+    LCS14-12i*)            _code='ir14g1';;
+    X370SN*)               _code='m2g5p';;
+    PD5x_7xSNC_*)          _code='m2g5';;
+    PD5x_7xPNP_*)          _code='m2g4';;
+    PC5x_7xHP_HR_HS*)      _code='m2g3';;
+    PC5*)                  _code='m2g2';;
+    PCX0DX*)               _code='m2g1';;
+    P95_96_97Ex,Rx*)       _code='m1g1';;
+    NV4XMB,ME,MZ*)         _code='xeg1';;
+    NV4xPZ*)               _code='xeg2';;
+    NUC11PAHi*)            _code='nxg1';;
+    NUC12WSHi*)            _code='nxg2';;
+    other|*)               _code='other';;
   esac;
 
   _cm2ModelCode="${_code}";
@@ -602,6 +603,7 @@ _cm2ModelLine='';
 _cm2ModelHeadList=();
 _cm2ModelTable=(
   'code|config_code|label|is_nv_sys|has_kb_led'
+  'ir14g2|ir14g2|Ir14 GEN 2|n|n'
   'ir14g1|ir14g1|Ir14 GEN 1|n|n'
   'm2g5p|m2g5|M2 GEN 5|y|y'
   'm2g5|m2g5|M2 GEN 5|y|y'
