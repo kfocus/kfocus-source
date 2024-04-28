@@ -206,9 +206,9 @@ EOF
 ${_cm2HtmBeginStr}${_tableStr}
 ${_browStr}<h3 style="color:#f7941d">Snapshot Creation Failed</h3>${_erowStr}
 
-${_browStr}Something went wrong and FocusRx was unable to<br>
-create a root filesystem snapshot. No changes have<br>
-been made to your system.${_erowStr}
+${_browStr}Something went wrong and a root filesystem<br>
+snapshot could not be created.  No changes<br>
+have been made to your system.${_erowStr}
 
 ${_browStr}Please try to create a snapshot again. You are<br>
 encouraged to contact technical support if this<br>
@@ -221,8 +221,8 @@ EOF
 ${_cm2HtmBeginStr}${_tableStr}
 ${_browStr}<h3 style="color:#f7941d">Critical Error</h3>${_erowStr}
 
-${_browStr}FocusRx was interrupted while attempting to<br>
-snapshot the root filesystem. This incident may<br>
+${_browStr}System Snapshot was interrupted while attempting<br>
+to snapshot the root filesystem. This incident may<br>
 be the result of failing hardware or a software<br>
 conflict.${_erowStr}
 
