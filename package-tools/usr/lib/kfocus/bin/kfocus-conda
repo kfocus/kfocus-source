@@ -374,7 +374,7 @@ _installEnvFn () {
     _cm2EchoFn;
   fi
 
-  ## TODO mxnet is not supported with cuda 11.7 (10.2 is latest)
+  ## TODO mxnet is not supported with cuda 11.7 (requires 10.2)
   # This is maintained here for reference.
   #
   # _reply_str=$( _fixCondaEnvFn 'mxnet-cu102') || _exitFn;
@@ -444,7 +444,7 @@ _installEnvFn () {
     _cm2SucFn;
   fi
 
-  ## TODO mxnet is not supported with cuda 11.7 (10.2 is latest)
+  ## TODO mxnet is not supported with cuda 11.7 (requires 10.2)
   # This is maintained here for reference.
   #
   # if _chkCondaEnvFn 'mxnet'; then
