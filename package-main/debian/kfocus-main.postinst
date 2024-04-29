@@ -15,72 +15,6 @@ _cmXWarnFn    () { _cmXEchoFn "== . END : WARN Could not ${_cmXBlockMsg}\n\n"; }
 _cmXWarnStrFn () { _cmXEchoFn "warn: ${*}"; }
 ## . END Declare common.2.source symbols }
 
-## BEGIN _mkSrcListStrFn {
-# IMPORTED on 2022-02-23 from test/test-scripts/unit.d/00400_mkSrcListStr
-#
-_mkSrcListStrFn () {
-  declare _etc_apt_dir _nl _repo_src_str;
-
-  _etc_apt_dir="${_rootDir}/etc/apt";
-  _nl=$'\n';
-  _repo_src_str=$(
-    find "${_etc_apt_dir}/sources.list.d" -maxdepth 1 -type f -name '*.list' \
-    | sort | grep -v --regexp '^.* ' \
-    | grep -v 'kfocus-recommended.list'
-  );
-
-  if [ -n "${_repo_src_str}" ]; then
-    _repo_src_str="${_etc_apt_dir}/sources.list${_nl}${_repo_src_str}";
-  else
-    _repo_src_str="${_etc_apt_dir}/sources.list";
-  fi
-  echo -e "${_repo_src_str}";
-}
-## END _mkSrcListStrFn }
-
-## BEGIN _dedupRepoSrcFileFn {
-# IMPORTED on 2022-03-23 from test/test-scripts/unit.d/00300_dedupRepo
-#
-_dedupRepoSrcFileFn() {
-  declare _src_list_str _is_all_ok _match_file _search_str _src_line;
-
-  # Skip processing if file does not exist
-  if [ ! -f "${_recomListFile}" ]; then return; fi
-
-  _src_list_str=$(_mkSrcListStrFn);
-  _is_all_ok='y';
-
-  _cmXSetMsgFn "Disable duplicate repo listings in ${_recomListFile}";
-  while read -r _src_line; do
-    # shellcheck disable=2001
-    _search_str="$(
-      sed 's/^deb.*http/http/g' <<< "${_src_line}"  \
-        | sed 's/^[[:space:]]*\(.*\)[[:space:]]*$/\1/' \
-        | sed -e 's/[]\/$*.^[]/\\&/g'
-    )";
-
-    while read -r _match_file; do
-      if (grep -q "^deb.* ${_search_str}" "${_match_file}"); then
-        _cmXEchoFn "'${_src_line}' found in '${_match_file}'"
-        if ( sed -i "s?^\\(deb.*${_search_str}.*\\)?# \1?g" \
-          "${_recomListFile}" ); then
-            _cmXSucStrFn "Disable '${_src_line}' in '${_recomListFile}'"
-          else
-            _cmXWarnStrFn "Could not disable '${_src_line}' in '${_recomListFile}'";
-            _is_all_ok='n'
-          fi
-      fi
-    done < <( echo -e "${_src_list_str}" );
-  done < <( grep --regexp='^\s*deb' "${_recomListFile}" );
-
-  if [ "${_is_all_ok}" ]; then
-    _cmXSucFn; return;
-  else
-    _cmXWarnStrFn "Some or all of the disables were unsuccessful";
-    _cmXWarnFn; return;
-  fi
-}
-## . END _dedupRepoSrcFileFn }
 
 ## BEGIN _updatePciidsFn {
 # IMPORTED on 2022-02-23 from test/test-scripts/unit.d/00500_updatePciids
@@ -119,28 +53,25 @@ _updatePciidsFn () {
 }
 ## . END _updatePciidsFn }
 
-## BEGIN _applyRootStyleFn {
-_applyRootStyleFn () {
+## BEGIN _applyRootConfigFn {
+_applyRootConfigFn () {
   declare _exe_rsync_str;
   _exe_rsync_str="$(command -v rsync || true)";
-  _cmXSetMsgFn 'Apply style for root apps, e.g. partition manager';
 
-  if [ -d "/root/Desktop" ]; then
-    _cmXSucStrFn 'Root style already applied';
-    _cmXSucFn; return;
-  fi
+  if [ -f "/root/.vimrc" ]; then return; fi
 
   if [ -z "${_exe_rsync_str}" ]; then
     _warnStr "${_exe_rsync_str} not found";
     _cmXWarnFn; return;
   fi
 
+  _cmXSetMsgFn 'Apply basic configs for root user';
   if "${_exe_rsync_str}" -azog --chown='0:0' \
     "${_libKfocusDir}/skel/" '/root/'; then
       _cmXSucFn; else _cmXWarnFn;
   fi
 }
-## . END _applyRootStyleFn }
+## . END _applyRootConfigFn }
 
 ## BEGIN _setupModelHintsFn {
  # Purpose: Setup hint widget model-specific symlinks
@@ -244,6 +175,11 @@ _cleanUpFn () {
   2>/dev/null deb-systemd-helper enable kfocus-focusrx-system.service || true;
   _cmXSucFn;
 
+  # Remove old bash completion symlink
+  if [ -f /etc/bash_completion.d/kfocus-bashcompletion ]; then
+    rm /etc/bash_completion.d/kfocus-bashcompletion;
+  fi
+
   # See https://askubuntu.com/questions/1018576
   # This allows boot work faster before network is enabled
   # 2551 Disabled to prevent breaking network file systems
@@ -274,14 +210,6 @@ _cleanUpFn () {
 #}
 ## . END _adviseRebootFn }
 
-## BEGIN _addBashCompletionFn {
-_addBashCompletionFn () {
-  if ! [ -f /etc/bash_completion.d/kfocus-bashcompletion ]; then
-    ln -sf /usr/lib/kfocus/lib/kfocus-bashcompletion \
-      /etc/bash_completion.d/kfocus-bashcompletion
-  fi
-}
-## . END _addBashCompletionFn }
 
 ## BEGIN _setupSddmFixFn {
 _setupSddmFixFn () {
@@ -338,31 +266,12 @@ EOS
 }
 ## . END _setupSddmFixFn }
 
-## BEGIN _createPlasmaWelcomeRcFn {
-_createPlasmaWelcomeRcFn () {
-  declare _set_exe;
-  _cmXSetMsgFn 'Add plasma-welcomerc';
-  _set_exe="$(command -v "${_libKfocusDir}/bin/kfocus-firstrun-set" || true)";
-  if [ -n "${_set_exe}" ]; then
-    if "${_set_exe}" 'write-plasma-welcomerc'; then
-      _cmXSucFn;
-    else
-      _cmXWarnStrFn "Trouble with |${_set_exe} 'write-plasma-welcomerc'|";
-     fi
-  else
-    _cmXWarnStrFn "Command for kfocus-firstrun-set not found";
-  fi
-}
-## . END _createPlasmaWelcomeRcFn }
-
-
 ## BEGIN declare and assign global vars {
-declare _rootDir _repoSrcDir _libKfocusDir _recomListFile;
+declare _rootDir _repoSrcDir _libKfocusDir;
 _rootDir='';
 _repoSrcDir="${_rootDir}/etc/apt/sources.list.d";
 
 _libKfocusDir="${_rootDir}/usr/lib/kfocus";
-_recomListFile="${_repoSrcDir}/kfocus-recommended.list";
 ## . END declare and assign global vars }
 
 ## BEGIN Run main if script is not sourced {
@@ -370,28 +279,23 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   case "${1:-}" in
     abort-upgrade|abort-remove|abort-configure|abort*) true;;
     configure|upgrade)
-      # Dedup entries in kfocus-recommends.list
-      _dedupRepoSrcFileFn;
+      # See jammy for
+      #   * _dedupRepoSrcFileFn to dedup repos if needed
+      #   * _setupSddmFixFn to apply SDDM screen order fix in Xsetup
+      #   * _addBashCompletionFn for kfocus-bashcompletion symlink
+      #   * _applyRootStyleFn => _applyRootconfigFn
+      #   * _createPlasmaWelcomeRcFn created user files; replace per 4176
 
       # Download PCI extended data if needed
       _updatePciidsFn;
 
-      # Apply styling to root apps like partition manager
-      _applyRootStyleFn;
+      # Apply minimal skel copy for root user 
+      _applyRootConfigFn;
 
-      # Add bash completion
-      _addBashCompletionFn;
-
-      # Add Xsetup for sddm screen fix
-      _setupSddmFixFn;
-
-      # Create links per model (copied from kfocus-hw)
+      # Create links per model
+      ## TODO: Set this to overwrite default ONLY if symlinks do not exist
       _setupModelHintsFn;
 
-      # Create .config/plasma-welcomerc for users iff not existing.
-      # This avoids race condition with welcome wizard.
-      _createPlasmaWelcomeRcFn;
-      
       # Cleanup misc details
       _cleanUpFn;
 
