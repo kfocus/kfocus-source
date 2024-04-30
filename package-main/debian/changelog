@@ -2,6 +2,7 @@ kfocus-main (24.04.1~beta8) UNRELEASED; urgency=medium
 
  * control: Replace pcmemtest with memtest86+ (4085)
  * control: Uncomment kernel packages when available (4085)
+ * control: Recommend vlc package, confirmed pulls in all libs (4085)
  * etc/xdg/autostart: replace with symlink (4085)
  * etc/xdg/autostart/kfocus-focusrx-dbus-dispatch.desktop: +symlink (4085)
  * kfocus-main.config: Adjust debconf message for Plasma 6.x (4085)
@@ -9,6 +10,8 @@ kfocus-main (24.04.1~beta8) UNRELEASED; urgency=medium
  * kfocus-main.postinst: Audit, remove, annotate OOD Fns (4085)
  * kfocus-main.postinst: Link default kfocus-hints only if missing (4085)
  * usr/share/kfocus-hints/default: Move here to set defaults (4085)
+ * usr/share/icons/pixmaps: All raster graphics removed (4240)
+ * usr/share/icons/hicolor/scalable/apps: Update 9 kfocus-bug icons (4240)
 
 kfocus-main (24.04.1~beta7) noble; urgency=medium
 
