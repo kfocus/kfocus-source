@@ -1,42 +1,41 @@
-Source: linux-meta-hwe-6.5-kfocus
+Source: linux-meta-kfocus
 Section: devel
 Priority: optional
 Maintainer: Ubuntu Kernel Team <kernel-team@lists.ubuntu.com>
 Standards-Version: 3.9.8
-Build-Depends: dpkg (>= 1.13.19), debhelper (>= 11), gawk, kmod
+Build-Depends: dpkg (>= 1.13.19), debhelper (>= 11), gawk
 Build-Depends-Arch:
- linux-hwe-6.5-headers-6.5.0-25,
- linux-headers-6.5.0-25-generic,
- linux-modules-6.5.0-25-generic,
-Vcs-Git: git://git.launchpad.net/~ubuntu-kernel/ubuntu/+source/linux-meta/+git/jammy
+ linux-headers-6.8.0-31,
+ linux-headers-6.8.0-31-generic,
+Vcs-Git: git://git.launchpad.net/~ubuntu-kernel/ubuntu/+source/linux-meta/+git/noble
 
-Package: linux-headers-generic-hwe-22.04-kfocus
+Package: linux-headers-generic-kfocus
 Architecture: amd64 armhf arm64 ppc64el s390x
 Section: kernel
-Replaces: linux-headers-generic-hwe-22.04, linux-headers-oem-22.04a-kfocus
-Conflicts: linux-headers-generic-hwe-22.04, linux-headers-oem-22.04a-kfocus
+Replaces: linux-headers-generic
+Conflicts: linux-headers-generic
 Depends: ${misc:Depends}, linux-headers-${kernel-abi-version}-generic
 Description: Generic Linux kernel headers
  This package will always depend on the latest generic kernel headers
  available.
 
-Package: linux-image-generic-hwe-22.04-kfocus
+Package: linux-image-generic-kfocus
 Architecture: amd64 armhf arm64 ppc64el s390x
 Section: kernel
 Provides: ${dkms:v4l2loopback-modules} ${dkms:zfs-modules} ${dkms:virtualbox-guest-modules} ${dkms:wireguard-linux-compat-modules}
-Replaces: linux-image-generic-hwe-22.04, linux-image-oem-22.04a-kfocus
-Conflicts: linux-image-generic-hwe-22.04, linux-image-oem-22.04a-kfocus
+Replaces: linux-image-generic
+Conflicts: linux-image-generic
 Depends: ${misc:Depends}, linux-image-${kernel-abi-version}-generic, linux-modules-extra-${kernel-abi-version}-generic [amd64 arm64 ppc64el s390x], linux-firmware [amd64 armhf arm64 ppc64el], intel-microcode [amd64], amd64-microcode [amd64]
 Recommends: thermald [amd64]
 Description: Generic Linux kernel image
  This package will always depend on the latest generic kernel image
  available.
 
-Package: linux-image-uc-generic-hwe-22.04-kfocus
+Package: linux-image-uc-generic-kfocus
 Architecture: amd64 arm64
 Section: kernel
-Replaces: linux-image-uc-generic-hwe-22.04
-Conflicts: linux-image-uc-generic-hwe-22.04
+Replaces: linux-image-uc-generic
+Conflicts: linux-image-uc-generic
 Depends: ${misc:Depends}, linux-image-uc-${kernel-abi-version}-generic, linux-modules-extra-${kernel-abi-version}-generic, linux-firmware, firmware-sof-signed [amd64], wireless-regdb
 Description: Generic Linux kernel image for Ubuntu Core
  This package will always depend on the latest generic kernel image
@@ -45,67 +44,68 @@ Description: Generic Linux kernel image for Ubuntu Core
  This kernel is suitable for staging into a kernel snap, and is not
  suitable to be used directly on classic systems.
 
-Package: linux-tools-generic-hwe-22.04-kfocus
+Package: linux-tools-generic-kfocus
 Architecture: amd64 armhf arm64 ppc64el s390x
 Section: kernel
 Provides: linux-tools
-Replaces: linux-tools-generic-hwe-22.04, linux-tools-oem-22.04a-kfocus
-Conflicts: linux-tools-generic-hwe-22.04, linux-tools-oem-22.04a-kfocus
+Replaces: linux-tools-generic
+Conflicts: linux-tools-generic
 Depends: ${misc:Depends}, linux-tools-${kernel-abi-version}-generic
 Description: Generic Linux kernel tools
  This package will always depend on the latest generic kernel tools
  available.
 
-Package: linux-cloud-tools-generic-hwe-22.04-kfocus
+Package: linux-cloud-tools-generic-kfocus
 Architecture: amd64
 Section: kernel
 Provides: linux-cloud-tools
-Replaces: linux-cloud-tools-generic-hwe-22.04
-Conflicts: linux-cloud-tools-generic-hwe-22.04
+Replaces: linux-cloud-tools-generic
+Conflicts: linux-cloud-tools-generic
 Depends: ${misc:Depends}, linux-cloud-tools-${kernel-abi-version}-generic
 Description: Generic Linux kernel cloud tools
  This package will always depend on the latest generic kernel cloud tools
  available.
 
-Package: linux-generic-hwe-22.04-kfocus
+Package: linux-generic-kfocus
 Architecture: amd64 armhf arm64 ppc64el s390x
 Section: kernel
-Provides: kernel-testing--linux-hwe-6.5-kfocus--full--generic, kernel-testing--linux-hwe-6.5-kfocus--full--preferred,
-Replaces: linux-generic-hwe-22.04, linux-oem-22.04a-kfocus
-Conflicts: linux-generic-hwe-22.04, linux-oem-22.04a-kfocus
-Depends: ${misc:Depends}, linux-image-generic-hwe-22.04-kfocus (= ${binary:Version}), linux-headers-generic-hwe-22.04-kfocus (= ${binary:Version})
+Provides: kernel-testing--linux-kfocus--full--generic, kernel-testing--linux-kfocus--full--preferred,
+Replaces: linux-generic
+Conflicts: linux-generic
+Depends: ${misc:Depends}, linux-image-generic-kfocus (= ${binary:Version}), linux-headers-generic-kfocus (= ${binary:Version})
+Recommends: linux-tools-${kernel-abi-version}-generic-kfocus, ubuntu-kernel-accessories
 Description: Complete Generic Linux kernel and headers
  This package will always depend on the latest complete generic Linux kernel
  and headers.
 
 
-Package: linux-headers-generic-hwe-22.04-edge-kfocus
+Package: linux-headers-generic-hwe-24.04-kfocus
 Architecture: amd64 armhf arm64 ppc64el s390x
 Section: kernel
-Replaces: linux-headers-generic-hwe-22.04-edge, linux-headers-oem-22.04a-kfocus
-Conflicts: linux-headers-generic-hwe-22.04-edge, linux-headers-oem-22.04a-kfocus
+Replaces: linux-headers-generic-hwe-24.04
+Conflicts: linux-headers-generic-hwe-24.04
 Depends: ${misc:Depends}, linux-headers-${kernel-abi-version}-generic
 Description: Generic Linux kernel headers
  This package will always depend on the latest generic kernel headers
  available.
 
-Package: linux-image-generic-hwe-22.04-edge-kfocus
+Package: linux-image-generic-hwe-24.04-kfocus
 Architecture: amd64 armhf arm64 ppc64el s390x
 Section: kernel
 Provides: ${dkms:v4l2loopback-modules} ${dkms:zfs-modules} ${dkms:virtualbox-guest-modules} ${dkms:wireguard-linux-compat-modules}
-Replaces: linux-image-generic-hwe-22.04-edge, linux-image-oem-22.04a-kfocus
-Conflicts: linux-image-generic-hwe-22.04-edge, linux-image-oem-22.04a-kfocus
+Replaces: linux-image-generic-hwe-24.04
+Conflicts: linux-image-generic-hwe-24.04
 Depends: ${misc:Depends}, linux-image-${kernel-abi-version}-generic, linux-modules-extra-${kernel-abi-version}-generic [amd64 arm64 ppc64el s390x], linux-firmware [amd64 armhf arm64 ppc64el], intel-microcode [amd64], amd64-microcode [amd64]
 Recommends: thermald [amd64]
 Description: Generic Linux kernel image
  This package will always depend on the latest generic kernel image
  available.
 
-Package: linux-image-uc-generic-hwe-22.04-edge-kfocus
+Package: linux-image-uc-generic-hwe-24.04-kfocus
 Architecture: amd64 arm64
 Section: kernel
-Replaces: linux-image-uc-generic-hwe-22.04-edge
-Conflicts: linux-image-uc-generic-hwe-22.04-edge
+Replaces: linux-image-uc-generic-hwe-24.04
+Conflicts: linux-image-uc-generic-hwe-24.04
 Depends: ${misc:Depends}, linux-image-uc-${kernel-abi-version}-generic, linux-modules-extra-${kernel-abi-version}-generic, linux-firmware, firmware-sof-signed [amd64], wireless-regdb
 Description: Generic Linux kernel image for Ubuntu Core
  This package will always depend on the latest generic kernel image
@@ -114,42 +114,183 @@ Description: Generic Linux kernel image for Ubuntu Core
  This kernel is suitable for staging into a kernel snap, and is not
  suitable to be used directly on classic systems.
 
-Package: linux-tools-generic-hwe-22.04-edge-kfocus
+Package: linux-tools-generic-hwe-24.04-kfocus
 Architecture: amd64 armhf arm64 ppc64el s390x
 Section: kernel
 Provides: linux-tools
-Replaces: linux-tools-generic-hwe-22.04-edge, linux-tools-oem-22.04a-kfocus
-Conflicts: linux-tools-generic-hwe-22.04-edge, linux-tools-oem-22.04a-kfocus
+Replaces: linux-tools-generic-hwe-24.04
+Conflicts: linux-tools-generic-hwe-24.04
 Depends: ${misc:Depends}, linux-tools-${kernel-abi-version}-generic
 Description: Generic Linux kernel tools
  This package will always depend on the latest generic kernel tools
  available.
 
-Package: linux-cloud-tools-generic-hwe-22.04-edge-kfocus
+Package: linux-cloud-tools-generic-hwe-24.04-kfocus
 Architecture: amd64
 Section: kernel
 Provides: linux-cloud-tools
-Replaces: linux-cloud-tools-generic-hwe-22.04-edge
-Conflicts: linux-cloud-tools-generic-hwe-22.04-edge
+Replaces: linux-cloud-tools-generic-hwe-24.04
+Conflicts: linux-cloud-tools-generic-hwe-24.04
 Depends: ${misc:Depends}, linux-cloud-tools-${kernel-abi-version}-generic
 Description: Generic Linux kernel cloud tools
  This package will always depend on the latest generic kernel cloud tools
  available.
 
-Package: linux-generic-hwe-22.04-edge-kfocus
+Package: linux-generic-hwe-24.04-kfocus
 Architecture: amd64 armhf arm64 ppc64el s390x
 Section: kernel
 Provides:  
-Replaces: linux-generic-hwe-22.04-edge, linux-oem-22.04a-kfocus
-Conflicts: linux-generic-hwe-22.04-edge, linux-oem-22.04a-kfocus
-Depends: ${misc:Depends}, linux-image-generic-hwe-22.04-edge-kfocus (= ${binary:Version}), linux-headers-generic-hwe-22.04-edge-kfocus (= ${binary:Version})
+Replaces: linux-generic-hwe-24.04
+Conflicts: linux-generic-hwe-24.04
+Depends: ${misc:Depends}, linux-image-generic-hwe-24.04-kfocus (= ${binary:Version}), linux-headers-generic-hwe-24.04-kfocus (= ${binary:Version})
+Recommends: linux-tools-${kernel-abi-version}-generic-kfocus, ubuntu-kernel-accessories
+Description: Complete Generic Linux kernel and headers
+ This package will always depend on the latest complete generic Linux kernel
+ and headers.
+
+
+Package: linux-headers-generic-hwe-24.04-edge-kfocus
+Architecture: amd64 armhf arm64 ppc64el s390x
+Section: kernel
+Replaces: linux-headers-generic-hwe-24.04-edge
+Conflicts: linux-headers-generic-hwe-24.04-edge
+Depends: ${misc:Depends}, linux-headers-${kernel-abi-version}-generic
+Description: Generic Linux kernel headers
+ This package will always depend on the latest generic kernel headers
+ available.
+
+Package: linux-image-generic-hwe-24.04-edge-kfocus
+Architecture: amd64 armhf arm64 ppc64el s390x
+Section: kernel
+Provides: ${dkms:v4l2loopback-modules} ${dkms:zfs-modules} ${dkms:virtualbox-guest-modules} ${dkms:wireguard-linux-compat-modules}
+Replaces: linux-image-generic-hwe-24.04-edge
+Conflicts: linux-image-generic-hwe-24.04-edge
+Depends: ${misc:Depends}, linux-image-${kernel-abi-version}-generic, linux-modules-extra-${kernel-abi-version}-generic [amd64 arm64 ppc64el s390x], linux-firmware [amd64 armhf arm64 ppc64el], intel-microcode [amd64], amd64-microcode [amd64]
+Recommends: thermald [amd64]
+Description: Generic Linux kernel image
+ This package will always depend on the latest generic kernel image
+ available.
+
+Package: linux-image-uc-generic-hwe-24.04-edge-kfocus
+Architecture: amd64 arm64
+Section: kernel
+Replaces: linux-image-uc-generic-hwe-24.04-edge
+Conflicts: linux-image-uc-generic-hwe-24.04-edge
+Depends: ${misc:Depends}, linux-image-uc-${kernel-abi-version}-generic, linux-modules-extra-${kernel-abi-version}-generic, linux-firmware, firmware-sof-signed [amd64], wireless-regdb
+Description: Generic Linux kernel image for Ubuntu Core
+ This package will always depend on the latest generic kernel image
+ available.
+ .
+ This kernel is suitable for staging into a kernel snap, and is not
+ suitable to be used directly on classic systems.
+
+Package: linux-tools-generic-hwe-24.04-edge-kfocus
+Architecture: amd64 armhf arm64 ppc64el s390x
+Section: kernel
+Provides: linux-tools
+Replaces: linux-tools-generic-hwe-24.04-edge
+Conflicts: linux-tools-generic-hwe-24.04-edge
+Depends: ${misc:Depends}, linux-tools-${kernel-abi-version}-generic
+Description: Generic Linux kernel tools
+ This package will always depend on the latest generic kernel tools
+ available.
+
+Package: linux-cloud-tools-generic-hwe-24.04-edge-kfocus
+Architecture: amd64
+Section: kernel
+Provides: linux-cloud-tools
+Replaces: linux-cloud-tools-generic-hwe-24.04-edge
+Conflicts: linux-cloud-tools-generic-hwe-24.04-edge
+Depends: ${misc:Depends}, linux-cloud-tools-${kernel-abi-version}-generic
+Description: Generic Linux kernel cloud tools
+ This package will always depend on the latest generic kernel cloud tools
+ available.
+
+Package: linux-generic-hwe-24.04-edge-kfocus
+Architecture: amd64 armhf arm64 ppc64el s390x
+Section: kernel
+Provides:  
+Replaces: linux-generic-hwe-24.04-edge
+Conflicts: linux-generic-hwe-24.04-edge
+Depends: ${misc:Depends}, linux-image-generic-hwe-24.04-edge-kfocus (= ${binary:Version}), linux-headers-generic-hwe-24.04-edge-kfocus (= ${binary:Version})
+Recommends: linux-tools-${kernel-abi-version}-generic-kfocus, ubuntu-kernel-accessories
+Description: Complete Generic Linux kernel and headers
+ This package will always depend on the latest complete generic Linux kernel
+ and headers.
+
+
+Package: linux-headers-generic-oem-24.04-kfocus
+Architecture: amd64 armhf arm64 ppc64el s390x
+Section: kernel
+Replaces: linux-headers-generic-oem-24.04
+Conflicts: linux-headers-generic-oem-24.04
+Depends: ${misc:Depends}, linux-headers-${kernel-abi-version}-generic
+Description: Generic Linux kernel headers
+ This package will always depend on the latest generic kernel headers
+ available.
+
+Package: linux-image-generic-oem-24.04-kfocus
+Architecture: amd64 armhf arm64 ppc64el s390x
+Section: kernel
+Provides: ${dkms:v4l2loopback-modules} ${dkms:zfs-modules} ${dkms:virtualbox-guest-modules} ${dkms:wireguard-linux-compat-modules}
+Replaces: linux-image-generic-oem-24.04
+Conflicts: linux-image-generic-oem-24.04
+Depends: ${misc:Depends}, linux-image-${kernel-abi-version}-generic, linux-modules-extra-${kernel-abi-version}-generic [amd64 arm64 ppc64el s390x], linux-firmware [amd64 armhf arm64 ppc64el], intel-microcode [amd64], amd64-microcode [amd64]
+Recommends: thermald [amd64]
+Description: Generic Linux kernel image
+ This package will always depend on the latest generic kernel image
+ available.
+
+Package: linux-image-uc-generic-oem-24.04-kfocus
+Architecture: amd64 arm64
+Section: kernel
+Replaces: linux-image-uc-generic-oem-24.04
+Conflicts: linux-image-uc-generic-oem-24.04
+Depends: ${misc:Depends}, linux-image-uc-${kernel-abi-version}-generic, linux-modules-extra-${kernel-abi-version}-generic, linux-firmware, firmware-sof-signed [amd64], wireless-regdb
+Description: Generic Linux kernel image for Ubuntu Core
+ This package will always depend on the latest generic kernel image
+ available.
+ .
+ This kernel is suitable for staging into a kernel snap, and is not
+ suitable to be used directly on classic systems.
+
+Package: linux-tools-generic-oem-24.04-kfocus
+Architecture: amd64 armhf arm64 ppc64el s390x
+Section: kernel
+Provides: linux-tools
+Replaces: linux-tools-generic-oem-24.04
+Conflicts: linux-tools-generic-oem-24.04
+Depends: ${misc:Depends}, linux-tools-${kernel-abi-version}-generic
+Description: Generic Linux kernel tools
+ This package will always depend on the latest generic kernel tools
+ available.
+
+Package: linux-cloud-tools-generic-oem-24.04-kfocus
+Architecture: amd64
+Section: kernel
+Provides: linux-cloud-tools
+Replaces: linux-cloud-tools-generic-oem-24.04
+Conflicts: linux-cloud-tools-generic-oem-24.04
+Depends: ${misc:Depends}, linux-cloud-tools-${kernel-abi-version}-generic
+Description: Generic Linux kernel cloud tools
+ This package will always depend on the latest generic kernel cloud tools
+ available.
+
+Package: linux-generic-oem-24.04-kfocus
+Architecture: amd64 armhf arm64 ppc64el s390x
+Section: kernel
+Provides:  
+Replaces: linux-generic-oem-24.04
+Conflicts: linux-generic-oem-24.04
+Depends: ${misc:Depends}, linux-image-generic-oem-24.04-kfocus (= ${binary:Version}), linux-headers-generic-oem-24.04-kfocus (= ${binary:Version})
+Recommends: linux-tools-${kernel-abi-version}-generic-kfocus, ubuntu-kernel-accessories
 Description: Complete Generic Linux kernel and headers
  This package will always depend on the latest complete generic Linux kernel
  and headers.
 
 
 
-Package: linux-modules-ipu6-generic-hwe-22.04
+Package: linux-modules-ipu6-generic
 Architecture: amd64
 Section: kernel
 Provides: ${dkms:ipu6-modules}
@@ -160,7 +301,7 @@ Description: Extra drivers for ipu6 for the generic flavour
  Install extra signed ipu6 modules compatible with the generic flavour.
 
 
-Package: linux-modules-ipu6-generic-hwe-22.04-edge
+Package: linux-modules-ipu6-generic-hwe-24.04
 Architecture: amd64
 Section: kernel
 Provides: ${dkms:ipu6-modules}
@@ -171,7 +312,29 @@ Description: Extra drivers for ipu6 for the generic flavour
  Install extra signed ipu6 modules compatible with the generic flavour.
 
 
-Package: linux-modules-ivsc-generic-hwe-22.04
+Package: linux-modules-ipu6-generic-hwe-24.04-edge
+Architecture: amd64
+Section: kernel
+Provides: ${dkms:ipu6-modules}
+Depends:
+ ${misc:Depends},
+ linux-modules-ipu6-${kernel-abi-version}-generic,
+Description: Extra drivers for ipu6 for the generic flavour
+ Install extra signed ipu6 modules compatible with the generic flavour.
+
+
+Package: linux-modules-ipu6-generic-oem-24.04
+Architecture: amd64
+Section: kernel
+Provides: ${dkms:ipu6-modules}
+Depends:
+ ${misc:Depends},
+ linux-modules-ipu6-${kernel-abi-version}-generic,
+Description: Extra drivers for ipu6 for the generic flavour
+ Install extra signed ipu6 modules compatible with the generic flavour.
+
+
+Package: linux-modules-ivsc-generic
 Architecture: amd64
 Section: kernel
 Provides: ${dkms:ivsc-modules}
@@ -182,7 +345,7 @@ Description: Extra drivers for ivsc for the generic flavour
  Install extra signed ivsc modules compatible with the generic flavour.
 
 
-Package: linux-modules-ivsc-generic-hwe-22.04-edge
+Package: linux-modules-ivsc-generic-hwe-24.04
 Architecture: amd64
 Section: kernel
 Provides: ${dkms:ivsc-modules}
@@ -193,7 +356,29 @@ Description: Extra drivers for ivsc for the generic flavour
  Install extra signed ivsc modules compatible with the generic flavour.
 
 
-Package: linux-modules-iwlwifi-generic-hwe-22.04
+Package: linux-modules-ivsc-generic-hwe-24.04-edge
+Architecture: amd64
+Section: kernel
+Provides: ${dkms:ivsc-modules}
+Depends:
+ ${misc:Depends},
+ linux-modules-ivsc-${kernel-abi-version}-generic,
+Description: Extra drivers for ivsc for the generic flavour
+ Install extra signed ivsc modules compatible with the generic flavour.
+
+
+Package: linux-modules-ivsc-generic-oem-24.04
+Architecture: amd64
+Section: kernel
+Provides: ${dkms:ivsc-modules}
+Depends:
+ ${misc:Depends},
+ linux-modules-ivsc-${kernel-abi-version}-generic,
+Description: Extra drivers for ivsc for the generic flavour
+ Install extra signed ivsc modules compatible with the generic flavour.
+
+
+Package: linux-modules-iwlwifi-generic
 Architecture: amd64
 Section: kernel
 Provides: ${dkms:iwlwifi-modules}
@@ -204,7 +389,29 @@ Description: Extra drivers for iwlwifi for the generic flavour
  Install extra signed iwlwifi modules compatible with the generic flavour.
 
 
-Package: linux-modules-iwlwifi-generic-hwe-22.04-edge
+Package: linux-modules-iwlwifi-generic-hwe-24.04
+Architecture: amd64
+Section: kernel
+Provides: ${dkms:iwlwifi-modules}
+Depends:
+ ${misc:Depends},
+ linux-modules-iwlwifi-${kernel-abi-version}-generic,
+Description: Extra drivers for iwlwifi for the generic flavour
+ Install extra signed iwlwifi modules compatible with the generic flavour.
+
+
+Package: linux-modules-iwlwifi-generic-hwe-24.04-edge
+Architecture: amd64
+Section: kernel
+Provides: ${dkms:iwlwifi-modules}
+Depends:
+ ${misc:Depends},
+ linux-modules-iwlwifi-${kernel-abi-version}-generic,
+Description: Extra drivers for iwlwifi for the generic flavour
+ Install extra signed iwlwifi modules compatible with the generic flavour.
+
+
+Package: linux-modules-iwlwifi-generic-oem-24.04
 Architecture: amd64
 Section: kernel
 Provides: ${dkms:iwlwifi-modules}

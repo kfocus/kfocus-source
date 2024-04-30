@@ -1,187 +1,409 @@
-linux-meta-hwe-6.5-kfocus (6.5.0.25.25~22.04.12) jammy; urgency=medium
+linux-meta-kfocus (6.8.0-31.31+kfocus1) noble; urgency=medium
 
   * Release for Kubuntu Focus
 
- -- Michael S. Mikowski <support@kfocus.org>  Sun, 10 Mar 2024 13:31:50 -0700
+ -- Michael S. Mikowski <support@kfocus.org>  Mon, 29 Apr 2024 18:32:54 -0700
 
-linux-meta-hwe-6.5 (6.5.0.25.25~22.04.12) jammy; urgency=medium
+linux-meta (6.8.0-31.31) noble; urgency=medium
 
-  * Bump ABI 6.5.0-25.25~22.04
-
-  * Packaging resync (LP: #1786013)
-    - [Packaging] resync debian/dkms-versions from main package
-
- -- Roxana Nicolescu <roxana.nicolescu@canonical.com>  Tue, 20 Feb 2024 15:22:07 +0100
-
-linux-meta-hwe-6.5 (6.5.0.21.21~22.04.11) jammy; urgency=medium
-
-  * Bump ABI 6.5.0-21.21~22.04
-
- -- Roxana Nicolescu <roxana.nicolescu@canonical.com>  Fri, 09 Feb 2024 11:54:39 +0100
-
-linux-meta-hwe-6.5 (6.5.0.18.18~22.04.10) jammy; urgency=medium
-
-  * Bump ABI 6.5.0-18.18~22.04
-
- -- Stefan Bader <stefan.bader@canonical.com>  Wed, 07 Feb 2024 11:02:02 +0100
-
-linux-meta-hwe-6.5 (6.5.0.17.17~22.04.9) jammy; urgency=medium
-
-  * Bump ABI 6.5.0-17.17~22.04
+  * Main version: 6.8.0-31.31
 
   * Packaging resync (LP: #1786013)
-    - [Packaging] resync debian/dkms-versions from main package
+    - [Packaging] debian/dkms-versions -- resync from main package
 
- -- Roxana Nicolescu <roxana.nicolescu@canonical.com>  Tue, 16 Jan 2024 13:33:21 +0100
+ -- Andrea Righi <andrea.righi@canonical.com>  Fri, 19 Apr 2024 23:48:34 +0200
 
-linux-meta-hwe-6.5 (6.5.0.15.15~22.04.8) jammy; urgency=medium
+linux-meta (6.8.0-30.30) noble; urgency=medium
 
-  * Bump ABI 6.5.0-15.15~22.04
+  * Main version: 6.8.0-30.30
 
- -- Roxana Nicolescu <roxana.nicolescu@canonical.com>  Fri, 12 Jan 2024 18:14:08 +0100
+ -- Andrea Righi <andrea.righi@canonical.com>  Tue, 16 Apr 2024 21:21:18 +0200
 
-linux-meta-hwe-6.5 (6.5.0.14.14~22.04.7) jammy; urgency=medium
+linux-meta (6.8.0-29.29) noble; urgency=medium
+
+  * Main version: 6.8.0-29.29
+
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Tue, 16 Apr 2024 20:33:43 +0200
+
+linux-meta (6.8.0-28.28) noble; urgency=medium
+
+  * Main version: 6.8.0-28.28
+
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Tue, 16 Apr 2024 19:02:46 +0200
+
+linux-meta (6.8.0-27.27) noble; urgency=medium
+
+  * Main version: 6.8.0-27.27
+
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Tue, 16 Apr 2024 11:15:08 +0200
+
+linux-meta (6.8.0-26.26) noble; urgency=medium
+
+  * Main version: 6.8.0-26.26
+
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Tue, 16 Apr 2024 07:30:46 +0200
+
+linux-meta (6.8.0-25.25) noble; urgency=medium
+
+  * Main version: 6.8.0-25.25
+
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Fri, 12 Apr 2024 11:33:38 +0200
+
+linux-meta (6.8.0-24.24) noble; urgency=medium
+
+  * Main version: 6.8.0-24.24
+
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Tue, 09 Apr 2024 12:11:43 +0200
+
+linux-meta (6.8.0-23.23) noble; urgency=medium
+
+  * Main version: 6.8.0-23.23
+
+  * Miscellaneous Ubuntu changes
+    - [Packaging] transitionals: bump oem-20.04 and oem-22.04 to rdepend on
+      hwe-24.04 counterparts
+    - debian/dkms-versions -- update from main
+
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Mon, 08 Apr 2024 15:23:20 +0200
+
+linux-meta (6.8.0-22.22) noble; urgency=medium
+
+  * Main version: 6.8.0-22.22
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Thu, 04 Apr 2024 23:02:11 +0200
+
+linux-meta (6.8.0-20.20+1) noble; urgency=medium
+
+
+  * Miscellaneous Ubuntu changes
+    - [Packaging] Recommends ubuntu-kernel-accessories from linux-
+      generic/generic-64k
+
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Mon, 18 Mar 2024 15:09:48 +0100
+
+linux-meta (6.8.0-20.20) noble; urgency=medium
+
+  * Main version: 6.8.0-20.20
 
   * Packaging resync (LP: #1786013)
     - [Packaging] update variants
 
- -- Roxana Nicolescu <roxana.nicolescu@canonical.com>  Wed, 13 Dec 2023 12:41:59 +0100
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Mon, 18 Mar 2024 11:09:09 +0100
 
-linux-meta-hwe-6.5 (6.5.0.14.14~22.04.6) jammy; urgency=medium
+linux-meta (6.8.0-19.19) noble; urgency=medium
 
-  * Bump ABI 6.5.0-14.14~22.04
+  * Main version: 6.8.0-19.19
 
- -- Roxana Nicolescu <roxana.nicolescu@canonical.com>  Mon, 20 Nov 2023 15:12:38 +0100
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Thu, 14 Mar 2024 14:36:31 +0100
 
-linux-meta-hwe-6.5 (6.5.0.12.12~22.04.5) jammy; urgency=medium
+linux-meta (6.8.0-18.18) noble; urgency=medium
 
-  * Bump version up
+  * Main version: 6.8.0-18.18
 
- -- Andrea Righi <andrea.righi@canonical.com>  Thu, 09 Nov 2023 14:41:23 +0200
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Tue, 12 Mar 2024 14:45:18 +0100
 
-linux-meta-hwe-6.5 (6.5.0.12.12~22.04.4) jammy; urgency=medium
+linux-meta (6.8.0-17.17) noble; urgency=medium
 
-  * Bump ABI 6.5.0-12.12~22.04
+  * Main version: 6.8.0-17.17
 
-  * Miscellaneous upstream changes
-    - Revert "UBUNTU: [Packaging] use meta version for changelog and tag"
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Mon, 11 Mar 2024 12:46:53 +0100
 
- -- Andrea Righi <andrea.righi@canonical.com>  Thu, 09 Nov 2023 14:01:15 +0200
+linux-meta (6.8.0-16.16) noble; urgency=medium
 
-linux-meta-hwe-6.5 (6.5.0.9.11~22.04.3) jammy; urgency=medium
+  * Main version: 6.8.0-16.16
 
-  * Bump ABI 6.5.0-12.12~22.04
+  * Miscellaneous Ubuntu changes
+    - [Packaging] move 'Recommends linux-tools-$version-$flavour' to
+      linux-$flavour
+
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Mon, 11 Mar 2024 10:48:50 +0100
+
+linux-meta (6.8.0-15.15) noble; urgency=medium
+
+  * Main version: 6.8.0-15.15
+
+  * Miscellaneous Ubuntu changes
+    - [Packaging] Transition laptop-23.10 to generic
+
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Mon, 04 Mar 2024 11:41:57 +0100
+
+linux-meta (6.8.0-14.14) noble; urgency=medium
+
+  * Main version: 6.8.0-14.14
+
+  * Miscellaneous Ubuntu changes
+    - debian/dkms-versions -- update from main
+
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Fri, 01 Mar 2024 11:47:54 +0100
+
+linux-meta (6.8.0-13.13) noble; urgency=medium
+
+  * Main version: 6.8.0-13.13
+
+  * Miscellaneous Ubuntu changes
+    - debian/dkms-versions -- update from main
+
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Thu, 29 Feb 2024 15:02:54 +0100
+
+linux-meta (6.8.0-12.12) noble; urgency=medium
+
+  * Main version: 6.8.0-12.12
+
+  * Miscellaneous Ubuntu changes
+    - [Packaging] Recommends linux-tools-6.6.0-14-generic from linux-image-generic
+
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Thu, 22 Feb 2024 14:36:24 +0100
+
+linux-meta (6.8.0-11.11+1) noble; urgency=medium
+
+
+  * Miscellaneous Ubuntu changes
+    - [Packaging] temporarily remove linux-modules-ipu6-oem-22.04 and linux-
+      modules-ivsc-oem-22.04
+
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Wed, 21 Feb 2024 12:20:33 +0100
+
+linux-meta (6.8.0-11.11) noble; urgency=medium
+
+  * Main version: 6.8.0-11.11
+
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Wed, 14 Feb 2024 00:04:47 +0100
+
+linux-meta (6.8.0-10.10) noble; urgency=medium
+
+  * Main version: 6.8.0-10.10
+
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Tue, 13 Feb 2024 13:24:21 +0100
+
+linux-meta (6.8.0-9.9) noble; urgency=medium
+
+  * Main version: 6.8.0-9.9
+
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Mon, 12 Feb 2024 15:49:40 +0100
+
+linux-meta (6.8.0-8.8) noble; urgency=medium
+
+  * Main version: 6.8.0-8.8
+
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Mon, 12 Feb 2024 11:07:40 +0100
+
+linux-meta (6.8.0-7.7) noble; urgency=medium
+
+  * Main version: 6.8.0-7.7
+
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Thu, 08 Feb 2024 12:06:08 +0100
+
+linux-meta (6.8.0-6.6) noble; urgency=medium
+
+  * Main version: 6.8.0-6.6
 
   * Packaging resync (LP: #1786013)
-    - [Packaging] resync git-ubuntu-log
-    - [Packaging] update variants
-    - [Packaging] resync debian/dkms-versions from main package
-
- -- Andrea Righi <andrea.righi@canonical.com>  Thu, 09 Nov 2023 13:17:25 +0200
-
-linux-meta-hwe-6.5 (6.5.0.9.11~22.04.2) jammy; urgency=medium
-
-  * Packaging resync (LP: #1786013)
+    - [Packaging] remove update-version script
     - [Packaging] update variants
 
   * Miscellaneous Ubuntu changes
-    - [Packaging] initialize linux-meta-hwe-6.5
-    - [Packaging] use meta version for changelog and tag
+    - [packaging] rename to linux-meta
+    - debian/dkms-versions -- update from main
 
- -- Andrea Righi <andrea.righi@canonical.com>  Wed, 11 Oct 2023 15:05:06 +0200
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Wed, 07 Feb 2024 15:11:17 +0100
 
-linux-meta-hwe-6.5 (6.5.0.9.11~22.04.1) jammy; urgency=medium
+linux-meta (6.8.0-5.5) noble; urgency=medium
+
+  * Master version: 6.8.0-5.5
+
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Fri, 02 Feb 2024 12:59:31 +0100
+
+linux-meta-unstable (6.8.0-4.4) noble; urgency=medium
+
+  * Master version: 6.8.0-4.4
+
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Mon, 29 Jan 2024 14:14:13 +0100
+
+linux-meta-unstable (6.8.0-3.3) noble; urgency=medium
+
+  * Master version: 6.8.0-3.3
+
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Mon, 29 Jan 2024 09:00:10 +0100
+
+linux-meta-unstable (6.8.0-2.2) noble; urgency=medium
+
+  * Master version: 6.8.0-2.2
+
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Wed, 24 Jan 2024 13:10:37 +0100
+
+linux-meta-unstable (6.8.0-1.1) noble; urgency=medium
+
+  * Master version: 6.8.0-1.1
+
+  * Miscellaneous Ubuntu changes
+    - debian/dkms-versions -- update from master
+
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Wed, 24 Jan 2024 10:49:42 +0100
+
+linux-meta-unstable (6.7.0-7.7) noble; urgency=medium
+
+  * Master version: 6.7.0-7.7
+
+  * Packaging resync (LP: #1786013)
+    - [Packaging] update variants
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Mon, 15 Jan 2024 08:47:37 +0100
+
+linux-meta-unstable (6.7.0-6.6) noble; urgency=medium
+
+  *  Empty entry
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Mon, 15 Jan 2024 08:43:49 +0100
+
+linux-meta (6.7.0-2.2) noble; urgency=medium
+
+  * Master version: 6.7.0-2.2
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Fri, 12 Jan 2024 09:23:58 +0100
+
+linux-meta (6.7.0-1.1) noble; urgency=medium
+
+  * Master version: 6.7.0-1.1
+
+  * Miscellaneous Ubuntu changes
+    - debian/dkms-versions -- update from master
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Wed, 10 Jan 2024 14:33:05 +0100
+
+linux-meta (6.7.0-0.0) noble; urgency=medium
 
   * Empty entry
 
- -- Andrea Righi <andrea.righi@canonical.com>  Wed, 11 Oct 2023 08:53:42 +0200
+ -- Andrea Righi <andrea.righi@canonical.com>  Wed, 10 Jan 2024 10:05:47 +0100
 
-linux-meta (6.5.0.9.11) mantic; urgency=medium
+linux-meta-unstable (6.7.0-5.5) noble; urgency=medium
 
-  * Bump ABI 6.5.0-9
+  * Master version: 6.7.0-5.5
 
- -- Andrea Righi <andrea.righi@canonical.com>  Fri, 06 Oct 2023 21:13:38 +0200
+  * Miscellaneous Ubuntu changes
+    - debian/dkms-versions -- update from master
 
-linux-meta (6.5.0.8.10) mantic; urgency=medium
+ -- Andrea Righi <andrea.righi@canonical.com>  Sat, 06 Jan 2024 08:31:43 +0100
 
-  * Bump ABI 6.5.0-8
+linux-meta-unstable (6.7.0-4.4) noble; urgency=medium
 
- -- Andrea Righi <andrea.righi@canonical.com>  Fri, 06 Oct 2023 07:36:32 +0200
+  * Master version: 6.7.0-4.4
 
-linux-meta (6.5.0.7.9) mantic; urgency=medium
+ -- Andrea Righi <andrea.righi@canonical.com>  Tue, 02 Jan 2024 17:52:44 +0100
 
-  * Bump ABI 6.5.0-7
+linux-meta-unstable (6.7.0-3.3) noble; urgency=medium
 
- -- Andrea Righi <andrea.righi@canonical.com>  Thu, 28 Sep 2023 10:21:43 +0200
+  * Master version: 6.7.0-3.3
 
-linux-meta (6.5.0.6.8) mantic; urgency=medium
+ -- Andrea Righi <andrea.righi@canonical.com>  Mon, 11 Dec 2023 16:02:22 +0100
 
-  * Bump ABI 6.5.0-6
+linux-meta-unstable (6.7.0-2.2) noble; urgency=medium
 
- -- Andrea Righi <andrea.righi@canonical.com>  Thu, 14 Sep 2023 16:48:17 +0200
+  * Master version: 6.7.0-2.2
 
-linux-meta (6.5.0.5.7) mantic; urgency=medium
+ -- Andrea Righi <andrea.righi@canonical.com>  Wed, 29 Nov 2023 07:53:43 +0100
 
-  * Bump ABI 6.5.0-5
+linux-meta-unstable (6.7.0-1.1) noble; urgency=medium
+
+  * Master version: 6.7.0-1.1
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Tue, 21 Nov 2023 10:46:11 +0100
+
+linux-meta-unstable (6.7.0-0.0) noble; urgency=medium
+
+  * Empty entry
+
+ -- Andrea Righi <andrea.righi@canonical.com>  Tue, 21 Nov 2023 10:42:25 +0100
+
+linux-meta-unstable (6.6.0-12.12) noble; urgency=medium
+
+  * Master version: 6.6.0-12.12
+
+  * Miscellaneous Ubuntu changes
+    - debian/dkms-versions -- update from master
+
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Thu, 16 Nov 2023 12:01:46 +0100
+
+linux-meta-unstable (6.6.0-11.11) noble; urgency=medium
+
+  * Master version: 6.6.0-11.11
 
   * Packaging resync (LP: #1786013)
-    - [Packaging] resync debian/dkms-versions from main package
+    - [Packaging] resync git-ubuntu-log
 
- -- Andrea Righi <andrea.righi@canonical.com>  Wed, 06 Sep 2023 15:52:13 +0200
+  * Miscellaneous Ubuntu changes
+    - [Packaging] move to Noble
+    - debian/dkms-versions -- update from master
 
-linux-meta (6.5.0.4.6) mantic; urgency=medium
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Wed, 15 Nov 2023 14:54:51 +0100
 
-  * Bump ABI 6.5.0-4
+linux-meta-unstable (6.6.0-10.10) noble; urgency=medium
 
-  * Packaging resync (LP: #1786013)
-    - [Packaging] resync debian/dkms-versions from main package
-
- -- Andrea Righi <andrea.righi@canonical.com>  Mon, 04 Sep 2023 16:56:44 +0200
-
-linux-meta (6.5.0.3.5) mantic; urgency=medium
-
-  * Bump ABI 6.5.0-3
+  * Master version: 6.6.0-10.10
 
   * Packaging resync (LP: #1786013)
-    - [Packaging] resync debian/dkms-versions from main package
+    - [Packaging] resync git-ubuntu-log
 
- -- Andrea Righi <andrea.righi@canonical.com>  Fri, 01 Sep 2023 16:17:46 +0200
+  * Miscellaneous Ubuntu changes
+    - [Packaging] Hard-code wireguard module version
+    - debian/scripts/misc/git-ubuntu-log -- update from master
 
-linux-meta (6.5.0.2.4) mantic; urgency=medium
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Thu, 09 Nov 2023 12:05:37 +0200
+
+linux-meta-unstable (6.6.0-9.9) mantic; urgency=medium
+
+  * Master version: 6.6.0-9.9
+
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Fri, 03 Nov 2023 12:05:19 +0100
+
+linux-meta-unstable (6.6.0-8.8) mantic; urgency=medium
+
+  * Master version: 6.6.0-8.8
+
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Tue, 24 Oct 2023 10:55:51 +0200
+
+linux-meta-unstable (6.6.0-7.7) mantic; urgency=medium
+
+  * Master version: 6.6.0-7.7
+
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Mon, 23 Oct 2023 11:57:00 +0200
+
+linux-meta-unstable (6.6.0-6.6) mantic; urgency=medium
+
+  * Master version: 6.6.0-6.6
+
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Thu, 19 Oct 2023 12:09:41 +0200
+
+linux-meta-unstable (6.6.0-5.5) mantic; urgency=medium
+
+  * Master version: 6.6.0-5.5
+
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Tue, 10 Oct 2023 11:18:56 +0200
+
+linux-meta-unstable (6.6.0-4.4) mantic; urgency=medium
+
+  * Master version: 6.6.0-4.4
+
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Wed, 04 Oct 2023 11:17:16 +0200
+
+linux-meta-unstable (6.6.0-3.3) mantic; urgency=medium
+
+  * Master version: 6.6.0-3.3
+
+ -- Paolo Pisati <paolo.pisati@canonical.com>  Thu, 28 Sep 2023 11:06:04 +0200
+
+linux-meta-unstable (6.6.0-2.2) mantic; urgency=medium
+
+  * Master version: 6.6.0-2.2
 
   * Remove non-LPAE kernel flavor (LP: #2025265)
-    - [Packaging] Fix lpae transitional
+    - [Packaging] Fixup armhf lpae transitional
 
- -- Andrea Righi <andrea.righi@canonical.com>  Fri, 01 Sep 2023 12:22:51 +0200
+  * Miscellaneous Ubuntu changes
+    - [Packaging] allow meta version to use dashes when computing ABI
+    - [Packaging] Reuse update-version from linux-signed
 
-linux-meta (6.5.0.2.3) mantic; urgency=medium
-
-  * SIGNEDv5: add ubuntu-core-initrd support to the linux-generate ancillary
-    package (LP: #2027818)
-    - Add linux-image-uc-generic meta
-
- -- Andrea Righi <andrea.righi@canonical.com>  Wed, 30 Aug 2023 14:11:47 +0200
-
-linux-meta (6.5.0.2.2) mantic; urgency=medium
-
-  * Bump ABI 6.5.0-2
-
- -- Andrea Righi <andrea.righi@canonical.com>  Mon, 28 Aug 2023 09:37:12 +0200
-
-linux-meta (6.5.0.1.1) mantic; urgency=medium
-
-  * Bump ABI 6.5.0-1
-
-  * Packaging resync (LP: #1786013)
-    - [Packaging] resync debian/dkms-versions from main package
-
- -- Andrea Righi <andrea.righi@canonical.com>  Thu, 24 Aug 2023 17:49:18 +0200
-
-linux-meta (6.5.0.0.0) mantic; urgency=medium
-
-  * Empty entry
-
- -- Andrea Righi <andrea.righi@canonical.com>  Wed, 23 Aug 2023 08:16:05 +0200
+ -- Dimitri John Ledkov <dimitri.ledkov@canonical.com>  Mon, 25 Sep 2023 23:50:59 +0100
 
 linux-meta-unstable (6.5.0.4.5) mantic; urgency=medium
 
