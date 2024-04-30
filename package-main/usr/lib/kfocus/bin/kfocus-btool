@@ -254,7 +254,7 @@ _EOT5
     _idx=0;
     for _line in "${_found_list[@]}"; do
       IFS=';' read -r -a _bitList<<<"${_line}";
-      _info_str="$(_echoDiskInfoFn)";
+      _info_str="$(_echoDiskInfoFn)"
       _echoFn "${_idx}. Install BIOS upgrade to ${_info_str}.";
       (( _idx++ ));
     done;

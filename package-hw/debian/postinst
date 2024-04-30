@@ -361,15 +361,15 @@ _setupModelHintsFn () {
 
   _cmXSetMsgFn 'Setup model hints';
 
-  _model_code="${1:-default}";
+  _model_code="${1:-other}";
   _hints_dir='/usr/share/kfocus-hints';
 
   _unique_dir="${_hints_dir}/unique";
   _model_dir="${_unique_dir}/${_model_code}";
 
   if [ ! -d "${_model_dir}" ]; then
-    _cmXWarnStrFn 'Model dir not found. Using default.';
-    _model_dir="${_unique_dir}/default";
+    _cmXWarnStrFn 'Model dir not found. Using other.';
+    _model_dir="${_unique_dir}/other";
   fi
 
   if [ ! -d "${_model_dir}" ]; then

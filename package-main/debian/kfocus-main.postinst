@@ -73,55 +73,42 @@ _applyRootConfigFn () {
 }
 ## . END _applyRootConfigFn }
 
-## BEGIN _setupModelHintsFn {
- # Purpose: Setup hint widget model-specific symlinks
- # Important: This is an extract from kfocus-hw which is the master.
- # Update that code first and copy here. This must be here in case
- # this is updated separate from kfocus-hw.
+## BEGIN _setupHintDefaultsFn {
+ # Purpose: Setup hint widget. Link to default panels IFF
+ #   the links do not already exist. Otherwise, we assume
+ #   kfocus-hw has created the links and all is copacetic.
  #
-_setupModelHintsFn () {
-  declare _lib_file _model_code _hints_dir _unique_dir _model_dir \
+_setupHintDefaultsFn () {
+  declare _hints_dir _default_dir \
     _png_list _src_path _img_file _tgt_path _msg;
 
   # Initialize
-  _cmXSetMsgFn 'Setup model hints';
+  _cmXSetMsgFn 'Set defaults for model hints if needed';
   _hints_dir='/usr/share/kfocus-hints';
-  _lib_file="${_libKfocusDir}/lib/common.2.source";
 
-  # Extract model code from common library if available
-  if [ -r "${_lib_file}" ]; then
-    # shellcheck disable=1091,1090 source=/usr/lib/kfocus/lib/common.2.source
-    source "${_lib_file}" || true;
-    if [ "$(type -t _cm2EchoModelStrFn)" = 'function' ]; then
-      _model_code="$(_cm2EchoModelStrFn 'code')";
-    fi
-  fi
-  if [ -z "${_model_code:-}"  ]; then  _model_code='other'; fi
 
-  # Calculate and test target directories
-  _unique_dir="${_hints_dir}/unique";
-  _model_dir="${_unique_dir}/${_model_code}";
-  if [ ! -d "${_model_dir}" ]; then
-    _cmXWarnStrFn 'Model dir not found. Using default.';
-    _model_dir="${_unique_dir}/default";
-    if [ ! -d "${_model_dir}" ]; then
-      _cmXWarnStrFn "Unexpected missing default dir: ${_model_dir}";
-      _cmXWarnStrFn '  Skipping step.';
-      return;
-    fi
+  # Calculate and test default dir
+  _default_dir="${_hints_dir}/default";
+  if [ ! -d "${_default_dir}" ]; then
+    _cmXWarnStrFn "Unexpected missing default dir: ${_default_dir}";
+    _cmXWarnFn;
+    return;
   fi
 
-  ## Begin Loop through unique images
+  ## Begin Loop through default images {
+   # Set default image links if not already set.
+   #
   mapfile -n30 -t _png_list < <(
-    find "${_model_dir}" -mindepth 1 -maxdepth 1 -name '*.png' | sort
+    find "${_default_dir}" -mindepth 1 -maxdepth 1 -name '*.png' | sort
   );
   for _src_path in "${_png_list[@]}"; do
     _img_file="$(basename "${_src_path}")";
     _tgt_path="${_hints_dir}/${_img_file}";
     if [ ! -f "${_src_path}" ]; then continue; fi
 
-    if [ -e "${_tgt_path}" ]; then
-      rm -f "${_tgt_path}" || continue;
+    if [ -f "${_tgt_path}" ]; then
+      _cmXWarnStrFn "${_tgt_path} already set. Skipped.";
+      continue;
     fi
 
     _msg="symlink target ${_tgt_path}";
@@ -131,11 +118,11 @@ _setupModelHintsFn () {
       _cmXWarnStrFn "Could not create ${_msg}";
     fi
   done
-  ## . End Loop through unique images
+  ## . End Loop through default images }
 
   _cmXSucFn;
 }
-## . END _setupModelHintsFn }
+## . END _setupHintDefaultsFn }
 
 ## BEGIN _cleanupFn {
 #  Purpose: Clean up of various bits
@@ -164,107 +151,23 @@ _cleanUpFn () {
     fi
   fi
 
-  # Update systemctl for removed kfocus-dm.service
-  _cmXSetMsgFn 'Remove out-of-date services';
-  2>/dev/null deb-systemd-helper purge  kfocus-dm.service || true;
-  2>/dev/null deb-systemd-helper unmask kfocus-dm.service || true;
-  _cmXSucFn;
-
   # Enable system-level FocusRx
   _cmXSetMsgFn 'Enable services';
   2>/dev/null deb-systemd-helper enable kfocus-focusrx-system.service || true;
   _cmXSucFn;
 
-  # Remove old bash completion symlink
-  if [ -f /etc/bash_completion.d/kfocus-bashcompletion ]; then
-    rm /etc/bash_completion.d/kfocus-bashcompletion;
-  fi
-
-  # See https://askubuntu.com/questions/1018576
-  # This allows boot work faster before network is enabled
-  # 2551 Disabled to prevent breaking network file systems
+  # Remove old bash completion symlink; this was renamed to
+  #   /etc/bash_completion.d/kfocus
+  # This is from Jammy; remove after Noble LTS
   #
-  # _cmXSetMsgFn 'Disable wait for network on boot';
-  # if ( deb-systemd-helper disable NetworkManager-wait-online.service ); then
-  #   _cmXSucFn; else _cmXWarnFn;
-  # fi
+  if [ -f /etc/bash_completion.d/kfocus-bashcompletion ]; then
+    _cmXSetMsgFn 'Remove out-of-date kfocus-bashcompletion';
+    if rm -f /etc/bash_completion.d/kfocus-bashcompletion; then
+      _cmXSucFn; else _cmXWarnFn;
+    fi
+  fi
 }
 ## . END _cleanupFn }
-
-## BEGIN _adviseRebootFn {
-# IMPORTED on 2022-03-23 from test/test-scripts/unit.d/00100_adviseReboot
-# Purpose: Advise reboot after install. Enable when appropriate.
-#   See https://askubuntu.com/questions/993570
-#
-#_adviseRebootFn () {
-#  declare _reboot_file;
-#  _reboot_file="${_rootDir}/var/run/reboot-required";
-#  _cmXSetMsgFn 'Advise reboot';
-#  if touch "${_reboot_file}"; then
-#    _cmXSucStrFn "Wrote ${_reboot_file}";
-#    _cmXSucFn;
-#  else
-#    _cmXWarnStrFn "Could not write ${_reboot_file}";
-#    _cmXWarnFn;
-#  fi
-#}
-## . END _adviseRebootFn }
-
-
-## BEGIN _setupSddmFixFn {
-_setupSddmFixFn () {
-  declare _blk_str _xsetup_file _setup_str;
-
-  _cmXSetMsgFn 'Setup SDDM screen fix';
-  _blk_str='/## BEGIN kfocus addition sddm fix\s*$/I,'
-  _blk_str+='/## . END kfocus addition sddm fix\s*$/Id';
-
-  _xsetup_file="${_rootDir}/usr/share/sddm/scripts/Xsetup";
-
-  ## Begin Short circuit block
-  while true; do
-    if [ ! -e "${_xsetup_file}" ]; then break; fi
-    if ! grep -qi '^## BEGIN kfocus' "${_xsetup_file}"; then break; fi
-
-    if sed -i "${_blk_str}" "${_xsetup_file}"; then
-      _cmXSucStrFn "Scrubbed ${_xsetup_file}";
-      break;
-    fi
-
-    # Alternate scrubber
-    sed -i '/##\s* \(BEGIN\|. END\) kfocus addition/Id' "${_xsetup_file}";
-    sed -i '/managed by kfocus/Id'                      "${_xsetup_file}";
-    sed -i '/if \[ -x "\${_kfSetupExe}" \];/d'          "${_xsetup_file}";
-    sed -i $'/_kfSetupExe=\'\/usr\/lib\/kfocus/d'       "${_xsetup_file}";
-    break;
-  done
-  ## . End Short circuit block
-
-  # 3153 Skip adding call if we find a signature of
-  # the sddm workaround per 2988.
-  if grep -qi '\Wxrandr\W.*--listmonitors' "${_xsetup_file}"; then
-    _cmXEchoFn 'Embedded SDDM fix signature found';
-    _cmXSucFn;
-    return;
-  fi
-
-  _setup_str="$(cat << 'EOS'
-## BEGIN KFocus addition sddm fix
-#  PLEASE DO NOT ALTER this section managed by kfocus-main
-_kfSetupExe='/usr/lib/kfocus/bin/kfocus-sddm-setup';
-if [ -x "${_kfSetupExe}" ]; then "${_kfSetupExe}" || true; fi
-## . END KFocus addition sddm fix
-EOS
-)";
-
-  if echo "${_setup_str}" >> "${_xsetup_file}"; then
-    _cmXSucFn;
-  else
-    _cmXWarnStrFn "Trouble updating ${_xsetup_file}";
-    _cmXWarnFn;
-  fi
-}
-## . END _setupSddmFixFn }
 
 ## BEGIN declare and assign global vars {
 declare _rootDir _repoSrcDir _libKfocusDir;
@@ -279,30 +182,25 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   case "${1:-}" in
     abort-upgrade|abort-remove|abort-configure|abort*) true;;
     configure|upgrade)
-      # See jammy for
-      #   * _dedupRepoSrcFileFn to dedup repos if needed
-      #   * _setupSddmFixFn to apply SDDM screen order fix in Xsetup
-      #   * _addBashCompletionFn for kfocus-bashcompletion symlink
-      #   * _applyRootStyleFn => _applyRootconfigFn
-      #   * _createPlasmaWelcomeRcFn created user files; replace per 4176
+      # See jammy branch for
+      #   * _dedupRepoSrcFileFn: dedup repos if needed
+      #   * _setupSddmFixFn: apply SDDM screen-order fix to Xsetup; upstreamed
+      #   * _addBashCompletionFn: kfocus-bashcompletion symlink; now in links
+      #   * _applyRootStyleFn: renamed _applyRootConfigFn
+      #   * _createPlasmaWelcomeRcFn: create user files; replace per 4176
+      #   * _adviseRebootFn to advise a reboot after install; not needed
 
       # Download PCI extended data if needed
       _updatePciidsFn;
 
-      # Apply minimal skel copy for root user 
+      # Apply minimal skel copy for root user
       _applyRootConfigFn;
 
       # Create links per model
-      ## TODO: Set this to overwrite default ONLY if symlinks do not exist
-      _setupModelHintsFn;
+      _setupHintDefaultsFn;
 
       # Cleanup misc details
       _cleanUpFn;
-
-      # Advise reboot
-      # 2023-11-04 Enable when appropriate.
-      #   Otherwise, have subordinate packages make this call if needed.
-      # _adviseRebootFn;
     ;;
   esac
 fi
