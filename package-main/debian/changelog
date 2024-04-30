@@ -1,17 +1,27 @@
 kfocus-main (24.04.1~beta8) UNRELEASED; urgency=medium
 
- * control: Replace pcmemtest with memtest86+ (4085)
- * control: Uncomment kernel packages when available (4085)
- * control: Recommend vlc package, confirmed pulls in all libs (4085)
- * etc/xdg/autostart: replace with symlink (4085)
- * etc/xdg/autostart/kfocus-focusrx-dbus-dispatch.desktop: +symlink (4085)
- * kfocus-main.config: Adjust debconf message for Plasma 6.x (4085)
- * kfocus-main.postinst: Add notes on how to recover from jammy (4085)
- * kfocus-main.postinst: Audit, remove, annotate OOD Fns (4085)
- * kfocus-main.postinst: Link default kfocus-hints only if missing (4085)
- * usr/share/kfocus-hints/default: Move here to set defaults (4085)
- * usr/share/icons/pixmaps: All raster graphics removed (4240)
- * usr/share/icons/hicolor/scalable/apps: Update 9 kfocus-bug icons (4240)
+  * control: Recommend vlc package, confirmed pulls in all libs (#4085)
+  * usr/share/icons/pixmaps: Remove all raster icons (#4240)
+  * usr/share/icons/hicolor/scalable/apps: Update 9 kfocus-bug icons (#4240)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 23 Apr 2024 20:59:20 -0500
+
+kfocus-main (24.04.1~beta8) noble; urgency=medium
+
+  * control: Replace pcmemtest with memtest86+ (#4085)
+  * control: Add new kernel packages (#4085)
+  * etc/xdg/autostart: replace with symlink (#4085)
+  * etc/xdg/autostart/kfocus-focusrx-dbus-dispatch.desktop: +symlink (#4085)
+  * kfocus-main.config: Adjust debconf message for Plasma 6.x (#4085)
+  * kfocus-main.postinst: Add notes on how to recover from jammy (#4085)
+  * kfocus-main.postinst: Audit, remove, annotate OOD functions (#4085)
+  * kfocus-main.postinst: Link default kfocus-hints only if missing (#4085)
+  * usr/share/kfocus-hints/default: Move here from kfocus-hw to set defaults (#4085)
+  * usr/share/kfocus-hints: Update Hint Widget panels (#3939)
+  * usr/lib/kfocus/lib/common.2.source: Add Ir14g2 detection logic (#4222)
+  * usr/lib/kfocus/bin/kfocus-firstrun-set: Simplify plasma-welcomerc (#4176)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 23 Apr 2024 20:59:20 -0500
 
 kfocus-main (24.04.1~beta7) noble; urgency=medium
 
