@@ -7,10 +7,10 @@ loadTemplate("org.kfocus.desktop.defaultPanel");
 var scaleMatrix = {
   large : {
     icon_table  : [
-      { "h": 4, "w": 3, "y":  2 },
-      { "h": 4, "w": 3, "y":  8 },
-      { "h": 3, "w": 3, "y": 14 },
-      { "h": 4, "w": 3, "y": 19 }
+      { "h": 6, "w": 4, "y":  1 },
+      { "h": 6, "w": 4, "y":  8 },
+      { "h": 6, "w": 4, "y": 15 },
+      { "h": 6, "w": 4, "y": 22 }
     ],
     icon_pad_int : 5,
     pad_h_int    : 1,
@@ -173,8 +173,8 @@ function setLayoutFn () {
           {
             "config": {
               "/": {
-                "localPath": "/usr/share/applications/kfocus-help.desktop",
-                "url": "file:///usr/share/applications/kfocus-help.desktop"
+                "localPath": "/usr/share/applications/kfocus-support-welcome.desktop",
+                "url": "file:///usr/share/applications/kfocus-support-welcome.desktop"
               }
             },
             "geometry.height": icon_table[2].h,
@@ -182,13 +182,13 @@ function setLayoutFn () {
             "geometry.x": icon_x_num,
             "geometry.y": icon_table[2].y,
             "plugin": "org.kde.plasma.icon",
-            "title": "Help"
+            "title": "Feature Guide"
           },
           {
             "config": {
               "/": {
-                "localPath": "/usr/share/applications/kfocus-support-welcome.desktop",
-                "url": "file:///usr/share/applications/kfocus-support-welcome.desktop"
+                "localPath": "/usr/share/applications/kfocus-help.desktop",
+                "url": "file:///usr/share/applications/kfocus-help.desktop"
               }
             },
             "geometry.height": icon_table[3].h,
@@ -196,7 +196,7 @@ function setLayoutFn () {
             "geometry.x": icon_x_num,
             "geometry.y": icon_table[3].y,
             "plugin": "org.kde.plasma.icon",
-            "title": "Feature Guide"
+            "title": "Help"
           }
         ],
         // Keeping this config appears to enhance stability
