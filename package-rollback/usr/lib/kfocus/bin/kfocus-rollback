@@ -118,24 +118,53 @@ _chooseSnapshotFn () {
   return;
 }
 
-_handleRestoreExitIntFn () {
-  declare _exit_int;
+_handleOperationExitIntFn () {
+  declare _op_type _exit_int _snapshot_disp_id;
 
-  _exit_int="${1:-}";
+  _op_type="${1:-}";
+  _exit_int="${2:-}";
+  _snapshot_disp_id="${3:-}";
 
-  if [ "${_exit_int}" = "${_NOTICE}" ]; then
+  if [ -z "${_op_type}" ]; then
+    _cm2WarnStrFn 'No operation type provided.';
+    return 1;
+  fi
+  if [ -z "${_exit_int}" ]; then
+    _cm2WarnStrFn 'No exit int provided.';
+    return 1;
+  fi
+  if [ -z "${_snapshot_disp_id}" ]; then
+    _cm2WarnStrFn 'No snapshot display ID provided.';
+    return 1;
+  fi
+
+  if [ "${_exit_int}" = "${_NOTICE}" ] && [ "${_op_type}" = 'restore' ]; then
     systemctl reboot -i;
   elif [ "${_exit_int}" = "${_ERR}" ]; then
-    _cm2PromptUserFn "${_restoreFailedMsg}" "${_winTitle}";
-    exit "${_ERR}";
+    if [ "${_op_type}" = 'restore' ]; then
+      _restoreFailedMsg="${_restoreFailedMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
+      _cm2PromptUserFn "${_restoreFailedMsg}" "${_winTitle}";
+      exit "${_ERR}";
+    elif [ "${_op_type}" = 'delete' ]; then
+      _deletionFailedMsg="${_restoreFailedMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
+      _cm2PromptUserFn "${_deletionFailedMsg}" "${_winTitle}";
+      exit "${_ERR}";
+    else
+      _cm2WarnStrFn 'Unrecognized operation type provided.';
+      return 1;
+    fi
   # 127 = auth failure, this is what pkexec spits out if you click 'Cancel' on
   # the auth window or provide a wrong password too many times.
   elif [ "${_exit_int}" = '127' ]; then
-    _cm2PromptUserFn "${_restoreCancelledMsg}" "${_winTitle}";
+    _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
     exit "${_NOTICE}";
-  else
+  elif [ "${_op_type}" = 'restore' ]; then
     _cm2PromptUserFn "${_criticalErrorMsg}" "${_winTitle}" 'e';
     exit "${_exit_int}";
+  elif [ "${_op_type}" = 'delete' ]; then
+    _deletionSuccessfulMsg="${_deletionSuccessfulMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
+    _cm2PromptUserFn "${_deletionSuccessfulMsg}" "${_winTitle}";
+    exit "${_NOTICE}";
   fi
 }
 
@@ -197,7 +226,7 @@ _mainFn () {
     < <(_chooseSnapshotFn);
 
   if [ -z "${_snapshot_id}" ]; then
-    _cm2PromptUserFn "${_restoreCancelledMsg}" "${_winTitle}";
+    _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
     exit "${_NOTICE}";
   fi
   
@@ -205,10 +234,11 @@ _mainFn () {
   _restore_mode="$(_cm2PromptUserFn "${_chooseRestoreTypeMsg}" \
     "${_winTitle}" 'r' 'totalRestore' \
     'Restore the Entire Snapshot (recommended)' 'on' 'selectiveRestore' \
-    'Restore Individual Files (ADVANCED)' 'off')";
+    'Restore Individual Files (ADVANCED)' 'off' 'delete' \
+    'Delete The Snapshot' 'off')";
 
   if [ -z "${_restore_mode}" ]; then
-    _cm2PromptUserFn "${_restoreCancelledMsg}" "${_winTitle}";
+    _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
     exit "${_NOTICE}";
   fi
 
@@ -217,9 +247,9 @@ _mainFn () {
     if [ "$(_cm2PromptUserFn "${_doTotalRestoreMsg}" "${_winTitle}" \
       'o')" = 'y' ]; then
       _rb2SystemRollbackFn "${_snapshot_id}";
-      _handleRestoreExitIntFn "$?";
+      _handleOperationExitIntFn 'restore' "$?" "${_snapshot_disp_id}";
     else
-      _cm2PromptUserFn "${_restoreCancelledMsg}" "${_winTitle}";
+      _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
       exit "${_NOTICE}";
     fi
   elif [ "${_restore_mode}" = 'selectiveRestore' ]; then
@@ -228,7 +258,17 @@ _mainFn () {
       'o')" = 'y' ]; then
       _selectiveRestoreSnapshotFn "${_snapshot_id}";
     else
-      _cm2PromptUserFn "${_restoreCancelledMsg}" "${_winTitle}";
+      _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
+      exit "${_NOTICE}";
+    fi
+  elif [ "${_restore_mode}" = 'delete' ]; then
+    _doDeleteMsg="${_doDeleteMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
+    if [ "$(_cm2PromptUserFn "${_doDeleteMsg}" "${_winTitle}" \
+      'o')" = 'y' ]; then
+      _rb2DeleteSnapshotFn "${_snapshot_id}";
+      _handleOperationExitIntFn 'delete' "$?" "${_snapshot_disp_id}";
+    else
+      _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
       exit "${_NOTICE}";
     fi
   fi
@@ -243,8 +283,8 @@ declare _binName _binDir _baseName _baseDir _libTable _assignList _kdiagExe \
   _erowStr _tableStr _systemUnsupportedMsg _restoreIncompleteMsg \
   _noSnapshotsFoundMsg _strangeSubvolsMsg _chooseSnapshotMsg \
   _chooseRestoreTypeMsg _doSelectiveRestoreMsg _doTotalRestoreMsg \
-  _restoreFailedMsg _criticalErrorMsg _restoreCancelledMsg \
-  _rollbackSuccessfulMsg;
+  _doDeleteMsg _deletionSuccessfulMsg _restoreFailedMsg _deletionFailedMsg \
+  _criticalErrorMsg _operationCancelledMsg _rollbackSuccessfulMsg;
 ## . END Declare and assign global vars }
 
 ## BEGIN Run mainFn when script is NOT sourced {
@@ -363,18 +403,18 @@ ${_browThinStr}Doc: <a style="color:#1d99f3"
   href="https://kfocus.org/wf/tools#rollback"
   >https://kfocus.org/wf/tools#rollback</a>${_erowStr}
 
-${_browThinStr}
-Use this tool to restore all or some files in a snapshot<br>
-to the root filesystem. <b style="color:#f7941d">This tool will NOT
-restore files<br>
-in the /home filesystem.</b> For that, click "Cancel" and<br>
-use the "Back In Time" icon found next to the system<br>
-tray.${_erowStr}
+${_browThinStr}<b style="color:#f7941d"
+>Use this tool to restore or delete a snapshot.</b> Restore allows<br>
+you to undo recent changes that may have caused system<br>
+issues. It reverts the apps, kernel, and system data.${_erowStr}
 
-${_browThinStr}Restoring the root filesystem is most useful after a<br>
-software install, purge, or upgrade has caused issues.<br>
-Select the desired snapshot and click OK to get
-started.<br>${_erowStr}</table>
+${_browThinStr}<b style="color:#f7941d"
+>This tool will NOT restore files in the /home filesystem.</b> For<br>
+that, click "Cancel" and use the "Back In Time" icon found next<br>
+to the system tray.${_erowStr}
+
+${_browThinStr}Select the snapshot and click OK to get
+started.${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
@@ -383,19 +423,21 @@ EOF
 ${_cm2HtmBeginStr}${_tableStr}
 ${_browThinStr}<h3 style="color:#f7941d">System Rollback (2 of 3)</h3>${_erowStr}
 
-${_browThinStr}You have selected the following snapshot to restore:${_erowStr}
+${_browThinStr}You have selected the following snapshot:${_erowStr}
 
 ${_browThinStr}<b style="color:#f7941d"
 >"XXX_SNAPSHOT_NAME_XXX"</b>${_erowStr}
 
+${_browThinStr}We recommend you "Restore the Entire Snapshot" to avoid <br>
+data consistency problems.${_erowStr}
+
 ${_browThinStr}
-We recommend you "Restore the Entire Snapshot" to<br>
-avoid data consistency problems. As with any system<br>
-maintenance, it is best practice to back up any critical<br>
-data first. See <a style="color:#1d99f3"
+As with any system maintenance, it is best practice to back up<br>
+any critical data first. See
+<a style="color:#1d99f3"
 href="https://kfocus.org/wf/backup"
->https://kfocus.org/wf/backup</a><br>
-for guidance.${_erowStr}</table>
+>https://kfocus.org/wf/backup</a> for<br>
+guidance.${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
@@ -432,9 +474,40 @@ ${_browThickStr}<b style="color:#f7941d"
 >"XXX_SNAPSHOT_NAME_XXX"</b>${_erowStr}
 
 ${_browThickStr}<b style="color:#da4453"
->This will immediately reboot the system!</b> Please save<br>
-any open work. Click OK to snapshot your current<br>
-root filesystem, finalize the restore, and reboot.${_erowStr}</table>
+>WARNING: This will immediately reboot the system!</b><br>
+Please save any open work. Click OK to snapshot your<br>
+current root filesystem, finalize the restore, and reboot.${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _doDeleteMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browThickStr}<h3 style="color:#f7941d">System Rollback (3 of 3)</h3>${_erowStr}
+
+${_browThickStr}The following snapshot is ready to be deleted:${_erowStr}
+
+${_browThickStr}<b style="color:#f7941d"
+>"XXX_SNAPSHOT_NAME_XXX"</b>${_erowStr}
+
+${_browThickStr}<b style="color:#da4453"
+>WARNING: Deleting a snapshot cannot be undone!</b>${_erowStr}
+
+${_browThickStr}Click on OK below to delete the snapshot, or Cancel to<br>
+back out.${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _deletionSuccessfulMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browThickStr}<h3 style="color:#f7941d">Snapshot Deleted</h3>${_erowStr}
+
+${_browThickStr}
+The following snapshot has been successfully deleted:${_erowStr}
+
+${_browThickStr}<b style="color:#f7941d"
+>"XXX_SNAPSHOT_NAME_XXX"</b>${_erowStr}
 ${_cm2HtmEndStr}
 EOF
   )";
@@ -443,16 +516,39 @@ EOF
 ${_cm2HtmBeginStr}${_tableStr}
 ${_browThickStr}<h3 style="color:#f7941d">Restore Failed</h3>${_erowStr}
 
-${_browThickStr}Something went wrong and System Rollback was<br>
-unable to restore the system to an earlier state.<br>
-No changes have been made.${_erowStr}
+${_browThickStr}The following snapshot could NOT be restored:${_erowStr}
+
+${_browThickStr}<b style="color:#f7941d"
+>"XXX_SNAPSHOT_NAME_XXX"</b>${_erowStr}
+
+${_browThickStr}No changes have been made.${_erowStr}
 
 ${_browThickStr}Please try to restore again. If this fails, see<br>
-<a style="color:#1d99f3" href="https://kfocus.org/wf/recovery"
->https://kfocus.org/wf/recovery</a>
-for other recovery<br>
-options. You are encouraged to contact technical<br>
-support if this issue is persistent.${_erowStr}</table>
+<a href="https://kfocus.org/wf/recovery"
+>https://kfocus.org/wf/recovery</a> for other<br>
+recovery options.${_erowStr}
+
+${_browThickStr}
+Please contact support if this issue persists.${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _deletionFailedMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browThickStr}<h3 style="color:#f7941d">Restore Failed</h3>${_erowStr}
+
+${_browThickStr}The following snapshot could NOT be deleted:${_erowStr}
+
+${_browThickStr}<b style="color:#f7941d"
+>"XXX_SNAPSHOT_NAME_XXX"</b>${_erowStr}
+
+${_browThickStr}Most likely it was already removed by automatic<br>
+snapshot maintenance. No changes have been<br>
+made.${_erowStr}
+
+${_browThickStr}
+Please contact support if this issue persists.${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
@@ -462,12 +558,15 @@ ${_cm2HtmBeginStr}${_tableStr}
 ${_browThickStr}<h3 style="color:#f7941d">Critical Error</h3>${_erowStr}
 
 ${_browThickStr}System Rollback was interrupted while attempting<br>
-to restore your system. This incident may be the<br>
-result of failing hardware or a software conflict.${_erowStr}
+to delete or restore a snapshot on your system.<br>
+This incident may be the result of failing hardware<br>
+or a software conflict.${_erowStr}
 
 ${_browThickStr}<b>Please do NOT reboot. Back up your data as<br>
 soon as possible.</b> Failure to do so may result in<br>
-data loss. See<br>
+data loss.${_erowStr}
+
+${_browThickStr}See<br>
 <a style="color:#1d99f3"
 href="https://kfocus.org/wf/backup#bkm_take_a_snapshot"
 >https://kfocus.org/wf/backup#bkm_take_a_snapshot</a><br>
@@ -476,12 +575,13 @@ ${_cm2HtmEndStr}
 EOF
   )";
 
-  _restoreCancelledMsg="$(cat <<EOF
+  _operationCancelledMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browThickStr}<h3 style="color:#f7941d">Restore Cancelled</h3>${_erowStr}
+${_browThickStr}<h3 style="color:#f7941d">Operation Cancelled</h3>${_erowStr}
 
-${_browThickStr}Restore operation cancelled. No changes have been<br>
-made to the system.${_erowStr}</table>
+${_browThickStr}Snapshot operation cancelled.${_erowStr}
+
+${_browThickStr}No changes have been made to the system.${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";

@@ -27,6 +27,9 @@ _rb2SystemRollbackFn () {
 _rb2SystemSnapshotFn () {
   "${_escExe}" "${_snapshotSetExe}" 'systemSnapshot' "${1:-}";
 }
+_rb2DeleteSnapshotFn () {
+  "${_escExe}" "${_snapshotSetExe}" 'deleteSnapshot' "${1:-}";
+}
 ## . END kfocus-rollback-set bindings }
 
 ## BEGIN _rb2MakeSnapshotDispIdFn {
