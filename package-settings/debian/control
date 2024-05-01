@@ -2,17 +2,14 @@ Source: kfocus-settings
 Section: x11
 Priority: optional
 Maintainer: Kubuntu Focus Developers <support@kfocus.org>
-Build-Depends: debhelper-compat (= 12), intltool
-Standards-Version: 4.6.0
-Homepage: https://launchpad.net/ubuntustudio-default-settings
-Vcs-Git: https://git.launchpad.net/ubuntustudio-default-settings
-Vcs-Browser: https://git.launchpad.net/ubuntustudio-default-settings/tree/
+Build-Depends: debhelper-compat (= 13), intltool
+Standards-Version: 4.6.2
 
 Package: kfocus-settings
 Architecture: all
 Pre-Depends: dpkg (>= 1.15.7.2~), kubuntu-settings-desktop
 Depends: ${misc:Depends}, kfocus-main (>> 22.0.54),
-         kfocus-power-scripts
+         kfocus-power-bin
 Recommends: plasma-desktop
 Description: default settings for the Kubuntu Focus laptop computers
  This package contains the default settings used by the Kubuntu Focus.
