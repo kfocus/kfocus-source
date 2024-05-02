@@ -1439,7 +1439,8 @@ Kirigami.ApplicationWindow {
               + '<a href="https://kfocus.org/wf/passwords#bkm_keepassxc">'
               + 'Passwords Guided Solution</a> and the '
               + '<a href="https://keepassxc.org/docs/">official '
-              + 'documentation.</a></p>'
+              + 'documentation</a></p>. You will need this to '
+              + 'enable browser integration!'
               ;
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
@@ -1689,7 +1690,7 @@ Kirigami.ApplicationWindow {
               + 'upgrade, configure, and otherwise manage their many popular '
               + 'developer tools. These includes IDEs like IntelliJ, '
               + 'PyCharm, WebStorm, Android Studio, and DataGrip. Several '
-              + 'IDEs have free community editions, while others have have '
+              + 'IDEs have free community editions, while others have '
               + 'generous free trial periods.<br></p>'
 
               + '<p><b>See more in the</b> '
