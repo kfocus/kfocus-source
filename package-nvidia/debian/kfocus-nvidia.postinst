@@ -1,11 +1,8 @@
 #!/bin/bash
 # kfocus-nvidia postinst
-# This must be run as root.
+# This must be run as root. Use set -u to debug.
 #
-# set -u is used to exist on uninitialized variables
-# set -e is not used as we do our own error checking
-#
-set -u;
+set -e;
 
 ## BEGIN Declare common.2.source symbols {
 #  IMPORTED on 2022-03-23 EXCERPT from test-scripts/common.2.source
@@ -15,50 +12,14 @@ _cm2EchoFn    () { 1>&2 echo -e "$*"; }
 _cm2SetMsgFn  () { _cm2BlockMsg="$*"; _cm2EchoFn "== BEGIN : ${_cm2BlockMsg}"; }
 _cm2SucFn     () { _cm2EchoFn "== . END : OK   ${_cm2BlockMsg}\n\n"; }
 _cm2WarnFn    () { _cm2EchoFn "== . END : WARN Could not ${_cm2BlockMsg}..\n\n"; }
-_cm2WarnStrFn () { _cm2EchoFn "warn: ${*}"; }
-_cm2SucStrFn  () { _cm2EchoFn "ok  : ${*}"; }
 ## } . END Declare common.2.source symbols
-
-_rootDir='';
-_systemdsys="${_rootDir}/etc/systemd/system";
-_libsleepdir="${_rootDir}/lib/systemd/system-sleep";
-_cm2RmExe="/usr/bin/rm"
-
-# If kept, these old fixes have been known to cause problems
-# with suspend/resume using nvidia-driver-470. See
-# https://forums.developer.nvidia.com/t/fixed-suspend-resume-issues-with-the-driver-version-470/187150/2
-
-_cm2SetMsgFn "Remove outdated Nvidia suspend/resume fixes";
-
-deb-systemd-helper disable nvidia-suspend.service;
-deb-systemd-helper disable nvidia-hibernate.service;
-deb-systemd-helper disable nvidia-resume.service;
-
-if [ -e "${_systemdsys}/nvidia-suspend.service" ]; then
-  "${_cm2RmExe}" "${_systemdsys}/nvidia-suspend.service";
-fi
-if [ -e "${_systemdsys}/nvidia-hibernate.service" ]; then
-  "${_cm2RmExe}" "${_systemdsys}/nvidia-hibernate.service";
-fi
-if [ -e "${_systemdsys}/nvidia-resume.service" ]; then
-  "${_cm2RmExe}" "${_systemdsys}/nvidia-resume.service";
-fi
-if [ -e "${_libsleepdir}/nvidia" ]; then
-  "${_cm2RmExe}" "${_libsleepdir}/nvidia";
-fi
-if [ -e "${_rootDir}/usr/bin/nvidia-sleep.sh" ]; then
-  "${_cm2RmExe}" "${_rootDir}/usr/bin/nvidia-sleep.sh";
-fi
-
-_cm2SucFn;
 
 if ! [ -f /etc/apt/preferences.d/kfocus-nvidia ]; then
   _cm2SetMsgFn "Make sure pinning is available";
-  if dpkg-reconfigure kfocus-nvidia-pinning; then _cm2SucFn;
-    else _cm2ErrFn;
+  if dpkg-reconfigure kfocus-nvidia-pinning; then
+    _cm2SucFn; else _cm2WarnFn;
   fi
 fi
-
 
 # Set performance mode only on first install not upgrade
 case "${1:-}" in
