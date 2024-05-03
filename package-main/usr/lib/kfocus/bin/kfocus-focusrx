@@ -1106,7 +1106,7 @@ _EOH18
 }
 ## . END _btrfsDeepCleanFn }
 
-## BEGIN _fixSycocaCacheFn {
+## BEGIN _postRollbackHandlerFn {
 #
 _postRollbackHandlerFn () {
   # Skip if required tools not installed
@@ -1120,7 +1120,7 @@ _postRollbackHandlerFn () {
     "${_escExe}" "${_focusRxSetExe}" 'clear-restore';
   fi
 }
-## . END _fixSycocaCacheFn }
+## . END _postRollbackHandlerFn }
 
 ## BEGIN _announceEndFn {
  # Purpose:

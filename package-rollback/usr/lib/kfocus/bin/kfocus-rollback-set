@@ -8,10 +8,9 @@
 # Summary  : kfocus-rollback-set (createSnapshot
 #              <Apt|Timed|Pre-Rollback|(username)>
 #              | restoreSnapshot @<timestamp> | deleteSnapshot @<timestamp>
-#              | labelAptSnapshot | labelUserSnapshot <username>
-#              | finalizeRestore  | trimSnapshots | prepareSystem
-#              | getBtrfsStatus   | restoreSnapshot (snapshot_id)
-#              | systemSnapshot
+#              | labelAptSnapshot | finalizeRestore  | trimSnapshots
+#              | prepareSystem    | getBtrfsStatus
+#              | restoreSnapshot (snapshot_id)       | systemSnapshot
 # Purpose  : Performs snapshot management operations
 # Example  : kfocus-rollback-set restoreSnapshot @1234
 # License  : GPLv2
@@ -547,8 +546,6 @@ _mainFn () {
     'deleteSnapshot')    _deleteSnapshotFn    "${2:-}";;
     'finalizeRestore')   _finalizeRestoreFn;;
     'getBtrfsStatus')    echo "${_btrfsStatus}";;
-    'labelAptSnapshot')  _labelAptSnapshotFn;;
-    'labelUserSnapshot') _labelUserSnapshotFn "${2:-}";;
     'prepareSystem')     _prepareSystemFn;;
     'restoreSnapshot')   _restoreSnapshotFn   "${2:-}";;
     'systemRollback')    _systemRollbackFn    "${2:-}";;
