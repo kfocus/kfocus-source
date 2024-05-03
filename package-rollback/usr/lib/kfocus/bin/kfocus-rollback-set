@@ -350,6 +350,7 @@ _restoreSnapshotFn () {
 
   mv '/btrfs_main/@' '/btrfs_main/@kfocus-rollback-working' || _exitCRIT;
   btrfs subvolume snapshot "${_snapshot_path}" '/btrfs_main/@' || _exitEMERG;
+  btrfs filesystem sync '/btrfs_main' || _exitEMERG;
   # Failing to unmount /boot/efi before attempting to move the old subvol
   # will result in the subvol not being moved, which will result in the
   # whole @boot subvol being nuked except for the contents of /boot/efi.
@@ -358,6 +359,8 @@ _restoreSnapshotFn () {
     || _exitALERT;
   btrfs subvolume snapshot "${_boot_snapshot_path}" '/btrfs_boot/@boot' \
     || _exitEMERG;
+  btrfs filesystem sync '/btrfs_boot' || _exitEMERG;
+  sync;
   mount /boot/efi || _exitALERT;
 
   # Let the user know that a restore has completed
@@ -480,8 +483,11 @@ _createSnapshotFn () {
 
   btrfs subvolume snapshot -r '/btrfs_main/@' "${_snapshot_path}" \
     || _exitEMERG "Could not create snapshot |${_snapshot_path}|";
+  btrfs filesystem sync '/btrfs_main' || _exitEMERG;
   btrfs subvolume snapshot -r '/btrfs_boot/@boot' "${_boot_snapshot_path}" \
     || _exitEMERG "Could not create boot snapshot |${_boot_snapshot_path}|";
+  btrfs filesystem sync '/btrfs_boot' || _exitEMERG;
+  sync;
 }
 
 _systemRollbackFn () {
