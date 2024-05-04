@@ -5,7 +5,7 @@ var
   idx,           loop_obj,      loop_key,      edge_key,
   is_horizontal, geom_obj,      max_w_int,     kickoff_obj,
   pager_obj,     icontasks_obj, launcher_list, lang_id_list,
-  backup_obj,    systray_obj,   clock_obj
+  backup_obj,    rollback_obj,  systray_obj,   clock_obj
   ;
 
 panel_obj = new Panel;
@@ -165,6 +165,11 @@ backup_obj = panel_obj.addWidget( 'org.kde.plasma.icon' );
 backup_obj.currentConfigGroup = [ 'General' ];
 backup_obj.writeConfig( 'localPath', '/usr/share/applications/backintime-qt.desktop' );
 backup_obj.writeConfig( 'url', 'file:///usr/share/applications/backintime-qt.desktop' );
+
+rollback_obj = panel_obj.addWidget( 'org.kde.plasma.icon' );
+rollback_obj.currentConfigGroup = [ 'General' ];
+rollback_obj.writeConfig( 'localPath', '/usr/share/applications/kfocus-rollback.desktop' );
+rollback_obj.writeConfig( 'url', 'file:///usr/share/applications/kfocus-rollback.desktop' );
 // TODO if we add kup
 // backup_obj.writeConfig( 'localPath', '/usr/share/kservices5/kcm_kup.desktop' );
 // backup_obj.writeConfig( 'url', 'file:///usr/share/kservices5/kcm_kup.desktop' );
