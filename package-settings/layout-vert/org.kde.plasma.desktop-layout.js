@@ -2,7 +2,7 @@
   getApiVersion, screenGeometry, loadTemplate */
 /* Passes eslint 2024-05-03 */
 
-loadTemplate("org.kfocus.desktop.defaultPanel");
+loadTemplate("org.focusvert.desktop.defaultPanel");
 
 // Given two points on a curve, return y at x (rounded)
 function getScaleNumFn ( map ) {
@@ -32,8 +32,8 @@ var
       icon_space_int : getScaleNumFn({x1:22,y1:9,x2:32,y2:7,min:6,max:14,x:gridUnit}),
       // Inverse scale with DPI: Icon width
       icon_w_int     : 4,
-      // Offset widget from edge
-      widget_padx_num: 0.5,
+      // Offset widget from right edge, add 3 to allow for vertical panel
+      widget_padx_num: 3.5,
       // Offset widget from edge
       widget_pady_num: 1,
       // Hack to make sure widget fits on 176 DPI
@@ -51,8 +51,8 @@ var
       icon_space_int : getScaleNumFn({x1:22,y1:7,x2:32,y2:6,min:6,max:14,x:gridUnit}),
       // Inverse scale with DPI: Icon width
       icon_w_int     : 4,
-      // Offset widget from edge
-      widget_padx_num: 0.5,
+      // Offset widget from right edge, add 3 to allow for vertical panel
+      widget_padx_num: 3.5,
       // Offset widget from edge
       widget_pady_num: 1,
       widget_h_px  : 796 + gridUnit / 4,
@@ -69,8 +69,8 @@ var
       icon_space_int : getScaleNumFn({x1:14,y1:10,x2:22,y2:7,min:6,max:14,x:gridUnit}),
       // Inverse scale with DPI: Icon width
       icon_w_int     : 4,
-      // Offset widget from edge
-      widget_padx_num: 0.5,
+      // Offset widget from right edge, add 3 to allow for vertical panel
+      widget_padx_num: 3.5,
       // Offset widget from edge
       widget_pady_num: 1,
       widget_h_px    : 664 + gridUnit / 4,
