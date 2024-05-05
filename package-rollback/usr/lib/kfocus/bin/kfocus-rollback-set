@@ -85,10 +85,13 @@ _trapExitFn () {
 }
 
 _chkSetFlockFn () {
+  if ! [ -e "${_lockFile}" ]; then
+    install -m 666 /dev/null "${_lockFile}";
+  fi
   exec 211>"${_lockFile}" || exit 21;
   if ! flock -n -e 211; then
     1>&2 echo "Cannot get lock on ${_lockFile}";
-    exit 20;
+    return 20;
   fi
   # Trap unexpected exits to clean up lock file
   trap _trapExitFn EXIT;
@@ -518,7 +521,9 @@ _mainFn () {
   declare _main_min_space _boot_min_space _main_space \
     _boot_space _mode;
 
-  _chkSetFlockFn;
+  while ! _chkSetFlockFn; do
+    sleep 1;
+  done
   _checkBtrfsStatusFn;
 
   if [ "${_btrfsStatus}" = 'INCONSISTENT' ]; then
