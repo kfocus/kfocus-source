@@ -70,8 +70,8 @@ Package: linux-generic-kfocus
 Architecture: amd64 armhf arm64 ppc64el s390x
 Section: kernel
 Provides: kernel-testing--linux-kfocus--full--generic, kernel-testing--linux-kfocus--full--preferred,
-Replaces: linux-generic
-Conflicts: linux-generic
+Replaces: linux-generic, linux-generic
+Conflicts: linux-generic, linux-generic
 Depends: ${misc:Depends}, linux-image-generic-kfocus (= ${binary:Version}), linux-headers-generic-kfocus (= ${binary:Version})
 Recommends: linux-tools-${kernel-abi-version}-generic-kfocus, ubuntu-kernel-accessories
 Description: Complete Generic Linux kernel and headers
@@ -93,8 +93,8 @@ Package: linux-image-generic-hwe-24.04-kfocus
 Architecture: amd64 armhf arm64 ppc64el s390x
 Section: kernel
 Provides: ${dkms:v4l2loopback-modules} ${dkms:zfs-modules} ${dkms:virtualbox-guest-modules} ${dkms:wireguard-linux-compat-modules}
-Replaces: linux-image-generic-hwe-24.04, linux-generic
-Conflicts: linux-image-generic-hwe-24.04, linux-generic
+Replaces: linux-image-generic-hwe-24.04
+Conflicts: linux-image-generic-hwe-24.04
 Depends: ${misc:Depends}, linux-image-${kernel-abi-version}-generic, linux-modules-extra-${kernel-abi-version}-generic [amd64 arm64 ppc64el s390x], linux-firmware [amd64 armhf arm64 ppc64el], intel-microcode [amd64], amd64-microcode [amd64]
 Recommends: thermald [amd64]
 Description: Generic Linux kernel image
@@ -140,8 +140,8 @@ Package: linux-generic-hwe-24.04-kfocus
 Architecture: amd64 armhf arm64 ppc64el s390x
 Section: kernel
 Provides:  
-Replaces: linux-generic-hwe-24.04
-Conflicts: linux-generic-hwe-24.04
+Replaces: linux-generic-hwe-24.04, linux-generic
+Conflicts: linux-generic-hwe-24.04, linux-generic
 Depends: ${misc:Depends}, linux-image-generic-hwe-24.04-kfocus (= ${binary:Version}), linux-headers-generic-hwe-24.04-kfocus (= ${binary:Version})
 Recommends: linux-tools-${kernel-abi-version}-generic-kfocus, ubuntu-kernel-accessories
 Description: Complete Generic Linux kernel and headers
@@ -210,8 +210,8 @@ Package: linux-generic-hwe-24.04-edge-kfocus
 Architecture: amd64 armhf arm64 ppc64el s390x
 Section: kernel
 Provides:  
-Replaces: linux-generic-hwe-24.04-edge
-Conflicts: linux-generic-hwe-24.04-edge
+Replaces: linux-generic-hwe-24.04-edge, linux-generic
+Conflicts: linux-generic-hwe-24.04-edge, linux-generic
 Depends: ${misc:Depends}, linux-image-generic-hwe-24.04-edge-kfocus (= ${binary:Version}), linux-headers-generic-hwe-24.04-edge-kfocus (= ${binary:Version})
 Recommends: linux-tools-${kernel-abi-version}-generic-kfocus, ubuntu-kernel-accessories
 Description: Complete Generic Linux kernel and headers
@@ -280,8 +280,8 @@ Package: linux-generic-oem-24.04-kfocus
 Architecture: amd64 armhf arm64 ppc64el s390x
 Section: kernel
 Provides:  
-Replaces: linux-generic-oem-24.04
-Conflicts: linux-generic-oem-24.04
+Replaces: linux-generic-oem-24.04, linux-generic
+Conflicts: linux-generic-oem-24.04, linux-generic
 Depends: ${misc:Depends}, linux-image-generic-oem-24.04-kfocus (= ${binary:Version}), linux-headers-generic-oem-24.04-kfocus (= ${binary:Version})
 Recommends: linux-tools-${kernel-abi-version}-generic-kfocus, ubuntu-kernel-accessories
 Description: Complete Generic Linux kernel and headers

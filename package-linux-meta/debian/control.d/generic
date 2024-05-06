@@ -59,8 +59,8 @@ Package: linux-generic${variant:suffix}-kfocus
 Architecture: amd64 armhf arm64 ppc64el s390x
 Section: kernel
 Provides: ${test:provides-full-generic} ${test:provides-full-preferred}
-Replaces: linux-generic${variant:suffix}
-Conflicts: linux-generic${variant:suffix}
+Replaces: linux-generic${variant:suffix}, linux-generic
+Conflicts: linux-generic${variant:suffix}, linux-generic
 Depends: ${misc:Depends}, linux-image-generic${variant:suffix}-kfocus (= ${binary:Version}), linux-headers-generic${variant:suffix}-kfocus (= ${binary:Version})
 Recommends: linux-tools-${kernel-abi-version}-generic-kfocus, ubuntu-kernel-accessories
 Description: Complete Generic Linux kernel and headers
