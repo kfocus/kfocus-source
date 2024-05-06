@@ -450,14 +450,9 @@ _createSnapshotFn () {
   )";
   _snapshot_event_type="${1:-}"
 
-  rm '/tmp/kfocus-rollback-set-noaptlabel' 2>/dev/null;
-  # Don't let a directory fake this out unless it has contents
-  rmdir '/tmp/kfocus-rollback-set-noaptlabel' 2>/dev/null;
-
   case "${_snapshot_event_type}" in
     'Apt')
       if (( ( _timestamp_str - _prev_timestamp_str ) < _hour_seconds )); then
-        touch '/tmp/kfocus-rollback-set-noaptlabel';
         _exitNOTICE 'Too little time has elapsed for another snapshot';
       fi
       ;;
