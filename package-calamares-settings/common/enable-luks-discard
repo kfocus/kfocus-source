@@ -7,7 +7,7 @@ if [ -e '/etc/crypttab' ]; then
   readarray -t _crypttabLineList <<< "${_crypttab}";
   (( _crypttabIdx = -1 ));
   for _crypttabItem in "${_crypttabLineList[@]}"; do
-    (( _crypttabIdx += 1 ));
+    (( _crypttabIdx += 1 )) || true;
     if [ "${_crypttabItem:0:1}" = '#' ]; then
       continue;
     fi

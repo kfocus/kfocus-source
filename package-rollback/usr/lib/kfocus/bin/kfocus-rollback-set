@@ -345,7 +345,7 @@ _restoreSnapshotFn () {
     _exitERR 'Restore already in progress';
   fi
 
-  if ! [ -e "${_snapshot_path}" ]; then
+  if ! [ -e "${_snapshot_path}" ] || ! [ -e "${_boot_snapshot_path}" ]; then
     _exitERR 'Expected snapshot path does not exist';
   fi
 
