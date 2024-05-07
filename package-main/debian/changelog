@@ -1,9 +1,13 @@
 kfocus-main (24.04.1~beta11~local1) noble; urgency=medium
 
+  [ Michael S. Mikowski ]
   * control: Adjust Recommends to use kfocus-qwe instead of QWE (#4085)
   * etc/bash_completion.d/kfocus: Simplify symlink (#4085)
   * usr/kfocus/bin/kfocus-reset-effects: ir16g2 ir14g2 support (#4222)
   * usr/share/applications/kfocus-help: Rename to Reference Pages (#4240)
+
+  [ Aaron Rainbolt ]
+  * Automatically strip tags and format text when using whiptail CLI UI.
 
  -- Michael S. Mikowski <support@kfocus.org>  Mon, 06 May 2024 19:42:01 -0700
 

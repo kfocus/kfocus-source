@@ -535,6 +535,9 @@ _cm2PromptUserFn () {
         _cmd_list+=("--yes-button=OK" "--no-button=Cancel");
       fi
 
+      _prompt_str="$(_cm2StripTagsFn "${_prompt_str}" 'n')";
+      _prompt_str="$(fmt <<< "${_prompt_str}")";
+
       # whiptail accepts arguments for setting window and list sizes, but we
       # want all of these to be automatically set as appropriate. To do that
       # we set the various size arguments to 0 as necessary, thus the strange

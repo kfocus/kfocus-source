@@ -64,7 +64,7 @@ _rb2MakeSnapshotDispIdFn () {
 
   _snapshot_datetime="$(date -d "${_snapshot_id}" '+%a %F %H:%M')";
 
-  _snapshot_disp_id="${_snapshot_datetime} | ${_snapshot_reason}";
+  _snapshot_disp_id="${_snapshot_reason} — ${_snapshot_datetime}";
   echo "${_snapshot_disp_id}";
 }
 ## . END _rb2MakeSnapshotDispIdFn }
