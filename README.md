@@ -62,9 +62,8 @@ Canonical. The version in the latest development branch is most up-to-date and
 is likely to be the version currently in use.
 
 `package-qwe` contains the latest qwe source. As it is a hybrid upstream and
-kubuntu focus project, it is treated as an upstream project. Tarballs are
-generated separately but packaged here using the .source file as the only
-source.
+kubuntu focus project, it is treated as a kfocus project. See the README for
+the associated other repos.
 
 [_0100]:https://launchpad.net/~kfocus-team/+archive/ubuntu/release.
 

@@ -15,7 +15,6 @@ _cmXWarnFn    () { _cmXEchoFn "== . END : WARN Could not ${_cmXBlockMsg}\n\n"; }
 _cmXWarnStrFn () { _cmXEchoFn "warn: ${*}"; }
 ## . END Declare common.2.source symbols }
 
-
 ## BEGIN _updatePciidsFn {
 # IMPORTED on 2022-02-23 from test/test-scripts/unit.d/00500_updatePciids
 #
@@ -185,7 +184,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
       # See jammy branch for
       #   * _dedupRepoSrcFileFn: dedup repos if needed
       #   * _setupSddmFixFn: apply SDDM screen-order fix to Xsetup; upstreamed
-      #   * _addBashCompletionFn: kfocus-bashcompletion symlink; now in links
+      #   * _addBashCompletionFn: kfocus-bash_completion symlink;moved to links
       #   * _applyRootStyleFn: renamed _applyRootConfigFn
       #   * _createPlasmaWelcomeRcFn: create user files; replace per 4176
       #   * _adviseRebootFn to advise a reboot after install; not needed

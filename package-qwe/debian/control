@@ -1,4 +1,4 @@
-Source: qwe
+Source: kfocus-qwe
 Section: admin
 Priority: optional
 Maintainer: Kubuntu Focus Support <support@kfocus.org>
@@ -7,10 +7,24 @@ Standards-Version: 4.6.0
 Homepage: https://kfocus.org
 Rules-Requires-Root: no
 
-Package: qwe
+Package: kfocus-qwe
 Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends},
          bash-completion
+Conflicts: qwe (<< ${binary:Version})
+Replaces:  qwe (<< ${binary:Version})
 Description: Command line bookmarks with autocomplete
- <insert long description, indented with spaces>
+ QWE has been adopted as a standard CLI utility for Kubuntu Focus
+ systems and is available with the kfocus-qwe package from their
+ ppa. Upstream is git@github.com:kfocus/qwe.git which is a fork of
+ git@github.com/olafurw/qwe. The original concept and code was
+ provided by Ólafur Waage, and then refactored and enhanced by
+ Michael Mikowski. 
 
+Package:      qwe
+Architecture: all
+Depends:      ${misc:Depends}, ${shlibs:depends},
+              kfocus-qwe
+Description:  Transitional Dummy Package for kfocus-rest
+ This is a transitional dummy package.
+ It can be safely removed.

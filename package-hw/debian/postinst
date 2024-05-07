@@ -57,7 +57,8 @@ _supplementXdgConfigsFn () {
 }
 ## . END _supplementXdgConfigsFn }
 
-# hw_config_code 'default' handles models m2g3, m2g2, m2g1, m1g1
+# hw_config_code 'default' handles models m2g3, m2g2, m2g1, m1g1.
+#   DPI scale set by _supplementXdgConfigsFn (none at time of writing).
 # shellcheck disable=SC2317
 #
 _handle_defaultFn () {
@@ -67,38 +68,43 @@ _handle_defaultFn () {
     '/etc/default/grub.d/kfocus.cfg|/usr/lib/kfocus/conf/dflt-etc_default_grub.d_kfocus.cfg'
     '/etc/initramfs-tools/conf.d/kfocus.conf|'
     '/etc/modprobe.d/kfocus.conf|/usr/lib/kfocus/conf/m2g4-dflt_etc_modprobe.d_kfocus.conf'
-    # Load keyboard
+    # Load keyboard fan modules
     '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
     # xhci enable/disable on sleep
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
-    # DPI scale symlink removed; Deprecated by _supplementXdgConfigsFn.
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
     '/etc/tlp.d/kfocus.conf|'
   );
-  # Deprecated by _supplementXdgConfigsFn
-  # _setScaleFactorFn '';
 }
-# hw_config_code 'generic' handles model xeg1
+# hw_config_code 'generic' handles model xeg1.
+#   DPI scale set by _supplementXdgConfigsFn (none at time of writing).
 # shellcheck disable=SC2317
 #
 _handle_genericFn () {
   _symlinkTable+=(
+    # Normal tty fonts
     '/etc/default/console-setup|'
+    # Boot parameters
     '/etc/default/grub.d/kfocus.cfg|'
+    # Initramfs config
     '/etc/initramfs-tools/conf.d/kfocus.conf|'
+    # Sound, nv power
     '/etc/modprobe.d/kfocus.conf|'
+    # Load keyboard fan modules
     '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
+    # xhci enable/disable on sleep
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
+    # Trackpad config
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
     # DPI scale symlink removed; Deprecated by _supplementXdgConfigsFn.
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
+    # Remove old TLP config
     '/etc/tlp.d/kfocus.conf|'
   );
-  # Deprecated by _supplementXdgConfigsFn
-  # _setScaleFactorFn '';
 }
-# hw_config_code 'xeg2' handles model xeg2
+# hw_config_code 'xeg2' handles model xeg2.
+#   DPI scale set by _supplementXdgConfigsFn (none at time of writing).
 # shellcheck disable=SC2317
 #
 _handle_xeg2Fn () {
@@ -111,7 +117,7 @@ _handle_xeg2Fn () {
     '/etc/initramfs-tools/conf.d/kfocus.conf|'
     # Sound, nv power
     '/etc/modprobe.d/kfocus.conf|'
-    # Load keyboard
+    # Load keyboard fan modules
     '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
     # xhci enable/disable on sleep
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
@@ -122,11 +128,9 @@ _handle_xeg2Fn () {
     # Remove old TLP config
     '/etc/tlp.d/kfocus.conf|'
   );
-  # Deprecated by _supplementXdgConfigsFn
-  # _setScaleFactorFn '';
 }
-# hw_config_code 'ir14g1' handles model ir14g1.
-# Based on nxg1. Remove sound-pop fix. Add 1.25 scale, console fonts
+# hw_config_code 'ir14g1' handles model ir14g1, ir14g2, ir16g2.
+#   DPI scale set by _supplementXdgConfigsFn (120, 136 at time of writing).
 # shellcheck disable=SC2317
 #
 _handle_ir14g1Fn () {
@@ -139,7 +143,9 @@ _handle_ir14g1Fn () {
     '/etc/initramfs-tools/conf.d/kfocus.conf|/usr/lib/kfocus/conf/nxg1-etc_initramfs-tools_conf.d_kfocus.conf'
     # Remove sound-pop fix
     '/etc/modprobe.d/kfocus.conf|'
+    # No kernel modules (used for keyboard on M and Xe series)
     '/etc/modules-load.d/kfocus.conf|'
+    # No xhci enable/disable on sleep (not needed here)
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
     # Select trackpad driver
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|/usr/lib/kfocus/conf/ir14g1-usr_share_X11_xorg.conf.d_80-kfocus.conf'
@@ -148,10 +154,10 @@ _handle_ir14g1Fn () {
     # Remove old TLP config
     '/etc/tlp.d/kfocus.conf|'
   );
-  # Deprecated by _supplementXdgConfigsFn
-  # _setScaleFactorFn '';
 }
+
 # hw_config_code 'm2g4' handles models m2g4
+#   DPI scale set by _supplementXdgConfigsFn (120 at time of writing).
 # shellcheck disable=SC2317
 #
 _handle_m2g4Fn () {

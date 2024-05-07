@@ -108,8 +108,7 @@ _resetEffectsFn () {
     'scut|kwin|Switch to Previous Desktop|Meta+Ctrl+Up,,Switch to Previous Desktop'
     'scut|kwin|Switch to Next Desktop|Meta+Ctrl+Down,,Switch to Next Desktop'
     'scut|kwin|Window Fullscreen|Meta+F,none,Make Window Fullscreen'
-    # Reverted to Ctrl+F8 as this is the default again in 5.27.9
-    'scut|kwin|Show Desktop Grid|none,Meta+F8,Show Desktop Grid'
+    # Reverted from Meta+F8 to Ctrl+F8 as this is the default again in 5.27.9+
     'scut|kwin|ShowDesktopGrid|Ctrl+F8,Ctrl+F8,Show Desktop Grid'
     'scut|kwin|Switch to Desktop 1|Ctrl+F1,Ctrl+F1,Switch to Desktop 1'
     'scut|kwin|Switch to Desktop 2|Ctrl+F2,Ctrl+F2,Switch to Desktop 2'
@@ -140,22 +139,24 @@ _resetEffectsFn () {
     'kwin|Effect-trackmouse|Meta|'
     'kwin|Effect-trackmouse|Shift|'
 
-    # Setup scale factor based on device and clear old settings.
-    # Clear all values first.
+    # Prevent plasma-welcome center from running alone.
+    # It is presented in first-run wizard.
+    "plwc|General|LastSeenVersion|${_plasma_version:-5.27.11}"
+    'plwc|General|ShouldShow|false'
+
+    # Reset DPI per ticket 3521: Set scale factor based on device.
+    #   First, clear prior values.
     'font|General|forceFontDPI|'
     'glob|KScreen|ScaleFactor|'
 
-    # Reset DPI per ticket 3521.
-    # We tried ScaleFactor in 5.27, but GTK apps did not honor the value.
+    # Second, set desired values on devices where it matters.
     'font|General|forceFontDPI|120|ir14g1'
+    'font|General|forceFontDPI|120|ir14g2'
+    'font|General|forceFontDPI|136|ir16g2'
     'font|General|forceFontDPI|136|m2g4'
     'font|General|forceFontDPI|136|m2g5'
     'font|General|forceFontDPI|136|m2g5p'
 
-    # Prevent plasma-welcome center from running alone.
-    # It is presented in first-run wizard.
-    "plwc|General|LastSeenVersion|${_plasma_version:-5.27.9}"
-    'plwc|General|ShouldShow|false'
   );
 
   _fixup_list=(
