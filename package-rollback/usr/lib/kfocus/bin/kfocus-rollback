@@ -311,7 +311,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   );
 
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
-    _cm2ErrStrFn 'Could not assign variable';
+    _cm2ErrStrFn 'Could not assign variables';
     exit 1;
   fi
 

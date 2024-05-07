@@ -1,0 +1,34 @@
+#!/bin/bash
+
+set -e
+
+if [ -e '/etc/crypttab' ]; then
+  _crypttab="$(cat '/etc/crypttab')";
+  readarray -t _crypttabLineList <<< "${_crypttab}";
+  (( _crypttabIdx = -1 ));
+  for _crypttabItem in "${_crypttabLineList[@]}"; do
+    (( _crypttabIdx++ ));
+    if [ "${_crypttabItem:0:1}" = '#' ]; then
+      continue;
+    fi
+    _cryptOptionStr="$(awk '{ print $4 }' <<< "${_crypttabItem}")";
+    if [ -n "${_cryptOptionStr}" ]; then
+      if ! [[ "${_cryptOptionStr}" =~ discard ]]; then
+        _newCryptOptionStr="${_cryptOptionStr},discard";
+        _newCrypttabItem="${_crypttabItem/"${_cryptOptionStr}"/"${_newCryptOptionStr}"}";
+        _crypttab="${_crypttab/"${_crypttabItem}"/"${_newCrypttabItem}"}";
+      fi
+    else
+      _cryptFixStr="$(awk '{ print $3 }' <<< "${_crypttabItem}")";
+      if [ -n "${_cryptFixStr}" ]; then
+        _newCryptFixStr="${_cryptFixStr} discard";
+        _newCrypttabItem="${_crypttabItem/"${_cryptFixStr}"/"${_newCryptFixStr}"}";
+        _crypttab="${_crypttab/"${_crypttabItem}"/"${_newCrypttabItem}"}";
+      else
+        echo 'Could not figure out how to add discard option.';
+        exit 1;
+      fi
+    fi
+  done
+  cat <<< "${_crypttab}" > '/etc/crypttab';
+fi

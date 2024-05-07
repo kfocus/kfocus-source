@@ -32,4 +32,5 @@ override_dh_missing:
 	mkdir -pv debian/kfocus-calamares-settings/usr/libexec/
 	cp -v common/fixconkeys-part1 debian/kfocus-calamares-settings/usr/libexec/fixconkeys-part1
 	cp -v common/fixconkeys-part2 debian/kfocus-calamares-settings/usr/libexec/fixconkeys-part2
+	cp -v common/enable-luks-discard debian/kfocus-calamares-settings/usr/libexec/enable-luks-discard
 	cp -v kfocus/kfocus-prep-user debian/kfocus-calamares-settings/usr/libexec/kfocus-prep-user

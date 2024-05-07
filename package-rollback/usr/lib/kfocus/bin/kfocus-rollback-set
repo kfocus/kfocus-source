@@ -152,8 +152,8 @@ _checkBtrfsStatusFn () {
   # The presence of /var/lib/portables or /var/lib/machines subvolumes will
   # interfere with snapshotting. These subvolumes may be created automatically
   # by systemd if it is not configured otherwise.
-  if grep -q 'var/lib/portables' < <(btrfs subvolume list /) || \
-     grep -q 'var/lib/machines' < <(btrfs subvolume list /); then
+  if grep -q 'var/lib/portables' < <("${_btrfsExe}" subvolume list /) || \
+     grep -q 'var/lib/machines' < <("${_btrfsExe}" subvolume list /); then
     if [ -n "$(ls -A /var/lib/portables)" ] || \
        [ -n "$(ls -A /var/lib/machines )" ]; then
       _btrfsStatus='UNSUPPORTED';
@@ -177,8 +177,8 @@ _checkBtrfsStatusFn () {
         | cut -d' ' -f1)";
       if [ -n "${_main_fs}" ] && [ -n "${_boot_fs}" ] \
         && [ "${_main_fs}" != "${_boot_fs}" ]; then
-        _main_subvols_str="$(btrfs subvolume list / | awk '{ print $9 }' | sort)";
-        _boot_subvols_str="$(btrfs subvolume list /boot | awk '{ print $9 }' | sort)";
+        _main_subvols_str="$("${_btrfsExe}" subvolume list / | awk '{ print $9 }' | sort)";
+        _boot_subvols_str="$("${_btrfsExe}" subvolume list /boot | awk '{ print $9 }' | sort)";
         if grep -E '^@$' <<< "${_main_subvols_str}" && \
           LC_ALL='C' mount | grep -q ' on /home '; then
           if [ -z "${_boot_subvols_str}" ]; then
@@ -239,8 +239,8 @@ _prepareSystemFn () {
   # systemd may create /var/lib/portables and /var/lib/machines BTRFS
   # subvolumes of its own accord if not configured otherwise. Ensure that
   # these are not present.
-  btrfs subvolume delete --commit-after '/var/lib/portables' || true;
-  btrfs subvolume delete --commit-after '/var/lib/machines'  || true;
+  "${_btrfsExe}" subvolume delete --commit-after '/var/lib/portables' || true;
+  "${_btrfsExe}" subvolume delete --commit-after '/var/lib/machines'  || true;
 
   # Create directories
   for _dir in '/btrfs_boot' '/btrfs_main' '/etc/libvirt' '/var/lib/libvirt'; do
@@ -280,7 +280,7 @@ _prepareSystemFn () {
 
   # Morph the layout of the boot partition
   mount /btrfs_boot || _exitALERT 'Failed to mount /btrfs_boot';
-  btrfs subvolume create /btrfs_boot/@boot \
+  "${_btrfsExe}" subvolume create /btrfs_boot/@boot \
     || _exitEMERG 'Failed to create @boot';
 
   # This will always throw a warning about not being able to move a directory
@@ -311,7 +311,7 @@ _prepareSystemFn () {
   );
 
   for _subvolume_id in "${_subvolume_list[@]}"; do
-    btrfs subvolume create "${_subvolume_id}" \
+    "${_btrfsExe}" subvolume create "${_subvolume_id}" \
       || _exitEMERG "Failed to create ${_subvolume_id}";
   done
 
@@ -352,17 +352,17 @@ _restoreSnapshotFn () {
   _snapshot_disp_id="$(_rb2MakeSnapshotDispIdFn "${_target_snapshot}")";
 
   mv '/btrfs_main/@' '/btrfs_main/@kfocus-rollback-working' || _exitCRIT;
-  btrfs subvolume snapshot "${_snapshot_path}" '/btrfs_main/@' || _exitEMERG;
-  btrfs filesystem sync '/btrfs_main' || _exitEMERG;
+  "${_btrfsExe}" subvolume snapshot "${_snapshot_path}" '/btrfs_main/@' || _exitEMERG;
+  "${_btrfsExe}" filesystem sync '/btrfs_main' || _exitEMERG;
   # Failing to unmount /boot/efi before attempting to move the old subvol
   # will result in the subvol not being moved, which will result in the
   # whole @boot subvol being nuked except for the contents of /boot/efi.
   umount /boot/efi || _exitALERT;
   mv '/btrfs_boot/@boot' '/btrfs_boot/@kfocus-rollback-working-boot' \
     || _exitALERT;
-  btrfs subvolume snapshot "${_boot_snapshot_path}" '/btrfs_boot/@boot' \
+  "${_btrfsExe}" subvolume snapshot "${_boot_snapshot_path}" '/btrfs_boot/@boot' \
     || _exitEMERG;
-  btrfs filesystem sync '/btrfs_boot' || _exitEMERG;
+  "${_btrfsExe}" filesystem sync '/btrfs_boot' || _exitEMERG;
   sync;
   mount /boot/efi || _exitALERT;
 
@@ -393,8 +393,8 @@ _deleteSnapshotFn () {
     _exitERR;
   fi
 
-  btrfs subvolume delete --commit-after "${_snapshot_path}" || _exitEMERG;
-  btrfs subvolume delete --commit-after "${_boot_snapshot_path}" || _exitEMERG;
+  "${_btrfsExe}" subvolume delete --commit-after "${_snapshot_path}" || _exitEMERG;
+  "${_btrfsExe}" subvolume delete --commit-after "${_boot_snapshot_path}" || _exitEMERG;
 }
 
 _finalizeRestoreFn () {
@@ -403,10 +403,10 @@ _finalizeRestoreFn () {
   if ! mount | grep 'btrfs' | grep -q '@kfocus-rollback-working' \
     && ! mount | grep 'btrfs' | grep -q '@kfocus-rollback-working-boot'; then
     if [ -d '/btrfs_main/@kfocus-rollback-working' ]; then
-      btrfs subvolume delete --commit-after '/btrfs_main/@kfocus-rollback-working' || _exitEMERG;
+      "${_btrfsExe}" subvolume delete --commit-after '/btrfs_main/@kfocus-rollback-working' || _exitEMERG;
     fi
     if [ -d '/btrfs_boot/@kfocus-rollback-working-boot' ]; then
-      btrfs subvolume delete --commit-after '/btrfs_boot/@kfocus-rollback-working-boot' \
+      "${_btrfsExe}" subvolume delete --commit-after '/btrfs_boot/@kfocus-rollback-working-boot' \
         || _exitEMERG;
     fi
   fi
@@ -479,12 +479,12 @@ _createSnapshotFn () {
     _exitERR "Boot snapshot path |${_snapshot_path}| already exists!";
   fi
 
-  btrfs subvolume snapshot -r '/btrfs_main/@' "${_snapshot_path}" \
+  "${_btrfsExe}" subvolume snapshot -r '/btrfs_main/@' "${_snapshot_path}" \
     || _exitEMERG "Could not create snapshot |${_snapshot_path}|";
-  btrfs filesystem sync '/btrfs_main' || _exitEMERG;
-  btrfs subvolume snapshot -r '/btrfs_boot/@boot' "${_boot_snapshot_path}" \
+  "${_btrfsExe}" filesystem sync '/btrfs_main' || _exitEMERG;
+  "${_btrfsExe}" subvolume snapshot -r '/btrfs_boot/@boot' "${_boot_snapshot_path}" \
     || _exitEMERG "Could not create boot snapshot |${_boot_snapshot_path}|";
-  btrfs filesystem sync '/btrfs_boot' || _exitEMERG;
+  "${_btrfsExe}" filesystem sync '/btrfs_boot' || _exitEMERG;
   sync;
 }
 
@@ -595,6 +595,15 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   );
 
   _loadLibTableFn "${_libTable[@]}" || exit 1;
+
+  _assignList=(
+    '_btrfsExe|/usr/bin/btrfs'
+  );
+
+  if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
+    _cm2ErrStrFn 'Could not assign variables';
+    exit 1;
+  fi
 
   # Set error messages
   _browStr='<tr><td style="padding:8px 32px 8px 0">';
