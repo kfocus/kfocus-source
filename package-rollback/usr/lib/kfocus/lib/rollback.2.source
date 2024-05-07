@@ -84,20 +84,14 @@ _rb2GetSnapshotListStrFn () {
 _rb2GetBtrfsStatusFn () {
   declare _btrfs_status_str _exitInt;
 
-  while true; do
-    _btrfs_status_str="$(_rb2GetBtrfsStatusInternalFn)"
-    _exit_int="$?";
+  _btrfs_status_str="$(_rb2GetBtrfsStatusInternalFn)"
+  _exit_int="$?";
 
-    # Override false positive due to complex exit code handling
-    # shellcheck disable=SC2181
-    if [ "${_exit_int}" = "${_LOCK}" ]; then
-      sleep 1;
-    elif [ "${_exit_int}" = "${_NOTICE}" ]; then
-      break;
-    else
-      exit "${_exit_int}";
-    fi
-  done
+  # Override false positive due to complex exit code handling
+  # shellcheck disable=SC2181
+  if [ "${_exit_int}" != "${_NOTICE}" ]; then
+    exit "${_exit_int}";
+  fi
 
   echo "${_btrfs_status_str}";
 }
