@@ -148,16 +148,15 @@ fi
 _masterLookupList=();
 
 _availablePkgStr="$(apt-cache pkgnames)";
-_installedPkgStr="$( dpkg-query -W | awk '{print $1}' )";
+_installedPkgStr="$(dpkg-query -W | awk '{print $1}')";
 _comboList=();
 _defaultPickStr='';
 
 for _versStr in {6..20}; do
-  _pkgList=( \
-   "gcc-${_versStr}" \
-   "gcc-${_versStr}-multilib" \
-   "g++-${_versStr}" \
-   "g++-${_versStr}-multilib" \
+  _pkgList=(
+   "gcc-${_versStr}" "gcc-${_versStr}-multilib"
+   "g++-${_versStr}" "g++-${_versStr}-multilib"
+   "cpp-${_versStr}" "cpp-${_versStr}-multilib"
   );
 
   _isAvailable='y';
@@ -165,8 +164,8 @@ for _versStr in {6..20}; do
   _availablePkgList=();
 
   for _pkgName in "${_pkgList[@]}"; do
-    if echo "${_availablePkgStr}" |grep -q "^${_pkgName}$"; then
-      if echo "${_installedPkgStr}" |grep -q "^${_pkgName}$"; then
+    if grep -q "^${_pkgName}$" <<< "${_availablePkgStr}"; then
+      if grep -q "^${_pkgName}$" <<< "${_installedPkgStr}"; then
         # debug
         # _cm2EchoFn "Package ${_pkgName} installed";
         _installedPkgList+=("${_pkgName}");
@@ -178,8 +177,11 @@ for _versStr in {6..20}; do
     else
       # debug
       # _cm2EchoFn "Package ${_pkgName} not found";
-      _isAvailable='n';
-      break 1;
+      # cpp is not required for all sets.
+      if ! [[ "${_pkgName}" =~ ^cpp- ]]; then
+        _isAvailable='n';
+        break 1;
+      fi
     fi
   done;
 

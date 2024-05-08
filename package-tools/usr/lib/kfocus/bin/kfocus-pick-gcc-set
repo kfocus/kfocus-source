@@ -79,7 +79,10 @@ for _phaseIdx in {1..2}; do
     if [ "${_phaseIdx}" = '1' ]; then
       _outStr=$(_setSymLinkFn '_check' "${_srcExeStr}" "${_tgtVersStr}");
       # shellcheck disable=2181 # Check exit code directly...
-      if [ "$?" != '0' ]; then _areAllFound='n'; fi
+      if [ "$?" != '0' ]; then
+        1>&2 echo "WARN: cannot find ${_srcExeStr}-${_tgtVersStr}";
+        _areAllFound='n';
+      fi
 
       if [ -n "${_outStr}" ]; then
         _checkStr="${_checkStr}${_outStr}";
