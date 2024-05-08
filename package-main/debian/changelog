@@ -8,6 +8,9 @@ kfocus-main (24.04.1~beta11~local1) noble; urgency=medium
 
   [ Aaron Rainbolt ]
   * Automatically strip tags and format text when using whiptail CLI UI.
+    (#4156)
+  * Don't continue on with snapshot maintenance if one of the core maintenance
+    commands fails. (#4013)
 
  -- Michael S. Mikowski <support@kfocus.org>  Mon, 06 May 2024 19:42:01 -0700
 
