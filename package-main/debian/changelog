@@ -1,4 +1,12 @@
-kfocus-main (24.04.1~beta11~local1) noble; urgency=medium
+kfocus-main (24.04.1~beta12) noble; urgency=medium
+
+  * control: +depends on kfocus-wallpapers (#4240)
+  * usr/lib/kfocus/bin/kfocus-extra: remove optional wallpapers (#4085)
+  * package-main/usr/lib/kfocus/bin/kfocus-mime: update dropbox (#4085)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Wed, 08 May 2024 10:55:54 -0700
+
+kfocus-main (24.04.1~beta11) noble; urgency=medium
 
   [ Michael S. Mikowski ]
   * control: Adjust Recommends to use kfocus-qwe instead of QWE (#4085)
@@ -12,7 +20,7 @@ kfocus-main (24.04.1~beta11~local1) noble; urgency=medium
   * Don't continue on with snapshot maintenance if one of the core maintenance
     commands fails. (#4013)
 
- -- Michael S. Mikowski <support@kfocus.org>  Mon, 06 May 2024 19:42:01 -0700
+ -- Michael S. Mikowski <support@kfocus.org>  Tue, 07 May 2024 22:35:41 -0700
 
 kfocus-main (24.04.1~beta10) noble; urgency=medium
 

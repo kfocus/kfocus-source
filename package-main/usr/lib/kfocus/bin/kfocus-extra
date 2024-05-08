@@ -65,17 +65,6 @@ _installExtraFn () {
     fi
   fi
 
-  if _cm2ChkInstalledPkgFn 'kfocus-wallpapers'; then
-    _cm2SucStrFn 'Kfocus Wallpapers already installed.';
-  else
-    _reply="$(_cm2ReadPromptYnFn 'Install kfocus wallpapers' 'n')";
-    if [ "${_reply}" = 'y' ]; then
-      if apt-get install -y kfocus-wallpapers; then
-        _cm2SucFn; else _cm2WarnFn;
-      fi
-    fi
-  fi
-
   if _cm2ChkInstalledPkgFn 'libdvd-pkg'; then
     _cm2SucStrFn 'DVD support package already installed.';
   else

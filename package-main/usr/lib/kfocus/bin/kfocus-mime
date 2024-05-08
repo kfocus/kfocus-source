@@ -181,10 +181,10 @@ function deb_docker-ce() {
   WEBSITE="https://www.docker.com/"
 }
 function deb_dropbox() {
-  # Extracted 2023-01-06 from deb-get main
+  # Verified 2024-05-07
   APT_KEY_URL="https://linux.dropbox.com/fedora/rpm-public-key.asc"
   APT_LIST_NAME="dropbox"
-  APT_REPO_URL="deb [arch=amd64] http://linux.dropbox.com/ubuntu disco main"
+  APT_REPO_URL="deb [arch=i386,amd64 signed-by=/usr/share/keyrings/dropbox.asc] http://linux.dropbox.com/ubuntu noble main"
   PRETTY_NAME="Dropbox"
   WEBSITE="https://www.dropbox.com/"
 }
