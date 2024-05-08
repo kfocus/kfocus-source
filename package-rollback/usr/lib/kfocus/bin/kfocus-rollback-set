@@ -326,52 +326,6 @@ _prepareSystemFn () {
   _isPreparingSystem='n';
 }
 
-_restoreSnapshotFn () {
-  declare _target_snapshot _snapshot_path _boot_snapshot_path \
-    _snapshot_disp_id;
-
-  _target_snapshot="${1:-}";
-  if [ -z "${_target_snapshot}" ]; then
-    _exitERR 'No snapshot name provided to restore!';
-  fi
-  _checkBtrfsStatusSetUpFn;
-  _snapshot_path="${_snapshotMainDir}/${_target_snapshot}";
-  _boot_snapshot_path="${_snapshotBootDir}/${_target_snapshot}";
-
-  if [ -e '/btrfs_main/@kfocus-rollback-working' ] || \
-    [ -e '/btrfs_boot/@kfocus-rollback-working-boot' ]; then
-    _cm2WarnStrFn 'Temporary restore subvols found, cannot continue.';
-    _cm2WarnStrFn 'Please reboot, then run "Finish restoration operation".';
-    _exitERR 'Restore already in progress';
-  fi
-
-  if ! [ -e "${_snapshot_path}" ] || ! [ -e "${_boot_snapshot_path}" ]; then
-    _exitERR 'Expected snapshot path does not exist';
-  fi
-
-  _snapshot_disp_id="$(_rb2MakeSnapshotDispIdFn "${_target_snapshot}")";
-
-  mv '/btrfs_main/@' '/btrfs_main/@kfocus-rollback-working' || _exitCRIT;
-  "${_btrfsExe}" subvolume snapshot "${_snapshot_path}" '/btrfs_main/@' || _exitEMERG;
-  "${_btrfsExe}" filesystem sync '/btrfs_main' || _exitEMERG;
-  # Failing to unmount /boot/efi before attempting to move the old subvol
-  # will result in the subvol not being moved, which will result in the
-  # whole @boot subvol being nuked except for the contents of /boot/efi.
-  umount /boot/efi || _exitALERT;
-  mv '/btrfs_boot/@boot' '/btrfs_boot/@kfocus-rollback-working-boot' \
-    || _exitALERT;
-  "${_btrfsExe}" subvolume snapshot "${_boot_snapshot_path}" '/btrfs_boot/@boot' \
-    || _exitEMERG;
-  "${_btrfsExe}" filesystem sync '/btrfs_boot' || _exitEMERG;
-  sync;
-  mount /boot/efi || _exitALERT;
-
-  # Let the user know that a restore has completed
-  echo "${_snapshot_disp_id}" \
-    > /btrfs_main/@/var/lib/kfocus/kfocus_rollback_restore_complete \
-    || _exitALERT;
-}
-
 _deleteSnapshotFn () {
   declare _target_snapshot _snapshot_path _boot_snapshot_path;
 
@@ -386,15 +340,16 @@ _deleteSnapshotFn () {
   _snapshot_path="${_snapshotMainDir}/${_target_snapshot}";
   _boot_snapshot_path="${_snapshotBootDir}/${_target_snapshot}";
 
-  if ! [ -e "${_snapshot_path}" ]; then
-    _exitERR;
-  fi
-  if ! [ -e "${_boot_snapshot_path}" ]; then
+  if ! [ -e "${_snapshot_path}" ] && ! [ -e "${_boot_snapshot_path}" ]; then
     _exitERR;
   fi
 
-  "${_btrfsExe}" subvolume delete --commit-after "${_snapshot_path}" || _exitEMERG;
-  "${_btrfsExe}" subvolume delete --commit-after "${_boot_snapshot_path}" || _exitEMERG;
+  if [ -e "${_snapshot_path}" ]; then
+    "${_btrfsExe}" subvolume delete --commit-after "${_snapshot_path}" || _exitEMERG;
+  fi
+  if [ -e "${_boot_snapshot_path}" ]; then
+    "${_btrfsExe}" subvolume delete --commit-after "${_boot_snapshot_path}" || _exitEMERG;
+  fi
 }
 
 _finalizeRestoreFn () {
@@ -413,19 +368,41 @@ _finalizeRestoreFn () {
 }
 
 _trimSnapshotsFn () {
-  declare _snapshot_list _snapshot_remove_count _snapshot_idx;
+  declare _main_snapshot_list _boot_snapshot_list _snapshot_id \
+    _snapshot_remove_count _snapshot_idx;
 
   _checkBtrfsStatusSetUpFn;
 
-  readarray -t _snapshot_list <<< "$(
+  readarray -t _main_snapshot_list <<< "$(
+    _cm2LsFn "${_snapshotMainDir}" | sed 's/@//' | sort -n | sed 's/^/@/'
+  )";
+  readarray -t _boot_snapshot_list <<< "$(
+    _cm2LsFn "${_snapshotBootDir}" | sed 's/@//' | sort -n | sed 's/^/@/'
+  )";
+
+  for _snapshot_id in "${_main_snapshot_list[@]}"; do
+    if ! [[ " ${_boot_snapshot_list[*]} " \
+      =~ [[:space:]]${_snapshot_id}[[:space:]] ]]; then
+      _deleteSnapshotFn "${_snapshot_id}";
+    fi
+  done
+
+  for _snapshot_id in "${_boot_snapshot_list[@]}"; do
+    if ! [[ " ${_main_snapshot_list[*]} " \
+      =~ [[:space:]]${_snapshot_id}[[:space:]] ]]; then
+      _deleteSnapshotFn "${_snapshot_id}";
+    fi
+  done
+  
+  readarray -t _main_snapshot_list <<< "$(
     _cm2LsFn "${_snapshotMainDir}" | sed 's/@//' | sort -n | sed 's/^/@/'
   )";
 
-  if [ "${#_snapshot_list[@]}" -gt '5' ]; then
-    _snapshot_remove_count=$((${#_snapshot_list[@]} - 5));
+  if [ "${#_main_snapshot_list[@]}" -gt '5' ]; then
+    _snapshot_remove_count=$((${#_main_snapshot_list[@]} - 5));
     for ((_snapshot_idx = 0; _snapshot_idx < _snapshot_remove_count; \
       _snapshot_idx++)); do
-      _deleteSnapshotFn "${_snapshot_list[_snapshot_idx]}";
+      _deleteSnapshotFn "${_main_snapshot_list[_snapshot_idx]}";
     done
   fi
 }
@@ -486,8 +463,9 @@ _createSnapshotFn () {
   sync;
 }
 
-_systemRollbackFn () {
-  declare _older_snapshot_list_str _restore_snapshot_str;
+_restoreSnapshotFn () {
+  declare _older_snapshot_list_str _target_snapshot _snapshot_path \
+    _boot_snapshot_path _snapshot_disp_id;
   
   _checkBtrfsStatusSetUpFn;
 
@@ -495,14 +473,53 @@ _systemRollbackFn () {
   # don't purposefully exclude them, so get the list of all but the four
   # newest snapshots and exclude them a bit later.
   _older_snapshot_list_str="$(_getSnapshotListStrFn | tail -n+5)";
-  _restore_snapshot_str="${1:-}";
+  _target_snapshot="${1:-}";
+  
+  if [ -z "${_target_snapshot}" ]; then
+    _exitERR 'No snapshot name provided to restore!';
+  fi
 
   _createSnapshotFn 'Pre-Rollback' || exit;
   # Exclude the fifth and older snapshots.
-  if ! [[ "${_older_snapshot_list_str}" =~ ${_restore_snapshot_str} ]]; then
+  if ! [[ "${_older_snapshot_list_str}" =~ ${_target_snapshot} ]]; then
     _trimSnapshotsFn || exit;
   fi
-  _restoreSnapshotFn "${1:-}" || exit;
+
+  _snapshot_path="${_snapshotMainDir}/${_target_snapshot}";
+  _boot_snapshot_path="${_snapshotBootDir}/${_target_snapshot}";
+
+  if [ -e '/btrfs_main/@kfocus-rollback-working' ] || \
+    [ -e '/btrfs_boot/@kfocus-rollback-working-boot' ]; then
+    _cm2WarnStrFn 'Temporary restore subvols found, cannot continue.';
+    _cm2WarnStrFn 'Please reboot, then run "Finish restoration operation".';
+    _exitERR 'Restore already in progress';
+  fi
+
+  if ! [ -e "${_snapshot_path}" ] || ! [ -e "${_boot_snapshot_path}" ]; then
+    _exitERR 'Expected snapshot path does not exist';
+  fi
+
+  _snapshot_disp_id="$(_rb2MakeSnapshotDispIdFn "${_target_snapshot}")";
+
+  mv '/btrfs_main/@' '/btrfs_main/@kfocus-rollback-working' || _exitCRIT;
+  "${_btrfsExe}" subvolume snapshot "${_snapshot_path}" '/btrfs_main/@' || _exitEMERG;
+  "${_btrfsExe}" filesystem sync '/btrfs_main' || _exitEMERG;
+  # Failing to unmount /boot/efi before attempting to move the old subvol
+  # will result in the subvol not being moved, which will result in the
+  # whole @boot subvol being nuked except for the contents of /boot/efi.
+  umount /boot/efi || _exitALERT;
+  mv '/btrfs_boot/@boot' '/btrfs_boot/@kfocus-rollback-working-boot' \
+    || _exitALERT;
+  "${_btrfsExe}" subvolume snapshot "${_boot_snapshot_path}" '/btrfs_boot/@boot' \
+    || _exitEMERG;
+  "${_btrfsExe}" filesystem sync '/btrfs_boot' || _exitEMERG;
+  sync;
+  mount /boot/efi || _exitALERT;
+
+  # Let the user know that a restore has completed
+  echo "${_snapshot_disp_id}" \
+    > /btrfs_main/@/var/lib/kfocus/kfocus_rollback_restore_complete \
+    || _exitALERT;
 }
 
 _systemSnapshotFn () {
@@ -555,7 +572,6 @@ _mainFn () {
     'getBtrfsStatus')    echo "${_btrfsStatus}";;
     'prepareSystem')     _prepareSystemFn;;
     'restoreSnapshot')   _restoreSnapshotFn   "${2:-}";;
-    'systemRollback')    _systemRollbackFn    "${2:-}";;
     'systemSnapshot')    _systemSnapshotFn    "${2:-}";;
     'trimSnapshots')     _trimSnapshotsFn;;
     *)

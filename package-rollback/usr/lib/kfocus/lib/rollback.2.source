@@ -21,8 +21,8 @@
 _rb2GetBtrfsStatusInternalFn () {
   "${_snapshotSetExe}" 'getBtrfsStatus';
 }
-_rb2SystemRollbackFn () {
-  "${_escExe}" "${_snapshotSetExe}" 'systemRollback' "${1:-}";
+_rb2RestoreSnapshotFn () {
+  "${_escExe}" "${_snapshotSetExe}" 'restoreSnapshot' "${1:-}";
 }
 _rb2SystemSnapshotFn () {
   "${_escExe}" "${_snapshotSetExe}" 'systemSnapshot' "${1:-}";
@@ -112,7 +112,7 @@ _LOCK='20';
 export _NOTICE _ERR _CRIT _ALERT _EMERG _LOCK;
 
 # Export Functions
-export -f _rb2GetBtrfsStatusInternalFn _rb2SystemRollbackFn \
+export -f _rb2GetBtrfsStatusInternalFn _rb2RestoreSnapshotFn \
   _rb2SystemSnapshotFn _rb2MakeSnapshotDispIdFn _rb2GetSnapshotListStrFn \
   _rb2GetBtrfsStatusFn;
 
