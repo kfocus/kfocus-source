@@ -10,7 +10,7 @@
 #              | restoreSnapshot @<timestamp> | deleteSnapshot @<timestamp>
 #              | labelAptSnapshot | finalizeRestore  | trimSnapshots
 #              | prepareSystem    | getBtrfsStatus
-#              | restoreSnapshot (snapshot_id)       | systemSnapshot
+#              | systemSnapshot
 # Purpose  : Performs snapshot management operations
 # Example  : kfocus-rollback-set restoreSnapshot @1234
 # License  : GPLv2
@@ -413,8 +413,7 @@ _finalizeRestoreFn () {
 }
 
 _trimSnapshotsFn () {
-  declare _snapshot_list _snapshot_remove_list _snapshot_remove_count \
-    _snapshot_idx;
+  declare _snapshot_list _snapshot_remove_count _snapshot_idx;
 
   _checkBtrfsStatusSetUpFn;
 
@@ -423,7 +422,6 @@ _trimSnapshotsFn () {
   )";
 
   if [ "${#_snapshot_list[@]}" -gt '5' ]; then
-    _snapshot_remove_list=();
     _snapshot_remove_count=$((${#_snapshot_list[@]} - 5));
     for ((_snapshot_idx = 0; _snapshot_idx < _snapshot_remove_count; \
       _snapshot_idx++)); do
@@ -490,6 +488,8 @@ _createSnapshotFn () {
 
 _systemRollbackFn () {
   declare _older_snapshot_list_str _restore_snapshot_str;
+  
+  _checkBtrfsStatusSetUpFn;
 
   # Any snapshots that are at number 5 or older will end up trimmed if we
   # don't purposefully exclude them, so get the list of all but the four
@@ -506,6 +506,7 @@ _systemRollbackFn () {
 }
 
 _systemSnapshotFn () {
+  _checkBtrfsStatusSetUpFn;
   _createSnapshotFn "${1:-}" || _exitERR 'Could not create snapshot';
   _trimSnapshotsFn           || _exitERR 'Could not trim snapshots';
 }
@@ -614,11 +615,11 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 ${_cm2HtmBeginStr}${_tableStr}
 ${_browStr}<h3 style="color:#f7941d">Critical Error</h3>${_erowStr}
 
-${_browStr}FocusRx was interrupted while attempting to set up system file
-snapshotting. This incident may be the result of failing
+${_browStr}FocusRx was interrupted while attempting to set up system<br>
+file snapshotting. This incident may be the result of failing<br>
 hardware or a software conflict.${_erowStr}
 
-${_browStr}<b>Please report this issue to technical support. This is not
+${_browStr}<b>Please report this issue to technical support. This is not<br>
 normal and should never happen.</b>${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
@@ -628,12 +629,12 @@ EOF
 ${_cm2HtmBeginStr}${_tableStr}
 ${_browStr}<h3 style="color:#f7941d">Low Disk Space</h3>${_erowStr}
 
-${_browStr}Your system is running low on disk space. This could result in
-filesystem corruption if not corrected. It is highly recommended
-that you use the Drive Optimizer to clear some space. You may also
-need to delete excess files or move them to other drives. You can
-access the Drive Optimizer by clicking <code>Start Menu >
-Kubuntu Focus Tools > Drive Optimizer</code>.${_erowStr}
+${_browStr}Your system is running low on disk space. This could result in<br>
+filesystem corruption if not corrected. It is highly recommended<br>
+that you use the Drive Optimizer to clear some space. You may<br>
+also need to delete excess files or move them to other drives.<br>
+You can access the Drive Optimizer by clicking <code>Start Menu &gt;<br>
+Kubuntu Focus Tools &gt; Drive Optimizer</code>.${_erowStr}
 
 ${_browStr}For your safety, no snapshot-related actions have been
 performed.${_erowStr}</table>
@@ -645,12 +646,14 @@ EOF
 ${_cm2HtmBeginStr}${_tableStr}
 ${_browStr}<h3 style="color:#f7941d">Inconsistent FS Layout</h3>${_erowStr}
 
-${_browStr}This system's filesystem layout appears to have been modified from
-its default configuration. System snapshots and system rollback
-are incompatible with the current filesystem state.${_erowStr}
+${_browStr}This computer's file system layout was changed from the<br>
+default. This breaks system snapshots and rollback.${_erowStr}
 
-${_browStr}Please correct the filesystem layout at your earliest convenience.
-See ??? for more information.${_erowStr}</table>
+${_browStr}If you moved <code>/btrfs_main</code> or <code>/btrfs_boot</code>,
+please move<br>
+them back to their original locations. If you did not move<br>
+either of these directories, please contact technical support.
+${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
