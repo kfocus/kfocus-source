@@ -246,7 +246,7 @@ _mainFn () {
     _doTotalRestoreMsg="${_doTotalRestoreMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
     if [ "$(_cm2PromptUserFn "${_doTotalRestoreMsg}" "${_winTitle}" \
       'o')" = 'y' ]; then
-      _rb2SystemRollbackFn "${_snapshot_id}";
+      _rb2RestoreSnapshotFn "${_snapshot_id}";
       _handleOperationExitIntFn 'restore' "$?" "${_snapshot_disp_id}";
     else
       _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";

@@ -119,9 +119,9 @@ _manageSnapshotsFn () {
   fi
 
   # TODO: If any of these fail, do we care?
-  "${_snapshotSetExe}" 'finalizeRestore';
-  "${_snapshotSetExe}" 'createSnapshot' 'Timed';
-  "${_snapshotSetExe}" 'trimSnapshots';
+  "${_snapshotSetExe}" 'finalizeRestore' || return;
+  "${_snapshotSetExe}" 'createSnapshot' 'Timed' || return;
+  "${_snapshotSetExe}" 'trimSnapshots' || return;
   _cm2SucFn;
 }
 # . END _manageSnapshotsFn }
