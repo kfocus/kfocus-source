@@ -61,7 +61,7 @@ if ( is_horizontal ) {
 
 // Begin Vertical Layout
 else {
-  panel_obj.height = Math.round( gridUnit * 2.75 );
+  panel_obj.height = Math.round( gridUnit * 3 );
   panel_obj.length = gridUnit * 999;
 }
 // . End Vertical Layout
