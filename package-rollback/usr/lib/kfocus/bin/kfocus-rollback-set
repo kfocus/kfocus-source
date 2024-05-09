@@ -165,7 +165,16 @@ _checkBtrfsStatusFn () {
       && [ -d "${_snapshotMainDir}" ] \
       && [ -d '/btrfs_boot/@boot' ] \
       && [ -d "${_snapshotBootDir}" ]; then
-      _btrfsStatus='SUPPORTED, SET UP';
+      _main_fs="$(LC_ALL='C' mount | grep btrfs | grep ' on / ' \
+        | cut -d' ' -f1)";
+      _boot_fs="$(LC_ALL='C' mount | grep btrfs | grep ' on /boot ' \
+        | cut -d' ' -f1)";
+      if [ -n "${_main_fs}" ] && [ -n "${_boot_fs}" ] \
+        && [ "${_main_fs}" != "${_boot_fs}" ]; then
+        _btrfsStatus='SUPPORTED, SET UP';
+      else
+        _btrfsStatus='UNSUPPORTED';
+      fi
     else
       _btrfsStatus='UNSUPPORTED';
     fi
@@ -182,7 +191,12 @@ _checkBtrfsStatusFn () {
         if grep -E '^@$' <<< "${_main_subvols_str}" && \
           LC_ALL='C' mount | grep -q ' on /home '; then
           if [ -z "${_boot_subvols_str}" ]; then
-            _btrfsStatus='SUPPORTED, NOT SET UP';
+            if ! grep -E '^@kfocus-rollback-snapshots$' \
+              <<< "${_main_subvols_str}"; then
+              _btrfsStatus='SUPPORTED, NOT SET UP';
+            else
+              _btrfsStatus='INCONSISTENT';
+            fi
           else
             _btrfsStatus='UNSUPPORTED';
           fi

@@ -441,7 +441,8 @@ _cm2StripTagsFn () {
 
 _cm2PromptUserFn () {
   declare _icon_key _opt_str _prompt_str _window_title _query_type \
-    _cmd_list _ans_str;
+    _cmd_list _ans_str _key_list _val_list _params_list _params_idx \
+    _cycle_idx;
 
   _icon_key='kfocus-bug-rx';
   local OPTIND=1;
@@ -481,6 +482,7 @@ _cm2PromptUserFn () {
       s) _cmd_list+=('--sorry');;
       e) _cmd_list+=('--error');;
       r) _cmd_list+=('--radiolist');;
+      d) _cmd_list+=('--combobox');;
       *) _cmd_list+=('--msgbox');;
     esac
 
@@ -489,6 +491,38 @@ _cm2PromptUserFn () {
       shift 3;
       _cmd_list+=( "$@" );
       _ans_str="$("${_cmd_list[@]}")";
+    elif [ "${_query_type}" = 'd' ]; then
+      shift 3;
+      # KDialog's combo box feature takes only a list of strings as input,
+      # while _cm2PromptUserFn expects a list of three-item tuples, each
+      # consisting of a key, a user-displayed value, and an on-off setting. To
+      # make these APIs compatible, this code ignores the on-off setting and
+      # correlates the user-displayed values shown by KDialog to the keys
+      # passed to the function, allowing the combo box feature to behave
+      # similar to the radio list feature.
+      _key_list=();
+      _val_list=();
+      _params_list=( "$@" );
+      _cycle_idx=0;
+      for (( _params_idx=0; _params_idx < $#; _params_idx++ )); do
+        if (( _cycle_idx == 0 )); then
+          _key_list+=( "${_params_list[_params_idx]}" );
+        elif (( _cycle_idx == 1 )); then
+          _cmd_list+=( "${_params_list[_params_idx]}" );
+          _val_list+=( "${_params_list[_params_idx]}" );
+        elif (( _cycle_idx == 2 )); then
+          _cycle_idx=-1;
+        fi
+        (( _cycle_idx++ )) || true;
+      done
+      _ans_str="$("${_cmd_list[@]}")";
+      for (( _params_idx=0; _params_idx < ${#_key_list[@]}; \
+        _params_idx++ )); do
+        if [ "${_ans_str}" = "${_val_list[_params_idx]}" ]; then
+          _ans_str="${_key_list[_params_idx]}";
+          break;
+        fi
+      done
     else
       if "${_cmd_list[@]}"; then _ans_str='y'; else _ans_str='n'; fi
     fi
@@ -507,7 +541,7 @@ _cm2PromptUserFn () {
         _cm2EchoFn "${_prompt_str}\n";
         _cmd_list=('read' '-rp' 'Press <return> to continue. ');
         ;;
-      r)
+      [rd])
         # TODO 2024-04-10 warm mmikowski: Add radio list method
         # See kfocus-btool around line 254
         _cm2WarnStrFn 'ERROR: Radio lists not supported in CLI mode';
@@ -527,7 +561,7 @@ _cm2PromptUserFn () {
 
       case "${_query_type}" in
         [aow]) _cmd_list+=('--yesno') ;;
-        r) _cmd_list+=('--radiolist') ;;
+        [rd]) _cmd_list+=('--radiolist') ;;
         *) _cmd_list+=('--msgbox') ;;
       esac
 
@@ -543,7 +577,7 @@ _cm2PromptUserFn () {
       # we set the various size arguments to 0 as necessary, thus the strange
       # 0s here.
       _cmd_list+=("${_prompt_str}" '0' '0' );
-      if [ "${_query_type}" = 'r' ]; then
+      if [[ "${_query_type}" =~ [rd] ]]; then
         shift 3;
         _cmd_list+=( '0' "$@" );
 
@@ -560,7 +594,7 @@ _cm2PromptUserFn () {
     fi
   fi
 
-  if [[ "${_query_type}" =~ [aowr] ]]; then
+  if [[ "${_query_type}" =~ [aowrd] ]]; then
     echo "${_ans_str}";
   fi
 }
