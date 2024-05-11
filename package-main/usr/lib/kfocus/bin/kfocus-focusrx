@@ -355,7 +355,7 @@ _EOH06
 
   # Prepare system for snapshotting (this should be done whether Internet is
   # present or not)
-  if [ -n "${_snapshotSetExe}" ]; then
+  if [ -n "${_rollbackSetExe}" ]; then
     "${_escExe}" "${_focusRxSetExe}" 'prep-snapshot' || exit;
   fi
 
@@ -369,8 +369,8 @@ _EOH06
   _prompt_msg="${_title}: This only needs to be done once";
   _reason_str="$(tr ' ' '_' <<< "${_reason_str}")";
   if _output_str="$(
-    _cm2RunLongCmdFn "${_prompt_msg}" "${_focusRxSetExe}" \
-      'fix-hw-config' "${_reason_str}"
+    _cm2RunLongCmdFn "${_prompt_msg}" "${_escExe}" \
+      "${_focusRxSetExe}" 'fix-hw-config' "${_reason_str}"
   )"; then
     _prompt_msg="$(cat << _EOH07
 ${_cm2HtmBeginStr}
@@ -1110,13 +1110,13 @@ _EOH18
 #
 _postRollbackHandlerFn () {
   # Skip if required tools not installed
-  [ -z "${_kfocusRollbackExe}" ] && return;
-  if [ -n "${_kBuildSycocaExe}" ]; then "${_kBuildSycocaExe}"; fi
+  [ -z "${_rollbackExe}" ] && return;
+  if [ -n "${_kbuildSycocaExe}" ]; then "${_kbuildSycocaExe}"; fi
 
   if [ -e '/var/lib/kfocus/kfocus_rollback_restore_complete' ]; then
-    # Run _kfocusRollbackExe first so it can use the contents of the restore
+    # Run _rollbackExe first so it can use the contents of the restore
     # drop file to display the name of the restored snapshot to the user.
-    "${_kfocusRollbackExe}" 'afterRestore';
+    "${_rollbackExe}" 'afterRestore';
     "${_escExe}" "${_focusRxSetExe}" 'clear-restore';
   fi
 }
@@ -1245,14 +1245,14 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     "_focusRxVersExe|${_binDir}/kfocus-rx-version"
 
     "_btoolExe|${_binDir}/kfocus-btool||optional"
+    "_btrfsOptimizeSetExe|${_binDir}/kfocus-btrfs-optimize-set||optional"
     "_firstrunExe|${_binDir}/kfocus-firstrun-bin||optional"
     "_fixIbusExe|${_binDir}/kfocus-fix-ibus||optional"
+    "_kbuildSycocaExe|/usr/bin/kbuildsycoca5||optional"
     "_kcleanExe|${_binDir}/kfocus-kclean||optional"
     "_resetEffectsExe|${_binDir}/kfocus-reset-effects||optional"
-    "_snapshotSetExe|${_binDir}/kfocus-rollback-set||optional"
-    "_kBuildSycocaExe|/usr/bin/kbuildsycoca5||optional"
-    "_kfocusRollbackExe|${_binDir}/kfocus-rollback||optional"
-    "_btrfsOptimizeSetExe|${_binDir}/kfocus-btrfs-optimize-set||optional"
+    "_rollbackExe|${_binDir}/kfocus-rollback||optional"
+    "_rollbackSetExe|${_binDir}/kfocus-rollback-set||optional"
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2ErrStrFn 'Could not assign variables';

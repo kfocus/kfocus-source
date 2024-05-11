@@ -165,9 +165,9 @@ _chkBiosUpdateFn () {
 ## . END _chkBiosUpdateFn }
 
 ## BEGIN _chkHwConfigFn {
-# Purpose: Check hw config components and return fixup steps in a string.
-#          This string can be sent to _fixHwConfigFn using the fix-hw-config
-#          directive.
+# Purpose: Check hw config components and return fixup steps in a
+#   string. This string can be sent to _fixHwConfigFn using the
+#   fix-hw-config directive.
 #
 _chkHwConfigFn () {
   declare _is_nv_system _do_force _reason_list _dmi_hw_config_code \
@@ -335,9 +335,9 @@ _fixHwConfigFn () {
 ## BEGIN _prepareSnapshotFn {
 #
 _prepareSnapshotFn () {
-  [ -z "${_snapshotSetExe}" ] && return;
+  [ -z "${_rollbackSetExe}" ] && return;
 
-  "${_snapshotSetExe}" 'prepareSystem';
+  "${_rollbackSetExe}" 'prepareSystem';
 }
 ## . END _prepareSnapshotFn }
 
@@ -383,7 +383,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   _assignList=(
     "_focusRxVersExe|${_binDir}/kfocus-rx-version"
-    "_snapshotSetExe|${_binDir}/kfocus-rollback-set||optional"
+    "_rollbackSetExe|${_binDir}/kfocus-rollback-set||optional"
   );
   if ! _cm2AssignExeVarsFn  "${_assignList[@]}"; then
     _cm2ErrStrFn 'Could not assign variable';
