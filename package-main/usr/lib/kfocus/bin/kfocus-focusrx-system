@@ -108,28 +108,7 @@ _manageSnapshotsFn () {
     return 1;
   fi
 
-  ## TODO 2024-05-10 ar HOT: Move space calculation to kfocus-rollback-set
-  ## This sends a dbus message to warn users about low disk if possible.
   "${_rollbackSetExe}" 'checkWarnDiskSpace' || return;
-  # (( _main_min_space = ( ( $(
-  #     LC_ALL='C' df / \
-  #       | tail -n1 \
-  #       | awk '{ print $2 }'
-  #   ) * 1024 ) / 100 ) * 15 ));
-  # _boot_min_space=1073741824 # 1 GiB
-  # _main_space="$(LC_ALL=C "${_btrfsExe}" filesystem usage -b /btrfs_main \
-  #   | awk '/Free \(estimated\)/{ print $3 }')";
-  # _boot_space="$(LC_ALL=C "${_btrfsExe}" filesystem usage -b /btrfs_boot \
-  #   | awk '/Free \(estimated\)/{ print $3 }')";
-  #
-  # if [ -d '/btrfs_main' ] && [ -d '/btrfs_boot' ]; then
-  #   if (( _main_space < _main_min_space )) \
-  #     || (( _boot_space < _boot_min_space )); then
-  #     _promptAllUsersFn 'info' "${_lowDiskMsg}";
-  #     return;
-  #   fi
-  # fi
-
   "${_rollbackSetExe}" 'finalizeRestore'        || return;
   "${_rollbackSetExe}" 'createSnapshot' 'Timed' || return;
   "${_rollbackSetExe}" 'trimSnapshots'          || return;
