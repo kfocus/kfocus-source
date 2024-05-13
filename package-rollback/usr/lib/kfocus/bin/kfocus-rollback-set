@@ -145,7 +145,39 @@ _promptAllUsersFn () {
 }
 ## . END _promptAllUsersFn }
 
+## BEGIN _checkRootFn {
+#
+_checkRootFn () {
+  if [ "$UID" = '0' ]; then
+    return 0;
+  else
+    _cm2WarnStrFn 'This action requires root privileges.';
+    return 1;
+  fi
+}
+## . END _checkRootFn }
+
+## BEGIN BTRFS maintenance helper functions {
+#
+_getMainUsageReportFn () {
+  LC_ALL='C' "${_btrfsExe}" filesystem usage -b '/btrfs_main';
+}
+
+_getBootUsageReportFn () {
+  LC_ALL='C' "${_btrfsExe}" filesystem usage -b '/btrfs_boot';
+}
+
+_getMainBtduReportFn () {
+  LC_ALL='C' "${_btduExe}" --du --min-resolution=1M --headless '/btrfs_main'
+}
+
+_getMainFragReportFn () {
+  "${_filefragExe}" '/btrfs_main/@';
+}
+## . END BTRFS maintenance helper functions }
+
 ## BEGIN _checkBtrfsStatusFn {
+#
 _checkBtrfsStatusFn () {
   declare _main_fs _boot_fs _main_subvols_str _boot_subvols_str;
 
@@ -213,12 +245,17 @@ _checkBtrfsStatusFn () {
 }
 ## . END _checkBtrfsStatusFn }
 
+## BEGIN _checkBtrfsStatusSetUpFn {
+#
 _checkBtrfsStatusSetUpFn () {
   if ! [ "${_btrfsStatus}" = 'SUPPORTED, SET UP' ]; then
     _exitNOTICE "${_btrfsStatus}";
   fi
 }
+## . END _checkBtrfsStatusSetUpFn }
 
+## BEGIN _getSnapshotListStrFn {
+#
 _getSnapshotListStrFn () {
   # TODO 2024-04-05 mmikowski warm: use _cm2LsFn instead here
   find "${_snapshotMainDir}" -maxdepth 1 \
@@ -226,7 +263,10 @@ _getSnapshotListStrFn () {
     | sort -n -r \
     | sed '/^$/d; s/^/@/;';
 }
+## . END _getSnapshotListStrFn }
 
+## BEGIN _prepareSystemFn () {
+#
 _prepareSystemFn () {
   declare _root_mount_id _boot_mount_id _btrfs_defaults_str \
     _dir _subvolume_list _subvolume_id;
@@ -328,18 +368,21 @@ _prepareSystemFn () {
     "${_btrfsExe}" subvolume create "${_subvolume_id}" \
       || _exitEMERG "Failed to create ${_subvolume_id}";
   done
+  ## . END Stage 4: Create subvolumes }
 
-  #####
-  # STAGE 5: Finish additional mounts
-
+  ## Begin STAGE 5: Finish additional mounts {
   # At this point, /boot, /boot/efi, /btrfs_main, and /btrfs_boot are mounted.
   # /etc/libvirt and /var/lib/libvirt are not mounted.
   mount /etc/libvirt     || _exitALERT 'Failed to mount /etc/libvirt';
   mount /var/lib/libvirt || _exitALERT 'Failed to mount /var/lib/libvirt';
+  ## . END STAGE 5: Finish additional mounts }
 
   _isPreparingSystem='n';
 }
+## . END _prepareSystemFn }
 
+## BEGIN _deleteSnapshotFn {
+#
 _deleteSnapshotFn () {
   declare _target_snapshot _snapshot_path _boot_snapshot_path;
 
@@ -365,7 +408,10 @@ _deleteSnapshotFn () {
     "${_btrfsExe}" subvolume delete --commit-after "${_boot_snapshot_path}" || _exitEMERG;
   fi
 }
+## . END _deleteSnapshotFn }
 
+## BEGIN _finalizeRestoreFn {
+#
 _finalizeRestoreFn () {
   _checkBtrfsStatusSetUpFn;
 
@@ -380,7 +426,10 @@ _finalizeRestoreFn () {
     fi
   fi
 }
+## . END _finalizeRestoreFn }
 
+## BEGIN _trimSnapshotsFn {
+#
 _trimSnapshotsFn () {
   declare _main_snapshot_list _boot_snapshot_list _snapshot_id \
     _snapshot_remove_count _snapshot_idx;
@@ -420,7 +469,10 @@ _trimSnapshotsFn () {
     done
   fi
 }
+## . END _trimSnapshotsFn }
 
+## BEGIN _createSnapshotFn {
+#
 _createSnapshotFn () {
   declare _snapshot_event_type _timestamp_str _prev_timestamp_str \
     _snapshot_path _boot_snapshot_path _hour_seconds _week_seconds;
@@ -476,7 +528,10 @@ _createSnapshotFn () {
   "${_btrfsExe}" filesystem sync '/btrfs_boot' || _exitEMERG;
   sync;
 }
+## . END _createSnapshotFn
 
+## BEGIN _restoreSnapshotFn {
+#
 _restoreSnapshotFn () {
   declare _older_snapshot_list_str _target_snapshot _snapshot_path \
     _boot_snapshot_path _snapshot_disp_id;
@@ -535,11 +590,23 @@ _restoreSnapshotFn () {
     > /btrfs_main/@/var/lib/kfocus/kfocus_rollback_restore_complete \
     || _exitALERT;
 }
+## . END _restoreSnapshotFn }
 
+## BEGIN _systemSnapshotFn {
+#
 _systemSnapshotFn () {
   _checkBtrfsStatusSetUpFn;
   _createSnapshotFn "${1:-}" || _exitERR 'Could not create snapshot';
   _trimSnapshotsFn           || _exitERR 'Could not trim snapshots';
+}
+## . END _systemSnapshotFn }
+
+_btrfsMaintainFn () {
+  true; # TODO port from kfocus-btrfs-optimize-set
+}
+
+_btrfsDeepCleanFn () {
+  true; # TODO port from kfocus-btrfs-optimize-set
 }
 
 ## BEGIN _mainFn {
@@ -588,6 +655,8 @@ _mainFn () {
     'restoreSnapshot')   _restoreSnapshotFn   "${2:-}";;
     'systemSnapshot')    _systemSnapshotFn    "${2:-}";;
     'trimSnapshots')     _trimSnapshotsFn;;
+    'btrfsMaintain')     _btrfsMaintainFn;;
+    'btrfsDeepClean')    _btrfsDeepCleanFn;;
     *)
       _cm2WarnStrFn 'Invalid mode specified.';
       _exitERR;
@@ -629,6 +698,9 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   _assignList=(
     '_btrfsExe|/usr/bin/btrfs'
+    '_btrfsBalanceExe|/usr/bin/btrfs-balance-least-used'
+    '_btduExe|/usr/bin/btdu'
+    "_filefragExe|${_binDir}/kfocus-report-filefrag"
   );
 
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
