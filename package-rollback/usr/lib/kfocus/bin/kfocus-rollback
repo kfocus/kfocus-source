@@ -222,8 +222,8 @@ _handleOperationExitIntFn () {
     _cm2PromptUserFn "${_criticalErrorMsg}" "${_winTitle}" 'e';
     exit "${_exit_int}";
   elif [ "${_op_type}" = 'delete' ]; then
-    _deletionSuccessfulMsg="${_deletionSuccessfulMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
-    _cm2PromptUserFn "${_deletionSuccessfulMsg}" "${_winTitle}";
+    _snapshotDeletedMsg="${_snapshotDeletedMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
+    _cm2PromptUserFn "${_snapshotDeletedMsg}" "${_winTitle}";
     exit "${_NOTICE}";
   fi
 }
@@ -232,9 +232,9 @@ _handleOperationExitIntFn () {
 #
 _mainFn () {
   declare _arg_str _working_subvol_loc _working_boot_subvol_loc \
-    _btrfs_status_str _snapshot_id _restore_mode _exit_int \
+    _btrfs_status_str _snapshot_id _restore_mode \
     _working_subvol_loc _working_boot_subvol_loc _mode_str _snapshot_id \
-    _snapshot_disp_id;
+    _snapshot_disp_id _restored_snapshot_disp_id;
 
   _arg_str="${1:-}";
   _working_subvol_loc='/btrfs_main/@kfocus-rollback-working';
@@ -264,6 +264,7 @@ _mainFn () {
   fi
 
   if [ "${_arg_str}" = 'afterRestore' ]; then
+    [ -n "${_kbuildSyCoca5}" ] && "${_kbuildSyCoca5}";
     _snapshot_id="$(_rb2GetSnapshotListStrFn | head -n1)";
     _restored_snapshot_disp_id="$(
       cat /var/lib/kfocus/kfocus_rollback_restore_complete
@@ -409,6 +410,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _loadLibTableFn "${_libTable[@]}" || exit 1;
 
   _assignList=(
+    '_kbuildSyCoca5|/usr/bin/kbuildsycoca5||optional'
     '_kdiagExe|/usr/bin/kdialog'
     '_whiptailExe|/usr/bin/whiptail'
     "_snapshotSetExe|${_binDir}/kfocus-rollback-set"

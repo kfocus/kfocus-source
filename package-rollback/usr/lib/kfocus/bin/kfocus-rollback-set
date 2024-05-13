@@ -60,14 +60,14 @@ _loadLibTableFn () {
       else
         _stderrFn "${_baseName} Error: source |${_lib_file}| is non-zero.";
         return 1;
-      fi  
+      fi
     done
     ## . End: Iterate over alternates.
 
     if [ "${_is_loaded}" != 'y' ]; then
       _stderrFn "${_baseName} error: no lib loaded";
       return 1;
-    fi  
+    fi
   done
   ## . End: Iterate over lib lines.
 
@@ -148,7 +148,9 @@ _promptAllUsersFn () {
 ## BEGIN _checkRootFn {
 #
 _checkRootFn () {
-  if [ "$UID" = '0' ]; then
+  declare _uid;
+  _uid="$(id -u)";
+  if [ "${_uid}" = '0' ]; then
     return 0;
   else
     _cm2WarnStrFn 'This action requires root privileges.';
@@ -156,6 +158,12 @@ _checkRootFn () {
   fi
 }
 ## . END _checkRootFn }
+
+## BEGIN _clearRestoreFn {
+_clearRestoreFn () {
+  rm -f "${_restoreCompleteFile}" || true;
+}
+## . END _clearRestoreFn }
 
 ## BEGIN BTRFS maintenance helper functions {
 #
@@ -456,7 +464,7 @@ _trimSnapshotsFn () {
       _deleteSnapshotFn "${_snapshot_id}";
     fi
   done
-  
+
   readarray -t _main_snapshot_list <<< "$(
     _cm2LsFn "${_snapshotMainDir}" | sed 's/@//' | sort -n | sed 's/^/@/'
   )";
@@ -535,7 +543,7 @@ _createSnapshotFn () {
 _restoreSnapshotFn () {
   declare _older_snapshot_list_str _target_snapshot _snapshot_path \
     _boot_snapshot_path _snapshot_disp_id;
-  
+
   _checkBtrfsStatusSetUpFn;
 
   # Any snapshots that are at number 5 or older will end up trimmed if we
@@ -543,7 +551,7 @@ _restoreSnapshotFn () {
   # newest snapshots and exclude them a bit later.
   _older_snapshot_list_str="$(_getSnapshotListStrFn | tail -n+5)";
   _target_snapshot="${1:-}";
-  
+
   if [ -z "${_target_snapshot}" ]; then
     _exitERR 'No snapshot name provided to restore!';
   fi
@@ -587,8 +595,7 @@ _restoreSnapshotFn () {
 
   # Let the user know that a restore has completed
   echo "${_snapshot_disp_id}" \
-    > /btrfs_main/@/var/lib/kfocus/kfocus_rollback_restore_complete \
-    || _exitALERT;
+    > "/btrfs_main/@${_restoreCompleteFile}" || _exitALERT;
 }
 ## . END _restoreSnapshotFn }
 
@@ -647,6 +654,7 @@ _mainFn () {
   _mode="${1:-}";
 
   case "${_mode}" in
+    'clearRestore')      _clearRestoreFn;;
     'createSnapshot')    _createSnapshotFn    "${2:-}";;
     'deleteSnapshot')    _deleteSnapshotFn    "${2:-}";;
     'finalizeRestore')   _finalizeRestoreFn;;
@@ -668,15 +676,19 @@ _mainFn () {
 ## . END _mainFn }
 
 ## BEGIN Declare and assign global vars {
-declare _binName _binDir _baseName _baseDir _lockFile _btrfsStatus _libTable \
-  _browStr _erowStr _tableStr _prepareFailMsg _lowDiskMsg _inconsistentMsg \
-  _isPreparingSystem _snapshotMainDir _snapshotBootDir;
+declare _binName _binDir _baseName _baseDir \
+  _isPreparingSystem _lockFile _btrfsStatus \
+  _snapshotMainDir _snapshotBootDir _restoreCompleteFile \
+  _libTable _browStr _erowStr _tableStr _prepareFailMsg \
+  _lowDiskMsg _inconsistentMsg _btrfsExe _btduExe _filefragExe;
 
-_snapshotMainDir='/btrfs_main/@kfocus-rollback-snapshots';
+_btrfsStatus='';
+_isPreparingSystem='n'; # Flag for error reporting
+_lockFile="/tmp/kfocus-rollback-backend.lock";
+_restoreCompleteFile='/var/lib/kfocus/kfocus_rollback_restore_complete';
 _snapshotBootDir='/btrfs_boot/@kfocus-rollback-boot-snapshots';
+_snapshotMainDir='/btrfs_main/@kfocus-rollback-snapshots';
 
-# Set flag for error reporting
-_isPreparingSystem='n';
 ## . END Declare and assign global vars }
 
 ## BEGIN Run mainFn when script is NOT sourced {
@@ -685,8 +697,6 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binDir="$(   dirname  "${_binName}" )" || exit 101;
   _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
   _baseName="$( basename "${_binName}" )" || exit 101;
-  _lockFile="/tmp/kfocus-rollback-backend.lock";
-  _btrfsStatus='';
 
   # Import libs
   _libTable=(

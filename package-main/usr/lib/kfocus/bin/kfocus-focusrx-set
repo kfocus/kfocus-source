@@ -336,7 +336,6 @@ _fixHwConfigFn () {
 #
 _prepareSnapshotFn () {
   [ -z "${_rollbackSetExe}" ] && return;
-
   "${_rollbackSetExe}" 'prepareSystem';
 }
 ## . END _prepareSnapshotFn }
@@ -344,7 +343,8 @@ _prepareSnapshotFn () {
 ## BEGIN _clearRestoreFn () {
 #
 _clearRestoreFn () {
-  rm '/var/lib/kfocus/kfocus_rollback_restore_complete';
+  [ -z "${_rollbackSetExe}" ] && return;
+  "${_rollbackSetExe}" 'clearRestore';
 }
 ## . END _clearRestoreFn () }
 
