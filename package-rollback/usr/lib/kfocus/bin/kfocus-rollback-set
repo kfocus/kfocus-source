@@ -648,13 +648,172 @@ _systemSnapshotFn () {
 }
 ## . END _systemSnapshotFn }
 
-_btrfsMaintainFn () {
-  true; # TODO port from kfocus-btrfs-optimize-set
-}
+## BEGIN _balanceMainFn {
+#
+_balanceMainFn () {
+  declare _main_report _main_unallocd _main_free _old_report _last_unallocd \
+    _last_free _trigger_threshold
 
-_btrfsDeepCleanFn () {
-  true; # TODO port from kfocus-btrfs-optimize-set
+  _trigger_threshold=5368709120; # 5 GiB
+
+  _main_report="$(_getMainUsageReportFn)";
+  _main_unallocd="$(grep $'Device unallocated:\t' <<< "${_main_report}" \
+    | awk '{ print $3 }')";
+  _main_free="$(grep $'Free (estimated):\t' <<< "${_main_report}" \
+    | awk '{ print $3 }')";
+  _last_unallocd=-1;
+  _last_free=0;
+
+  if [ -f "${_optimizeStatePath}" ]; then
+    _old_report="$(cat "${_optimizeStatePath}")";
+    _last_unallocd="$(grep 'unallocd' <<< "${_old_report}" | cut -d'|' -f2)";
+    _last_free="$(grep 'free' <<< "${_old_report}" | cut -d'|' -f2)";
+  fi  
+
+  if (( (_last_unallocd - _main_unallocd) >= "${_trigger_threshold}" )) \
+    || (( (_main_free - _last_free) >= "${_trigger_threshold}" )); then
+    "${_btrfsBalanceExe}" -u 70 '/btrfs_main';
+    echo "unallocd|${_main_unallocd}" > "${_optimizeStatePath}";
+    echo "free|${_main_free}" >> "${_optimizeStatePath}";
+  fi  
 }
+## . END _balanceMainFn }
+
+## BEGIN _balanceBootFn {
+#
+_balanceBootFn () {
+  "${_btrfsBalanceExe}" -u 85 '/btrfs_boot';
+}
+## . END _balanceBootFn }
+
+## BEGIN _deleteAllSnapshotsFn {
+#
+_deleteAllSnapshotsFn () {
+  declare _snapshot_list _current_snapshot;
+
+  readarray -t _snapshot_list < <(
+    _cm2LsFn '/btrfs_main/@kfocus-rollback-snapshots' 2>/dev/null
+  );
+
+  if [ "${#_snapshot_list[@]}" = '0' ] || [ -z "${_snapshot_list[0]}" ]; then
+    _cm2WarnStrFn 'No snapshots found.';
+    return 1;
+  fi
+
+  for _current_snapshot in "${_snapshot_list[@]}"; do
+    _deleteSnapshotFn "${_current_snapshot}";
+  done
+}
+## . END _deleteAllSnapshotsFn }
+
+## BEGIN _defragmentFn {
+#
+_defragmentFn () {
+  declare _frag_report _frag_count_list _target_frag_list _frag_file_list \
+    _defrag_file_list _report_idx _btdu_report _btdu_val_list \
+    _btdu_file_list _file_size _unreachable_size _clean_file_list \
+    _defrag_list_idx _merge_yn _clean_list_idx _current_file;
+
+  _frag_report="$(
+    _getMainFragReportFn \
+    | sort -nr;
+  )";
+
+  readarray -t _frag_count_list  < <(cut -d'|' -f2 <<< "${_frag_report}");
+  readarray -t _target_frag_list < <(cut -d'|' -f3 <<< "${_frag_report}");
+  readarray -t _frag_file_list   < <(cut -d'|' -f4 <<< "${_frag_report}");
+
+  _defrag_file_list=();
+  for (( _report_idx=0; _report_idx < ${#_frag_file_list[@]}; \
+    _report_idx++ )); do
+    _current_file="${_frag_file_list[_report_idx]}";
+
+    if [ -f "${_current_file}" ]; then
+      if (( _frag_count_list[_report_idx] > \
+        _target_frag_list[_report_idx] )); then
+        _defrag_file_list+=( "${_current_file}" );
+      fi
+    fi
+  done
+
+  if (( ${#_defrag_file_list[@]} > 50 )); then
+    _defrag_file_list=( "${_defrag_file_list[@]:0:50}" );
+  fi
+
+  _btdu_report="$(
+    _getMainBtduReportFn \
+      | grep '<UNREACHABLE>' \
+      | sort -nr \
+      | sed 's|/<SINGLE>/<DATA>/<UNREACHABLE>||; /<ERROR>/d'
+  )";
+
+  readarray -t _btdu_val_list < <(cut -f1 <<< "${_btdu_report}");
+  readarray -t _btdu_file_list < <(cut -f2 <<< "${_btdu_report}");
+
+  _clean_file_list=();
+  for (( _report_idx=0; _report_idx < ${#_btdu_val_list[@]}; \
+    _report_idx++ )); do
+    _current_file="${_btdu_file_list[_report_idx]}";
+
+    if [ -f "${_current_file}" ]; then
+      _file_size="$(du -b "${_current_file}" | cut -f1)";
+      (( _unreachable_size = _btdu_val_list[_report_idx] * 1024 ));
+
+      if [ "$(bc -l <<< "scale=2; (${_unreachable_size} / ${_file_size}) > 0.15")" \
+        = '1' ]; then
+        _clean_file_list+=( "${_current_file}" );
+      fi
+    fi
+  done
+
+  if (( ${#_clean_file_list[@]} > 50 )); then
+    _clean_file_list=( "${_clean_file_list[@]:0:50}" );
+  fi
+
+  for (( _defrag_list_idx=0; _defrag_list_idx < "${#_defrag_file_list[@]}"; \
+    _defrag_list_idx++ )); do
+    _current_file="${_defrag_file_list[_defrag_list_idx]}";
+    _merge_yn='y';
+    for (( _clean_list_idx=0; _clean_list_idx < "${#_clean_file_list[@]}"; \
+      _clean_list_idx++ )); do
+      if [ "${_current_file}" = "${_clean_file_list[_clean_list_idx]}" ]; then
+        _merge_yn='n';
+        break;
+      fi
+    done
+
+    if [ "${_merge_yn}" = 'y' ]; then
+      _clean_file_list+=( "${_current_file}" );
+    fi
+  done
+
+  if (( ${#_defrag_file_list[@]} > 0 )); then
+    "${_btrfsExe}" filesystem defragment -clzo "${_clean_file_list[@]}";
+  fi
+}
+## . END _defragmentFn }
+
+## BEGIN _btrfsMaintainFn {
+#
+_btrfsMaintainFn () {
+  _checkBtrfsStatusSetUpFn;
+  _checkRootFn   || exit;
+  _balanceMainFn || exit;
+  _balanceBootFn || exit;
+}
+## . END _btrfsMaintainFn }
+
+## BEGIN _btrfsDeepCleanFn {
+#
+_btrfsDeepCleanFn () {
+  _checkBtrfsStatusSetUpFn;
+  _checkRootFn   || exit;
+  _deleteAllSnapshotsFn;
+  _balanceMainFn || exit;
+  _balanceBootFn || exit;
+  _defragmentFn;
+}
+## . END _btrfsDeepCleanFn }
 
 ## BEGIN _mainFn {
 #
@@ -718,14 +877,16 @@ _mainFn () {
 
 ## BEGIN Declare and assign global vars {
 declare _binName _binDir _baseName _baseDir \
-  _isPreparingSystem _lockFile _btrfsStatus \
+  _isPreparingSystem _lockFile _optimizeStatePath _btrfsStatus \
   _snapshotMainDir _snapshotBootDir _restoreCompleteFile \
   _libTable _browStr _erowStr _tableStr _prepareFailMsg \
-  _lowDiskMsg _inconsistentMsg _btrfsExe _btduExe _filefragExe;
+  _lowDiskMsg _inconsistentMsg _btrfsExe _btduExe _filefragExe \
+  _btrfsBalanceExe;
 
 _btrfsStatus='';
 _isPreparingSystem='n'; # Flag for error reporting
 _lockFile="/tmp/kfocus-rollback-backend.lock";
+_optimizeStatePath='/var/lib/kfocus/last_optimize_state';
 _restoreCompleteFile='/var/lib/kfocus/kfocus_rollback_restore_complete';
 _snapshotBootDir='/btrfs_boot/@kfocus-rollback-boot-snapshots';
 _snapshotMainDir='/btrfs_main/@kfocus-rollback-snapshots';

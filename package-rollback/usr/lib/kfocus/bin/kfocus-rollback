@@ -369,7 +369,14 @@ _mainFn () {
       fi
       ;;
     'optimize')
-      exec "${_btrfsOptimizeExe}";
+      if [ "$(_cm2PromptUserFn "${_doOptimizeMsg}" "${_winTitle}" 'a')" \
+        = 'y' ]; then
+        if _rb2OptimizeDiskFn; then
+          _cm2PromptUserFn "${_optimizeSuccessfulMsg}" "${_winTitle}";
+        else
+          _cm2PromptUserFn "${_optimizeFailedMsg}" "${_winTitle}" 's';
+        fi
+      fi
       ;;
     *)
       _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
@@ -383,12 +390,13 @@ _mainFn () {
 
 ## BEGIN Declare and assign global vars {
 declare _binName _binDir _baseName _baseDir _libTable _assignList _kdiagExe \
-  _whiptailExe _snapshotSetExe _dolphinExe _btrfsOptimizeExe _escExe \
+  _whiptailExe _rollbackSetExe _dolphinExe _btrfsOptimizeExe _escExe \
   _winTitle _browRpStr _browLpStr _erowStr _tableStr _centerHeaderStr \
   _boldStr _warnStr _chooseModeMsg _chooseRestoreSnapshotMsg \
   _chooseRestoreModeMsg _totalRestoreConfirmMsg _rollbackSuccessfulMsg \
   _selectiveRestoreConfirmMsg _createSnapshotMsg _snapshotCreatedMsg \
   _chooseDeleteSnapshotMsg _deleteConfirmMsg _snapshotDeletedMsg \
+  _doOptimizeMsg _optimizeSuccessfulMsg _optimizeFailedMsg \
   _systemUnsupportedMsg _restoreIncompleteMsg _noSnapshotsFoundMsg \
   _strangeSubvolsMsg _restoreFailedMsg _deletionFailedMsg _creationFailedMsg \
   _criticalErrorMsg _operationCancelledMsg;
@@ -414,7 +422,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     '_kbuildSyCoca5Exe|/usr/bin/kbuildsycoca5Exe||optional'
     '_kdiagExe|/usr/bin/kdialog'
     '_whiptailExe|/usr/bin/whiptail'
-    "_snapshotSetExe|${_binDir}/kfocus-rollback-set"
+    "_rollbackSetExe|${_binDir}/kfocus-rollback-set"
     '_dolphinExe|/usr/bin/dolphin'
     "_btrfsOptimizeExe|${_binDir}/kfocus-btrfs-optimize"
   );
@@ -619,6 +627,51 @@ ${_browRpStr}${_centerHeaderStr}Snapshot Deleted</h3>${_erowStr}
 ${_browRpStr}The following snapshot has been successfully deleted:${_erowStr}
 
 ${_browRpStr}${_boldStr}"XXX_SNAPSHOT_NAME_XXX"${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _doOptimizeMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browRpStr}${_centerHeaderStr}System Rollback (Step 2)</h3>${_erowStr}
+
+${_browRpStr}System Rollback is now ready to optimize<br>
+your boot disk.${_erowStr}
+
+${_browRpStr}${_warnStr}WARNING: This will delete all snapshots<br>
+on the system! This cannot be undone!${_erowStr}
+
+${_browRpStr}Click on OK below to optimize the disk, or Cancel<br>
+to back out.${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _optimizeSuccessfulMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browRpStr}${_centerHeaderStr}Disk Optimized${_erowStr}
+
+${_browRpStr}Your system's boot disk has been optimized<br>
+successfully.${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _optimizeFailedMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browRpStr}${_centerHeaderStr}Disk Optimization Failed</h3>${_erowStr}
+
+${_browRpStr}The disk optimization operation failed! This<br>
+incident may be the result of failing hardware<br>
+or a software conflict.${_erowStr}
+
+${_browRpStr}<b>Please do NOT reboot. Back up your data as<br>
+soon as possible.</b> Failure to do so may result in<br>
+data loss. See<br>
+<a style="color:#1d99f3"
+href="https://kfocus.org/wf/backup#bkm_take_a_snapshot"
+>https://kfocus.org/wf/backup#bkm_take_a_snapshot</a><br>
+for instructions on how to safeguard your data.${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
