@@ -673,9 +673,15 @@ _balanceMainFn () {
   if (( (_last_unallocd - _main_unallocd) >= "${_trigger_threshold}" )) \
     || (( (_main_free - _last_free) >= "${_trigger_threshold}" )); then
     "${_btrfsBalanceExe}" -u 70 '/btrfs_main';
-    echo "unallocd|${_main_unallocd}" > "${_optimizeStatePath}";
-    echo "free|${_main_free}" >> "${_optimizeStatePath}";
+    _main_report="$(_getMainUsageReportFn)";
+    _main_unallocd="$(grep $'Device unallocated:\t' <<< "${_main_report}" \
+      | awk '{ print $3 }')";
+    _main_free="$(grep $'Free (estimated):\t' <<< "${_main_report}" \
+      | awk '{ print $3 }')";
   fi  
+  
+  echo "unallocd|${_main_unallocd}" > "${_optimizeStatePath}";
+  echo "free|${_main_free}" >> "${_optimizeStatePath}";
 }
 ## . END _balanceMainFn }
 
