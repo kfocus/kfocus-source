@@ -88,7 +88,10 @@ _chkSetFlockFn () {
   if ! [ -e "${_lockFile}" ]; then
     install -m 666 /dev/null "${_lockFile}";
   fi
-  exec 211>"${_lockFile}" || exit 21;
+  exec 211>"${_lockFile}" || {
+    echo 'Lock file permission denied';
+    return 21;
+  };
   if ! flock -n -e 211; then
     1>&2 echo "Cannot get lock on ${_lockFile}";
     return 20;

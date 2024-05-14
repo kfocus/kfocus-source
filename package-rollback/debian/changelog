@@ -6,6 +6,7 @@ kfocus-rollback (24.04.1~beta15) UNRELEASED; urgency=medium
   * Create a polkit policy for auth screens. (#4013)
   * Symlink apt configuration file rather than installing it directly. (#4013)
   * Adjust systemd timer execution timing. (#4013)
+  * Don't crash when hitting a permissions issue on the lockfile. (#4013)
 
  -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 14 May 2024 12:09:22 -0500
 
