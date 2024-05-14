@@ -374,7 +374,7 @@ _mainFn () {
         if _rb2OptimizeDiskFn; then
           _cm2PromptUserFn "${_optimizeSuccessfulMsg}" "${_winTitle}";
         else
-          _cm2PromptUserFn "${_optimizeFailedMsg}" "${_winTitle}" 's';
+          _cm2PromptUserFn "${_optimizeFailedMsg}" "${_winTitle}" 'e';
         fi
       fi
       ;;
@@ -419,12 +419,11 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _loadLibTableFn "${_libTable[@]}" || exit 1;
 
   _assignList=(
-    '_kbuildSyCoca5Exe|/usr/bin/kbuildsycoca5Exe||optional'
+    '_kbuildSyCoca5Exe|/usr/bin/kbuildsycoca5||optional'
     '_kdiagExe|/usr/bin/kdialog'
     '_whiptailExe|/usr/bin/whiptail'
     "_rollbackSetExe|${_binDir}/kfocus-rollback-set"
     '_dolphinExe|/usr/bin/dolphin'
-    "_btrfsOptimizeExe|${_binDir}/kfocus-btrfs-optimize"
   );
 
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
@@ -614,8 +613,8 @@ ${_browRpStr}${_boldStr}"XXX_SNAPSHOT_NAME_XXX"${_erowStr}
 ${_browRpStr}${_warnStr}WARNING: Deleting a snapshot cannot be
 undone!</br>${_erowStr}
 
-${_browRpStr}Click on OK below to delete the snapshot, or Cancel<br>
-to back out.${_erowStr}</table>
+${_browRpStr}Click on OK below to delete the snapshot, or<br>
+Cancel to back out.${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
@@ -641,8 +640,8 @@ your boot disk.${_erowStr}
 ${_browRpStr}${_warnStr}WARNING: This will delete all snapshots<br>
 on the system! This cannot be undone!${_erowStr}
 
-${_browRpStr}Click on OK below to optimize the disk, or Cancel<br>
-to back out.${_erowStr}</table>
+${_browRpStr}Click on OK below to optimize the disk, or<br>
+Cancel to back out.${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
