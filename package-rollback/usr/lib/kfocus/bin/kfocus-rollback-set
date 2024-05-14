@@ -736,12 +736,11 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
   _baseName="$( basename "${_binName}" )" || exit 101;
 
-  # Import libs
+  # Import libs and assign more global vars
   _libTable=(
-    '/usr/lib/kfocus/lib/common.2.source'
-    '/usr/lib/kfocus/lib/rollback.2.source'
+    "${_baseDir}/lib/common.2.source"
+    "${_baseDir}/lib/rollback.2.source"
   );
-
   _loadLibTableFn "${_libTable[@]}" || exit 1;
 
   _assignList=(

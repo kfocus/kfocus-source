@@ -368,8 +368,9 @@ _EOH06
 
   _prompt_msg="${_title}: This only needs to be done once";
   _reason_str="$(tr ' ' '_' <<< "${_reason_str}")";
+  # Note: _cm2RunLongCmdFn prefixes commands with pkexec
   if _output_str="$(
-    _cm2RunLongCmdFn "${_prompt_msg}" "${_escExe}" \
+    _cm2RunLongCmdFn "${_prompt_msg}" \
       "${_focusRxSetExe}" 'fix-hw-config' "${_reason_str}"
   )"; then
     _prompt_msg="$(cat << _EOH07
@@ -1061,32 +1062,28 @@ _EOH17b
 }
 ## . END _chkResetEffectsFn }
 
-## BEGIN _btrfsDeepCleanFn {
+## BEGIN _offerKfRollbackFn {
 #
-_btrfsDeepCleanFn () {
+_offerKfRollbackFn () {
   declare _title _win_title _prompt_msg _ans_str;
 
   # Always skip if not in force mode
   [ "${_doForce}" = 'n' ] && return;
   # Skip if required tool not installed
-  [ -z "${_btrfsOptimizeSetExe}" ] && return;
+  [ -z "${_rollbackExe}" ] && return;
 
-  _title='Deep Clean Filesystem';
+  _title='Manage Snapshots';
   _cm2SetMsgFn "${_title}";
   _win_title="${_rootTitle}: ${_title}";
 
   _prompt_msg="$(cat <<_EOH18
 ${_cm2HtmBeginStr}
-${_cm2HtmH3Str}SKIP ${_title}?</h3>
+${_cm2HtmH3Str}${_title}?</h3>
 
-${_cm2HtmPStr}You can run a filesystem deep-clean to keep <br>
-your system performing well and avoid <br>
-unexpectedly running out of free space. This <br>
-is usually unnecessary unless you're noticing <br>
-degraded performance or you recently cleared <br>
-a large amount of unused data from your disk.</p>
+${_cm2HtmPStr}You can use snapshots to undo recent changes <br>
+that may have caused system issues.</p>
 
-${_cm2HtmPStr}<b>SKIP run deep-clean?</b></p>
+${_cm2HtmPStr}<b>Run kfocus-rollback now?</b></p>
 ${_cm2HtmEndStr}
 _EOH18
   )";
@@ -1095,28 +1092,26 @@ _EOH18
     _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'a'
   )";
 
-  if [ "${_ans_str}" = 'n' ]; then
-    if _cm2RunLongCmdFn 'Optimizing filesystems...' "${_escExe}" \
-      "${_btrfsOptimizeSetExe}" 'deepClean'; then
-      _cm2SucFn; else _cm2WarnFn;
-    fi
-  else
-    _cm2SucFn;
+  if [ "${_ans_str}" = 'y' ]; then
+    "${_rollbackExe}" || true;
   fi
+  
+  _cm2SucFn;
 }
-## . END _btrfsDeepCleanFn }
+## . END _offerKfocusRollback }
 
 ## BEGIN _postRollbackHandlerFn {
 #
 _postRollbackHandlerFn () {
   # Skip if required tools not installed
   [ -z "${_rollbackExe}" ] && return;
-  if [ -n "${_kbuildSycocaExe}" ]; then "${_kbuildSycocaExe}"; fi
 
-  if [ -e '/var/lib/kfocus/kfocus_rollback_restore_complete' ]; then
-    # Run _rollbackExe first so it can use the contents of the restore
-    # drop file to display the name of the restored snapshot to the user.
+  # If drop file is found, run _rollbackExe, so it can use the contents
+  #   of that file to display the name of the restored snapshot to the user.
+  if [ -e "${_restoreCompleteFile}" ]; then
     "${_rollbackExe}" 'afterRestore';
+
+    # Remove drop file after completion
     "${_escExe}" "${_focusRxSetExe}" 'clear-restore';
   fi
 }
@@ -1194,6 +1189,7 @@ _mainFn () {
   _chkUpdateBiosFn;
   _chkHwConfigFn;
   _chkKbdLedFn;     #3735
+  _offerKfRollbackFn;
   _chkKernelPkgFn;
   _chkNvidiaPkgFn;
   _chkXorgConfigFn;
@@ -1202,7 +1198,6 @@ _mainFn () {
   _runDropScriptsFn;
   _chkExperRepoFn;
   _chkResetEffectsFn;
-  _btrfsDeepCleanFn;
   _postRollbackHandlerFn;
   _announceEndFn;
   _cm2EchoFn "\n== . END : OK   ${_rootTitle}\n\n";
@@ -1225,6 +1220,7 @@ _parentCmdStr="$(ps -o comm= $PPID)";
 _pingHost1Str='8.8.8.8';
 _pingHost2Str='1.1.1.1';
 _maxNagCount=6;
+_restoreCompleteFile='/var/lib/kfocus/kfocus_rollback_restore_complete';
 ## . END Declare and assign global vars }
 
 ## BEGIN Run main if script is not sourced {
@@ -1245,10 +1241,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     "_focusRxVersExe|${_binDir}/kfocus-rx-version"
 
     "_btoolExe|${_binDir}/kfocus-btool||optional"
-    "_btrfsOptimizeSetExe|${_binDir}/kfocus-btrfs-optimize-set||optional"
     "_firstrunExe|${_binDir}/kfocus-firstrun-bin||optional"
     "_fixIbusExe|${_binDir}/kfocus-fix-ibus||optional"
-    "_kbuildSycocaExe|/usr/bin/kbuildsycoca5||optional"
     "_kcleanExe|${_binDir}/kfocus-kclean||optional"
     "_resetEffectsExe|${_binDir}/kfocus-reset-effects||optional"
     "_rollbackExe|${_binDir}/kfocus-rollback||optional"
@@ -1263,3 +1257,4 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _mainFn "$@";
 fi
 ## . END Run main if script is not sourced }
+

@@ -72,7 +72,7 @@ _loadLibTableFn () {
 ## BEGIN _mainFn {
 #
 _mainFn () {
-  declare _btrfs_status_str _ans _exit_int;
+  declare _btrfs_status_str _ans;
 
   _btrfs_status_str="$(_rb2GetBtrfsStatusFn)"
 
@@ -113,10 +113,9 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   # Import libs and assign more global vars
   _libTable=(
-    '/usr/lib/kfocus/lib/common.2.source'
-    '/usr/lib/kfocus/lib/rollback.2.source'
+    "${_baseDir}/lib/common.2.source"
+    "${_baseDir}/lib/rollback.2.source"
   );
-
   _loadLibTableFn "${_libTable[@]}" || exit 1;
 
   _assignList=(
@@ -161,10 +160,10 @@ ${_browStr}Doc: <a style="color:#1d99f3"
   href="https://kfocus.org/wf/tools#optimize"
   >https://kfocus.org/wf/tools#optimize</a>${_erowStr}
 
-${_browStr}Use this tool to optimize your system's boot<br>
-drive. This will delete all snapshots, defragment<br>
-highly fragmented files, free disk space that has<br>
-become unreachable, and ensure that your boot<br>
+${_browStr}Use this tool to optimize your system's boot <br>
+drive. This will delete all snapshots, defragment <br>
+highly fragmented files, free disk space that has <br>
+become unreachable, and ensure that your boot <br>
 drive's free space is properly organized.${_erowStr}
 
 ${_browStr}<b>Optimize Drive Now?</b>${_erowStr}</table>

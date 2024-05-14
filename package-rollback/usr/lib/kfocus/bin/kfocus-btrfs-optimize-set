@@ -204,7 +204,7 @@ _deleteAllSnapshotsFn () {
   fi
 
   for _current_snapshot in "${_snapshot_list[@]}"; do
-    "${_snapshotSetExe}" deleteSnapshot "${_current_snapshot}";
+    "${_rollbackSetExe}" deleteSnapshot "${_current_snapshot}";
   done
 }
 ## . END _deleteAllSnapshotsFn }
@@ -215,7 +215,7 @@ _defragmentFn () {
   declare _frag_report _frag_count_list _target_frag_list _frag_file_list \
     _defrag_file_list _report_idx _btdu_report _btdu_val_list \
     _btdu_file_list _file_size _unreachable_size _clean_file_list \
-    _defrag_list_idx _merge_yn _clean_list_idx;
+    _defrag_list_idx _merge_yn _clean_list_idx _current_file;
 
   _frag_report="$(
     _getMainFragReportFn \
@@ -326,7 +326,8 @@ _mainFn () {
 
 ## BEGIN Declare and assign global vars {
 declare _userId _binName _binDir _baseName _baseDir _lockFile \
-  _optimizeStatePath;
+  _optimizeStatePath _btrfsExe _btduExe _filefragExe _btrfsBalanceExe \
+  _rollbackSetExe;
 ## . END Declare and assign global vars }
 
 ## BEGIN Run mainFn when script is NOT sourced {
@@ -341,17 +342,16 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   # Import libs and assign more global vars
   _libTable=(
-    '/usr/lib/kfocus/lib/common.2.source'
-    '/usr/lib/kfocus/lib/rollback.2.source'
+    "${_baseDir}/lib/common.2.source"
+    "${_baseDir}/lib/rollback.2.source"
   );
-
   _loadLibTableFn "${_libTable[@]}" || exit 1;
 
   _assignList=(
     '_btrfsExe|/usr/bin/btrfs'
     '_btrfsBalanceExe|/usr/bin/btrfs-balance-least-used'
     '_btduExe|/usr/bin/btdu'
-    "_snapshotSetExe|${_binDir}/kfocus-rollback-set"
+    "_rollbackSetExe|${_binDir}/kfocus-rollback-set"
     "_filefragExe|${_binDir}/kfocus-report-filefrag"
   );
 

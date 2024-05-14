@@ -264,7 +264,8 @@ _mainFn () {
   fi
 
   if [ "${_arg_str}" = 'afterRestore' ]; then
-    [ -n "${_kbuildSyCoca5}" ] && "${_kbuildSyCoca5}";
+    # Refresh desktop database after restore
+    [ -n "${_kbuildSyCoca5Exe}" ] && "${_kbuildSyCoca5Exe}";
     _snapshot_id="$(_rb2GetSnapshotListStrFn | head -n1)";
     _restored_snapshot_disp_id="$(
       cat /var/lib/kfocus/kfocus_rollback_restore_complete
@@ -403,14 +404,14 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   # Import libs and assign more global vars
   _libTable=(
-    '/usr/lib/kfocus/lib/common.2.source'
-    '/usr/lib/kfocus/lib/rollback.2.source'
+    "${_baseDir}/lib/common.2.source"
+    "${_baseDir}/lib/rollback.2.source"
   );
 
   _loadLibTableFn "${_libTable[@]}" || exit 1;
 
   _assignList=(
-    '_kbuildSyCoca5|/usr/bin/kbuildsycoca5||optional'
+    '_kbuildSyCoca5Exe|/usr/bin/kbuildsycoca5Exe||optional'
     '_kdiagExe|/usr/bin/kdialog'
     '_whiptailExe|/usr/bin/whiptail'
     "_snapshotSetExe|${_binDir}/kfocus-rollback-set"
