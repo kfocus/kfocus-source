@@ -121,11 +121,11 @@ _manageSnapshotsFn () {
 _maintainBtrfsFn () {
   declare _title;
 
-  [ -z "${_optimizeExe}" ] && return;
+  [ -z "${_rollbackSetExe}" ] && return;
 
   _title='Maintain BTRFS';
   _cm2SetMsgFn "${_title}";
-  "${_optimizeExe}" 'maintain';
+  "${_rollbackSetExe}" 'btrfsMaintain';
   _cm2SucFn;
 }
 ## . END _maintainBtrfsFn }
@@ -173,7 +173,6 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _assignList=(
     "_powerSetExe|${_binDir}/kfocus-power-set||optional"
     "_rollbackSetExe|${_binDir}/kfocus-rollback-set||optional"
-    "_optimizeExe|${_binDir}/kfocus-btrfs-optimize-set||optional"
     '_btrfsExe|/usr/bin/btrfs'
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
@@ -189,12 +188,13 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 ${_cm2HtmBeginStr}${_tableStr}
 ${_browStr}<h3 style="color:#f7941d">Low Disk Space</h3>${_erowStr}
 
-${_browStr}Your system is running low on disk space. This could result in
-filesystem corruption if not corrected. It is highly recommended
-that you use the Drive Optimizer to clear some space. You may also
-need to delete excess files or move them to other drives. You can
-access the Drive Optimizer by clicking <code>Start Menu >
-Kubuntu Focus Tools > Drive Optimizer</code>.${_erowStr}
+${_browStr}Your system is running low on disk space. This could result in<br>
+filesystem corruption if not corrected. It is highly recommended<br>
+that you delete all snapshots and optimize the drive using<br>
+KFocus System Rollback. You may also need to delete excess files<br>
+or move them to other drives. You can access KFocus System<br>
+Rollback by clicking <code>Start Menu &gt; Kubuntu Focus Tools &gt;<br>
+KFocus System Rollback</code>.${_erowStr}
 ${_cm2HtmEndStr}
 EOF
   )";

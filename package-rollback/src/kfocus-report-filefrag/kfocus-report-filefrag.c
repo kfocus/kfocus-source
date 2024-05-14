@@ -14,7 +14,7 @@
  *            of all files in the tree.
  * Example  : kfocus-report-filefrag /usr
  * License  : GPLv2
- * Run By   : kfocus-btrfs-optimize-set
+ * Run By   : kfocus-rollback-set
  * Spec     : 4201
  */
 
