@@ -2,7 +2,7 @@
 Description=Regularly run BTRFS maintenance
 
 [Timer]
-OnBootSec=0
+OnBootSec=4h
 OnUnitActiveSec=4h
 Unit=kfocus-rollback-btrfs-maintain.service
 
