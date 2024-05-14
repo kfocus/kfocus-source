@@ -395,33 +395,25 @@ _prepareSystemFn () {
 ## BEGIN _checkWarnDiskSpaceFn {
 #
 _checkWarnDiskSpaceFn () {
-  declare _main_space_report _main_min_space _boot_min_space \
-    _main_min_unalloc _main_space _main_unalloc _boot_space;
+  declare _main_space_report _boot_min_unalloc _main_min_unalloc \
+    _main_unalloc _boot_unalloc;
 
   _checkBtrfsStatusSetUpFn;
 
-  # TODO: Take unallocated space into account here, not just estimated free
-  # space
-  (( _main_min_space = ( ( $(
-      LC_ALL='C' df / \
-        | tail -n1 \
-        | awk '{ print $2 }'
-    ) * 1024 ) / 100 ) * 15 ));
-  _main_min_unalloc=21474836480 # 20 GiB
-  _boot_min_space=1073741824 # 1 GiB
   _main_space_report="$(LC_ALL=C "${_btrfsExe}" filesystem usage -b \
     /btrfs_main)";
-  _main_space="$(awk '/Free \(estimated\)/{ print $3 }' \
-    <<< "${_main_space_report}")";
+  (( _main_min_unalloc = $(grep $'Device size:\t' <<< "${_main_space_report}" \
+    | awk '{ print $3 }' \
+    ) / 10 ))
+  _boot_min_unalloc=1073741824 # 1 GiB
   _main_unalloc="$(awk '/Device unallocated/{ print $3 }' \
     <<< "${_main_space_report}")";
-  _boot_space="$(LC_ALL=C "${_btrfsExe}" filesystem usage -b /btrfs_boot \
-    | awk '/Free \(estimated\)/{ print $3 }')";
+  _boot_unalloc="$(LC_ALL=C "${_btrfsExe}" filesystem usage -b /btrfs_boot \
+    | awk '/Device unallocated/{ print $3 }')";
  
   if [ -d '/btrfs_main' ] && [ -d '/btrfs_boot' ]; then
-    if (( _main_space < _main_min_space )) \
-      || (( _main_unalloc < _main_min_unalloc )) \
-      || (( _boot_space < _boot_min_space )); then
+    if (( _main_unalloc < _main_min_unalloc )) \
+      || (( _boot_unalloc < _boot_min_unalloc )); then
       _promptAllUsersFn 'info' "${_lowDiskMsg}";
       _exitERR;
     fi
