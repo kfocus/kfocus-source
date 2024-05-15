@@ -37,6 +37,8 @@ _importCommonFn () {
 _installExtraFn () {
   declare _reply;
 
+  # depends:kubuntu-restricted-addons
+  # recommends: lame libavcodec-extra ttf-mscorefonts-installer unrar
   if _cm2ChkInstalledPkgFn 'kubuntu-restricted-extras'; then
     _cm2SucStrFn 'Restricted packages already installed';
   else
