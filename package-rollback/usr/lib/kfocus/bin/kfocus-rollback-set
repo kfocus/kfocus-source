@@ -270,9 +270,8 @@ _checkBtrfsStatusSetUpFn () {
 _getMainUnallocSpaceFn () {
   _checkBtrfsStatusSetUpFn;
 
-  echo "$(LC_ALL=C "${_btrfsExe}" filesystem usage -b /btrfs_main \
-    | awk '/Device unallocated/{ print $3 }'
-  )";
+  LC_ALL=C "${_btrfsExe}" filesystem usage -b /btrfs_main \
+    | awk '/Device unallocated/{ print $3 }';
 }
 _getMainMinUnallocFn () {
   echo "$(( $(LC_ALL=C "${_btrfsExe}" filesystem usage -b /btrfs_main \
@@ -283,12 +282,11 @@ _getMainMinUnallocFn () {
 _getBootUnallocSpaceFn () {
   _checkBtrfsStatusSetUpFn;
 
-  echo "$(LC_ALL=C "${_btrfsExe}" filesystem usage -b /btrfs_boot \
-    | awk '/Device unallocated/{ print $3 }'
-  )";
+  LC_ALL=C "${_btrfsExe}" filesystem usage -b /btrfs_boot \
+    | awk '/Device unallocated/{ print $3 }';
 }
 _getBootMinUnallocFn () {
-  echo 1073741824 # 1 GiB
+  echo 1073741824; # 1 GiB
 }
 _checkMainUnallocSpaceFn () {
   declare _main_min_unalloc _main_unalloc;
@@ -845,10 +843,10 @@ _mainFn () {
   _boot_min_unalloc="$( _getBootMinUnallocFn   )";
   _boot_unalloc="$(     _getBootUnallocSpaceFn )";
   if [ -d '/btrfs_main' ] && [ -d '/btrfs_boot' ]; then
-    if (( _main_space < _main_min_space )); then
+    if (( _main_unalloc < _main_min_unalloc )); then
       _promptAllUsersFn 'info' "${_lowDiskMsg}";
       _exitERR;
-    elif (( _boot_space < _boot_min_space )); then
+    elif (( _boot_unalloc < _boot_min_unalloc )); then
       # TODO: Do something to point the user to the kernel cleaner here!
       _exitERR;
     fi

@@ -155,7 +155,7 @@ _maintainBtrfsFn () {
     && (( _boot_unalloc > _boot_min_unalloc )); then
     "${_rollbackSetExe}" 'createSnapshot' 'Timed' || { _cm2WarnFn; return; };
     "${_rollbackSetExe}" 'trimSnapshots'          || { _cm2WarnFn; return; };
-    "${_rollbackSetExe}" 'btrfsMaintain';         || { _cm2WarnFn; return; };
+    "${_rollbackSetExe}" 'btrfsMaintain'          || { _cm2WarnFn; return; };
     _cm2SucFn;
   else
     _cm2WarnStrFn 'Main or boot disk space low!';
