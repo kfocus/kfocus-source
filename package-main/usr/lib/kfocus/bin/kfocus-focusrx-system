@@ -88,10 +88,44 @@ _initCpuFn () {
 }
 ## . END _initCpuFn }
 
-## BEGIN _manageSnapshotsFn {
-# Purpose   : Handle all system-level snapshot-related operations
+## BEGIN _manageSnapshotsOnBootFn {
+# Purpose   : Handle all boot-time snapshot-related operations
 #
-_manageSnapshotsFn () {
+_manageSnapshotsOnBootFn () {
+  declare _title;
+  _title='Manage Snapshots On Boot';
+
+  _cm2SetMsgFn "${_title}";
+  if [ -z "${_rollbackSetExe}" ] || [ -z "${_btrfsExe}" ]; then
+    _cm2WarnStrFn 'Required utils not available';
+    _cm2WarnFn;
+    return 1;
+  fi
+
+  if [ "$("${_rollbackSetExe}" 'getBtrfsStatus')" != 'SUPPORTED, SET UP' ]; then
+    _cm2WarnStrFn 'BTRFS not setup';
+    _cm2WarnFn;
+    return 1;
+  fi
+  
+  _main_unalloc="$(${_rollbackSetExe} 'getMainUnallocSpace')";
+  _main_min_unalloc="$(${_rollbackSetExe} 'getMainMinUnalloc')";
+  if (( _main_unalloc > _main_min_unalloc )); then
+    "${_rollbackSetExe}" 'finalizeRestore'        || { _cm2WarnFn; return; };
+    "${_rollbackSetExe}" 'createSnapshot' 'Timed' || { _cm2WarnFn; return; };
+    "${_rollbackSetExe}" 'trimSnapshots'          || { _cm2WarnFn; return; };
+    _cm2SucFn;
+  else
+    _cm2WarnStrFn 'Disk space low!';
+    _cm2WarnFn;
+  fi
+}
+## . END _manageSnapshotsOnBootFn }
+
+## BEGIN _maintainBtrfsFn {
+# Purpose   : Handle all periodic BTRFS-related maintenance operations
+#
+_maintainBtrfsFn () {
   declare _title;
   _title='Maintain Snapshots';
 
@@ -108,25 +142,17 @@ _manageSnapshotsFn () {
     return 1;
   fi
 
-  "${_rollbackSetExe}" 'checkWarnDiskSpace' || return;
-  "${_rollbackSetExe}" 'finalizeRestore'        || return;
-  "${_rollbackSetExe}" 'createSnapshot' 'Timed' || return;
-  "${_rollbackSetExe}" 'trimSnapshots'          || return;
-  _cm2SucFn;
-}
-# . END _manageSnapshotsFn }
-
-## BEGIN _maintainBtrfsFn {
-#
-_maintainBtrfsFn () {
-  declare _title;
-
-  [ -z "${_rollbackSetExe}" ] && return;
-
-  _title='Maintain BTRFS';
-  _cm2SetMsgFn "${_title}";
-  "${_rollbackSetExe}" 'btrfsMaintain';
-  _cm2SucFn;
+  _main_unalloc="$(${_rollbackSetExe} 'getMainUnallocSpace')";
+  _main_min_unalloc="$(${_rollbackSetExe} 'getMainMinUnalloc')";
+  if (( _main_unalloc > _main_min_unalloc )); then
+    "${_rollbackSetExe}" 'createSnapshot' 'Timed' || { _cm2WarnFn; return; };
+    "${_rollbackSetExe}" 'trimSnapshots'          || { _cm2WarnFn; return; };
+    "${_rollbackSetExe}" 'btrfsMaintain';         || { _cm2WarnFn; return; };
+    _cm2SucFn;
+  else
+    _cm2WarnStrFn 'Disk space low!';
+    _cm2WarnFn;
+  fi
 }
 ## . END _maintainBtrfsFn }
 
@@ -140,14 +166,13 @@ _mainFn () {
     b) # Boot tasks
       _cm2EchoFn "== BEGIN :     ${_rootTitle}\n";
       _initCpuFn;
-      _manageSnapshotsFn;
+      _manageSnapshotsOnBootFn;
       _cm2EchoFn "\n==. END : OK   ${_rootTitle}\n\n";
       ;;
     s) # Regular BTRFS maintenance
-      _manageSnapshotsFn;
       _maintainBtrfsFn;
       ;;
-    *) _cm2EchoFN "\nInvalid option: -$OPTARG} \n";
+    *) _cm2EchoFn "\nInvalid option: -$OPTARG} \n";
       _exit 1;;
     esac
   done

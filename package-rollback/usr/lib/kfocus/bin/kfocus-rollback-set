@@ -265,6 +265,46 @@ _checkBtrfsStatusSetUpFn () {
 }
 ## . END _checkBtrfsStatusSetUpFn }
 
+## BEGIN Space checking functions {
+#
+_getMainUnallocSpaceFn () {
+  _checkBtrfsStatusSetUpFn;
+
+  echo "$(LC_ALL=C "${_btrfsExe}" filesystem usage -b /btrfs_main \
+    | awk '/Device unallocated/{ print $3 }'
+  )";
+}
+_getMainMinUnallocFn () {
+  echo "$(( $(LC_ALL=C "${_btrfsExe}" filesystem usage -b /btrfs_main \
+    | grep $'Device size:\t' \
+    | awk '{ print $3 }' \
+    ) / 10 ))";
+}
+_getBootUnallocSpaceFn () {
+  _checkBtrfsStatusSetUpFn;
+
+  echo "$(LC_ALL=C "${_btrfsExe}" filesystem usage -b /btrfs_boot \
+    | awk '/Device unallocated/{ print $3 }'
+  )";
+}
+_getBootMinUnallocFn () {
+  echo 1073741824 # 1 GiB
+}
+_checkMainUnallocSpaceFn () {
+  declare _main_min_unalloc _main_unalloc;
+
+  _checkBtrfsStatusSetUpFn;
+
+  _main_min_unalloc="$(_getMainUnallocSpaceFn)";
+  _main_unalloc="$(_getMainMinUnallocFn)";
+
+  if (( _main_unalloc < _main_min_unalloc )); then
+    _promptAllUsersFn 'info' "${_lowDiskMsg}";
+    _exitERR;
+  fi
+}
+## . END Space checking functions }
+
 ## BEGIN _getSnapshotListStrFn {
 #
 _getSnapshotListStrFn () {
@@ -391,35 +431,6 @@ _prepareSystemFn () {
   _isPreparingSystem='n';
 }
 ## . END _prepareSystemFn }
-
-## BEGIN _checkWarnDiskSpaceFn {
-#
-_checkWarnDiskSpaceFn () {
-  declare _main_space_report _boot_min_unalloc _main_min_unalloc \
-    _main_unalloc _boot_unalloc;
-
-  _checkBtrfsStatusSetUpFn;
-
-  _main_space_report="$(LC_ALL=C "${_btrfsExe}" filesystem usage -b \
-    /btrfs_main)";
-  (( _main_min_unalloc = $(grep $'Device size:\t' <<< "${_main_space_report}" \
-    | awk '{ print $3 }' \
-    ) / 10 ))
-  _boot_min_unalloc=1073741824 # 1 GiB
-  _main_unalloc="$(awk '/Device unallocated/{ print $3 }' \
-    <<< "${_main_space_report}")";
-  _boot_unalloc="$(LC_ALL=C "${_btrfsExe}" filesystem usage -b /btrfs_boot \
-    | awk '/Device unallocated/{ print $3 }')";
- 
-  if [ -d '/btrfs_main' ] && [ -d '/btrfs_boot' ]; then
-    if (( _main_unalloc < _main_min_unalloc )) \
-      || (( _boot_unalloc < _boot_min_unalloc )); then
-      _promptAllUsersFn 'info' "${_lowDiskMsg}";
-      _exitERR;
-    fi
-  fi
-}
-## . END _checkWarnDiskSpaceFn }
 
 ## BEGIN _deleteSnapshotFn {
 #
@@ -816,8 +827,8 @@ _btrfsDeepCleanFn () {
 ## BEGIN _mainFn {
 #
 _mainFn () {
-  declare _main_min_space _boot_min_space _main_space \
-    _boot_space _mode;
+  declare _main_min_unalloc _boot_min_unalloc _main_unalloc \
+    _boot_unalloc _mode;
 
   while ! _chkSetFlockFn; do
     sleep 1;
@@ -829,21 +840,16 @@ _mainFn () {
     _exitERR;
   fi
 
-  (( _main_min_space = ( ( $(
-      LC_ALL='C' df / \
-        | tail -n1 \
-        | awk '{ print $2 }'
-    ) * 1024 ) / 100 ) * 15 ));
-  _boot_min_space=1073741824 # 1 GiB
-  _main_space="$(LC_ALL=C btrfs filesystem usage -b /btrfs_main \
-    | awk '/Free \(estimated\)/{ print $3 }')";
-  _boot_space="$(LC_ALL=C btrfs filesystem usage -b /btrfs_boot \
-    | awk '/Free \(estimated\)/{ print $3 }')";
-
+  _main_min_unalloc="$( _getMainMinUnallocFn   )";
+  _main_unalloc="$(     _getMainUnallocSpaceFn )";
+  _boot_min_unalloc="$( _getBootMinUnallocFn   )";
+  _boot_unalloc="$(     _getBootUnallocSpaceFn )";
   if [ -d '/btrfs_main' ] && [ -d '/btrfs_boot' ]; then
-    if (( _main_space < _main_min_space )) \
-      || (( _boot_space < _boot_min_space )); then
+    if (( _main_space < _main_min_space )); then
       _promptAllUsersFn 'info' "${_lowDiskMsg}";
+      _exitERR;
+    elif (( _boot_space < _boot_min_space )); then
+      # TODO: Do something to point the user to the kernel cleaner here!
       _exitERR;
     fi
   fi
@@ -851,18 +857,23 @@ _mainFn () {
   _mode="${1:-}";
 
   case "${_mode}" in
-    'checkWarnDiskSpace') _checkWarnDiskSpaceFn;;
-    'clearRestore')       _clearRestoreFn;;
-    'createSnapshot')     _createSnapshotFn    "${2:-}";;
-    'deleteSnapshot')     _deleteSnapshotFn    "${2:-}";;
-    'finalizeRestore')    _finalizeRestoreFn;;
-    'getBtrfsStatus')     echo "${_btrfsStatus}";;
-    'prepareSystem')      _prepareSystemFn;;
-    'restoreSnapshot')    _restoreSnapshotFn   "${2:-}";;
-    'systemSnapshot')     _systemSnapshotFn    "${2:-}";;
-    'trimSnapshots')      _trimSnapshotsFn;;
-    'btrfsMaintain')      _btrfsMaintainFn;;
-    'btrfsDeepClean')     _btrfsDeepCleanFn;;
+    'btrfsDeepClean')        _btrfsDeepCleanFn;;
+    'btrfsMaintain')         _btrfsMaintainFn;;
+    'checkMainUnallocSpace') _checkMainUnallocSpaceFn;;
+    'checkWarnDiskSpace')    _checkWarnDiskSpaceFn;;
+    'clearRestore')          _clearRestoreFn;;
+    'createSnapshot')        _createSnapshotFn    "${2:-}";;
+    'deleteSnapshot')        _deleteSnapshotFn    "${2:-}";;
+    'finalizeRestore')       _finalizeRestoreFn;;
+    'getBootMinUnalloc')     _getBootMinUnallocFn;;
+    'getBootUnallocSpace')   _getBootUnallocSpaceFn;;
+    'getBtrfsStatus')        echo "${_btrfsStatus}";;
+    'getMainMinUnalloc')     _getMainMinUnallocFn;;
+    'getMainUnallocSpace')   _getMainUnallocSpaceFn;;
+    'prepareSystem')         _prepareSystemFn;;
+    'restoreSnapshot')       _restoreSnapshotFn   "${2:-}";;
+    'systemSnapshot')        _systemSnapshotFn    "${2:-}";;
+    'trimSnapshots')         _trimSnapshotsFn;;
     *)
       _cm2WarnStrFn 'Invalid mode specified.';
       _exitERR;
