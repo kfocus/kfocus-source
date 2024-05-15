@@ -158,7 +158,11 @@ _maintainBtrfsFn () {
     "${_rollbackSetExe}" 'btrfsMaintain'          || { _cm2WarnFn; return; };
     _cm2SucFn;
   else
-    _cm2WarnStrFn 'Main or boot disk space low!';
+    if (( _main_unalloc <= _main_min_unalloc )); then
+      _promptAllUsersFn 'warning' "${_lowDiskMsg}";
+    elif (( _boot_unalloc <= _boot_min_unalloc )); then
+      _promptAllUsersFn 'warning' "${_lowBootMsg}";
+    fi
     _cm2WarnFn;
   fi
 }
@@ -227,7 +231,21 @@ that you delete all snapshots and optimize the drive using<br>
 KFocus System Rollback. You may also need to delete excess files<br>
 or move them to other drives. You can access KFocus System<br>
 Rollback by clicking <code>Start Menu &gt; Kubuntu Focus Tools &gt;<br>
-KFocus System Rollback</code>.${_erowStr}
+KFocus System Rollback</code>.${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _lowBootMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}<h3 style="color:#f7941d">Low Boot Space</h3>${_erowStr}
+
+${_browStr}Your system is running low on boot space. This could result in<br>
+failed upgrades and kernel-related system issues if not corrected.<br>
+It is highly recommended that you run the Kernel Cleaner utility to<br>
+free space boot space. You can access the Kernel Cleaner by clicking<br>
+<code>Start Menu &gt; Kubuntu Focus Tools &gt; Kernel Cleaner</code>.
+${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
