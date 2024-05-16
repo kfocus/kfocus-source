@@ -188,5 +188,14 @@ else
 fi
 ## . END Run kfocus-reset-effects to populate kfocus/kf5-settings
 
+## BEGIN Ensure KFocus logging is enabled
+#
+_logFile='/var/log/kfocus.log';
+if ! [ -e "${_logFile}" ]; then
+  touch "${_logFile}";
+  chown syslog:adm "${_logFile}";
+fi
+## . END Ensure KFocus logging is enabled
+
 # Tag to allow some debhelper commands to inject relevant code
 #DEBHELPER#

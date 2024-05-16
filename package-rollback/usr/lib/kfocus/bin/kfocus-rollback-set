@@ -116,6 +116,13 @@ _exitWithCodeFn () {
 
   if [ -n "${_msg}" ]; then
     1>&2 echo "${_msg}";
+    case ${_int} in
+      '0') _cm2LogFn 'notice' "${_msg}";;
+      '1') _cm2LogFn 'err'    "${_msg}";;
+      '2') _cm2LogFn 'crit'   "${_msg}";;
+      '3') _cm2LogFn 'alert'  "${_msg}";;
+      '4') _cm2LogFn 'emerg'  "${_msg}";;
+    esac
   fi
   _exitCleanFn "${_int}";
 }
@@ -156,7 +163,6 @@ _checkRootFn () {
   if [ "${_uid}" = '0' ]; then
     return 0;
   else
-    _cm2WarnStrFn 'This action requires root privileges.';
     return 1;
   fi
 }
@@ -165,6 +171,7 @@ _checkRootFn () {
 ## BEGIN _clearRestoreFn {
 _clearRestoreFn () {
   rm -f "${_restoreCompleteFile}" || true;
+  _cm2LogFn 'notice' 'Restore flag cleared.';
 }
 ## . END _clearRestoreFn }
 
@@ -277,7 +284,7 @@ _getMainMinUnallocFn () {
   echo "$(( $(LC_ALL=C "${_btrfsExe}" filesystem usage -b /btrfs_main \
     | grep $'Device size:\t' \
     | awk '{ print $3 }' \
-    ) / 10 ))";
+    ) / 15 ))";
 }
 _getBootUnallocSpaceFn () {
   _checkBtrfsStatusSetUpFn;
@@ -298,7 +305,20 @@ _checkMainUnallocSpaceFn () {
 
   if (( _main_unalloc < _main_min_unalloc )); then
     _promptAllUsersFn 'info' "${_lowDiskMsg}";
-    _exitERR;
+    _exitERR 'Low disk space detected.';
+  fi
+}
+_checkBootUnallocSpaceFn () {
+  declare _boot_min_unalloc _boot_unalloc;
+
+  _checkBtrfsStatusSetUpFn;
+
+  _boot_min_unalloc="$(_getBootUnallocSpaceFn)";
+  _boot_unalloc="$(_getBootMinUnallocFn)";
+
+  if (( _boot_unalloc < _boot_min_unalloc )); then
+    _promptAllUsersFn 'info' "${_lowBootMsg}";
+    _exitERR 'Low boot space detected.';
   fi
 }
 ## . END Space checking functions }
@@ -427,6 +447,7 @@ _prepareSystemFn () {
   ## . END STAGE 5: Finish additional mounts }
 
   _isPreparingSystem='n';
+  _cm2LogFn 'notice' 'System successfully prepared for snapshotting.';
 }
 ## . END _prepareSystemFn }
 
@@ -447,15 +468,18 @@ _deleteSnapshotFn () {
   _boot_snapshot_path="${_snapshotBootDir}/${_target_snapshot}";
 
   if ! [ -e "${_snapshot_path}" ] && ! [ -e "${_boot_snapshot_path}" ]; then
-    _exitERR;
+    _exitERR 'Snapshot deletion request points to a non-existant snapshot!';
   fi
 
   if [ -e "${_snapshot_path}" ]; then
-    "${_btrfsExe}" subvolume delete --commit-after "${_snapshot_path}" || _exitEMERG;
+    "${_btrfsExe}" subvolume delete --commit-after "${_snapshot_path}" \
+      || _exitEMERG "Failed to delete main BTRFS snapshot ${_snapshot_path}!";
   fi
   if [ -e "${_boot_snapshot_path}" ]; then
-    "${_btrfsExe}" subvolume delete --commit-after "${_boot_snapshot_path}" || _exitEMERG;
+    "${_btrfsExe}" subvolume delete --commit-after "${_boot_snapshot_path}" \
+      || _exitEMERG "Failed to delete boot BTRFS snapshot ${_boot_snapshot_path}!";
   fi
+  _cm2LogFn 'notice' "Snapshot ${_target_snapshot} deleted.";
 }
 ## . END _deleteSnapshotFn }
 
@@ -467,13 +491,15 @@ _finalizeRestoreFn () {
   if ! mount | grep 'btrfs' | grep -q '@kfocus-rollback-working' \
     && ! mount | grep 'btrfs' | grep -q '@kfocus-rollback-working-boot'; then
     if [ -d '/btrfs_main/@kfocus-rollback-working' ]; then
-      "${_btrfsExe}" subvolume delete --commit-after '/btrfs_main/@kfocus-rollback-working' || _exitEMERG;
+      "${_btrfsExe}" subvolume delete --commit-after '/btrfs_main/@kfocus-rollback-working' \
+        || _exitEMERG 'Failed to finalize restore for main filesystem!';
     fi
     if [ -d '/btrfs_boot/@kfocus-rollback-working-boot' ]; then
       "${_btrfsExe}" subvolume delete --commit-after '/btrfs_boot/@kfocus-rollback-working-boot' \
-        || _exitEMERG;
+        || _exitEMERG 'Failed to finalize restore for boot filesystem!';
     fi
   fi
+  _cm2LogFn 'notice' 'Restore operation successfully finalized.';
 }
 ## . END _finalizeRestoreFn }
 
@@ -481,9 +507,11 @@ _finalizeRestoreFn () {
 #
 _trimSnapshotsFn () {
   declare _main_snapshot_list _boot_snapshot_list _snapshot_id \
-    _snapshot_remove_count _snapshot_idx;
+    _snapshot_remove_count _snapshot_idx _delete_count;
 
   _checkBtrfsStatusSetUpFn;
+
+  _delete_count=0;
 
   readarray -t _main_snapshot_list <<< "$(
     _cm2LsFn "${_snapshotMainDir}" | sed 's/@//' | sort -n | sed 's/^/@/'
@@ -496,6 +524,8 @@ _trimSnapshotsFn () {
     if ! [[ " ${_boot_snapshot_list[*]} " \
       =~ [[:space:]]${_snapshot_id}[[:space:]] ]]; then
       _deleteSnapshotFn "${_snapshot_id}";
+      _cm2LogFn 'warning' \
+        "Mismatched BTRFS snapshot ${_snapshot_id} trimmed from main.";
     fi
   done
 
@@ -503,6 +533,8 @@ _trimSnapshotsFn () {
     if ! [[ " ${_main_snapshot_list[*]} " \
       =~ [[:space:]]${_snapshot_id}[[:space:]] ]]; then
       _deleteSnapshotFn "${_snapshot_id}";
+      _cm2LogFn 'warning' \
+        "Mismatched BTRFS snapshot ${_snapshot_id} trimmed from boot.";
     fi
   done
 
@@ -515,8 +547,12 @@ _trimSnapshotsFn () {
     for ((_snapshot_idx = 0; _snapshot_idx < _snapshot_remove_count; \
       _snapshot_idx++)); do
       _deleteSnapshotFn "${_main_snapshot_list[_snapshot_idx]}";
+      (( _delete_count++ )) || true;
     done
   fi
+
+  _cm2LogFn 'notice' \
+    "Snapshots trimmed, deleting ${_delete_count} non-mismatched snapshots.";
 }
 ## . END _trimSnapshotsFn }
 
@@ -527,6 +563,8 @@ _createSnapshotFn () {
     _snapshot_path _boot_snapshot_path _hour_seconds _week_seconds;
 
   _checkBtrfsStatusSetUpFn;
+  _checkMainUnallocSpace;
+  _checkBootUnallocSpace;
 
   _hour_seconds=3600;
   _week_seconds=604800;
@@ -566,8 +604,9 @@ _createSnapshotFn () {
   # that it could if the user changes their clock backwards.
   #
   # TODO: There's a time-of-check to time-of-use bug here, I don't *think*
-  # we care but review to see if this should be worked around.
-  #
+  # we care since it can only be triggered by a locking failure or a malicious
+  # process with root privileges, but review to see if this should be worked
+  # around.
   if [ -e "${_snapshot_path}" ]; then
     _exitERR "Snapshot path |${_snapshot_path}| already exists!";
   fi
@@ -577,11 +616,15 @@ _createSnapshotFn () {
 
   "${_btrfsExe}" subvolume snapshot -r '/btrfs_main/@' "${_snapshot_path}" \
     || _exitEMERG "Could not create snapshot |${_snapshot_path}|";
-  "${_btrfsExe}" filesystem sync '/btrfs_main' || _exitEMERG;
+  "${_btrfsExe}" filesystem sync '/btrfs_main' \
+    || _exitEMERG 'Failed to sync main filesystem!';
   "${_btrfsExe}" subvolume snapshot -r '/btrfs_boot/@boot' "${_boot_snapshot_path}" \
     || _exitEMERG "Could not create boot snapshot |${_boot_snapshot_path}|";
-  "${_btrfsExe}" filesystem sync '/btrfs_boot' || _exitEMERG;
+  "${_btrfsExe}" filesystem sync '/btrfs_boot' \
+    || _exitEMERG 'Failed to sync boot filesystem!';
   sync;
+
+  _cm2LogFn 'notice' "Snapshot @${_timestamp_str} created.";
 }
 ## . END _createSnapshotFn
 
@@ -592,6 +635,8 @@ _restoreSnapshotFn () {
     _boot_snapshot_path _snapshot_disp_id;
 
   _checkBtrfsStatusSetUpFn;
+  _checkMainUnallocSpace;
+  _checkBootUnallocSpace;
 
   # Any snapshots that are at number 5 or older will end up trimmed if we
   # don't purposefully exclude them, so get the list of all but the four
@@ -616,33 +661,40 @@ _restoreSnapshotFn () {
     [ -e '/btrfs_boot/@kfocus-rollback-working-boot' ]; then
     _cm2WarnStrFn 'Temporary restore subvols found, cannot continue.';
     _cm2WarnStrFn 'Please reboot, then run "Finish restoration operation".';
-    _exitERR 'Restore already in progress';
+    _exitERR 'Restore already in progress!';
   fi
 
   if ! [ -e "${_snapshot_path}" ] || ! [ -e "${_boot_snapshot_path}" ]; then
-    _exitERR 'Expected snapshot path does not exist';
+    _exitERR 'Expected snapshot path does not exist!';
   fi
 
   _snapshot_disp_id="$(_rb2MakeSnapshotDispIdFn "${_target_snapshot}")";
 
-  mv '/btrfs_main/@' '/btrfs_main/@kfocus-rollback-working' || _exitCRIT;
-  "${_btrfsExe}" subvolume snapshot "${_snapshot_path}" '/btrfs_main/@' || _exitEMERG;
-  "${_btrfsExe}" filesystem sync '/btrfs_main' || _exitEMERG;
+  mv '/btrfs_main/@' '/btrfs_main/@kfocus-rollback-working' \
+    || _exitCRIT 'Unable to move root filesystem subvolume for restore!';
+  "${_btrfsExe}" subvolume snapshot "${_snapshot_path}" '/btrfs_main/@' \
+    || _exitEMERG 'Unable to restore root filesystem snapshot!';
+  "${_btrfsExe}" filesystem sync '/btrfs_main' \
+    || _exitEMERG 'Unable to sync main filesystem!';
   # Failing to unmount /boot/efi before attempting to move the old subvol
   # will result in the subvol not being moved, which will result in the
   # whole @boot subvol being nuked except for the contents of /boot/efi.
-  umount /boot/efi || _exitALERT;
+  umount /boot/efi || _exitALERT 'Unable to unmount EFI system partition!';
   mv '/btrfs_boot/@boot' '/btrfs_boot/@kfocus-rollback-working-boot' \
-    || _exitALERT;
+    || _exitALERT 'Unable to move boot filesystem subvolume for restore!';
   "${_btrfsExe}" subvolume snapshot "${_boot_snapshot_path}" '/btrfs_boot/@boot' \
-    || _exitEMERG;
-  "${_btrfsExe}" filesystem sync '/btrfs_boot' || _exitEMERG;
+    || _exitEMERG 'Unable to restore boot filesystem snapshot!';
+  "${_btrfsExe}" filesystem sync '/btrfs_boot' \
+    || _exitEMERG 'Unable to sync boot filesystem!';
   sync;
-  mount /boot/efi || _exitALERT;
+  mount /boot/efi || _exitALERT 'Unable to remount EFI system partition!';
 
   # Let the user know that a restore has completed
   echo "${_snapshot_disp_id}" \
-    > "/btrfs_main/@${_restoreCompleteFile}" || _exitALERT;
+    > "/btrfs_main/@${_restoreCompleteFile}" \
+    || _exitALERT 'Unable to prepare system for post-snapshot cleanup!';
+
+  _cm2LogFn 'notice' "Snapshot ${_target_snapshot} restored.";
 }
 ## . END _restoreSnapshotFn }
 
@@ -650,8 +702,10 @@ _restoreSnapshotFn () {
 #
 _systemSnapshotFn () {
   _checkBtrfsStatusSetUpFn;
-  _createSnapshotFn "${1:-}" || _exitERR 'Could not create snapshot';
-  _trimSnapshotsFn           || _exitERR 'Could not trim snapshots';
+  _checkMainUnallocSpace;
+  _checkBootUnallocSpace;
+  _createSnapshotFn "${1:-}" || _exitERR 'Could not create snapshot!';
+  _trimSnapshotsFn           || _exitERR 'Could not trim snapshots!';
 }
 ## . END _systemSnapshotFn }
 
@@ -689,6 +743,8 @@ _balanceMainFn () {
   
   echo "unallocd|${_main_unallocd}" > "${_optimizeStatePath}";
   echo "free|${_main_free}" >> "${_optimizeStatePath}";
+
+  _cm2LogFn 'notice' "Main filesystem balanced.";
 }
 ## . END _balanceMainFn }
 
@@ -696,6 +752,8 @@ _balanceMainFn () {
 #
 _balanceBootFn () {
   "${_btrfsBalanceExe}" -u 85 '/btrfs_boot';
+
+  _cm2LogFn 'notice' "Boot filesystem balanced.";
 }
 ## . END _balanceBootFn }
 
@@ -716,6 +774,8 @@ _deleteAllSnapshotsFn () {
   for _current_snapshot in "${_snapshot_list[@]}"; do
     _deleteSnapshotFn "${_current_snapshot}";
   done
+
+  _cm2LogFn 'notice' "All snapshots deleted.";
 }
 ## . END _deleteAllSnapshotsFn }
 
@@ -803,6 +863,9 @@ _defragmentFn () {
   if (( ${#_defrag_file_list[@]} > 0 )); then
     "${_btrfsExe}" filesystem defragment -clzo "${_clean_file_list[@]}";
   fi
+
+  _cm2LogFn 'notice' \
+    "Defragmented ${#_defrag_file_list[@]} files on main filesystem.";
 }
 ## . END _defragmentFn }
 
@@ -810,9 +873,10 @@ _defragmentFn () {
 #
 _btrfsMaintainFn () {
   _checkBtrfsStatusSetUpFn;
-  _checkRootFn   || exit;
-  _balanceMainFn || exit;
-  _balanceBootFn || exit;
+  _checkRootFn   || _exitNOTICE 'BTRFS maintenance requires root privileges.';
+  _balanceMainFn || _exitALERT  'Failed to balance main filesystem!';
+  _balanceBootFn || _exitALERT  'Failed to balance boot filesystem!';
+  _cm2LogFn 'notice' "Routine BTRFS maintenance complete.";
 }
 ## . END _btrfsMaintainFn }
 
@@ -820,11 +884,13 @@ _btrfsMaintainFn () {
 #
 _btrfsDeepCleanFn () {
   _checkBtrfsStatusSetUpFn;
-  _checkRootFn   || exit;
+  _checkRootFn   || _exitNOTICE \
+    'BTRFS deep cleaning requires root privileges.';
   _deleteAllSnapshotsFn;
-  _balanceMainFn || exit;
-  _balanceBootFn || exit;
-  _defragmentFn;
+  _balanceMainFn || _exitALERT 'Failed to balance main filesystem!';
+  _balanceBootFn || _exitALERT 'Failed to balance boot filesystem!';
+  _defragmentFn  || _exitALERT 'Failed to defragment files!';
+  _cm2LogFn 'notice' "BTRFS deep clean operation complete.";
 }
 ## . END _btrfsDeepCleanFn }
 
@@ -841,21 +907,7 @@ _mainFn () {
 
   if [ "${_btrfsStatus}" = 'INCONSISTENT' ]; then
     _promptAllUsersFn 'warning' "${_inconsistentMsg}";
-    _exitERR;
-  fi
-
-  _main_min_unalloc="$( _getMainMinUnallocFn   )";
-  _main_unalloc="$(     _getMainUnallocSpaceFn )";
-  _boot_min_unalloc="$( _getBootMinUnallocFn   )";
-  _boot_unalloc="$(     _getBootUnallocSpaceFn )";
-  if [ -d '/btrfs_main' ] && [ -d '/btrfs_boot' ]; then
-    if (( _main_unalloc < _main_min_unalloc )); then
-      _promptAllUsersFn 'info' "${_lowDiskMsg}";
-      _exitERR;
-    elif (( _boot_unalloc < _boot_min_unalloc )); then
-      # TODO: Do something to point the user to the kernel cleaner here!
-      _exitERR;
-    fi
+    _exitERR 'BTRFS state is inconsistent!';
   fi
 
   _mode="${1:-}";
@@ -864,7 +916,6 @@ _mainFn () {
     'btrfsDeepClean')        _btrfsDeepCleanFn;;
     'btrfsMaintain')         _btrfsMaintainFn;;
     'checkMainUnallocSpace') _checkMainUnallocSpaceFn;;
-    'checkWarnDiskSpace')    _checkWarnDiskSpaceFn;;
     'clearRestore')          _clearRestoreFn;;
     'createSnapshot')        _createSnapshotFn    "${2:-}";;
     'deleteSnapshot')        _deleteSnapshotFn    "${2:-}";;
@@ -879,8 +930,7 @@ _mainFn () {
     'systemSnapshot')        _systemSnapshotFn    "${2:-}";;
     'trimSnapshots')         _trimSnapshotsFn;;
     *)
-      _cm2WarnStrFn 'Invalid mode specified.';
-      _exitERR;
+      _exitERR 'Invalid mode specified.';
       ;;
   esac
 
@@ -893,7 +943,7 @@ declare _binName _binDir _baseName _baseDir \
   _isPreparingSystem _lockFile _optimizeStatePath _btrfsStatus \
   _snapshotMainDir _snapshotBootDir _restoreCompleteFile \
   _libTable _browStr _erowStr _tableStr _prepareFailMsg \
-  _lowDiskMsg _inconsistentMsg _btrfsExe _btduExe _filefragExe \
+  _lowDiskMsg _lowBootMsg _inconsistentMsg _btrfsExe _btduExe _filefragExe \
   _btrfsBalanceExe;
 
 _btrfsStatus='';
@@ -932,6 +982,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     exit 1;
   fi
 
+  _cm2SetLogTagFn 'kfocus-rollback-set';
+
   # Set error messages
   _browStr='<tr><td style="padding:8px 32px 8px 0">';
   _erowStr='</td></tr>';
@@ -957,10 +1009,26 @@ ${_browStr}<h3 style="color:#f7941d">Low Disk Space</h3>${_erowStr}
 
 ${_browStr}Your system is running low on disk space. This could result in<br>
 filesystem corruption if not corrected. It is highly recommended<br>
-that you use the Drive Optimizer to clear some space. You may<br>
-also need to delete excess files or move them to other drives.<br>
-You can access the Drive Optimizer by clicking <code>Start Menu &gt;<br>
-Kubuntu Focus Tools &gt; Drive Optimizer</code>.${_erowStr}
+that you delete all snapshots and optimize the drive using System<br>
+Rollback. You may also need to delete excess files or move them to<br>
+other drives. You can access System Rollback by clicking <code>Start<br>
+Menu &gt; Kubuntu Focus Tools &gt; System Rollback</code>.
+
+${_browStr}For your safety, no snapshot-related actions have been
+performed.${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _lowBootMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}<h3 style="color:#f7941d">Low Boot Space</h3>${_erowStr}
+
+${_browStr}Your system is running low on boot space. This could result in<br>
+failed upgrades and kernel-related system issues if not corrected.<br>
+It is highly recommended that you run the Kernel Cleaner utility to<br>
+free space boot space. You can access the Kernel Cleaner by clicking<br>
+<code>Start Menu &gt; Kubuntu Focus Tools &gt; Kernel Cleaner</code>.
 
 ${_browStr}For your safety, no snapshot-related actions have been
 performed.${_erowStr}</table>
