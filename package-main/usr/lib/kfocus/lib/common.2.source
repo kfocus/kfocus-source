@@ -77,6 +77,58 @@ _cm2TrapInterruptFn () {
 }
 ## . END Error Control Section }
 
+## BEGIN Logging facilities {
+_cm2SetLogTagFn () {
+  declare _log_tag_str;
+  
+  [ -z "${_cm2LoggerExe}" ] && return;
+
+  _log_tag_str="${1:-}";
+  if [ -z "${_log_tag_str}" ]; then
+    _cm2WarnStrFn 'Empty log tag string provided.';
+    return 1;
+  fi
+
+  _cm2LogTag="${_log_tag_str}[$$]";
+}
+_cm2LogFn () {
+  declare _log_level_str _log_str _log_prio_str;
+
+  [ -z "${_cm2LoggerExe}" ] && return;
+
+  _log_level_str="${1:-}";
+  _log_str="${2:-}";
+
+  if [ -z "${_log_level_str}" ] \
+    || [ -z "${_log_str}" ]; then
+    _cm2WarnStrFn 'No log level or log string provided.';
+    return 1;
+  fi
+
+  if [ -z "${_cm2LogTag}" ]; then
+    _cm2WarnStrFn 'Log tag not yet set. Use _cm2SetLogTagFn first.';
+    return 1;
+  fi
+
+  case "${_log_level_str}" in
+    'debug'  ) _log_prio_str='user.debug'   ;;
+    'info'   ) _log_prio_str='user.info'    ;;
+    'notice' ) _log_prio_str='user.notice'  ;;
+    'warning') _log_prio_str='user.warning' ;;
+    'err'    ) _log_prio_str='user.err'     ;;
+    'crit'   ) _log_prio_str='user.crit'    ;;
+    'alert'  ) _log_prio_str='user.alert'   ;;
+    'emerg'  ) _log_prio_str='user.emerg'   ;;
+    *)
+      _cm2WarnStrFn 'Invalid log level string provided.';
+      return 1;
+      ;;
+  esac
+
+  "${_cm2LoggerExe}" -p "${_log_prio_str}" -t "${_cm2LogTag}" "${_log_str}";
+}
+## . END Logging facilities }
+
 _cm2GetEscExeFn () {
   declare _esc_exe _uid_int _prompt_str _reply_str;
   if [ "${_cm2IsTty}" = 'n' ]; then
@@ -686,12 +738,14 @@ _cm2HtmH3Str='<h3 style="color:#f7941d">FocusRx: ';
 _cm2HtmPStr='<p style="margin-right:32px">';
 _cm2CliType='cli';
 _cm2WhiptailExe="$(command -v whiptail || true)";
+_cm2LoggerExe="$(command -v logger || true)";
+_cm2LogTag='';
 
 # Export Strings
 # shellcheck disable=2090 # Disable complaining about html vars
 export _cm2Arg01 _cm2Arg02 _cm2BlockMsg _cm2HtmBeginStr _cm2HtmEndStr     \
   _cm2HtmH3Str _cm2HtmPStr _cm2IsTty _cm2KdiagExe _cm2ModelCode _cm2RmExe \
-  _cm2CliType _cm2WhiptailExe;
+  _cm2CliType _cm2WhiptailExe _cm2LoggerExe _cm2LogTag;
 
 # Export Functions
 export -f _cm2AskExitFn _cm2AssignExeVarsFn _cm2CatStripEchoFn               \
@@ -702,5 +756,5 @@ export -f _cm2AskExitFn _cm2AssignExeVarsFn _cm2CatStripEchoFn               \
   _cm2PromptUserFn _cm2ReadPromptYnFn _cm2RunLongCmdFn _cm2SetMsgFn          \
   _cm2StripTagsFn _cm2SucFn _cm2SucStrFn _cm2TestVersFn _cm2TrapErrorFn      \
   _cm2TrapExitFn _cm2TrapInterruptFn _cm2WarnFn _cm2WarnStrFn _cm2SetIsTtyFn \
-  _cm2SetCliTypeFn                                                           ;
+  _cm2SetCliTypeFn _cm2SetLogTagFn _cm2LogFn                                 ;
 ## . END Execute on source }
