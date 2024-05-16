@@ -110,10 +110,16 @@ launcher_list = [
   'applications:systemsettings.desktop',
   'applications:org.kde.discover.desktop',
   'applications:org.kde.konsole.desktop',
-  'applications:org.kde.dolphin.desktop',
-  'applications:google-chrome.desktop',
-  'applications:firefox.desktop'
+  'applications:org.kde.dolphin.desktop'
 ];
+
+if (applicationExists( 'firefox' ) ) {
+  launcher_list.push( 'applications:firefox.desktop' );
+}
+if (applicationExists( 'google-chrome' ) ) {
+  launcher_list.push( 'applications:google-chrome.desktop' );
+}
+
 icontasks_obj.writeConfig( 'launchers', launcher_list );
 
 /* Determine whether to add the Input Method Panel
@@ -161,21 +167,29 @@ if ( lang_id_list.indexOf( languageId ) !== -1 ) {
   panel_obj.addWidget( 'org.kde.plasma.kimpanel' );
 }
 
-backup_obj = panel_obj.addWidget( 'org.kde.plasma.icon' );
-backup_obj.currentConfigGroup = [ 'General' ];
-backup_obj.writeConfig( 'localPath', '/usr/share/applications/backintime-qt.desktop' );
-backup_obj.writeConfig( 'url', 'file:///usr/share/applications/backintime-qt.desktop' );
+// Add only if installed
+if (applicationExists( 'backintime-qt' ) ) {
+  backup_obj = panel_obj.addWidget( 'org.kde.plasma.icon' );
+  backup_obj.currentConfigGroup = [ 'General' ];
+  backup_obj.writeConfig( 'localPath', '/usr/share/applications/backintime-qt.desktop' );
+  backup_obj.writeConfig( 'url', 'file:///usr/share/applications/backintime-qt.desktop' );
+}
 
-rollback_obj = panel_obj.addWidget( 'org.kde.plasma.icon' );
-rollback_obj.currentConfigGroup = [ 'General' ];
-rollback_obj.writeConfig( 'localPath', '/usr/share/applications/kfocus-rollback.desktop' );
-rollback_obj.writeConfig( 'url', 'file:///usr/share/applications/kfocus-rollback.desktop' );
+// Add only if installed
+if (applicationExists( 'kfocus-rollback' ) ) {
+  rollback_obj = panel_obj.addWidget( 'org.kde.plasma.icon' );
+  rollback_obj.currentConfigGroup = [ 'General' ];
+  rollback_obj.writeConfig( 'localPath', '/usr/share/applications/kfocus-rollback.desktop' );
+  rollback_obj.writeConfig( 'url', 'file:///usr/share/applications/kfocus-rollback.desktop' );
+}
+
 // TODO if we add kup
 // backup_obj.writeConfig( 'localPath', '/usr/share/kservices5/kcm_kup.desktop' );
 // backup_obj.writeConfig( 'url', 'file:///usr/share/kservices5/kcm_kup.desktop' );
 
 systray_obj = panel_obj.addWidget( 'org.kde.plasma.systemtray' );
 systray_obj.currentConfigGroup = [ 'General' ];
+
 // TODO if we add kup
 // systray_obj.writeConfig( 'shownItems', 'org.kde.kupapplet' );
 

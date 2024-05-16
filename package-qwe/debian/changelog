@@ -1,10 +1,10 @@
-kfocus-qwe (24.04.1~alpha1) noble; urgency=medium
+kfocus-qwe (24.04.1~beta1) noble; urgency=medium
 
   * control: Renamed for Noble, replace qwe package (#4085)
   * usr/share/man: Add manpages (#4085)
-  * preinst, postinst: Replace with links (#4085) 
+  * preinst, postinst: Replace with links (#4085)
 
- -- Michael S. Mikowski <support@kfocus.org>  Mon, 06 May 2024 14:04:04 -0700
+ -- Michael S. Mikowski <support@kfocus.org>  Wed, 15 May 2024 22:13:54 -0700
 
 qwe (22.04.1) jammy; urgency=medium
 
@@ -23,24 +23,4 @@ qwe (0.3-0ubuntu1) jammy; urgency=medium
   * Initial release
 
  -- Erich Eickmeyer <eeickmeyer@ubuntu.com>  Tue, 08 Mar 2022 14:06:32 -0800
-
-
-  (use "git restore --staged <file>..." to unstage)
-        new file:   debian/kfocus-qwe.manpages
-        new file:   debian/links
-        new file:   debian/manpages/genmanpages
-        new file:   debian/manpages/kfocus-qwe.1
-        new file:   debian/manpages/kfocus-qwe.1.md
-        new file:   debian/manpages/previewmanpage
-        new file:   debian/manpages/qwe.1
-        new file:   debian/manpages/qwe.1.md
-        deleted:    debian/postinst
-        deleted:    debian/prerm
-
-Changes not staged for commit:
-  (use "git add <file>..." to update what will be committed)
-  (use "git restore <file>..." to discard changes in working directory)
-        modified:   README.md
-        modified:   debian/changelog
-        modified:   debian/control
 

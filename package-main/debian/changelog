@@ -1,6 +1,5 @@
-kfocus-main (24.04.1~beta14) UNRELEASED; urgency=medium
+kfocus-main (24.04.1~beta15) UNRELEASED; urgency=medium
 
-  * Update hints widget.
   * Use kfocus-rollback-set rather than kfocus-btrfs-optimize-set for BTRFS
     optimization. (#4013)
   * Enhance disk space checking on snapshot-enabled BTRFS systems. (#4013)
@@ -8,7 +7,20 @@ kfocus-main (24.04.1~beta14) UNRELEASED; urgency=medium
   * kfocus-focusrx: Split out snapshot setup into its own function. (#4013)
   * common.2.source: Implement logging facilities. (#4013)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Fri, 10 May 2024 01:02:28 -0500
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 16 May 2024 13:14:58 -0500
+
+kfocus-main (24.04.1~beta14) noble; urgency=medium
+
+  [ Aaron Rainbolt ]
+  * /usr/share/kfocus-hints: Update hints widget (#3939)
+
+  [ Michael S. Mikowski ]
+  * conf/etc_bash_completion.d_kfocus (#4085)
+  * org.kfocus.pkexec.kfocus-mime.policy: Improve auth msg (#4277)
+  * usr/share/kfocus-hints: Fix 2nd title font, panels 10, 11 (#3939)
+  * bin/kfocus-extra: default y option for kubuntu-restricted-extra (#4085)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Wed, 15 May 2024 21:24:51 -0700
 
 kfocus-main (24.04.1~beta13) noble; urgency=medium
 
