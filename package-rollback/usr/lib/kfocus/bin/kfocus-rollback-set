@@ -545,10 +545,16 @@ _createSnapshotFn () {
       if (( ( _timestamp_str - _prev_timestamp_str ) < _hour_seconds )); then
         _exitNOTICE 'Too little time has elapsed for another snapshot';
       fi
+      if [ -d '/home/oem' ]; then
+        _exitNOTICE 'Cannot create apt snapshot in OEM configuration mode';
+      fi
       ;;
     'Timed')
       if (( ( _timestamp_str - _prev_timestamp_str ) < _week_seconds )); then
         _exitNOTICE 'Too little time has elapsed for another snapshot';
+      fi
+      if [ -d '/home/oem' ]; then
+        _exitNOTICE 'Cannot create timed snapshot in OEM configuration mode';
       fi
       ;;
   esac

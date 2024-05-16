@@ -12,6 +12,8 @@ kfocus-rollback (24.04.1~beta16) noble; urgency=medium
   * Fix buggy state saving in the BTRFS optimization main fs balance routine.
     (#4013)
   * Enhance disk space checking. (#4013)
+  * Forbid the creation of timed or apt snapshots in OEM configuration mode.
+    (#4013)
 
  -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 16 May 2024 13:17:53 -0500
 

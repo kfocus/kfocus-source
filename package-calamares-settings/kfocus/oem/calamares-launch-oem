@@ -31,6 +31,9 @@ if kdialog --warningyesno "${msg}"; then
   # Enable OEM prep module
   sed -i "/- packages$/a \ \ - shellprocess@oemprep" /etc/calamares/settings.conf;
 
+  # Fix OEM UID
+  sed -i "/- shellprocess@oemprep$/a \ \ - shellprocess@fix-oem-uid" /etc/calamares/settings.conf;
+
   # Force the user of an OEM configuration user
   cp /etc/calamares/modules/users.conf.oem /etc/calamares/modules/users.conf;
 
