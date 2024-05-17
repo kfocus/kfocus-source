@@ -93,7 +93,7 @@ _initCpuFn () {
 #
 _manageSnapshotsOnBootFn () {
   declare _title _main_unalloc _main_min_unalloc _boot_unalloc
-    _boot_min_unalloc;
+    _boot_min_unalloc _btrfs_status;
   _title='Manage Snapshots On Boot';
 
   _cm2SetMsgFn "${_title}";
@@ -103,7 +103,9 @@ _manageSnapshotsOnBootFn () {
     return 1;
   fi
 
-  if [ "$("${_rollbackSetExe}" 'getBtrfsStatus')" != 'SUPPORTED, SET UP' ]; then
+  _btrfs_status="$("${_rollbackSetExe}" 'getBtrfsStatus')";
+  if [ "${_btrfs_status}" != 'SUPPORTED, AUTO' ] \
+    && [ "${_btrfs_status}" != 'SUPPORTED, MANUAL' ]; then
     _cm2WarnStrFn 'BTRFS not setup';
     _cm2WarnFn;
     return 1;
@@ -141,7 +143,9 @@ _maintainBtrfsFn () {
     return 1;
   fi
 
-  if [ "$("${_rollbackSetExe}" 'getBtrfsStatus')" != 'SUPPORTED, SET UP' ]; then
+  _btrfs_status="$("${_rollbackSetExe}" 'getBtrfsStatus')";
+  if [ "${_btrfs_status}" != 'SUPPORTED, AUTO' ] \
+    && [ "${_btrfs_status}" != 'SUPPORTED, MANUAL' ]; then
     _cm2WarnStrFn 'BTRFS not setup';
     _cm2WarnFn;
     return 1;

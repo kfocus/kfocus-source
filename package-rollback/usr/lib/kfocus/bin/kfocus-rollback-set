@@ -221,7 +221,11 @@ _checkBtrfsStatusFn () {
         | cut -d' ' -f1)";
       if [ -n "${_main_fs}" ] && [ -n "${_boot_fs}" ] \
         && [ "${_main_fs}" != "${_boot_fs}" ]; then
-        _btrfsStatus='SUPPORTED, SET UP';
+        if [ -e "${_manualSwitchFile}" ]; then
+          _btrfsStatus='SUPPORTED, MANUAL';
+        else
+          _btrfsStatus='SUPPORTED, AUTO';
+        fi
       else
         _btrfsStatus='UNSUPPORTED';
       fi
@@ -266,7 +270,8 @@ _checkBtrfsStatusFn () {
 ## BEGIN _checkBtrfsStatusSetUpFn {
 #
 _checkBtrfsStatusSetUpFn () {
-  if ! [ "${_btrfsStatus}" = 'SUPPORTED, SET UP' ]; then
+  if [ "${_btrfsStatus}" != 'SUPPORTED, AUTO' ] \
+    && [ "${_btrfsStatus}" != 'SUPPORTED, MANUAL' ]; then
     _exitNOTICE "${_btrfsStatus}";
   fi
 }
@@ -343,7 +348,8 @@ _prepareSystemFn () {
   _isPreparingSystem='y';
 
   ## Begin STAGE 1: Check and prep filesystem {
-  if [ "${_btrfsStatus}" = 'SUPPORTED, SET UP' ]; then
+  if [ "${_btrfsStatus}" = 'SUPPORTED, AUTO' ] \
+    || [ "${_btrfsStatus}" = 'SUPPORTED, MANUAL' ]; then
     _exitNOTICE 'This system already appears snapshot-enabled.';
   fi
 
@@ -586,6 +592,9 @@ _createSnapshotFn () {
       if [ -d '/home/oem' ]; then
         _exitNOTICE 'Cannot create apt snapshot in OEM configuration mode';
       fi
+      if [ "${_btrfsStatus}" = 'SUPPORTED, MANUAL' ]; then
+        _exitNOTICE 'Cannot create apt snapshot in manual snapshot mode';
+      fi
       ;;
     'Timed')
       if (( ( _timestamp_str - _prev_timestamp_str ) < _week_seconds )); then
@@ -593,6 +602,9 @@ _createSnapshotFn () {
       fi
       if [ -d '/home/oem' ]; then
         _exitNOTICE 'Cannot create timed snapshot in OEM configuration mode';
+      fi
+      if [ "${_btrfsStatus}" = 'SUPPORTED, MANUAL' ]; then
+        _exitNOTICE 'Cannot create timed snapshot in manual snapshot mode';
       fi
       ;;
   esac
@@ -939,13 +951,14 @@ _mainFn () {
 ## . END _mainFn }
 
 ## BEGIN Declare and assign global vars {
-declare _binName _binDir _baseName _baseDir \
+declare _binName _binDir _baseName _baseDir _manualSwitchFile \
   _isPreparingSystem _lockFile _optimizeStatePath _btrfsStatus \
   _snapshotMainDir _snapshotBootDir _restoreCompleteFile \
   _libTable _browStr _erowStr _tableStr _prepareFailMsg \
   _lowDiskMsg _lowBootMsg _inconsistentMsg _btrfsExe _btduExe _filefragExe \
   _btrfsBalanceExe;
 
+_manualSwitchFile='/var/lib/kfocus/kfocus_rollback_manual_mode';
 _btrfsStatus='';
 _isPreparingSystem='n'; # Flag for error reporting
 _lockFile="/tmp/kfocus-rollback-backend.lock";

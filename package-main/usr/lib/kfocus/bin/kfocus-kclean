@@ -434,7 +434,7 @@ _mainFn() {
     _kversExtraKeepStr _kversFullPrefStr _kversFullRunStr \
     _opt_str _overfull_threshold_count _prompt_str \
     _purge_msg _purge_pkg_list_str _purge_pkg_list _purge_pkg \
-    _reply  _reserve_kvers_count _run_msg _table_str _win_title;
+    _reply  _reserve_kvers_count _run_msg _table_str _win_title _btrfs_status;
 
   ## Begin Initialize {
   _aptListStr="$(_echoAptListStrFn)";
@@ -462,7 +462,9 @@ _mainFn() {
 
   ## Begin Detect BTRFS {
   if [ -n "${_rollbackSetExe}" ]; then
-    if [ "$("${_rollbackSetExe}" 'getBtrfsStatus')" = 'SUPPORTED, SET UP' ];
+    _btrfs_status="$("${_rollbackSetExe}" 'getBtrfsStatus')"
+    if [ "${_btrfs_status}" = 'SUPPORTED, AUTO' ] \
+      || [ "${_btrfs_status}" = 'SUPPORTED, MANUAL' ];
       then _isBtrfsYn='y';
       _kernelUnitSizeInt="${_kernelUnitSizeBtrfsInt}";
     fi

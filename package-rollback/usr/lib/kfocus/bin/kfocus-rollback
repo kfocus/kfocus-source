@@ -242,7 +242,8 @@ _mainFn () {
 
   _btrfs_status_str="$(_rb2GetBtrfsStatusFn)"
 
-  if [ "${_btrfs_status_str}" != 'SUPPORTED, SET UP' ]; then
+  if [ "${_btrfs_status_str}" != 'SUPPORTED, AUTO' ] \
+    && [ "${_btrfs_status_str}" != 'SUPPORTED, MANUAL' ]; then
     _cm2PromptUserFn "${_systemUnsupportedMsg}" "${_winTitle}";
     exit "${_NOTICE}";
   fi
