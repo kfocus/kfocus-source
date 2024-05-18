@@ -78,6 +78,18 @@ _incCountFn () {
 }
 ## . END _incCountFn }
 
+# This illustrates some more advanced printf techniques
+## BEGIN _formatFn {
+_formatFn () {
+  declare _example_str _print_list _out_str
+  _example_str='Hello Aaron how are you doing?';
+  _print_list=( "${_example_str}" 5.2345 19.24566 19 );
+  printf -v _out_str '| %-10.10s |   %04.1f |   %04.1f |   %04.1f |' \
+    "${_print_list[@]}";
+  echo "${_out_str}";
+}
+## . END _formatFn }
+
 ## BEGIN _mainFn {
 # Summary   : _mainFn [args-and-options]
 # Purpose   : Main function for package
