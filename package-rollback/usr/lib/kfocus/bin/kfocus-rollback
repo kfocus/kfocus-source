@@ -69,20 +69,6 @@ _loadLibTableFn () {
 }
 ## . END _loadLibTableFn }
 
-_selectiveRestoreSnapshotFn () {
-  declare _snapshot_id;
-
-  _snapshot_id="${1:-}";
-  if [ -z "${_snapshot_id}" ]; then
-    _cm2WarnStrFn 'No snapshot ID provided to selectively restore!';
-    return 1;
-  fi
-
-  "${_dolphinExe}" --split \
-    "admin:///btrfs_main/@kfocus-rollback-snapshots/${_snapshot_id}/" \
-    'admin:///';
-}
-
 _chooseSnapshotFn () {
   declare _choose_msg _snapshot_list_str _snapshot_list _snapshot_disp_list \
     _radio_list _snapshot_idx _answer;
@@ -183,7 +169,7 @@ _handleOperationExitIntFn () {
         _cm2PromptUserFn "${_snapshotDeletedMsg}" "${_winTitle}";
         exit "${_NOTICE}";
       elif [ "${_exit_int}" = "${_ERR}" ]; then
-        _deletionFailedMsg="${_restoreFailedMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
+        _deletionFailedMsg="${_deletionFailedMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
         _cm2PromptUserFn "${_deletionFailedMsg}" "${_winTitle}";
         exit "${_ERR}";
       elif [ "${_exit_int}" = '127' ]; then
@@ -232,9 +218,13 @@ _handleOperationExitIntFn () {
 #
 _mainFn () {
   declare _arg_str _working_subvol_loc _working_boot_subvol_loc \
-    _btrfs_status_str _snapshot_id _restore_mode \
-    _working_subvol_loc _working_boot_subvol_loc _mode_str _snapshot_id \
-    _snapshot_disp_id _restored_snapshot_disp_id;
+    _btrfs_status_str _mode_str _snapshot_id _snapshot_disp_id \
+    _btrfs_main_report _btrfs_boot_report _btrfs_main_raw_report \
+    _btrfs_boot_raw_report _btrfs_main_status _btrfs_main_size \
+    _btrfs_main_remain _btrfs_main_raw_size _btrfs_main_raw_unalloc \
+    _btrfs_main_unalloc _btrfs_boot_status _btrfs_boot_size \
+    _btrfs_boot_remain _btrfs_boot_raw_size _btrfs_boot_raw_unalloc \
+    _btrfs_boot_unalloc _switch_state _new_switch_state;
 
   _arg_str="${1:-}";
   _working_subvol_loc='/btrfs_main/@kfocus-rollback-working';
@@ -273,68 +263,23 @@ _mainFn () {
     )";
     _rollbackSuccessfulMsg="${_rollbackSuccessfulMsg//XXX_SNAPSHOT_NAME_XXX/${_restored_snapshot_disp_id}}";
     if [ "$(_cm2PromptUserFn "${_rollbackSuccessfulMsg}" \
-      "FocusRx: System Rollback" 'a')" = 'y' ]; then
-      _selectiveRestoreSnapshotFn "${_snapshot_id}";
-      exit "${_NOTICE}";
-    else
-      exit "${_NOTICE}";
+      "FocusRx: System Rollback" 'm')" = 'n' ]; then
+      _snapshot_path="/btrfs_main/@kfocus-rollback-snapshots/${_snapshot_id}";
+      _rollbackMoreInfoMsg="${_rollbackMoreInfoMsg//XXX_SNAPSHOT_PATH_XXX/${_snapshot_path}}";
+      _cm2PromptUserFn "${_rollbackMoreInfoMsg}" "${_winTitle}";
     fi
+    exit "${_NOTICE}";
   fi
 
-  _mode_str="$(
-    _cm2PromptUserFn "${_chooseModeMsg}" "${_winTitle}" 'd' 'restore' \
-      'RESTORE Snapshot' 'off' 'create' 'CREATE Snapshot' 'off' 'delete' \
-      'DELETE Snapshot' 'off' 'optimize' 'DELETE ALL and optimize disk' 'off';
-  )";
+  _mode_str="$(_cm2PromptUserFn "${_chooseModeMsg}" "${_winTitle}" 'd' \
+      'create' 'CREATE Snapshot' 'on' 'restore' 'RESTORE Snapshot' 'off' \
+      'delete' 'DELETE Snapshot' 'off' 'optimize' \
+      'DELETE ALL and Optimize Disk' 'off' 'bound' '——————' 'off' 'explain' \
+      'EXPLAIN How to Compare Snapshots' 'off' 'show' \
+      'SHOW BTRFS Disk-Use Estimate' 'off' 'switch' \
+      'SWITCH between AUTO and MANUAL modes' 'off')";
 
   case "${_mode_str}" in
-    'restore')
-      if [ -z "$(ls '/btrfs_main/@kfocus-rollback-snapshots')" ]; then
-        _cm2PromptUserFn "${_noSnapshotsFoundMsg}" "${_winTitle}";
-        exit "${_NOTICE}";
-      fi
-
-      IFS=$'\n'; read -r -d '' _snapshot_id _snapshot_disp_id \
-        < <(_chooseSnapshotFn "${_chooseRestoreSnapshotMsg}");
-  
-      if [ -z "${_snapshot_id}" ]; then
-        _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
-        exit "${_NOTICE}";
-      fi
-  
-      _chooseRestoreModeMsg="${_chooseRestoreModeMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
-  
-      _restore_mode="$(_cm2PromptUserFn "${_chooseRestoreModeMsg}" \
-        "${_winTitle}" 'd' 'totalRestore' \
-        'Restore the Entire Snapshot (recommended)' 'off' 'selectiveRestore' \
-        'Restore Individual Files (ADVANCED)' 'off')";
-
-      if [ -z "${_restore_mode}" ]; then
-        _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
-        exit "${_NOTICE}";
-      fi
-
-      if [ "${_restore_mode}" = 'totalRestore' ]; then
-        _totalRestoreConfirmMsg="${_totalRestoreConfirmMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
-        if [ "$(_cm2PromptUserFn "${_totalRestoreConfirmMsg}" "${_winTitle}" \
-          'o')" = 'y' ]; then
-          _rb2RestoreSnapshotFn "${_snapshot_id}";
-          _handleOperationExitIntFn 'restore' "$?" "${_snapshot_disp_id}";
-        else
-          _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
-          exit "${_NOTICE}";
-        fi
-      elif [ "${_restore_mode}" = 'selectiveRestore' ]; then
-        _selectiveRestoreConfirmMsg="${_selectiveRestoreConfirmMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
-        if [ "$(_cm2PromptUserFn "${_selectiveRestoreConfirmMsg}" \
-          "${_winTitle}" 'o')" = 'y' ]; then
-          _selectiveRestoreSnapshotFn "${_snapshot_id}";
-        else
-          _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
-          exit "${_NOTICE}";
-        fi
-      fi
-      ;;
     'create')
       if [ "$(_cm2PromptUserFn "${_createSnapshotMsg}" "${_winTitle}" 'a')" \
         = 'y' ]; then
@@ -345,15 +290,39 @@ _mainFn () {
         exit "${_NOTICE}";
       fi
       ;;
+    'restore')
+      if [ -z "$(_rb2GetSnapshotListFn)" ]; then
+        _cm2PromptUserFn "${_noSnapshotsFoundMsg}" "${_winTitle}";
+        exit "${_NOTICE}";
+      fi
+
+      IFS=$'\n'; read -r -d '' _snapshot_id _snapshot_disp_id \
+        < <(_chooseSnapshotFn "${_chooseRestoreSnapshotMsg}");
+
+      if [ -z "${_snapshot_id}" ]; then
+        _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
+        exit "${_NOTICE}";
+      fi
+
+      _restoreConfirmMsg="${_restoreConfirmMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
+      if [ "$(_cm2PromptUserFn "${_restoreConfirmMsg}" "${_winTitle}" \
+        'o')" = 'y' ]; then
+        _rb2RestoreSnapshotFn "${_snapshot_id}";
+        _handleOperationExitIntFn 'restore' "$?" "${_snapshot_disp_id}";
+      else
+        _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
+        exit "${_NOTICE}";
+      fi
+      ;;
     'delete')
-      if [ -z "$(ls '/btrfs_main/@kfocus-rollback-snapshots')" ]; then
+      if [ -z "$(_rb2GetSnapshotListFn)" ]; then
         _cm2PromptUserFn "${_noSnapshotsFoundMsg}" "${_winTitle}";
         exit "${_NOTICE}";
       fi
 
       IFS=$'\n'; read -r -d '' _snapshot_id _snapshot_disp_id \
         < <(_chooseSnapshotFn "${_chooseDeleteSnapshotMsg}");
-  
+
       if [ -z "${_snapshot_id}" ]; then
         _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
         exit "${_NOTICE}";
@@ -379,6 +348,161 @@ _mainFn () {
         fi
       fi
       ;;
+    'bound')
+      _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
+      exit "${_NOTICE}";
+      ;;
+    'explain')
+      if [ -z "$(_rb2GetSnapshotListFn)" ]; then
+        _cm2PromptUserFn "${_noSnapshotsFoundMsg}" "${_winTitle}";
+        exit "${_NOTICE}";
+      fi
+      
+      IFS=$'\n'; read -r -d '' _snapshot_id _snapshot_disp_id \
+        < <(_chooseSnapshotFn "${_chooseExplainSnapshotMsg}");
+
+      if [ -z "${_snapshot_id}" ]; then
+        _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
+        exit "${_NOTICE}";
+      fi
+
+      _snapshot_path="/btrfs_main/@kfocus-rollback-snapshots/${_snapshot_id}";
+      _explainSnapshotMsg="${_explainSnapshotMsg//XXX_SNAPSHOT_PATH_XXX/${_snapshot_path}}";
+
+      _cm2PromptUserFn "${_explainSnapshotMsg}" "${_winTitle}";
+      ;;
+    'show')
+      _btrfs_main_report="$(LC_ALL=C "${_btrfsExe}" filesystem usage \
+        '/btrfs_main')";
+      _btrfs_boot_report="$(LC_ALL=C "${_btrfsExe}" filesystem usage \
+        '/btrfs_boot')";
+      _btrfs_main_raw_report="$(LC_ALL=C "${_btrfsExe}" filesystem usage -b \
+        '/btrfs_main')";
+      _btrfs_boot_raw_report="$(LC_ALL=C "${_btrfsExe}" filesystem usage -b \
+        '/btrfs_boot')";
+
+      _btrfs_main_size="$(awk '/Device size:/{ print $3 }' \
+        <<< "${_btrfs_main_report}")";
+      _btrfs_main_remain="$(awk '/Free \(estimated\):/{ print $3 }' \
+        <<< "${_btrfs_main_report}")";
+      _btrfs_main_raw_size="$(awk '/Device size:/{ print $3 }' \
+        <<< "${_btrfs_main_raw_report}")";
+      _btrfs_main_raw_unalloc="$(awk '/Device unallocated:/{ print $3 }' \
+        <<< "${_btrfs_main_raw_report}")";
+      _btrfs_main_unalloc="$(bc <<< "scale=3; \
+        ${_btrfs_main_raw_unalloc}/${_btrfs_main_raw_size} * 100" \
+        | sed 's/\..*//')";
+      if (( _btrfs_main_unalloc > 15 )); then
+        if [ "${_cm2IsTty}" = 'n' ]; then
+          _btrfs_main_status='<b style="color:#4daa4d">Good</b>';
+        else
+          _btrfs_main_status='Good';
+        fi
+        _btrfs_main_unalloc="${_btrfs_main_unalloc}%";
+      else
+        if [ "${_cm2IsTty}" = 'n' ]; then
+          _btrfs_main_status="${_warnStr}ALERT</b>";
+          _btrfs_main_unalloc="${_warnStr}${_btrfs_main_unalloc}%</b>";
+        else
+          _btrfs_main_status='ALERT';
+          _btrfs_main_unalloc="${_btrfs_main_unalloc}%";
+        fi
+      fi
+
+      _btrfs_boot_size="$(awk '/Device size:/{ print $3 }' \
+        <<< "${_btrfs_boot_report}")";
+      _btrfs_boot_remain="$(awk '/Free \(estimated\):/{ print $3 }' \
+        <<< "${_btrfs_boot_report}")";
+      _btrfs_boot_raw_size="$(awk '/Device size:/{ print $3 }' \
+        <<< "${_btrfs_boot_raw_report}")";
+      _btrfs_boot_raw_unalloc="$(awk '/Device unallocated:/{ print $3 }' \
+        <<< "${_btrfs_boot_raw_report}")";
+      _btrfs_boot_unalloc="$(bc <<< "scale=3; \
+        ${_btrfs_boot_raw_unalloc}/${_btrfs_boot_raw_size} * 100" \
+        | sed 's/\..*//')";
+      if (( _btrfs_boot_unalloc > 25 )); then
+        if [ "${_cm2IsTty}" = 'n' ]; then
+          _btrfs_boot_status='<b style="color:#4daa4d">Good</b>';
+        else
+          _btrfs_boot_status='Good';
+        fi
+        _btrfs_boot_unalloc="${_btrfs_boot_unalloc}%";
+      else
+        if [ "${_cm2IsTty}" = 'n' ]; then
+          _btrfs_boot_status="${_warnStr}ALERT</b>";
+          _btrfs_boot_unalloc="${_warnStr}${_btrfs_boot_unalloc}%</b>";
+        else
+          _btrfs_boot_status='ALERT';
+          _btrfs_boot_unalloc="${_btrfs_boot_unalloc}%";
+        fi
+      fi
+
+      # This particular screen is too complex to have a unified screen for
+      # both KDialog and Whiptail, so we have to work on the two separately.
+      if [ "${_cm2IsTty}" = 'n' ]; then # kdialog
+        _diskUsageKdiagMsg="${_diskUsageKdiagMsg//XMST/${_btrfs_main_status}}";
+        _diskUsageKdiagMsg="${_diskUsageKdiagMsg//XMSZ/${_btrfs_main_size}}";
+        _diskUsageKdiagMsg="${_diskUsageKdiagMsg//XMRM/${_btrfs_main_remain}}";
+        _diskUsageKdiagMsg="${_diskUsageKdiagMsg//XMUA/${_btrfs_main_unalloc}}";
+        _diskUsageKdiagMsg="${_diskUsageKdiagMsg//XBST/${_btrfs_boot_status}}";
+        _diskUsageKdiagMsg="${_diskUsageKdiagMsg//XBSZ/${_btrfs_boot_size}}";
+        _diskUsageKdiagMsg="${_diskUsageKdiagMsg//XBRM/${_btrfs_boot_remain}}";
+        _diskUsageKdiagMsg="${_diskUsageKdiagMsg//XBUA/${_btrfs_boot_unalloc}}";
+
+        if [ "$(_cm2PromptUserFn "${_diskUsageKdiagMsg}" "${_winTitle}" \
+          'm')" = 'n' ]; then
+          _cm2PromptUserFn "${_diskGuidanceMsg}" "${_winTitle}";
+        fi
+      else # whiptail
+        # Format the strings for table presentation
+        printf -v _btrfs_main_status  '%-6s' "${_btrfs_main_status}";
+        printf -v _btrfs_main_size    '%10s'  "${_btrfs_main_size}";
+        printf -v _btrfs_main_remain  '%10s' "${_btrfs_main_remain}";
+        printf -v _btrfs_main_unalloc '%9s'  "${_btrfs_main_unalloc}";
+        printf -v _btrfs_boot_status  '%-6s' "${_btrfs_boot_status}";
+        printf -v _btrfs_boot_size    '%10s'  "${_btrfs_boot_size}";
+        printf -v _btrfs_boot_remain  '%10s' "${_btrfs_boot_remain}";
+        printf -v _btrfs_boot_unalloc '%9s'  "${_btrfs_boot_unalloc}";
+
+        _diskUsageWhiptailMsg="${_diskUsageWhiptailMsg//XMSTXX/${_btrfs_main_status}}";
+        _diskUsageWhiptailMsg="${_diskUsageWhiptailMsg//XXXXXXXMSZ/${_btrfs_main_size}}";
+        _diskUsageWhiptailMsg="${_diskUsageWhiptailMsg//XXXXXXXMRM/${_btrfs_main_remain}}";
+        _diskUsageWhiptailMsg="${_diskUsageWhiptailMsg//XXXXXXMUA/${_btrfs_main_unalloc}}";
+        _diskUsageWhiptailMsg="${_diskUsageWhiptailMsg//XBSTXX/${_btrfs_boot_status}}";
+        _diskUsageWhiptailMsg="${_diskUsageWhiptailMsg//XXXXXXXBSZ/${_btrfs_boot_size}}";
+        _diskUsageWhiptailMsg="${_diskUsageWhiptailMsg//XXXXXXXBRM/${_btrfs_boot_remain}}";
+        _diskUsageWhiptailMsg="${_diskUsageWhiptailMsg//XXXXXXBUA/${_btrfs_boot_unalloc}}";
+
+        echo "${_diskUsageWhiptailMsg}";
+
+        if [ "$(_cm2PromptUserFn "${_diskUsageWhiptailMsg}" "${_winTitle}" \
+          'm')" = 'n' ]; then
+          _cm2PromptUserFn "${_diskGuidanceMsg}" "${_winTitle}";
+        fi
+      fi
+      ;;
+    'switch')
+      _switch_state="$(_rb2GetManualSwitchStateFn)";
+      _switchSelectMsg="${_switchSelectMsg//XXX_SNAPSHOT_MODE_XXX/${_switch_state}}";
+      _new_switch_state="$(_cm2PromptUserFn "${_switchSelectMsg}" \
+        "${_winTitle}" 'd' 'manual' \
+        'MANUAL — Snapshots created on user request only' 'on' 'auto' \
+        'AUTO — Snapshots created automatically and regularly' 'off')";
+
+      if [ -z "${_new_switch_state}" ]; then
+        _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
+        exit "${_NOTICE}";
+      fi
+
+      if _rb2SetManualSwitchStateFn "${_new_switch_state}"; then
+        _switchSuccessfulMsg="${_switchSuccessfulMsg//XXX_SNAPSHOT_MODE_XXX/${_new_switch_state}}";
+        _cm2PromptUserFn "${_switchSuccessfulMsg}" "${_winTitle}";
+        exit "${_NOTICE}";
+      else
+        _cm2PromptUserFn "${_switchFailedMsg}" "${_winTitle}" 's';
+        exit "${_ERR}";
+      fi
+      ;;
     *)
       _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
       exit "${_NOTICE}";
@@ -390,11 +514,11 @@ _mainFn () {
 ## . END _mainFn }
 
 ## BEGIN Declare and assign global vars {
-declare _binName _binDir _baseName _baseDir _libTable _assignList _kdiagExe \
-  _whiptailExe _rollbackSetExe _dolphinExe _btrfsOptimizeExe _escExe \
-  _winTitle _browRpStr _browLpStr _erowStr _tableStr _centerHeaderStr \
-  _boldStr _warnStr _chooseModeMsg _chooseRestoreSnapshotMsg \
-  _chooseRestoreModeMsg _totalRestoreConfirmMsg _rollbackSuccessfulMsg \
+declare _binName _binDir _baseName _baseDir _libTable _assignList _btrfsExe \
+  _rollbackSetExe _btrfsOptimizeExe _escExe _winTitle _browRpStr _browLpStr \
+  _erowStr _tableStr _centerHeaderStr _boldStr _warnStr _codeStr \
+  _chooseModeMsg _chooseRestoreSnapshotMsg _chooseRestoreModeMsg \
+  _totalRestoreConfirmMsg _rollbackSuccessfulMsg \
   _selectiveRestoreConfirmMsg _createSnapshotMsg _snapshotCreatedMsg \
   _chooseDeleteSnapshotMsg _deleteConfirmMsg _snapshotDeletedMsg \
   _doOptimizeMsg _optimizeSuccessfulMsg _optimizeFailedMsg \
@@ -420,11 +544,9 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _loadLibTableFn "${_libTable[@]}" || exit 1;
 
   _assignList=(
+    '_btrfsExe|/usr/bin/btrfs'
     '_kbuildSyCoca5Exe|/usr/bin/kbuildsycoca5||optional'
-    '_kdiagExe|/usr/bin/kdialog'
-    '_whiptailExe|/usr/bin/whiptail'
     "_rollbackSetExe|${_binDir}/kfocus-rollback-set"
-    '_dolphinExe|/usr/bin/dolphin'
   );
 
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
@@ -441,132 +563,109 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _erowStr='</td></tr>';
   _tableStr='<table style="width:100%;margin-right:32px">';
   _centerHeaderStr='<h3 style="color:#f7941d;text-align:center">';
+  _leftHeaderStr='<h3 style="color:#f7941d">';
   _boldStr='<b style="color:#f7941d">';
   _warnStr='<b style="color:#da4453">';
+  _codeStr='<code style="color:#4daa4d">';
 
   _chooseModeMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browLpStr}${_centerHeaderStr}System Rollback (Step 1)</h3>${_erowStr}
+${_browLpStr}${_centerHeaderStr}Manage Snapshots</h3>${_erowStr}
 
 ${_browLpStr}Doc: <a style="color:#1d99f3"
   href="https://kfocus.org/wf/tools#rollback"
   >https://kfocus.org/wf/tools#rollback</a>${_erowStr}
 
-${_browLpStr}${_boldStr}Use this tool to restore, create, or delete a
-snapshot.</b><br>
-Snapshots allow you to undo recent changes that may<br>
-have caused system issues. Restoring a snapshot will<br>
-revert the apps, kernel, and system data.${_erowStr}
+${_browLpStr}${_boldStr}Use this tool to manage system snapshots.</b>
+These can be<br>
+used to undo recent changes that may have caused system<br>
+issues. Restoring a snapshot will revert the apps, kernel,<br>
+and system data.${_erowStr}
 
 ${_browLpStr}${_boldStr}This tool will NOT snapshot or restore files in
-the<br>
-/home filesystem.</b> For that,  click "Cancel" and use the<br>
-"Back In Time" icon found next to the system tray.${_erowStr}
+the /home<br>
+filesystem.</b> For that, click "Cancel", then click on the "Back<br>
+In Time" icon found next to the system tray.${_erowStr}
 
-${_browLpStr}Select a snapshot action and click OK to get started.
-${_erowStr}</table>
+${_browLpStr}Select an action below to get started.${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
 
   _chooseRestoreSnapshotMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browLpStr}${_centerHeaderStr}System Rollback (Step 2)</h3>${_erowStr}
+${_browLpStr}${_centerHeaderStr}Restore (1 of 3)</h3>${_erowStr}
 
 ${_browLpStr}${_boldStr}Select the snapshot to restore.</b> You may restore
 the entire<br>
-snapshot, or individual files, as needed. Click OK to continue<br>
-with the selected snapshot.${_erowStr}</table>
-${_cm2HtmEndStr}
-EOF
-  )";
+snapshot, or individual files.${_erowStr}
 
-  _chooseRestoreModeMsg="$(cat <<EOF
-${_cm2HtmBeginStr}${_tableStr}
-${_browLpStr}${_centerHeaderStr}System Rollback (Step 3)</h3>${_erowStr}
-
-${_browLpStr}You have selected the following snapshot:${_erowStr}
-
-${_browLpStr}${_boldStr}"XXX_SNAPSHOT_NAME_XXX"${_erowStr}
-
-${_browLpStr}We recommend you "Restore the Entire Snapshot" to avoid<br>
-data consistency problems. ${_erowStr}
-
-${_browLpStr}As with any system maintenance, it is best practice to back<br>
+${_browLpStr}${_boldStr}As with any system maintenance,</b> it is best
+practice to back<br>
 up any critical data first. See
-<a style="color:#1d99f3" href="https://kfocus.org/wf/backup"
+<a href="https://kfocus.org/wf/backup"
 >https://kfocus.org/wf/backup</a><br>
 for guidance.${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
 
-  _totalRestoreConfirmMsg="$(cat <<EOF
+  _restoreConfirmMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browRpStr}${_centerHeaderStr}System Rollback (Step 4)</h3>${_erowStr}
+${_browRpStr}${_leftHeaderStr}Restore (2 of 3)</h3>${_erowStr}
 
 ${_browRpStr}The following snapshot is now ready to be restored:${_erowStr}
 
-${_browRpStr}${_boldStr}"XXX_SNAPSHOT_NAME_XXX"${_erowStr}
+${_browRpStr}${_boldStr}"XXX_SNAPSHOT_NAME_XXX"</b>${_erowStr}
+
+${_browRpStr}Please save any open work. Click OK to snapshot<br>
+your current system, finalize the restore, and reboot.${_erowStr}
 
 ${_browRpStr}${_warnStr}WARNING: This will immediately reboot the
-system!</b><br>
-Please save any open work. Click OK to snapshot<br>
-your current root filesystem, finalize the restore,<br>
-and reboot.${_erowStr}</table>
+system!</b>${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
 
   _rollbackSuccessfulMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browRpStr}${_centerHeaderStr}Rollback Successful</h3>${_erowStr}
+${_browRpStr}${_leftHeaderStr}Restore (3 of 3)</h3>${_erowStr}
 
-${_browRpStr}Doc: <a style="color:#1d99f3"
-  href="https://kfocus.org/wf/tools#rollback"
-  >https://kfocus.org/wf/tools#rollback</a>${_erowStr}
-
-${_browRpStr}Files from the snapshot:${_erowStr}
+${_browRpStr}Files from the snapshot below have been restored to<br>
+the system.${_erowStr}
 
 ${_browRpStr}${_boldStr}"XXX_SNAPSHOT_NAME_XXX"${_erowStr}
 
-${_browRpStr}have been restored to the system.${_erowStr}
-
-${_browRpStr}If you desire, you may compare to the files as they<br>
-existed prior to the rollback. The snapshot will<br>
-appear on the LEFT, while the current root filesystem<br>
-will be shown on the RIGHT. This is advanced, and is<br>
-not recommended for most users. However, it can<br>
-be useful for restoring database files, for instance.${_erowStr}
-
-${_browRpStr}Would you like to compare now?${_erowStr}</table>
+${_browRpStr}Click "OK" to finish, or "More Info" to see how to<br>
+compare the changes.${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
 
-  _selectiveRestoreConfirmMsg="$(cat <<EOF
+  _rollbackMoreInfoMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browRpStr}${_centerHeaderStr}System Rollback (Step 4)</h3>${_erowStr}
+${_browRpStr}${_leftHeaderStr}More Info</h3>${_erowStr}
 
-${_browRpStr}You can now selectively restore files from this<br>
-snapshot:${_erowStr}
+${_browRpStr}The pre-rollback snapshot path is found at:<br>
+${_codeStr}XXX_SNAPSHOT_PATH_XXX</code>${_erowStr}
 
-${_browRpStr}${_boldStr}"XXX_SNAPSHOT_NAME_XXX"${_erowStr}
+${_browRpStr}The recently restored, live root filesystem is found at:<br>
+${_codeStr}/btrfs_main/@</code>${_erowStr}
 
-${_browRpStr}${_warnStr}WARNING: PROCEED WITH CAUTION!</b> You will be<br>
-restoring system files as root!${_erowStr}
+${_browRpStr}You can compare the changes from the pre-rollback<br>
+files to the live root filesystem and selectively restore<br>
+files. For example, one can compare ${_codeStr}/usr/lib</code> before<br>
+and after restore by running this command in a terminal:${_erowStr}
 
-${_browRpStr}Click on OK below to open a file manager with the<br>
-snapshot on the LEFT and the current root filesystem<br>
-on the RIGHT. When you are done copying files and<br>
-directories, simply close the file manager.${_erowStr}</table>
+${_browRpStr}${_codeStr}diff -r --brief /btrfs_main/@/usr/lib \\<br>
+XXX_SNAPSHOT_PATH_XXX/usr/lib;${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
 
   _createSnapshotMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browRpStr}${_centerHeaderStr}System Rollback (Step 2)</h3>${_erowStr}
+${_browRpStr}${_leftHeaderStr}Create (1 of 2)</h3>${_erowStr}
 
 ${_browRpStr}System Rollback is now ready to create a new<br>
 snapshot.${_erowStr}
@@ -574,27 +673,25 @@ snapshot.${_erowStr}
 ${_browRpStr}${_boldStr}IMPORTANT: Virtual machine data (libvirt) will<br>
 NOT be included in the snapshot.${_erowStr}
 
-${_browRpStr}Create Snapshot Now?${_erowStr}</table>
+${_browRpStr}Create snapshot now?${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
 
   _snapshotCreatedMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browRpStr}${_centerHeaderStr}Snapshot Created</h3>${_erowStr}
+${_browRpStr}${_leftHeaderStr}Create (2 of 2)</h3>${_erowStr}
 
-${_browRpStr}A system file snapshot called:${_erowStr}
+${_browRpStr}The following system snapshot has been created:${_erowStr}
 
-${_browRpStr}${_boldStr}"XXX_SNAPSHOT_NAME_XXX"${_erowStr}
-
-${_browRpStr}has been created.${_erowStr}</table>
+${_browRpStr}${_boldStr}"XXX_SNAPSHOT_NAME_XXX"</b>${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
 
   _chooseDeleteSnapshotMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browLpStr}${_centerHeaderStr}System Rollback (Step 2)</h3>${_erowStr}
+${_browLpStr}${_centerHeaderStr}Delete (1 of 3)</h3>${_erowStr}
 
 ${_browLpStr}${_boldStr}Select the snapshot to delete.</b> You will be asked
 to confirm<br>
@@ -605,24 +702,24 @@ EOF
 
   _deleteConfirmMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browRpStr}${_centerHeaderStr}System Rollback (Step 3)</h3>${_erowStr}
+${_browRpStr}${_leftHeaderStr}Delete (2 of 3)</h3>${_erowStr}
 
 ${_browRpStr}The following snapshot is ready to be deleted:${_erowStr}
 
 ${_browRpStr}${_boldStr}"XXX_SNAPSHOT_NAME_XXX"${_erowStr}
 
-${_browRpStr}${_warnStr}WARNING: Deleting a snapshot cannot be
-undone!</br>${_erowStr}
+${_browRpStr}Click "OK" to delete the snapshot, or "Cancel" to back<br>
+out.${_erowStr}
 
-${_browRpStr}Click on OK below to delete the snapshot, or<br>
-Cancel to back out.${_erowStr}</table>
+${_browRpStr}${_warnStr}WARNING: Deleting a snapshot cannot be
+undone!</br>${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
 
   _snapshotDeletedMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browRpStr}${_centerHeaderStr}Snapshot Deleted</h3>${_erowStr}
+${_browRpStr}${_leftHeaderStr}Delete (3 of 3)</h3>${_erowStr}
 
 ${_browRpStr}The following snapshot has been successfully deleted:${_erowStr}
 
@@ -631,54 +728,172 @@ ${_cm2HtmEndStr}
 EOF
   )";
 
+  _chooseExplainSnapshotMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browLpStr}${_centerHeaderStr}Explain (1 of 2)</h3>${_erowStr}
+
+${_browLpStr}${_boldStr}Select a snapshot</b> to learn how to compare it with
+the current<br>
+root filesystem.${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _explainSnapshotMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browRpStr}${_leftHeaderStr}Explain (2 of 2)</h3>${_erowStr}
+
+${_browRpStr}The selected snapshot's path is found at:<br>
+${_codeStr}XXX_SNAPSHOT_PATH_XXX</code>${_erowStr}
+
+${_browRpStr}The live root filesystem is found at:
+${_codeStr}/btrfs_main/@</code>${_erowStr}
+
+${_browRpStr}You can compare these two, and selectively restore<br>
+files. For example, one can compare ${_codeStr}/usr/lib</code> from<br>
+the snapshot and the root filesystem by running this<br>
+command in a terminal:${_erowStr}
+
+${_browRpStr}${_codeStr}diff -r --brief /btrfs_main/@/usr/lib \\<br>
+XXX_SNAPSHOT_PATH_XXX/usr/lib;${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
   _doOptimizeMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browRpStr}${_centerHeaderStr}System Rollback (Step 2)</h3>${_erowStr}
+${_browRpStr}${_leftHeaderStr}Optimize (1 of 2)</h3>${_erowStr}
 
-${_browRpStr}System Rollback is now ready to optimize<br>
-your boot disk.${_erowStr}
+${_browRpStr}System Rollback is now ready to optimize the boot
+disk.${_erowStr}
 
-${_browRpStr}${_warnStr}WARNING: This will delete all snapshots<br>
-on the system! This cannot be undone!${_erowStr}
+${_browRpStr}Click "OK" to optimize the disk, or "Cancel" to back
+out.${_erowStr}
 
-${_browRpStr}Click on OK below to optimize the disk, or<br>
-Cancel to back out.${_erowStr}</table>
+${_browRpStr}${_warnStr}WARNING: This will delete all snapshots on the
+system!<br>
+This cannot be undone!${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
 
   _optimizeSuccessfulMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browRpStr}${_centerHeaderStr}Disk Optimized${_erowStr}
+${_browRpStr}${_leftHeaderStr}Optimize (2 of 2)</h3>${_erowStr}
 
-${_browRpStr}Your system's boot disk has been optimized<br>
+${_browRpStr}This system's boot disk has been optimized
 successfully.${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
 
-  _optimizeFailedMsg="$(cat <<EOF
+  _diskUsageKdiagMsg="$(cat <<EOF
+${_cm2HtmBeginStr}
+<style type="text/css">
+td { padding: 0 5px; }
+</style>
+${_tableStr}
+${_browRpStr}${_leftHeaderStr}Disk Usage</h3>${_erowStr}</table>
+
+<table style="width:100%;">
+  <tr><td><b>Mount</b></td>
+    <td><b>Status</b></td>
+    <td align='right'><b>Size GiB</b></td>
+    <td align='right'><b>Remain GiB</b></td>
+    <td align='right'><b>Unalloc %</b></td></tr>
+  <tr><td>/</td>
+    <td>XMST</td>
+    <td align='right'>XMSZ</td>
+    <td align='right'>XMRM</td>
+    <td align='right'>XMUA</td></tr>
+  <tr><td>/boot</td>
+    <td>XBST</td>
+    <td align='right'>XBSZ</td>
+    <td align='right'>XBRM</td>
+    <td align='right'>XBUA</td></tr>
+</table>
+
+${_tableStr}${_browRpStr}${_boldStr}To avoid problems, we recommend</b>
+you maintain<br>
+unallocated space greater than 15% for the root<br>
+filesystem (/), and 25% for boot filesystem (/boot).${_erowStr}
+
+${_browRpStr}Click "OK" to finish, or "More Info" to see how to<br>
+increase unallocated space.${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _diskUsageWhiptailMsg="$(cat <<EOF
+Disk Usage
+
+------------------------------------------------------------
+
+Mount  —  Status  —    Size GiB  —  Remain GiB  —  Unalloc %
+
+/      —  XMSTXX  —  XXXXXXXMSZ  —  XXXXXXXMRM  —  XXXXXXMUA
+
+/boot  —  XBSTXX  —  XXXXXXXBSZ  —  XXXXXXXBRM  —  XXXXXXBUA
+
+------------------------------------------------------------
+
+To avoid problems, we recomment you maintain unallocated space greater than
+15% for the root filesystem (/), and 25% for the boot filesystem (/boot).
+
+Click "OK" to finish, or "More Info" to see how to increase unallocated space.
+EOF
+  )";
+
+  _diskGuidanceMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browRpStr}${_centerHeaderStr}Disk Optimization Failed</h3>${_erowStr}
+${_browRpStr}${_leftHeaderStr}Disk Guidance</h3>${_erowStr}
 
-${_browRpStr}The disk optimization operation failed! This<br>
-incident may be the result of failing hardware<br>
-or a software conflict.${_erowStr}
+${_browRpStr}${_boldStr}BTRFS handles data in "blocks".</b> Empty blocks
+are<br>
+allocated for use as data is written to the disk. Blocks<br>
+containing data are deallocated when all data in them<br>
+has been deleted or moved to other blocks. All<br>
+unallocated space is free, but not all free space is<br>
+unallocated.${_erowStr}
 
-${_browRpStr}<b>Please do NOT reboot. Back up your data as<br>
-soon as possible.</b> Failure to do so may result in<br>
-data loss. See<br>
-<a style="color:#1d99f3"
-href="https://kfocus.org/wf/backup#bkm_take_a_snapshot"
->https://kfocus.org/wf/backup#bkm_take_a_snapshot</a><br>
-for instructions on how to safeguard your data.${_erowStr}</table>
+${_browRpStr}${_boldStr}To increase unallocated space</b> on the main (/)<br>
+filesystem, one can remove large software packages,<br>
+data files, or database containers. On the boot (/boot)<br>
+filesystem, one can purge unused kernels.${_erowStr}
+
+${_browRpStr}${_boldStr}Another option,</b> is to use System Rollback to
+delete<br>
+snapshots, or in more extreme cases, "DELETE ALL and<br>
+Optimize Disk".${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _switchSelectMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browLpStr}${_centerHeaderStr}Switch (1 of 2)</h3>${_erowStr}
+
+${_browLpStr}${_boldStr}System rollback is currently in
+XXX_SNAPSHOT_MODE_XXX
+mode.</b> Select the<br>
+mode you would like to switch to.${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _switchSuccessfulMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browRpStr}${_leftHeaderStr}Switch (2 of 2)</h3>${_erowStr}
+
+${_browRpStr}System Rollback has been switched to
+${_boldStr}XXX_SNAPSHOT_MODE_XXX</b> mode.${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
 
   _systemUnsupportedMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browRpStr}${_centerHeaderStr}System Unsupported</h3>${_erowStr}
+${_browRpStr}${_leftHeaderStr}System Unsupported</h3>${_erowStr}
 
 ${_browRpStr}Doc: <a style="color:#1d99f3"
   href="https://kfocus.org/wf/tools#rollback"
@@ -695,23 +910,23 @@ EOF
 
   _restoreIncompleteMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browRpStr}${_centerHeaderStr}Restore Incomplete</h3>${_erowStr}
+${_browRpStr}${_leftHeaderStr}Restore Incomplete</h3>${_erowStr}
 
 ${_browRpStr}Doc: <a style="color:#1d99f3"
   href="https://kfocus.org/wf/tools#rollback"
   >https://kfocus.org/wf/tools#rollback</a>${_erowStr}
 
-${_browRpStr}You appear to have restored a snapshot, but have<br>
-not yet rebooted after this. Please reboot to<br>
-finalize the restore process. If this does not fix<br>
-your system, you can attempt another rollback.${_erowStr}</table>
+${_browRpStr}A snapshot was restored, but the system has not<br>
+been rebooted. Please reboot to finalize the restore.<br>
+If this does not fix the system, you can attempt<br>
+another rollback.${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
 
   _noSnapshotsFoundMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browRpStr}${_centerHeaderStr}No Snapshots Found</h3>${_erowStr}
+${_browRpStr}${_leftHeaderStr}No Snapshots Found</h3>${_erowStr}
 
 ${_browRpStr}Doc: <a style="color:#1d99f3"
   href="https://kfocus.org/wf/tools#rollback"
@@ -729,7 +944,7 @@ EOF
 
   _strangeSubvolsMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browRpStr}${_centerHeaderStr}Strange BTRFS Subvols</h3>${_erowStr}
+${_browRpStr}${_leftHeaderStr}Strange BTRFS Subvols</h3>${_erowStr}
 
 ${_browRpStr}Doc: <a style="color:#1d99f3"
   href="https://kfocus.org/wf/tools#rollback"
@@ -749,7 +964,7 @@ EOF
 
   _restoreFailedMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browRpStr}${_centerHeaderStr}Restore Failed</h3>${_erowStr}
+${_browRpStr}${_leftHeaderStr}Restore Failed</h3>${_erowStr}
 
 ${_browRpStr}The following snapshot could NOT be restored:${_erowStr}
 
@@ -770,7 +985,7 @@ EOF
 
   _deletionFailedMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browRpStr}${_centerHeaderStr}Deletion Failed</h3>${_erowStr}
+${_browRpStr}${_leftHeaderStr}Deletion Failed</h3>${_erowStr}
 
 ${_browRpStr}The following snapshot could NOT be deleted:${_erowStr}
 
@@ -788,7 +1003,7 @@ EOF
 
   _creationFailedMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browRpStr}${_centerHeaderStr}Creation Failed</h3>${_erowStr}
+${_browRpStr}${_leftHeaderStr}Creation Failed</h3>${_erowStr}
 
 ${_browRpStr}Something went wrong and a system file snapshot<br>
 could not be created. No changes have been made<br>
@@ -800,16 +1015,49 @@ ${_cm2HtmEndStr}
 EOF
   )";
 
+  _switchFailedMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browRpStr}${_leftHeaderStr}Switch Failed</h3>${_erowStr}
+
+${_browRpStr}Something went wrong and System Rollback<br>
+could not switch modes. No changes have<br>
+been made to the system.${_erowStr}
+
+${_browRpStr}Please try again. If this issue persists, please<br>
+contact technical support.${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
   _criticalErrorMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browRpStr}${_centerHeaderStr}Critical Error</h3>${_erowStr}
+${_browRpStr}${_leftHeaderStr}Critical Error</h3>${_erowStr}
 
 ${_browRpStr}System Rollback was interrupted while attempting<br>
-to manage snapshots on your system. This incident<br>
-may be the result of failing hardware or a software<br>
-conflict.${_erowStr}
+to manage snapshots on this system. This may be the<br>
+result of failing hardware or a software conflict.${_erowStr}
 
-${_browRpStr}<b>Please do NOT reboot. Back up your data as<br>
+${_browRpStr}${_warnStr}Please do NOT reboot. Back up your data as<br>
+soon as possible.</b> Failure to do so may result in<br>
+data loss.${_erowStr}
+
+${_browRpStr}See<br>
+<a style="color:#1d99f3"
+href="https://kfocus.org/wf/backup#bkm_take_a_snapshot"
+>https://kfocus.org/wf/backup#bkm_take_a_snapshot</a><br>
+for instructions on how to safeguard your data.${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _optimizeFailedMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browRpStr}${_leftHeaderStr}Optimize Failed</h3>${_erowStr}
+
+${_browRpStr}The disk optimization operation failed! This may be<br>
+the result of failing hardware or a software conflict.${_erowStr}
+
+${_browRpStr}${_warnStr}Please do NOT reboot. Back up your data as<br>
 soon as possible.</b> Failure to do so may result in<br>
 data loss.${_erowStr}
 
@@ -824,7 +1072,7 @@ EOF
 
   _operationCancelledMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browRpStr}${_centerHeaderStr}Operation Cancelled</h3>${_erowStr}
+${_browRpStr}${_leftHeaderStr}Operation Cancelled</h3>${_erowStr}
 
 ${_browRpStr}Snapshot operation cancelled.${_erowStr}
 

@@ -33,6 +33,15 @@ _rb2DeleteSnapshotFn () {
 _rb2OptimizeDiskFn () {
   _cm2RunLongCmdFn 'Optimizing disk...' "${_escExe}" "${_rollbackSetExe}" 'btrfsOptimizeDeep';
 }
+_rb2GetSnapshotListFn () {
+  "${_rollbackSetExe}" 'getSnapshotList';
+}
+_rb2GetManualSwitchStateFn () {
+  "${_rollbackSetExe}" 'getManualSwitchState';
+}
+_rb2SetManualSwitchStateFn () {
+  "${_escExe}" "${_rollbackSetExe}" 'setManualSwitchState' "${1:-}";
+}
 ## . END kfocus-rollback-set bindings }
 
 ## BEGIN _rb2MakeSnapshotDispIdFn {

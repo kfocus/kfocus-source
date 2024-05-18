@@ -175,6 +175,51 @@ _clearRestoreFn () {
 }
 ## . END _clearRestoreFn }
 
+## BEGIN _getManualSwitchStateFn {
+#
+_getManualSwitchStateFn () {
+  _checkBtrfsStatusSetUpFn;
+  if [ -e "${_manualSwitchFile}" ]; then
+    echo 'MANUAL';
+  else
+    echo 'AUTO';
+  fi
+}
+## . END _getManualSwitchStateFn }
+
+## BEGIN _setManualSwitchStateFn {
+#
+_setManualSwitchStateFn () {
+  declare _state_str;
+
+  _checkBtrfsStatusSetUpFn;
+  _checkRootFn;
+
+  _state_str="${1:-}";
+  if [ -z "${_state_str}" ]; then
+    _exitERR 'Empty state string provided.';
+  fi
+
+  case "${_state_str}" in
+    'AUTO')
+      if [ -e "${_manualSwitchFile}" ]; then
+        rm "${_manualSwitchFile}" \
+          || _exitERR 'Could not remove manual switch file.';
+      fi
+      ;;
+    'MANUAL')
+      if ! [ -e "${_manualSwitchFile}" ]; then
+        touch "${_manualSwitchFile}" \
+          || _exitERR 'Could not create manual switch file.';
+      fi
+      ;;
+    *)
+      _exitERR 'Invalid state string provided.';
+      ;;
+  esac
+}
+## . END _setManualSwitchStateFn }
+
 ## BEGIN BTRFS maintenance helper functions {
 #
 _getMainUsageReportFn () {
@@ -331,11 +376,8 @@ _checkBootUnallocSpaceFn () {
 ## BEGIN _getSnapshotListStrFn {
 #
 _getSnapshotListStrFn () {
-  # TODO 2024-04-05 mmikowski warm: use _cm2LsFn instead here
-  find "${_snapshotMainDir}" -maxdepth 1 \
-    | cut -d'@' -f3 \
-    | sort -n -r \
-    | sed '/^$/d; s/^/@/;';
+  _checkBtrfsStatusSetUpFn;
+  _cm2LsFn "${_snapshotMainDir}";
 }
 ## . END _getSnapshotListStrFn }
 
@@ -917,6 +959,8 @@ _mainFn () {
   done
   _checkBtrfsStatusFn;
 
+  # TODO: Fix this, we should refuse to do almost anything if in INCONSISTENT
+  # state but some of the functions of the script may need to work anyway.
   if [ "${_btrfsStatus}" = 'INCONSISTENT' ]; then
     _promptAllUsersFn 'warning' "${_inconsistentMsg}";
     _exitERR 'BTRFS state is inconsistent!';
@@ -929,17 +973,20 @@ _mainFn () {
     'btrfsMaintain')         _btrfsMaintainFn;;
     'checkMainUnallocSpace') _checkMainUnallocSpaceFn;;
     'clearRestore')          _clearRestoreFn;;
-    'createSnapshot')        _createSnapshotFn    "${2:-}";;
-    'deleteSnapshot')        _deleteSnapshotFn    "${2:-}";;
+    'createSnapshot')        _createSnapshotFn       "${2:-}";;
+    'deleteSnapshot')        _deleteSnapshotFn       "${2:-}";;
     'finalizeRestore')       _finalizeRestoreFn;;
+    'getManualSwitchState')  _getManualSwitchStateFn;;
     'getBootMinUnalloc')     _getBootMinUnallocFn;;
     'getBootUnallocSpace')   _getBootUnallocSpaceFn;;
     'getBtrfsStatus')        echo "${_btrfsStatus}";;
     'getMainMinUnalloc')     _getMainMinUnallocFn;;
     'getMainUnallocSpace')   _getMainUnallocSpaceFn;;
+    'getSnapshotList')       _getSnapshotListStrFn;;
     'prepareSystem')         _prepareSystemFn;;
-    'restoreSnapshot')       _restoreSnapshotFn   "${2:-}";;
-    'systemSnapshot')        _systemSnapshotFn    "${2:-}";;
+    'restoreSnapshot')       _restoreSnapshotFn      "${2:-}";;
+    'setManaulSwitchState')  _setManualSwitchStateFn "${2:-}";;
+    'systemSnapshot')        _systemSnapshotFn       "${2:-}";;
     'trimSnapshots')         _trimSnapshotsFn;;
     *)
       _exitERR 'Invalid mode specified.';
