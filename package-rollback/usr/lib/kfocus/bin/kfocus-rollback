@@ -455,25 +455,17 @@ _mainFn () {
         fi
       else # whiptail
         # Format the strings for table presentation
-        printf -v _btrfs_main_status  '%-6s' "${_btrfs_main_status}";
-        printf -v _btrfs_main_size    '%10s'  "${_btrfs_main_size}";
-        printf -v _btrfs_main_remain  '%10s' "${_btrfs_main_remain}";
-        printf -v _btrfs_main_unalloc '%9s'  "${_btrfs_main_unalloc}";
-        printf -v _btrfs_boot_status  '%-6s' "${_btrfs_boot_status}";
-        printf -v _btrfs_boot_size    '%10s'  "${_btrfs_boot_size}";
-        printf -v _btrfs_boot_remain  '%10s' "${_btrfs_boot_remain}";
-        printf -v _btrfs_boot_unalloc '%9s'  "${_btrfs_boot_unalloc}";
+        printf -v _disk_usage_line1_str \
+          '%-5s  —  %-6s  —  %10s  —  %10s  —  %9s' '/' \
+          "${_btrfs_main_status}" "${_btrfs_main_size}" \
+          "${_btrfs_main_remain}" "${_btrfs_main_unalloc}";
+        printf -v _disk_usage_line2_str \
+          '%-5s  —  %-6s  —  %10s  —  %10s  —  %9s' '/boot' \
+          "${_btrfs_boot_status}" "${_btrfs_boot_size}" \
+          "${_btrfs_boot_remain}" "${_btrfs_boot_unalloc}";
 
-        _diskUsageWhiptailMsg="${_diskUsageWhiptailMsg//XMSTXX/${_btrfs_main_status}}";
-        _diskUsageWhiptailMsg="${_diskUsageWhiptailMsg//XXXXXXXMSZ/${_btrfs_main_size}}";
-        _diskUsageWhiptailMsg="${_diskUsageWhiptailMsg//XXXXXXXMRM/${_btrfs_main_remain}}";
-        _diskUsageWhiptailMsg="${_diskUsageWhiptailMsg//XXXXXXMUA/${_btrfs_main_unalloc}}";
-        _diskUsageWhiptailMsg="${_diskUsageWhiptailMsg//XBSTXX/${_btrfs_boot_status}}";
-        _diskUsageWhiptailMsg="${_diskUsageWhiptailMsg//XXXXXXXBSZ/${_btrfs_boot_size}}";
-        _diskUsageWhiptailMsg="${_diskUsageWhiptailMsg//XXXXXXXBRM/${_btrfs_boot_remain}}";
-        _diskUsageWhiptailMsg="${_diskUsageWhiptailMsg//XXXXXXBUA/${_btrfs_boot_unalloc}}";
-
-        echo "${_diskUsageWhiptailMsg}";
+        _diskUsageWhiptailMsg="${_diskUsageWhiptailMsg//XXX_INFO_LINE_1_XXX/${_disk_usage_line1_str}}";
+        _diskUsageWhiptailMsg="${_diskUsageWhiptailMsg//XXX_INFO_LINE_2_XXX/${_disk_usage_line2_str}}";
 
         if [ "$(_cm2PromptUserFn "${_diskUsageWhiptailMsg}" "${_winTitle}" \
           'm')" = 'n' ]; then
@@ -831,9 +823,9 @@ Disk Usage
 
 Mount  —  Status  —    Size GiB  —  Remain GiB  —  Unalloc %
 
-/      —  XMSTXX  —  XXXXXXXMSZ  —  XXXXXXXMRM  —  XXXXXXMUA
+XXX_INFO_LINE_1_XXX
 
-/boot  —  XBSTXX  —  XXXXXXXBSZ  —  XXXXXXXBRM  —  XXXXXXBUA
+XXX_INFO_LINE_2_XXX
 
 ------------------------------------------------------------
 
