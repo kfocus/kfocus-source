@@ -1,0 +1,64 @@
+#!/bin/bash
+#
+# Copyright 2020-2024 MindShare Inc.
+# Written for the Kubuntu Focus by Michael Mikowski
+#
+# Name   : kfocus-flock-example
+# Purpose: Illustrate flock usage
+#
+# License: GPL v2
+#
+set -u;
+
+# shellcheck disable=SC2317
+_trapExitFn () {
+  1>&2 echo "${_baseName} was interrupted";
+  rm "${_lockFile}" || true;
+}
+
+_chkSetFlockFn () {
+  exec 211>"${_lockFile}" || exit 1;
+  if ! flock -n -e 211; then
+    1>&2 echo "Cannot get lock on ${_lockFile}";
+    exit 1;
+  else
+    1>&2 echo "Flock set on ${_lockFile}";
+  fi
+  # Trap unexpected exits to clean up lock file
+  trap _trapExitFn EXIT;
+}
+
+# Remove lock file on exit
+_exitCleanFn () {
+  declare _exit_int="${1:-0}";
+  trap '' EXIT;
+  rm "${_lockFile}" || true;
+  exit "${_exit_int}";
+}
+
+## BEGIN _mainFn {
+_mainFn () {
+  # Set flock or exit on dup run
+  _chkSetFlockFn;
+  _exitCleanFn;
+}
+## . END _mainFn }
+
+## BEGIN Declare and set global vars {
+declare _binName _binDir _baseName _userName _lockFile;
+## . END Declare and set global vars }
+
+## BEGIN Run main if script is not sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(readlink -f "$0")"        || exit 101;
+  _binDir="$(dirname "${_binName}")"    || exit 101;
+  _baseDir="$(dirname "${_binDir}")"    || exit 101;
+  _baseName="$(basename "${_binName}")" || exit 101;
+
+  _userName="$(id -un)";
+  # _lockFile="/tmp/${_baseName}-${_userName}.lock";
+  _lockFile="/tmp/${_baseName}.lock";
+  _mainFn "$@";
+fi
+## . END Run main if script is not sourced }
+
