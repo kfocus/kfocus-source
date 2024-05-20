@@ -131,6 +131,7 @@ _resetEffectsFn () {
     'scut|kwin|Window Quick Tile Left|Meta+Left,Meta+Left,Quick Tile Window to the Left'
     'scut|kwin|Window Quick Tile Right|Meta+Right,Meta+Right,Quick Tile Window to the Right'
     'scut|kwin|Window Quick Tile Bottom|Meta+Down,Meta+Down,Quick Tile Window to the Bottom'
+    'scut|kcm_touchpad|Toggle Touchpad=Meta+Space\tTouchpad Toggle,Touchpad Toggle,Toggle Touchpad'
 
     # Reset all things mouse tracking to defaults
     'scut|kwin|TrackMouse|'
@@ -409,3 +410,4 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _mainFn "$@";
 fi
 ## . END Run main if script is not sourced }
+
