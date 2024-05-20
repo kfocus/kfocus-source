@@ -306,6 +306,31 @@ _EOH05
 }
 ## . END _chkUpdateBiosFn }
 
+## BEGIN _chkBtrfsSetUpFn {
+#
+_chkBtrfsSetUpFn () {
+  declare _title;
+
+  # Skip if required tool not installed
+  [ -z "${_rollbackSetExe}" ] && return;
+
+  _title='Check BTRFS is Set Up';
+  _cm2SetMsgFn "${_title}";
+  if [ "$("${_rollbackSetExe}" 'getBtrfsStatus')" = 'SUPPORTED, NOT SET UP' ]; then
+    if "${_escExe}" "${_focusRxSetExe}" 'prep-snapshot'; then
+      _cm2SucFn;
+      return;
+    else
+      _cm2WarnFn;
+      # We may have left the system in a damaged state. Bail out of focusrx
+      # entirely.
+      exit 1;
+    fi
+  fi
+  _cm2SucFn;
+}
+## . END _chkBtrfsSetUpFn }
+
 ## BEGIN _chkHwConfigFn {
 # _cm2PromptUserFn \
 #   'Restart the system for hardware mods to take effect' "${_baseName}" 'p';
@@ -351,12 +376,6 @@ _EOH06
     _cm2SucStrFn 'Configuration change not needed.';
     _cm2SucFn;
     return;
-  fi
-
-  # Prepare system for snapshotting (this should be done whether Internet is
-  # present or not)
-  if [ -n "${_snapshotSetExe}" ]; then
-    "${_escExe}" "${_focusRxSetExe}" 'prep-snapshot' || exit;
   fi
 
   # Bail if internet connection appears hopeless
@@ -1192,6 +1211,7 @@ _mainFn () {
   _cm2EchoFn "== BEGIN :      ${_rootTitle}\n";
   _announceStartFn;
   _chkUpdateBiosFn;
+  _chkBtrfsSetUpFn;
   _chkHwConfigFn;
   _chkKbdLedFn;     #3735
   _chkKernelPkgFn;
@@ -1249,7 +1269,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     "_fixIbusExe|${_binDir}/kfocus-fix-ibus||optional"
     "_kcleanExe|${_binDir}/kfocus-kclean||optional"
     "_resetEffectsExe|${_binDir}/kfocus-reset-effects||optional"
-    "_snapshotSetExe|${_binDir}/kfocus-rollback-set||optional"
+    "_rollbackSetExe|${_binDir}/kfocus-rollback-set||optional"
     "_kBuildSycocaExe|/usr/bin/kbuildsycoca5||optional"
     "_kfocusRollbackExe|${_binDir}/kfocus-rollback||optional"
     "_btrfsOptimizeSetExe|${_binDir}/kfocus-btrfs-optimize-set||optional"
