@@ -31,7 +31,7 @@ _rb2DeleteSnapshotFn () {
   "${_escExe}" "${_rollbackSetExe}" 'deleteSnapshot' "${1:-}";
 }
 _rb2OptimizeDiskFn () {
-  _cm2RunLongCmdFn 'Optimizing disk...' "${_escExe}" "${_rollbackSetExe}" 'btrfsOptimizeDeep';
+  _cm2RunLongCmdFn 'Optimizing disk...' "${_escExe}" "${_rollbackSetExe}" 'btrfsDeepClean';
 }
 _rb2GetSnapshotListFn () {
   "${_rollbackSetExe}" 'getSnapshotList';

@@ -85,6 +85,7 @@ _trapExitFn () {
 }
 
 _chkSetFlockFn () {
+  mkdir -p "${_lockDir}";
   if ! [ -e "${_lockFile}" ]; then
     install -m 666 /dev/null "${_lockFile}";
   fi
@@ -104,7 +105,10 @@ _exitCleanFn () {
   declare _int;
   _int="$(_cm2EchoIntFn "${1:-0}")";
   trap '' EXIT;
-  rm "${_lockFile}" || true;
+  # If the lock file is deleted after a parallel kfocus-rollback-set process
+  # opens it but before it locks it, this will cause two parallel
+  # kfocus-rollback-set processes to be able to execute, which is very bad.
+  # rm "${_lockFile}" || true;
   exit "${_int}";
 }
 
@@ -201,13 +205,13 @@ _setManualSwitchStateFn () {
   fi
 
   case "${_state_str}" in
-    'AUTO')
+    'auto')
       if [ -e "${_manualSwitchFile}" ]; then
         rm "${_manualSwitchFile}" \
           || _exitERR 'Could not remove manual switch file.';
       fi
       ;;
-    'MANUAL')
+    'manual')
       if ! [ -e "${_manualSwitchFile}" ]; then
         touch "${_manualSwitchFile}" \
           || _exitERR 'Could not create manual switch file.';
@@ -350,8 +354,8 @@ _checkMainUnallocSpaceFn () {
 
   _checkBtrfsStatusSetUpFn;
 
-  _main_min_unalloc="$(_getMainUnallocSpaceFn)";
-  _main_unalloc="$(_getMainMinUnallocFn)";
+  _main_min_unalloc="$(_getMainMinUnallocFn)";
+  _main_unalloc="$(_getMainUnallocSpaceFn)";
 
   if (( _main_unalloc < _main_min_unalloc )); then
     _promptAllUsersFn 'info' "${_lowDiskMsg}";
@@ -363,8 +367,8 @@ _checkBootUnallocSpaceFn () {
 
   _checkBtrfsStatusSetUpFn;
 
-  _boot_min_unalloc="$(_getBootUnallocSpaceFn)";
-  _boot_unalloc="$(_getBootMinUnallocFn)";
+  _boot_min_unalloc="$(_getBootMinUnallocFn)";
+  _boot_unalloc="$(_getBootUnallocSpaceFn)";
 
   if (( _boot_unalloc < _boot_min_unalloc )); then
     _promptAllUsersFn 'info' "${_lowBootMsg}";
@@ -377,7 +381,10 @@ _checkBootUnallocSpaceFn () {
 #
 _getSnapshotListStrFn () {
   _checkBtrfsStatusSetUpFn;
-  _cm2LsFn "${_snapshotMainDir}";
+  _cm2LsFn "${_snapshotMainDir}" \
+    | sed 's/@//' \
+    | sort -nr \
+    | sed 's/^/@/';
 }
 ## . END _getSnapshotListStrFn }
 
@@ -611,15 +618,34 @@ _createSnapshotFn () {
     _snapshot_path _boot_snapshot_path _hour_seconds _week_seconds;
 
   _checkBtrfsStatusSetUpFn;
-  _checkMainUnallocSpace;
-  _checkBootUnallocSpace;
+  _checkMainUnallocSpaceFn;
+  _checkBootUnallocSpaceFn;
 
   _hour_seconds=3600;
   _week_seconds=604800;
 
-  _timestamp_str="$(date +%s)";
-  _snapshot_path="${_snapshotMainDir}/@${_timestamp_str}";
-  _boot_snapshot_path="${_snapshotBootDir}/@${_timestamp_str}";
+  # If a pre-existing snapshot ID is generated, sleep for one second and try
+  # again.
+  while true; do
+    _timestamp_str="$(date +%s)";
+    _snapshot_path="${_snapshotMainDir}/@${_timestamp_str}";
+    _boot_snapshot_path="${_snapshotBootDir}/@${_timestamp_str}";
+
+    # TODO: There's a time-of-check to time-of-use bug here, I don't *think*
+    # we care since it can only be triggered by a locking failure or a malicious
+    # process with root privileges, but review to see if this should be worked
+    # around.
+    if [ -e "${_snapshot_path}" ]; then
+      sleep 1;
+      continue;
+    fi
+    if [ -e "${_boot_snapshot_path}" ]; then
+      sleep 1;
+      continue;
+    fi
+    break;
+  done
+
   _prev_timestamp_str="$(
     _cm2LsFn "${_snapshotMainDir}" \
       | sed 's/@//' | sort -n | tail -n1
@@ -654,20 +680,6 @@ _createSnapshotFn () {
   echo "${_snapshot_event_type}" \
     > '/var/lib/kfocus/kfocus_rollback_snapshot_reason';
 
-  # This should theoretically never happen, but there's a non-zero chance
-  # that it could if the user changes their clock backwards.
-  #
-  # TODO: There's a time-of-check to time-of-use bug here, I don't *think*
-  # we care since it can only be triggered by a locking failure or a malicious
-  # process with root privileges, but review to see if this should be worked
-  # around.
-  if [ -e "${_snapshot_path}" ]; then
-    _exitERR "Snapshot path |${_snapshot_path}| already exists!";
-  fi
-  if [ -e "${_boot_snapshot_path}" ]; then
-    _exitERR "Boot snapshot path |${_snapshot_path}| already exists!";
-  fi
-
   "${_btrfsExe}" subvolume snapshot -r '/btrfs_main/@' "${_snapshot_path}" \
     || _exitEMERG "Could not create snapshot |${_snapshot_path}|";
   "${_btrfsExe}" filesystem sync '/btrfs_main' \
@@ -689,8 +701,8 @@ _restoreSnapshotFn () {
     _boot_snapshot_path _snapshot_disp_id;
 
   _checkBtrfsStatusSetUpFn;
-  _checkMainUnallocSpace;
-  _checkBootUnallocSpace;
+  _checkMainUnallocSpaceFn;
+  _checkBootUnallocSpaceFn;
 
   # Any snapshots that are at number 5 or older will end up trimmed if we
   # don't purposefully exclude them, so get the list of all but the four
@@ -719,7 +731,7 @@ _restoreSnapshotFn () {
   fi
 
   if ! [ -e "${_snapshot_path}" ] || ! [ -e "${_boot_snapshot_path}" ]; then
-    _exitERR 'Expected snapshot path does not exist!';
+    _exitERR "Part or all of snapshot |${_target_snapshot}| does not exist!";
   fi
 
   _snapshot_disp_id="$(_rb2MakeSnapshotDispIdFn "${_target_snapshot}")";
@@ -756,8 +768,8 @@ _restoreSnapshotFn () {
 #
 _systemSnapshotFn () {
   _checkBtrfsStatusSetUpFn;
-  _checkMainUnallocSpace;
-  _checkBootUnallocSpace;
+  _checkMainUnallocSpaceFn;
+  _checkBootUnallocSpaceFn;
   _createSnapshotFn "${1:-}" || _exitERR 'Could not create snapshot!';
   _trimSnapshotsFn           || _exitERR 'Could not trim snapshots!';
 }
@@ -985,7 +997,7 @@ _mainFn () {
     'getSnapshotList')       _getSnapshotListStrFn;;
     'prepareSystem')         _prepareSystemFn;;
     'restoreSnapshot')       _restoreSnapshotFn      "${2:-}";;
-    'setManaulSwitchState')  _setManualSwitchStateFn "${2:-}";;
+    'setManualSwitchState')  _setManualSwitchStateFn "${2:-}";;
     'systemSnapshot')        _systemSnapshotFn       "${2:-}";;
     'trimSnapshots')         _trimSnapshotsFn;;
     *)
@@ -1008,7 +1020,8 @@ declare _binName _binDir _baseName _baseDir _manualSwitchFile \
 _manualSwitchFile='/var/lib/kfocus/kfocus_rollback_manual_mode';
 _btrfsStatus='';
 _isPreparingSystem='n'; # Flag for error reporting
-_lockFile="/tmp/kfocus-rollback-backend.lock";
+_lockFile='/tmp/kfocus-rollback/kfocus-rollback-set.lock';
+_lockDir='/tmp/kfocus-rollback';
 _optimizeStatePath='/var/lib/kfocus/last_optimize_state';
 _restoreCompleteFile='/var/lib/kfocus/kfocus_rollback_restore_complete';
 _snapshotBootDir='/btrfs_boot/@kfocus-rollback-boot-snapshots';

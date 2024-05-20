@@ -641,7 +641,7 @@ _cm2PromptUserFn () {
         'm') _cmd_list+=('--yes-button=OK' '--no-button=More Info');;
       esac
 
-      _prompt_str="$(_cm2StripTagsFn "${_prompt_str}" 'n')";
+      _prompt_str="$(_cm2StripTagsFn "${_prompt_str}" 'w')";
       _prompt_str="$(fmt <<< "${_prompt_str}")";
 
       # whiptail accepts arguments for setting window and list sizes, but we

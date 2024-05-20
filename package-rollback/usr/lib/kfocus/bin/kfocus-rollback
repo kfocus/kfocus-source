@@ -339,13 +339,15 @@ _mainFn () {
       fi
       ;;
     'optimize')
-      if [ "$(_cm2PromptUserFn "${_doOptimizeMsg}" "${_winTitle}" 'a')" \
+      if [ "$(_cm2PromptUserFn "${_doOptimizeMsg}" "${_winTitle}" 'o')" \
         = 'y' ]; then
         if _rb2OptimizeDiskFn; then
           _cm2PromptUserFn "${_optimizeSuccessfulMsg}" "${_winTitle}";
         else
           _cm2PromptUserFn "${_optimizeFailedMsg}" "${_winTitle}" 'e';
         fi
+      else
+        _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
       fi
       ;;
     'bound')
@@ -487,6 +489,8 @@ _mainFn () {
       fi
 
       if _rb2SetManualSwitchStateFn "${_new_switch_state}"; then
+        _new_switch_state="$(tr '[:lower:]' '[:upper:]' \
+          <<< "${_new_switch_state}")";
         _switchSuccessfulMsg="${_switchSuccessfulMsg//XXX_SNAPSHOT_MODE_XXX/${_new_switch_state}}";
         _cm2PromptUserFn "${_switchSuccessfulMsg}" "${_winTitle}";
         exit "${_NOTICE}";
