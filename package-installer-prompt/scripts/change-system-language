@@ -1,0 +1,31 @@
+#!/bin/bash
+
+LANGUAGE_CODE="$1"
+COUNTRY_CODE="$2"
+LOCALE="${LANGUAGE_CODE}_${COUNTRY_CODE}.UTF-8"
+LIBREOFFICE_CODE="$3"
+ONLY_PLASMA="$4"
+
+# Special handling for language packs for Chinese
+if [[ "$LANGUAGE_CODE" == "zh" ]]; then
+    if [[ "$COUNTRY_CODE" == "CN" || "$COUNTRY_CODE" == "SG" || "$COUNTRY_CODE" == "MY" ]]; then
+        LANG_PACK_SUFFIX="zh-hans"
+    else
+        LANG_PACK_SUFFIX="zh-hant"
+    fi
+else
+    LANG_PACK_SUFFIX="$LANGUAGE_CODE"
+fi
+
+if [ -z "$ONLY_PLASMA" ]; then
+    apt-get -y install language-pack-gnome-"$LANG_PACK_SUFFIX" language-pack-kde-"$LANG_PACK_SUFFIX"
+    # Install LibreOffice language pack only if LIBREOFFICE_CODE is provided
+    # and it's not English without a specific variant
+    if [[ "$LANGUAGE_CODE" != "en" ]] || [[ "$LANGUAGE_CODE" == "en" && ( "$COUNTRY_CODE" == "GB" || "$COUNTRY_CODE" == "ZA" ) ]]; then
+        apt-get -y install libreoffice-l10n-"$LIBREOFFICE_CODE"
+    fi
+fi
+
+locale-gen "$LOCALE"
+update-locale LANGUAGE="$LOCALE" LANG="$LOCALE" LC_ALL="$LOCALE"
+systemctl restart sddm
