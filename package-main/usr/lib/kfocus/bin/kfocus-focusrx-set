@@ -131,6 +131,16 @@ _installSynapticsFn () {
 }
 ## . END _installSynapticsFn }
 
+## BEGIN _purgeRollbackFn {
+#
+_purgeRollbackFn () {
+  _cm2SetMsgFn 'Purge kfocus-rollback package';
+  if apt-get purge -y 'kfocus-rollback'; then
+    _cm2SucFn; else _cm2WarnFn; return 1;
+  fi
+}
+## . END _purgeRollbackFn }
+
 ## BEGIN _chkBiosUpdateFn {
 # Purpose: Return true if no bios upgrade needed, false otherwise
 #
@@ -289,6 +299,18 @@ _chkHwConfigFn () {
   fi
   ## . End Run lib updates iff hardware reconfig is flagged }
 
+  ## BEGIN Detect if kfocus-rollback should be removed {
+  #
+  if [ -n "${_rollbackSetExe}" ]; then
+    _btrfs_status="$("${_rollbackSetExe}" 'getBtrfsStatus')";
+    if [ "${_btrfs_status}" = 'UNSUPOPRTED' ] \
+      || [ "${_btrfs_status}" = 'INCONSISTENT' ]; then
+      _msg='purge-rollback;;';
+      _reason_list+=( "${_msg}" );
+    fi
+  fi
+  ## . END Detect if kfocus-rollback should be removed }
+
   ( IFS=$'|'; echo "${_reason_list[*]}"; )
 }
 ## . END _chkHwConfigFn }
@@ -315,6 +337,7 @@ _fixHwConfigFn () {
       'install-nvidia'    ) _cmd_list=( '_installNvidiaFn'    );;
       'install-synaptics' ) _cmd_list=( '_installSynapticsFn' );;
       'purge-kbd-ite'     ) _cmd_list=( '_purgeKbdIteFn'      );;
+      'purge-rollback'    ) _cmd_list=( '_purgeRollbackFn'    );;
       *) _cm2WarnStrFn "Option ${_bit_list[0]} is not supported";
         continue;
         ;;
@@ -335,9 +358,9 @@ _fixHwConfigFn () {
 ## BEGIN _prepareSnapshotFn {
 #
 _prepareSnapshotFn () {
-  [ -z "${_snapshotSetExe}" ] && return;
+  [ -z "${_rollbackSetExe}" ] && return;
 
-  "${_snapshotSetExe}" 'prepareSystem';
+  "${_rollbackSetExe}" 'prepareSystem';
 }
 ## . END _prepareSnapshotFn }
 
@@ -383,7 +406,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   _assignList=(
     "_focusRxVersExe|${_binDir}/kfocus-rx-version"
-    "_snapshotSetExe|${_binDir}/kfocus-rollback-set||optional"
+    "_rollbackSetExe|${_binDir}/kfocus-rollback-set||optional"
   );
   if ! _cm2AssignExeVarsFn  "${_assignList[@]}"; then
     _cm2ErrStrFn 'Could not assign variable';
