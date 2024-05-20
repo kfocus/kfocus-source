@@ -1,0 +1,17 @@
+#!/bin/bash
+# Starts the Kubuntu Live Environment.
+
+export XDG_SESSION_CLASS="user"
+export XDG_SESSION_DESKTOP="KDE"
+export DESKTOP_SESSION="plasma"
+export QT_STYLE_OVERRIDE="breeze"
+
+kwin_x11 &
+if [[ $(cat /proc/cmdline) =~ "oem-config/enable=true" ]]; then
+    sudo -E /usr/bin/calamares-launch-oem;
+else
+    kubuntu-installer-prompt;
+fi
+# If it exits...
+killall kwin_x11
+startplasma-x11
