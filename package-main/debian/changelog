@@ -1,15 +1,23 @@
-kfocus-main (24.04.1~beta17) UNRELEASED; urgency=medium
+kfocus-main (24.04.1~beta18) UNRELEASED; urgency=medium
 
+  * bin/kfocus-focusrx: Separate BTRFS setup logic from hardware check
+    routine. (#4013)
   * Use kfocus-rollback-set rather than kfocus-btrfs-optimize-set for BTRFS
     optimization. (#4013)
   * Enhance disk space checking on snapshot-enabled BTRFS systems. (#4013)
   * Integrate kfocus-rollback with kfocus-kclean. (#4013)
-  * kfocus-focusrx: Split out snapshot setup into its own function. (#4013)
   * common.2.source: Implement logging facilities. (#4013)
   * common.2.source: Fix a bug that stripped a question mark from the end of
     messages on whiptail CLI screens. (#4013)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 16 May 2024 13:14:58 -0500
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 20 May 2024 18:15:04 -0500
+
+kfocus-main (24.04.1~beta17) noble; urgency=medium
+
+  * bin/kfocus-reset-effects: Fix Meta + Space touchpad toggle (#3179)
+  * bin/kfocus-reset-effects: Refactor escape chars for maintenance (#3179)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Mon, 20 May 2024 13:01:15 -0700
 
 kfocus-main (24.04.1~beta16) noble; urgency=medium
 

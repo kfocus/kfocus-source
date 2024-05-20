@@ -131,7 +131,7 @@ _resetEffectsFn () {
     'scut|kwin|Window Quick Tile Left|Meta+Left,Meta+Left,Quick Tile Window to the Left'
     'scut|kwin|Window Quick Tile Right|Meta+Right,Meta+Right,Quick Tile Window to the Right'
     'scut|kwin|Window Quick Tile Bottom|Meta+Down,Meta+Down,Quick Tile Window to the Bottom'
-    'scut|kcm_touchpad|Toggle Touchpad=Meta+Space\tTouchpad Toggle,Touchpad Toggle,Toggle Touchpad'
+    'scut|kcm_touchpad|Toggle Touchpad|Meta+Space_\t_Touchpad Toggle,Touchpad Toggle,Toggle Touchpad'
 
     # Reset all things mouse tracking to defaults
     'scut|kwin|TrackMouse|'
@@ -157,15 +157,10 @@ _resetEffectsFn () {
     'font|General|forceFontDPI|136|m2g4'
     'font|General|forceFontDPI|136|m2g5'
     'font|General|forceFontDPI|136|m2g5p'
-
   );
 
-  _fixup_list=(
-    'scut|_launch=Alt+Space\\tAlt+F2\\tSearch,Alt+Space\\tAlt+F2\\tSearch,KRunner|_launch=Alt+Space\tAlt+F2\tSearch,Alt+Space\tAlt+F2\tSearch,KRunner'
-    'scut|view_zoom_in=Meta+=,Meta++\\tMeta+=,Zoom In|view_zoom_in=Meta+=,Meta++\tMeta+=,Zoom In'
-    'scut|Lock Session=Meta+L\\tCtrl+Alt+L\\tScreensaver,Meta+L\\tScreensaver,Lock Session|Lock Session=Meta+L\tCtrl+Alt+L\tScreensaver,Meta+L\tScreensaver,Lock Session'
-  );
 
+  _tab_char=$'\t';
   _log_list=();
   for _line in "${_config_list[@]}"; do
     IFS='|' read -r -a _bit_list <<<"${_line}";
@@ -224,36 +219,13 @@ _resetEffectsFn () {
     );
 
     if [ -n "${_bit_list[3]:-}" ]; then
-      _opt_list+=("${_bit_list[3]}");
+      # Important: Must replace \t with real tab char for this to work
+      _opt_list+=("${_bit_list[3]//\\t/${_tab_char}}");
     else
       _opt_list+=('--delete');
     fi
 
     "${_kwriteconfig5Exe}" "${_opt_list[@]}";
-  done
-
-  # TODO: This fixup routine is probably more complicated than it
-  # needs to be. Instead, replace special characters in strings
-  # like so: Alt+Space\\tAlt+F2\\t => Alt+Space_XtabX_Alt+F2_XtabX_ ...
-  # and then replace them above.
-  #
-  for _line in "${_fixup_list[@]}"; do
-    IFS='|' read -r -a _bit_list <<<"${_line}";
-    _key="${_bit_list[0]:-}";
-    _name_file="${_fileMap[$_key]}";
-    if [ -z "${_name_file}" ]; then
-      _log_list+=("WARN: Config key |${_key}| is not supported.");
-      continue;
-    fi
-
-    _config_file="${_configDir}/${_name_file}";
-    _fixup_orig_str="$(_cm2EscapeRxCharsFn "${_bit_list[1]}")";
-    _fixup_new_str="$(_cm2EscapeRxCharsFn "${_bit_list[2]}")";
-    _apply_str="${_line}";
-
-    sed -E -i "s/${_fixup_orig_str}/${_fixup_new_str}/" "${_config_file}";
-
-    _log_list+=("Fixup ${_apply_str}");
   done
 
   ( IFS=$'\n'; echo "Reset values:"; echo "${_log_list[*]}" )
