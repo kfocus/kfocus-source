@@ -4,7 +4,7 @@
 export XDG_SESSION_CLASS="user"
 export XDG_SESSION_DESKTOP="KDE"
 export DESKTOP_SESSION="plasma"
-export QT_STYLE_OVERRIDE="breeze"
+export QT_QPA_PLATFORMTHEME="kde"
 
 kwin_x11 &
 if [[ $(cat /proc/cmdline) =~ "oem-config/enable=true" ]]; then
