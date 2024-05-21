@@ -1,5 +1,6 @@
 kfocus-main (24.04.1~beta18) UNRELEASED; urgency=medium
 
+  [ Aaron Rainbolt ]
   * bin/kfocus-focusrx: Separate BTRFS setup logic from hardware check
     routine. (#4013)
   * Use kfocus-rollback-set rather than kfocus-btrfs-optimize-set for BTRFS
@@ -9,6 +10,9 @@ kfocus-main (24.04.1~beta18) UNRELEASED; urgency=medium
   * Implement logging facilities. (#4013)
   * common.2.source: Fix a bug that stripped a question mark from the end of
     messages on whiptail CLI screens. (#4013)
+
+  [ Michael S. Mikowski ]
+  * bin/kfocus-reset-effects: Comments only for lookandfeel tools (#3179)
 
  -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 20 May 2024 18:15:04 -0500
 

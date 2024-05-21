@@ -333,6 +333,11 @@ _EOH02
   if [ "$?" = '0' ]; then disown "$!"; sleep 1; fi
   sleep 2;
 
+  # Probably not desirable here, but worthy of note:
+  # /usr/bin/lookandfeeltool, plasma-apply-lookandfeel
+  # /usr/bin/lookandfeelexplorer
+  # 
+
   # Replace window manager
   nohup kwin --replace > /dev/null 2>&1 &
   # shellcheck disable=SC2181
