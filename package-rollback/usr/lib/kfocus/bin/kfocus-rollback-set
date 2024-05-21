@@ -989,6 +989,7 @@ _mainFn () {
     'btrfsDeepClean')        _btrfsDeepCleanFn;;
     'btrfsMaintain')         _btrfsMaintainFn;;
     'checkMainUnallocSpace') _checkMainUnallocSpaceFn;;
+    'checkBootUnallocSpace') _checkBootUnallocSpaceFn;;
     'clearRestore')          _clearRestoreFn;;
     'createSnapshot')        _createSnapshotFn       "${2:-}";;
     'deleteSnapshot')        _deleteSnapshotFn       "${2:-}";;

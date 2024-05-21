@@ -340,6 +340,14 @@ _prepareSnapshotFn () {
 }
 ## . END _prepareSnapshotFn }
 
+## BEGIN _chkBtrfsSpaceFn () {
+#
+_chkBtrfsSpaceFn () {
+  [ -z "${_rollbackSetExe}" ] && return;
+  "${_rollbackSetExe}" 'checkMainUnallocSpace' || exit;
+}
+## . END _chkBtrfsStaceFn () }
+
 ## BEGIN _clearRestoreFn () {
 #
 _clearRestoreFn () {
@@ -358,6 +366,7 @@ _mainFn () {
     'force-hw-config' ) _chkHwConfigFn 'y';;
     'fix-hw-config'   ) _fixHwConfigFn "${2:-}";;
     'prep-snapshot'   ) _prepareSnapshotFn;;
+    'chk-btrfs-space' ) _chkBtrfsSpaceFn;;
     'clear-restore'   ) _clearRestoreFn;;
     *) _cm2WarnStrFn "Unrecognized directive |${_arg_str}|";;
   esac

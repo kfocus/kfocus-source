@@ -1122,16 +1122,25 @@ _EOH18
 ## BEGIN _postRollbackHandlerFn {
 #
 _postRollbackHandlerFn () {
+  declare _btrfs_status;
+
   # Skip if required tools not installed
   [ -z "${_rollbackExe}" ] && return;
 
-  # If drop file is found, run _rollbackExe, so it can use the contents
-  #   of that file to display the name of the restored snapshot to the user.
-  if [ -e "${_restoreCompleteFile}" ]; then
-    "${_rollbackExe}" 'afterRestore';
+  _btrfs_status="$("${_rollbackSetExe}" 'getBtrfsStatus')"
 
-    # Remove drop file after completion
-    "${_escExe}" "${_focusRxSetExe}" 'clear-restore';
+  if [ "${_btrfs_status}" != 'SUPPORTED, AUTO' ] \
+    && [ "${_btrfs_status}" != 'SUPPORTED, MANUAL' ]; then
+    # If drop file is found, run _rollbackExe, so it can use the contents
+    #   of that file to display the name of the restored snapshot to the user.
+    if "${_escExe}" "${_focusRxSetExe}" 'chk-btrfs-space'; then
+      if [ -e "${_restoreCompleteFile}" ]; then
+        "${_rollbackExe}" 'afterRestore';
+
+        # Remove drop file after completion
+        "${_escExe}" "${_focusRxSetExe}" 'clear-restore';
+      fi
+    fi
   fi
 }
 ## . END _postRollbackHandlerFn }
