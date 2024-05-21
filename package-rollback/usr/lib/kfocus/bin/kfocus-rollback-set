@@ -500,6 +500,11 @@ _prepareSystemFn () {
   mount /etc/libvirt     || _exitALERT 'Failed to mount /etc/libvirt';
   mount /var/lib/libvirt || _exitALERT 'Failed to mount /var/lib/libvirt';
   ## . END STAGE 5: Finish additional mounts }
+  
+  # TODO: Potentially remove this later if we decide to default to automatic
+  # snapshotting.
+  touch "${_manualSwitchFile}" \
+    || _exitCRIT 'Could not create manual switch file during setup.';
 
   _isPreparingSystem='n';
   _cm2LogFn 'notice' 'System successfully prepared for snapshotting.';
