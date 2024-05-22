@@ -174,6 +174,7 @@ _checkRootFn () {
 
 ## BEGIN _clearRestoreFn {
 _clearRestoreFn () {
+  _checkBtrfsStatusSetUpFn;
   rm -f "${_restoreCompleteFile}" || true;
   _cm2LogFn 'notice' 'Restore flag cleared.';
 }
@@ -227,18 +228,22 @@ _setManualSwitchStateFn () {
 ## BEGIN BTRFS maintenance helper functions {
 #
 _getMainUsageReportFn () {
+  _checkBtrfsStatusSetUpFn;
   LC_ALL='C' "${_btrfsExe}" filesystem usage -b '/btrfs_main';
 }
 
 _getBootUsageReportFn () {
+  _checkBtrfsStatusSetUpFn;
   LC_ALL='C' "${_btrfsExe}" filesystem usage -b '/btrfs_boot';
 }
 
 _getMainBtduReportFn () {
+  _checkBtrfsStatusSetUpFn;
   LC_ALL='C' "${_btduExe}" --du --min-resolution=1M --headless '/btrfs_main'
 }
 
 _getMainFragReportFn () {
+  _checkBtrfsStatusSetUpFn;
   "${_filefragExe}" '/btrfs_main/@';
 }
 ## . END BTRFS maintenance helper functions }
@@ -335,6 +340,8 @@ _getMainUnallocSpaceFn () {
     | awk '/Device unallocated/{ print $3 }';
 }
 _getMainMinUnallocFn () {
+  _checkBtrfsStatusSetUpFn;
+
   echo "$(( $(LC_ALL=C "${_btrfsExe}" filesystem usage -b /btrfs_main \
     | grep $'Device size:\t' \
     | awk '{ print $3 }' \
@@ -347,6 +354,8 @@ _getBootUnallocSpaceFn () {
     | awk '/Device unallocated/{ print $3 }';
 }
 _getBootMinUnallocFn () {
+  _checkBtrfsStatusSetUpFn;
+
   echo 1073741824; # 1 GiB
 }
 _checkMainUnallocSpaceFn () {
@@ -504,7 +513,7 @@ _prepareSystemFn () {
   # TODO: Potentially remove this later if we decide to default to automatic
   # snapshotting.
   touch "${_manualSwitchFile}" \
-    || _exitCRIT 'Could not create manual switch file during setup.';
+    || _exitALERT 'Could not create manual switch file during setup.';
 
   _isPreparingSystem='n';
   _cm2LogFn 'notice' 'System successfully prepared for snapshotting.';
@@ -558,6 +567,8 @@ _finalizeRestoreFn () {
       "${_btrfsExe}" subvolume delete --commit-after '/btrfs_boot/@kfocus-rollback-working-boot' \
         || _exitEMERG 'Failed to finalize restore for boot filesystem!';
     fi
+  else
+    _exitERR 'Cannot finalize restore, restore operation half-done!';
   fi
   _cm2LogFn 'notice' 'Restore operation successfully finalized.';
 }
@@ -719,6 +730,13 @@ _restoreSnapshotFn () {
     _exitERR 'No snapshot name provided to restore!';
   fi
 
+  if [ -e '/btrfs_main/@kfocus-rollback-working' ] || \
+    [ -e '/btrfs_boot/@kfocus-rollback-working-boot' ]; then
+    _cm2WarnStrFn 'Temporary restore subvols found, cannot continue.';
+    _cm2WarnStrFn 'Please reboot, then run "Finish restoration operation".';
+    _exitERR 'Restore already in progress!';
+  fi
+
   _createSnapshotFn 'Pre-Rollback' || exit;
   # Exclude the fifth and older snapshots.
   if ! [[ "${_older_snapshot_list_str}" =~ ${_target_snapshot} ]]; then
@@ -727,13 +745,6 @@ _restoreSnapshotFn () {
 
   _snapshot_path="${_snapshotMainDir}/${_target_snapshot}";
   _boot_snapshot_path="${_snapshotBootDir}/${_target_snapshot}";
-
-  if [ -e '/btrfs_main/@kfocus-rollback-working' ] || \
-    [ -e '/btrfs_boot/@kfocus-rollback-working-boot' ]; then
-    _cm2WarnStrFn 'Temporary restore subvols found, cannot continue.';
-    _cm2WarnStrFn 'Please reboot, then run "Finish restoration operation".';
-    _exitERR 'Restore already in progress!';
-  fi
 
   if ! [ -e "${_snapshot_path}" ] || ! [ -e "${_boot_snapshot_path}" ]; then
     _exitERR "Part or all of snapshot |${_target_snapshot}| does not exist!";
@@ -785,6 +796,8 @@ _systemSnapshotFn () {
 _balanceMainFn () {
   declare _main_report _main_unallocd _main_free _old_report _last_unallocd \
     _last_free _trigger_threshold
+  
+  _checkBtrfsStatusSetUpFn;
 
   _trigger_threshold=5368709120; # 5 GiB
 
@@ -822,6 +835,8 @@ _balanceMainFn () {
 ## BEGIN _balanceBootFn {
 #
 _balanceBootFn () {
+  _checkBtrfsStatusSetUpFn;
+
   "${_btrfsBalanceExe}" -u 85 '/btrfs_boot';
 
   _cm2LogFn 'notice' "Boot filesystem balanced.";
@@ -832,6 +847,8 @@ _balanceBootFn () {
 #
 _deleteAllSnapshotsFn () {
   declare _snapshot_list _current_snapshot;
+  
+  _checkBtrfsStatusSetUpFn;
 
   readarray -t _snapshot_list < <(
     _cm2LsFn '/btrfs_main/@kfocus-rollback-snapshots' 2>/dev/null
@@ -857,6 +874,8 @@ _defragmentFn () {
     _defrag_file_list _report_idx _btdu_report _btdu_val_list \
     _btdu_file_list _file_size _unreachable_size _clean_file_list \
     _defrag_list_idx _merge_yn _clean_list_idx _current_file;
+  
+  _checkBtrfsStatusSetUpFn;
 
   _frag_report="$(
     _getMainFragReportFn \

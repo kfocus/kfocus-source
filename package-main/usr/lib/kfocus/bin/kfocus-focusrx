@@ -1129,8 +1129,8 @@ _postRollbackHandlerFn () {
 
   _btrfs_status="$("${_rollbackSetExe}" 'getBtrfsStatus')"
 
-  if [ "${_btrfs_status}" != 'SUPPORTED, AUTO' ] \
-    && [ "${_btrfs_status}" != 'SUPPORTED, MANUAL' ]; then
+  if [ "${_btrfs_status}" == 'SUPPORTED, AUTO' ] \
+    || [ "${_btrfs_status}" == 'SUPPORTED, MANUAL' ]; then
     # If drop file is found, run _rollbackExe, so it can use the contents
     #   of that file to display the name of the restored snapshot to the user.
     if "${_escExe}" "${_focusRxSetExe}" 'chk-btrfs-space'; then

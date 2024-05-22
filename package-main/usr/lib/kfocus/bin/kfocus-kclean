@@ -831,7 +831,7 @@ _isBtrfsYn='n';
 _divisorInt=8;
 # Nominal size in MB for a kernel on /boot partition
 _kernelUnitSizeInt=230;
-_kernelUnitSizeBtrfsInt=460;
+_kernelUnitSizeBtrfsInt=$(( _kernelUnitSizeInt * 2 ));
 # Size in MB of what we consider a low root disk (10GB)
 _lowRootDiskInt=10240;
 # Max kernel count for unconstrained, large disks
