@@ -131,7 +131,7 @@ _runXtermCmdFn () {
 
 ## BEGIN _confirmInternetFn {
 _confirmInternetFn () {
-  declare _prompt_msg _title _count;
+  declare _prompt_msg _title _count _lookup_str;
 
   _prompt_msg="$(cat << _EOH01
 ${_cm2HtmBeginStr}
@@ -149,9 +149,9 @@ _EOH01
 
   _title='Connect to Internet';
   for (( _count = 2; _count <= 4; _count++ )); do
-    nslookup "${_lookupHost1Str}" && return;
-    nslookup "${_lookupHost2Str}" && return;
-    nslookup "${_lookupHost3Str}" && return;
+    for _lookup_str in "${_lookup_list[@]}"; do
+      nslookup "${_lookup_str}" && return;
+    done
 
     _cm2PromptUserFn "${_prompt_msg}" "${_title}";
 
@@ -1239,8 +1239,8 @@ _mainFn () {
 ## . END _mainFn }
 
 ## BEGIN Declare and assign global vars {
-declare _gfxTgtVersStr _parentCmdStr _lookupHost1Str _lookupHost2Str \
-  _lookupHost3Str _maxNagCount _binName _binDir _baseDir _baseName _escExe \
+declare _gfxTgtVersStr _parentCmdStr _lookupList \
+  _maxNagCount _binName _binDir _baseDir _baseName _escExe \
   _focusRxDropDir _kbdColorSetExe _rootTitle _assignList \
   _focusRxSetExe _focusRxVersExe _btoolExe _firstrunExe \
   _fixIbusExe _kcleanExe _resetEffectsExe _sysVersStr;
@@ -1250,9 +1250,7 @@ _parentCmdStr="$(ps -o comm= $PPID)";
 # These domain names exist here only for the purposes of looking them up via
 # DNS to confirm if Internet is working. They are not connected to or
 # otherwise communicated with by FocusRx.
-_lookupHost1Str='cloudflare.com';
-_lookupHost2Str='google.com';
-_lookupHost3Str='example.com';
+_lookup_list=( 'example.com' 'cloudflare.com' 'fastly.com' );
 _maxNagCount=6;
 _restoreCompleteFile='/var/lib/kfocus/kfocus_rollback_restore_complete';
 ## . END Declare and assign global vars }

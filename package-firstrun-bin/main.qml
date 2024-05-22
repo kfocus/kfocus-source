@@ -2061,7 +2061,7 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'checkNetwork':
-            internetCheckerEngine.exec('nslookup google.com');
+            internetCheckerEngine.exec('nslookup cloudflare.com');
             // DEBUG: Use the following to simulate a broken connection
             // internetCheckerEngine.exec('false');
             switchPageFn( 'internetCheckItem' );
