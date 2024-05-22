@@ -108,12 +108,12 @@ _chkReportFanSupportFn () {
 _EOH01
       )";;
 
-    ir14*)
+    ir14*|ir16*)
       _model_msg="$(cat <<_EOH02
 <b>Select a fan profile in the BIOS</b>.
  Press <code>F2</code> during boot and select <code>BIOS &gt;
  Advanced &gt; Operating Mode &gt; Balanced</code> or
- <code>20 dB</code> mode. ${_kpf_msg}
+ other mode. ${_kpf_msg}
 _EOH02
       )";;
 
