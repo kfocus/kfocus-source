@@ -92,7 +92,7 @@ _initCpuFn () {
 # Purpose   : Handle all boot-time snapshot-related operations
 #
 _manageSnapshotsOnBootFn () {
-  declare _title _main_unalloc _main_min_unalloc _boot_unalloc
+  declare _title _main_unalloc _main_min_unalloc _boot_unalloc \
     _boot_min_unalloc _btrfs_status;
   _title='Manage Snapshots On Boot';
 
@@ -132,7 +132,7 @@ _manageSnapshotsOnBootFn () {
 # Purpose   : Handle all periodic BTRFS-related maintenance operations
 #
 _maintainBtrfsFn () {
-  declare _title _main_unalloc _main_min_unalloc _boot_unalloc
+  declare _title _main_unalloc _main_min_unalloc _boot_unalloc \
     _boot_min_unalloc;
   _title='Maintain Snapshots';
 
