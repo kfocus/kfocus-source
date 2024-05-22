@@ -1250,7 +1250,7 @@ _parentCmdStr="$(ps -o comm= $PPID)";
 # These domain names exist here only for the purposes of looking them up via
 # DNS to confirm if Internet is working. They are not connected to or
 # otherwise communicated with by FocusRx.
-_lookup_list=( 'example.com' 'cloudflare.com' 'fastly.com' );
+_lookupList=( 'example.com' 'cloudflare.com' 'fastly.com' 'akamai.com' );
 _maxNagCount=6;
 _restoreCompleteFile='/var/lib/kfocus/kfocus_rollback_restore_complete';
 ## . END Declare and assign global vars }
