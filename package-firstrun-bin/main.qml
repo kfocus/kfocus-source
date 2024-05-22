@@ -2061,7 +2061,7 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'checkNetwork':
-            internetCheckerEngine.exec('ping -c 1 8.8.8.8');
+            internetCheckerEngine.exec('nslookup google.com');
             // DEBUG: Use the following to simulate a broken connection
             // internetCheckerEngine.exec('false');
             switchPageFn( 'internetCheckItem' );

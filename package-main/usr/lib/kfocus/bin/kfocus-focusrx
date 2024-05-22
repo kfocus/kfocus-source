@@ -149,8 +149,9 @@ _EOH01
 
   _title='Connect to Internet';
   for (( _count = 2; _count <= 4; _count++ )); do
-    ping -W 2 -c 1 "${_pingHost1Str}" && return;
-    ping -W 2 -c 1 "${_pingHost2Str}" && return;
+    nslookup "${_lookupHost1Str}" && return;
+    nslookup "${_lookupHost2Str}" && return;
+    nslookup "${_lookupHost3Str}" && return;
 
     _cm2PromptUserFn "${_prompt_msg}" "${_title}";
 
@@ -1238,16 +1239,20 @@ _mainFn () {
 ## . END _mainFn }
 
 ## BEGIN Declare and assign global vars {
-declare _gfxTgtVersStr _parentCmdStr _pingHost1Str _pingHost2Str \
-  _maxNagCount _binName _binDir _baseDir _baseName _escExe \
+declare _gfxTgtVersStr _parentCmdStr _lookupHost1Str _lookupHost2Str \
+  _lookupHost3Str _maxNagCount _binName _binDir _baseDir _baseName _escExe \
   _focusRxDropDir _kbdColorSetExe _rootTitle _assignList \
   _focusRxSetExe _focusRxVersExe _btoolExe _firstrunExe \
   _fixIbusExe _kcleanExe _resetEffectsExe _sysVersStr;
 
 _gfxTgtVersStr='22.04.9';
 _parentCmdStr="$(ps -o comm= $PPID)";
-_pingHost1Str='8.8.8.8';
-_pingHost2Str='1.1.1.1';
+# These domain names exist here only for the purposes of looking them up via
+# DNS to confirm if Internet is working. They are not connected to or
+# otherwise communicated with by FocusRx.
+_lookupHost1Str='cloudflare.com';
+_lookupHost2Str='google.com';
+_lookupHost3Str='example.com';
 _maxNagCount=6;
 _restoreCompleteFile='/var/lib/kfocus/kfocus_rollback_restore_complete';
 ## . END Declare and assign global vars }
