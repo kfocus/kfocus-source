@@ -296,10 +296,10 @@ _checkBtrfsStatusFn () {
         && [ "${_main_fs}" != "${_boot_fs}" ]; then
         _main_subvols_str="$("${_btrfsExe}" subvolume list / | awk '{ print $9 }' | sort)";
         _boot_subvols_str="$("${_btrfsExe}" subvolume list /boot | awk '{ print $9 }' | sort)";
-        if grep -E '^@$' <<< "${_main_subvols_str}" && \
+        if grep -qE '^@$' <<< "${_main_subvols_str}" && \
           LC_ALL='C' mount | grep -q ' on /home '; then
           if [ -z "${_boot_subvols_str}" ]; then
-            if ! grep -E '^@kfocus-rollback-snapshots$' \
+            if ! grep -qE '^@kfocus-rollback-snapshots$' \
               <<< "${_main_subvols_str}"; then
               _btrfsStatus='SUPPORTED, NOT SET UP';
             else
