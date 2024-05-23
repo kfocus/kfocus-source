@@ -868,6 +868,9 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binDir="$(dirname "${_binName}")"    || exit 1;
   _baseDir="$(dirname "${_binDir}")"    || exit 1;
   _baseName="$(basename "${_binName}")" || exit 1;
+  # IMPORTANT: When called via Google Chrome, this is necessary to keep Zenity
+  # from grabbing Chrome's libvulkan rather than the system's libvulkan.
+  export LD_LIBRARY_PATH='';
   _importCommonFn;
   _mainFn "$@";
 fi
