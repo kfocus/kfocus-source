@@ -1439,7 +1439,7 @@ Kirigami.ApplicationWindow {
               + '<a href="https://kfocus.org/wf/passwords#bkm_keepassxc">'
               + 'Passwords Guided Solution</a> and the '
               + '<a href="https://keepassxc.org/docs/">official '
-              + 'documentation</a></p>. You will need this to '
+              + 'documentation</a>.</p> You will need this to '
               + 'enable browser integration!'
               ;
             interActionButton.text      = 'Continue';
