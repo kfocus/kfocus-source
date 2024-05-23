@@ -149,7 +149,7 @@ _EOH01
 
   _title='Connect to Internet';
   for (( _count = 2; _count <= 4; _count++ )); do
-    for _lookup_str in "${_lookup_list[@]}"; do
+    for _lookup_str in "${_lookupList[@]}"; do
       nslookup "${_lookup_str}" && return;
     done
 
@@ -317,7 +317,8 @@ _chkBtrfsSetUpFn () {
 
   _title='Check BTRFS is Set Up';
   _cm2SetMsgFn "${_title}";
-  if [ "$("${_rollbackSetExe}" 'getBtrfsStatus')" = 'SUPPORTED, NOT SET UP' ]; then
+  if [ "$("${_escExe}" "${_focusRxSetExe}" 'get-btrfs-status')" \
+    = 'SUPPORTED, NOT SET UP' ]; then
     if "${_escExe}" "${_focusRxSetExe}" 'prep-snapshot'; then
       _cm2SucFn;
       return;

@@ -1,8 +1,9 @@
 kfocus-main (24.04.1~beta20) UNRELEASED; urgency=medium
 
-  * Use nslookup rather than ping for testing Internet connectivity.
+  * Use nslookup rather than ping for testing Internet connectivity. (#4288)
   * Promote curl from being a Recommends of kfocus-meta to being a Depends of
-    kfocus-main.
+    kfocus-main. (#4288)
+  * Fix kfocus-rollback setup. (#4288)
 
  -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 22 May 2024 16:19:02 -0500
 
