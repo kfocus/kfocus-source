@@ -695,6 +695,27 @@ _cm2SetCliTypeFn () {
   esac
 }
 
+_cm2RunPlasmaScriptFn () {
+  declare _script_name;
+
+  _script_str="${1:-}";
+  if [ -z "${_script_name}" ]; then
+    _cm2WarnStrFn 'No Plasma script name provided!';
+    return 1;
+  fi
+
+ [ -z "${_cm2QdbusExe}" ] && return;
+
+  if [ -e "${_cm2PlasmaScriptDir}/${_script_name}.js" ]; then
+    "${_cm2QdbusExe}" 'org.kde.plasmashell' '/PlasmaShell' \
+      'org.kde.PlasmaShell.evaluateScript' "$(cat \
+        "${_cm2PlasmaScriptDir}/${_script_name}.js")";
+  else
+    _cm2WarnStrFn 'Specified Plasma script does not exist!';
+    return 1;
+  fi
+}
+
 # Regression tests only
 _cm2SetIsTtyFn () {
   if [ "${1:-}" = 'y' ]; then
@@ -760,12 +781,15 @@ _cm2CliType='cli';
 _cm2WhiptailExe="$(command -v whiptail || true)";
 _cm2LoggerExe="$(command -v logger || true)";
 _cm2LogTag='';
+_cm2PlasmaScriptDir='/usr/lib/kfocus/plasma/script';
+_cm2QdbusExe="$(command -v qdbus || true)";
 
 # Export Strings
 # shellcheck disable=2090 # Disable complaining about html vars
-export _cm2Arg01 _cm2Arg02 _cm2BlockMsg _cm2HtmBeginStr _cm2HtmEndStr     \
-  _cm2HtmH3Str _cm2HtmPStr _cm2IsTty _cm2KdiagExe _cm2ModelCode _cm2RmExe \
-  _cm2CliType _cm2WhiptailExe _cm2LoggerExe _cm2LogTag;
+export _cm2Arg01 _cm2Arg02 _cm2BlockMsg _cm2HtmBeginStr _cm2HtmEndStr      \
+  _cm2HtmH3Str _cm2HtmPStr _cm2IsTty _cm2KdiagExe _cm2ModelCode _cm2RmExe  \
+  _cm2CliType _cm2WhiptailExe _cm2LoggerExe _cm2LogTag _cm2PlasmaScriptDir \
+  _cm2QdbusExe;
 
 # Export Functions
 export -f _cm2AskExitFn _cm2AssignExeVarsFn _cm2CatStripEchoFn               \

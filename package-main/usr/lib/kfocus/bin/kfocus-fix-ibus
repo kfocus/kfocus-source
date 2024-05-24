@@ -11,7 +11,7 @@
 #            Also, usable as a library for adding IBus checking and fixing
 #            capabilities to other scripts.
 # Example  : kfocus-fix-ibus check; kfocus-fix-ibus repair;
-# License  : GPLv2 (with JavaScript components GPLv3)
+# License  : GPLv2
 # Run By   : Developers only
 # Spec     : 4027
 #
@@ -38,40 +38,9 @@ _repairIbusConfigFn () {
   "${_dconfExe}" write \
     '/desktop/ibus/general/use-system-keyboard-layout' 'true' || return 1;
 
-    # Hiding the systray icon via IBus's dconf setting doesn't work reliably,
-    # so we use a Plasma script to do it.
-    "${_qdbusExe}" 'org.kde.plasmashell' '/PlasmaShell' \
-      'org.kde.PlasmaShell.evaluateScript' "$(cat <<'EOL'
-// Copyright: 2024 MindShare Inc., 2024 KDE Contributors
-// License: GPLv3
-// Copied and adapted for the Kubuntu Focus from the example shown at
-// https://develop.kde.org/docs/plasma/scripting/
-
-panelIds.forEach((panel) => {
-    panel = panelById(panel);
-    if (!panel) {
-        return;
-    }
-    panel.widgetIds.forEach((myWidget) => {
-        myWidget = panel.widgetById(myWidget);
-        if (myWidget.type === "org.kde.plasma.systemtray") {
-            systrayId = myWidget.readConfig("SystrayContainmentId");
-            if (systrayId) {
-                const systray = desktopById(systrayId);
-                systray.currentConfigGroup = ["General"];
-                const hiddenItems = systray.readConfig("hiddenItems")
-                  .split(",");
-                if (hiddenItems.indexOf("ibus-ui-gtk3") === -1) {
-                    hiddenItems.push("ibus-ui-gtk3");
-                    systray.writeConfig("hiddenItems", hiddenItems);
-                    systray.reloadConfig();
-                }
-            }
-        }
-    });
-});
-EOL
-    )";
+  # Hiding the systray icon via IBus's dconf setting doesn't work reliably,
+  # so we use a Plasma script to do it.
+  _cm2RunPlasmaScriptFn 'fixIbusPanelIcon';
 }
 ## . END _repairIbusConfigFn }
 
@@ -82,46 +51,7 @@ _checkIbusConfigFn () {
   # NOTE: Right now this just checks for a running IBus service. It may be
   # worthwhile to also check and see if IBus is installed.
   if _chkInstalledPkgFn 'ibus'; then
-    _do_show_icon="$(
-      "${_qdbusExe}" 'org.kde.plasmashell' '/PlasmaShell' \
-        'org.kde.PlasmaShell.evaluateScript' "$(cat <<'EOL'
-// Copyright: 2024 MindShare Inc., 2024 KDE Contributors
-// License: GPLv3
-// Copied and adapted for the Kubuntu Focus from the example shown at
-// https://develop.kde.org/docs/plasma/scripting/
-
-isIbusIconFound=false;
-
-panelIds.forEach((panel) => {
-    panel = panelById(panel);
-    if (!panel) {
-        return;
-    }
-    panel.widgetIds.forEach((myWidget) => {
-        myWidget = panel.widgetById(myWidget);
-        if (myWidget.type === "org.kde.plasma.systemtray") {
-            systrayId = myWidget.readConfig("SystrayContainmentId");
-            if (systrayId) {
-                const systray = desktopById(systrayId);
-                systray.currentConfigGroup = ["General"];
-                const hiddenItems = systray.readConfig("hiddenItems")
-                  .split(",");
-                if (hiddenItems.indexOf("ibus-ui-gtk3") === -1) {
-                    isIbusIconFound=true;
-                }
-            }
-        }
-    });
-});
-
-if (isIbusIconFound) {
-    print('true');
-} else {
-    print ('false');
-}
-EOL
-      )";
-    )";
+    _do_show_icon="$(_cm2RunPlasmaScriptFn 'chkIbusPanelIcon')";
     _do_use_system_keyboard="$("${_dconfExe}" read \
      '/desktop/ibus/general/use-system-keyboard-layout')";
 
