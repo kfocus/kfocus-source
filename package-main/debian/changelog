@@ -5,7 +5,8 @@ kfocus-main (24.04.1~beta21) UNRELEASED; urgency=medium
   * Store Plasma scripts in a central repository and call them using
     common.2.source.
   * Remove kfocus-rollback during hardware config if it is not useful. (#4013)
-  * Fix aws and telegram installers in kfocus-mime. (#4288)
+  * kfocus-mime: Fix aws and telegram installers. (#4288)
+  * postinst: Don't attempt to install pip-tools system-wide anymore. (#4288)
 
   [ Michael S. Mikowski ]
   * bin/kfocus-reset-effects: Apply changes as last step (#4300)

@@ -139,9 +139,6 @@ _cleanUpFn () {
     if "${_exe_update_deskdb}";  then _cmXSucFn; else _cmXWarnFn; fi
   fi
 
-  _cmXSetMsgFn 'Set up pip-tools';
-  if pip3 install pip-tools; then _cmXSucFn; else _cmXWarnFn; fi
-
   _firstrun_file='/etc/xdg/autostart/kfocus-firstrun.desktop';
   if [ -e "${_firstrun_file}" ] || [ -L "${_firstrun_file}" ]; then
     _cmXSetMsgFn "Remove deprecated ${_firstrun_file}";
