@@ -153,6 +153,9 @@ _handleOperationExitIntFn () {
       elif [ "${_exit_int}" = "${_ERR}" ]; then
         _cm2PromptUserFn "${_creationFailedMsg}" "${_winTitle}" 's';
         exit "${_ERR}";
+      elif [ "${_exit_int}" = '127' ]; then
+        _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
+        exit "${_NOTICE}";
       else
         _cm2PromptUserFn "${_criticalErrorMsg}" "${_winTitle}" 'e';
         exit "${_exit_int}";
