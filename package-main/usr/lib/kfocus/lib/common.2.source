@@ -696,20 +696,31 @@ _cm2SetCliTypeFn () {
 }
 
 _cm2RunPlasmaScriptFn () {
-  declare _script_name;
+  declare _script_name _counter;
 
-  _script_str="${1:-}";
+  _script_name="${1:-}";
   if [ -z "${_script_name}" ]; then
     _cm2WarnStrFn 'No Plasma script name provided!';
     return 1;
   fi
 
- [ -z "${_cm2QdbusExe}" ] && return;
+  [ -z "${_cm2QdbusExe}" ] && return;
 
-  if [ -e "${_cm2PlasmaScriptDir}/${_script_name}.js" ]; then
+  for (( _counter = 0; _counter < 3; _counter++ )); do
+    if ! pgrep plasmashell; then
+      sleep 3;
+    else
+      break;
+    fi
+  done
+
+  if ! [[ "${_script_name}" =~ ^/ ]]; then
+    _script_name="${_cm2PlasmaScriptDir}/${_script_name}";
+  fi
+
+  if [ -f "${_script_name}" ]; then
     "${_cm2QdbusExe}" 'org.kde.plasmashell' '/PlasmaShell' \
-      'org.kde.PlasmaShell.evaluateScript' "$(cat \
-        "${_cm2PlasmaScriptDir}/${_script_name}.js")";
+      'org.kde.PlasmaShell.evaluateScript' "$(cat "${_script_name}")";
   else
     _cm2WarnStrFn 'Specified Plasma script does not exist!';
     return 1;

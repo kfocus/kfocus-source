@@ -420,6 +420,17 @@ _EOH07
 }
 ## . END _chkHwConfigFn }
 
+## BEGIN _chkRollbackPresence {
+# Purpose: Get rid of the kfocus-rollback icon in the panel if kfocus-rollback
+# is not installed
+#
+_chkRollbackPresence () {
+  if ! dpkg-query -s 'kfocus-rollback' 2>/dev/null; then
+    _cm2RunPlasmaScriptFn 'rmRollbackIcon.js';
+  fi
+}
+## . END _chkRollbackPresence }
+
 ## BEGIN _chkKbdLedFn {
 # Purpose: Restore keyboard colors for specific models.
 # Important: Enable is set by kfocus-power-set which precedes this on sign-in.
@@ -1219,6 +1230,7 @@ _mainFn () {
   _chkUpdateBiosFn;
   _chkBtrfsSetUpFn;
   _chkHwConfigFn;
+  _chkRollbackPresence;
   _chkKbdLedFn;     #3735
   _offerKfRollbackFn;
   _chkKernelPkgFn;

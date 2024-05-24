@@ -4,6 +4,7 @@ kfocus-main (24.04.1~beta21) UNRELEASED; urgency=medium
   * Wipe LD_LIBRARY_PATH before running _mainFn in kfocus-mime (#4288)
   * Store Plasma scripts in a central repository and call them using
     common.2.source.
+  * Remove kfocus-rollback during hardware config if it is not useful. (#4013)
 
   [ Michael S. Mikowski ]
   * bin/kfocus-reset-effects: Apply changes as last step (#4300)
