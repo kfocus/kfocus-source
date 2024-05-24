@@ -55,9 +55,14 @@ Kirigami.ApplicationWindow {
             taskIcon : 'lock'
         }
         ListElement {
-           jsId     : 'extraSoftwareItem'
+            jsId     : 'extraSoftwareItem'
             task     : 'Extra Software'
             taskIcon : 'install'
+        }
+        ListElement {
+            jsId     : 'systemRollbackItem'
+            task     : 'System Rollback'
+            taskIcon : 'edit-undo-symbolic'
         }
         ListElement {
             jsId     : 'fileBackupItem'
@@ -98,11 +103,6 @@ Kirigami.ApplicationWindow {
             jsId     : 'curatedAppsItem'
             task     : 'Curated Apps'
             taskIcon : 'THEMED|kfocus_bug_apps_line'
-        }
-        ListElement {
-            jsId     : 'kdeWelcomeItem'
-            task     : 'KDE Welcome'
-            taskIcon : 'start-here-symbolic'
         }
         ListElement {
             jsId     : 'finishItem'
@@ -1309,6 +1309,79 @@ Kirigami.ApplicationWindow {
             regenUiFn( interTemplatePage, false );
             break;
 
+        case 'systemRollbackItem':
+            initPageFn([
+              topImage,       topHeading,
+              primaryText,    actionButton,
+              previousButton, skipButton
+            ]);
+
+            pageTitleText   = 'System Rollback';
+            topImage.source = imgDir + 'rollback.svg';
+            topHeading.text = 'Manage and Restore Snapshots';
+            primaryText.text
+              = '<p><b>The System Rollback tool</b> snapshots and restores '
+              + 'system files upon request, allowing you to quickly recover '
+              + 'from failed upgrades, kernel issues, and other OS problems. '
+              + 'If desired, it can automatically take snapshots both '
+              + 'periodically and before software updates, however '
+              + '<b>automatic snapshots are not enabled by '
+              + 'default.</b><br></p>'
+
+              + '<p><b>System Rollback does not snapshot files in /home.</b> '
+              + 'For more info, see the '
+              + '<a href="https://kfocus.org/wf/tools#rollback">Tools Guided '
+              + 'Solution.</a></p>'
+              ;
+            actionButton.text           = 'Launch System Rollback Now';
+            actionButton.icon.name      = 'arrow-right';
+            actionName                  = 'launchSystemRollback';
+            regenUiFn( baseTemplatePage, true );
+            break;
+
+        case 'systemRollbackLaunchedItem':
+            initPageFn([
+              headerHighlightRect, interTopHeading,
+              instructionsText,    interActionButton,
+              pictureColumn,       interContinueLabel
+            ]);
+
+            pageTitleText             = 'System Rollback';
+            pageTitleImage            = imgDir + 'rollback.svg';
+            headerHighlightRect.color = '#27ae60';
+            interTopHeading.text      = 'Proceed with System Rollback...';
+            instructionsText.text
+              = '<p>' + ding01Str + '<b>Click on the drop-down menu</b> to '
+              + 'view all available actions.<br></p>'
+
+              + '<p>' + ding02Str + '<b>To enable automatic snapshots</b>, '
+              + 'select <b>SWITCH between AUTO and MANUAL modes</b>, and '
+              + 'select <b>AUTO</b> on the next screen.<br></p>'
+
+              + '<p>' + ding03Str + '<b>The rollback quick launch icon</b> '
+              + 'will immediately display the System Rollback app. You can '
+              + 'create snapshots here at any time.<br></p>'
+
+              + '<p>' + ding04Str + '<b>To restore a snapshot</b>, select '
+              + '<b>RESTORE Snapshot</b>, then select the desired snapshot. '
+              + 'The system will reboot.<br></p>'
+
+              + '<p><b>See more in the</b> '
+              + '<a href="https://kfocus.org/wf/tools#rollback">Tools Guided '
+              + 'Solution.</a></p>'
+              ;
+            interActionButton.text      = 'Continue';
+            interActionButton.icon.name = 'arrow-right';
+            interImageList = [
+              'rollback-welcome.svg',
+              'rollback-systray.svg',
+              'rollback-restore.svg'
+            ];
+            actionName = 'nextPage';
+            regenUiFn( interTemplatePage, false );
+            break;
+
+
         case 'fileBackupItem':
             initPageFn([
               topImage,       topHeading,
@@ -1878,31 +1951,6 @@ Kirigami.ApplicationWindow {
             regenUiFn( interTemplatePage, false );
             break;
 
-        case 'kdeWelcomeItem':
-            initPageFn([
-              topImage,       topHeading,
-              primaryText,    actionButton,
-              previousButton, skipButton
-            ]);
-
-            pageTitleText   = 'KDE Welcome';
-            topImage.source = imgDir + 'kde.svg';
-            topHeading.text = 'Explore KDE Features';
-            primaryText.text
-              = '<p><b>The KDE Welcome Center</b> guides you through '
-              + 'the important features and concepts of the KDE desktop. '
-              + 'This has been developed by the KDE team, and we highly '
-              + 'recommend it.<br></p>'
-
-              + '<p><b>You can always run this again</b> using <code>'
-              + 'Start Menu &gt; Utilities &gt; Welcome Center</code>.</p>'
-              ;
-            actionButton.text           = 'Launch KDE Welcome Center Now';
-            actionButton.icon.name      = 'arrow-right';
-            actionName                  = 'launchKdeWelcome';
-            regenUiFn( baseTemplatePage, true );
-            break;
-
         case 'finishItem':
             initPageFn([
               topImage,       topHeading,
@@ -2159,6 +2207,11 @@ Kirigami.ApplicationWindow {
             switchPageFn( 'extraSoftwareInstallItem' );
             break;
 
+        case 'launchSystemRollback':
+            exeRun.exec( '/usr/lib/kfocus/bin/kfocus-rollback' );
+            switchPageFn( 'systemRollbackLaunchedItem' );
+            break;
+
         case 'launchBackInTime':
             exeRun.exec( systemDataMap.binDir + '/kfocus-mime -k backintime' );
             switchPageFn( 'fileBackupLaunchedItem' );
@@ -2182,11 +2235,6 @@ Kirigami.ApplicationWindow {
         case 'launchInsync':
             exeRun.exec( systemDataMap.binDir + '/kfocus-mime -k insync' );
             switchPageFn( 'insyncLaunchedItem' );
-            break;
-
-        case 'launchKdeWelcome':
-            setCheckMarkFn();
-            exeRun.exec( systemDataMap.welcomeCmd );
             break;
 
         case 'launchJetbrainsToolbox':
@@ -2228,9 +2276,10 @@ Kirigami.ApplicationWindow {
             removeSidebarItemFn('diskPassphraseItem');
         }
 
-        if ( systemDataMap.welcomeCmd === '' ) {
-            removeSidebarItemFn('kdeWelcomeItem');
+        if ( systemDataMap.rollbackCmd === '' ) {
+          removeSidebarItemFn( 'systemRollbackItem' );
         }
+
         switchPageFn( 'introductionItem' );
 
         const json_file = systemDataMap.homeDir

@@ -12,7 +12,7 @@ QStringList StartupData::m_cryptDiskList = QStringList();
 QString StartupData::m_binDir     = "";
 QString StartupData::m_homeDir    = "";
 QString StartupData::m_userName   = "";
-QString StartupData::m_welcomeCmd = "";
+QString StartupData::m_rollbackCmd = "";
 bool StartupData::m_isLiveSession = false;
 
 const qint64 min_disk_int = 1073741824;
@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
 
     // Determine path for kfocus-fixup-set. Prefer dev path if available.
     QString exeDir = app.applicationDirPath();
-    QString dirList[2] = { "../package-main/usr/lib/kfocus/bin", exeDir };
+    QString dirList[2] = { "../../package-main/usr/lib/kfocus/bin", exeDir };
     for ( QString testDir : dirList ) {
       if (QFile::exists(testDir + "/kfocus-firstrun-set")) {
         dat.setBinDir(testDir);
@@ -121,11 +121,11 @@ int main(int argc, char *argv[])
     }
 
     // Look for plasma-welcome executable
-    ShellEngine welcomeFinder;
-    welcomeFinder.execSync("command -v plasma-welcome || true");
-    QString welcomeCmd = welcomeFinder.stdout();
-    welcomeCmd.remove('\n');
-    dat.setWelcomeCmd(welcomeCmd);
+    ShellEngine rollbackFinder;
+    rollbackFinder.execSync("command -v /usr/lib/kfocus/bin/kfocus-rollback || true");
+    QString rollbackCmd = rollbackFinder.stdout();
+    rollbackCmd.remove('\n');
+    dat.setRollbackCmd(rollbackCmd);
 
     QQmlApplicationEngine engine;
     const QUrl url(QStringLiteral("qrc:/main.qml"));

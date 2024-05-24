@@ -11,7 +11,7 @@ class StartupData : public QObject
     Q_PROPERTY(QString binDir READ binDir WRITE setBinDir)
     Q_PROPERTY(QString homeDir READ homeDir WRITE setHomeDir)
     Q_PROPERTY(QString userName READ userName WRITE setUserName)
-    Q_PROPERTY(QString welcomeCmd READ welcomeCmd WRITE setWelcomeCmd)
+    Q_PROPERTY(QString rollbackCmd READ rollbackCmd WRITE setRollbackCmd)
     Q_PROPERTY(bool isLiveSession READ isLiveSession WRITE setIsLiveSession)
     QML_ELEMENT 
 
@@ -29,8 +29,8 @@ public:
     QString userName() {
         return m_userName;
     }
-    QString welcomeCmd() {
-        return m_welcomeCmd;
+    QString rollbackCmd() {
+      return m_rollbackCmd;
     }
     bool isLiveSession() {
         return m_isLiveSession;
@@ -48,8 +48,8 @@ public:
     void setUserName(QString val) {
         m_userName = val;
     }
-    void setWelcomeCmd(QString val) {
-        m_welcomeCmd = val;
+    void setRollbackCmd(QString val) {
+      m_rollbackCmd = val;
     }
     void setIsLiveSession(bool val) {
         m_isLiveSession = val;
@@ -60,7 +60,7 @@ private:
     static QString m_binDir;
     static QString m_homeDir;
     static QString m_userName;
-    static QString m_welcomeCmd;
+    static QString m_rollbackCmd;
     static bool m_isLiveSession;
 };
 
