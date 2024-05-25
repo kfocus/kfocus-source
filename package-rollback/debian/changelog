@@ -1,3 +1,36 @@
+kfocus-rollback (24.04.1~beta17) noble; urgency=medium
+
+  * Fix a bug that causes a "Critical Error" message to appear if
+    authorization is cancelled while manually creating a snapshot. (#4288)
+  * Shorten GRUB boot menu timeout to 2 seconds. (#4288)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Fri, 24 May 2024 12:01:27 -0500
+
+kfocus-rollback (24.04.1~beta16) noble; urgency=medium
+
+  * Merge kfocus-btrfs-optimize-set and kfocus-rollback-set. (#4013)
+  * Reorganize architectural components for consistency. (#4013)
+  * Fix library loader paths. (#4013)
+  * Symlink apt configuration file rather than installing it directly. (#4013)
+  * Adjust systemd timer execution timing. (#4013)
+  * Don't crash when hitting a permissions issue on the lockfile. (#4013)
+  * Merge kfocus-btrfs-optimize into kfocus-rollback. (#4013)
+  * Merge kfocus-btrfs-optimize-set into kfocus-rollback-set. (#4013)
+  * Fix buggy state saving in the BTRFS optimization main fs balance routine.
+    (#4013)
+  * Enhance disk space checking. (#4013)
+  * Forbid the creation of timed or apt snapshots in OEM configuration mode.
+    (#4013)
+  * Log activity and error conditions. (#4013)
+  * Handle low-disk-space conditions correctly. (#4013)
+  * Fix low-disk-space warning messages. (#4013)
+  * Allow switching between automatic and manual snapshotting modes. (#4013)
+  * Massive UI overhaul. (#4013)
+  * Set up the system in "SUPPORTED, MANUAL" mode for safety. (#4013)
+  * Fix a bug where the output of 'getBtrfsStatus' could be corrupted. (#4288)
+
+ -- Aaron Rainbolt <arraybolt3@ubuntu.com>  Wed, 22 May 2024 22:22:42 -0500
+
 kfocus-rollback (24.04.1~beta15) noble; urgency=medium
 
   * org.kfocus.pkexec.kfocus-rollback.policy: Add pretty auth msgs (#4277)

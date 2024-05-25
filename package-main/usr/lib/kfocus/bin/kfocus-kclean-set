@@ -1,0 +1,90 @@
+#!/bin/bash
+#
+# Copyright 2019-2024 MindShare Inc.
+# Written for the Kubuntu Focus by Michael Mikowski
+#
+# Name    : kfocus-kclean-set
+# Purpose : run-as-root options for kfocus-kclean
+# License : GPL v2
+# Run By  : kfocus-kclean
+# Spec    : 4152
+#
+set -u;
+
+## BEGIN _importCommonFn {
+# Purpose: Import common library with _cm2* symbols
+#
+_importCommonFn() {
+  declare _lib_file;
+  _lib_file="${_baseDir}/lib/common.2.source";
+  if [ -r "${_lib_file}" ]; then
+    # shellcheck source=../lib/common.2.source
+    source "${_lib_file}" || exit 202;
+  else
+    echo 1>&2 "${_baseName}: ABORT - Cannot source lib |${_lib_file}|";
+    exit 202;
+  fi
+}
+## . END _importCommonFn }
+
+## BEGIN _purgePkgsFn {
+#
+_purgePkgsFn () {
+  declare _mode _pkg_list _cmd_list;
+
+  _mode="${1:-}";
+  shift;
+  _pkg_list=( "$@" );
+
+  if [ -z "${_mode}" ] \
+    || (( ${#_pkg_list[@]} == 0 )); then
+    _cm2WarnStrFn 'Invalid mode or package list.'
+    return 1;
+  fi
+
+  _cmd_list=('apt-get' 'purge' '-y' "${_pkg_list[@]}")
+  "${_cmd_list[@]}";
+
+  if [ "${_mode}" = 'optimize' ] \
+    && [ -n "${_rollbackSetExe}" ]; then
+    "${_rollbackSetExe}" 'btrfsDeepClean';
+  fi
+}
+## . END _purgePkgsFn }
+
+## BEGIN _mainFn {
+_mainFn () {
+  declare _arg_str;
+  _arg_str="${1:-}";
+  shift;
+  case "${_arg_str}" in
+    'purge-pkgs'             ) _purgePkgsFn 'normal'   "$@";;
+    'purge-pkgs-and-optimize') _purgePkgsFn 'optimize' "$@";;
+    *) _cm2WarnStrFn "Unrecognized directive |${_arg_str}|";;
+  esac
+}
+## . END _mainFn }
+
+## BEGIN Declare global variables {
+declare  _binName _binDir _baseDir _baseName _assignList;
+## . END Declare global variables }
+
+## BEGIN Run main if script is not sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"        )" || exit 101;
+  _binDir="$(   dirname  "${_binName}"  )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"   )" || exit 101;
+  _baseName="$( basename "${_binName}"  )" || exit 101;
+  _importCommonFn;
+
+  _assignList=(
+    "_rollbackSetExe|${_binDir}/kfocus-rollback-set||optional"
+  );
+  if ! _cm2AssignExeVarsFn  "${_assignList[@]}"; then
+    _cm2ErrStrFn 'Could not assign variable';
+    exit 1;
+  fi
+
+  _mainFn "$@";
+fi
+## . END Run main if script is not sourced }

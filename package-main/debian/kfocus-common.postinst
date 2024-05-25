@@ -1,0 +1,18 @@
+#!/bin/bash
+#
+# Copyright 2024 MindShare Inc.
+# Written for the Kubuntu Focus by Michael Mikowski and Aaron Rainbolt.
+#
+set -e
+
+## BEGIN Ensure KFocus logging is enabled
+#
+_logFile='/var/log/kfocus.log';
+if ! [ -e "${_logFile}" ]; then
+  touch "${_logFile}";
+  chown syslog:adm "${_logFile}";
+fi
+## . END Ensure KFocus logging is enabled
+
+# Tag to allow some debhelper commands to inject relevant code
+#DEBHELPER#

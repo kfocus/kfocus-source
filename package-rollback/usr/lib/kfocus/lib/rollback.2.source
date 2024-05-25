@@ -11,7 +11,7 @@
 # Package: kfocus-rollback
 #
 # NOTICE: common.2.source must be sourced before sourcing this library!
-# NOTICE: _snapshotSetExe is expected to be set to the path to the executable
+# NOTICE: _rollbackSetExe is expected to be set to the path to the executable
 #         script kfocus-rollback-set or a mock of it.
 # NOTICE: _escExe is expected to be set to the path to a privilege escalation
 #         program or a mock of it.
@@ -19,16 +19,28 @@
 ## BEGIN kfocus-rollback-set bindings {
 #
 _rb2GetBtrfsStatusInternalFn () {
-  "${_snapshotSetExe}" 'getBtrfsStatus';
+  "${_rollbackSetExe}" 'getBtrfsStatus';
 }
 _rb2RestoreSnapshotFn () {
-  "${_escExe}" "${_snapshotSetExe}" 'restoreSnapshot' "${1:-}";
+  "${_escExe}" "${_rollbackSetExe}" 'restoreSnapshot' "${1:-}";
 }
 _rb2SystemSnapshotFn () {
-  "${_escExe}" "${_snapshotSetExe}" 'systemSnapshot' "${1:-}";
+  "${_escExe}" "${_rollbackSetExe}" 'systemSnapshot' "${1:-}";
 }
 _rb2DeleteSnapshotFn () {
-  "${_escExe}" "${_snapshotSetExe}" 'deleteSnapshot' "${1:-}";
+  "${_escExe}" "${_rollbackSetExe}" 'deleteSnapshot' "${1:-}";
+}
+_rb2OptimizeDiskFn () {
+  _cm2RunLongCmdFn 'Optimizing disk...' "${_escExe}" "${_rollbackSetExe}" 'btrfsDeepClean';
+}
+_rb2GetSnapshotListFn () {
+  "${_rollbackSetExe}" 'getSnapshotList';
+}
+_rb2GetManualSwitchStateFn () {
+  "${_rollbackSetExe}" 'getManualSwitchState';
+}
+_rb2SetManualSwitchStateFn () {
+  "${_escExe}" "${_rollbackSetExe}" 'setManualSwitchState' "${1:-}";
 }
 ## . END kfocus-rollback-set bindings }
 

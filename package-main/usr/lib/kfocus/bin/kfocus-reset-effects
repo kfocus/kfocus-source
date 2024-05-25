@@ -13,12 +13,7 @@ set -u;
 
 ## BEGIN _importCommonFn {
 # Summary   : _importCommonFn
-# Purpose   : Load common routines, prefer relative dir
-# Example   : _importCommonFn;
-# Arguments : none
-# Globals   : Package vars _baseDir _baseName
-# Outputs   : none
-# Returns   : none
+# Purpose   : Load common lib. See kfocus-example-app 
 #
 _importCommonFn () {
   declare _lib_list _is_loaded _lib_file;
@@ -44,8 +39,8 @@ _importCommonFn () {
 }
 ## . END _importCommonFn }
 
-## BEGIN _resetEffectsFn {
-_resetEffectsFn () {
+## BEGIN _resetShortcutsFn {
+_resetShortcutsFn () {
   declare _model_code _plasma_version _config_list _fixup_list _line \
     _bit_list _key _apply_str _log_list _name_file _config_file _opt_list \
     _fixup_orig_str _fixup_new_str;
@@ -159,7 +154,6 @@ _resetEffectsFn () {
     'font|General|forceFontDPI|136|m2g5p'
   );
 
-
   _tab_char=$'\t';
   _log_list=();
   for _line in "${_config_list[@]}"; do
@@ -240,7 +234,7 @@ _mainFn () {
   if [ "${1:-}" = '-d' ]; then
     if [ -n "${2:-}" ]; then
       _configDir="$(readlink -f "${2:-}")";
-      if [ -d "${_configDir}" ]; then _resetEffectsFn; fi
+      if [ -d "${_configDir}" ]; then _resetShortcutsFn; fi
     fi
     return;
   fi
@@ -267,7 +261,7 @@ _EOH00
   _prompt_msg="$(
     cat <<_EOH01
 ${_cm2HtmBeginStr}
-<h3 style="color:#f7941d">RESET KFOCUS DESKTOP UX</h3>
+<h3 style="color:#f7941d">KFocus Reset Effects</h3>
 
 ${_cm2HtmPStr}This app resets keyboard shortcuts and desktop<br>
 effects to Kubuntu Focus defaults.</p>
@@ -290,7 +284,7 @@ _EOH01
   # Request to reset effects and keyboard shortcuts
   _prompt_msg='Reset effects and keyboard shortcuts';
   _reply_str="$(_cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}" 'a')";
-  if [ "${_reply_str}" = 'y' ]; then _resetEffectsFn; fi
+  if [ "${_reply_str}" = 'y' ]; then _resetShortcutsFn; fi
 
   # Request to reset power management
   _power_file="${_configDir}/powermanagementprofilesrc";
@@ -316,35 +310,24 @@ _EOH01
   # shellcheck disable=SC2181
   _prompt_msg="$(cat <<_EOH02
 ${_cm2HtmBeginStr}
-<h3 style="color:#f7941d">RESET KFOCUS UX COMPLETE</h3>
-${_cm2HtmPStr}To apply effects, we will reload the plasma <br>
-shell, window manager, and keyboard shortcuts.<br></p>
+<h3 style="color:#f7941d">KFocus Reset Effects Finished</h3>
+${_cm2HtmPStr}To apply effects, press OK to reload the window <br>
+window manager, restart the keyboard shortcuts, and 
+rebuild the desktop cache.<br></p>
 
-${_cm2HtmPStr}To ensure all changes are applied, please log <br>
-out and back in.</p>
+${_cm2HtmPStr}This should apply all changes, but to be <br>
+absolutely sure, you may log out and back in.</p>
 ${_cm2HtmEndStr}
 _EOH02
   )";
   _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}";
 
-  # Rerun global hot keys
-  killall kglobalaccel5 && nohup kglobalaccel5 > /dev/null 2>&1 &
-  # shellcheck disable=SC2181
-  if [ "$?" = '0' ]; then disown "$!"; sleep 1; fi
+  # Rerun global hot keys, restart kwin, rebuild dt cache
+  kquitapp5 kglobalaccel && sleep 2s && kglobalaccel5 &
+
+  kwin --replace > /dev/null 2>&1 &
   sleep 2;
 
-  # Replace window manager
-  nohup kwin --replace > /dev/null 2>&1 &
-  # shellcheck disable=SC2181
-  if [ "$?" = '0' ]; then disown "$!"; sleep 2; fi
-  sleep 2;
-
-  # Replace plasma shell
-  nohup plasmashell --replace > /dev/null 2>&1 &
-  # shellcheck disable=SC2181
-  if [ "$?" = '0' ]; then disown "$!"; sleep 2; fi
-
-  # Rebuild desktop cache
   kbuildsycoca5 || true;
 }
 ## . END _mainFn }

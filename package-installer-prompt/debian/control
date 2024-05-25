@@ -1,0 +1,27 @@
+Source:              kfocus-installer-prompt
+Section:             misc
+Priority:            optional
+Maintainer:          Kubuntu Focus Team <support@kfocus.org>
+Uploaders:           Aaron Rainbolt <arainbolt@kfocus.org>
+Standards-Version:   4.6.2
+Rules-Requires-Root: no
+Build-Depends:       cmake,
+                     debhelper-compat (= 13),
+                     extra-cmake-modules,
+                     kubuntu-settings-desktop (>= 1:24.04.5),
+                     libkf5networkmanagerqt-dev,
+                     libkf5widgetsaddons-dev,
+                     qtbase5-dev,
+                     qttools5-dev
+
+Package:      kfocus-installer-prompt
+Architecture: any
+Depends:      kfocus-calamares-settings, ${misc:Depends}, ${shlibs:Depends}
+Conflicts:    kubuntu-installer-prompt
+Provides:     kubuntu-installer-prompt
+Pre-Depends:  ${misc:Pre-Depends}
+Description: Live ISO prompt for trying or installing Kubuntu Focus Suite
+ This application displays a screen allowing the user to either try or
+ install the Kubuntu Focus Suite after booting the KFocus ISO file. It
+ auto-launches when the ISO is first booted, and will either launch Calamares
+ or Plasma, depending on the user's choice.

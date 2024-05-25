@@ -1,10 +1,12 @@
 #!/bin/bash
 # Starts the Kubuntu OEM Environment.
-export QT_STYLE_OVERRIDE="Breeze"
-export BROWSER='sudo -H -u kubuntu firefox'
+export XDG_SESSION_CLASS="user"
+export XDG_SESSION_DESKTOP="KDE"
+export DESKTOP_SESSION="plasma"
+export QT_QPA_PLATFORMTHEME="kde"
 
 /usr/bin/kwin_x11 &
-/usr/bin/basicwallpaper /usr/share/wallpapers/KubuntuLight/contents/images/3840x2160.png &
+/usr/bin/basicwallpaper /usr/share/wallpapers/KubuntuDark/contents/images/3840x2400.png &
 sudo -E /usr/bin/calamares -D8 # This is intentionally *not* backgrounded.
 # If it exits...
 killall basicwallpaper

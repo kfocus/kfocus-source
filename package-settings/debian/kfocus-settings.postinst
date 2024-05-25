@@ -188,5 +188,51 @@ else
 fi
 ## . END Run kfocus-reset-effects to populate kfocus/kf5-settings
 
+## BEGIN Set default SDDM theme
+#
+_sddmSetFile='/var/lib/kfocus/kfocus_sddm_theme_set'
+_sddmConfigFile='/etc/sddm.conf.d/kde_settings.conf'
+if ! [ -e "${_sddmSetFile}" ]; then
+  if ! [ -e "${_sddmConfigFile}" ]; then
+    echo '[Theme]' > "${_sddmConfigFile}";
+    echo 'Current=kfocus' >> "${_sddmConfigFile}";
+  else
+    # This routine finds the '[Theme]' section of the config file if it
+    # exists, modifies the 'Current' entry in it if it exists, creates the
+    # 'Current' entry if it doesn't exist, and generates the entire '[Theme]'
+    # section if it turns out to be missing entirely.
+    readarray -t _sddmConfigLines < <(cat "${_sddmConfigFile}");
+    _foundThemeSection='n';
+
+    for (( _sddm_counter = 0; _sddm_counter < "${#_sddmConfigLines[@]}"; \
+      _sddm_counter++ )); do
+      if [ "${_sddmConfigLines[_sddm_counter]}" = '[Theme]' ]; then
+        _foundThemeSection='y';
+      elif [[ "${_sddmConfigLines[_sddm_counter]}" =~ ^Current= ]]; then
+        if [ "${_foundThemeSection}" = 'y' ]; then
+          _sddmConfigLines[_sddm_counter]='Current=kfocus';
+          break;
+        fi
+      elif [[ "${_sddmConfigLines[_sddm_counter]}" =~ ^\[.*\]$ ]]; then
+        if [ "${_foundThemeSection}" = 'y' ]; then
+          _sddmConfigLines=( "${_sddmConfigLines[@]:0:_sddm_counter}" \
+            'Current=kfocus' \
+            "${_sddmConfigLines[@]:_sddm_counter:(( ${#_sddmConfigLines[@]} - _sddm_counter ))}" );
+          break;
+        fi
+      fi
+    done
+
+    if [ "${_foundThemeSection}" = 'n' ]; then
+      _sddmConfigLines+=( '[Theme]' 'Current=kfocus' );
+    fi
+
+    IFS=$'\n'; echo "${_sddmConfigLines[*]}" > "${_sddmConfigFile}";
+  fi
+
+  touch "${_sddmSetFile}";
+fi
+## . END Set default SDDM theme
+
 # Tag to allow some debhelper commands to inject relevant code
 #DEBHELPER#

@@ -1,3 +1,52 @@
+kfocus-main (24.04.1~beta21) noble; urgency=medium
+
+  [ Aaron Rainbolt ]
+  * Wipe LD_LIBRARY_PATH before running _mainFn in kfocus-mime (#4288)
+  * Store Plasma scripts in a central repository and call them using
+    common.2.source.
+  * Remove kfocus-rollback during hardware config if it is not useful. (#4013)
+  * kfocus-mime: Fix aws and telegram installers. (#4288)
+  * postinst: Don't attempt to install pip-tools system-wide anymore. (#4288)
+
+  [ Michael S. Mikowski ]
+  * bin/kfocus-reset-effects: Apply changes as last step (#4300)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Fri, 24 May 2024 18:14:55 -0500
+
+kfocus-main (24.04.1~beta20) noble; urgency=medium
+
+  * Use nslookup rather than ping for testing Internet connectivity. (#4288)
+  * Promote curl from being a Recommends of kfocus-meta to being a Depends of
+    kfocus-main. (#4288)
+  * Fix kfocus-rollback setup. (#4288)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 22 May 2024 16:19:02 -0500
+
+kfocus-main (24.04.1~beta19) noble; urgency=medium
+
+  * Remove some erroneous files from src/kfocus-focusrx-dbus-dispatch.
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 22 May 2024 14:47:08 -0500
+
+kfocus-main (24.04.1~beta18) noble; urgency=medium
+
+  [ Aaron Rainbolt ]
+  * bin/kfocus-focusrx: Separate BTRFS setup logic from hardware check
+    routine. (#4013)
+  * Use kfocus-rollback-set rather than kfocus-btrfs-optimize-set for BTRFS
+    optimization. (#4013)
+  * Enhance disk space checking on snapshot-enabled BTRFS systems. (#4013)
+  * Integrate kfocus-rollback with kfocus-kclean. (#4013)
+  * Implement logging facilities. (#4013)
+  * common.2.source: Fix a bug that stripped a question mark from the end of
+    messages on whiptail CLI screens. (#4013)
+  * Fix post-rollback handling in FocusRx to match spec. (#4013)
+
+  [ Michael S. Mikowski ]
+  * bin/kfocus-reset-effects: Comments only for lookandfeel tools (#3179)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 20 May 2024 18:15:04 -0500
+
 kfocus-main (24.04.1~beta17) noble; urgency=medium
 
   * bin/kfocus-reset-effects: Fix Meta + Space touchpad toggle (#3179)

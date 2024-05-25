@@ -283,6 +283,17 @@ function deb_zoom() {
   PRETTY_NAME="Zoom"
   WEBSITE="https://zoom.us/"
 }
+function deb_awscli() {
+  PRETTY_NAME="AWS CLI"
+  WEBSITE="https://aws.amazon.com/cli/"
+  SNAP_PKG_NAME="aws-cli"
+  IS_CLASSIC_SNAP='y'
+}
+function deb_telegram-desktop() {
+  PRETTY_NAME="Telegram Desktop"
+  WEBSITE="https://telegram.org/"
+  SNAP_PKG_NAME="telegram-desktop"
+}
 # Extracted from main
 function _makeAppListFn () {
   IFS=$'\n' read -r -d '' -a _pkgNameList < <(
@@ -345,6 +356,7 @@ function _readPkgRepoInfoFn () {
   METHOD='website';
   EULA='';
   SNAP_PKG_NAME='';
+  IS_CLASSIC_SNAP='';
   URL='';
   VERSION_INSTALLED='';
   VERSION_PUBLISHED='';
@@ -398,6 +410,13 @@ function install_apt() {
 
   if ! _cm2ChkInstalledPkgFn "${APP}"; then
     apt-get -q -y install "${APP}"
+  fi
+}
+function install_snap() {
+  if [ "${IS_CLASSIC_SNAP:-}" = 'y' ]; then
+    snap install --classic "${SNAP_PKG_NAME:-}";
+  else
+    snap install "${SNAP_PKG_NAME:-}";
   fi
 }
 function download_deb() {
@@ -569,7 +588,7 @@ _installPkgFn () {
     direct|github|website) install_deb "${URL:-}";;
     apt) install_apt;;
     ppa) install_ppa;;
-    snap) snap install "${SNAP_PKG_NAME:-}";;
+    snap) install_snap;;
     *) echo -e "Unexpected method |${METHOD:-}|";
       exit 1;;
   esac;
@@ -868,6 +887,9 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binDir="$(dirname "${_binName}")"    || exit 1;
   _baseDir="$(dirname "${_binDir}")"    || exit 1;
   _baseName="$(basename "${_binName}")" || exit 1;
+  # IMPORTANT: When called via Google Chrome, this is necessary to keep Zenity
+  # from grabbing Chrome's libvulkan rather than the system's libvulkan.
+  export LD_LIBRARY_PATH='';
   _importCommonFn;
   _mainFn "$@";
 fi

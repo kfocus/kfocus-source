@@ -279,10 +279,28 @@ _echoIsBootMountPointFn () {
 # Mock this for tests
 #
 _echoBootMegsFn() {
-  declare _arg_str _int;
+  declare _arg_str _btrfs_report _int;
+
   _arg_str="${1:-size}";
-  _int="$(df -m --output="${_arg_str}" /boot | tail -n1 | sed 's/[^0-9]//g')";
-  printf '%d' "${_int}";
+
+  if [ "${_isBtrfsYn}" = 'y' ]; then
+    _btrfs_report="$(LC_ALL=C "${_btrfsExe}" filesystem usage -b \
+      /btrfs_boot)";
+    if [ "${_arg_str}" = 'avail' ]; then
+      _int="$("${_rollbackSetExe}" 'getBootUnallocSpace')";
+      (( _int = _int / 1048576 ));
+      printf '%d' "${_int}";
+    elif [ "${_arg_str}" = 'size' ]; then
+      _int="$(df -m --output='size' /boot | tail -n1 | sed 's/[^0-9]//g')";
+      printf '%d' "${_int}";
+    else
+      _cm2WarnStrFn 'Unrecognized _arg_str provided.';
+      return 1;
+    fi
+  else
+    _int="$(df -m --output="${_arg_str}" /boot | tail -n1 | sed 's/[^0-9]//g')";
+    printf '%d' "${_int}";
+  fi
 }
 ## . END _echoBootMegsFn }
 
@@ -416,7 +434,7 @@ _mainFn() {
     _kversExtraKeepStr _kversFullPrefStr _kversFullRunStr \
     _opt_str _overfull_threshold_count _prompt_str \
     _purge_msg _purge_pkg_list_str _purge_pkg_list _purge_pkg \
-    _reply  _reserve_kvers_count _run_msg _table_str _win_title;
+    _reply  _reserve_kvers_count _run_msg _table_str _win_title _btrfs_status;
 
   ## Begin Initialize {
   _aptListStr="$(_echoAptListStrFn)";
@@ -441,6 +459,17 @@ _mainFn() {
     esac
   done
   ## . End Process Options }
+
+  ## Begin Detect BTRFS {
+  if [ -n "${_rollbackSetExe}" ]; then
+    _btrfs_status="$("${_rollbackSetExe}" 'getBtrfsStatus')"
+    if [ "${_btrfs_status}" = 'SUPPORTED, AUTO' ] \
+      || [ "${_btrfs_status}" = 'SUPPORTED, MANUAL' ];
+      then _isBtrfsYn='y';
+      _kernelUnitSizeInt="${_kernelUnitSizeBtrfsInt}";
+    fi
+  fi
+  ## . END Detect BTRFS }
 
   ## Begin Heuristics {
   # 1. Determine actual /boot size, free space, if /boot is a partition.
@@ -555,7 +584,7 @@ _mainFn() {
   # _kversFullOemStr="$(_echoMetaKversStrFn linux-image-oem-22.04-kfocus)";
 
   # Output debug
-  _kc2RtestDebugStr="$(cat << EOD;
+  _kc2RtestDebugStr="$(cat <<EOD
 === BEGIN Diagnostics ============
 Installed Kernel List : ${_inst_kvers_list_str}
 Target Max Kernels    : ${_kernel_max_count}
@@ -678,8 +707,7 @@ Please see your system administrator to fix.";
   ## Begin Show dialog if there are no packages to purge {
   if [ -z "${_filtered_purge_list_str}" ]; then
     if [ "${_is_boot_low}" = 'y' ]; then
-      _run_msg+="$(
-        cat <<_EOW01
+      _run_msg+="$(cat <<_EOW01
 
 
 <p>Disk space on <code>/boot</code> is low, but only protected <br>
@@ -691,8 +719,7 @@ system from booting.</p>
 _EOW01
       )";
     fi
-    _purge_msg="$(
-      cat <<_EOW02
+    _purge_msg="$(cat <<_EOW02
 ${_cm2HtmBeginStr}${_table_str}
 ${_brow_str}<h3 style="color:#f7941d">${_body_title}</h3>${_erow_str}
 ${_brow_str}Doc: <a style="color:#1d99f3" href="https://kfocus.org/wf/tools#kclean">https://kfocus.org/wf/tools#kclean</a>${_erow_str}
@@ -716,8 +743,7 @@ _EOW02
 
   ## Begin Show dialog with packages to purge {
   _kernel_purge_count="$(( _inst_kvers_count - _kernel_keep_count ))";
-  _purge_msg="$(
-    cat <<_EOW04
+  _purge_msg="$(cat <<_EOW04
 ${_cm2HtmBeginStr}${_table_str}
 ${_brow_str}<h3 style="color:#f7941d">FocusRX: Purge Older Kernels?</h3>${_erow_str}
 ${_brow_str}Doc: <a style="color:#1d99f3" href="https://kfocus.org/wf/tools#kclean">https://kfocus.org/wf/tools#kclean</a>${_erow_str}
@@ -751,9 +777,13 @@ _EOW04
 
   ## Begin Purge packages {
   _end_msg='';
-  _cmd_list=('apt-get' 'purge' '-y' "${_filtered_purge_list[@]}");
+  if [ "${_isBtrfsYn}" = 'y' ]; then
+    _cmd_list=("${_kcleanSetExe}" 'optimize' "${_filtered_purge_list[@]}");
+  else
+    _cmd_list=("${_kcleanSetExe}" 'normal' "${_filtered_purge_list[@]}");
+  fi
   if _exit_str="$(
-    _cm2RunLongCmdFn 'Purging packages' "${_cmd_list[@]}"
+    _cm2RunLongCmdFn 'Cleaning up kernels' "${_cmd_list[@]}"
   )"; then
     _end_msg='Purge was successful.';
   else
@@ -765,8 +795,7 @@ _EOW04
   ## . End Purge packages }
 
   ## Begin Report purge results {
-  _purge_msg="$(
-    cat <<_EOW05
+  _purge_msg="$(cat <<_EOW05
 ${_cm2HtmBeginStr}${_table_str}
 ${_brow_str}<h3 style="color:#f7941d">${_body_title} FINISHED</h3>${_erow_str}
 ${_brow_str}${_end_msg}${_erow_str}
@@ -783,7 +812,9 @@ _EOW05
 declare _binName _binDir _baseDir _baseName _cStr \
   _doDebug _escExe _aptListStr _kversExtraKeepStr _preferredMetaPkg \
   _kversFullPrefStr _kversFullRunStr _kc2RtestDebugStr \
-  _divisorInt _kernelUnitSizeInt _lowDiskSizeInt _multiInt \
+  _isBtrfsYn _divisorInt _kernelUnitSizeInt _kernelUnitSizeBtrfsInt \
+  _lowDiskSizeInt _multiInt _assignList _btrfsExe _rollbackSetExe \
+  _kcleanSetExe;
 
 _aptListStr='';
 _cStr=$'\n';
@@ -793,11 +824,14 @@ _kversFullPrefStr='';
 _kversFullRunStr='';
 # TODO: Revive as needed: _kversFullLlHweStr=''; _kversFullOemStr='';
 
+# Used to switch behavior on BTRFS disks
+_isBtrfsYn='n';
 # Divisor for portion of root disk to consider reserved for kernels
 #   when space is low and /boot is on root disk.
 _divisorInt=8;
 # Nominal size in MB for a kernel on /boot partition
 _kernelUnitSizeInt=230;
+_kernelUnitSizeBtrfsInt=$(( _kernelUnitSizeInt * 2 ));
 # Size in MB of what we consider a low root disk (10GB)
 _lowRootDiskInt=10240;
 # Max kernel count for unconstrained, large disks
@@ -816,6 +850,17 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   # Get escalation exe
   _escExe="$(_cm2GetEscExeFn)" || exit;
+
+  _assignList=(
+    '_btrfsExe|/usr/bin/btrfs'
+    "_kcleanSetExe|${_binDir}/kfocus-kclean-set"
+    "_rollbackSetExe|${_binDir}/kfocus-rollback-set||optional"
+  );
+  if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
+    _cm2WarnStrFn 'ABORT: Required commands not found';
+    exit 1;
+  fi
+
   _mainFn "$@";
 fi
 ## . END Run main if script is not sourced }

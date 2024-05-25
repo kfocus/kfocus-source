@@ -77,6 +77,58 @@ _cm2TrapInterruptFn () {
 }
 ## . END Error Control Section }
 
+## BEGIN Logging facilities {
+_cm2SetLogTagFn () {
+  declare _log_tag_str;
+  
+  [ -z "${_cm2LoggerExe}" ] && return;
+
+  _log_tag_str="${1:-}";
+  if [ -z "${_log_tag_str}" ]; then
+    _cm2WarnStrFn 'Empty log tag string provided.';
+    return 1;
+  fi
+
+  _cm2LogTag="${_log_tag_str}[$$]";
+}
+_cm2LogFn () {
+  declare _log_level_str _log_str _log_prio_str;
+
+  [ -z "${_cm2LoggerExe}" ] && return;
+
+  _log_level_str="${1:-}";
+  _log_str="${2:-}";
+
+  if [ -z "${_log_level_str}" ] \
+    || [ -z "${_log_str}" ]; then
+    _cm2WarnStrFn 'No log level or log string provided.';
+    return 1;
+  fi
+
+  if [ -z "${_cm2LogTag}" ]; then
+    _cm2WarnStrFn 'Log tag not yet set. Use _cm2SetLogTagFn first.';
+    return 1;
+  fi
+
+  case "${_log_level_str}" in
+    'debug'  ) _log_prio_str='user.debug'   ;;
+    'info'   ) _log_prio_str='user.info'    ;;
+    'notice' ) _log_prio_str='user.notice'  ;;
+    'warning') _log_prio_str='user.warning' ;;
+    'err'    ) _log_prio_str='user.err'     ;;
+    'crit'   ) _log_prio_str='user.crit'    ;;
+    'alert'  ) _log_prio_str='user.alert'   ;;
+    'emerg'  ) _log_prio_str='user.emerg'   ;;
+    *)
+      _cm2WarnStrFn 'Invalid log level string provided.';
+      return 1;
+      ;;
+  esac
+
+  "${_cm2LoggerExe}" -p "${_log_prio_str}" -t "${_cm2LogTag}" "${_log_str}";
+}
+## . END Logging facilities }
+
 _cm2GetEscExeFn () {
   declare _esc_exe _uid_int _prompt_str _reply_str;
   if [ "${_cm2IsTty}" = 'n' ]; then
@@ -441,8 +493,8 @@ _cm2StripTagsFn () {
 
 _cm2PromptUserFn () {
   declare _icon_key _opt_str _prompt_str _window_title _query_type \
-    _cmd_list _ans_str _key_list _val_list _params_list _params_idx \
-    _cycle_idx;
+    _cmd_list _ans_str _key_list _val_list _default_option_str _params_list \
+    _params_idx _cycle_idx;
 
   _icon_key='kfocus-bug-rx';
   local OPTIND=1;
@@ -472,12 +524,13 @@ _cm2PromptUserFn () {
 
     # These arguments *must* be inserted before the actual '--yesno' argument
     # below, or KDialog glitches badly (at least on Kubuntu 24.04).
-    if [ "${_query_type}" = 'o' ]; then
-      _cmd_list+=("--yes-label=OK" "--no-label=Cancel");
-    fi
+    case "${_query_type}" in
+      'o') _cmd_list+=('--yes-label=OK' '--no-label=Cancel');;
+      'm') _cmd_list+=('--yes-label=OK' '--no-label=More Info');;
+    esac
 
     case "${_query_type}" in
-      [ao]) _cmd_list+=('--yesno');;
+      [aom]) _cmd_list+=('--yesno');;
       w) _cmd_list+=('--warningyesno');;
       s) _cmd_list+=('--sorry');;
       e) _cmd_list+=('--error');;
@@ -502,6 +555,7 @@ _cm2PromptUserFn () {
       # similar to the radio list feature.
       _key_list=();
       _val_list=();
+      _default_option_str='';
       _params_list=( "$@" );
       _cycle_idx=0;
       for (( _params_idx=0; _params_idx < $#; _params_idx++ )); do
@@ -511,10 +565,21 @@ _cm2PromptUserFn () {
           _cmd_list+=( "${_params_list[_params_idx]}" );
           _val_list+=( "${_params_list[_params_idx]}" );
         elif (( _cycle_idx == 2 )); then
+          if [ "${_params_list[_params_idx]}" = 'on' ]; then
+            _default_option_str="${_params_list[((_params_idx - 1))]}";
+          elif [ "${_params_list[_params_idx]}" = 'off' ]; then
+            true; # this doesn't do anything but is an allowable value
+          else
+            _cm2WarnStrFn 'Unrecognized combo box toggle provided.'
+            return 1;
+          fi
           _cycle_idx=-1;
         fi
         (( _cycle_idx++ )) || true;
       done
+      if [ -n "${_default_option_str}" ]; then
+        _cmd_list+=( "--default=${_default_option_str}" );
+      fi
       _ans_str="$("${_cmd_list[@]}")";
       for (( _params_idx=0; _params_idx < ${#_key_list[@]}; \
         _params_idx++ )); do
@@ -547,6 +612,12 @@ _cm2PromptUserFn () {
         _cm2WarnStrFn 'ERROR: Radio lists not supported in CLI mode';
         return 1;
         ;;
+      [om])
+        # TODO 2024-05-17 warm arainbolt: Add ok/cancel and ok/more info
+        # methods
+        _cm2WarnStrFn 'ERROR: OK/Cancel/More Info not supported in CLI mode';
+        return 1;
+        ;;
       *)
         _prompt_str="$(_cm2StripTagsFn "${_prompt_str}")";
         _cmd_list=('_cm2EchoFn' "${_prompt_str}");
@@ -560,16 +631,17 @@ _cm2PromptUserFn () {
       );
 
       case "${_query_type}" in
-        [aow]) _cmd_list+=('--yesno') ;;
+        [aomw]) _cmd_list+=('--yesno') ;;
         [rd]) _cmd_list+=('--radiolist') ;;
         *) _cmd_list+=('--msgbox') ;;
       esac
 
-      if [ "${_query_type}" = 'o' ]; then
-        _cmd_list+=("--yes-button=OK" "--no-button=Cancel");
-      fi
+      case "${_query_type}" in
+        'o') _cmd_list+=('--yes-button=OK' '--no-button=Cancel');;
+        'm') _cmd_list+=('--yes-button=OK' '--no-button=More Info');;
+      esac
 
-      _prompt_str="$(_cm2StripTagsFn "${_prompt_str}" 'n')";
+      _prompt_str="$(_cm2StripTagsFn "${_prompt_str}" 'w')";
       _prompt_str="$(fmt <<< "${_prompt_str}")";
 
       # whiptail accepts arguments for setting window and list sizes, but we
@@ -594,7 +666,7 @@ _cm2PromptUserFn () {
     fi
   fi
 
-  if [[ "${_query_type}" =~ [aowrd] ]]; then
+  if [[ "${_query_type}" =~ [aomwrd] ]]; then
     echo "${_ans_str}";
   fi
 }
@@ -621,6 +693,38 @@ _cm2SetCliTypeFn () {
       ;;
     *) return 1;;
   esac
+}
+
+_cm2RunPlasmaScriptFn () {
+  declare _script_name _counter;
+
+  _script_name="${1:-}";
+  if [ -z "${_script_name}" ]; then
+    _cm2WarnStrFn 'No Plasma script name provided!';
+    return 1;
+  fi
+
+  [ -z "${_cm2QdbusExe}" ] && return;
+
+  for (( _counter = 0; _counter < 3; _counter++ )); do
+    if ! pgrep plasmashell; then
+      sleep 3;
+    else
+      break;
+    fi
+  done
+
+  if ! [[ "${_script_name}" =~ ^/ ]]; then
+    _script_name="${_cm2PlasmaScriptDir}/${_script_name}";
+  fi
+
+  if [ -f "${_script_name}" ]; then
+    "${_cm2QdbusExe}" 'org.kde.plasmashell' '/PlasmaShell' \
+      'org.kde.PlasmaShell.evaluateScript' "$(cat "${_script_name}")";
+  else
+    _cm2WarnStrFn 'Specified Plasma script does not exist!';
+    return 1;
+  fi
 }
 
 # Regression tests only
@@ -686,12 +790,17 @@ _cm2HtmH3Str='<h3 style="color:#f7941d">FocusRx: ';
 _cm2HtmPStr='<p style="margin-right:32px">';
 _cm2CliType='cli';
 _cm2WhiptailExe="$(command -v whiptail || true)";
+_cm2LoggerExe="$(command -v logger || true)";
+_cm2LogTag='';
+_cm2PlasmaScriptDir='/usr/lib/kfocus/plasma/script';
+_cm2QdbusExe="$(command -v qdbus || true)";
 
 # Export Strings
 # shellcheck disable=2090 # Disable complaining about html vars
-export _cm2Arg01 _cm2Arg02 _cm2BlockMsg _cm2HtmBeginStr _cm2HtmEndStr     \
-  _cm2HtmH3Str _cm2HtmPStr _cm2IsTty _cm2KdiagExe _cm2ModelCode _cm2RmExe \
-  _cm2CliType _cm2WhiptailExe;
+export _cm2Arg01 _cm2Arg02 _cm2BlockMsg _cm2HtmBeginStr _cm2HtmEndStr      \
+  _cm2HtmH3Str _cm2HtmPStr _cm2IsTty _cm2KdiagExe _cm2ModelCode _cm2RmExe  \
+  _cm2CliType _cm2WhiptailExe _cm2LoggerExe _cm2LogTag _cm2PlasmaScriptDir \
+  _cm2QdbusExe;
 
 # Export Functions
 export -f _cm2AskExitFn _cm2AssignExeVarsFn _cm2CatStripEchoFn               \
@@ -702,5 +811,5 @@ export -f _cm2AskExitFn _cm2AssignExeVarsFn _cm2CatStripEchoFn               \
   _cm2PromptUserFn _cm2ReadPromptYnFn _cm2RunLongCmdFn _cm2SetMsgFn          \
   _cm2StripTagsFn _cm2SucFn _cm2SucStrFn _cm2TestVersFn _cm2TrapErrorFn      \
   _cm2TrapExitFn _cm2TrapInterruptFn _cm2WarnFn _cm2WarnStrFn _cm2SetIsTtyFn \
-  _cm2SetCliTypeFn                                                           ;
+  _cm2SetCliTypeFn _cm2SetLogTagFn _cm2LogFn                                 ;
 ## . END Execute on source }
