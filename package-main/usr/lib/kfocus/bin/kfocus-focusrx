@@ -1265,7 +1265,7 @@ _parentCmdStr="$(ps -o comm= $PPID)";
 # otherwise communicated with by FocusRx.
 _lookupList=( 'example.com' 'cloudflare.com' 'fastly.com' 'akamai.com' );
 _maxNagCount=6;
-_restoreCompleteFile='/var/lib/kfocus/kfocus_rollback_restore_complete';
+_restoreCompleteFile='/var/lib/kfocus/rollback_restore_complete';
 ## . END Declare and assign global vars }
 
 ## BEGIN Run main if script is not sourced {

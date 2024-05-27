@@ -185,7 +185,8 @@ _chkBiosUpdateFn () {
 _chkHwConfigFn () {
   declare _is_nv_system _do_force _reason_list _dmi_hw_config_code \
     _dmi_hw_model_code _file_hw_config_code _file_hw_model_code \
-    _is_hw_reconfig _msg _tool_pkg_suffix _tool_pkg_name _lspci_exe;
+    _is_hw_reconfig _msg _tool_pkg_suffix _tool_pkg_name _lspci_exe \
+    _btrfs_status;
 
   _do_force='n';
   if [[ "${1:-}" =~ ^[Yy] ]]; then _do_force='y'; fi
