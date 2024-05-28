@@ -637,7 +637,7 @@ _chooseSnapshotFn () {
   for (( _snapshot_idx=0; _snapshot_idx < ${#_snapshot_list[@]}; \
     _snapshot_idx++ )); do
     _snapshot_disp_list[_snapshot_idx]="$(
-      "$_rollbackSetExe" 'makeSnapshotDispId' \
+      "${_rollbackSetExe}" 'makeSnapshotDispId' \
         "${_snapshot_list[_snapshot_idx]}";
     )";
     _radio_list+=( "${_snapshot_idx}" \
