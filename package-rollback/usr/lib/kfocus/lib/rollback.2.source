@@ -10,122 +10,37 @@
 # Run By : Scripts that source this file
 # Package: kfocus-rollback
 #
-# NOTICE: common.2.source must be sourced before sourcing this library!
-# NOTICE: _rollbackSetExe is expected to be set to the path to the executable
-#         script kfocus-rollback-set or a mock of it.
-# NOTICE: _escExe is expected to be set to the path to a privilege escalation
-#         program or a mock of it.
-
-## BEGIN kfocus-rollback-set bindings {
-#
-_rb2GetBtrfsStatusInternalFn () {
-  "${_rollbackSetExe}" 'getBtrfsStatus';
-}
-_rb2RestoreSnapshotFn () {
-  "${_escExe}" "${_rollbackSetExe}" 'restoreSnapshot' "${1:-}";
-}
-_rb2SystemSnapshotFn () {
-  "${_escExe}" "${_rollbackSetExe}" 'systemSnapshot' "${1:-}";
-}
-_rb2DeleteSnapshotFn () {
-  "${_escExe}" "${_rollbackSetExe}" 'deleteSnapshot' "${1:-}";
-}
-_rb2OptimizeDiskFn () {
-  _cm2RunLongCmdFn 'Optimizing disk...' "${_escExe}" "${_rollbackSetExe}" 'btrfsDeepClean';
-}
-_rb2GetSnapshotListFn () {
-  "${_rollbackSetExe}" 'getSnapshotList';
-}
-_rb2GetManualSwitchStateFn () {
-  "${_rollbackSetExe}" 'getManualSwitchState';
-}
-_rb2SetManualSwitchStateFn () {
-  "${_escExe}" "${_rollbackSetExe}" 'setManualSwitchState' "${1:-}";
-}
-## . END kfocus-rollback-set bindings }
-
-## BEGIN _rb2MakeSnapshotDispIdFn {
-#
-_rb2MakeSnapshotDispIdFn () {
-  declare _snapshot_id _snapshot_reason_loc _snapshot_reason_raw \
-    _snapshot_reason _snapshot_datetime _snapshot_disp_id;
-
-  _snapshot_id="${1:-}";
-  _snapshot_reason_loc="/btrfs_main/@kfocus-rollback-snapshots/${_snapshot_id}/var/lib/kfocus/kfocus_rollback_snapshot_reason";
-
-  if [ -z "${_snapshot_id}" ] || [ -z "${_snapshot_reason_loc}" ]; then
-    _cm2WarnStrFn 'Invalid arguments, cannot generate snapshot display ID';
-    return 1;
-  fi  
-
-  _snapshot_reason_raw="$(cat "${_snapshot_reason_loc}")";
-  case "${_snapshot_reason_raw}" in
-    'Apt')
-      _snapshot_reason='Before Package Change';
-      ;;  
-    'Timed')
-      _snapshot_reason='System Schedule';
-      ;;  
-    'Pre-Rollback')
-      _snapshot_reason='Pre-Rollback';
-      ;;  
-    *) # must be user-generated
-      _snapshot_reason="Created by ${_snapshot_reason_raw}";
-      ;;  
-  esac
-
-  _snapshot_datetime="$(date -d "${_snapshot_id}" '+%a %F %H:%M')";
-
-  _snapshot_disp_id="${_snapshot_reason} — ${_snapshot_datetime}";
-  echo "${_snapshot_disp_id}";
-}
-## . END _rb2MakeSnapshotDispIdFn }
-
-## BEGIN _rb2GetSnapshotListStrFn {
-#
-_rb2GetSnapshotListStrFn () {
-  find '/btrfs_main/@kfocus-rollback-snapshots' -maxdepth 1 \
-     | cut -d'@' -f3 \
-     | sort -n -r \
-     | sed '/^$/d; s/^/@/;';
-}
-## . END _rb2GetSnapshotListStrFn }
-
-## BEGIN _rb2GetBtrfsStatusFn {
-#
-_rb2GetBtrfsStatusFn () {
-  declare _btrfs_status_str _exitInt;
-
-  _btrfs_status_str="$(_rb2GetBtrfsStatusInternalFn)"
-  _exit_int="$?";
-
-  # Override false positive due to complex exit code handling
-  # shellcheck disable=SC2181
-  if [ "${_exit_int}" != "${_NOTICE}" ]; then
-    exit "${_exit_int}";
-  fi
-
-  echo "${_btrfs_status_str}";
-}
-## . END _rb2GetBtrfsStatusFn }
-
-## BEGIN Execute on source {
-#
-
 # Set exit code definitions
-_NOTICE='0';
-_ERR='1';
-_CRIT='2';
-_ALERT='3';
-_EMERG='4';
-_LOCK='20';
+declare -g _rb2NOTICE _rb2ERR _rb2CRIT _rb2ALERT _rb2EMERG _rb2LOCK \
+  _rb2MainDir _rb2BootDir _rb2MainSubvol _rb2BootSubvol _rb2MainSnapshotId \
+  _rb2MainWorkingId _rb2BootSnapshotId _rb2BootWorkingId _rb2MainSnapshotDir \
+  _rb2MainWorkingDir _rb2BootSnapshotDir _rb2BootWorkingDir \
+  _rb2KfocusStateDir _rb2RestoreCompleteFile _rb2OptimizeStateFile \
+  _rb2SnapshotReasonFile;
 
-# Export String
-export _NOTICE _ERR _CRIT _ALERT _EMERG _LOCK;
+_rb2NOTICE='0';
+_rb2ERR='1';
+_rb2CRIT='2';
+_rb2ALERT='3';
+_rb2EMERG='4';
+_rb2LOCK='20';
 
-# Export Functions
-export -f _rb2GetBtrfsStatusInternalFn _rb2RestoreSnapshotFn \
-  _rb2SystemSnapshotFn _rb2MakeSnapshotDispIdFn _rb2GetSnapshotListStrFn \
-  _rb2GetBtrfsStatusFn;
+_rb2MainDir='/btrfs_main';
+_rb2BootDir='/btrfs_boot';
+_rb2MainSubvol="${_rb2MainDir}/@";
+_rb2BootSubvol="${_rb2BootDir}/@boot";
+_rb2MainSnapshotId='@kfocus-rollback-snapshots';
+_rb2MainWorkingId='@kfocus-rollback-working';
+_rb2BootSnapshotId='@kfocus-rollback-boot-snapshots';
+_rb2BootWorkingId='@kfocus-rollback-working-boot';
 
-## . END Execute on source }
+_rb2MainSnapshotDir="${_rb2MainDir}/${_rb2MainSnapshotId}";
+_rb2MainWorkingDir="${_rb2MainDir}/${_rb2MainWorkingId}";
+_rb2BootSnapshotDir="${_rb2BootDir}/${_rb2BootSnapshotId}";
+_rb2BootWorkingDir="${_rb2BootDir}/${_rb2BootWorkingId}";
+
+_rb2KfocusStateDir='/var/lib/kfocus';
+_rb2RestoreCompleteFile="${_rb2KfocusStateDir}/rollback_restore_complete";
+_rb2OptimizeStateFile="${_rb2KfocusStateDir}/rollback_optimize_state";
+_rb2SnapshotReasonFile="${_rb2KfocusStateDir}/rollback_snapshot_reason";
+_rb2ManualSwitchFile="${_rb2KfocusStateDir}/rollback_manual_mode";

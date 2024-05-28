@@ -1,0 +1,655 @@
+#!/bin/bash
+#All of our nested mock functions are showing up as unreachable, silence it
+#shellcheck disable=SC2317
+#
+# set -u is set in _runUnitTests (the test harness)
+#
+
+## BEGIN _overwriteWithMocksFn {
+# Purpose: Source and overwrite function with mocks
+# The global declares are on purpose for modifying global vars.
+# bashsupport disable=BP2001
+_overwriteWithMocksFn () {
+  declare _exe_file _rb2_file;
+
+  # shellcheck disable=SC2154
+  _exe_file="${_t00TopDir}";
+  _exe_file+='/package-rollback/usr/lib/kfocus/bin/kfocus-rollback-set';
+  # shellcheck disable=SC1090
+  source "${_exe_file}" || exit 1;
+
+  # shellcheck disable=SC2154
+  _rb2_file="${_t00TopDir}";
+  _rb2_file+='/package-rollback/usr/lib/kfocus/lib/rollback.2.source';
+  # shellcheck disable=SC1090
+  source "${_rb2_file}" || exit 1;
+
+  # Override executables with functions
+  declare -g _btrfsExe='_btrfsExe';
+  declare -g _btrfsBalanceExe='_btrfsBalanceExe';
+  declare -g _btduExe='_btduExe';
+  declare -g _filefragExe='_filefragExe';
+}
+## . END _overwriteWithMocksFn }
+
+_setupPathMocksFn () {
+  declare _arg_str;
+  
+  _arg_str="${1:-}";
+  if [ -z "${_arg_str}" ]; then
+    return 1;
+  fi
+
+  _rootDir="${_t00RunDir}/${_arg_str}";
+  _lockFile="${_rootDir}/tmp/kfocus-rollback/kfocus-rollback-set.lock";
+  _lockDir="${_rootDir}/tmp/kfocus-rollback";
+  _libvirtSettingsDir="${_rootDir}/etc/libvirt";
+  _libvirtDataDir="${_rootDir}/var/lib/libvirt";
+  _fstabFile="${_rootDir}/etc/fstab";
+  _rb2MainDir="${_rootDir}${_rb2MainDir}";
+  _rb2BootDir="${_rootDir}${_rb2BootDir}";
+  _rb2MainSubvol="${_rb2MainDir}/@";
+  _rb2BootSubvol="${_rb2BootDir}/@boot";
+  _rb2MainSnapshotDir="${_rb2MainDir}/${_rb2MainSnapshotId}";
+  _rb2MainWorkingDir="${_rb2MainDir}/${_rb2MainWorkingId}";
+  _rb2BootSnapshotDir="${_rb2BootDir}/${_rb2BootSnapshotId}";
+  _rb2BootWorkingDir="${_rb2BootDir}/${_rb2BootWorkingId}";
+  _rb2KfocusStateDir="${_rootDir}${_rb2KfocusStateDir}";
+  _rb2RestoreCompleteFile="${_rb2KfocusStateDir}/rollback_restore_complete";
+  _rb2OptimizeStateFile="${_rb2KfocusStateDir}/rollback_optimize_state";
+  _rb2SnapshotReasonFile="${_rb2KfocusStateDir}/rollback_snapshot_reason";
+  _rb2ManualSwitchFile="${_rb2KfocusStateDir}/rollback_manual_mode";
+}
+
+_lowMainYn='n';
+_lowBootYn='n';
+_mainSyncOkYn='y';
+_bootSyncOkYn='y';
+_defragmentOkYn='y';
+_mainSubvolList=();
+_mainSubvolDirs=();
+_mainSubvolRwMap=();
+_bootSubvolList=();
+_bootSubvolDirs=();
+_bootSubvolRwMap=();
+_mountList=();
+
+_mainBGoodSpaceStr="$(cat <<'EOF'
+Overall:
+    Device size:		      995573858304
+    Device allocated:		      285640491008
+    Device unallocated:		      709933367296
+    Device missing:		                 0
+    Device slack:		               512
+    Used:			      280898146304
+    Free (estimated):		      712708616192	(min: 357741932544)
+    Free (statfs, df):		      712707534848
+    Data ratio:			              1.00
+    Metadata ratio:		              2.00
+    Global reserve:		         393445376	(used: 0)
+    Multiple profiles:		                no
+
+Data,single: Size:281328746496, Used:278553497600 (99.01%)
+   /dev/mapper/luks-97028cee-110d-4d98-861c-f91a5137012a	281328746496
+
+Metadata,DUP: Size:2147483648, Used:1172258816 (54.59%)
+   /dev/mapper/luks-97028cee-110d-4d98-861c-f91a5137012a	4294967296
+
+System,DUP: Size:8388608, Used:65536 (0.78%)
+   /dev/mapper/luks-97028cee-110d-4d98-861c-f91a5137012a	  16777216
+
+Unallocated:
+   /dev/mapper/luks-97028cee-110d-4d98-861c-f91a5137012a	709933367296
+EOF
+)";
+_mainBLowSpaceStr="$(cat <<'EOF'
+Overall:
+    Device size:		       64102350848
+    Device allocated:		       58007224320
+    Device unallocated:		        6095126528
+    Device missing:		                 0
+    Device slack:		              1024
+    Used:			       52148396032
+    Free (estimated):		       10428375040	(min: 7380811776)
+    Free (statfs, df):		       10427310080
+    Data ratio:			              1.00
+    Metadata ratio:		              2.00
+    Global reserve:		          65847296	(used: 0)
+    Multiple profiles:		                no
+
+Data,single: Size:55842963456, Used:51509714944 (92.24%)
+   /dev/vda3	55842963456
+
+Metadata,DUP: Size:1073741824, Used:319324160 (29.74%)
+   /dev/vda3	2147483648
+
+System,DUP: Size:8388608, Used:16384 (0.20%)
+   /dev/vda3	  16777216
+
+Unallocated:
+   /dev/vda3	6095126528
+EOF
+)";
+_mainNonbGoodSpaceStr="$(cat <<'EOF'
+Overall:
+    Device size:		 927.20GiB
+    Device allocated:		 266.02GiB
+    Device unallocated:		 661.18GiB
+    Device missing:		     0.00B
+    Device slack:		   512.00B
+    Used:			 261.61GiB
+    Free (estimated):		 663.76GiB	(min: 333.17GiB)
+    Free (statfs, df):		 663.76GiB
+    Data ratio:			      1.00
+    Metadata ratio:		      2.00
+    Global reserve:		 375.22MiB	(used: 0.00B)
+    Multiple profiles:		        no
+
+Data,single: Size:262.01GiB, Used:259.42GiB (99.01%)
+   /dev/mapper/luks-97028cee-110d-4d98-861c-f91a5137012a	 262.01GiB
+
+Metadata,DUP: Size:2.00GiB, Used:1.09GiB (54.59%)
+   /dev/mapper/luks-97028cee-110d-4d98-861c-f91a5137012a	   4.00GiB
+
+System,DUP: Size:8.00MiB, Used:64.00KiB (0.78%)
+   /dev/mapper/luks-97028cee-110d-4d98-861c-f91a5137012a	  16.00MiB
+
+Unallocated:
+   /dev/mapper/luks-97028cee-110d-4d98-861c-f91a5137012a	 661.18GiB
+EOF
+)";
+_mainNonbLowSpaceStr="$(cat <<'EOF'
+Overall:
+    Device size:		  59.70GiB
+    Device allocated:		  54.02GiB
+    Device unallocated:		   5.68GiB
+    Device missing:		     0.00B
+    Device slack:		   1.00KiB
+    Used:			  48.57GiB
+    Free (estimated):		   9.71GiB	(min: 6.87GiB)
+    Free (statfs, df):		   9.71GiB
+    Data ratio:			      1.00
+    Metadata ratio:		      2.00
+    Global reserve:		  62.80MiB	(used: 0.00B)
+    Multiple profiles:		        no
+
+Data,single: Size:52.01GiB, Used:47.97GiB (92.24%)
+   /dev/vda3	  52.01GiB
+
+Metadata,DUP: Size:1.00GiB, Used:304.53MiB (29.74%)
+   /dev/vda3	   2.00GiB
+
+System,DUP: Size:8.00MiB, Used:16.00KiB (0.20%)
+   /dev/vda3	  16.00MiB
+
+Unallocated:
+   /dev/vda3	   5.68GiB
+EOF
+)";
+_bootBGoodSpaceStr="$(cat <<'EOF'
+Overall:
+    Device size:		        4294967296
+    Device allocated:		        1862270976
+    Device unallocated:		        2432696320
+    Device missing:		                 0
+    Device slack:		                 0
+    Used:			         250712064
+    Free (estimated):		        3492573184	(min: 2276225024)
+    Free (statfs, df):		        3491524608
+    Data ratio:			              1.00
+    Metadata ratio:		              2.00
+    Global reserve:		           5767168	(used: 0)
+    Multiple profiles:		                no
+
+Data,single: Size:1308622848, Used:248745984 (19.01%)
+   /dev/nvme0n1p2	1308622848
+
+Metadata,DUP: Size:268435456, Used:966656 (0.36%)
+   /dev/nvme0n1p2	 536870912
+
+System,DUP: Size:8388608, Used:16384 (0.20%)
+   /dev/nvme0n1p2	  16777216
+
+Unallocated:
+   /dev/nvme0n1p2	2432696320
+EOF
+)";
+_bootBLowSpaceStr="$(cat <<'EOF'
+Overall:
+    Device size:		        4294967296
+    Device allocated:		        3615490048
+    Device unallocated:		         679477248
+    Device missing:		                 0
+    Device slack:		                 0
+    Used:			        2249670656
+    Free (estimated):		        1497415680	(min: 1157677056)
+    Free (statfs, df):		        1496367104
+    Data ratio:			              1.00
+    Metadata ratio:		              2.00
+    Global reserve:		           5767168	(used: 0)
+    Multiple profiles:		                no
+
+Data,single: Size:3061841920, Used:2243903488 (73.29%)
+   /dev/vda2	3061841920
+
+Metadata,DUP: Size:268435456, Used:2867200 (1.07%)
+   /dev/vda2	 536870912
+
+System,DUP: Size:8388608, Used:16384 (0.20%)
+   /dev/vda2	  16777216
+
+Unallocated:
+   /dev/vda2	 679477248
+EOF
+)";
+_bootNonbGoodSpaceStr="$(cat <<'EOF'
+Overall:
+    Device size:		   4.00GiB
+    Device allocated:		   1.73GiB
+    Device unallocated:		   2.27GiB
+    Device missing:		     0.00B
+    Device slack:		     0.00B
+    Used:			 239.10MiB
+    Free (estimated):		   3.25GiB	(min: 2.12GiB)
+    Free (statfs, df):		   3.25GiB
+    Data ratio:			      1.00
+    Metadata ratio:		      2.00
+    Global reserve:		   5.50MiB	(used: 0.00B)
+    Multiple profiles:		        no
+
+Data,single: Size:1.22GiB, Used:237.22MiB (19.01%)
+   /dev/nvme0n1p2	   1.22GiB
+
+Metadata,DUP: Size:256.00MiB, Used:944.00KiB (0.36%)
+   /dev/nvme0n1p2	 512.00MiB
+
+System,DUP: Size:8.00MiB, Used:16.00KiB (0.20%)
+   /dev/nvme0n1p2	  16.00MiB
+
+Unallocated:
+   /dev/nvme0n1p2	   2.27GiB
+EOF
+)";
+_bootNonbLowSpaceStr="$(cat <<'EOF'
+Overall:
+    Device size:		   4.00GiB
+    Device allocated:		   3.37GiB
+    Device unallocated:		 648.00MiB
+    Device missing:		     0.00B
+    Device slack:		     0.00B
+    Used:			   2.09GiB
+    Free (estimated):		   1.39GiB	(min: 1.08GiB)
+    Free (statfs, df):		   1.39GiB
+    Data ratio:			      1.00
+    Metadata ratio:		      2.00
+    Global reserve:		   5.50MiB	(used: 0.00B)
+    Multiple profiles:		        no
+
+Data,single: Size:2.85GiB, Used:2.09GiB (73.29%)
+   /dev/vda2	   2.85GiB
+
+Metadata,DUP: Size:256.00MiB, Used:2.73MiB (1.07%)
+   /dev/vda2	 512.00MiB
+
+System,DUP: Size:8.00MiB, Used:16.00KiB (0.20%)
+   /dev/vda2	  16.00MiB
+
+Unallocated:
+   /dev/vda2	 648.00MiB
+EOF
+)";
+_fstabStr="$(cat <<'EOF'
+UUID=0123-4567 /boot/efi vfat defaults 0 2
+UUID=12312312-1231-1231-1231-123412341234 /boot btrfs defaults,noatime,autodefrag,discard,compress=lzo 0 0
+UUID=98798798-9879-9879-9879-987698769876 / btrfs subvol=/@,defaults,noatime,autodefrag,discard,compress=lzo 0 0
+UUID=98798798-9879-9879-9879-987698769876 /home btrfs subvolume=/@home/defaults,noatime,autodefrag,discard,compress=lzo 0 0
+tmpfs /tmp tmpfs defaults,noatime,mode=1777 0 0
+EOF
+)";
+
+## BEGIN _unsetMocksFn {
+# Purpose : Unset mocked functions and other globals to prevent
+#   pollution of namespaces. Mocked functions from commons.2.source are not
+#   reset here; instead they are re-source after every test in runUnitTests.
+#   See more notes in 00900.
+_unsetMocksFn () {
+  unset _btrfsExe _btrfsBalanceExe _btduExe _filefragExe _lowMainYn \
+    _lowBootYn _mainSyncOkYn _bootSyncOkYn _defragmentOkYn;
+}
+## . END _unsetMocksFn }
+
+## BEGIN Mock executables {
+_btrfsExe () {
+  declare _arg_list _counter _found_yn;
+
+  _showBtrfsHelpFn () {
+    cat <<'EOF'
+usage: btrfs [global] <group> [<group>...] <command> [<args>]
+
+blah blah blah...
+EOF
+  }
+  
+
+  if (( $# < 1 )); then
+    _showBtrfsHelpFn;
+    return 1;
+  fi
+
+  ## BEGIN filesystem call {
+  if [ "$1" = 'filesystem' ]; then
+    shift;
+    ## BEGIN usage subcall {
+    if [ "$1" = 'usage' ]; then
+      shift;
+      ## BEGIN -b switch {
+      if [ "$1" = '-b' ]; then
+        shift;
+        if [ "$1" = "${_rb2MainDir}" ]; then
+          if [ "${_lowMainYn}" = 'y' ]; then
+            echo "${_mainBLowSpaceStr}";
+          else
+            echo "${_mainBGoodSpaceStr}";
+          fi
+        elif [ "$1" = "${_rb2BootDir}" ]; then
+          if [ "${_lowBootYn}" = 'y' ]; then
+            echo "${_bootBLowSpaceStr}";
+          else
+            echo "${_bootBGoodSpaceStr}";
+          fi
+        else
+          echo "ERROR: cannot access '$1': No such file or directory";
+          return 1;
+        fi
+      ## . END -b switch }
+
+      ## BEGIN non-b switch {
+      else
+        shift;
+        if [ "$1" = "${_rb2MainDir}" ]; then
+          if [ "${_lowMainYn}" = 'y' ]; then
+            echo "${_mainNonbLowSpaceStr}";
+          else
+            echo "${_mainNonbGoodSpaceStr}";
+          fi
+        elif [ "$1" = "${_rb2BootDir}" ]; then
+          if [ "${_lowBootYn}" = 'y' ]; then
+            echo "${_bootNonbLowSpaceStr}";
+          else
+            echo "${_bootNonbGoodSpaceStr}";
+          fi
+        else
+          echo "ERROR: cannot access '$1': No such file or directory";
+          return 1;
+        fi
+      ## . END non-b switch }
+      fi
+    ## . END usage subcall }
+    
+    ## BEGIN sync subcall {
+    elif [ "$1" = 'sync' ]; then
+      shift;
+      if [ "$1" = "${_rb2MainDir}" ]; then
+        if [ "${_mainSyncOkYn}" = 'y' ]; then
+          true;
+        else
+          echo "ERROR: Something went wrong syncing ${_rb2MainDir}";
+          return 1;
+        fi
+      elif [ "$1" = "${_rb2BootDir}" ]; then
+        if [ "${_bootSyncOkYn}" = 'y' ]; then
+          true;
+        else
+          echo "ERROR: Something went wrong syncing ${_rb2BootDir}";
+          return 1;
+        fi
+      else
+        echo "ERROR: Could not open: No such file or directory";
+        return 1;
+      fi
+    ## . END sync subcall }
+
+    ## BEGIN defragment subcall {
+    elif [ "$1" = 'defragment' ]; then
+      shift;
+      if [ "$1" = '-clzo' ]; then
+        if [ "${_defragmentOkYn}" = 'y' ]; then
+          true;
+        else
+          echo "ERROR: Something went wrong with defrag";
+          return 1;
+        fi
+      else
+        echo "ERROR: No -clzo passed!";
+        return 1;
+      fi
+    ## . END defragment subcall }
+    else
+      _showBtrfsHelpFn;
+      return 1;
+    fi
+  ## . END filesystem call }
+
+  ## BEGIN subvolume call {
+  elif [ "$1" = 'subvolume' ]; then
+    shift;
+    ## BEGIN snapshot subcall {
+    if [ "$1" = 'snapshot' ]; then
+      shift;
+    ## . END snapshot subcall }
+
+    ## BEGIN list subcall {
+    elif [ "$1" = 'list' ]; then
+      shift;
+      if [ "$1" = '/' ]; then
+        for (( _counter=0; _counter < ${#_mainSubvolList[@]}; \
+          _counter++ )); do
+          echo "ID 0 gen 0 top level 0 path ${_mainSubvolList[_counter]}";
+        done
+      elif [ "$1" = '/boot' ]; then
+        for (( _counter=0; _counter < ${#_bootSubvolList[@]}; \
+          _counter++ )); do
+          echo "ID 0 gen 0 top level 0 path ${_bootSubvolList[_counter]}";
+        done
+      else
+        echo "ERROR: Something went wrong listing subvols on $1";
+        return 1;
+      fi
+    ## . END list subcall }
+
+    ## BEGIN delete subcall {
+    elif [ "$1" = 'delete' ]; then
+      shift;
+      if [ "$1" = '--commit-after' ]; then
+        shift;
+      fi
+      _found_yn='n';
+      for (( _counter=0; _counter < ${#_mainSubvolDirs[@]}; _counter++ )); do
+        if [ "${_mainSubvolDirs[_counter]}" = "$1" ]; then
+          rm -r "${_mainSubvolDirs[_counter]}";
+          _mainSubvolList=( "${_mainSubvolList[@]:0:_counter}"
+            "${_mainSubvolList[@]:(( _counter + 1 )):(( ${#_mainSubvolList[@]} - _counter - 1 ))}" );
+          _mainSubvolDirs=( "${_mainSubvolDirs[@]:0:_counter}"
+            "${_mainSubvolDirs[@]:(( _counter + 1 )):(( ${#_mainSubvolDirs[@]} - _counter - 1 ))}" );
+          _mainSubvolRwMap=( "${_mainSubvolRwMap[@]:0:_counter}"
+            "${_mainSubvolRwMap[@]:(( _counter + 1 )):(( ${#_mainSubvolRwMap[@]} - _counter - 1 ))}" );
+          _found_yn='y';
+          break;
+        fi
+      done
+      if [ "${_found_yn}" = 'n' ]; then
+        for (( _counter=0; _counter < ${#_bootSubvolDirs[@]}; _counter++ )); do
+          if [ "${_bootSubvolDirs[_counter]}" = "$1" ]; then
+            rm -r "${_bootSubvolDirs[_counter]}";
+            _bootSubvolList=( "${_bootSubvolList[@]:0:_counter}"
+              "${_bootSubvolList[@]:(( _counter + 1 )):(( ${#_bootSubvolList[@]} - _counter - 1 ))}" );
+            _bootSubvolDirs=( "${_bootSubvolDirs[@]:0:_counter}"
+              "${_bootSubvolDirs[@]:(( _counter + 1 )):(( ${#_bootSubvolDirs[@]} - _counter - 1 ))}" );
+            _bootSubvolRwMap=( "${_bootSubvolRwMap[@]:0:_counter}"
+              "${_bootSubvolRwMap[@]:(( _counter + 1 )):(( ${#_bootSubvolRwMap[@]} - _counter - 1 ))}" );
+            _found_yn='y';
+            break;
+          fi
+        done
+        if [ "${_found_yn}" = 'n' ]; then
+          echo 'ERROR: Could not statfs: No such file or directory';
+          return 1;
+        fi
+      fi
+    ## . END delete subcall }
+
+    ## BEGIN create subcall {
+    elif [ "$1" = 'create' ]; then
+      shift;
+    ## . END create subcall }
+    else
+      _showBtrfsHelpFn;
+      return 1;
+    fi
+  ## . END subvolume call }
+  else
+    _showBtrfsHelpFn;
+    return 1;
+  fi
+}
+_btrfsBalanceExe () {
+  true;
+}
+_btduExe () {
+  true;
+}
+_filefragExe () {
+  true;
+}
+## . END Mock executables }
+
+_regenTestDirFn () {
+  rm -rf "${_rootDir}"                       || exit 1;
+  mkdir -p "${_rootDir}"                     || exit 1;
+  mkdir -p "${_rb2MainSubvol}"               || exit 1;
+  mkdir -p "${_rb2BootSubvol}"               || exit 1;
+  mkdir -p "${_rb2MainDir}/@home"            || exit 1;
+  mkdir -p "${_rb2BootDir}/boot"             || exit 1;
+  mkdir -p "${_rb2BootDir}/boot/efi"         || exit 1;
+  touch "${_rb2BootSubvol}/boot/kernel"      || exit 1;
+  touch "${_rb2BootSubvol}/boot/initrd"      || exit 1;
+  mkdir -p "${_rb2MainSubvol}/home"                || exit 1;
+  mkdir -p "${_rb2MainSubvol}/tmp/kfocus-rollback" || exit 1;
+  mkdir -p "${_rb2MainSubvol}/var/lib/portables"   || exit 1;
+  mkdir -p "${_rb2MainSubvol}/var/lib/machines"    || exit 1;
+  mkdir -p "${_rb2MainSubvol}/etc"                 || exit 1;
+  echo "${_fstabStr}" > "${_rb2MainSubvol}/etc/fstab";
+  cp -r "${_rb2MainSubvol}/*" "${_rootDir}";
+
+  _mainSubvolList=( '@' '@home' 'var/lib/portables' 'var/lib/machines' );
+  _mainSubvolDirs=( "${_rb2MainSubvol}" "${_rb2MainDir}/@home"
+    "${_rootDir}/var/lib/portables" "${_rootDir}/var/lib/machines" );
+  _bootSubvolRwMap=( 'w' 'w' 'w' 'w' );
+  _bootSubvolList=();
+  _bootSubvolDirs=();
+  _bootSubvolRwMap=();
+  # We purpoefully don't have _rb2MainDir or _rb2BootDir mounted here.
+  _mountList=( '/' '/home' '/boot' '/boot/efi' );
+}
+
+## BEGIN _runTestFn {
+# This MUST be called '_runTestFn' for use by the _runUnitTests
+_runTestFn () {
+  declare _fail_count _assert_table _assert_count _assert_idx _assert_line \
+    _file _expect_file _msg _check_str _count_str _cr _testfn_str _arg_str \
+    _set_exe _run_file _bit_list ;
+
+  # Use function from _runUnitTests: clear out run dir and check expect dir
+  if ! _t00ClearRunDirFn;    then return 1; fi
+  if ! _t00CheckExpectDirFn; then return 1; fi
+
+  # WE DO NOT NEED TO IMPORT COMMON FOR sourced scripts, as the common lib
+  #   is already imported by _runUnitTests.
+  # _importCommonFn;
+
+  # Source and overwrite functions with mocks
+  _setupPathMocksFn '0';
+  _overwriteWithMocksFn;
+
+  _assert_table=(
+    'prepareSystem'
+  );
+
+  _regenTestDirFn;
+
+  ## Begin Iterate through assertions {
+  _cr=$'\n';
+  _fail_count=0;
+  _assert_count="${#_assert_table[@]}";
+  _assert_idx=1;
+
+  _mockWithIbusGoodConfFn;
+  for _assert_line in "${_assert_table[@]}"; do
+    IFS='|' read -r -d '' -a _bit_list < <(echo -n "${_assert_line}");
+    _testfn_str="${_bit_list[0]}";
+    _arg_str="${_bit_list[1]}";
+    # Mock qdbus using function
+    _set_exe="_mock${_bit_list[2]}Fn";
+    "${_set_exe}";
+
+    # Calculate expect and run files
+    # bashsupport disable=BP2001
+    _file="$( printf '%s_%s_%s.txt' "${_bit_list[0]}" "${_bit_list[1]}" "${_bit_list[2]}" )";
+
+    # shellcheck disable=SC2154
+    _expect_file="${_t00ExpectDir}/${_file}";
+    # shellcheck disable=SC2154
+    _run_file="${_t00RunDir}/${_file}";
+
+    _msg="$(cat << EOT
+Check kfocus-fix-ibus
+Function Call: _${_testfn_str} '${_arg_str}';
+Panel Indicator State: ${_mockIbusSystray}
+Keyboard Follows System: ${_mockIbusSystemKeyboard}
+EOT
+    )";
+
+    echo "${_msg}" > "${_run_file}";
+    echo -e "\n_${_testfn_str} ${_arg_str} OUTPUT:" >> "${_run_file}";
+    "_${_testfn_str}" "${_arg_str}" >> "${_run_file}" 2>&1
+
+    _msg="$(cat << EOT
+Check kfocus-fix-ibus changes
+Panel Indicator State: ${_mockIbusSystray}
+Keyboard Follows System: ${_mockIbusSystemKeyboard}
+Return Value: $?
+EOT
+    )";
+    echo '' >> "${_run_file}";
+    echo "${_msg}" >> "${_run_file}";
+
+    # shellcheck disable=SC2154
+    _count_str="$(_t00MakeCountStrFn "${_assert_idx}" "${_assert_count}")";
+
+    ## Begin Check diffs
+    if [ ! -f "${_expect_file}" ]; then touch "${_expect_file}"; fi
+    _check_str="$(diff -r --brief "${_expect_file}" "${_run_file}" )";
+    if [ -z "${_check_str}" ]; then
+      _cm2EchoFn "  ok  : ${_count_str} ${_msg}";
+    else
+      _cm2EchoFn "  fail: ${_count_str} ${_msg}";
+      _cm2EchoFn '    Please compare expected to run file';
+      meld "${_expect_file}" "${_run_file}";
+      (( _fail_count++ ));
+    fi
+    ## . End Check diffs }
+      (( _assert_idx++ ));
+  done
+  ## End Iterate through assertions }
+
+  if [ "${_fail_count}" -gt 0 ]; then
+    _cm2EchoFn "FAIL: ${_fail_count} of ${_assert_count} asserts failed.";
+  else
+    _cm2EchoFn 'OK  : Results match expected';
+  fi
+
+  _unsetMocksFn;
+
+  return "${_fail_count}";
+}
+## . END _runTestFn }
