@@ -343,7 +343,7 @@ _getMainMinUnallocFn () {
   echo "$(( $(LC_ALL=C "${_btrfsExe}" filesystem usage -b /btrfs_main \
     | grep $'Device size:\t' \
     | awk '{ print $3 }' \
-    ) * 100 / 15 ))";
+    ) * 15 / 100 ))";
 }
 _getBootUnallocSpaceFn () {
   _checkBtrfsStatusSetUpFn;
