@@ -159,7 +159,7 @@ _promptAllUsersFn () {
       DISPLAY="${_xserver_id}" \
       DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$(id -u "${_user_name}")/bus" \
       qdbus org.kfocus.FocusRxDispatch.launcher / "${_mode}" "${_msg}";
-  done < <(_cm2LsFn '/tmp/.X11-unix/' | sed 's?/tmp/.X11-unix/X??')
+  done < <(_cm2LsFn '/tmp/.X11-unix/' | sed 's?X??')
 }
 ## . END _promptAllUsersFn }
 
@@ -343,7 +343,7 @@ _getMainMinUnallocFn () {
   echo "$(( $(LC_ALL=C "${_btrfsExe}" filesystem usage -b /btrfs_main \
     | grep $'Device size:\t' \
     | awk '{ print $3 }' \
-    ) / 15 ))";
+    ) * 100 / 15 ))";
 }
 _getBootUnallocSpaceFn () {
   _checkBtrfsStatusSetUpFn;
@@ -365,7 +365,7 @@ _checkMainUnallocSpaceFn () {
   _main_unalloc="$(_getMainUnallocSpaceFn)";
 
   if (( _main_unalloc < _main_min_unalloc )); then
-    _promptAllUsersFn 'info' "${_lowDiskMsg}";
+    _promptAllUsersFn 'warning' "${_lowDiskMsg}";
     _exitERR 'Low disk space detected.';
   fi
 }
@@ -378,7 +378,7 @@ _checkBootUnallocSpaceFn () {
   _boot_unalloc="$(_getBootUnallocSpaceFn)";
 
   if (( _boot_unalloc < _boot_min_unalloc )); then
-    _promptAllUsersFn 'info' "${_lowBootMsg}";
+    _promptAllUsersFn 'warning' "${_lowBootMsg}";
     _exitERR 'Low boot space detected.';
   fi
 }

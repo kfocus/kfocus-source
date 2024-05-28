@@ -105,7 +105,7 @@ the /home <br>
 filesystem.</b> For that, click "Cancel", then click on the "Back <br>
 In Time" icon found next to the system tray.${_erow_str}
 
-${_brow_lp_str}${_bold_str}XXX_STATE_MSG_XXX$</b>{_erow_str}
+${_brow_lp_str}${_bold_str}XXX_STATE_MSG_XXX</b>${_erow_str}
 
 ${_brow_lp_str}Select an action below to get started.${_erow_str}</table>
 ${_cm2HtmEndStr}
@@ -397,17 +397,16 @@ ${_brow_lp_str}${_bold_str}System rollback is currently in
 XXX_SNAPSHOT_MODE_XXX mode.</b>${_erow_str}
 
 ${_brow_lp_str}${_bold_str}In AUTO mode</b>, the system takes <br>
-a snapshot when each of the following occur:<br>${_erow_str}
+a snapshot when each of the following occur:${_erow_str}
 
 ${_brow_lp_str}<ul><li>You manually create a snapshot</li>
-<li>After an apt software update/install</li>
-<li>After a week has elapsed</li></ul>${_erow_str}
-filesystem, one can remove large software packages, <br>
-data files, or database containers. On the boot (/boot) <br>
-filesystem, one can purge unused kernels.${_erow_str}
 
-${_brow_lp_str}${_bold_str}In MANUAL mode</b>, the system takes <br>
-a snapshot only when you direct it.${_erow_str}
+<li>After an apt software update/install</li>
+
+<li>After a week has elapsed</li></ul>${_erow_str}
+
+${_brow_lp_str}${_bold_str}In MANUAL mode</b>, the system takes a snapshot <br>
+only when you direct it.${_erow_str}
 
 ${_brow_lp_str}${_bold_str}In either case, the system always trims <br>
 snapshots to a maximum of 5 to minimize disk use.${_erow_str}
@@ -465,12 +464,8 @@ EOF
 ${_cm2HtmBeginStr}${_table_str}
 ${_brow_rp_str}${_left_header_str}No Snapshots Found</h3>${_erow_str}
 
-${_brow_rp_str}Doc: <a style="color:#1d99f3"
-  href="https://kfocus.org/wf/tools#rollback"
-  >https://kfocus.org/wf/tools#rollback</a>${_erow_str}
-
 ${_brow_rp_str}There do not appear to be any snapshots <br>
-available to roll back to. Please see <br>
+available. Please see <br>
 <a style="color:#1d99f3" href="https://kfocus.org/wf/recovery"
 >https://kfocus.org/wf/recovery</a>
 for other <br>
@@ -736,38 +731,23 @@ _handleOperationExitIntFn () {
         exit "${_exit_int}";
       fi
       ;;
+    'optimize')
+      if [ "${_exit_int}" = "${_rb2NOTICE}" ]; then
+        _cm2PromptUserFn "${_optimizeSuccessfulMsg}" "${_winTitle}";
+        exit "${_rb2NOTICE}";
+      elif [ "${_exit_int}" = '127' ]; then
+        _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
+        exit "${_rb2NOTICE}";
+      else
+        _cm2PromptUserFn "${_optimizeFailedMsg}" "${_winTitle}" 'e';
+        exit "${_exit_int}";
+      fi
+      ;;
     *)
       _cm2WarnStrFn 'Unrecognized operation type.';
       return 1;
       ;;
   esac
-
-  if [ "${_exit_int}" = "${_rb2NOTICE}" ] && [ "${_op_type}" = 'restore' ]; then
-    systemctl reboot -i;
-  elif [ "${_exit_int}" = "${_rb2ERR}" ]; then
-    if [ "${_op_type}" = 'restore' ]; then
-      _restoreFailedMsg="${_restoreFailedMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
-      _cm2PromptUserFn "${_restoreFailedMsg}" "${_winTitle}";
-      exit "${_rb2ERR}";
-    elif [ "${_op_type}" = 'delete' ]; then
-      _deletionFailedMsg="${_restoreFailedMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
-      _cm2PromptUserFn "${_deletionFailedMsg}" "${_winTitle}";
-      exit "${_rb2ERR}";
-    else
-      _cm2WarnStrFn 'Unrecognized operation type provided.';
-      return 1;
-    fi
-  elif [ "${_exit_int}" = '127' ]; then
-    _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
-    exit "${_rb2NOTICE}";
-  elif [ "${_op_type}" = 'restore' ]; then
-    _cm2PromptUserFn "${_criticalErrorMsg}" "${_winTitle}" 'e';
-    exit "${_exit_int}";
-  elif [ "${_op_type}" = 'delete' ]; then
-    _snapshotDeletedMsg="${_snapshotDeletedMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
-    _cm2PromptUserFn "${_snapshotDeletedMsg}" "${_winTitle}";
-    exit "${_rb2NOTICE}";
-  fi
 }
 
 ## BEGIN _getBtrfsStatusFn {
@@ -933,12 +913,9 @@ _mainFn () {
     'optimize')
       _reply_str="$(_cm2PromptUserFn "${_doOptimizeMsg}" "${_winTitle}" 'o')";
       if [ "${_reply_str}" = 'y' ]; then
-        if _cm2RunLongCmdFn 'Optimizing disk...' \
-          "${_escExe}" "${_rollbackSetExe}" 'btrfsDeepClean'; then
-          _cm2PromptUserFn "${_optimizeSuccessfulMsg}" "${_winTitle}";
-        else
-          _cm2PromptUserFn "${_optimizeFailedMsg}" "${_winTitle}" 'e';
-        fi
+        _cm2RunLongCmdFn 'Optimizing disk...' \
+          "${_escExe}" "${_rollbackSetExe}" 'btrfsDeepClean';
+        _handleOperationExitIntFn 'optimize' "$?";
       else
         _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
       fi
