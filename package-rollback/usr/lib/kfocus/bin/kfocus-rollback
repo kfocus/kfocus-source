@@ -12,8 +12,8 @@
 # Run By   : Users
 # Spec     : 4013
 #
-# shellcheck source=../lib/common.2.source
 # shellcheck source=../lib/rollback.2.source
+# shellcheck source=../lib/common.2.source
 # shellcheck source=kfocus-rollback-set
 #
 set -u;
@@ -612,6 +612,35 @@ ${_brow_rp_str}No changes have been made to the system.${_erow_str}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
+
+  _lowDiskMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_lp_str}${_left_header_str}Low Disk Space</h3>${_erow_str}
+
+${_brow_lp_str}Your system is running low on disk space. This could result in<br>
+filesystem corruption if not corrected. It is highly recommended<br>
+that you delete all snapshots and optimize the drive using System<br>
+Rollback. You may also need to delete excess files or move them to<br>
+other drives. You can access System Rollback by clicking <code>Start<br>
+Menu &gt; Kubuntu Focus Tools &gt; System Rollback</code>.
+${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _lowBootMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_lp_str}${_left_header_str}Low Boot Space</h3>${_erow_str}
+
+${_brow_lp_str}Your system is running low on boot space. This could result in<br>
+failed upgrades and kernel-related system issues if not corrected.<br>
+It is highly recommended that you run the Kernel Cleaner utility to<br>
+free space boot space. You can access the Kernel Cleaner by clicking<br>
+<code>Start Menu &gt; Kubuntu Focus Tools &gt; Kernel Cleaner</code>.
+${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
 }
 
 _chooseSnapshotFn () {
@@ -778,7 +807,8 @@ _mainFn () {
     _btrfs_boot_remain _btrfs_boot_raw_size _btrfs_boot_raw_unalloc \
     _btrfs_boot_unalloc _switch_state _new_switch_state \
     _restored_snapshot_disp_id _snapshot_dir _disk_usage_line1_str \
-    _disk_usage_line2_str;
+    _disk_usage_line2_str _main_unalloc _main_min_unalloc _boot_unalloc \
+    _boot_min_unalloc;
 
   _arg_str="${1:-}";
   _btrfs_status_str="$(_getBtrfsStatusFn)";
@@ -844,6 +874,18 @@ _mainFn () {
   ## Begin Dispatch on selection {
   case "${_mode_str}" in
     'create')
+      _main_unalloc="$("${_rollbackSetExe}" 'getMainUnallocSpace')";
+      _main_min_unalloc="$("${_rollbackSetExe}" 'getMainMinUnalloc')";
+      _boot_unalloc="$("${_rollbackSetExe}" 'getBootUnallocSpace')";
+      _boot_min_unalloc="$("${_rollbackSetExe}" 'getBootMinUnalloc')";
+      if (( _main_unalloc <= _main_min_unalloc )); then
+        _cm2PromptUserFn "${_lowDiskMsg}" "${_winTitle}" 's';
+        exit 1;
+      elif (( _boot_unalloc <= _boot_min_unalloc )); then
+        _cm2PromptUserFn "${_lowBootMsg}" "${_winTitle}" 's';
+        exit 1;
+      fi
+
       _reply_str="$(
         _cm2PromptUserFn "${_createSnapshotMsg}" "${_winTitle}" 'a'
       )";
@@ -857,6 +899,18 @@ _mainFn () {
       fi
       ;;
     'restore')
+      _main_unalloc="$("${_rollbackSetExe}" 'getMainUnallocSpace')";
+      _main_min_unalloc="$("${_rollbackSetExe}" 'getMainMinUnalloc')";
+      _boot_unalloc="$("${_rollbackSetExe}" 'getBootUnallocSpace')";
+      _boot_min_unalloc="$("${_rollbackSetExe}" 'getBootMinUnalloc')";
+      if (( _main_unalloc <= _main_min_unalloc )); then
+        _cm2PromptUserFn "${_lowDiskMsg}" "${_winTitle}" 's';
+        exit 1;
+      elif (( _boot_unalloc <= _boot_min_unalloc )); then
+        _cm2PromptUserFn "${_lowBootMsg}" "${_winTitle}" 's';
+        exit 1;
+      fi
+
       if [ -z "$("${_rollbackSetExe}" 'getSnapshotList')" ]; then
         _cm2PromptUserFn "${_noSnapshotsFoundMsg}" "${_winTitle}";
         exit "${_rb2NOTICE}";
@@ -1094,7 +1148,7 @@ declare _binName _binDir _baseName _baseDir _libTable _assignList \
   _doOptimizeMsg _optimizeSuccessfulMsg _optimizeFailedMsg \
   _systemUnsupportedMsg _restoreIncompleteMsg _noSnapshotsFoundMsg \
   _strangeSubvolsMsg _restoreFailedMsg _deletionFailedMsg _creationFailedMsg \
-  _criticalErrorMsg _operationCancelledMsg;
+  _criticalErrorMsg _operationCancelledMsg _lowDiskMsg _lowBootMsg;
 
 _userName="$(id -un)";
 _warnStr='<b style="color:#da4453">';
