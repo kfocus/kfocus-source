@@ -268,18 +268,26 @@ fi
 _stepName='Check disk space';
 _nextStepFn "${_stepName}";
 _cm2EchoFn "${_adviceStr} Please review the disk space. The system
-disk, /, should have 5GB free, as should any separate
-/home disk. If you see full disks, open another terminal
- and backup or remove files as needed to get more disk space.
+disk, /, should have 5GB free, as should any separate /home
+disk. If you see full disks, open another terminal and backup
+or remove files as needed to get more disk space.
 
-The /boot partition (if it exists) should have at least
-150MB free. If it does not, run the Focus Kernel Cleaner tool
-to free up space.
+The /boot partition (if it exists) should have at least 150MB
+free. If it does not, run the Focus Kernel Cleaner tool to
+free up space.
 
 ";
 
-df -h |head -n1;
-df -h |grep -E ' /$| /home$| /boot$';
+for _dir in '/' '/home' '/boot'; do
+  if findmnt --mountpoint="${_dir}"; then
+    _dir_type="$(stat -f -c %T "${_dir}")";
+    if [ "${_dir_type}" = 'btrfs' ]; then
+      btrfs 'filesystem' 'usage' "${_dir}";
+    else
+      df -h "${_dir}";
+    fi
+  fi
+done
 _cm2EchoFn;
 _cm2SucFn;
 

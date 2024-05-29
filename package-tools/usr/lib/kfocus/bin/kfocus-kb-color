@@ -57,16 +57,20 @@ _mainFn () {
   case "${_model_code}" in
     m1g1) true;;
     m2g*) true;;
-    xeg*|ir14*)
+    xeg*|ir14*|ir16*)
       if [[ "${_model_code}" =~ ^xeg.*$ ]]; then
-        _key_str='Fn + F4'; else _key_str='Fn + F6';
+        _key_str='Fn + F4';
+      elif [[ "${_model_code}" =~ ^ir14.*$ ]]; then
+        _key_str='Fn + F6';
+      else
+        _key_str='Fn + F6 and F7';
       fi
       _prompt_msg="$(cat <<EOE
 <html><head>${_cssStyleStr}</head><body>
 <h3>Keyboard Color Settings</h3>
 ${_cm2HtmPStr}This <b>Kubuntu Focus ${_model_label}</b> system has <br>
-monochromatic keyboard backlighting. Press ${_key_str} to increase <br>
-or decrease the effect.<br></p>
+monochromatic keyboard backlighting. Press <br>
+${_key_str} to increase or decrease the effect.<br></p>
 </body></html>
 EOE
       )";;

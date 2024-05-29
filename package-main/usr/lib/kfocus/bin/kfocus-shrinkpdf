@@ -7,42 +7,14 @@
 # Updated by Michael Mikowski
 #
 # Name    : kfocus-shrinkpdf
-# Purpose : Assist every user on first run with the following:
-#   1. Position the hints widget correctly for subsequent logins.
-#   2. Assist in setting up Cloud services
 # License : 3-clause BSD (see above)
 # Run By  : Users
 #
 # Exit   (-u) on unset vars
 # Errors (-e) are caught inline using '|| exit' or similar
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-# 1. Redistributions of source code must retain the above copyright notice,
-#    this list of conditions and the following disclaimer.
-# 2. Redistributions in binary form must reproduce the above copyright notice,
-#    this list of conditions and the following disclaimer in the documentation
-#    and/or other materials provided with the distribution.
-# 3. Neither the name of the copyright holder nor the names of its contributors
-#    may be used to endorse or promote products derived from this software
-#    without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
 
-# Low dpi (72) = better compression. High (300) = better quality
-_dpi=72;
-
-shrink () {
+_shrinkFn () {
   gs \
     -q -dNOPAUSE -dBATCH -dSAFER        \
     -sDEVICE=pdfwrite                   \
@@ -51,50 +23,77 @@ shrink () {
     -dEmbedAllFonts=true                \
     -dSubsetFonts=true                  \
     -dColorImageDownsampleType=/Bicubic \
-    -dColorImageResolution="${_dpi}"    \
+    -dColorImageResolution="${_dpiStr}" \
     -dGrayImageDownsampleType=/Bicubic  \
-    -dGrayImageResolution="${_dpi}"     \
+    -dGrayImageResolution="${_dpiStr}"  \
     -dMonoImageDownsampleType=/Bicubic  \
-    -dMonoImageResolution="${_dpi}"     \
+    -dMonoImageResolution="${_dpiStr}"  \
     -sOutputFile="${2}"                 \
     "${1}";
 }
 
-check_smaller () {
-  declare _input_size _output_size;
+_chkCopyFile () {
+  declare _input_file _output_file _input_size _output_size;
+  _input_file="${1:-}";
+  _output_file="${2:-}";
+
   # If $1 and $2 are regular files, we can compare file sizes to
   # see if we succeeded in shrinking. If not, we copy $1 over $2:
-  if [ ! -f "${1}" ] || [ ! -f "${2}" ]; then return 0; fi
+  if [ ! -f "${_input_file}" ] || [ ! -f "${_output_file}" ]; then
+    return 0;
+  fi
 
-  _input_size="$(  wc -c "${1}" | cut -f1 -d\ )";
-  _output_size="$( wc -c "${2}" | cut -f1 -d\ )";
+  _input_size="$(  wc -c "${_input_file}"  | cut -f1 -d\ )";
+  _output_size="$( wc -c "${_output_file}" | cut -f1 -d\ )";
 
-  if [ "${_input_size}" -lt "${_output_size}" ]; then
-    echo "Input smaller than output, doing straight copy" >&2
-    cp "${1}" "${2}";
+  if (( "${_input_size}" < "${_output_size}" )); then
+    1>&2 echo 'Input smaller than output, doing straight copy';
+    1>&2 echo "  ( ${_input_size} < ${_output_size} )";
+    cp "${_input_file}" "${_output_file}";
   fi
 }
 
-usage () {
-  echo "Reduces PDF filesize by lossy recompressing with Ghostscript.";
-  echo "Not guaranteed to succeed, but usually works.";
-  echo "  Usage: ${1} infile [outfile]";
+_echoUsage () {
+  cat << _EOH
+Usage: ${_baseName} [-d DPI] INFILE [OUTFILE]
+
+Reduce a PDF file size through lossy recompressing with Ghostscript.
+If the file size is not reduced, then a straight copy is done if both
+inputs are files. Default DPI is ${_dpiStr}.
+_EOH
 }
 
-IFILE="${1}";
+_mainFn () {
+  declare _input_file _output_file;
+  if [ "${1:-}" = '-d' ]; then
+    _dpiStr="$(printf '%d' "${2:-}")";
+    shift 2;
+  fi
+  _input_file="${1:-}";
+  _output_file="${2:-}";
 
-# Set input file name
-if [ -z "${IFILE}" ]; then
-  usage "${0}";
-  exit 1;
+  if [ -z "${_input_file}" ]; then
+    echo "Bad arguments.";
+    _echoUsage;
+    exit 1;
+  fi
+
+  if [ -z "${_output_file}" ]; then
+    _output_file='-';
+  fi
+
+  _shrinkFn "${_input_file}" "${_output_file}"    || exit $?;
+  _chkCopyFile "${_input_file}" "${_output_file}" || exit $?;
+}
+
+declare _dpiStr _binName _binDir _baseDir _baseName;
+# Low dpi (72) = better compression. High (300) = better quality
+_dpiStr='72';
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+  _mainFn "$@";
 fi
-
-# Default output filename to - (stdout) unless given
-if [ -n "${2}" ]; then
-  OFILE="${2}";
-else
-  OFILE="-";
-fi
-
-shrink "${IFILE}" "${OFILE}" || exit $?;
-check_smaller "${IFILE}" "${OFILE}";
