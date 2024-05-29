@@ -801,6 +801,14 @@ _EOH1
 }
 ## . END _checkIbusConfigFn }
 
+## BEGIN _ensureCrontabFn {
+_ensureCrontabFn () {
+  if ! crontab -l 2>/dev/null >/dev/null; then
+    crontab <<<'' || true;
+  fi
+}
+## . END _ensureCrontabFn }
+
 ## BEGIN _runDropScriptsFn {
 # Summary : _runDropScriptsFn;
 # Purpose : Run fixup scripts in kfocus-focusrx.d in order of version.
@@ -1238,6 +1246,7 @@ _mainFn () {
   _chkXorgConfigFn;
   _runKernelCleanFn;
   _chkIbusConfigFn;
+  _ensureCrontabFn;
   _runDropScriptsFn;
   _chkExperRepoFn;
   _chkResetEffectsFn;
