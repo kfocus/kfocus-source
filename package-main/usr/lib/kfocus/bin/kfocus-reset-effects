@@ -41,9 +41,8 @@ _importCommonFn () {
 
 ## BEGIN _resetShortcutsFn {
 _resetShortcutsFn () {
-  declare _model_code _plasma_version _config_list _fixup_list _line \
-    _bit_list _key _apply_str _log_list _name_file _config_file _opt_list \
-    _fixup_orig_str _fixup_new_str;
+  declare _model_code _plasma_version _config_list _line _bit_list \
+    _key _apply_str _log_list _name_file _config_file _opt_list _tab_char;
 
   _model_code="$(_cm2EchoModelStrFn 'code')";
   _plasma_version="$(
@@ -311,23 +310,37 @@ _EOH01
   _prompt_msg="$(cat <<_EOH02
 ${_cm2HtmBeginStr}
 <h3 style="color:#f7941d">KFocus Reset Effects Finished</h3>
-${_cm2HtmPStr}To apply effects, press OK to reload the window <br>
-window manager, restart the keyboard shortcuts, and 
-rebuild the desktop cache.<br></p>
+${_cm2HtmPStr}To apply effects, press OK to reload plasma, <br>
+reload the window manager, restart the keyboard, <br>
+shortcuts, and rebuild the desktop cache.</p>
 
 ${_cm2HtmPStr}This should apply all changes, but to be <br>
-absolutely sure, you may log out and back in.</p>
+absolutely sure, you may log out and back in.<br></p>
+
 ${_cm2HtmEndStr}
 _EOH02
   )";
   _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}";
 
-  # Rerun global hot keys, restart kwin, rebuild dt cache
-  kquitapp5 kglobalaccel && sleep 2s && kglobalaccel5 &
+  # Reload global key mappings. kglobalaccel is NOT a typo.
+  kquitapp5 kglobalaccel && sleep 2 && kglobalaccel5 &
+  # shellcheck disable=SC2181
+  if [ "$?" = '0' ]; then disown "$!"; fi
+  sleep 1;
 
-  kwin --replace > /dev/null 2>&1 &
+  # Replace plasma shell
+  nohup plasmashell --replace > /dev/null 2>&1 &
+  # shellcheck disable=SC2181
+  if [ "$?" = '0' ]; then disown "$!"; fi
   sleep 2;
 
+  # Replace window manager
+  nohup kwin --replace > /dev/null 2>&1 &
+  # shellcheck disable=SC2181
+  if [ "$?" = '0' ]; then disown "$!"; fi
+  sleep 2;
+
+  # Rebuild desktop cache
   kbuildsycoca5 || true;
 }
 ## . END _mainFn }
@@ -365,4 +378,3 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _mainFn "$@";
 fi
 ## . END Run main if script is not sourced }
-
