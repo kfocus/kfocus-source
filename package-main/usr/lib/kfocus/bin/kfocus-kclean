@@ -782,6 +782,7 @@ _EOW04
   else
     _cmd_list=("${_kcleanSetExe}" 'normal' "${_filtered_purge_list[@]}");
   fi
+  # Note: _cm2RunLongCmdFn prefixes commands with pkexec
   if _exit_str="$(
     _cm2RunLongCmdFn 'Cleaning up kernels' "${_cmd_list[@]}"
   )"; then
