@@ -426,6 +426,16 @@ ${_bold_str}XXX_SNAPSHOT_MODE_XXX</b> mode.${_erow_str}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
+  
+  _switchUnchangedMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}Switch (2 of 2)</h3>${_erow_str}
+
+${_brow_rp_str}System Rollback remains UNCHANGED in
+${_bold_str}XXX_SNAPSHOT_MODE_XXX</b> mode.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
 
   _systemUnsupportedMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_table_str}
@@ -808,7 +818,7 @@ _mainFn () {
     _btrfs_boot_unalloc _switch_state _new_switch_state \
     _restored_snapshot_disp_id _snapshot_dir _disk_usage_line1_str \
     _disk_usage_line2_str _main_unalloc _main_min_unalloc _boot_unalloc \
-    _boot_min_unalloc;
+    _boot_min_unalloc _manual_onoff _auto_onoff;
 
   _arg_str="${1:-}";
   _btrfs_status_str="$(_getBtrfsStatusFn)";
@@ -967,8 +977,9 @@ _mainFn () {
     'optimize')
       _reply_str="$(_cm2PromptUserFn "${_doOptimizeMsg}" "${_winTitle}" 'o')";
       if [ "${_reply_str}" = 'y' ]; then
+        # NOTE: _cm2RunLongCmdFn prefixes commands with pkexec
         _cm2RunLongCmdFn 'Optimizing disk...' \
-          "${_escExe}" "${_rollbackSetExe}" 'btrfsDeepClean';
+          "${_rollbackSetExe}" 'btrfsDeepClean';
         _handleOperationExitIntFn 'optimize' "$?";
       else
         _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
@@ -1102,23 +1113,36 @@ _mainFn () {
       fi
       ;;
     'switch')
+      # _switch_state is uppercase, _new_switch_state is lowercase
       _switch_state="$("${_rollbackSetExe}" 'getManualSwitchState')";
       _switchSelectMsg="${_switchSelectMsg//XXX_SNAPSHOT_MODE_XXX/${_switch_state}}";
-      _new_switch_state="$(_cm2PromptUserFn "${_switchSelectMsg}" \
-        "${_winTitle}" 'd' 'manual' \
-        'MANUAL — Snapshots created on user request only' 'on' 'auto' \
-        'AUTO — Snapshots created automatically and regularly' 'off')";
+      _manual_onoff=''
+      _auto_onoff='';
+      if [ "${_switch_state}" = 'AUTO' ]; then
+        _manual_onoff='off';
+        _auto_onoff='on';
+      else
+        _manual_onoff='on';
+        _auto_onoff='off';
+      fi
+      _new_switch_state="$(
+        _cm2PromptUserFn "${_switchSelectMsg}" "${_winTitle}" 'd' \
+        'manual' 'MANUAL — Snapshots created on user request only' "${_manual_onoff}" \
+        'auto' 'AUTO — Snapshots created automatically and regularly' "${_auto_onoff}"
+      )";
 
       if [ -z "${_new_switch_state}" ]; then
         _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
         exit "${_rb2NOTICE}";
       fi
 
-      if "${_escExe}" "${_rollbackSetExe}" 'setManualSwitchState' \
+      if [ "${_switch_state,,}" = "${_new_switch_state}" ]; then
+        _switchUnchangedMsg="${_switchUnchangedMsg//XXX_SNAPSHOT_MODE_XXX/${_new_switch_state^^}}";
+        _cm2PromptUserFn "${_switchUnchangedMsg}" "${_winTitle}";
+        exit "${_rb2NOTICE}";
+      elif "${_escExe}" "${_rollbackSetExe}" 'setManualSwitchState' \
         "${_new_switch_state}"; then
-        _new_switch_state="$(tr '[:lower:]' '[:upper:]' \
-          <<< "${_new_switch_state}")";
-        _switchSuccessfulMsg="${_switchSuccessfulMsg//XXX_SNAPSHOT_MODE_XXX/${_new_switch_state}}";
+        _switchSuccessfulMsg="${_switchSuccessfulMsg//XXX_SNAPSHOT_MODE_XXX/${_new_switch_state^^}}";
         _cm2PromptUserFn "${_switchSuccessfulMsg}" "${_winTitle}";
         exit "${_rb2NOTICE}";
       else
