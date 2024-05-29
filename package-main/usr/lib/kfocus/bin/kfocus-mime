@@ -768,6 +768,7 @@ _runAppFn () {
           _cm2PromptUserFn "${_install_prompt_msg:-}" 'Install package' 'a'
         )";
         if [ "${_ans_str}" = 'y' ]; then
+          # Note: _cm2RunLongCmdFn prefixes commands with pkexec
           if _exit_str="$(_cm2RunLongCmdFn "Installing ${_pkg_name}" \
               "${_binName}" '-i' "${_pkg_name}")"; then continue;
           else

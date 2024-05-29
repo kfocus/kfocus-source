@@ -65,7 +65,7 @@ _promptAllUsersFn () {
       DISPLAY="${_xserver_id}" \
       DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$(id -u "${_user_name}")/bus" \
       qdbus org.kfocus.FocusRxDispatch.launcher / "${_mode}" "${_msg}";
-  done < <(_cm2LsFn '/tmp/.X11-unix/' | sed 's?/tmp/.X11-unix/X??')
+  done < <(_cm2LsFn '/tmp/.X11-unix/' | sed 's?X??')
 }
 ## . END _promptAllUsersFn }
 

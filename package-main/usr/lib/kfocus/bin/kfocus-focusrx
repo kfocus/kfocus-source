@@ -801,6 +801,14 @@ _EOH1
 }
 ## . END _checkIbusConfigFn }
 
+## BEGIN _ensureCrontabFn {
+_ensureCrontabFn () {
+  if ! crontab -l 2>/dev/null >/dev/null; then
+    crontab <<<'' || true;
+  fi
+}
+## . END _ensureCrontabFn }
+
 ## BEGIN _runDropScriptsFn {
 # Summary : _runDropScriptsFn;
 # Purpose : Run fixup scripts in kfocus-focusrx.d in order of version.
@@ -1238,6 +1246,7 @@ _mainFn () {
   _chkXorgConfigFn;
   _runKernelCleanFn;
   _chkIbusConfigFn;
+  _ensureCrontabFn;
   _runDropScriptsFn;
   _chkExperRepoFn;
   _chkResetEffectsFn;
@@ -1265,7 +1274,7 @@ _parentCmdStr="$(ps -o comm= $PPID)";
 # otherwise communicated with by FocusRx.
 _lookupList=( 'example.com' 'cloudflare.com' 'fastly.com' 'akamai.com' );
 _maxNagCount=6;
-_restoreCompleteFile='/var/lib/kfocus/kfocus_rollback_restore_complete';
+_restoreCompleteFile='/var/lib/kfocus/rollback_restore_complete';
 ## . END Declare and assign global vars }
 
 ## BEGIN Run main if script is not sourced {

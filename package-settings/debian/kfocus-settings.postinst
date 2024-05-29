@@ -6,7 +6,7 @@
 set -e
 
 ## BEGIN Maintain adduser.local
-_thisScriptVers='22.04.4'; # BUMP THIS IF THE FOLLOWING STRING IS UPDATED
+_thisScriptVers='24.04.1'; # BUMP THIS IF THE FOLLOWING STRING IS UPDATED
 _addUserStr="$(cat << 'EOF'
 #!/bin/bash
 #
@@ -33,7 +33,8 @@ _mainFn () {
   echo "BEGIN ${_baseName}";
 
   declare _username _uid _gid _home_dir _hostname \
-    _rsync_exe _skel_dir _loop_dir _backup_dir _effects_exe;
+    _rsync_exe _skel_dir _loop_dir _backup_dir _effects_exe \
+    _old_prompt_str _new_prompt_str _bashrc_file;
 
   _username="${1:-}";
   _uid="${2:-}";
@@ -132,6 +133,36 @@ _mainFn () {
   else
     echo "  - ERROR : Could not create |${_backup_dir}/1|";
   fi
+
+  # Install fancy bash prompts
+  _bashrc_file="$(cat "${_home_dir}/.bashrc")";
+  _old_prompt_str="$(cat <<'EOC'
+PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+EOC
+  )";
+  _new_prompt_str="$(cat <<'EOC'
+PS1='\[\033[00;33m\]┌─╴\[\033[00m\]${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\[\033[00;33m\]\n└─╴\$\[\033[00m\] '
+    # If you prefer a default Ubuntu prompt, comment out the above line and
+    # uncomment the line below.
+    #
+    # PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+EOC
+  )";
+  _bashrc_file="${_bashrc_file//"${_old_prompt_str}"/"${_new_prompt_str}"}";
+  _old_prompt_str="$(cat <<'EOC'
+PS1='${debian_chroot:+($debian_chroot)}\u@\h:\w\$ '
+EOC
+  )";
+  _new_prompt_str="$(cat <<'EOC'
+PS1='┌─╴${debian_chroot:+($debian_chroot)}\u@\h:\w\n└─╴\$ '
+    # If you prefer a default Ubuntu prompt, comment out the above line and
+    # uncomment the line below.
+    #
+    # PS1='${debian_chroot:+($debian_chroot)}\u@\h:\w\$ '
+EOC
+  )";
+  _bashrc_file="${_bashrc_file//"${_old_prompt_str}"/"${_new_prompt_str}"}";
+  cat <<<"${_bashrc_file}" > "${_home_dir}/.bashrc";
 
   echo ". END ${_baseName}";
 }
