@@ -22,7 +22,7 @@ set -u;
 # 1       2                 3         4       5
 _exeLookupList=(
   'apt-rollback|konsole;-e;man;apt-rollback|apt-rollback|apt-rollback|AptRollback: Rollback System Packages'
-  'atom|atom;--no-sandbox||atom|Atom: A hackable text editor. Use atom --nosandbox to launch.'
+#  'atom|atom;--no-sandbox||atom|Atom: A hackable text editor. Use atom --nosandbox to launch.'
   'audacity|audacity||audacity|Audacity: Edit Sound'
   'aws-cli|konsole;--hold;-e;aws;help|aws|awscli|AWS: Command Line DevOps Tool'
   'azure-cli|konsole;--hold;-e;az;--help|az|azure-cli|Azure: Command Line DevOps Tool'
@@ -139,13 +139,15 @@ _importCommonFn () {
 ## BEGIN deb-get functions {
 # These functions are taken directly from the deb-get project with the
 # intention of contributing to it and making it our pkexec backend.
-function deb_atom() {
-  APT_KEY_URL="https://packagecloud.io/AtomEditor/atom/gpgkey"
-  APT_LIST_NAME="atom"
-  APT_REPO_URL="deb [arch=amd64] https://packagecloud.io/AtomEditor/atom/any/ any main"
-  PRETTY_NAME="Atom"
-  WEBSITE="https://atom.io/"
-}
+
+# Atom no longer is maintained, we do not want it.
+#function deb_atom() {
+#  APT_KEY_URL="https://packagecloud.io/AtomEditor/atom/gpgkey"
+#  APT_LIST_NAME="atom"
+#  APT_REPO_URL="deb [arch=amd64] https://packagecloud.io/AtomEditor/atom/any/ any main"
+#  PRETTY_NAME="Atom"
+#  WEBSITE="https://atom.io/"
+#}
 function deb_azure-cli() {
   APT_KEY_URL="https://packages.microsoft.com/keys/microsoft.asc"
   APT_LIST_NAME="azure-cli"
