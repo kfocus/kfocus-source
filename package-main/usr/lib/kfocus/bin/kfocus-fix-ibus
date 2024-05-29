@@ -14,10 +14,34 @@
 # License  : GPLv2
 # Run By   : Developers only
 # Spec     : 4027
+# 
+# shellcheck source=../lib/common.2.source
 #
 set -u;
 
-_stderrFn () { 1>&2 echo -e  "$*"; }
+## BEGIN _importCommonFn {
+_importCommonFn () {
+  declare _lib_list _is_loaded _lib_file;
+  _lib_list=(
+    "${_baseDir}/lib/common.2.source"
+    '/usr/lib/kfocus/lib/common.2.source'
+  );
+  _is_loaded='n';
+  for _lib_file in "${_lib_list[@]}"; do
+    if [ -r "${_lib_file}" ]; then
+      if source "${_lib_file}"; then
+        _is_loaded='y';
+        break;
+      fi
+    fi
+  done
+
+  if [ "${_is_loaded}" = 'n' ]; then
+    echo 1>&2 "${_baseName}: ABORT - Cannot source common lib";
+    exit 202;
+  fi
+}
+## . END _importCommonFn }
 
 ## BEGIN _chkInstalledPkgFn {
 # 2024-02-26: Copied from common.2.source _cm2ChkInstalledPkgFn
@@ -72,33 +96,33 @@ _mainFn () {
   case "${_mode_str}" in
     check)
       if _checkIbusConfigFn; then
-        _stderrFn 'IBus is configured properly.';
+        _cm2EchoFn 'IBus is configured properly.';
         return;
       else
-        _stderrFn 'IBus is misconfigured.';
+        _cm2EchoFn 'IBus is misconfigured.';
         return 1;
       fi
       ;;
     repair)
       if _repairIbusConfigFn; then
-        _stderrFn 'IBus configuration repaired.';
+        _cm2EchoFn 'IBus configuration repaired.';
         return;
       else
-        _stderrFn 'IBus configuration repair failed!';
+        _cm2EchoFn 'IBus configuration repair failed!';
         return 1;
       fi
       ;;
     *)
       if ! _checkIbusConfigFn; then
         if _repairIbusConfigFn; then
-          _stderrFn 'Bad IBus configuration detected, repair successful.';
+          _cm2EchoFn 'Bad IBus configuration detected, repair successful.';
           return
         else
-          _stderrFn 'Bad IBus configuration detected, repair failed!';
+          _cm2EchoFn 'Bad IBus configuration detected, repair failed!';
           return 1;
         fi
       else
-        _stderrFn   'IBus is configured properly.';
+        _cm2EchoFn   'IBus is configured properly.';
         return;
       fi
       ;;
@@ -110,16 +134,23 @@ declare _qdbusExe _dconfExe _dpkgQueryExe;
 
 ## BEGIN Run fi2MainFn when script is NOT sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+
+  _importCommonFn;
+
   _qdbusExe="$(      command -v qdbus      )";
   _dconfExe="$(      command -v dconf      )";
   _dpkgQueryExe="$(  command -v dpkg-query )";
 
   if [ -z "${_qdbusExe}" ]; then
-    _stderrFn 'qdbus not found';
+    _cm2EchoFn 'qdbus not found';
     exit 1;
   fi
   if [ -z "${_dconfExe}" ]; then
-    _stderrFn 'dconf not found';
+    _cm2EchoFn 'dconf not found';
     exit 0;
   fi
   if [ -z "${_dpkgQueryExe}" ]; then
