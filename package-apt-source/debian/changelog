@@ -1,46 +1,20 @@
-kfocus-apt-source (24.04.1~beta7) noble; urgency=medium
+kfocus-apt-source (24.04.1) noble; urgency=medium
 
-  * Add Dropbox key. (#4288)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 23 May 2024 11:46:58 -0500
-
-kfocus-apt-source (24.04.1~beta6) noble; urgency=medium
-
-  * Keep unattended-upgrades from re-Snapping Firefox and Thunderbird.
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 16 Apr 2024 14:30:06 -0500
-
-kfocus-apt-source (24.04.1~beta5) noble; urgency=medium
-
-  * Fix an erroneous pin for the Thunderbird deb package. (#4120)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 16 Apr 2024 14:00:50 -0500
-
-kfocus-apt-source (24.04.1~beta4) noble; urgency=medium
-
-  * Use Thunderbird and Mozilla deb packages. (#4120)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 11 Apr 2024 12:09:49 -0500
-
-kfocus-apt-source (24.04.1~beta3) noble; urgency=medium
-
-  * Pin wslu to priority 50 to keep it from getting automatically installed.
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 10 Apr 2024 22:58:54 -0500
-
-kfocus-apt-source (24.04.1~beta2) noble; urgency=medium
-
-  * Add Google Chrome key. (#4120)
+  [ Aaron Rainbolt ]
+  * Add Dropbox key (#4288)
+  * Stop unattended-upgrades from re-Snapping Firefox, Thunderbird (#4120)
+  * Fix an erroneous pin for the Thunderbird deb package (#4120)
+  * Use Thunderbird and Mozilla deb packages (#4120)
+  * Pin wslu to priority 50 to keep it from getting automatically installed
+  * Add Google Chrome key (#4120)
   * Remove preinst script, as it is no longer relevant and is broken by the
     deb822 package sources format.
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 10 Apr 2024 19:59:31 -0500
-
-kfocus-apt-source (24.04.1~beta1) noble; urgency=medium
-
   * Update repos for Noble. (#4120, #4085)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Sun, 07 Apr 2024 14:01:07 -0500
+  [ Michael S. Mikowski ]
+  * Add kubuntu-backports
+
+ -- Michael S. Mikowski <support@kfocus.org>  Wed, 29 May 2024 15:13:48 -0700
 
 kfocus-apt-source (22.04.8) jammy; urgency=medium
 
