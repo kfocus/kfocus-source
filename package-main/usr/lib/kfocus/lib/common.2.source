@@ -707,7 +707,7 @@ _cm2RunPlasmaScriptFn () {
   [ -z "${_cm2QdbusExe}" ] && return;
 
   for (( _counter = 0; _counter < 3; _counter++ )); do
-    if ! pgrep plasmashell; then
+    if ! pgrep plasmashell >/dev/null; then
       sleep 3;
     else
       break;
