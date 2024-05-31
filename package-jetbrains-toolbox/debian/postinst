@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -e
+
+wget -O - https://download-cdn.jetbrains.com/toolbox/jetbrains-toolbox-2.3.0.30876.tar.gz \
+  | tar xvzf - -C /usr/bin/ --strip-components=1
+
+#DEBHELPER#

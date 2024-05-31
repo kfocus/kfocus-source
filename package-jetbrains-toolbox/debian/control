@@ -1,0 +1,22 @@
+Source:            jetbrains-toolbox
+Section:           devel
+Priority:          optional
+Maintainer:        Kubuntu Focus Team <support@kfocus.org>
+Standards-Version: 4.6.2
+Build-Depends:     debhelper-compat (=13)
+
+Package:           jetbrains-toolbox
+Architecture:      amd64
+Pre-Depends:       wget
+Depends:           ${misc:Depends}, ${shlibs:Depends}
+Description: Manage your JetBrains tools easily
+ Easily Manage your JetBrains tools
+ .
+  - Install
+  - Update automatically
+  - Update the plugins together with IDE
+  - Roll back and downgrade
+ .
+ Save time and effort maintaining your IDEs, by downloading a patch or a set
+ of patches instead of the full package download. Everything updates in the
+ background while you never stop coding.
