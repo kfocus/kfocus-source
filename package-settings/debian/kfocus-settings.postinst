@@ -223,6 +223,8 @@ fi
 #
 _sddmSetFile='/var/lib/kfocus/kfocus_sddm_theme_set'
 _sddmConfigFile='/etc/sddm.conf.d/kde_settings.conf'
+mkdir -p '/etc/sddm.conf.d';
+mkdir -p '/var/lib/kfocus';
 if ! [ -e "${_sddmSetFile}" ]; then
   if ! [ -e "${_sddmConfigFile}" ]; then
     echo '[Theme]' > "${_sddmConfigFile}";
