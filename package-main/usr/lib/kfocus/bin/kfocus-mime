@@ -22,12 +22,12 @@ set -u;
 # 1       2                 3         4       5
 _exeLookupList=(
   'apt-rollback|konsole;-e;man;apt-rollback|apt-rollback|apt-rollback|AptRollback: Rollback System Packages'
-  'atom|atom;--no-sandbox||atom|Atom: A hackable text editor. Use atom --nosandbox to launch.'
+#  'atom|atom;--no-sandbox||atom|Atom: A hackable text editor. Use atom --nosandbox to launch.'
   'audacity|audacity||audacity|Audacity: Edit Sound'
   'aws-cli|konsole;--hold;-e;aws;help|aws|awscli|AWS: Command Line DevOps Tool'
   'azure-cli|konsole;--hold;-e;az;--help|az|azure-cli|Azure: Command Line DevOps Tool'
   'backintime|backintime-qt||backintime-qt|BackInTime: Backup Files'
-  'brave-browser|brave-browser||brave-browser|Brave Browser'
+#  'brave-browser|brave-browser||brave-browser|Brave Browser'
   'blender|blender||blender|Blender: 3D Modeller and Renderer'
   'code|code||code|Microsoft Visual Studio Code: Development IDE'
   'cpupower-gui|cpupower-gui|cpupower-gui|cpupower-gui|CPU Power GUI: Manage CPU power'
@@ -139,13 +139,15 @@ _importCommonFn () {
 ## BEGIN deb-get functions {
 # These functions are taken directly from the deb-get project with the
 # intention of contributing to it and making it our pkexec backend.
-function deb_atom() {
-  APT_KEY_URL="https://packagecloud.io/AtomEditor/atom/gpgkey"
-  APT_LIST_NAME="atom"
-  APT_REPO_URL="deb [arch=amd64] https://packagecloud.io/AtomEditor/atom/any/ any main"
-  PRETTY_NAME="Atom"
-  WEBSITE="https://atom.io/"
-}
+
+# Atom no longer is maintained, we do not want it.
+#function deb_atom() {
+#  APT_KEY_URL="https://packagecloud.io/AtomEditor/atom/gpgkey"
+#  APT_LIST_NAME="atom"
+#  APT_REPO_URL="deb [arch=amd64] https://packagecloud.io/AtomEditor/atom/any/ any main"
+#  PRETTY_NAME="Atom"
+#  WEBSITE="https://atom.io/"
+#}
 function deb_azure-cli() {
   APT_KEY_URL="https://packages.microsoft.com/keys/microsoft.asc"
   APT_LIST_NAME="azure-cli"
@@ -158,13 +160,18 @@ function deb_backintime() {
   PRETTY_NAME="BackInTime"
   WEBSITE="https://backintime.readthedocs.io/en/latest/"
 }
-function deb_brave-browser() {
-  APT_KEY_URL="https://brave-browser-apt-release.s3.brave.com/brave-core.asc"
-  APT_LIST_NAME="brave-browser-release"
-  APT_REPO_URL="deb [arch=amd64] https://brave-browser-apt-release.s3.brave.com/ stable main"
-  PRETTY_NAME="Brave"
-  WEBSITE="https://brave.com/"
-}
+# Brave is currently broken and not available from the Curated Apps webpage.
+# The key is out-of-date. We would like to fix this with a method that does
+# not require trusted.gpg.d, such as creating a sources.list file for Brave
+# that embeds the key directly.
+#
+#function deb_brave-browser() {
+#  APT_KEY_URL="https://brave-browser-apt-release.s3.brave.com/brave-core.asc"
+#  APT_LIST_NAME="brave-browser-release"
+#  APT_REPO_URL="deb [arch=amd64] https://brave-browser-apt-release.s3.brave.com/ stable main"
+#  PRETTY_NAME="Brave"
+#  WEBSITE="https://brave.com/"
+#}
 function deb_code() {
   APT_KEY_URL="https://packages.microsoft.com/keys/microsoft.asc"
   APT_LIST_NAME="vscode"

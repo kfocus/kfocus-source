@@ -1,38 +1,15 @@
-kfocus-nvidia (24.04.1~beta5) noble; urgency=medium
-
-  * Reverted from 550 to driver-535 to resolve glitches (#4229)
-
- -- Michael S. Mikowski <support@kfocus.org>  Sun, 19 May 2024 15:10:47 -0700
-
-kfocus-nvidia (24.04.1~beta4) noble; urgency=medium
+kfocus-nvidia (24.04.1) noble; urgency=medium
 
   [ Michael S. Mikowski ]
   * control: Drop transitional package kfocus-nvidia-001
   * control: Remove OOD sleep-resume services (#4229)
   * nvidia-pinning: Update pins to 24.04 (#4229)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 02 May 2024 20:39:19 -0700
-
-kfocus-nvidia (24.04.1~beta3) noble; urgency=medium
-
-  [ Michael Mikowski ]
-  * control: Update driver reference to 550 (#4229)
-  * nvidia-pinning: Update driver to 550 (#4229)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 29 Apr 2024 22:39:11 -0500
-
-kfocus-nvidia (24.04.1~beta2) noble; urgency=medium
-
-  * Fix erroneous NVIDIA driver pins. (#4085)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 16 Apr 2024 14:01:47 -0500
-
-kfocus-nvidia (24.04.1~beta1) noble; urgency=medium
-
+  [ Aaron Rainbolt ]
   * Update Ubuntu repo references to 24.04. (#4085)
   * Drop transitional package kfocus-001-nvidia. (#4085)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Sun, 07 Apr 2024 16:29:33 -0500
+ -- Michael S. Mikowski <support@kfocus.org>  Thu, 30 May 2024 20:06:20 -0700
 
 kfocus-nvidia (22.04.10) jammy; urgency=medium
 

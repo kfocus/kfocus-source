@@ -1,218 +1,90 @@
-kfocus-main (24.04.1~beta22) noble; urgency=medium
-
-  [ Michael S. Mikowski ]
-  * bin/kfocus-reset-effects: Fix meta+space se (#4085)
-  * bin/kfocus-reset-effects: Full desktop reset (#4300)
-  * bin/kfocus-vidsync: Update comment only (#4085)
-  * bin/kfocus-shrinkpdf: Enhance per package audit (#4222)
-  * bin/kfocus-focusrx: Provide BTRFS disk usage (#4222)
-
-  [ Aaron Rainbolt ]
-  * kfocus-fix-ibus: Source common.2.source and use its calls (#4322)
-  * kfocus-focusrx: Ensure a crontab exists for the user (#4323)
-
- -- Michael S. Mikowski <support@kfocus.org>  Tue, 28 May 2024 22:50:02 -0700
-
-kfocus-main (24.04.1~beta21) noble; urgency=medium
-
-  [ Aaron Rainbolt ]
-  * Wipe LD_LIBRARY_PATH before running _mainFn in kfocus-mime (#4288)
-  * Store Plasma scripts in a central repository and call them using
-    common.2.source.
-  * Remove kfocus-rollback during hardware config if it is not useful. (#4013)
-  * kfocus-mime: Fix aws and telegram installers. (#4288)
-  * postinst: Don't attempt to install pip-tools system-wide anymore. (#4288)
-
-  [ Michael S. Mikowski ]
-  * bin/kfocus-reset-effects: Apply changes as last step (#4300)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Fri, 24 May 2024 18:14:55 -0500
-
-kfocus-main (24.04.1~beta20) noble; urgency=medium
-
-  * Use nslookup rather than ping for testing Internet connectivity. (#4288)
-  * Promote curl from being a Recommends of kfocus-meta to being a Depends of
-    kfocus-main. (#4288)
-  * Fix kfocus-rollback setup. (#4288)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 22 May 2024 16:19:02 -0500
-
-kfocus-main (24.04.1~beta19) noble; urgency=medium
-
-  * Remove some erroneous files from src/kfocus-focusrx-dbus-dispatch.
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 22 May 2024 14:47:08 -0500
-
-kfocus-main (24.04.1~beta18) noble; urgency=medium
-
-  [ Aaron Rainbolt ]
-  * bin/kfocus-focusrx: Separate BTRFS setup logic from hardware check
-    routine. (#4013)
-  * Use kfocus-rollback-set rather than kfocus-btrfs-optimize-set for BTRFS
-    optimization. (#4013)
-  * Enhance disk space checking on snapshot-enabled BTRFS systems. (#4013)
-  * Integrate kfocus-rollback with kfocus-kclean. (#4013)
-  * Implement logging facilities. (#4013)
-  * common.2.source: Fix a bug that stripped a question mark from the end of
-    messages on whiptail CLI screens. (#4013)
-  * Fix post-rollback handling in FocusRx to match spec. (#4013)
-
-  [ Michael S. Mikowski ]
-  * bin/kfocus-reset-effects: Comments only for lookandfeel tools (#3179)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 20 May 2024 18:15:04 -0500
-
-kfocus-main (24.04.1~beta17) noble; urgency=medium
-
-  * bin/kfocus-reset-effects: Fix Meta + Space touchpad toggle (#3179)
-  * bin/kfocus-reset-effects: Refactor escape chars for maintenance (#3179)
-
- -- Michael S. Mikowski <support@kfocus.org>  Mon, 20 May 2024 13:01:15 -0700
-
-kfocus-main (24.04.1~beta16) noble; urgency=medium
-
-  * org.kfocus.pkexec.kfocus-check-crypt.policy: Improve auth msg (#4277)
-
- -- Michael S. Mikowski <support@kfocus.org>  Sun, 19 May 2024 10:21:37 -0700
-
-kfocus-main (24.04.1~beta15) noble; urgency=medium
-
-  * usr/share/kfocus-hints/default: Update kubuntu bug, add touchpad toggle (#3939)
+kfocus-main (24.04.1) noble; urgency=medium
+  
+  [ Michael Mikowski ]
   * bin/kfocus-example: Add printf example
-  * bin/kfocus-reset-effects: Add toggle touchpad (Meta + Space)
-
- -- Michael S. Mikowski <support@kfocus.org>  Fri, 17 May 2024 20:10:56 -0700
-
-kfocus-main (24.04.1~beta14) noble; urgency=medium
-
-  [ Aaron Rainbolt ]
-  * /usr/share/kfocus-hints: Update hints widget (#3939)
-
-  [ Michael S. Mikowski ]
-  * conf/etc_bash_completion.d_kfocus (#4085)
-  * org.kfocus.pkexec.kfocus-mime.policy: Improve auth msg (#4277)
-  * usr/share/kfocus-hints: Fix 2nd title font, panels 10, 11 (#3939)
   * bin/kfocus-extra: default y option for kubuntu-restricted-extra (#4085)
-
- -- Michael S. Mikowski <support@kfocus.org>  Wed, 15 May 2024 21:24:51 -0700
-
-kfocus-main (24.04.1~beta13) noble; urgency=medium
-
-  * common.2.source: Add support for showing combo boxes to the user. (#4013)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 09 May 2024 11:57:55 -0500
-
-kfocus-main (24.04.1~beta12) noble; urgency=medium
-
-  * control: +depends on kfocus-wallpapers (#4240)
-  * usr/lib/kfocus/bin/kfocus-extra: remove optional wallpapers (#4085)
-  * package-main/usr/lib/kfocus/bin/kfocus-mime: update dropbox (#4085)
-
- -- Michael S. Mikowski <support@kfocus.org>  Wed, 08 May 2024 10:55:54 -0700
-
-kfocus-main (24.04.1~beta11) noble; urgency=medium
-
-  [ Michael S. Mikowski ]
-  * control: Adjust Recommends to use kfocus-qwe instead of QWE (#4085)
-  * etc/bash_completion.d/kfocus: Simplify symlink (#4085)
-  * usr/kfocus/bin/kfocus-reset-effects: ir16g2 ir14g2 support (#4222)
-  * usr/share/applications/kfocus-help: Rename to Reference Pages (#4240)
-
-  [ Aaron Rainbolt ]
-  * Automatically strip tags and format text when using whiptail CLI UI.
-    (#4156)
-  * Don't continue on with snapshot maintenance if one of the core maintenance
-    commands fails. (#4013)
-
- -- Michael S. Mikowski <support@kfocus.org>  Tue, 07 May 2024 22:35:41 -0700
-
-kfocus-main (24.04.1~beta10) noble; urgency=medium
-
-  * Install all files under usr/lib/kfocus/conf.
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Fri, 03 May 2024 17:31:31 -0500
-
-kfocus-main (24.04.1~beta9) noble; urgency=medium
-
-  [ Michael S. Mikowski ]
-  * control: Recommend vlc package, confirmed pulls in all libs (#4085)
-  * control: Review all recommends (#4085)
-  * usr/share/icons/pixmaps: Remove most raster icons (#4240)
-  * usr/share/icons/hicolor/scalable/apps: Update 9 icons (#4240)
-  * usr/share/icons/pixmaps: Update for terminal:
-  *   kfocus-bug-rx, kfocus-bug-welcome (#4240)
-
-  [ Aaron Rainbolt ]
-  * Fix a couple of out-of-date function description comments.
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 23 Apr 2024 20:59:20 -0500
-
-kfocus-main (24.04.1~beta8) noble; urgency=medium
-
-  * control: Replace pcmemtest with memtest86+ (#4085)
+  * bin/kfocus-focusrx: Provide BTRFS disk usage (#4222)
+  * bin/kfocus-reset-effects: Add toggle touchpad (Meta + Space)
+  * bin/kfocus-reset-effects: Apply changes as last step (#4300)
+  * bin/kfocus-reset-effects: Comments only for lookandfeel tools (#3179)
+  * bin/kfocus-reset-effects: Full desktop reset (#4300)
+  * bin/kfocus-reset-effects: Refactor escape chars for maintenance (#3179)
+  * bin/kfocus-shrinkpdf: Enhance per package audit (#4222)
+  * bin/kfocus-vidsync: Update comment only (#4085)
+  * conf/etc_bash_completion.d_kfocus (#4085)
   * control: Add new kernel packages (#4085)
-  * etc/xdg/autostart: replace with symlink (#4085)
+  * control: Adjust Recommends to use kfocus-qwe instead of QWE (#4085)
+  * control: +depends on kfocus-wallpapers (#4240)
+  * control: Recommend vlc package, confirmed pulls in all libs (#4085)
+  * control: Replace pcmemtest with memtest86+ (#4085)
+  * control: Review all recommends (#4085)
+  * etc/bash_completion.d/kfocus: Simplify symlink (#4085)
   * etc/xdg/autostart/kfocus-focusrx-dbus-dispatch.desktop: +symlink (#4085)
+  * etc/xdg/autostart: replace with symlink (#4085)
   * kfocus-main.config: Adjust debconf message for Plasma 6.x (#4085)
   * kfocus-main.postinst: Add notes on how to recover from jammy (#4085)
   * kfocus-main.postinst: Audit, remove, annotate OOD functions (#4085)
   * kfocus-main.postinst: Link default kfocus-hints only if missing (#4085)
-  * usr/share/kfocus-hints/default: Move here from kfocus-hw to set defaults (#4085)
-  * usr/share/kfocus-hints: Update Hint Widget panels (#3939)
-  * usr/lib/kfocus/lib/common.2.source: Add Ir14g2 detection logic (#4222)
+  * org.kfocus.pkexec.kfocus-check-crypt.policy: Improve auth msg (#4277)
+  * org.kfocus.pkexec.kfocus-mime.policy: Improve auth msg (#4277)
+  * package-main/usr/lib/kfocus/bin/kfocus-mime: update dropbox (#4085)
+  * usr/kfocus/bin/kfocus-reset-effects: ir16g2 ir14g2 support (#4222)
+  * usr/lib/kfocus/bin/kfocus-extra: remove optional wallpapers (#4085)
   * usr/lib/kfocus/bin/kfocus-firstrun-set: Simplify plasma-welcomerc (#4176)
+  * usr/lib/kfocus/lib/common.2.source: Add Ir14g2 detection logic (#4222)
+  * usr/share/applications/kfocus-help: Rename to Reference Pages (#4240)
+  * usr/share/icons/hicolor/scalable/apps: Update 9 icons (#4240)
+  * usr/share/icons/pixmaps: Remove most raster icons (#4240)
+  * usr/share/icons/pixmaps: Update for terminal: kfocus-bug-rx,
+    kfocus-bug-welcome (#4240)
+  * usr/share/kfocus-hints/default: Move here from kfocus-hw to set defaults
+    (#4085)
+  * usr/share/kfocus-hints/default: Update kubuntu bug, add touchpad toggle
+    (#3939)
+  * usr/share/kfocus-hints: Fix 2nd title font, panels 10, 11 (#3939)
+  * usr/share/kfocus-hints: Update Hint Widget panels (#3939)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 23 Apr 2024 20:59:20 -0500
-
-kfocus-main (24.04.1~beta7) noble; urgency=medium
-
-  * Improve low disk space messaging.
-  * Propagate name changes from kfocus-rollback (kfocus-btrfs-optimize ->
-    kfocus-btrfs-optimize-set).
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 23 Apr 2024 20:59:20 -0500
-
-kfocus-main (24.04.1~beta6) noble; urgency=medium
-
-  * Integrate BTRFS optimization into kfocus-focusrx. (#4201)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 17 Apr 2024 14:25:30 -0500
-
-kfocus-main (24.04.1~beta5) noble; urgency=medium
-
-  * Keep wslu from getting installed via www-browser.
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 10 Apr 2024 22:08:01 -0500
-
-kfocus-main (24.04.1~beta4) noble; urgency=medium
-
-  [ Michael Mikowski ]
-  * Re-add unintentionally removed code in common.2.source.
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 10 Apr 2024 19:06:13 -0500
-
-kfocus-main (24.04.1~beta3) noble; urgency=medium
-
+  [ Aaron Rainbolt ]
+  * Automatically strip tags and format text when using whiptail CLI UI.
+    (#4156)
+  * bin/kfocus-focusrx: Separate BTRFS setup logic from hardware check
+    routine. (#4013)
+  * common.2.source: Add support for showing combo boxes to the user. (#4013)
+  * common.2.source: Fix a bug that stripped a question mark from the end of
+    messages on whiptail CLI screens. (#4013)
   * Create kfocus-focusrx-system service for system-level background
     maintenance. (#3476)
-  * Integrate kfocus-rollback with kfocus-focusrx. (#4013)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 09 Apr 2024 21:38:19 -0500
-
-kfocus-main (24.04.1~beta2) noble; urgency=medium
-
   * Don't put kfocus kernel packages or pcmemtest in Recommends for now, those
     aren't available yet.
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 08 Apr 2024 15:15:47 -0500
-
-kfocus-main (24.04.1~beta1) noble; urgency=medium
-
-  * Migrate power management tools to package-power-bin. (#4085)
   * Drop obsolete transitional package kfocus-001-main. (#4085)
+  * Enhance disk space checking on snapshot-enabled BTRFS systems. (#4013)
+  * Fix a couple of out-of-date function description comments.
+  * Implement logging facilities. (#4013)
+  * Improve low disk space messaging.
+  * Install all files under usr/lib/kfocus/conf.
+  * Integrate BTRFS optimization into kfocus-focusrx. (#4201)
+  * Integrate kfocus-rollback with kfocus-focusrx. (#4013)
+  * Integrate kfocus-rollback with kfocus-kclean. (#4013)
+  * Keep wslu from getting installed via www-browser.
+  * kfocus-fix-ibus: Source common.2.source and use its calls (#4322)
+  * kfocus-focusrx: Ensure a crontab exists for the user (#4323)
+  * kfocus-mime: Fix aws and telegram installers. (#4288)
+  * kfocus-mime: Remove Atom text editor. (#4320)
+  * kfocus-mime: Remove Brave Browser. (#4320)
   * Migrate away from kfocus-rest. (#4085)
+  * Migrate power management tools to package-power-bin. (#4085)
+  * postinst: Don't attempt to install pip-tools system-wide anymore. (#4288)
+  * Promote curl from being a Recommends of kfocus-meta to being a Depends of
+    kfocus-main. (#4288)
+  * Remove kfocus-rollback during hardware config if it is not useful. (#4013)
+  * Store Plasma scripts in a central repository and call them using
+    common.2.source.
+  * Use nslookup rather than ping for testing Internet connectivity. (#4288)
+  * /usr/share/kfocus-hints: Update hints widget (#3939)
+  * Wipe LD_LIBRARY_PATH before running _mainFn in kfocus-mime (#4288)
+  * Initial Noble Release
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Sun, 07 Apr 2024 16:09:54 -0500
+ -- Michael S. Mikowski <support@kfocus.org>  Thu, 30 May 2024 20:06:20 -0700
 
 kfocus-main (22.04.58) jammy; urgency=medium
 

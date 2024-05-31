@@ -1425,20 +1425,19 @@ Kirigami.ApplicationWindow {
             instructionsText.text
               = '<p>' + ding01Str + '<b>If BackInTime is not '
               + 'installed,</b> you will be asked to install it, and '
-              + 'will need to provide your password to do so.<br></p>'
-
-              + '<p>' + ding02Str + '<b>Once installed, the '
-              + 'BackInTime app</b> should appear as shown.<br></p>'
+              + 'will need to provide your password to do so. ' + ding02Str
+              + '<b>Once installed, the BackInTime app</b> should appear as '
+              + 'shown.<br></p>'
 
               + '<p>' + ding03Str + '<b>Take snapshots with the Disk '
               + 'icon</b>. ' + ding04Str + 'Browse snapshots on the left, '
               + ding05Str + 'select files on the right, and '
-              + ding06Str + 'adjust settings.<br></p>'
+              + ding06Str + 'adjust settings. See General > Schedule at the '
+              + 'bottom to set automatic snapshots.<br></p>'
 
               + '<p>' + ding07Str
               + '<b>Click on the disk icon next to the system tray</b> to '
-              + 'launch BackInTime. This is shown in the default Kubuntu '
-              + 'Focus themes.<br></p>'
+              + 'launch BackInTime.<br></p>'
 
               + '<p><b>See more in the</b> '
               + '<a href="https://kfocus.org/wf/backup">Backups Guided '

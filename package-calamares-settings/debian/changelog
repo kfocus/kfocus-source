@@ -1,89 +1,26 @@
-kfocus-calamares-settings (24.04.12) noble; urgency=medium
+kfocus-calamares-settings (24.04.1) noble; urgency=medium
 
   [ Aaron Rainbolt ]
+  * Add a script for enabling KFocus customizations after user creation.
+  * Change the UID of the OEM user to 60999 at install time. (#4013)
+  * Corrected the copyright file.
+  * Don't ask for an Internet connection during first-time user setup.
+  * Enable discard and LZO compression on BTRFS.
+  * Enable discard on LUKS.
+  * Fix color scheme.
+  * Fixed a malformed desktop file.
+  * Fixed the Architecture field in debian/control.
   * Fix theming and wallpaper in OEM mode. (#4288)
+  * Initial release, port to KFocus.
+  * Make the /boot filesystem the same as the primary filesystem.
+  * Remove Lubuntu references from welcome.conf.
+  * Remove the pkgselect module, it's not necessary for Kubuntu Focus Suite.
+  * Rename the kubuntu_boot partition to kfocus_boot.
+  * Run Calamares in windowed mode. sensible values.
+  * Set RAM requirements, disk space requirements, and Internet check URL to
 
   [ Michael S. Mikowski ]
   * welcome.png: Brand first slide for end-user setup (#4288)
+  * Initial release of fork from calamares-settings-kubuntu (#4240)
 
- -- Aaron Rainbolt <arraybolt3@ubuntu.com>  Mon, 20 May 2024 14:32:48 -0500
-
-kfocus-calamares-settings (24.04.11) noble; urgency=medium
-
-  * Run Calamares in windowed mode.
-  * Remove Lubuntu references from welcome.conf.
-  * Don't ask for an Internet connection during first-time user setup.
-  * Set RAM requirements, disk space requirements, and Internet check URL to
-    sensible values.
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Fri, 17 May 2024 19:18:22 -0500
-
-kfocus-calamares-settings (24.04.10) noble; urgency=medium
-
-  * Change the UID of the OEM user to 60999 at install time. (#4013)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 16 May 2024 13:35:18 -0500
-
-kfocus-calamares-settings (24.04.9) noble; urgency=medium
-
-  * Fix the increment operator again.
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 07 May 2024 15:13:15 -0500
-
-kfocus-calamares-settings (24.04.8) noble; urgency=medium
-
-  * Fix an increment operator that was unexpectedly giving a non-zero return
-    code in enable-luks-discard.
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 07 May 2024 13:42:49 -0500
-
-kfocus-calamares-settings (24.04.7) noble; urgency=medium
-
-  * Enable discard on LUKS.
-  * Enable discard and LZO compression on BTRFS.
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 06 May 2024 14:38:23 -0500
-
-kfocus-calamares-settings (24.04.6) noble; urgency=medium
-
-  * Rename the kubuntu_boot partition to kfocus_boot.
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 29 Apr 2024 17:16:32 -0500
-
-kfocus-calamares-settings (24.04.5) noble; urgency=medium
-
-  * Make the /boot filesystem the same as the primary filesystem.
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Fri, 26 Apr 2024 16:10:49 -0500
-
-kfocus-calamares-settings (24.04.4) noble; urgency=medium
-
-  * Update with changes from upstream Kubuntu Calamares configuration.
-  * Fix color scheme.
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 25 Apr 2024 20:40:35 -0500
-
-kfocus-calamares-settings (24.04.3) noble; urgency=medium
-
-  * Provide calamares-settings-kubuntu so that kubuntu-installer-prompt
-    doesn't get uninstalled.
-  * Add a script for enabling KFocus customizations after user creation.
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 11 Apr 2024 18:47:32 -0500
-
-kfocus-calamares-settings (24.04.2) noble; urgency=medium
-
-  * Remove the pkgselect module, it's not necessary for Kubuntu Focus Suite.
-  * Fixed a build failure resulting from the basicwallpaper component being
-    looked for in the wrong place.
-  * Corrected the copyright file.
-  * Fixed a malformed desktop file.
-  * Fixed the Architecture field in debian/control.
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 10 Apr 2024 16:58:35 -0500
-
-kfocus-calamares-settings (24.04.1) noble; urgency=medium
-
-  * Initial release.
-
- -- Aaron Rainbolt <arraybolt3@ubuntu.com>  Tue, 09 Apr 2024 18:37:44 -0500
+ -- Michael S. Mikowski <support@kfocus.org>  Thu, 30 May 2024 20:28:05 -0700

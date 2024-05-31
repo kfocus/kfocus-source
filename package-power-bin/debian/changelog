@@ -1,37 +1,18 @@
-kfocus-power-bin (24.04.1~beta5) noble; urgency=medium
+kfocus-power-bin (24.04.1) noble; urgency=medium
 
   [ Michael S. Mikowski ]
-  * bin/kfocus-power-fan: +ir14g2 and ir16g2 fan profile message
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 21 May 2024 22:35:59 -0700
-
-kfocus-power-bin (24.04.1~beta4) noble; urgency=medium
-
-  [ Michael S. Mikowski ]
-  * usr/share/icons/pixmaps: Remove all raster gfx (#4240)
-  * usr/share/icons/hicolor/scalable/apps: Update 2 icons (#4240)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 29 Apr 2024 22:44:50 -0500
-
-kfocus-power-bin (24.04.1~beta3) noble; urgency=medium
-
-  [ Michael Mikowski ]
   * Add keywords to desktop file for easier search (#4085)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 29 Apr 2024 22:44:50 -0500
-
-kfocus-power-bin (24.04.1~beta2) noble; urgency=medium
-
+  * bin/kfocus-power-fan: +ir14g2 and ir16g2 fan profile message
+  * usr/share/icons/hicolor/scalable/apps: Update 2 icons (#4240)
+  * usr/share/icons/pixmaps: Remove all raster gfx (#4240)
+  
+  [ Aaron Rainbolt ]
   * Add a symlink from kfocus-power-bin to kfocus-power in usr/lib/kfocus/bin
     so the app menu entry works right.
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 11 Apr 2024 11:58:45 -0500
-
-kfocus-power-bin (24.04.1~beta1) noble; urgency=medium
-
   * Consolidate all power management code into package-power-bin. (#4085)
+  * Initial Noble Release
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Sun, 07 Apr 2024 16:10:33 -0500
+ -- Michael S. Mikowski <support@kfocus.org>  Thu, 30 May 2024 20:06:20 -0700
 
 kfocus-power-bin (22.04.7) jammy; urgency=medium
 
