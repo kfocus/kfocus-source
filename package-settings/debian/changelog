@@ -1,108 +1,46 @@
-kfocus-settings (24.04.1~beta12) UNRELEASED; urgency=medium
-
-  * Disable automatic BackInTime snapshots.
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 29 May 2024 14:41:42 -0500
-
-kfocus-settings (24.04.1~beta11) noble; urgency=medium
-
-  [ Aaron Rainbolt ]
-  * Make Bash prompt fancy for newly created users.
-  * Remove the `-x` option from BackInTime's rsync options. (#4323)
+kfocus-settings (24.04.1) UNRELEASED; urgency=medium
 
   [ Michael S. Mikowski ]
   * control: Depend kfocus-wallpapers for themes (#4306)
-  * plasma/look-and-feel: Set six wallpapers (#4306)
-  * sddm/themes/kfocus/theme.conf: Set wallpaper (#4306)
-
- -- Michael S. Mikowski <support@kfocus.org>  Tue, 28 May 2024 22:55:02 -0700
-
-kfocus-settings (24.04.1~beta10) noble; urgency=medium
-
-  * Add kfocus sddm theme. (#4288)
-  * Update global theme screenshots. (#4288, #4085)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 22 May 2024 20:00:18 -0500
-
-kfocus-settings (24.04.1~beta9) noble; urgency=medium
-
-  [ Michael S. Mikowski ]
+  * Move plasma-welcomerc to kfocus-settings. (#4085)
   * plasma/desktoptheme: Normalize defaults (#4240)
-  * plasma/layout-templates: Update vertical panel ~10% wider (#4240)
   * plasma/layout-templates: Exclude not-found app icons (#4240)
+  * plasma/layout-templates: Update vertical panel ~10% wider (#4240)
   * plasma/look-and-feel: Refine DPI adjusted layouts (#4240)
   * plasma/look-and-feel: Set color scheme to KubuntuLight rather than
     BreezeLight on all Light and Twilight themes. (#4240)
+  * plasma/look-and-feel: Set six wallpapers (#4306)
+  * sddm/themes/kfocus/theme.conf: Set wallpaper (#4306)
+  * Update default theme (#4240)
+  * Update keepassxc init defaults file (#4085)
+  * Update remaining kfocus themes (#4240)
+  * WIP large desktop layout, horiz and vert (#4240)
 
   [ Aaron Rainbolt ]
+  * Add kfocus sddm theme. (#4288)
+  * Adjust Firefox launchers to point to the apt package's .desktop file.
   * Allow unrestricted user namespaces to be created by unprivileged
     applications. (#4271)
-
- -- Michael S. Mikowski <support@kfocus.org>  Wed, 08 May 2024 20:49:04 -0700
-
-kfocus-settings (24.04.1~beta8) noble; urgency=medium
-
-  * Update remaining kfocus themes (#4240)
-
- -- Michael S. Mikowski <support@kfocus.org>  Tue, 07 May 2024 22:11:25 -0700
-
-kfocus-settings (24.04.1~beta7) noble; urgency=medium
-
-  * Update default theme (#4240)
-
- -- Michael S. Mikowski <support@kfocus.org>  Sat, 04 May 2024 08:37:34 -0700
-
-kfocus-settings (24.04.1~beta6) noble; urgency=medium
-
-  * Remove the obsolete "etc/X11" line from kfocus-settings.install.
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Fri, 03 May 2024 00:25:09 -0500
-
-kfocus-settings (24.04.1~beta5) noble; urgency=medium
-
-  [ Aaron Rainbolt ]
   * debian/control: Bump debhelper-compat to 13 (#4085)
   * debian/control: Bump Standards-Version to 4.6.2 (#4085)
-  * debian/control: Remove inaccurate Vcs and Homepage info (#4085)
   * debian/control: Depend on kfocus-power-bin instead of kfocus-power-scripts
     (#4085)
+  * debian/control: Remove inaccurate Vcs and Homepage info (#4085)
   * debian/copyright: Update copyright date (#4085)
-  * etc/*: Store config in usr/lib/kfocus/conf and symlink to the appropriate
-    locations (#4085)
-  * Makefile: Remove obsolete Makefile. (#4085)
-
-  [ Michael S. Mikowski ]
-  * WIP large desktop layout, horiz and vert (#4240)
-  * Update keepassxc init defaults file (#4085)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 30 Apr 2024 17:13:10 -0500
-
-kfocus-settings (24.04.1~beta4) noble; urgency=medium
-
-  [ Michael Mikowski ]
-  * Move plasma-welcomerc to kfocus-settings. (#4085)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 29 Apr 2024 22:37:46 -0500
-
-kfocus-settings (24.04.1~beta3) noble; urgency=medium
-
-  * Adjust Firefox launchers to point to the apt package's .desktop file.
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Fri, 12 Apr 2024 18:00:59 -0500
-
-kfocus-settings (24.04.1~beta2) noble; urgency=medium
-
-  * Keep systemd from creating BTRFS subvolumes at /var/lib/machines and
-    /var/lib/portables. (#4013)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 09 Apr 2024 21:48:55 -0500
-
-kfocus-settings (24.04.1~beta1) noble; urgency=medium
-
+  * Disable automatic BackInTime snapshots.
   * Drop transitional package kfocus-001-settings. (#4085)
   * Drop Ubiquity configuration files. (#4085)
+  * etc/*: Store config in usr/lib/kfocus/conf and symlink to the appropriate
+    locations (#4085)
+  * Keep systemd from creating BTRFS subvolumes at /var/lib/machines and
+    /var/lib/portables. (#4013)
+  * Make Bash prompt fancy for newly created users.
+  * Makefile: Remove obsolete Makefile. (#4085)
+  * Remove the obsolete "etc/X11" line from kfocus-settings.install.
+  * Remove the `-x` option from BackInTime's rsync options. (#4323)
+  * Update global theme screenshots. (#4288, #4085)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Sun, 07 Apr 2024 17:04:56 -0500
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 30 May 2024 19:42:56 -0500
 
 kfocus-settings (22.04.21) jammy; urgency=medium
 
