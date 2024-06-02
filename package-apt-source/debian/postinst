@@ -77,11 +77,17 @@ _installReposFn () {
   ##
   _top_msg='Add recommended 3rd-party repos';
   _cm2SetMsgFn "${_top_msg}";
+
+  # TODO: When ubuntu studio backports becomes available, we can add it
+  #   to the backports. As of 2024-06-02, no release file existed so this
+  #   results in warning during installation and an apt error on all
+  #   subsequent updates. Here is the config line to add to _ppa_table:
+  # 'ubuntustudio-ppa-ubuntu-backports-noble.list|2024-05-31
+  #   |ppa:ubuntustudio-ppa/backports|Ubuntu Studio Backports'
   _ppa_table=(    
     'kubuntu-ppa-ubuntu-backports-jammy.list|2022-04-02|ppa:kubuntu-ppa/backports|Kubuntu Backports'
     'mozilla-team-noble.list|2024-04-11|ppa:mozillateam/ppa|Mozilla Team'
     'phoerious-ubuntu-keepassxc-noble.list|2024-04-07|ppa:phoerious/keepassxc|KeePassXC'
-    'ubuntustudio-ppa-ubuntu-backports-noble.list|2024-05-31|ppa:ubuntustudio-ppa/backports|Ubuntu Studio Backports'
   );
 
   for _line in "${_ppa_table[@]}"; do
