@@ -220,7 +220,7 @@ _chkHwConfigFn () {
   case "${_dmi_hw_config_code}" in
     default|generic|m2g4|m2g5|xeg2) _tool_pkg_suffix='';;
     nxg1) _tool_pkg_suffix='-nxg1';;
-    ir14g1|other|*) _tool_pkg_suffix='-other';;
+    ir14g1|ir1Xg2|other|*) _tool_pkg_suffix='-other';;
   esac
   _tool_pkg_name="kfocus-tools${_tool_pkg_suffix}";
   if ! _cm2ChkPkgFn "${_tool_pkg_name}"; then

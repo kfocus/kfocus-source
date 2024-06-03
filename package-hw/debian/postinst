@@ -129,11 +129,38 @@ _handle_xeg2Fn () {
     '/etc/tlp.d/kfocus.conf|'
   );
 }
-# hw_config_code 'ir14g1' handles model ir14g1, ir14g2, ir16g2.
-#   DPI scale set by _supplementXdgConfigsFn (120, 136 at time of writing).
+# hw_config_code 'ir14g1' handles model ir14g1
+#   DPI scale set by _supplementXdgConfigsFn (120 at time of writing).
 # shellcheck disable=SC2317
 #
 _handle_ir14g1Fn () {
+  _symlinkTable+=(
+    # Bigger tty fonts
+    '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
+    # Add params to minimize flicker and logs
+    '/etc/default/grub.d/kfocus.cfg|/usr/lib/kfocus/conf/ir14g1-etc_default_grub.d_kfocus.cfg'
+    # Minimize initrd accommodate GPU libs
+    '/etc/initramfs-tools/conf.d/kfocus.conf|/usr/lib/kfocus/conf/nxg1-etc_initramfs-tools_conf.d_kfocus.conf'
+    # Remove sound-pop fix
+    '/etc/modprobe.d/kfocus.conf|'
+    # No kernel modules (used for keyboard on M and Xe series)
+    '/etc/modules-load.d/kfocus.conf|'
+    # No xhci enable/disable on sleep (not needed here)
+    '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
+    # Select trackpad driver
+    '/usr/share/X11/xorg.conf.d/80-kfocus.conf|/usr/lib/kfocus/conf/ir14g1-usr_share_X11_xorg.conf.d_80-kfocus.conf'
+    # DPI scale symlink removed; Deprecated by _supplementXdgConfigsFn.
+    '/usr/share/kfocus/kf5-settings/kcmfonts|'
+    # Remove old TLP config
+    '/etc/tlp.d/kfocus.conf|'
+  );
+}
+
+# hw_config_code 'ir1Xg2' handles model ir14g2, ir16g2
+#   DPI scale set by _supplementXdgConfigsFn (120, 136 at time of writing).
+# shellcheck disable=SC2317
+#
+_handle_ir1Xg2Fn () {
   _symlinkTable+=(
     # Bigger tty fonts
     '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
