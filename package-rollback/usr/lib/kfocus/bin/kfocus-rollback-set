@@ -769,22 +769,6 @@ _restoreSnapshotFn () {
     _cm2ErrStrFn 'Please reboot, then run "Finish restoration operation".';
     _exitERR 'Restore already in progress!';
   fi
-
-  _createSnapshotFn 'Pre-Rollback' || exit;
-  # Exclude the fifth and older snapshots.
-  if ! [[ "${_older_snapshot_list_str}" =~ ${_target_snapshot_id} ]]; then
-    _trimSnapshotsFn || exit;
-  fi
-
-  _snapshot_path="${_rb2MainSnapshotDir}/${_target_snapshot_id}";
-  _boot_snapshot_path="${_rb2BootSnapshotDir}/${_target_snapshot_id}";
-
-  if ! [ -e "${_snapshot_path}" ] || ! [ -e "${_boot_snapshot_path}" ]; then
-    _exitERR "Part or all of the snapshot |${_target_snapshot_id}| does not
-    exist!";
-  fi
-
-  _snapshot_disp_id="$(_makeSnapshotDispIdFn "${_target_snapshot_id}")";
   
   # Failing to unmount /boot/efi before attempting to move the old subvol
   # will result in the subvol not being moved, which will result in the
@@ -802,6 +786,22 @@ _restoreSnapshotFn () {
   if [ "${_efi_umount_yn}" = 'n' ]; then
     _exitERR 'Unable to unmount EFI system partition!';
   fi
+
+  _createSnapshotFn 'Pre-Rollback' || exit;
+  # Exclude the fifth and older snapshots.
+  if ! [[ "${_older_snapshot_list_str}" =~ ${_target_snapshot_id} ]]; then
+    _trimSnapshotsFn || exit;
+  fi
+
+  _snapshot_path="${_rb2MainSnapshotDir}/${_target_snapshot_id}";
+  _boot_snapshot_path="${_rb2BootSnapshotDir}/${_target_snapshot_id}";
+
+  if ! [ -e "${_snapshot_path}" ] || ! [ -e "${_boot_snapshot_path}" ]; then
+    _exitERR "Part or all of the snapshot |${_target_snapshot_id}| does not
+    exist!";
+  fi
+
+  _snapshot_disp_id="$(_makeSnapshotDispIdFn "${_target_snapshot_id}")";
 
   # mv '/btrfs_main/@' '/btrfs_main/@kfocus-rollback-working'
   mv '/btrfs_main/@' "${_rb2MainWorkingDir}" \
