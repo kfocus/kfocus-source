@@ -745,7 +745,7 @@ _makeSnapshotDispIdFn () {
 ## BEGIN _restoreSnapshotFn {
 _restoreSnapshotFn () {
   declare _older_snapshot_list_str _target_snapshot_id _snapshot_path \
-    _boot_snapshot_path _snapshot_disp_id;
+    _boot_snapshot_path _snapshot_disp_id _umount_cnt _efi_umount_yn;
 
   _checkBtrfsStatusSetUpFn;
   _checkMainUnallocSpaceFn;
@@ -768,6 +768,23 @@ _restoreSnapshotFn () {
     _cm2ErrStrFn 'Temporary restore subvols found, cannot continue.';
     _cm2ErrStrFn 'Please reboot, then run "Finish restoration operation".';
     _exitERR 'Restore already in progress!';
+  fi
+  
+  # Failing to unmount /boot/efi before attempting to move the old subvol
+  # will result in the subvol not being moved, which will result in the
+  # whole @boot subvol being nuked except for the contents of /boot/efi.
+  _efi_umount_yn='n';
+  for (( _umount_cnt=0; _umount_cnt < 3; _umount_cnt++)); do
+    if ! umount /boot/efi ; then
+      sleep 1;
+    else
+      _efi_umount_yn='y';
+      break;
+    fi
+  done
+
+  if [ "${_efi_umount_yn}" = 'n' ]; then
+    _exitERR 'Unable to unmount EFI system partition!';
   fi
 
   _createSnapshotFn 'Pre-Rollback' || exit;
@@ -793,10 +810,6 @@ _restoreSnapshotFn () {
     || _exitEMERG 'Unable to restore root filesystem snapshot!';
   "${_btrfsExe}" filesystem sync '/btrfs_main' \
     || _exitEMERG 'Unable to sync main filesystem!';
-  # Failing to unmount /boot/efi before attempting to move the old subvol
-  # will result in the subvol not being moved, which will result in the
-  # whole @boot subvol being nuked except for the contents of /boot/efi.
-  umount /boot/efi || _exitALERT 'Unable to unmount EFI system partition!';
   mv '/btrfs_boot/@boot' '/btrfs_boot/@kfocus-rollback-working-boot' \
     || _exitALERT 'Unable to move boot filesystem subvolume for restore!';
   "${_btrfsExe}" subvolume snapshot "${_boot_snapshot_path}" '/btrfs_boot/@boot' \
