@@ -137,6 +137,13 @@ _importCommonFn () {
 }
 ## . END _importCommonFn }
 
+_checkNotRootFn () {
+  if [ "$(id -u)" = '0' ]; then
+    _cm2WarnStrFn 'kfocus-mime cannot not be run as root.';
+    exit 1;
+  fi
+}
+
 ## BEGIN deb-get functions {
 # These functions are taken directly from the deb-get project with the
 # intention of contributing to it and making it our pkexec backend.
@@ -185,6 +192,7 @@ function deb_docker-ce() {
   APT_KEY_URL="https://download.docker.com/linux/ubuntu/gpg"
   APT_LIST_NAME="docker"
   APT_REPO_URL="deb [arch=${HOST_ARCH}] https://download.docker.com/linux/ubuntu ${UBUNTU_CODENAME} stable"
+  APT_EXTRA_PKGLIST=('docker-compose-plugin')
   PRETTY_NAME="Docker Engine"
   WEBSITE="https://www.docker.com/"
 }
@@ -325,9 +333,9 @@ function _readPkgRepoInfoFn () {
   _makeAppListFn;
 
   export CACHE_DIR ERROR_STR HOST_CPU HOST_ARCH USER_AGENT UBUNTU_CODENAME \
-    APT_KEY_URL GPG_KEY_URL APT_LIST_NAME APT_REPO_URL PPA ARCHS_SUPPORTED \
-    METHOD EULA SNAP_PKG_NAME URL VERSION_INSTALLED VERSION_PUBLISHED \
-    PRETTY_NAME WEBSITE;
+    APT_KEY_URL GPG_KEY_URL APT_LIST_NAME APT_REPO_URL APT_EXTRA_PKGLIST PPA \
+    ARCHS_SUPPORTED METHOD EULA SNAP_PKG_NAME URL VERSION_INSTALLED \
+    VERSION_PUBLISHED PRETTY_NAME WEBSITE;
 
   CACHE_DIR='/var/cache/deb-get'
 
@@ -359,6 +367,7 @@ function _readPkgRepoInfoFn () {
   APT_KEY_ID='';
   APT_LIST_NAME='';
   APT_REPO_URL='';
+  APT_EXTRA_PKGLIST=();
   PPA='';
   ARCHS_SUPPORTED='amd64';
   METHOD='website';
@@ -419,6 +428,16 @@ function install_apt() {
   if ! _cm2ChkInstalledPkgFn "${APP}"; then
     apt-get -q -y install "${APP}"
   fi
+
+  if (( "${#APT_EXTRA_PKGLIST[@]}" > 0 )); then
+    apt-get -q -y install "${APT_EXTRA_PKGLIST[@]}";
+  fi
+
+  case "${APP}" in
+    docker-ce)
+      usermod -aG 'docker' "$(id -nu "${PKEXEC_UID}")";
+      ;;
+  esac
 }
 function install_snap() {
   if [ "${IS_CLASSIC_SNAP:-}" = 'y' ]; then
@@ -868,6 +887,8 @@ _mainFn () {
     read -r _arg_app_id < "${_arg0_str}" || exit 1;
     rm "${_arg0_str}" || true;
   fi
+  
+  _checkNotRootFn;
 
   if [ -z "${_arg_app_id}" ]; then
     1>&2 echo 'Missing required argument';
