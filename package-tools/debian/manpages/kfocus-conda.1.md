@@ -1,6 +1,6 @@
-% KFOCUS-CONDA(1) kfocus-conda 22.04
+% KFOCUS-CONDA(1) kfocus-conda 24.04
 % Michael Mikowski, Erich Eickmeyer
-% March 2021
+% June 2024
 
 # NAME
 kfocus-conda - Deep Learning Suite installer and launcher

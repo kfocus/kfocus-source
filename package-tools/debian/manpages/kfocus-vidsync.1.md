@@ -1,6 +1,6 @@
-% KFOCUS-VIDSYNC(1) kfocus-vidsync 22.04
+% KFOCUS-VIDSYNC(1) kfocus-vidsync 24.04
 % Erich Eickmeyer, Michael Mikowski
-% May 2021
+% June 2024
 
 # NAME
 kfocus-vidsync - GUI video sync profile manager
