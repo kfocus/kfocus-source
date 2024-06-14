@@ -890,21 +890,21 @@ _mainFn () {
     _arg_app_id="${1:-}";
     _doForceForeground='y';
 
-  elif [ "${_arg0_str}" = '-u' ]; then
-    shift;
-    _arg_app_id="$(_urlDecodeFn "${1:-}" | cut -d'/' -f3)";
-
   # Handle link file. Bail if not readable.
   else
-    # Ensure link file is readable
-    if ! [ -r "${_arg0_str}" ]; then
-      _cm2WarnStrFn "Abort: Link file |${_arg0_str}| cannot be read";
-      exit 1;
-    fi
+    if [[ "${_arg0_str}" =~ ^kfocus-mime:// ]]; then
+      _arg_app_id="$(_urlDecodeFn "${1:-}" | cut -d'/' -f3)";
+    else
+      # Ensure link file is readable
+      if ! [ -r "${_arg0_str}" ]; then
+        _cm2WarnStrFn "Abort: Link file |${_arg0_str}| cannot be read";
+        exit 1;
+      fi
 
-    # Read id from link file and then remove it.
-    read -r _arg_app_id < "${_arg0_str}" || exit 1;
-    rm "${_arg0_str}" || true;
+      # Read id from link file and then remove it.
+      read -r _arg_app_id < "${_arg0_str}" || exit 1;
+      rm "${_arg0_str}" || true;
+    fi
   fi
   
   _checkNotRootFn;
