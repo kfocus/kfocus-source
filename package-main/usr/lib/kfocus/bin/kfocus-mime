@@ -136,6 +136,21 @@ _importCommonFn () {
 }
 ## . END _importCommonFn }
 
+_urlDecodeFn () {
+  declare _url_str;
+  
+  _url_str="${1:-}";
+  if [ -z "${_url_str}" ]; then
+    _cm2WarnStrFn 'No URL provided.';
+    exit 1;
+  fi
+
+  # https://stackoverflow.com/questions/6250698/how-to-decode-url-encoded-string-in-shell
+  _url_str="${_url_str//+/ }";
+  _url_str="$(echo -e "${_url_str//%/\\x}")";
+  echo "${_url_str}";
+}
+
 ## BEGIN deb-get functions {
 # These functions are taken directly from the deb-get project with the
 # intention of contributing to it and making it our pkexec backend.
@@ -830,15 +845,19 @@ _mainFn () {
 
   # Handle link file. Bail if not readable.
   else
-    # Ensure link file is readable
-    if ! [ -r "${_arg0_str}" ]; then
-      _cm2WarnStrFn "Abort: Link file |${_arg0_str}| cannot be read";
-      exit 1;
-    fi
+    if [[ "${_arg0_str}" =~ ^kfocus-mime:// ]]; then
+      _arg_app_id="$(_urlDecodeFn "${1:-}" | cut -d'/' -f3)";
+    else
+      # Ensure link file is readable
+      if ! [ -r "${_arg0_str}" ]; then
+        _cm2WarnStrFn "Abort: Link file |${_arg0_str}| cannot be read";
+        exit 1;
+      fi
 
-    # Read id from link file and then remove it.
-    read -r _arg_app_id < "${_arg0_str}" || exit 1;
-    rm "${_arg0_str}" || true;
+      # Read id from link file and then remove it.
+      read -r _arg_app_id < "${_arg0_str}" || exit 1;
+      rm "${_arg0_str}" || true;
+    fi
   fi
 
   if [ -z "${_arg_app_id}" ]; then
