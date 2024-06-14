@@ -137,7 +137,7 @@ _importCommonFn () {
 }
 ## . END _importCommonFn }
 
-_checkNotRootFn () {
+_exitIfRootFn () {
   if [ "$(id -u)" = '0' ]; then
     _cm2WarnStrFn 'kfocus-mime cannot not be run as root.';
     exit 1;
@@ -146,7 +146,7 @@ _checkNotRootFn () {
 
 _urlDecodeFn () {
   declare _url_str;
-  
+
   _url_str="${1:-}";
   if [ -z "${_url_str}" ]; then
     _cm2WarnStrFn 'No URL provided.';
@@ -440,19 +440,20 @@ function install_apt() {
   echo -e "${APT_REPO_URL}" > "/etc/apt/sources.list.d/${APT_LIST_NAME}.list";
   update_apt
 
-  if ! _cm2ChkInstalledPkgFn "${APP}"; then
-    apt-get -q -y install "${APP}"
-  fi
-
+  # Install all packages as a group
   if (( "${#APT_EXTRA_PKGLIST[@]}" > 0 )); then
-    apt-get -q -y install "${APT_EXTRA_PKGLIST[@]}";
+    apt-get -q -y install "${APP}" "${APT_EXTRA_PKGLIST[@]}";
+  else
+    apt-get -q -y install "${APP}";
   fi
 
+  ## Begin Special handlers for certain apps {
   case "${APP}" in
     docker-ce)
       usermod -aG 'docker' "$(id -nu "${PKEXEC_UID}")";
       ;;
   esac
+  ## . End Special handlers for certain apps }
 }
 function install_snap() {
   if [ "${IS_CLASSIC_SNAP:-}" = 'y' ]; then
@@ -878,9 +879,13 @@ _mainFn () {
   elif [ "${_arg0_str}" = '-l' ]; then
     _echoKeyListFn;
     exit;
+  fi
+
+  # Refuse to continue as root for any other actions
+  _exitIfRootFn;
 
   # Handle app_id and args directly
-  elif [ "${_arg0_str}" = '-k' ]; then
+  if [ "${_arg0_str}" = '-k' ]; then
     shift;
     _arg_app_id="${1:-}";
 
@@ -890,10 +895,11 @@ _mainFn () {
     _arg_app_id="${1:-}";
     _doForceForeground='y';
 
-  # Handle link file. Bail if not readable.
   else
+    # Handle URI
     if [[ "${_arg0_str}" =~ ^kfocus-mime:// ]]; then
       _arg_app_id="$(_urlDecodeFn "${1:-}" | cut -d'/' -f3)";
+    # Handle link file. Bail if not readable.
     else
       # Ensure link file is readable
       if ! [ -r "${_arg0_str}" ]; then
@@ -906,8 +912,6 @@ _mainFn () {
       rm "${_arg0_str}" || true;
     fi
   fi
-  
-  _checkNotRootFn;
 
   if [ -z "${_arg_app_id}" ]; then
     1>&2 echo 'Missing required argument';
@@ -930,7 +934,7 @@ _etcAptDir="${_rootDir}/etc/apt";
 _pkgNameList=();
 ## . END Declare and set global vars {
 
-## BEGIN run main if script is not sourced {
+## BEGIN Run main if script is not sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binName="$(readlink -f "$0")"        || exit 1;
   _binDir="$(dirname "${_binName}")"    || exit 1;
