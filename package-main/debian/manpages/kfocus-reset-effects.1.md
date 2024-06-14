@@ -1,6 +1,6 @@
-% KFOCUS-RESET-EFFECTS(1) kfocus-reset-effects 22.04
+% KFOCUS-RESET-EFFECTS(1) kfocus-reset-effects 24.04
 % Erich Eickmeyer, Michael Mikowski
-% May 2022
+% June 2024
 
 # NAME
 kfocus-reset-effects - reset effects and keyboard shortcuts
@@ -9,7 +9,7 @@ kfocus-reset-effects - reset effects and keyboard shortcuts
 **kfocus-reset-effects**
 
 # DESCRIPTION
-**kfocus-reset-effects** is a utility that resets the keyboard shortcuts and effects to the Focus-prescribed desktop effects and overcome a bug and shortcomings in resetting the shortcuts.
+**kfocus-reset-effects** is a utility that resets the keyboard shortcuts and effects to the Focus-prescribed defaults. This works around a bug in KDE's settings reset feature.
 
 # OPTIONS
 none

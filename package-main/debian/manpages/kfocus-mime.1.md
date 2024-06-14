@@ -1,6 +1,6 @@
-% KFOCUS-MIME(1) kfocus-mime 22.04
-% Michael Mikowski
-% March 2021
+% KFOCUS-MIME(1) kfocus-mime 24.04
+% Michael Mikowski, Aaron Rainbolt
+% June 2024
 
 # NAME
 kfocus-mime - mimetype handler for kfocus.org website

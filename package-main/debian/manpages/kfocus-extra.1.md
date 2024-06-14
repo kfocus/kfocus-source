@@ -1,6 +1,6 @@
-% KFOCUS-EXTRA(1) kfocus-extra 22.04
+% KFOCUS-EXTRA(1) kfocus-extra 24.04
 % Michael Mikowski, Erich Eickmeyer
-% March 2021
+% June 2024
 
 # NAME
 kfocus-extra - Installs extra packages for Kubuntu Focus laptops
