@@ -1,6 +1,6 @@
-% KFOCUS-POWER(1) kfocus-power 22.04
+% KFOCUS-POWER(1) kfocus-power 24.04
 % Erich Eickmeyer, Michael Mikowski, Aaron Rainbolt, Niccolo Ve
-% March 2021
+% June 2024
 
 # NAME
 kfocus-power - GUI power profile manager
