@@ -138,7 +138,7 @@ _importCommonFn () {
 
 _urlDecodeFn () {
   declare _url_str;
-  
+
   _url_str="${1:-}";
   if [ -z "${_url_str}" ]; then
     _cm2WarnStrFn 'No URL provided.';
@@ -843,10 +843,11 @@ _mainFn () {
     _arg_app_id="${1:-}";
     _doForceForeground='y';
 
-  # Handle link file. Bail if not readable.
   else
+    # Handle URI
     if [[ "${_arg0_str}" =~ ^kfocus-mime:// ]]; then
       _arg_app_id="$(_urlDecodeFn "${1:-}" | cut -d'/' -f3)";
+    # Handle link file. Bail if not readable.
     else
       # Ensure link file is readable
       if ! [ -r "${_arg0_str}" ]; then
