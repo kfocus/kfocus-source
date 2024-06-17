@@ -1,5 +1,5 @@
 #!/bin/bash
-# kfocus-main preinst
+# kfocus-main postrm
 #
 # set -u is used to exist on uninitialized variables
 # set -e is not used as we do our own error checking
@@ -22,16 +22,13 @@ _cm2WarnStrFn () { _cm2EchoFn "warn: ${*}"; }
 
 ## BEGIN MAIN {
 case "${_cm2Arg01}" in
-  abort-upgrade)
+  abort-upgrade|failed-upgrade|purge|upgrade)
   ;;
 
-  install|upgrade)
-    _cm2SetMsgFn 'Add i386 architecture for Vulkan';
-    if ( dpkg --add-architecture i386 ); then
-      _cm2SucFn; else _cm2WarnFn;
-    fi
-    _cm2SetMsgFn 'Install wrapper for check-language-support';
-    if dpkg-divert --package 'kfocus-main' --add --rename --divert \
+  remove|disappear|abort-install)
+    _cm2SetMsgFn 'Remove wrapper for check-language-support';
+    rm '/usr/bin/check-language-support' # to support downgrades
+    if dpkg-divert --package 'kfocus-main' --remove --rename --divert \
       '/usr/bin/check-language-support.real' \
       '/usr/bin/check-language-support'; then
       _cm2SucFn;

@@ -1,0 +1,20 @@
+#!/bin/bash
+# Kubuntu Focus wrapper to avoid issue with thunderbird locale snap files
+_mainFn () {
+  declare _exe _out_str _check_str;
+  _exe='/usr/bin/check-language-support.real';
+  [ ! -x "${_exe}" ] && exit 1;
+
+  _out_str="$("${_exe}" "$@")" || exit "$?";
+  _check_str="$(dpkg-query -l 'thunderbird' |grep '^ii ')";
+  if [ -n "${_check_str}" ]; then
+    if ! grep 'snap' <<< "${_check_str}"; then
+      sed 's? thunderbird[^ ]*??g' <<< "${_out_str}";
+      exit;
+    fi
+  fi
+
+  echo "${_out_str}";
+}
+
+_mainFn "$@";
