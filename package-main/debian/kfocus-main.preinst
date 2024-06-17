@@ -30,15 +30,6 @@ case "${_cm2Arg01}" in
     if ( dpkg --add-architecture i386 ); then
       _cm2SucFn; else _cm2WarnFn;
     fi
-    _cm2SetMsgFn 'Install wrapper for check-language-support';
-    if dpkg-divert --package 'kfocus-main' --add --rename --divert \
-      '/usr/bin/check-language-support.real' \
-      '/usr/bin/check-language-support'; then
-      _cm2SucFn;
-    else
-      _cm2WarnFn;
-      exit 1;
-    fi
   ;;
 esac
 
