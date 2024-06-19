@@ -102,7 +102,9 @@ _formatFn () {
 # Returns   : none
 #
 _mainFn () {
-  declare _opt_str;
+  declare _opt_str _test_str _out_str;
+
+  # Example option handling
   local OPTIND=1;
   while getopts ':i:j:k:x' _opt_str; do
     case "${_opt_str}" in
@@ -114,6 +116,11 @@ _mainFn () {
   shift $((OPTIND-1));
 
   _cm2EchoFn "Left overs are |$*|";
+
+  # Example on how to match spaces or boundaries using sed
+	_test_str='thunderbird-locale-en gimp-help-en-gb thunderbird-locale-en-gb hunspell-en-au hunspell-en-ca hunspell-en-gb hunspell-en-za hyphen-en-gb hyphen-en-us libreoffice-help-en-gb libreoffice-help-en-us libreoffice-l10n-en-gb libreoffice-l10n-en-za mythes-en-au mythes-en-us thunderbird-locale-en-us'
+  _out_str="$(sed -E 's?(^| )thunderbird([^ ]*|$)??g' <<< "${_test_str}")";
+  echo "Thunderbird free? ${_out_str}";
 }
 ## . END _mainFn }
 
