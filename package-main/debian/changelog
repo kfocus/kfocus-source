@@ -1,13 +1,14 @@
-kfocus-main (24.04.7~beta2) noble; urgency=medium
+kfocus-main (24.04.7~beta3) noble; urgency=medium
 
-  * kfocus-mime: When installing Docker, also install Docker Compose. (#2068)
-  * kfocus-mime: When installing Docker, add the installing user to the docker
-    group. (#2068)
-  * Update manpages. (#4318)
-  * kfocus-mime: Add kfocus-mime:// URL support. (#4258)
-  * Work around incorrect language support notification. (#4386)
+  * Update manpages (#4318)
+  * usr/share/language-selector/pkg_depends: avoid nag
+      when thunderbird is installed from a deb (#4386)
+  * kfocus-mime: Add support for kfocus-mime:// handler (#4258)
+  * kfocus-mime: When installing Docker, also install Docker Compose (#2068)
+  * kfocus-mime: When installing Docker, add the installing user to the 
+    docker group (#2068)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 13 Jun 2024 13:26:15 -0500
+ -- Michael S. Mikowski <support@kfocus.org>  Wed, 19 Jun 2024 22:21:00 -0700
 
 kfocus-main (24.04.5) noble; urgency=medium
 

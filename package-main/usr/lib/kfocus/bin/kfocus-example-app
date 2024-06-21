@@ -118,7 +118,7 @@ _mainFn () {
   _cm2EchoFn "Left overs are |$*|";
 
   # Example on how to match spaces or boundaries using sed
-	_test_str='thunderbird-locale-en gimp-help-en-gb thunderbird-locale-en-gb hunspell-en-au hunspell-en-ca hunspell-en-gb hunspell-en-za hyphen-en-gb hyphen-en-us libreoffice-help-en-gb libreoffice-help-en-us libreoffice-l10n-en-gb libreoffice-l10n-en-za mythes-en-au mythes-en-us thunderbird-locale-en-us'
+  _test_str='thunderbird-locale-en gimp-help-en-gb thunderbird-locale-en-gb hunspell-en-au hunspell-en-ca hunspell-en-gb hunspell-en-za hyphen-en-gb hyphen-en-us libreoffice-help-en-gb libreoffice-help-en-us libreoffice-l10n-en-gb libreoffice-l10n-en-za mythes-en-au mythes-en-us thunderbird-locale-en-us'
   _out_str="$(sed -E 's?(^| )thunderbird([^ ]*|$)??g' <<< "${_test_str}")";
   echo "Thunderbird free? ${_out_str}";
 }
