@@ -20,16 +20,25 @@ _overwriteWithMocksFn () {
   source "${_exe_file}" || exit 1;
   # Override executables with functions
   declare -g _dconfExe="_dconfExe";
-  declare -g _qdbusExe="_qdbusExe";
+
+  _cm2RunPlasmaScriptFn () {
+    if [ "$1" = 'fixIbusPanelIcon.js' ]; then
+      _mockIbusSystray='false';
+    elif [ "$1" = 'chkIbusPanelIcon.js' ]; then
+      echo "${_mockIbusSystray}";
+    else
+      _cm2WarnStrFn 'No Plasma script name provided!';
+    fi
+  }
 }
 ## . END _overwriteWithMocksFn }
 
 ## BEGIN _unsetMocksFn {
 # Purpose : Unset mocked functions and other globals to prevent
-#   pollution of namespaces. Mocked functions from commons.2.source are not
+#   pollution of namespaces. Mocked functions from common.2.source are not
 #   reset here; instead they are re-source after every test in runUnitTests.
 #   See more notes in 00900.
-_unsetMocksFn () { unset _qdbusExe; }
+_unsetMocksFn () { true; }
 ## . END _unsetMocksFn }
 _mockWithIbusStr="$(cat << 'EOT';
 :1.0
@@ -58,74 +67,6 @@ _mockNoIbusStr="$(cat << 'EOT';
 :1.8
 :1.9
 org.freedesktop.DBus
-EOT
-)";
-_mockQdbusRepairScript="$(cat << 'EOT';
-// Copyright: 2024 MindShare Inc., 2024 KDE Contributors
-// License: GPLv3
-// Copied and adapted for the Kubuntu Focus from the example shown at
-// https://develop.kde.org/docs/plasma/scripting/
-
-panelIds.forEach((panel) => {
-    panel = panelById(panel);
-    if (!panel) {
-        return;
-    }
-    panel.widgetIds.forEach((myWidget) => {
-        myWidget = panel.widgetById(myWidget);
-        if (myWidget.type === "org.kde.plasma.systemtray") {
-            systrayId = myWidget.readConfig("SystrayContainmentId");
-            if (systrayId) {
-                const systray = desktopById(systrayId);
-                systray.currentConfigGroup = ["General"];
-                const hiddenItems = systray.readConfig("hiddenItems")
-                  .split(",");
-                if (hiddenItems.indexOf("ibus-ui-gtk3") === -1) {
-                    hiddenItems.push("ibus-ui-gtk3");
-                    systray.writeConfig("hiddenItems", hiddenItems);
-                    systray.reloadConfig();
-                }
-            }
-        }
-    });
-});
-EOT
-)";
-_mockQdbusCheckScript="$(cat <<'EOT';
-// Copyright: 2024 MindShare Inc., 2024 KDE Contributors
-// License: GPLv3
-// Copied and adapted for the Kubuntu Focus from the example shown at
-// https://develop.kde.org/docs/plasma/scripting/
-
-isIbusIconFound=false;
-
-panelIds.forEach((panel) => {
-    panel = panelById(panel);
-    if (!panel) {
-        return;
-    }
-    panel.widgetIds.forEach((myWidget) => {
-        myWidget = panel.widgetById(myWidget);
-        if (myWidget.type === "org.kde.plasma.systemtray") {
-            systrayId = myWidget.readConfig("SystrayContainmentId");
-            if (systrayId) {
-                const systray = desktopById(systrayId);
-                systray.currentConfigGroup = ["General"];
-                const hiddenItems = systray.readConfig("hiddenItems")
-                  .split(",");
-                if (hiddenItems.indexOf("ibus-ui-gtk3") === -1) {
-                    isIbusIconFound=true;
-                }
-            }
-        }
-    });
-});
-
-if (isIbusIconFound) {
-    print('true');
-} else {
-    print ('false');
-}
 EOT
 )";
 
@@ -178,26 +119,10 @@ _mockDconfActiveFn () {
     fi
   }
 }
-_mockQdbusActiveFn () {
-  _qdbusExe () {
-    if [ "$1" = 'org.kde.plasmashell' ] && \
-      [ "$2" = '/PlasmaShell' ] && \
-      [ "$3" = 'org.kde.PlasmaShell.evaluateScript' ]; then
-      if [ "$4" = "${_mockQdbusCheckScript}" ]; then
-        echo "${_mockIbusSystray}";
-      elif [ "$4" = "${_mockQdbusRepairScript}" ]; then
-        _mockIbusSystray='false';
-      else
-        return 1;
-      fi
-    fi
-  }
-}
 _mockNoIbusFn () {
   _mockIbusSystray='';
   _mockIbusSystemKeyboard='';
   _mockDconfActiveFn;
-  _mockQdbusActiveFn;
 }
 _mockNoIbusFailFn () {
   _mockIbusSystray='';
@@ -206,22 +131,16 @@ _mockNoIbusFailFn () {
     echo '';
     return 1;
   }
-  _qdbusExe () {
-    echo '';
-    return 1;
-  }
 }
 _mockWithIbusBadConfFn () {
   _mockIbusSystray='true';
   _mockIbusSystemKeyboard='false';
   _mockDconfActiveFn;
-  _mockQdbusActiveFn;
 }
 _mockWithIbusGoodConfFn () {
   _mockIbusSystray='false';
   _mockIbusSystemKeyboard='true';
   _mockDconfActiveFn;
-  _mockQdbusActiveFn;
 }
 _mockWithIbusBadConfReadonlyFn () {
   _mockIbusSystray='true';
@@ -239,18 +158,6 @@ _mockWithIbusBadConfReadonlyFn () {
     else
       # this will return 1 even if a valid write command is passed
       return 1;
-    fi
-  }
-  _qdbusExe () {
-    if [ "$1" = 'org.kde.plasmashell' ] && \
-      [ "$2" = '/PlasmaShell' ] && \
-      [ "$3" = 'org.kde.PlasmaShell.evaluateScript' ]; then
-      if [ "$4" = "${_mockQdbusCheckScript}" ]; then
-        echo "${_mockIbusSystray}";
-      else
-        # ditto
-        return 1;
-      fi
     fi
   }
 }
@@ -331,7 +238,7 @@ _runTestFn () {
     IFS='|' read -r -d '' -a _bit_list < <(echo -n "${_assert_line}");
     _testfn_str="${_bit_list[0]}";
     _arg_str="${_bit_list[1]}";
-    # Mock qdbus using function
+    # Mock setup using function
     _set_exe="_mock${_bit_list[2]}Fn";
     "${_set_exe}";
 
