@@ -1281,7 +1281,7 @@ _overwriteWithMocksFn () {
   _cm2RunLongCmdFn () {
     declare _pkg_list _pkg_name _purge_kernel_count _avail_int _size_int;
     echo -e "\nPurge Package List:\n${*:-}\n" >>"${_runFile}";
-    shift 4;
+    shift 3;
     _pkg_list=("$@");
     _purge_kernel_count=0;
     for _pkg_name in "${_pkg_list[@]}"; do
@@ -1317,6 +1317,9 @@ _overwriteWithMocksFn () {
       echo 'XXX_NOT_INSTALLED_XXX';
     fi
   }
+
+  _kcleanSetExe='_kcleanSetExe';
+  _rollbackSetExe='';
 }
 ## . END _overwriteWithMocksFn }
 

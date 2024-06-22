@@ -1,6 +1,5 @@
 |app_id|cmd_str|sniff_str|pkg_str|descr_str
 |apt-rollback|konsole;-e;man;apt-rollback|apt-rollback|apt-rollback|AptRollback: Rollback System Packages|
-|atom|atom;--no-sandbox|atom|atom|Atom: A hackable text editor. Use atom --nosandbox to launch.|
 |audacity|audacity|audacity|audacity|Audacity: Edit Sound|
 |aws-cli|konsole;--hold;-e;aws;help|aws|awscli|AWS: Command Line DevOps Tool|
 |azure-cli|konsole;--hold;-e;az;--help|az|azure-cli|Azure: Command Line DevOps Tool|
@@ -40,7 +39,7 @@
 |kfocus_conda|konsole;-e;kfocus-conda|kfocus-conda|kfocus-conda|KFocus Conda: Deep Learning Suite|
 |kfocus_extra|konsole;-e;pkexec;kfocus-extra|kfocus-extra|kfocus-main|KFocus Extra: Install extra and restricted software|
 |kfocus_fan|kfocus-fan|kfocus-fan|kfocus-fan|Fan Control: Select a desired fan profile.|
-  WARN: Found package appears incorrect: |kfocus-power| NOT |kfocus-fan|
+  WARN: Found package appears incorrect: |kfocus-power-bin| NOT |kfocus-fan|
 |kfocus_focusrx|focusrx;-f|focusrx|kfocus-main|FocusRx: System diagnostics and repair|
 |kfocus_guided|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://kfocus.org/wf|/usr/lib/kfocus/bin/kfocus-web-launcher|kfocus-main|KFocus Guided Solutions|
 |kfocus_help|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://kfocus.org/wf/help.html|/usr/lib/kfocus/bin/kfocus-web-launcher|kfocus-main|KFocus Help: Help and FAQs|
@@ -48,6 +47,8 @@
 |kfocus_kclean|/usr/lib/kfocus/bin/kfocus-kclean;-f|/usr/lib/kfocus/bin/kfocus-kclean|kfocus-main|Kernel Cleaner: Clean up old kernels|
 |kfocus_pick_gcc|kfocus-pick-gcc|kfocus-pick-gcc|kfocus-pick-gcc|KFocus Pick GCC: Select default compiler toolchain|
 |kfocus_power|kfocus-power|kfocus-power|kfocus-power|KFocus Power: Control CPU Power|
+  WARN: Found package appears incorrect: |kfocus-power-bin| NOT |kfocus-power|
+|kfocus_rollback|/usr/lib/kfocus/bin/kfocus-rollback|/usr/lib/kfocus/bin/kfocus-rollback|kfocus-rollback|KFocus Rollback: Restore the system to an earlier state|
 |kfocus_vidsync|kfocus-vidsync|kfocus-vidsync|kfocus-vidsync|KFocus Vidsync: Sync video across all displays|
 |kfocus_welcome|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://docs.google.com/presentation/d/e/2PACX-1vTsKGkzy_tFm2xZo-BYX7mqeLG43C2vy108qsWZ2L_c4XJGXEVh2fAt3sNvgiqXfw4OFPWynHS-32xx/pub?start=false&loop=false&delayms=3000|/usr/lib/kfocus/bin/kfocus-web-launcher|kfocus-main|KFocus Welcome Document|
 |kfocus_wizard|/usr/lib/kfocus/bin/kfocus-firstrun-bin;-f|/usr/lib/kfocus/bin/kfocus-firstrun-bin|kfocus-firstrun-bin|Welcome Wizard: Configure your apps|

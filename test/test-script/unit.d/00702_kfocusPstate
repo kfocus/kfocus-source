@@ -94,8 +94,8 @@ _EOT
   _qdbusExe='_qdbusExeFn';
   _upowerExe='_upowerExeFn';
 
-  # shellcheck source=../../../package-main/usr/lib/kfocus/bin/kfocus-pstate
-  source "${_t00TopDir}/package-main/usr/lib/kfocus/bin/kfocus-pstate";
+  # shellcheck source=../../../package-power-bin/helper/usr/lib/kfocus/bin/kfocus-pstate
+  source "${_t00TopDir}/package-power-bin/helper/usr/lib/kfocus/bin/kfocus-pstate";
 }
 ## . END _setMocksFn }
 
