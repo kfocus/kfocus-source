@@ -18,16 +18,14 @@
 #
 set -u;
 
-# app_str|cmd_str;with;args|sniff_str|pkg_str|descr_str
+# app_id|cmd_str;with;args|sniff_str|pkg_str|descr_str
 # 1       2                 3         4       5
 _exeLookupList=(
   'apt-rollback|konsole;-e;man;apt-rollback|apt-rollback|apt-rollback|AptRollback: Rollback System Packages'
-#  'atom|atom;--no-sandbox||atom|Atom: A hackable text editor. Use atom --nosandbox to launch.'
   'audacity|audacity||audacity|Audacity: Edit Sound'
   'aws-cli|konsole;--hold;-e;aws;help|aws|awscli|AWS: Command Line DevOps Tool'
   'azure-cli|konsole;--hold;-e;az;--help|az|azure-cli|Azure: Command Line DevOps Tool'
   'backintime|backintime-qt||backintime-qt|BackInTime: Backup Files'
-#  'brave-browser|brave-browser||brave-browser|Brave Browser'
   'blender|blender||blender|Blender: 3D Modeller and Renderer'
   'code|code||code|Microsoft Visual Studio Code: Development IDE'
   'cpupower-gui|cpupower-gui|cpupower-gui|cpupower-gui|CPU Power GUI: Manage CPU power'
@@ -115,10 +113,13 @@ _exeLookupList=(
   'webstorm|!webstorm|jetbrains-toolbox|jetbrains-toolbox|WebStorm: JetBrains Web IDE'
   'zoom|!zoom||zoom|Zoom: Start and Join Video and Web Conferencing'
 
-  # These are experimental and WIP
-  # 'nodejs16|konsole;-e man node|node|nodejs|NodeJS: Javascript + TCP Server'
+  # Future considerations
   # 'nvidia-cuda|!|!|nvidia-cuda|Nvidia CUDA libs'
-  # 'nvidia-ml|!|!|nvidia-ml|Nvidia Legacy ML libs'
+  # 'nvidia-ml|!|!|nvidia-ml|Nvidia ML libs'
+
+  # Deprecated
+  # 'atom|atom;--no-sandbox||atom|Atom: A hackable text editor. Use atom --nosandbox to launch.'
+  # 'brave-browser|brave-browser||brave-browser|Brave Browser'
 );
 
 ## BEGIN _importCommonFn {
@@ -562,50 +563,6 @@ _echoInstallPromptMsgFn () {
 }
 ## . END _echoInstallPromptMsgFn }
 
-## BEGIN _getPkgInfoStrFn {
- # Purpose: This is ONLY used for debugging when _doPkgAudit is set to 'y'.
- #
-_getPkgInfoStrFn () {
-  declare _sniff_str _found_pkg_name _expect_pkg_name \
-    _exe_str _found_list _msg_str;
-
-  _sniff_str="${1:-}";
-  _expect_pkg_name="${2:-}";
-
-  _cm2EchoFn "Progress ... ${_sniff_str}";
-
-  _exe_str="$(readlink -f "$(command -v "${_sniff_str}" || true)")";
-  if [ -z "${_exe_str}" ]; then
-    echo "Cannot find cmd_str |${_sniff_str}|. Please install to audit.";
-    return 1;
-  fi
-
-  read -r -d '' -a _found_list < <(
-    dpkg-query -S "${_exe_str}" | awk -F: '{print $1}' | sort -u
-  );
-  if [ "${#_found_list[@]}" -eq 0 ]; then
-    echo "ERROR: Trouble finding installed package for ${_exe_str}";
-    return 1;
-  fi
-
-  _msg_str='';
-  for _found_pkg_name in "${_found_list[@]}"; do
-    if [ "${_found_pkg_name}" = "${_expect_pkg_name}" ]; then
-      _msg_str='';
-      break;
-    else
-      _msg_str+="\n  WARN: Found package appears incorrect:";
-      _msg_str+=" |${_found_pkg_name}| NOT |${_expect_pkg_name}|";
-    fi
-  done
-
-  if [ "${#_found_list[@]}" -gt 1 ]; then
-    _msg_str+="\n  WARN: multiple packages found: |${_found_list[*]}|";
-  fi
-
-  echo -e "${_msg_str}";
-}
-## . END _getPkgInfoStrFn }
 
 ## BEGIN _installPkgFn {
 # Purpose: Install requested package
@@ -719,73 +676,73 @@ _runAppHandlerFn () {
 # Arguments: app_id - App identifier key
 #
 _runAppFn () {
-  declare _arg_app_id _found_list _prompt_msg _pkg_name   \
-    _line_str _bit_list _app_id _full_cmd_str _sniff_str  \
-    _descr_str _cmd_str _do_handler _arg_list _report_str \
-    _sniff_exe _app_exe _install_prompt_msg  _ans_str     \
-    _exit_str _idx;
+  declare _arg1_str _arg2_str _arg_app_id _do_report        \
+    _prompt_msg _pkg_name _line_str _bit_list _app_id       \
+    _full_cmd_str _sniff_str _descr _cmd_str _do_handler    \
+    _arg_list _report_str _sniff_exe _app_exe               \
+    _install_prompt_msg  _ans_str _exit_str _idx;
 
-  _arg_app_id="${1:-}";
-  _found_list=();
-  if [ "${_doPkgAudit}" = 'y' ]; then
-    _found_list+=('|app_id|cmd_str|sniff_str|pkg_str|descr_str');
-  elif [ -z "${_arg_app_id}" ]; then
+  _arg1_str="${1:-}";
+  _arg2_str="${2:-}";
+
+  _do_report='n';
+  if [ "${_arg1_str}" = '-r' ]; then
+    _do_report='y';
+    _arg_app_id="${_arg2_str}";
+  else
+    _arg_app_id="${_arg1_str}";
+  fi
+
+  if [ -z "${_arg_app_id}" ]; then
     _prompt_msg='ABORT: No app_id provided';
     _promptFn "${_prompt_msg}";
     exit 1;
   fi
 
   _pkg_name='';
-  for _line_str in "${_exeLookupList[@]}"; do
-    # Process a match
-    if [ "${_doPkgAudit}" = 'y' ] \
-      || grep -qE "^${_arg_app_id}\|" <<< "${_line_str}"; then
+  _line_str="$(
+    IFS=$'\n'; grep -E "^${_arg_app_id}\|" <<< "${_exeLookupList[*]}"
+  )";
+  if [ -z "${_line_str}" ]; then
+    _prompt_msg="ABORT: App |${_arg_app_id}| no found";
+    _promptFn "${_prompt_msg}";
+    exit 1;
+  fi
 
-      # Split fields
-      IFS='|' read -ra _bit_list <<< "$_line_str";
-      _app_id="${_bit_list[0]}";
-      _full_cmd_str="${_bit_list[1]}";
-      _sniff_str="${_bit_list[2]}";
-      _pkg_name="${_bit_list[3]}";
-      _descr_str="${_bit_list[4]}";
+  # Split fields
+  IFS='|' read -ra _bit_list <<< "$_line_str";
+  _app_id="${_bit_list[0]}";
+  _full_cmd_str="${_bit_list[1]}";
+  _sniff_str="${_bit_list[2]}";
+  _pkg_name="${_bit_list[3]}";
+  _descr="${_bit_list[4]}";
 
-      # Split _cmd_str, _arg_list from _full_cmd_str
-      IFS=';' read -ra _arg_list <<< "${_full_cmd_str}";
-      _cmd_str="${_arg_list[0]}";
+  # Split _cmd_str, _arg_list from _full_cmd_str
+  IFS=';' read -ra _arg_list <<< "${_full_cmd_str}";
+  _cmd_str="${_arg_list[0]}";
+  # Shift _arg_list to remove _cmd_str
+  _arg_list=("${_arg_list[@]:1}");
 
-      # Calc cmd_str, _do_handler, _sniff_str
-      if echo "${_cmd_str}" |grep -qE '^!'; then
-        _do_handler='y';
-        _cmd_str="${_cmd_str/#\!/}"; # Scrub '!'
-      else
-        _do_handler='n';
-      fi
-      if [ -z "${_sniff_str}" ]; then _sniff_str="${_cmd_str}"; fi
+  # Calc cmd_str, _do_handler, _sniff_str
+  if echo "${_cmd_str}" |grep -qE '^!'; then
+    _do_handler='y';
+    _cmd_str="${_cmd_str/#\!/}"; # Scrub '!'
+  else
+    _do_handler='n';
+  fi
+  if [ -z "${_sniff_str}" ]; then _sniff_str="${_cmd_str}"; fi
 
-      # Shift _arg_list to remove _cmd_str
-      _arg_list=("${_arg_list[@]:1}");
-
-      if [ "${_doPkgAudit}" = 'n' ]; then
-        break;
-      else
-        _report_str="|${_app_id}|${_full_cmd_str}|${_sniff_str}"
-        _report_str+="|${_pkg_name}|${_descr_str}";
-        if [ "${_do_handler}" = 'y' ]; then
-          _report_str+='|Special handler expected';
-        fi
-        _report_str+="|$(_getPkgInfoStrFn "${_sniff_str}" "${_pkg_name}")";
-        _found_list+=("${_report_str}");
-      fi
+  if [ "${_do_report}" = 'y' ]; then
+    _report_str="${_app_id}|${_full_cmd_str}|${_sniff_str}"
+    _report_str+="|${_pkg_name}|${_descr}";
+    if [ "${_do_handler}" = 'y' ]; then
+      _report_str+='|Special handler expected';
     fi
-  done;
-
-  # Exit on completion of audit
-  if [ "${_doPkgAudit}" = 'y' ]; then
-    echo -e "$(printf '%s\n' "${_found_list[@]}")";
+    echo "${_report_str}";
     exit 0;
   fi
 
-  # Exit if app id is not in table
+  # Exit if pkg_name is not in table
   if [ -z "${_pkg_name}" ]; then
     _prompt_msg="Sorry, |${_arg_app_id}| is not supported";
     _promptFn "${_prompt_msg}";
@@ -805,7 +762,7 @@ _runAppFn () {
     # Try to install package using pkexec (may install repository too)
     if [ ! -x "${_sniff_exe}" ] && [ "${_idx}" = '0' ]; then
       if _install_prompt_msg="$(
-        _echoInstallPromptMsgFn "${_app_id}" "${_pkg_name}" "${_descr_str}"
+        _echoInstallPromptMsgFn "${_app_id}" "${_pkg_name}" "${_descr}"
         )"; then
         _ans_str="$(
           _cm2PromptUserFn "${_install_prompt_msg:-}" 'Install package' 'a'
@@ -815,7 +772,7 @@ _runAppFn () {
           if _exit_str="$(_cm2RunLongCmdFn "Installing ${_pkg_name}" \
               "${_binName}" '-i' "${_pkg_name}")"; then continue;
           else
-            _prompt_msg="Trouble installing ${_descr_str}";
+            _prompt_msg="Trouble installing ${_descr}";
             if [ -n "${_exit_str}" ]; then
               _prompt_msg+=":<br>${_exit_str}";
             fi
@@ -838,7 +795,7 @@ _runAppFn () {
 
   # Run app handler if provided
   if [ "${_do_handler}" = 'y' ]; then
-    _runAppHandlerFn "${_app_id}" "${_descr_str}";
+    _runAppHandlerFn "${_app_id}" "${_descr}";
     exit 0;
   # Execute command and arguments if possible
   elif [ -x "${_app_exe}" ]; then
@@ -859,57 +816,62 @@ _runAppFn () {
 
 ## BEGIN _mainFn {
 _mainFn () {
-  declare _arg0_str _arg_app_id;
-  _arg0_str="${1:-}";
-
-  _doPkgAudit='n';
-  if [ "${_arg0_str}" = '-a' ]; then
-    _doPkgAudit='y';
-    _runAppFn;
-    exit; # Exit with return code
-  fi
+  declare _arg1_str _arg2_str _arg_app_id;
+  _arg1_str="${1:-}";
+  _arg2_str="${2:-}";
 
   # Handle package and repo install with reentrant call
-  if [ "${_arg0_str}" = '-i' ]; then
+  if [ "${_arg1_str}" = '-i' ]; then
     shift;
     _installPkgFn "$@";
     exit;
-
-  # Handle request to echo key list
-  elif [ "${_arg0_str}" = '-l' ]; then
+  elif [ "${_arg1_str}" = '-l' ]; then
     _echoKeyListFn;
+    exit;
+  elif [ "${_arg1_str}" = '-L' ]; then
+    ( IFS=$'\n'; echo "${_exeLookupList[*]}"; )
     exit;
   fi
 
   # Refuse to continue as root for any other actions
   _exitIfRootFn;
 
-  # Handle app_id and args directly
-  if [ "${_arg0_str}" = '-k' ]; then
+  # Handle report string
+  if [ "${_arg1_str}" = '-r' ]; then
+    if [ -n "${_arg2_str}" ]; then
+      _runAppFn -r "${_arg2_str}";
+      exit; # Exit with return code
+    else
+      exit 1;
+    fi
+  fi
+
+  # Handle app_id request
+  if [ "${_arg1_str}" = '-k' ]; then
     shift;
     _arg_app_id="${1:-}";
 
-  # Same as above, but use a blocking execute mode
-  elif [ "${_arg0_str}" = '-kf' ]; then
+  # Handle app_id requires with sync blocking
+  elif [ "${_arg1_str}" = '-kf' ]; then
     shift;
     _arg_app_id="${1:-}";
     _doForceForeground='y';
 
+  # Handle URI
   else
-    # Handle URI
-    if [[ "${_arg0_str}" =~ ^kfocus-mime:// ]]; then
+    if [[ "${_arg1_str}" =~ ^kfocus-mime:// ]]; then
       _arg_app_id="$(_urlDecodeFn "${1:-}" | cut -d'/' -f3)";
     # Handle link file. Bail if not readable.
     else
       # Ensure link file is readable
-      if ! [ -r "${_arg0_str}" ]; then
-        _cm2WarnStrFn "Abort: Link file |${_arg0_str}| cannot be read";
+      if ! [ -r "${_arg1_str}" ]; then
+        _cm2WarnStrFn "Abort: Link file |${_arg1_str}| cannot be read";
         exit 1;
       fi
 
       # Read id from link file and then remove it.
-      read -r _arg_app_id < "${_arg0_str}" || exit 1;
-      rm "${_arg0_str}" || true;
+      read -r _arg_app_id < "${_arg1_str}" || exit 1;
+      rm "${_arg1_str}" || true;
     fi
   fi
 
