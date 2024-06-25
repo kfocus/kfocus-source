@@ -840,40 +840,52 @@ _systemSnapshotFn () {
 
 ## BEGIN _balanceMainFn {
 _balanceMainFn () {
-  declare _main_report _main_unalloc_int _main_free _old_report_str \
-   _last_unalloc_int _last_free _trigger_threshold;
+  declare _do_force_balance _main_report _main_unalloc_int _main_free_int \
+    _old_report_str _last_unalloc_int _last_free_int _trigger_threshold \
+    _balance_percent _do_balance;
   
+  _do_force_balance="${1:-n}";
   _checkBtrfsStatusSetUpFn;
   _trigger_threshold=5368709120; # 5 GiB
 
   _main_report="$(_getMainUsageReportFn)";
   _main_unalloc_int="$(grep $'Device unallocated:\t' <<< "${_main_report}" \
     | awk '{ print $3 }')";
-  _main_free="$(grep $'Free (estimated):\t' <<< "${_main_report}" \
+  _main_free_int="$(grep $'Free (estimated):\t' <<< "${_main_report}" \
     | awk '{ print $3 }')";
   _last_unalloc_int=-1;
-  _last_free=0;
+  _last_free_int=0;
 
   if [ -f "${_rb2OptimizeStateFile}" ]; then
     _old_report_str="$(cat "${_rb2OptimizeStateFile}")";
     _last_unalloc_int="$(grep 'unallocd' <<< "${_old_report_str}" | cut -d'|' -f2)";
-    _last_free="$(grep 'free' <<< "${_old_report_str}" | cut -d'|' -f2)";
+    _last_free_int="$(grep 'free' <<< "${_old_report_str}" | cut -d'|' -f2)";
   fi  
 
-  if (( (_last_unalloc_int - _main_unalloc_int) >= "${_trigger_threshold}" )) \
-    || (( (_main_free - _last_free) >= "${_trigger_threshold}" )); then
-    "${_btrfsBalanceExe}" -u 70 '/btrfs_main';
+  if [ "${_do_force_balance}" = 'y' ]; then
+    _balance_percent='85';
+    _do_balance='y'
+  elif (( (_last_unalloc_int - _main_unalloc_int) >= "${_trigger_threshold}" )) \
+    || (( (_main_free_int - _last_free_int) >= "${_trigger_threshold}" )); then
+    _balance_percent='70';
+    _do_balance='y';
+  fi
+
+  if [ "${_do_balance}" = 'y' ]; then
+    "${_btrfsBalanceExe}" -u "${_balance_percent}" '/btrfs_main';
     _main_report="$(_getMainUsageReportFn)";
     _main_unalloc_int="$(grep $'Device unallocated:\t' <<< "${_main_report}" \
       | awk '{ print $3 }')";
-    _main_free="$(grep $'Free (estimated):\t' <<< "${_main_report}" \
+    _main_free_int="$(grep $'Free (estimated):\t' <<< "${_main_report}" \
       | awk '{ print $3 }')";
-  fi  
   
-  echo "unallocd|${_main_unalloc_int}" > "${_rb2OptimizeStateFile}";
-  echo "free|${_main_free}" >> "${_rb2OptimizeStateFile}";
-
-  _cm2LogFn 'notice' "Main filesystem balanced.";
+    echo "unallocd|${_main_unalloc_int}" > "${_rb2OptimizeStateFile}";
+    echo "free|${_main_free_int}" >> "${_rb2OptimizeStateFile}";
+    _cm2LogFn 'notice' "Main filesystem balanced.";
+  else
+    _cm2LogFn 'notice' \
+      "Main filesystem not balanced: not forced and threshold not met.";
+  fi
 }
 ## . END _balanceMainFn }
 
@@ -1005,9 +1017,10 @@ _defragmentFn () {
 ## BEGIN _btrfsMaintainFn {
 _btrfsMaintainFn () {
   _checkBtrfsStatusSetUpFn;
-  _checkRootFn   || _exitNOTICE 'BTRFS maintenance requires root privileges.';
-  _balanceMainFn || _exitALERT  'Failed to balance main filesystem!';
-  _balanceBootFn || _exitALERT  'Failed to balance boot filesystem!';
+  _checkRootFn       || _exitNOTICE \
+    'BTRFS maintenance requires root privileges.';
+  _balanceMainFn 'n' || _exitALERT  'Failed to balance main filesystem!';
+  _balanceBootFn     || _exitALERT  'Failed to balance boot filesystem!';
   _cm2LogFn 'notice' "Routine BTRFS maintenance complete.";
 }
 ## . END _btrfsMaintainFn }
@@ -1015,12 +1028,12 @@ _btrfsMaintainFn () {
 ## BEGIN _btrfsDeepCleanFn {
 _btrfsDeepCleanFn () {
   _checkBtrfsStatusSetUpFn;
-  _checkRootFn   || _exitNOTICE \
+  _checkRootFn       || _exitNOTICE \
     'BTRFS deep cleaning requires root privileges.';
   _deleteAllSnapshotsFn;
-  _balanceMainFn || _exitALERT 'Failed to balance main filesystem!';
-  _balanceBootFn || _exitALERT 'Failed to balance boot filesystem!';
-  _defragmentFn  || _exitALERT 'Failed to defragment files!';
+  _balanceMainFn 'y' || _exitALERT 'Failed to balance main filesystem!';
+  _balanceBootFn     || _exitALERT 'Failed to balance boot filesystem!';
+  _defragmentFn      || _exitALERT 'Failed to defragment files!';
   _cm2LogFn 'notice' "BTRFS deep clean operation complete.";
 }
 ## . END _btrfsDeepCleanFn }
