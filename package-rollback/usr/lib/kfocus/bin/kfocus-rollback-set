@@ -845,6 +845,7 @@ _balanceMainFn () {
     _balance_percent _do_balance;
   
   _do_force_balance="${1:-n}";
+  _do_balance='n';
   _checkBtrfsStatusSetUpFn;
   _trigger_threshold=5368709120; # 5 GiB
 
