@@ -30,13 +30,12 @@ _exeLookupList=(
   'code|code||code|Microsoft Visual Studio Code: Development IDE'
   'cpupower-gui|cpupower-gui|cpupower-gui|cpupower-gui|CPU Power GUI: Manage CPU power'
   'darktable|darktable||darktable||DarkTable: Edit RAW Photos'
-  'docker|konsole;-e;man;docker|docker|docker-ce|Docker: Container Engine'
   'dolphin|dolphin||dolphin|Dolphin: Manage Files'
   'elisa|elisa||elisa|Elisa Music Player'
   'ffmpeg|konsole;-e;man ffmpeg|ffmpeg|ffmpeg|Tools for Transcoding|FFMpeg: Stream and Play Multimedia Files'
   'filezilla|filezilla||filezilla|Filezilla: Transfer Files'
   'firefox|firefox||firefox|Firefox: Browse the Web with Mozilla Firefox'
-  'gcloud|konsole;-e;main;gcloud;help|gcloud|google-cloud-sdk|GCS: Google Cloud Services SDK'
+  'gcloud|konsole;-e;main;gcloud;help|gcloud|google-cloud-cli|GCS: Google Cloud Services CLI'
   'ghb|ghb||handbrake|Handbrake: Rip and Transcode DVDs and Video'
   'git-cola|git-cola||git-cola|Git-Cola: Explore Git Branches GUI'
   'gimp|gimp||gimp|Gimp: Edit and Create Raster Images'
@@ -67,7 +66,7 @@ _exeLookupList=(
   'kfocus_rollback|/usr/lib/kfocus/bin/kfocus-rollback|/usr/lib/kfocus/bin/kfocus-rollback|kfocus-rollback|KFocus Rollback: Restore the system to an earlier state'
   'kfocus_vidsync|kfocus-vidsync||kfocus-vidsync|KFocus Vidsync: Sync video across all displays'
   'kfocus_welcome|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://docs.google.com/presentation/d/e/2PACX-1vTsKGkzy_tFm2xZo-BYX7mqeLG43C2vy108qsWZ2L_c4XJGXEVh2fAt3sNvgiqXfw4OFPWynHS-32xx/pub?start=false&loop=false&delayms=3000||kfocus-main|KFocus Welcome Document'
-# app_str|cmd_str;with;args|sniff_str|pkg_str|descr_str
+# app_id|cmd_str;with;args|sniff_str|pkg_str|descr_str
   'kfocus_wizard|/usr/lib/kfocus/bin/kfocus-firstrun-bin;-f||kfocus-firstrun-bin|Welcome Wizard: Configure your apps'
   'kleopatra|kleopatra||kleopatra|Kleopatra: Unified Crypto GUI'
   'konsole|konsole||konsole|Konsole: Use an X Terminal Emulator'
@@ -91,7 +90,7 @@ _exeLookupList=(
   'ppa-purge|konsole;-e;man ppa-purge|ppa-purge|ppa-purge|PPA Purge: Purge PPAs'
   'rar|konsole;-e;man rar|rar|rar|Rar: Create .rar Archive Files'
   'simplescreenrecorder|simplescreenrecorder||simplescreenrecorder|SimpleScreenRecorder: Record Your Screen with Powerful Options'
-  'skype|skypeforlinux||skypeforlinux|Skype: Video Call Platform'
+  'skype|skype||skype|Skype: Video Call Platform'
   'slack|slack||slack-desktop|Slack: Team Messaging'
   'spectacle|spectacle||kde-spectacle|Spectacle: Take Screenshots'
   'steam|steam||steam|Steam: Manage and Play Games'
@@ -99,26 +98,25 @@ _exeLookupList=(
   'systemsettings5|systemsettings5||systemsettings|System Settings: Adjust Your System'
   'telegram-desktop|telegram-desktop||telegram-desktop|Telegram: Encrypted Instant Messenger'
   'thunderbird|thunderbird||thunderbird|Thunderbird: Email and Calendar'
-  'virtualbox|virtualbox||virtualbox|VirtualBox: Run Virtual Machines'
   'vlc|vlc||vlc|VLC: Play and Stream Video and Multimedia'
   'wallpapers|dolphin;/usr/share/wallpapers||dolphin|Wallpapers: View Wallpaper Images'
   'webcamoid|webcamoid||webcamoid|Webcamoid: Test Your Webcam'
   'winff|winff||winff-qt|WinFF: Convert Video using ffmpeg'
 
   # Packages with special handlers
+  'docker|!docker|docker|docker-ce|Docker: Container Engine'
   'dropbox|!dropbox|dropbox|dropbox|Dropbox: Sync to Cloud Storage'
   'jetbrains-toolbox|!jetbrains-toolbox|jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs'
   'intellij|!intellij|jetbrains-toolbox|jetbrains-toolbox|IntelliJ: JetBrains Java IDE'
   'pycharm|!pycharm|jetbrains-toolbox|jetbrains-toolbox|PyCharm: JetBrains Python IDE'
   'webstorm|!webstorm|jetbrains-toolbox|jetbrains-toolbox|WebStorm: JetBrains Web IDE'
+  'virtualbox|!virtualbox||virtualbox|VirtualBox: Run Virtual Machines'
   'zoom|!zoom||zoom|Zoom: Start and Join Video and Web Conferencing'
 
-  # Future considerations
-  # 'nvidia-cuda|!|!|nvidia-cuda|Nvidia CUDA libs'
-  # 'nvidia-ml|!|!|nvidia-ml|Nvidia ML libs'
+  # Future consideration: Nvidia CUDA and ML libs
 
   # Deprecated
-  # 'atom|atom;--no-sandbox||atom|Atom: A hackable text editor. Use atom --nosandbox to launch.'
+  # 'atom|atom;--no-sandbox||atom|Atom: A hackable text editor.'
   # 'brave-browser|brave-browser||brave-browser|Brave Browser'
 );
 
@@ -282,11 +280,9 @@ function deb_nvidia-ml() {
   PRETTY_NAME="Nvidia ML (deprecated; use CUDA for later lib versions)"
   WEBSITE="https://developer.nvidia.com"
 }
-function deb_skypeforlinux() {
-  APT_KEY_URL="https://repo.skype.com/data/SKYPE-GPG-KEY"
-  APT_LIST_NAME="skype-stable"
-  APT_REPO_URL="deb [arch=amd64] https://repo.skype.com/deb stable main"
+function deb_skype() {
   PRETTY_NAME="Skype"
+  SNAP_PKG_NAME="skype"
   WEBSITE="https://www.skype.com/"
 }
 function deb_slack-desktop() {
@@ -368,7 +364,8 @@ function _readPkgRepoInfoFn () {
       return 1;;
   esac
 
-  readonly USER_AGENT="Mozilla/5.0 (X11; Linux ${HOST_CPU}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36"
+  USER_AGENT="Mozilla/5.0 (X11; Linux ${HOST_CPU}) AppleWebKit/537.36";
+  USER_AGENT+=" (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36";
 
   if [ -e /etc/os-release ]; then
     UBUNTU_CODENAME=$(grep UBUNTU_CODENAME /etc/os-release | cut -d'=' -f2)
@@ -557,7 +554,7 @@ _echoInstallPromptMsgFn () {
   echo -e "\n${_report_str}\n\n   ";
 
   if [ -n "${EULA:-}" ]; then
-    echo -e "\nOnly press OK if you agree with \nthe following EULA:";
+    echo -e "\nOnly press OK if you agree with \n  the following EULA:";
     echo -e "${EULA:-}\n";
   fi
 }
@@ -602,7 +599,9 @@ _promptFn () {
 ## BEGIN _runAppHandlerFn {
 # Summary  : _runAppHandlerFn <app_id> <label>
 # Example  : _runAppHandlerFn 'dropbox' 'Dropbox: Sync to ...'
-# Purpose  : Run the custom handler according to its app_id.
+# Purpose  : Run the special handlers for provided _app_id.
+#          : This is called only when the cmd_str is prefixed by an '!'
+#          : and after installation is complete.
 # Arguments: _app_id    : App identifier key
 #            _descr_str : App description
 #
@@ -627,7 +626,7 @@ _runAppHandlerFn () {
 
     jetbrains-toolbox)
       _prompt_msg+='Click on the JetBrains Toolbox <br>';
-      _prompt_msg+='found in the system tray. <br>';
+      _prompt_msg+='icon found in the system tray. <br>';
       _exe_str="$(command -v 'jetbrains-toolbox' || true)";
       if [ -n "${_exe_str}" ]; then
         "${_exe_str}"; # ... and continue
@@ -635,11 +634,27 @@ _runAppHandlerFn () {
       ;;
 
     dropbox)
-      _prompt_msg+="|${_app_id}| Click on the Dropbox <br>";
+      _prompt_msg+='Click on the Dropbox icon <br>';
       _prompt_msg+='found in the system tray. <br>';
       _exe_str="$(command -v 'dropbox' || true)";
       if [ -n "${_exe_str}" ]; then
         "${_exe_str}" start -i; # ... and continue
+      fi
+      ;;
+
+    docker)
+      _prompt_msg="$(cat <<EOT
+If Docker was just installed, <br>';
+this user has been added to the <br>
+docker group and docker-compose-plugin
+has been installed. Please logout <br>
+and back in for these changes to <br>
+take effect.<br>
+EOT
+      )";
+      _exe_str="$(command -v 'konsole' || true)";
+      if [ -n "${_exe_str}" ]; then
+        "${_exe_str}" -e man docker; # ... and continue
       fi
       ;;
 
@@ -704,7 +719,7 @@ _runAppFn () {
     IFS=$'\n'; grep -E "^${_arg_app_id}\|" <<< "${_exeLookupList[*]}"
   )";
   if [ -z "${_line_str}" ]; then
-    _prompt_msg="ABORT: App |${_arg_app_id}| no found";
+    _prompt_msg="ABORT: App |${_arg_app_id}| not found";
     _promptFn "${_prompt_msg}";
     exit 1;
   fi
@@ -736,7 +751,7 @@ _runAppFn () {
     _report_str="${_app_id}|${_full_cmd_str}|${_sniff_str}"
     _report_str+="|${_pkg_name}|${_descr}";
     if [ "${_do_handler}" = 'y' ]; then
-      _report_str+='|Special handler expected';
+      _report_str+='|Special handler expected|';
     fi
     echo "${_report_str}";
     exit 0;
@@ -796,6 +811,7 @@ _runAppFn () {
   # Run app handler if provided
   if [ "${_do_handler}" = 'y' ]; then
     _runAppHandlerFn "${_app_id}" "${_descr}";
+    # shellcheck disable=SC2317
     exit 0;
   # Execute command and arguments if possible
   elif [ -x "${_app_exe}" ]; then
@@ -840,7 +856,8 @@ _mainFn () {
   if [ "${_arg1_str}" = '-r' ]; then
     if [ -n "${_arg2_str}" ]; then
       _runAppFn -r "${_arg2_str}";
-      exit; # Exit with return code
+      # shellcheck disable=SC2317
+      exit 0;
     else
       exit 1;
     fi
@@ -861,6 +878,7 @@ _mainFn () {
   else
     if [[ "${_arg1_str}" =~ ^kfocus-mime:// ]]; then
       _arg_app_id="$(_urlDecodeFn "${1:-}" | cut -d'/' -f3)";
+      _cm2EchoFn "_arg_app_id=${_arg_app_id}";
     # Handle link file. Bail if not readable.
     else
       # Ensure link file is readable
@@ -886,7 +904,9 @@ _mainFn () {
 
 ## BEGIN Declare and set global vars {
 declare _binName _binDir _baseDir _baseName \
-  _rootDir _exeAptDir _pkgNameList _doForceForeground;
+  _rootDir _exeAptDir _pkgNameList _doForceForeground \
+  ARCHS_SUPPORTED HOST_CPU PRETTY_NAME USER_AGENT \
+  VERSION_INSTALLED VERSION_PUBLISHED WEBSITE;
 
 # Set this first.
 _rootDir='';

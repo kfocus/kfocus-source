@@ -19,10 +19,10 @@ _cmXWarnStrFn () { _cmXEchoFn "warn: ${*}"; }
 # IMPORTED on 2022-02-23 from test/test-scripts/unit.d/00500_updatePciids
 #
 _updatePciidsFn () {
-  declare _share_file _exe_lspci_str _exe_update_str;
+  declare _share_file _lspci_exe _update_exe;
   _share_file="${_rootDir}/usr/share/misc/pci.ids";
-  _exe_lspci_str="$( command -v lspci         || true)";
-  _exe_update_str="$(command -v update-pciids || true)";
+  _lspci_exe="$( command -v lspci         || true)";
+  _update_exe="$(command -v update-pciids || true)";
 
   _cmXSetMsgFn 'Update pciids';
 
@@ -32,17 +32,17 @@ _updatePciidsFn () {
   fi
 
   # Use -z instead of ! -x to allow for functional mocks.
-  if [ -z "${_exe_lspci_str}" ]; then
-    _cmXWarnStrFn "${_exe_lspci_str} not found";
+  if [ -z "${_lspci_exe}" ]; then
+    _cmXWarnStrFn "${_lspci_exe} not found";
     _cmXWarnFn; return;
   fi
 
-  if [ -z "${_exe_update_str}" ]; then
-    _cmXWarnStrFn "${_exe_update_str} not found";
+  if [ -z "${_update_exe}" ]; then
+    _cmXWarnStrFn "${_update_exe} not found";
     _cmXWarnFn; return;
   fi
 
-  if "${_exe_update_str}"; then
+  if "${_update_exe}"; then
     _cmXSucStrFn 'Updated pciids';
     _cmXSucFn; return;
   else
@@ -54,18 +54,18 @@ _updatePciidsFn () {
 
 ## BEGIN _applyRootConfigFn {
 _applyRootConfigFn () {
-  declare _exe_rsync_str;
-  _exe_rsync_str="$(command -v rsync || true)";
+  declare _rsync_exe;
+  _rsync_exe="$(command -v rsync || true)";
 
   if [ -f "/root/.vimrc" ]; then return; fi
 
-  if [ -z "${_exe_rsync_str}" ]; then
-    _warnStr "${_exe_rsync_str} not found";
+  if [ -z "${_rsync_exe}" ]; then
+    _warnStr "${_rsync_exe} not found";
     _cmXWarnFn; return;
   fi
 
   _cmXSetMsgFn 'Apply basic configs for root user';
-  if "${_exe_rsync_str}" -azog --chown='0:0' \
+  if "${_rsync_exe}" -azog --chown='0:0' \
     "${_libKfocusDir}/skel/" '/root/'; then
       _cmXSucFn; else _cmXWarnFn;
   fi
@@ -126,17 +126,17 @@ _setupHintDefaultsFn () {
 ## BEGIN _cleanupFn {
 #  Purpose: Clean up of various bits
 _cleanUpFn () {
-  declare _firstrun_file _exe_update_deskdb;
+  declare  _update_deskdb_exe _firstrun_file _file;
   if [ -d "${_libKfocusDir}/skel/.ssh" ]; then
     _cmXSetMsgFn "Set secure .ssh access rights";
     if chmod 700 "${_libKfocusDir}/skel/.ssh"; then
       _cmXSucFn; else _cmXWarnFn; fi
   fi
 
-  _exe_update_deskdb="$(command -v update-desktop-database || true)";
-  if [ -n "${_exe_update_deskdb}" ]; then
+  _update_deskdb_exe="$(command -v update-desktop-database || true)";
+  if [ -n "${_update_deskdb_exe}" ]; then
     _cmXSetMsgFn 'Update desktop database';
-    if "${_exe_update_deskdb}";  then _cmXSucFn; else _cmXWarnFn; fi
+    if "${_update_deskdb_exe}";  then _cmXSucFn; else _cmXWarnFn; fi
   fi
 
   _firstrun_file='/etc/xdg/autostart/kfocus-firstrun.desktop';
@@ -162,6 +162,14 @@ _cleanUpFn () {
       _cmXSucFn; else _cmXWarnFn;
     fi
   fi
+
+  # Disable unsupported Skype report 2024-06-25
+  while read -r _file; do
+    sed -i '/^\s*deb .*https*:\/\/repo.skype.com\/deb/s/^/# /' "${_file}";
+  done < <(
+    grep -rlE '^\s*deb .*https?://repo.skype.com/deb' \
+      '/etc/apt/sources.list.d'
+  );
 }
 ## . END _cleanupFn }
 

@@ -1,23 +1,20 @@
-|app_id|cmd_str|sniff_str|pkg_str|descr_str
+|app_id|cmd_str;with;args|sniff_str|pkg_str|descr|diagnostics
 |apt-rollback|konsole;-e;man;apt-rollback|apt-rollback|apt-rollback|AptRollback: Rollback System Packages|
 |audacity|audacity|audacity|audacity|Audacity: Edit Sound|
 |aws-cli|konsole;--hold;-e;aws;help|aws|awscli|AWS: Command Line DevOps Tool|
+  WARN: Found package appears incorrect: |snapd| NOT |awscli|
 |azure-cli|konsole;--hold;-e;az;--help|az|azure-cli|Azure: Command Line DevOps Tool|
 |backintime|backintime-qt|backintime-qt|backintime-qt|BackInTime: Backup Files|
-|brave-browser|brave-browser|brave-browser|brave-browser|Brave Browser|
 |blender|blender|blender|blender|Blender: 3D Modeller and Renderer|
 |code|code|code|code|Microsoft Visual Studio Code: Development IDE|
 |cpupower-gui|cpupower-gui|cpupower-gui|cpupower-gui|CPU Power GUI: Manage CPU power|
 |darktable|darktable|darktable|darktable||
-|docker|konsole;-e;man;docker|docker|docker-ce|Docker: Container Engine|
-  WARN: Found package appears incorrect: |docker-ce-cli| NOT |docker-ce|
 |dolphin|dolphin|dolphin|dolphin|Dolphin: Manage Files|
 |elisa|elisa|elisa|elisa|Elisa Music Player|
 |ffmpeg|konsole;-e;man ffmpeg|ffmpeg|ffmpeg|Tools for Transcoding|
 |filezilla|filezilla|filezilla|filezilla|Filezilla: Transfer Files|
 |firefox|firefox|firefox|firefox|Firefox: Browse the Web with Mozilla Firefox|
-  WARN: Found package appears incorrect: |snapd| NOT |firefox|
-|gcloud|konsole;-e;main;gcloud;help|gcloud|google-cloud-sdk|GCS: Google Cloud Services SDK|
+|gcloud|konsole;-e;main;gcloud;help|gcloud|google-cloud-cli|GCS: Google Cloud Services CLI|
 |ghb|ghb|ghb|handbrake|Handbrake: Rip and Transcode DVDs and Video|
 |git-cola|git-cola|git-cola|git-cola|Git-Cola: Explore Git Branches GUI|
 |gimp|gimp|gimp|gimp|Gimp: Edit and Create Raster Images|
@@ -29,7 +26,7 @@
 |insync|insync;start|insync|insync-dolphin|Insync: Sync Google Drive and Others|
   WARN: Found package appears incorrect: |insync| NOT |insync-dolphin|
 |jekyll|konsole;-e;man jekyll|jekyll|jekyll|Jekyll: Create Static Web Sites|
-|jetbrains-toolbox-plain|jetbrains-toolbox|jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs|
+|jetbrains-toolbox-plain|jetbrains-toolbox|jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs|ERROR: Trouble finding installed package for /usr/bin/jetbrains-toolbox
 |kate|kate|kate|kate|Kate: Edit Text with Power|
 |kde-connect|kdeconnect-settings|kdeconnect-settings|kdeconnect|KDE Connect: Connect Smartphones to Desktop|
 |kdenlive|kdenlive|kdenlive|kdenlive|KDEnlive: Edit  Non-Linear Videos|
@@ -79,23 +76,27 @@
 |ppa-purge|konsole;-e;man ppa-purge|ppa-purge|ppa-purge|PPA Purge: Purge PPAs|
 |rar|konsole;-e;man rar|rar|rar|Rar: Create .rar Archive Files|
 |simplescreenrecorder|simplescreenrecorder|simplescreenrecorder|simplescreenrecorder|SimpleScreenRecorder: Record Your Screen with Powerful Options|
-|skype|skypeforlinux|skypeforlinux|skypeforlinux|Skype: Video Call Platform|
+|skype|skype|skype|skype|Skype: Video Call Platform|
+  WARN: Found package appears incorrect: |snapd| NOT |skype|
 |slack|slack|slack|slack-desktop|Slack: Team Messaging|
 |spectacle|spectacle|spectacle|kde-spectacle|Spectacle: Take Screenshots|
 |steam|steam|steam|steam|Steam: Manage and Play Games|
+  WARN: Found package appears incorrect: |steam-installer| NOT |steam|
 |sublime-text|subl|subl|sublime-text|Sublime Text editor|
 |systemsettings5|systemsettings5|systemsettings5|systemsettings|System Settings: Adjust Your System|
 |telegram-desktop|telegram-desktop|telegram-desktop|telegram-desktop|Telegram: Encrypted Instant Messenger|
+  WARN: Found package appears incorrect: |snapd| NOT |telegram-desktop|
 |thunderbird|thunderbird|thunderbird|thunderbird|Thunderbird: Email and Calendar|
-|virtualbox|virtualbox|virtualbox|virtualbox|VirtualBox: Run Virtual Machines|
 |vlc|vlc|vlc|vlc|VLC: Play and Stream Video and Multimedia|
   WARN: Found package appears incorrect: |vlc-bin| NOT |vlc|
 |wallpapers|dolphin;/usr/share/wallpapers|dolphin|dolphin|Wallpapers: View Wallpaper Images|
 |webcamoid|webcamoid|webcamoid|webcamoid|Webcamoid: Test Your Webcam|
 |winff|winff|winff|winff-qt|WinFF: Convert Video using ffmpeg|
+|docker|!docker|docker|docker-ce|Docker: Container Engine|Special handler expected|
 |dropbox|!dropbox|dropbox|dropbox|Dropbox: Sync to Cloud Storage|Special handler expected|
 |jetbrains-toolbox|!jetbrains-toolbox|jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs|Special handler expected|
 |intellij|!intellij|jetbrains-toolbox|jetbrains-toolbox|IntelliJ: JetBrains Java IDE|Special handler expected|
 |pycharm|!pycharm|jetbrains-toolbox|jetbrains-toolbox|PyCharm: JetBrains Python IDE|Special handler expected|
 |webstorm|!webstorm|jetbrains-toolbox|jetbrains-toolbox|WebStorm: JetBrains Web IDE|Special handler expected|
+|virtualbox|!virtualbox|virtualbox|virtualbox|VirtualBox: Run Virtual Machines|Special handler expected|
 |zoom|!zoom|zoom|zoom|Zoom: Start and Join Video and Web Conferencing|Special handler expected|
