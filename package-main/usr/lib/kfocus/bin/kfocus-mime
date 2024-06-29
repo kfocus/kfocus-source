@@ -46,7 +46,6 @@ _exeLookupList=(
   'inkscape|inkscape||inkscape|Inkscape: Edit Scalable Vector Graphics'
   'insync|insync;start||insync-dolphin|Insync: Sync Google Drive and Others'
   'jekyll|konsole;-e;man jekyll|jekyll|jekyll|Jekyll: Create Static Web Sites'
-  'jetbrains-toolbox-plain|jetbrains-toolbox|jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs'
   'kate|kate||kate|Kate: Edit Text with Power'
   'kde-connect|kdeconnect-settings||kdeconnect|KDE Connect: Connect Smartphones to Desktop'
   'kdenlive|kdenlive||kdenlive|KDEnlive: Edit  Non-Linear Videos'
@@ -116,8 +115,8 @@ _exeLookupList=(
   # Future consideration: Nvidia CUDA and ML libs
 
   # Deprecated
-  # 'atom|atom;--no-sandbox||atom|Atom: A hackable text editor.'
   # 'brave-browser|brave-browser||brave-browser|Brave Browser'
+  # 'jetbrains-toolbox-plain|jetbrains-toolbox|jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs'
 );
 
 ## BEGIN _importCommonFn {
@@ -162,14 +161,6 @@ _urlDecodeFn () {
 # These functions are taken directly from the deb-get project with the
 # intention of contributing to it and making it our pkexec backend.
 
-# Atom no longer is maintained, we do not want it.
-#function deb_atom() {
-#  APT_KEY_URL="https://packagecloud.io/AtomEditor/atom/gpgkey"
-#  APT_LIST_NAME="atom"
-#  APT_REPO_URL="deb [arch=amd64] https://packagecloud.io/AtomEditor/atom/any/ any main"
-#  PRETTY_NAME="Atom"
-#  WEBSITE="https://atom.io/"
-#}
 function deb_azure-cli() {
   APT_KEY_URL="https://packages.microsoft.com/keys/microsoft.asc"
   APT_LIST_NAME="azure-cli"
@@ -444,14 +435,23 @@ function install_apt() {
   else
     apt-get -q -y install "${APP}";
   fi
-
-  ## Begin Special handlers for certain apps {
-  case "${APP}" in
-    docker-ce)
-      usermod -aG 'docker' "$(id -nu "${PKEXEC_UID}")";
-      ;;
-  esac
-  ## . End Special handlers for certain apps }
+}
+function _isUserInActiveGroupFn () {
+  declare _group_name;
+  _group_name="${1:-}";
+  if [ -z "${_group_name}" ]; then
+    return 1;
+  fi
+  groups |grep -qE '(^|\s)'"${_group_name}"'(\s|$)';
+}
+function _isUserInGroupFn () {
+  declare _group_name;
+  _group_name="${1:-}";
+  if [ -z "${_group_name}" ]; then
+    return 1;
+  fi
+  grep "${_group_name}" /etc/group \
+    | grep -qE '(:|,)'"${_userName}"'(,|$)';
 }
 function install_snap() {
   if [ "${IS_CLASSIC_SNAP:-}" = 'y' ]; then
@@ -596,8 +596,126 @@ _promptFn () {
   _cm2PromptUserFn "$*" "${_baseName}" 'p';
 }
 
+_handleDockerSetupFn () {
+  declare _msg01 _msg02 _ans_str;
+
+  _msg01="$(cat <<EOT01
+${_cm2HtmBeginStr}
+${_cm2HtmPStr}Docker is installed, but user '${_userName}' <br>
+must be added to the 'docker' group <br>
+to run as a normal user.</p>
+
+${_cm2HtmPStr}Add user '${_userName}' to the 'docker' <br>
+group now?</p>
+${_cm2HtmEndStr}
+EOT01
+  )";
+
+  _msg02="$(cat <<EOT02
+${_cm2HtmBeginStr}
+${_cm2HtmPStr}Docker is installed, and user '${_userName}' <br>
+is in the the 'docker' group. But that group <br>
+is not active.</p>
+
+${_cm2HtmPStr}Please log out and back in to activate that <br>
+group if you wish  to run docker as a <br>
+regular user instead of root.</p>
+${_cm2HtmEndStr}
+EOT02
+   )";
+
+  if _isUserInGroupFn 'docker'; then
+   _cm2EchoFn "User '${_userName}' is in 'docker' group";
+  else
+    _ans_str="$(
+      _cm2PromptUserFn "${_msg01}" 'Add to Group' 'a'
+    )";
+    if [ "${_ans_str}" = 'y' ]; then
+      "${_escExe}" usermod -aG 'docker' "${_userName}" || true;
+    fi
+  fi
+
+  if ! _isUserInGroupFn 'docker'; then return; fi
+
+  if _isUserInActiveGroupFn 'docker'; then
+    _cm2EchoFn "Group 'docker' is active";
+    return;
+  else
+    _promptFn "${_msg02}";
+  fi
+}
+
+_handleVboxSetupFn () {
+  declare _msg0a _msg0b _msg0c _ans_str;
+
+  _msg0a="$(cat <<EOT0A
+${_cm2HtmBeginStr}
+${_cm2HtmPStr}The 'VirtualBox Extension Pack' does not appear <br>
+installed. This is required to access hardware<br>
+features like USB device integration.</p>
+
+${_cm2HtmPStr}To install the extension pack now, open a <br>
+terminal and run the following:</p>
+
+${_cm2HtmPStr}<code>sudo apt install virtualbox-ext-pack</code><br></p>
+${_cm2HtmEndStr}
+EOT0A
+  )";
+
+  _msg0b="$(cat <<EOT0B
+${_cm2HtmBeginStr}
+${_cm2HtmPStr}VirtualBox is installed, but user '${_userName}' <br>
+must be added to the 'vboxusers' group <br>
+to use all the features.</p>
+
+${_cm2HtmPStr}Add user '${_userName}' to the 'vboxusers' <br>
+group now?</p>
+${_cm2HtmEndStr}
+EOT0B
+  )";
+
+  _msg0c="$(cat <<EOT0C
+${_cm2HtmBeginStr}
+${_cm2HtmPStr}VirtualBox is installed, and the user <br>
+'${_userName}' is in the 'vboxusers' group. But that<br>
+group is not active.</p>
+
+${_cm2HtmPStr}Please log out and back in to activate <br>
+the 'vboxusers' group so you can use <br>
+more VirtualBox features.</p>
+${_cm2HtmEndStr}
+EOT0C
+  )";
+
+  if _cm2ChkInstalledPkgFn 'virtualbox-ext-pack'; then
+    _cm2EchoFn 'VirtualBox Extension Pack installed';
+  else
+    _promptFn "${_msg0a}";
+  fi
+
+  if _isUserInGroupFn 'vboxusers'; then
+    _cm2EchoFn "User '${_userName}' is in 'vboxusers' group";
+  else
+    _ans_str="$(
+      _cm2PromptUserFn "${_msg0b}" 'Add to Group' 'a'
+    )";
+    if [ "${_ans_str}" = 'y' ]; then
+      "${_escExe}" usermod -aG 'vboxusers' "${_userName}" || true;
+    fi
+  fi
+
+  if ! _isUserInGroupFn 'vboxusers'; then return; fi
+
+  if _isUserInActiveGroupFn 'vboxusers'; then
+    _cm2EchoFn "Group 'vboxusers' is active";
+    return;
+  else
+    _promptFn "${_msg0c}";
+  fi
+}
+
 ## BEGIN _runAppHandlerFn {
-# Summary  : _runAppHandlerFn <app_id> <label>
+# Summary  : _runAppHandlerFn <app_id> <descr_str>
 # Example  : _runAppHandlerFn 'dropbox' 'Dropbox: Sync to ...'
 # Purpose  : Run the special handlers for provided _app_id.
 #          : This is called only when the cmd_str is prefixed by an '!'
@@ -606,75 +724,98 @@ _promptFn () {
 #            _descr_str : App description
 #
 _runAppHandlerFn () {
-  declare _app_id _descr_str _prompt_msg _exe_str;
+  declare _app_id _descr_str _prompt_msg _cmd_str \
+    _exe_str _arg_list _run_list;
+
   _app_id="${1:-}";
   _descr_str="${2:-}";
   _prompt_msg='';
+  _arg_list=();
 
   _cm2EchoFn "Running handler for app_id |${_app_id}|";
 
   case "${_app_id}" in
     intellij|pycharm|webstorm)
-      _prompt_msg+='Please use JetBrains Toolbox found <br>';
-      _prompt_msg+='in the system tray to launch <br>';
-      _prompt_msg+="|${_descr_str}|";
-      _exe_str="$(command -v 'jetbrains-toolbox' || true)";
-      if [ -n "${_exe_str}" ]; then
-        "${_exe_str}"; # ... and continue
-      fi
+      _prompt_msg="$(cat <<EOT
+${_cm2HtmPStr}Click to start JetBrain toolbox <br>
+and select the tool for <br>
+'${_descr_str}'.</p>
+
+${_cm2HtmPStr}You may click on the Toolbox icon <br>
+in the System Tray to reopen <br>
+the toolbox as needed.</p>
+EOT
+      )";
+      _cmd_str='jetbrains-toolbox';
       ;;
 
     jetbrains-toolbox)
-      _prompt_msg+='Click on the JetBrains Toolbox <br>';
-      _prompt_msg+='icon found in the system tray. <br>';
-      _exe_str="$(command -v 'jetbrains-toolbox' || true)";
-      if [ -n "${_exe_str}" ]; then
-        "${_exe_str}"; # ... and continue
-      fi
+      _prompt_msg="$(cat <<EOT
+${_cm2HtmPStr}Click OK to start JetBrain toolbox.</p>
+
+${_cm2HtmPStr}You may click on the Toolbox icon <br>
+in the System Tray to reopen <br>
+the toolbox as needed.</p>
+EOT
+      )";
+      _cmd_str='jetbrains-toolbox';
       ;;
 
     dropbox)
-      _prompt_msg+='Click on the Dropbox icon <br>';
-      _prompt_msg+='found in the system tray. <br>';
-      _exe_str="$(command -v 'dropbox' || true)";
-      if [ -n "${_exe_str}" ]; then
-        "${_exe_str}" start -i; # ... and continue
-      fi
+      _prompt_msg="$(cat <<EOT
+${_cm2HtmPStr}Click OK to start Dropbox.</p>
+
+${_cm2HtmPStr}Right- or left-click on the <br>
+Dropbox icon in the System Tray<br>
+to access more controls.</p>
+EOT
+      )";
+      _cmd_str='dropbox';
+      _arg_list=( 'start' );
       ;;
 
     docker)
-      _prompt_msg="$(cat <<EOT
-If Docker was just installed, <br>';
-this user has been added to the <br>
-docker group and docker-compose-plugin
-has been installed. Please logout <br>
-and back in for these changes to <br>
-take effect.<br>
-EOT
-      )";
-      _exe_str="$(command -v 'konsole' || true)";
-      if [ -n "${_exe_str}" ]; then
-        "${_exe_str}" -e man docker; # ... and continue
-      fi
+      _handleDockerSetupFn;
+      _cmd_str='konsole';
+      _arg_list=( '-e' 'man' 'docker' );
+      ;;
+
+    virtualbox)
+      _handleVboxSetupFn;
+
+      _cmd_str='virtualbox';
       ;;
 
     zoom)
       if ! "${_binDir}/kfocus-fix-ibus" 'check'; then
         "${_binDir}/kfocus-fix-ibus" 'repair';
       fi
-      _exe_str="$(command -v 'zoom' || true)";
-      if [ -n "${_exe_str}" ]; then
-        "${_exe_str}" & disown; # ... and continue
-      fi
+      _cmd_str='zoom';
+      _arg_list=( '&' 'disown' );
       ;;
 
     *) true;;
   esac
 
-  if [ -n "${_prompt_msg}" ]; then
-    _promptFn "${_prompt_msg}";
+  # Bail if command not found
+  _exe_str="$(command -v "${_cmd_str}" || true)";
+  if [ -z "${_exe_str}" ]; then
+    _promptFn "Command for |${_descr_str}|<br> not found.";
+    exit 1;
   fi
-  exit 0; # Always exit and do NOT return
+
+  # Prompt user if there is a message
+  if [ -n "${_prompt_msg}" ]; then
+    _promptFn "${_cm2HtmBeginStr}${_prompt_msg}${_cm2HtmEndStr}";
+  fi
+
+  # Run command with arguments
+  _run_list=( "${_exe_str}" );
+  if (( "${#_arg_list[@]}" > 0 )); then
+    _run_list+=( "${_arg_list[@]}" );
+  fi
+  "${_run_list[@]}";
+  exit; # Always exit and do NOT return
 }
 ## . END _runAppHandlerFn }
 
@@ -774,7 +915,7 @@ _runAppFn () {
       _sniff_exe="$(command -v "${_sniff_str}" || true)";
     fi
 
-    # Try to install package using pkexec (may install repository too)
+    # Try to install package using (may install repository too)
     if [ ! -x "${_sniff_exe}" ] && [ "${_idx}" = '0' ]; then
       if _install_prompt_msg="$(
         _echoInstallPromptMsgFn "${_app_id}" "${_pkg_name}" "${_descr}"
@@ -783,7 +924,7 @@ _runAppFn () {
           _cm2PromptUserFn "${_install_prompt_msg:-}" 'Install package' 'a'
         )";
         if [ "${_ans_str}" = 'y' ]; then
-          # Note: _cm2RunLongCmdFn prefixes commands with pkexec
+          # Note: _cm2RunLongCmdFn prefixes commands with _escExe (pkexec)
           if _exit_str="$(_cm2RunLongCmdFn "Installing ${_pkg_name}" \
               "${_binName}" '-i' "${_pkg_name}")"; then continue;
           else
@@ -904,7 +1045,8 @@ _mainFn () {
 
 ## BEGIN Declare and set global vars {
 declare _binName _binDir _baseDir _baseName \
-  _rootDir _exeAptDir _pkgNameList _doForceForeground \
+  _rootDir _exeAptDir _pkgNameList _userName \
+  _escExe _doForceForeground \
   ARCHS_SUPPORTED HOST_CPU PRETTY_NAME USER_AGENT \
   VERSION_INSTALLED VERSION_PUBLISHED WEBSITE;
 
@@ -914,7 +1056,8 @@ _rootDir='';
 _doForceForeground='n';
 _etcAptDir="${_rootDir}/etc/apt";
 _pkgNameList=();
-## . END Declare and set global vars {
+_userName="$(id -un)";
+## . END Declare and set global vars }
 
 ## BEGIN Run main if script is not sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
@@ -926,6 +1069,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   # from grabbing Chrome's libvulkan rather than the system's libvulkan.
   export LD_LIBRARY_PATH='';
   _importCommonFn;
+
+  _escExe="$(_cm2GetEscExeFn)" || exit 1;
   _mainFn "$@";
 fi
 ## . END Run main if script is not sourced }

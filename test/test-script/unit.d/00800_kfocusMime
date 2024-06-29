@@ -100,6 +100,8 @@ _auditInstallFn () {
   IFS=$'\n' read -r -d '\n' -a _key_list <<< "${_key_str}";
 
   for _key in "${_key_list[@]}"; do
+    # Use this to limit tests to secial handlers
+    # if ! grep -qE '^(docker|dropbox|jetbrains-toolbox|intellij|pycharm|webstorm|virtualbox|zoom)$' <<< "${_key}"; then continue; fi
     read -rp "Press return to test |${_key}| > ";
     "${_mimeExe}" -k "${_key}";
     _cm2EchoFn "\nPress return to proceed...\n";
