@@ -770,6 +770,13 @@ _restoreSnapshotFn () {
     _exitERR 'Restore already in progress!';
   fi
   
+  _snapshot_path="${_rb2MainSnapshotDir}/${_target_snapshot_id}";
+  _boot_snapshot_path="${_rb2BootSnapshotDir}/${_target_snapshot_id}";
+
+  if ! [ -e "${_snapshot_path}" ] || ! [ -e "${_boot_snapshot_path}" ]; then
+    _exitERR "Part or all of the snapshot |${_target_snapshot_id}| does not exist!";
+  fi
+
   # Failing to unmount /boot/efi before attempting to move the old subvol
   # will result in the subvol not being moved, which will result in the
   # whole @boot subvol being nuked except for the contents of /boot/efi.
@@ -791,14 +798,6 @@ _restoreSnapshotFn () {
   # Exclude the fifth and older snapshots.
   if ! [[ "${_older_snapshot_list_str}" =~ ${_target_snapshot_id} ]]; then
     _trimSnapshotsFn || exit;
-  fi
-
-  _snapshot_path="${_rb2MainSnapshotDir}/${_target_snapshot_id}";
-  _boot_snapshot_path="${_rb2BootSnapshotDir}/${_target_snapshot_id}";
-
-  if ! [ -e "${_snapshot_path}" ] || ! [ -e "${_boot_snapshot_path}" ]; then
-    _exitERR "Part or all of the snapshot |${_target_snapshot_id}| does not
-    exist!";
   fi
 
   _snapshot_disp_id="$(_makeSnapshotDispIdFn "${_target_snapshot_id}")";
@@ -845,6 +844,7 @@ _balanceMainFn () {
     _balance_percent _do_balance;
   
   _do_force_balance="${1:-n}";
+  _do_balance='n';
   _checkBtrfsStatusSetUpFn;
   _trigger_threshold=5368709120; # 5 GiB
 

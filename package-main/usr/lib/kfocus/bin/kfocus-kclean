@@ -72,6 +72,7 @@ _echoInstKversListStrFn () {
 #   WARNING: This routine expect only one image metapackage.
 # Example  :
 # _kversFullPrefStr="$( _echoMetaKversStrFn linux-image-generic-hwe-24.04 )";
+# _kversFullPrefStr="$( _echoMetaKversStrFn linux-kfocus-24.04-kfocus )";
 # Arguments: _str is the metapackage name to check
 #
 _echoMetaKversStrFn () {
@@ -414,6 +415,13 @@ _echoPrioritizedKversExtraKeepStr () {
 #     linux-image-generic-hwe-24.04-kfocus   \
 #     linux-tools-generic-hwe-24.04-kfocus;
 
+# Example install group for linux-kfocus meta-packages:
+#   sudo apt install \
+#     linux-kfocus-24.04-kfocus              \
+#     linux-headers-kfocus-24.04-kfocus      \
+#     linux-image-kfocus-24.04-kfocus        \
+#     linux-tools-kfocus-24.04-kfocus;
+
 # Example install for non-meta hwe group:
 #   sudo apt install \
 #    linux-headers-6.5.0-14-generic          \
@@ -619,10 +627,12 @@ EOD
   ## Begin Create Keeper Versions {
   # TODO: Revise logic to pull from list from config file populated by
   # a 'this is what I want to keep' GUI.
-  #  Logic: List top-level metapackages like linux-generic-hwe-24.04:
-  #    * If not found, do not reserve any associate kernel packages
-  #    * If installed, find related image package and use as below
-  #    WE SHOULD KEEP 2 VERSION OF ANY META-LEVEL LIKE generic-hwe-24.04
+  #  Logic: List top-level metapackages like linux-kfocus-24.04-kfocus
+  #    or linux-generic-hwe-24.04-kfocus:
+  #      * If not found, do not reserve any associate kernel packages
+  #      * If installed, find related image package and use as below
+  #    WE SHOULD KEEP 2 VERSION OF ANY META-LEVEL LIKE
+  #      kfocus-24.04-kfocus or generic-hwe-24.04-kfocus
   #
   _kversExtraKeepStr='';
 

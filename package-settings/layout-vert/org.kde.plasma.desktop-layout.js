@@ -23,7 +23,9 @@ var
   scaleMatrix = {
     large : {
       // Inverse scale with DPI: Icon height
-      icon_ht_int    : getScaleNumFn({x1:22,y1:8,x2:32,y2:7,min:6,max:8,x:gridUnit}),
+      // icon_ht_int : getScaleNumFn({x1:22,y1:8,x2:32,y2:7,min:6,max:8,x:gridUnit}),
+      // Adjusted scale for 136 DPI 4K screen
+      icon_ht_int    : getScaleNumFn({x1:22,y1:7,x2:32,y2:6,min:6,max:8,x:gridUnit}),
       // Inverse scale with DPI: Icon padding from widget edge
       icon_padx_int  : getScaleNumFn({x1:22,y1:2,x2:32,y2:1,min:1,max:4,x:gridUnit}),
       // Inverse icon top from screen edge

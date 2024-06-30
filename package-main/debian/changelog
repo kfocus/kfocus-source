@@ -1,14 +1,14 @@
-kfocus-main (24.04.9~beta2) noble; urgency=medium
+kfocus-main (24.04.9~beta4) noble; urgency=medium
 
-  * Promote kernel metapackages to Depends. (#4423)
+  [ Michael S. Mikowski ]
+  * kfocus-mime: Update rtests, skype, atom, brave, docker, vbox (#4431)
+  * kfocus-mime: Refine for docker, vbox, special handlers (#4431)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 26 Jun 2024 12:28:59 -0500
-
-kfocus-main (24.04.9~beta1) noble; urgency=medium
-
+  [ Aaron Rainbolt ]
+  * Promote kernel metapackages to Depends. (#4422)
   * Point to new kernel metapackages. (#4423)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 25 Jun 2024 23:29:09 -0500
+ -- Michael S. Mikowski <support@kfocus.org>  Fri, 28 Jun 2024 23:47:01 -0700
 
 kfocus-main (24.04.8) noble; urgency=medium
 
@@ -23,7 +23,7 @@ kfocus-main (24.04.7) noble; urgency=medium
       when thunderbird is installed from a deb (#4386)
   * kfocus-mime: Add support for kfocus-mime:// handler (#4258)
   * kfocus-mime: When installing Docker, also install Docker Compose (#2068)
-  * kfocus-mime: When installing Docker, add the installing user to the 
+  * kfocus-mime: When installing Docker, add the installing user to the
     docker group (#2068)
 
  -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 20 Jun 2024 21:01:53 -0500
@@ -54,7 +54,7 @@ kfocus-main (24.04.2) noble; urgency=medium
  -- Michael S. Mikowski <support@kfocus.org>  Mon, 03 Jun 2024 09:45:52 -0700
 
 kfocus-main (24.04.1) noble; urgency=medium
-  
+
   [ Michael Mikowski ]
   * bin/kfocus-example: Add printf example
   * bin/kfocus-extra: default y option for kubuntu-restricted-extra (#4085)
