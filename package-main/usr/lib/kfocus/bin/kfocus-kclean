@@ -59,8 +59,8 @@ _importCommonFn () {
 #
 _echoInstKversListStrFn () {
   echo -e "${_aptListStr}" \
-    | grep -E '^linux-image-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+$' \
-    | sed  -E 's/^linux-image-([0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+)$/\1/' \
+    | grep -E '^linux-image-(unsigned-|)[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+$' \
+    | sed  -E 's/^linux-image-((unsigned-|)[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+)$/\1/' \
     | sort -uV;
 }
 ## . END _echoInstKversListStrFn }
@@ -71,7 +71,7 @@ _echoInstKversListStrFn () {
 #   The version is in the <number> format, e.g. '6.5.0-14'.
 #   WARNING: This routine expect only one image metapackage.
 # Example  :
-# _kversFullPrefStr="$( _echoMetaKversStrFn linux-image-generic-hwe-22.04 )";
+# _kversFullPrefStr="$( _echoMetaKversStrFn linux-image-generic-hwe-24.04 )";
 # Arguments: _str is the metapackage name to check
 #
 _echoMetaKversStrFn () {
@@ -409,10 +409,10 @@ _echoPrioritizedKversExtraKeepStr () {
 ## BEGIN _mainFn {
 # Example install group for linux meta-packages:
 #   sudo apt install \
-#     linux-generic-hwe-22.04-kfocus         \
-#     linux-headers-generic-hwe-22.04-kfocus \
-#     linux-image-generic-hwe-22.04-kfocus   \
-#     linux-tools-generic-hwe-22.04-kfocus;
+#     linux-generic-hwe-24.04-kfocus         \
+#     linux-headers-generic-hwe-24.04-kfocus \
+#     linux-image-generic-hwe-24.04-kfocus   \
+#     linux-tools-generic-hwe-24.04-kfocus;
 
 # Example install for non-meta hwe group:
 #   sudo apt install \
@@ -580,8 +580,8 @@ _mainFn() {
   _kversFullRunStr="$(_echoKversFullRunStrFn)";
   _kversFullPrefStr="$(_echoMetaKversStrFn "${_preferredMetaPkg}")";
   # Deprecated
-  # _kversFullLlHweStr="$(_echoMetaKversStrFn linux-image-lowlatency-hwe-22.04)";
-  # _kversFullOemStr="$(_echoMetaKversStrFn linux-image-oem-22.04-kfocus)";
+  # _kversFullLlHweStr="$(_echoMetaKversStrFn linux-image-lowlatency-hwe-24.04)";
+  # _kversFullOemStr="$(_echoMetaKversStrFn linux-image-oem-24.04-kfocus)";
 
   # Output debug
   _kc2RtestDebugStr="$(cat <<EOD
@@ -619,10 +619,10 @@ EOD
   ## Begin Create Keeper Versions {
   # TODO: Revise logic to pull from list from config file populated by
   # a 'this is what I want to keep' GUI.
-  #  Logic: List top-level metapackages like linux-generic-hwe-22.04:
+  #  Logic: List top-level metapackages like linux-generic-hwe-24.04:
   #    * If not found, do not reserve any associate kernel packages
   #    * If installed, find related image package and use as below
-  #    WE SHOULD KEEP 2 VERSION OF ANY META-LEVEL LIKE generic-hwe-22.04
+  #    WE SHOULD KEEP 2 VERSION OF ANY META-LEVEL LIKE generic-hwe-24.04
   #
   _kversExtraKeepStr='';
 
@@ -838,7 +838,8 @@ _lowRootDiskInt=10240;
 # Max kernel count for unconstrained, large disks
 _multiInt=12;
 # Package where bless kernel comes from.
-_preferredMetaPkg='linux-image-generic-hwe-22.04-kfocus';
+# _preferredMetaPkg='linux-image-generic-hwe-24.04-kfocus';
+_preferredMetaPkg='linux-kfocus-24.04-kfocus';
 ## . END Declare and assign global vars }
 
 ## BEGIN Run main if script is not sourced {
