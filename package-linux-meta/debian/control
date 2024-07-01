@@ -5,8 +5,8 @@ Maintainer: Ubuntu Kernel Team <kernel-team@lists.ubuntu.com>
 Standards-Version: 3.9.8
 Build-Depends: dpkg (>= 1.13.19), debhelper (>= 11), gawk
 Build-Depends-Arch:
- linux-headers-6.8.0-35,
- linux-headers-6.8.0-35-kfocus,
+ linux-kfocus-headers-6.8.0-36,
+ linux-headers-6.8.0-36-kfocus,
 Vcs-Git: git://git.launchpad.net/~ubuntu-kernel/ubuntu/+source/linux-meta/+git/noble
 
 Package: linux-headers-kfocus-24.04-kfocus
@@ -80,35 +80,35 @@ Description: Complete KFocus Linux kernel and headers
 
 
 
-Package: linux-modules-ipu6-generic-24.04
+Package: linux-modules-ipu6-kfocus-24.04
 Architecture: amd64
 Section: kernel
 Provides: ${dkms:ipu6-modules}
 Depends:
  ${misc:Depends},
- linux-modules-ipu6-${kernel-abi-version}-generic,
-Description: Extra drivers for ipu6 for the generic flavour
- Install extra signed ipu6 modules compatible with the generic flavour.
+ linux-modules-ipu6-${kernel-abi-version}-kfocus,
+Description: Extra drivers for ipu6 for the kfocus flavour
+ Install extra signed ipu6 modules compatible with the kfocus flavour.
 
 
-Package: linux-modules-ivsc-generic-24.04
-Architecture: amd64
-Section: kernel
-Provides: ${dkms:ivsc-modules}
-Depends:
- ${misc:Depends},
- linux-modules-ivsc-${kernel-abi-version}-generic,
-Description: Extra drivers for ivsc for the generic flavour
- Install extra signed ivsc modules compatible with the generic flavour.
-
-
-Package: linux-modules-iwlwifi-generic-24.04
+Package: linux-modules-iwlwifi-kfocus-24.04
 Architecture: amd64
 Section: kernel
 Provides: ${dkms:iwlwifi-modules}
 Depends:
  ${misc:Depends},
- linux-modules-iwlwifi-${kernel-abi-version}-generic,
-Description: Extra drivers for iwlwifi for the generic flavour
- Install extra signed iwlwifi modules compatible with the generic flavour.
+ linux-modules-iwlwifi-${kernel-abi-version}-kfocus,
+Description: Extra drivers for iwlwifi for the kfocus flavour
+ Install extra signed iwlwifi modules compatible with the kfocus flavour.
+
+
+Package: linux-modules-usbio-kfocus-24.04
+Architecture: amd64
+Section: kernel
+Provides: ${dkms:usbio-modules}
+Depends:
+ ${misc:Depends},
+ linux-modules-usbio-${kernel-abi-version}-kfocus,
+Description: Extra drivers for usbio for the kfocus flavour
+ Install extra signed usbio modules compatible with the kfocus flavour.
 

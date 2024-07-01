@@ -1,0 +1,10 @@
+
+Package: linux-modules-usbio-kfocus${variant:suffix}
+Architecture: amd64
+Section: kernel
+Provides: ${dkms:usbio-modules}
+Depends:
+ ${misc:Depends},
+ linux-modules-usbio-${kernel-abi-version}-kfocus,
+Description: Extra drivers for usbio for the kfocus flavour
+ Install extra signed usbio modules compatible with the kfocus flavour.

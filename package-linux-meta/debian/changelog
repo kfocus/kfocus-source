@@ -1,14 +1,47 @@
-linux-meta-kfocus (6.8.0-35.35+kfocus1~beta1) noble; urgency=medium
+linux-meta-kfocus (6.8.0-36.36+kfocus1~beta1) noble; urgency=medium
 
-  * Point all metapackages to KFocus kernels. (#4423)
+  * Update to new kernel 6.8.0-36.36
 
- -- Aaron Rainbolt <arraybolt3@ubuntu.com>  Tue, 25 Jun 2024 18:51:18 -0500
+ -- Aaron Rainbolt <arraybolt3@ubuntu.com>  Mon, 01 Jul 2024 13:52:48 -0500
 
-linux-meta-kfocus (6.8.0-31.31+kfocus4) noble; urgency=medium
+linux-meta (6.8.0-36.36) noble; urgency=medium
 
-  * Release for Kubuntu Focus
+  * Main version: 6.8.0-36.36
 
- -- Michael S. Mikowski <support@kfocus.org>  Thu, 30 May 2024 20:06:20 -0700
+ -- Roxana Nicolescu <roxana.nicolescu@canonical.com>  Mon, 10 Jun 2024 11:29:30 +0200
+
+linux-meta (6.8.0-35.35) noble; urgency=medium
+
+  * Main version: 6.8.0-35.35
+
+ -- Roxana Nicolescu <roxana.nicolescu@canonical.com>  Mon, 20 May 2024 16:26:53 +0200
+
+linux-meta (6.8.0-34.34) noble; urgency=medium
+
+  * Main version: 6.8.0-34.34
+
+  * Packaging resync (LP: #1786013)
+    - [Packaging] debian/dkms-versions -- resync from main package
+
+ -- Roxana Nicolescu <roxana.nicolescu@canonical.com>  Wed, 08 May 2024 13:15:09 +0200
+
+linux-meta (6.8.0-32.32) noble; urgency=medium
+
+  * Main version: 6.8.0-32.32
+
+  * Packaging resync (LP: #1786013)
+    - [Packaging] update variants
+    - [Packaging] debian/dkms-versions -- resync from main package
+
+  * linux-virtual: recommends linux-tools and ubuntu-kernel-accessories
+    (LP: #2064266)
+    - [Packaging] Recommends linux-tools-$kernel-abi-version-$flavour and ubuntu-
+      kernel-accessories
+
+  * obsolete out-of-tree ivsc dkms in favor of in-tree one (LP: #2061747)
+    - [Packaging] obsolete out-of-tree ivsc dkms
+
+ -- Roxana Nicolescu <roxana.nicolescu@canonical.com>  Wed, 01 May 2024 16:03:09 +0200
 
 linux-meta (6.8.0-31.31) noble; urgency=medium
 
