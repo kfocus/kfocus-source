@@ -1,11 +1,10 @@
 #!/bin/bash
 #
-# Copyright 2020-2023 MindShare Inc.
-# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer,
-# with some code and configurations courtesy of deb-get found at
-# https://github.com/wimpysworld/deb-get. We plan to further contribute
-# and share code with this project, and may make it the back-end
-# of a future revision.
+# Copyright 2020-2024 MindShare Inc.
+# Written for Kubuntu Focus by:
+#   Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
+#   with some code and configurations courtesy of deb-get found at
+#   https://github.com/wimpysworld/deb-get.
 #
 # Name   : kfocus-mime
 # Purpose: Launch app for link with x-schema-handler/kfocus-mime
@@ -14,7 +13,8 @@
 # Example: xdg-open ./link.kfocus-001
 #          kfocus-mime -k zoom
 # Run By : Browser through xdg-open, direct call to ensure app is installed
-# Spec   : 951
+# Spec   : 951, 2117, 2146, 2330, 2416, 3103, 3314, 3588, 4124, 4258,
+#          4274, 4431
 #
 set -u;
 
@@ -65,7 +65,8 @@ _exeLookupList=(
   'kfocus_rollback|/usr/lib/kfocus/bin/kfocus-rollback|/usr/lib/kfocus/bin/kfocus-rollback|kfocus-rollback|KFocus Rollback: Restore the system to an earlier state'
   'kfocus_vidsync|kfocus-vidsync||kfocus-vidsync|KFocus Vidsync: Sync video across all displays'
   'kfocus_welcome|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://docs.google.com/presentation/d/e/2PACX-1vTsKGkzy_tFm2xZo-BYX7mqeLG43C2vy108qsWZ2L_c4XJGXEVh2fAt3sNvgiqXfw4OFPWynHS-32xx/pub?start=false&loop=false&delayms=3000||kfocus-main|KFocus Welcome Document'
-# app_id|cmd_str;with;args|sniff_str|pkg_str|descr_str
+  # app_id|cmd_str;with;args|sniff_str|pkg_str|descr_str
+  # 1       2                 3         4       5
   'kfocus_wizard|/usr/lib/kfocus/bin/kfocus-firstrun-bin;-f||kfocus-firstrun-bin|Welcome Wizard: Configure your apps'
   'kleopatra|kleopatra||kleopatra|Kleopatra: Unified Crypto GUI'
   'konsole|konsole||konsole|Konsole: Use an X Terminal Emulator'
@@ -115,6 +116,7 @@ _exeLookupList=(
   # Future consideration: Nvidia CUDA and ML libs
 
   # Deprecated
+  # 'atom|atom;--no-sandbox||atom|Atom: A hackable text editor.'
   # 'brave-browser|brave-browser||brave-browser|Brave Browser'
   # 'jetbrains-toolbox-plain|jetbrains-toolbox|jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs'
 );
@@ -1019,7 +1021,7 @@ _mainFn () {
   else
     if [[ "${_arg1_str}" =~ ^kfocus-mime:// ]]; then
       _arg_app_id="$(_urlDecodeFn "${1:-}" | cut -d'/' -f3)";
-      _cm2EchoFn "_arg_app_id=${_arg_app_id}";
+      # DEBUG: _cm2EchoFn "_arg_app_id=${_arg_app_id}";
     # Handle link file. Bail if not readable.
     else
       # Ensure link file is readable

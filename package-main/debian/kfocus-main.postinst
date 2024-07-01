@@ -1,5 +1,16 @@
 #!/bin/bash
-# kfocus-main postinst
+# kfocus-main.postinst
+
+# Copyright 2019-2024 MindShare Inc.
+# Written for Kubuntu Focus by:
+#   Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
+#
+# Name    : kfocus-main.postinst
+# Purpose : Postinst script for kfocus-main package
+# License : GPL v2
+# Run By  : Root
+# Spec    : Numerous
+#
 # This must be run as root. Use set -u to debug.
 #
 set -e;
@@ -126,7 +137,7 @@ _setupHintDefaultsFn () {
 ## BEGIN _cleanupFn {
 #  Purpose: Clean up of various bits
 _cleanUpFn () {
-  declare  _update_deskdb_exe _firstrun_file _file;
+  declare _update_deskdb_exe _firstrun_file _file;
   if [ -d "${_libKfocusDir}/skel/.ssh" ]; then
     _cmXSetMsgFn "Set secure .ssh access rights";
     if chmod 700 "${_libKfocusDir}/skel/.ssh"; then
@@ -165,7 +176,10 @@ _cleanUpFn () {
 
   # Disable unsupported Skype report 2024-06-25
   while read -r _file; do
-    sed -i '/^\s*deb .*https*:\/\/repo.skype.com\/deb/s/^/# /' "${_file}";
+    _cmXSetMsgFn "Disable old Skype repo in ${_file}";
+    if sed -i '/^\s*deb .*https*:\/\/repo.skype.com\/deb/s/^/# /' "${_file}";
+      then _cmXSucFn; else _cmXWarnFn;
+    fi
   done < <(
     grep -rlE '^\s*deb .*https?://repo.skype.com/deb' \
       '/etc/apt/sources.list.d'
