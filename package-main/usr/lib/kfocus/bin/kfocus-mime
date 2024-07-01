@@ -115,6 +115,7 @@ _exeLookupList=(
   # Future consideration: Nvidia CUDA and ML libs
 
   # Deprecated
+  # 'atom|atom;--no-sandbox||atom|Atom: A hackable text editor.'
   # 'brave-browser|brave-browser||brave-browser|Brave Browser'
   # 'jetbrains-toolbox-plain|jetbrains-toolbox|jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs'
 );
@@ -1019,7 +1020,7 @@ _mainFn () {
   else
     if [[ "${_arg1_str}" =~ ^kfocus-mime:// ]]; then
       _arg_app_id="$(_urlDecodeFn "${1:-}" | cut -d'/' -f3)";
-      _cm2EchoFn "_arg_app_id=${_arg_app_id}";
+      # DEBUG: _cm2EchoFn "_arg_app_id=${_arg_app_id}";
     # Handle link file. Bail if not readable.
     else
       # Ensure link file is readable
