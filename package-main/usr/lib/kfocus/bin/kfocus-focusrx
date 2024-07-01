@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2019-2023 MindShare Inc.
+# Copyright 2019-2024 MindShare Inc.
 # Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
 #
 # Name    : kfocus-focusrx
@@ -344,7 +344,7 @@ _chkHwConfigFn () {
   _cm2SetMsgFn "${_title}";
   _win_title="${_rootTitle}: ${_title} ";
 
-  # Check if reconfig is required
+  # Check if reconfiguration is required
   _reason_str="$("${_escExe}" "${_focusRxSetExe}" 'chk-hw-config')";
   if [ -z "${_reason_str}" ]; then
     # Always skip if not in force mode
@@ -352,7 +352,7 @@ _chkHwConfigFn () {
       _cm2SucStrFn 'Configuration completed and not forced.';
       _cm2SucFn;
       return;
-    # Provide user *option* to reconfig in force mode
+    # Provide user *option* to reconfigure in force mode
     else
       _prompt_msg="$(cat << _EOH06
 ${_cm2HtmBeginStr}
@@ -833,61 +833,9 @@ _EOH15
 }
 ## . END _runDropScriptsFn }
 
-## BEGIN _chkExperRepoFn {
- # Purpose:
- #   Recommend user purge kubuntu-ppa-experimental if
- #   kubuntu-ppa-backports-extra installed
- #
-_chkExperRepoFn () {
-  declare _title _win_title _cache_str _prompt_str _nag_msg;
-
-  _title='Check Experimental Repo';
-  _cm2SetMsgFn "${_title}";
-  _win_title="${_rootTitle}: ${_title} ";
-
-  if ! _nag_msg="$(_testNagCountFn 'check' 'kfocus-exper-count')"; then
-    _cm2SucStrFn 'View count limit reached.';
-    _cm2SucFn;
-    return;
-  fi
-
-  _cache_str="$(
-    apt-cache policy |sed '/^Pinned packages:/q' \
-    | grep -iE '^\s*release'
-  )";
-
-  if grep -q 'o=LP-PPA-kubuntu-ppa-backports-extra' <<< "${_cache_str}"; then
-    if grep -q 'o=LP-PPA-kubuntu-ppa-experimental' <<< "${_cache_str}"; then
-  _prompt_msg="$( cat <<_EOH17
-${_cm2HtmBeginStr}
-${_cm2HtmH3Str}Experimental Repo Detected</h3>
-
-${_cm2HtmPStr}The kubuntu-ppa-experimental repo is installed <br>
-along with kubuntu-ppa-backports-extra. We strongly <br>
-recommend you purge this now in a terminal using <br>
-the following command:</p>
-
-${_cm2HtmPStr}
-<code>sudo ppa-purge ppa:kubuntu-ppa/experimental</code></p>
-
-${_cm2HtmPStr}If you do not purge the repo, this <br>
-${_nag_msg}.</p>
-${_cm2HtmEndStr}
-_EOH17
-  )";
-      _ans_str="$(
-        _cm2PromptUserFn "${_prompt_msg}" "${_win_title}"
-      )";
-      _testNagCountFn 'inc' 'kfocus-exper-count'
-    fi
-  fi
-  _cm2SucFn;
-}
-## . END _chkExperRepoFn }
-
 ## BEGIN _chkResetEffectsFn {
  # Purpose:
- #   Announce the conclusion of a FocusRx run when forced
+ #   When forced, offer to run kfocus-reset-effects
  #
 _chkResetEffectsFn () {
   declare _title _win_title _prompt_msg _ans_str;
@@ -1069,18 +1017,18 @@ _mainFn () {
   _chkHwConfigFn;
   _chkRollbackPresence;
   _chkKbdLedFn;      # Issue 3735
-  # _chkKernelPkgFn; # Disabled: See 66226a00c
-  # _chkNvidiaPkgFn; # Disabled: See 66226a00c
-  # _cleanupZoomFn;  # Disabled: See prior
+  _offerKfRollbackFn;
+  # _chkKernelPkgFn; # Disabled: See    66226a00c
+  # _chkNvidiaPkgFn; # Disabled: See    66226a00c
+  # _cleanupZoomFn;  # Disabled: Before 66226a00c
   _chkXorgConfigFn;
   _runKernelCleanFn;
   _chkIbusConfigFn;
   _ensureCrontabFn;
   _runDropScriptsFn;
-  _chkExperRepoFn;
+  # _chkExperRepoFn; # Disabled: See 66226a00c
   _chkResetEffectsFn;
   _postRollbackHandlerFn;
-  _offerKfRollbackFn;
   _announceEndFn;
   _cm2EchoFn "\n== . END : OK   ${_rootTitle}\n\n";
   ## . End Run focusrx steps }
@@ -1095,7 +1043,8 @@ declare _parentCmdStr _lookupList \
   _maxNagCount _binName _binDir _baseDir _baseName _escExe \
   _focusRxDropDir _kbdColorSetExe _rootTitle _assignList \
   _focusRxSetExe _focusRxVersExe _btoolExe _firstrunExe \
-  _fixIbusExe _kcleanExe _resetEffectsExe _sysVersStr;
+  _fixIbusExe _kcleanExe _resetEffectsExe _rollbackSetExe \
+  _sysVersStr;
 
 _parentCmdStr="$(ps -o comm= $PPID)";
 # These domain names exist here only for the purposes of looking them up via
