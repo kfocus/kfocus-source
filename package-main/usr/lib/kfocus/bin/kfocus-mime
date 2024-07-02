@@ -46,6 +46,7 @@ _exeLookupList=(
   'inkscape|inkscape||inkscape|Inkscape: Edit Scalable Vector Graphics'
   'insync|insync;start||insync-dolphin|Insync: Sync Google Drive and Others'
   'jekyll|konsole;-e;man jekyll|jekyll|jekyll|Jekyll: Create Static Web Sites'
+  'jetbrains-toolbox-plain|jetbrains-toolbox|jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs' # for firstrun-bin
   'kate|kate||kate|Kate: Edit Text with Power'
   'kde-connect|kdeconnect-settings||kdeconnect|KDE Connect: Connect Smartphones to Desktop'
   'kdenlive|kdenlive||kdenlive|KDEnlive: Edit  Non-Linear Videos'
@@ -620,7 +621,7 @@ is in the the 'docker' group. But that group <br>
 is not active.</p>
 
 ${_cm2HtmPStr}Please log out and back in to activate that <br>
-group if you wish  to run docker as a <br>
+group if you wish to run docker as a <br>
 regular user instead of root.</p>
 ${_cm2HtmEndStr}
 EOT02
@@ -633,15 +634,23 @@ EOT02
       _cm2PromptUserFn "${_msg01}" 'Add to Group' 'a'
     )";
     if [ "${_ans_str}" = 'y' ]; then
-      "${_escExe}" usermod -aG 'docker' "${_userName}" || true;
+      if "${_escExe}" usermod -aG 'docker' "${_userName}"; then
+        _promptFn "User added to group 'docker'";
+      else
+        _promptFn "Warn: Could not add user to group 'docker'";
+        return;
+      fi
+    else
+      _promptFn "User cancelled joining group 'docker'";
+      return;
     fi
   fi
 
+  # Safety; this should rarely be true
   if ! _isUserInGroupFn 'docker'; then return; fi
 
   if _isUserInActiveGroupFn 'docker'; then
     _cm2EchoFn "Group 'docker' is active";
-    return;
   else
     _promptFn "${_msg02}";
   fi
@@ -702,15 +711,23 @@ EOT0C
       _cm2PromptUserFn "${_msg0b}" 'Add to Group' 'a'
     )";
     if [ "${_ans_str}" = 'y' ]; then
-      "${_escExe}" usermod -aG 'vboxusers' "${_userName}" || true;
+      if "${_escExe}" usermod -aG 'vboxusers' "${_userName}"; then
+        _promptFn "User added to group 'vboxusers'";
+      else
+        _promptFn "Warn: Could not add user to group 'vboxusers'";
+        return;
+      fi
+    else
+      _promptFn "User cancelled joining group 'vboxusers'";
+      return;
     fi
   fi
 
+  # Safety; this should rarely be true
   if ! _isUserInGroupFn 'vboxusers'; then return; fi
 
   if _isUserInActiveGroupFn 'vboxusers'; then
     _cm2EchoFn "Group 'vboxusers' is active";
-    return;
   else
     _promptFn "${_msg0c}";
   fi
@@ -784,7 +801,6 @@ EOT
 
     virtualbox)
       _handleVboxSetupFn;
-
       _cmd_str='virtualbox';
       ;;
 
