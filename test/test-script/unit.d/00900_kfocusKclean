@@ -1351,7 +1351,7 @@ _unsetMocksFn () {
 # This MUST be called '_runTestFn' for use by the _runUnitTests
 # bashsupport disable=BP2001
 _runTestFn () {
-  declare _exe_file _fail_count _assert_count _assert_idx _assert_line_str \
+  declare _exe_file _fail_count _group_count _group_idx _group_line_str \
     _arg_list _expect_file _check_str;
 
   # Use function from _runUnitTests: clear out run dir and check expect dir
@@ -1369,6 +1369,9 @@ _runTestFn () {
   # shellcheck disable=SC1090,SC2154
   source "${_exe_file}" || exit 1;
 
+  # Overwrite embedded preferred meta package for repeatability
+  _preferredMetaPkg='linux-image-generic-hwe-22.04-kfocus';
+
   # Set environment vars
   export XDG_SESSION_TYPE='tty';
 
@@ -1379,14 +1382,15 @@ _runTestFn () {
 
   ## Begin Iterate through tests {
   _fail_count=0;
-  _assert_count="${#_assertDataTable[@]}";
+  _group_count="${#_assertDataTable[@]}";
+  _group_idx=1;
   _assert_idx=1;
 
-  for _assert_line_str in "${_assertDataTable[@]}"; do
-    _cm2EchoFn "BEGIN Assert ${_assert_idx} of ${_assert_count}:";
+  for _group_line_str in "${_assertDataTable[@]}"; do
+    _cm2EchoFn "BEGIN Assert ${_group_idx} of ${_group_count}:";
 
     # Extract _dataList, _ansList, and reset _assertAnsIdx
-    readarray -td ';' _assertDataList < <(echo -n "${_assert_line_str}");
+    readarray -td ';' _assertDataList < <(echo -n "${_group_line_str}");
     readarray -td ' ' _arg_list       < <(echo -n "${_assertDataList[1]}");
     readarray -td ',' _assertAnsList  < <(echo -n "${_assertDataList[2]}");
     _assertAnsIdx=0;
@@ -1395,14 +1399,14 @@ _runTestFn () {
       # Calculate expect and run files
       # shellcheck disable=SC2154
       _expect_file="$(
-        printf '%s/test_%02d%s.txt' "${_t00ExpectDir}" "${_assert_idx}" "${_str}"
+        printf '%s/test_%02d%s.txt' "${_t00ExpectDir}" "${_group_idx}" "${_str}"
       )";
       # shellcheck disable=SC2154
       _runFile="$(
-        printf '%s/test_%02d%s.txt' "${_t00RunDir}" "${_assert_idx}" "${_str}"
+        printf '%s/test_%02d%s.txt' "${_t00RunDir}" "${_group_idx}" "${_str}"
       )";
       _updateStateFile="$(
-        printf '/tmp/kclean_state_%02d%s.txt' "${_assert_idx}" "${_str}"
+        printf '/tmp/kclean_state_%02d%s.txt' "${_group_idx}" "${_str}"
       )";
 
       # Remove state file if exists
@@ -1438,11 +1442,11 @@ _runTestFn () {
       if [ ! -f "${_expect_file}" ]; then touch "${_expect_file}"; fi
       _check_str="$(diff -r --brief "${_expect_file}" "${_runFile}" )";
       if [ -z "${_check_str}" ]; then
-        _cm2EchoFn ". OK   assert ${_assert_idx}\n\n";
+        _cm2EchoFn ". OK   assert ${_assert_idx} (${_group_idx}${_str})\n\n";
       else
         _cm2EchoFn 'Please compare expected to run file';
         meld "${_expect_file}" "${_runFile}";
-        _cm2EchoFn ". FAIL assert ${_assert_idx}\n\n";
+        _cm2EchoFn ". FAIL assert ${_assert_idx} (${_group_idx}${_str})\n\n";
         (( _fail_count++ ));
       fi
 
@@ -1454,9 +1458,10 @@ _runTestFn () {
         # Assign new modules list
         _assertDataList[7]="$(tail -n+2 <<< "${_slurp_str}")";
       fi
+      (( _assert_idx++ ));
     done
     ## . End Check diffs }
-    (( _assert_idx++ ));
+    (( _group_idx++ ));
   done
   ## End Iterate through tests }
 
