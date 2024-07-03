@@ -60,7 +60,7 @@ _importCommonFn () {
 _echoInstKversListStrFn () {
   echo -e "${_aptListStr}" \
     | grep -E '^linux-image-(unsigned-|)[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+$' \
-    | sed  -E 's/^linux-image-((unsigned-|)[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+)$/\1/' \
+    | sed  -E 's/^linux-image-(unsigned-|)([0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+)$/\2/' \
     | sort -uV;
 }
 ## . END _echoInstKversListStrFn }
@@ -81,8 +81,8 @@ _echoMetaKversStrFn () {
     _str="$( apt-cache depends "${*}" \
       | grep -E '^\s*Depends:' \
       | sed  -E 's/^\s*Depends:\s*//' \
-      | grep -E '^\s*linux-image-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+$' \
-      | sed  -E 's/^\s*linux-image-([0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+)$/\1/' \
+      | grep -E '^\s*linux-image-(unsigned-|)[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+$' \
+      | sed  -E 's/^\s*linux-image-(unsigned-|)([0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+)$/\2/' \
       | sort -uV \
       | tail -n1
     )";
@@ -110,9 +110,9 @@ _echoMetaKversStrFn () {
 #
 _echoPurgeableKversListStr () {
   echo -e "${_aptListStr}" \
-    | grep -E '^linux-(image|modules|modules-extra|headers|tools)-[0-9]' \
-    | grep -E '^linux-[a-z]+-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+$' \
-    | sed  -E 's/^linux-[a-z]+-([0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+)$/\1/' \
+    | grep -E '^linux-(image|image-unsigned|modules|modules-extra|headers|tools)-[0-9]' \
+    | grep -E '^linux-[a-z]+-([a-z]+-|)[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+$' \
+    | sed  -E 's/^linux-[a-z]+-([a-z]+-|)([0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+)$/\2/' \
     | grep -vE "^${_kversFullRunStr}$"     \
     | grep -vE "^${_kversFullPrefStr}$"    \
     | grep -vE "^(${_kversExtraKeepStr})$" \
@@ -137,14 +137,17 @@ _echoPkgStrFn () {
 # Arguments: _vers_str
 #
 _echoInstKversPkgStrFn () {
-  declare _vers_str _short_str _kernel_flavor _kernel_alt_flavor _prefix;
+  declare _vers_str _short_str _kernel_flavor _kernel_alt_flavor _prefix \
+    _echo_result;
   _vers_str="${*}";
   _short_str="$(cut -f1-2 -d'-' <<< "${_vers_str}")";
   _kernel_flavor="$(cut -f3 -d'-' <<< "${_vers_str}")";
 
-  _echoPkgStrFn "linux-image-${_vers_str}";
-  # TODO: linux-image-unsigned is not yet properly handled
-  # _echoPkgStrFn "linux-image-unsigned-${_vers_str}";
+  _echo_result="$(_echoPkgStrFn "linux-image-${_vers_str}")";
+  if [ -z "${_echo_result}" ]; then
+    _echo_result="$(_echoPkgStrFn "linux-image-unsigned-${_vers_str}")";
+  fi
+  echo "${_echo_result}";
 
   if [ "${_kernel_flavor}" = 'azure' ]; then
     # Cut off the '-fde' at the end if it exists, the headers, modules,
@@ -214,7 +217,7 @@ _echoKeepPkgListStrFn () {
 #
 # shellcheck disable=SC2001
 _echoPurgePkgListStrFn() {
-  declare _vers_str _azure_check_kvers_str _azure_check_kvers;
+  declare _vers_str _azure_check_kvers_str _azure_check_kvers _echo_result;
   _echoDebugFn "PURGEABLE KVERS LIST >>>$(_echoPurgeableKversListStr)<<<";
 
   # If the user has Azure kernels installed for whatever reason, and the
@@ -234,9 +237,11 @@ _echoPurgePkgListStrFn() {
   while read -r _vers_str; do
     _azure_check_kvers="$(sed "s/azure-fde/azure/" <<< "${_vers_str}")";
     if [[ "${_azure_check_kvers_str}" =~ ${_azure_check_kvers} ]]; then
-      _echoPkgStrFn "linux-image-${_vers_str}";
-      # TODO: linux-image-unsigned is not yet properly handled
-      # _echoPkgStrFn "linux-image-unsigned-${_vers_str}";
+      _echo_result="$(_echoPkgStrFn "linux-image-${_vers_str}")";
+      if [ -z "${_echo_result}" ]; then
+        _echo_result="$(_echoPkgStrFn "linux-image-unsigned-${_vers_str}")";
+      fi
+      echo "${_echo_result}";
     else
       _echoInstKversPkgStrFn "${_vers_str}";
     fi
@@ -345,9 +350,9 @@ _echoPrioritizedKversExtraKeepStr () {
   # TODO: If we switch to OEM, generic must become oem; use a variable?
   _kernel_flavor_list_str="$(
     echo -n "${_kernel_flavor_list_str}" \
-      | sed "s/^kfocus$/000000001/; s/^lowlatency$/000000002/;" \
+      | sed "s/^kfocus$/000000001/; s/^generic$/000000002/; s/^lowlatency$/000000003/;" \
       | sort -u \
-      | sed "s/^000000001$/kfocus/; s/^000000002$/lowlatency/;";
+      | sed "s/^000000001$/kfocus/; s/^000000002$/generic/; s/^000000003$/lowlatency/;";
   )";
 
   # Read flavor list and initialize loop variables
@@ -435,7 +440,7 @@ _mainFn() {
     _body_title _boot_free_int _boot_size_int \
     _brow_str _cmd_list _do_check _do_force _eff_free_int \
     _check_msg _eff_size_int _end_msg _erow_str _exit_str \
-    _filtered_purge_list  _filtered_purge_list_str _inst_kvers_count \
+    _filtered_purge_list _filtered_purge_list_str _inst_kvers_count \
     _inst_kvers_list_str _is_boot_low _is_boot_partition \
     _keep_kvers_list_count _keep_pkg_list_str _kernel_free_count \
     _kernel_keep_count _kernel_purge_count _kernel_max_count \
@@ -649,7 +654,7 @@ Please see your system administrator to fix.";
   _keep_pkg_list_str="$(_echoKeepPkgListStrFn | sort -u)";
   _keep_kvers_list_count="$(
     echo -e "${_keep_pkg_list_str}" \
-    | grep -E '^linux-image-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+(\W|$)' \
+    | grep -E '^linux-image-(unsigned-|)[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[a-z-]+(\W|$)' \
     | sort -u | wc -l
   )";
 
@@ -849,7 +854,7 @@ _lowRootDiskInt=10240;
 _multiInt=12;
 # Package where bless kernel comes from.
 # _preferredMetaPkg='linux-image-generic-hwe-24.04-kfocus';
-_preferredMetaPkg='linux-kfocus-24.04-kfocus';
+_preferredMetaPkg='linux-image-kfocus-24.04-kfocus';
 ## . END Declare and assign global vars }
 
 ## BEGIN Run main if script is not sourced {

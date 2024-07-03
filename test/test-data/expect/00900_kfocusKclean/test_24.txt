@@ -1,0 +1,36 @@
+
+=== BEGIN Intention ==============
+_024 Installed kernels are
+6.8.0-31-generic,
+6.8.0-35-generic (UNSIGNED!),
+6.8.0-35-kfocus (UNSIGNED!),
+6.8.0-36-kfocus (UNSIGNED!).
+- Running kernel is 6.8.0-36-kfocus per assert.
+- Blessed kernel is 6.8.0-36-kfocus because meta installed per assert.
+- /boot is on separate partition with 2000M free.
+- NO PURGE, because...
+-- There is enough room for several more kernels (2000M > 230M)
+-- This is NOT low space when total space allows (2600/230 = 11) kernels
+=== . END Intention ==============
+
+=== BEGIN Diagnostics ============
+Installed Kernel List : 6.8.0-31-generic
+6.8.0-35-generic
+6.8.0-35-kfocus
+6.8.0-36-kfocus
+Target Max Kernels    : 11
+Installed Kernel Count: 4
+Target Keep Kernels   : 8
+
+Running Kernel        : 6.8.0-36-kfocus
+Blessed Kernel        : 6.8.0-36-kfocus
+Is /boot a partition? : y
+/boot free,size       : 2000,2600 MB
+Effective free,size   : 2000,2600 MB
+
+Do Force Flag?        : n
+Is /boot low?         : n
+Do Check Triggered?   : n
+Check Message         : 4 kernels are installed.<br>
+
+=== . END Diagnostics ============

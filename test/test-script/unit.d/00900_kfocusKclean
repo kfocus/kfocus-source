@@ -1237,6 +1237,91 @@ linux-tools-6.5.0-17-generic
 linux-tools-6.5.0-21-generic
 linux-tools-common
 linux-tools-generic-hwe-22.04-kfocus'
+  
+  '_023 Installed kernels are
+6.8.0-31-generic,
+6.8.0-35-generic (UNSIGNED!),
+6.8.0-35-kfocus (UNSIGNED!),
+6.8.0-36-kfocus (UNSIGNED!).
+- Running kernel is 6.8.0-36-kfocus per assert.
+- Blessed kernel is 6.8.0-36-kfocus because meta installed per assert.
+- /boot is on separate partition with 200M free.
+- Check forced: Low disk space
+- Results in purge of 6.8.0-31-generic and 6.8.0-35-generic BECAUSE:
+-- 6.8.0-36-kfocus is running and blessed, so retained.
+-- 6.8.0-35-kfocus is of a protected flavor (kfocus) and two kernels are
+   being preserved, so retained
+-- *-generic kernels ARE PURGED because...
+--- There is NOT enough room for any more kernels (effective size is 200MB).
+-- ALSO WARN that disk space is low.
+;;y;6.8.0-36-kfocus;y;200,800;0;
+linux-base
+linux-firmware
+linux-image-kfocus-24.04-kfocus
+linux-headers-6.8.0-31-generic
+linux-headers-6.8.0-35-generic
+linux-headers-6.8.0-35-kfocus
+linux-headers-6.8.0-36-kfocus
+linux-image-6.8.0-31-generic
+linux-image-unsigned-6.8.0-35-generic
+linux-image-unsigned-6.8.0-35-kfocus
+linux-image-unsigned-6.8.0-36-kfocus
+linux-libc-dev
+linux-modules-6.8.0-31-generic
+linux-modules-6.8.0-35-generic
+linux-modules-6.8.0-35-kfocus
+linux-modules-6.8.0-36-kfocus
+linux-modules-extra-6.8.0-31-generic
+linux-modules-extra-6.8.0-35-generic
+linux-modules-extra-6.8.0-35-kfocus
+linux-modules-extra-6.8.0-36-kfocus
+linux-sound-base
+linux-tools-6.8.0-31-generic
+linux-tools-6.8.0-35-generic
+linux-tools-6.8.0-35-kfocus
+linux-tools-6.8.0-36-kfocus
+linux-tools-common
+linux-tools-kfocus-24.04-kfocus'
+  
+  '_024 Installed kernels are
+6.8.0-31-generic,
+6.8.0-35-generic (UNSIGNED!),
+6.8.0-35-kfocus (UNSIGNED!),
+6.8.0-36-kfocus (UNSIGNED!).
+- Running kernel is 6.8.0-36-kfocus per assert.
+- Blessed kernel is 6.8.0-36-kfocus because meta installed per assert.
+- /boot is on separate partition with 2000M free.
+- NO PURGE, because...
+-- There is enough room for several more kernels (2000M > 230M)
+-- This is NOT low space when total space allows (2600/230 = 11) kernels
+;;y;6.8.0-36-kfocus;y;2000,2600;0;
+linux-base
+linux-firmware
+linux-image-kfocus-24.04-kfocus
+linux-headers-6.8.0-31-generic
+linux-headers-6.8.0-35-generic
+linux-headers-6.8.0-35-kfocus
+linux-headers-6.8.0-36-kfocus
+linux-image-6.8.0-31-generic
+linux-image-unsigned-6.8.0-35-generic
+linux-image-unsigned-6.8.0-35-kfocus
+linux-image-unsigned-6.8.0-36-kfocus
+linux-libc-dev
+linux-modules-6.8.0-31-generic
+linux-modules-6.8.0-35-generic
+linux-modules-6.8.0-35-kfocus
+linux-modules-6.8.0-36-kfocus
+linux-modules-extra-6.8.0-31-generic
+linux-modules-extra-6.8.0-35-generic
+linux-modules-extra-6.8.0-35-kfocus
+linux-modules-extra-6.8.0-36-kfocus
+linux-sound-base
+linux-tools-6.8.0-31-generic
+linux-tools-6.8.0-35-generic
+linux-tools-6.8.0-35-kfocus
+linux-tools-6.8.0-36-kfocus
+linux-tools-common
+linux-tools-kfocus-24.04-kfocus'
 );
 ## . END _assertDataTable
 
@@ -1311,6 +1396,7 @@ _overwriteWithMocksFn () {
     if [[ "${_assertDataList[7]}" =~ ${1:-} ]]; then
       case "${1:-}" in
         'linux-image-generic-hwe-22.04-kfocus' ) echo '6.5.0-14-generic' ;;
+        'linux-image-kfocus-24.04-kfocus' ) echo '6.8.0-36-kfocus' ;;
         *) echo 'XXX_NOT_INSTALLED_XXX';
       esac
     else
@@ -1369,9 +1455,6 @@ _runTestFn () {
   # shellcheck disable=SC1090,SC2154
   source "${_exe_file}" || exit 1;
 
-  # Overwrite embedded preferred meta package for repeatability
-  _preferredMetaPkg='linux-image-generic-hwe-22.04-kfocus';
-
   # Set environment vars
   export XDG_SESSION_TYPE='tty';
 
@@ -1394,6 +1477,13 @@ _runTestFn () {
     readarray -td ' ' _arg_list       < <(echo -n "${_assertDataList[1]}");
     readarray -td ',' _assertAnsList  < <(echo -n "${_assertDataList[2]}");
     _assertAnsIdx=0;
+
+    # Overwrite embedded preferred meta package for repeatability
+    if [[ "${_assertDataList[7]}" =~ linux-image-kfocus-24.04-kfocus ]]; then
+      _preferredMetaPkg='linux-image-kfocus-24.04-kfocus';
+    else
+      _preferredMetaPkg='linux-image-generic-hwe-22.04-kfocus';
+    fi
 
     for _str in '' 'a'; do
       # Calculate expect and run files
@@ -1466,7 +1556,7 @@ _runTestFn () {
   ## End Iterate through tests }
 
   if [ "${_fail_count}" -gt 0 ]; then
-    _cm2EchoFn "FAIL: ${_fail_count} of ${_assert_count} tests failed.";
+    _cm2EchoFn "FAIL: ${_fail_count} of ${_group_count} tests failed.";
   else
     _cm2EchoFn 'OK  : Results match expected';
   fi

@@ -1,0 +1,85 @@
+FocusRX: Purge Older Kernels?
+Doc: https://kfocus.org/wf/tools#kclean
+
+4 kernels are installed.
+Check forced: /boot space is low (200 of 800 MB).
+
+Removing unused kernels prevents the system
+from running out of disk space in /boot.
+
+Packages to Keep
+linux-headers-6.8.0-35-kfocus
+linux-headers-6.8.0-36-kfocus
+linux-image-unsigned-6.8.0-35-kfocus
+linux-image-unsigned-6.8.0-36-kfocus
+linux-modules-6.8.0-35-kfocus
+linux-modules-6.8.0-36-kfocus
+linux-modules-extra-6.8.0-35-kfocus
+linux-modules-extra-6.8.0-36-kfocus
+linux-tools-6.8.0-35-kfocus
+linux-tools-6.8.0-36-kfocus
+
+Packages to Purge
+linux-headers-6.8.0-31-generic
+linux-headers-6.8.0-35-generic
+linux-image-6.8.0-31-generic
+linux-image-unsigned-6.8.0-35-generic
+linux-modules-6.8.0-31-generic
+linux-modules-6.8.0-35-generic
+linux-modules-extra-6.8.0-31-generic
+linux-modules-extra-6.8.0-35-generic
+linux-tools-6.8.0-31-generic
+linux-tools-6.8.0-35-generic
+
+Make sure your files are backed-up.
+
+Do you wish to purge 2 of 4 kernels now
+y
+
+Purge Package List:
+Cleaning up kernels _kcleanSetExe normal linux-headers-6.8.0-31-generic linux-headers-6.8.0-35-generic linux-image-6.8.0-31-generic linux-image-unsigned-6.8.0-35-generic linux-modules-6.8.0-31-generic linux-modules-6.8.0-35-generic linux-modules-extra-6.8.0-31-generic linux-modules-extra-6.8.0-35-generic linux-tools-6.8.0-31-generic linux-tools-6.8.0-35-generic
+
+FocusRx: KERNEL CLEANER FINISHED
+
+Press <return> to continue.
+
+=== BEGIN Intention ==============
+_023 Installed kernels are
+6.8.0-31-generic,
+6.8.0-35-generic (UNSIGNED!),
+6.8.0-35-kfocus (UNSIGNED!),
+6.8.0-36-kfocus (UNSIGNED!).
+- Running kernel is 6.8.0-36-kfocus per assert.
+- Blessed kernel is 6.8.0-36-kfocus because meta installed per assert.
+- /boot is on separate partition with 200M free.
+- Check forced: Low disk space
+- Results in purge of 6.8.0-31-generic and 6.8.0-35-generic BECAUSE:
+-- 6.8.0-36-kfocus is running and blessed, so retained.
+-- 6.8.0-35-kfocus is of a protected flavor (kfocus) and two kernels are
+   being preserved, so retained
+-- *-generic kernels ARE PURGED because...
+--- There is NOT enough room for any more kernels (effective size is 200MB).
+-- ALSO WARN that disk space is low.
+=== . END Intention ==============
+
+=== BEGIN Diagnostics ============
+Installed Kernel List : 6.8.0-31-generic
+6.8.0-35-generic
+6.8.0-35-kfocus
+6.8.0-36-kfocus
+Target Max Kernels    : 3
+Installed Kernel Count: 4
+Target Keep Kernels   : 2
+
+Running Kernel        : 6.8.0-36-kfocus
+Blessed Kernel        : 6.8.0-36-kfocus
+Is /boot a partition? : y
+/boot free,size       : 200,800 MB
+Effective free,size   : 200,800 MB
+
+Do Force Flag?        : n
+Is /boot low?         : y
+Do Check Triggered?   : y
+Check Message         : 4 kernels are installed.<br>
+Check forced: /boot space is low (200 of 800 MB).
+=== . END Diagnostics ============
