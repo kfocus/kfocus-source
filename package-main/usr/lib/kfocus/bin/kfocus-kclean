@@ -345,9 +345,9 @@ _echoPrioritizedKversExtraKeepStr () {
   # TODO: If we switch to OEM, generic must become oem; use a variable?
   _kernel_flavor_list_str="$(
     echo -n "${_kernel_flavor_list_str}" \
-      | sed "s/^generic$/000000001/; s/^lowlatency$/000000002/;" \
+      | sed "s/^kfocus$/000000001/; s/^lowlatency$/000000002/;" \
       | sort -u \
-      | sed "s/^000000001$/generic/; s/^000000002$/lowlatency/;";
+      | sed "s/^000000001$/kfocus/; s/^000000002$/lowlatency/;";
   )";
 
   # Read flavor list and initialize loop variables
