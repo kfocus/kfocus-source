@@ -290,8 +290,7 @@ _echoBootMegsFn() {
   _arg_str="${1:-size}";
 
   if [ "${_isBtrfsYn}" = 'y' ]; then
-    _btrfs_report="$(LC_ALL=C "${_btrfsExe}" filesystem usage -b \
-      /btrfs_boot)";
+    _btrfs_report="$(LC_ALL=C "${_btrfsExe}" filesystem usage -b /btrfs_boot)";
     if [ "${_arg_str}" = 'avail' ]; then
       _int="$("${_rollbackSetExe}" 'getBootUnallocSpace')";
       (( _int = _int / 1048576 ));
@@ -374,30 +373,30 @@ _echoPrioritizedKversExtraKeepStr () {
     _kernel_flavor_str="${_kernel_flavor_list[_flavor_idx]}";
 
     _kvers_count="${#_kvers_list[@]}";
-    for ((_kvers_idx = 0; _kvers_idx < _kvers_count; _kvers_idx++)); do
+    for (( _kvers_idx = 0; _kvers_idx < _kvers_count; _kvers_idx++ )); do
       _kvers_str="${_kvers_list[_kvers_idx]}";
       if [ "${_kernel_flavor_str}" = \
         "$(cut -d'-' -f3 <<< "${_kvers_str}")" ]; then
         if ! [[ "${_kvers_str}" =~ ^[[:digit:]]{3}_ ]]; then
           _id_prefix="$(printf '%03i_' "${_id_idx}")";
           _kvers_list[_kvers_idx]="${_id_prefix}${_kvers_list[_kvers_idx]}";
-          ((_id_idx++));
-          ((_unmarked_kvers_count--));
+          (( _id_idx++ ));
+          (( _unmarked_kvers_count-- ));
           break;
         fi
       fi
     done
 
-    ((_flavor_idx++));
+    (( _flavor_idx++ ));
     if [ "${_flavor_idx}" -ge "${#_kernel_flavor_list[@]}" ]; then
       _flavor_idx=0;
     fi
 
     # Break once all versions are considered
-    if ((_unmarked_kvers_count < 1)); then break; fi
+    if (( _unmarked_kvers_count < 1 )); then break; fi
   done
 
-  if ((_unmarked_kvers_count > 0)); then
+  if (( _unmarked_kvers_count > 0 )); then
     _cm2EchoFn 'Unexpected data error.';
     _cm2EchoStackFn;
     return 1;
@@ -510,36 +509,35 @@ _mainFn() {
   # Otherwise, calculate effective free and size.
   else
     _run_msg+="The /boot dir shares the system disk.<br>${_cStr}";
-    if ((_boot_free_int > _lowRootDiskInt)); then
-      _eff_size_int="$((_kernelUnitSizeInt * _multiInt))";
+    if (( _boot_free_int > _lowRootDiskInt )); then
+      _eff_size_int="$(( _kernelUnitSizeInt * _multiInt ))";
     else
-      _eff_size_int="$((_boot_free_int / _divisorInt))";
+      _eff_size_int="$(( _boot_free_int / _divisorInt ))";
     fi
     # Calculate effective free disk (can be negative).
-    _eff_free_int="$((_eff_size_int
+    _eff_free_int="$(( _eff_size_int
       - _inst_kvers_count * _kernelUnitSizeInt ))";
   fi
 
   # 3. Determine max number of kernels that can fit in the full effective size,
   #    also how many more kernels can fit into the effective avail space.
-  _kernel_max_count="$(( _eff_size_int / _kernelUnitSizeInt))";
-  _kernel_free_count="$((_eff_free_int / _kernelUnitSizeInt))";
+  _kernel_max_count="$((  _eff_size_int / _kernelUnitSizeInt ))";
+  _kernel_free_count="$(( _eff_free_int / _kernelUnitSizeInt ))";
 
   # 4. Determine the low-space trigger and target kernels to keep.
-  if ((_kernel_max_count <= 3 )); then
+  if (( _kernel_max_count <= 3 )); then
     _overfull_threshold_count=0;
     _kernel_keep_count=2;
+  elif (( _kernel_max_count <= 5 )); then
+    _overfull_threshold_count=1;
+    _kernel_keep_count=3;
   else
-    if ((_kernel_max_count <= 5)); then
-      _overfull_threshold_count=1;
-      _kernel_keep_count=3;
-    else
-      _overfull_threshold_count=2;
-      _kernel_keep_count="$((_kernel_max_count - 3))";
-    fi
+    _overfull_threshold_count=2;
+    _kernel_keep_count="$(( _kernel_max_count - 3 ))";
   fi
-  # Failsafe to ensure 2 kernels remain
-  if (( "${_kernel_keep_count}" < 2)); then
+
+  # Failsafe to always ensure 2 kernels remain
+  if (( _kernel_keep_count < 2 )); then
     _cm2ErrStrFn "Keep count |${_kernel_keep_count}| < 2";
     _cm2ErrStrFn 'Please investigate. This should not occur.';
     _kernel_keep_count=2;
@@ -555,7 +553,7 @@ _mainFn() {
   fi
 
   # _kernel_max_count is present in _kernel_keep_count
-  if ((_kernel_free_count <= _overfull_threshold_count)); then
+  if (( _kernel_free_count <= _overfull_threshold_count )); then
     _is_boot_low='y';
     _do_check='y';
     # Create new or append as needed
@@ -565,10 +563,10 @@ _mainFn() {
     if [ "${_is_boot_partition}" = 'y' ]; then
       _check_msg+='/boot space is low ';
       _check_msg+="(${_boot_free_int} of ${_boot_size_int} MB).";
-    elif ((_boot_free_int > _lowRootDiskInt)); then
+    elif (( _boot_free_int > _lowRootDiskInt )); then
       _check_msg+="Kernel count (${_inst_kvers_count}) exceeds <br>${_cStr}";
-      _check_msg+="recommended max ($((_kernel_max_count - \
-        _overfull_threshold_count - 1))).";
+      _check_msg+="recommended max ($(( _kernel_max_count - \
+        _overfull_threshold_count - 1 ))).";
     else
       _check_msg+="System disk is low (${_boot_free_int} MB).<br>${_cStr}";
       _check_msg+="<b>MAKE ROOM TO KEEP MORE KERNELS!</b>";
@@ -576,7 +574,7 @@ _mainFn() {
 
   # This should never be encountered, but we keep it here as
   # a failsafe.
-  elif ((_inst_kvers_count > _kernel_max_count)); then
+  elif (( _inst_kvers_count > _kernel_max_count )); then
     _do_check='y';
     # Create new or append as needed
     if [ -z "${_run_msg}" ]; then
@@ -659,13 +657,13 @@ Please see your system administrator to fix.";
   )";
 
   _echoDebugFn "Target min kernels >>>${_kernel_keep_count}<<<";
-  _reserve_kvers_count=$(("${_kernel_keep_count}" - "${_keep_kvers_list_count}"));
+  _reserve_kvers_count=$(( _kernel_keep_count - _keep_kvers_list_count ));
 
   # Create regex string to match more kernel versions to keep ignoring
   # the other exclusions we've already created. This is used to ensure
   # we always have the minimum number of kernels (usually >= 2) installed.
   #
-  if ((_reserve_kvers_count > 0)); then
+  if (( _reserve_kvers_count > 0 )); then
     # Deprecated: grep -vE "^${_kversFullOemStr}$"
     # Deprecated: grep -vE "^${_kversFullLlHweStr}$"
     _kversExtraKeepStr="$(
@@ -834,7 +832,7 @@ declare _binName _binDir _baseDir _baseName _cStr \
 
 _aptListStr='';
 _cStr=$'\n';
-_doDebug='y';
+_doDebug='n';
 _kversExtraKeepStr='';
 _kversFullPrefStr='';
 _kversFullRunStr='';

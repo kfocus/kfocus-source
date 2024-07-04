@@ -1454,6 +1454,7 @@ _runTestFn () {
 
   # shellcheck disable=SC1090,SC2154
   source "${_exe_file}" || exit 1;
+  _doDebug='y'; # Enable debug in sourced file
 
   # Set environment vars
   export XDG_SESSION_TYPE='tty';
