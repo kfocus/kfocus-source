@@ -1,6 +1,11 @@
-linux-meta-kfocus (6.8.0-36.36+kfocus1~beta1) noble; urgency=medium
+linux-meta-kfocus (6.8.0-36.36+kfocus1) noble; urgency=medium
 
-  * Release for Kubuntu Focus
+  * Release for Kubuntu Focus (#4333)
+  * Upstream Ubuntu linux-meta 6.8.0-36.36
+  * Applied patch: Cherry-pick ITMT adjustment from 6.10
+    (https://lore.kernel.org/linux-acpi/12460110.O9o76ZdvQC@rjwysocki.net)
+  * Applied patch: Cherry-pick typo fix in PCI/ASPM from 6.9
+    (https://lists.ubuntu.com/archives/kernel-team/2024-July/151954.html)
 
  -- Aaron Rainbolt <arraybolt3@ubuntu.com>  Mon, 01 Jul 2024 13:52:48 -0500
 
