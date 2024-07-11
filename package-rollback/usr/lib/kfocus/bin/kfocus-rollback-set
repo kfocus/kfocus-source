@@ -543,6 +543,23 @@ _deleteSnapshotFn () {
     "${_btrfsExe}" subvolume delete --commit-after "${_boot_snapshot_dir}" \
       || _exitEMERG "Failed to delete boot BTRFS snapshot ${_boot_snapshot_dir}!";
   fi
+
+  # Ensure any and all snapshot metadata is deleted
+  "${_kwriteconfig5Exe}" \
+    --file "${_snapshotMetaDb}" \
+    --group "${_target_snapshot_id}" \
+    --key 'name' --delete;
+
+  "${_kwriteconfig5Exe}" \
+    --file "${_snapshotMetaDb}" \
+    --group "${_target_snapshot_id}" \
+    --key 'desc' --delete;
+
+  "${_kwriteconfig5Exe}" \
+    --file "${_snapshotMetaDb}" \
+    --group "${_target_snapshot_id}" \
+    --key 'pinned' --delete;
+  
   _cm2LogFn 'notice' "Snapshot ${_target_snapshot_id} deleted.";
 }
 ## . END _deleteSnapshotFn }
@@ -610,6 +627,22 @@ _trimSnapshotsFn () {
   readarray -t _main_snapshot_list <<< "$(
     _cm2LsFn "${_rb2MainSnapshotDir}" | sed 's/@//' | sort -n | sed 's/^/@/'
   )";
+
+  for ((_snapshot_idx = 0; _snapshot_idx < ${#_main_snapshot_list[@]}; \
+    _snapshot_idx++)); do
+    if [ "$(
+      "${_kreadconfig5Exe}" \
+        --file "${_snapshotMetaDb}" \
+        --group "${_main_snapshot_list[_snapshot_idx]}" \
+        --key 'pinned'
+      )" = 'y' ]; then
+      unset "_main_snapshot_list[_snapshot_idx]";
+    fi
+  done
+
+  # Remove holes left by unset
+  _main_snapshot_list=( "${_main_snapshot_list[@]}" );
+  _cm2EchoFn "${_main_snapshot_list[@]}";
 
   if [ "${#_main_snapshot_list[@]}" -gt '5' ]; then
     _snapshot_remove_count=$((${#_main_snapshot_list[@]} - 5));
@@ -706,20 +739,21 @@ _createSnapshotFn () {
 }
 ## . END _createSnapshotFn
 
-## BEGIN _makeSnapshotDispIdFn {
-_makeSnapshotDispIdFn () {
+## BEGIN _getSnapshotReasonFn {
+_getSnapshotReasonFn () {
   declare _snapshot_id _snapshot_reason_file _snapshot_reason_raw \
-    _snapshot_reason _snapshot_datetime _snapshot_disp_id;
+    _snapshot_reason;
 
   _snapshot_id="${1:-}";
   _snapshot_reason_file="${_rb2MainSnapshotDir}/${_snapshot_id}";
   _snapshot_reason_file+='/var/lib/kfocus/rollback_snapshot_reason';
 
   if [ -z "${_snapshot_id}" ] || [ -z "${_snapshot_reason_file}" ]; then
-    _cm2WarnStrFn 'Invalid arguments, cannot generate snapshot display ID';
+    _cm2WarnStrFn 'Invalid arguments, cannot get snapshot reason';
     return 1;
   fi
 
+  _snapshot_reason_raw="$(cat "${_snapshot_reason_file}")";
   _snapshot_reason_raw="$(cat "${_snapshot_reason_file}")";
   case "${_snapshot_reason_raw}" in
     'Apt')
@@ -735,6 +769,23 @@ _makeSnapshotDispIdFn () {
       _snapshot_reason="Created by ${_snapshot_reason_raw}";
       ;;
   esac
+
+  echo "${_snapshot_reason}";
+}
+## . END _getSnapshotReasonFn }
+
+## BEGIN _makeSnapshotDispIdFn {
+_makeSnapshotDispIdFn () {
+  declare _snapshot_id _snapshot_reason _snapshot_datetime _snapshot_disp_id;
+
+  _snapshot_id="${1:-}";
+
+  if [ -z "${_snapshot_id}" ] || [ -z "${_snapshot_reason_file}" ]; then
+    _cm2WarnStrFn 'Invalid arguments, cannot generate snapshot display ID';
+    return 1;
+  fi
+
+  _snapshot_reason="$(_getSnapshotReasonFn "${_snapshot_id}")";
 
   _snapshot_datetime="$(date -d "${_snapshot_id}" '+%a %F %H:%M')";
   _snapshot_disp_id="${_snapshot_reason} — ${_snapshot_datetime}";
@@ -836,6 +887,61 @@ _systemSnapshotFn () {
   _trimSnapshotsFn           || _exitERR 'Could not trim snapshots!';
 }
 ## . END _systemSnapshotFn }
+
+## BEGIN _getSnapshotMetadataFn {
+_getSnapshotMetadataFn () {
+  declare _snapshot_id _item;
+
+  _snapshot_id="${1:-}";
+  [ -z "${_snapshot_id}" ] && _exitERR 'No snapshot ID provided!';
+  [ -d "${_rb2MainSnapshotDir}/${_snapshot_id}" ] \
+    || _exitERR 'The specified snapshot does not exist!'
+
+  for _item in 'name' 'desc' 'pinned'; do
+    "${_kreadconfig5Exe}" \
+      --file "${_snapshotMetaDb}" \
+      --group "${_snapshot_id}" \
+      --key "${_item}";
+  done
+}
+## . END _getSnapshotMetadataFn }
+
+## BEGIN _setSnapshotMetadataFn {
+_setSnapshotMetadataFn () {
+  declare _snapshot_id _name_str _desc_str _is_pinned
+
+  _snapshot_id="${1:-}";
+  _name_str="${2:-}";
+  _desc_str="${3:-}";
+  _is_pinned="${4:-}";
+
+  [ -z "${_snapshot_id}" ] && _exitERR 'No snapshot ID provided!';
+  [ -z "${_name_str}" ] && _exitERR 'No name data provided!';
+  [ -z "${_desc_str}" ] && _exitERR 'No description data provided!';
+  [ -z "${_is_pinned}" ] && _exitERR 'No pinning information provided!';
+  [ -d "${_rb2MainSnapshotDir}/${_snapshot_id}" ] \
+    || _exitERR 'The specified snapshot does not exist!'
+  [[ "${_is_pinned}" =~ ^[yn]$ ]] || _exitERR 'Pinning data is not boolean!';
+
+  "${_kwriteconfig5Exe}" \
+    --file "${_snapshotMetaDb}" \
+    --group "${_snapshot_id}" \
+    --key 'name' \
+    "${_name_str}";
+
+  "${_kwriteconfig5Exe}" \
+    --file "${_snapshotMetaDb}" \
+    --group "${_snapshot_id}" \
+    --key 'desc' \
+    "${_desc_str}";
+
+  "${_kwriteconfig5Exe}" \
+    --file "${_snapshotMetaDb}" \
+    --group "${_snapshot_id}" \
+    --key 'pinned' \
+    "${_is_pinned}";
+}
+## . END _setSnapshotMetadataFn }
 
 ## BEGIN _balanceMainFn {
 _balanceMainFn () {
@@ -1042,7 +1148,7 @@ _btrfsDeepCleanFn () {
 _mainFn () {
   declare _mode_str _arg2_str;
   _mode_str="${1:-}";
-  _arg2_str="${2:-}";
+  shift;
 
   while ! _chkSetFlockFn; do
     sleep 1;
@@ -1062,8 +1168,8 @@ _mainFn () {
     'checkMainUnallocSpace') _checkMainUnallocSpaceFn;;
     'checkBootUnallocSpace') _checkBootUnallocSpaceFn;;
     'clearRestore')          _clearRestoreFn;;
-    'createSnapshot')        _createSnapshotFn       "${_arg2_str}";;
-    'deleteSnapshot')        _deleteSnapshotFn       "${_arg2_str}";;
+    'createSnapshot')        _createSnapshotFn       "${1:-}";;
+    'deleteSnapshot')        _deleteSnapshotFn       "${1:-}";;
     'finalizeRestore')       _finalizeRestoreFn;;
     'getManualSwitchState')  _getManualSwitchStateFn;;
     'getBootMinUnalloc')     _getBootMinUnallocFn;;
@@ -1072,11 +1178,14 @@ _mainFn () {
     'getMainMinUnalloc')     _getMainMinUnallocFn;;
     'getMainUnallocSpace')   _getMainUnallocSpaceFn;;
     'getSnapshotList')       _getSnapshotListStrFn;;
-    'makeSnapshotDispId')    _makeSnapshotDispIdFn   "${_arg2_str}";;
+    'getSnapshotMetadata')   _getSnapshotMetadataFn  "${1:-}";;
+    'getSnapshotReason')     _getSnapshotReasonFn    "${1:-}";;
+    'makeSnapshotDispId')    _makeSnapshotDispIdFn   "${1:-}";;
     'prepareSystem')         _prepareSystemFn;;
-    'restoreSnapshot')       _restoreSnapshotFn      "${_arg2_str}";;
-    'setManualSwitchState')  _setManualSwitchStateFn "${_arg2_str}";;
-    'systemSnapshot')        _systemSnapshotFn       "${_arg2_str}";;
+    'restoreSnapshot')       _restoreSnapshotFn      "${1:-}";;
+    'setManualSwitchState')  _setManualSwitchStateFn "${1:-}";;
+    'setSnapshotMetadata')   _setSnapshotMetadataFn  "$@";;
+    'systemSnapshot')        _systemSnapshotFn       "${1:-}";;
     'trimSnapshots')         _trimSnapshotsFn;;
     *)
       _exitERR 'Invalid mode specified.';
@@ -1089,16 +1198,17 @@ _mainFn () {
 
 ## BEGIN Declare and assign global vars {
 declare _binName _binDir _baseName _baseDir _manualSwitchFile \
-  _isPreparingSystem _lockFile _btrfsStatus \
+  _isPreparingSystem _lockFile _btrfsStatus _snapshotMetaDb \
   _libTable _browStr _erowStr _tableStr _prepareFailMsg \
   _lowDiskMsg _lowBootMsg _inconsistentMsg _btrfsExe _btduExe _filefragExe \
-  _btrfsBalanceExe;
+  _btrfsBalanceExe _kwriteconfig5Exe _kreadconfig5Exe;
 
 _manualSwitchFile='/var/lib/kfocus/rollback_manual_mode';
 _btrfsStatus='';
 _isPreparingSystem='n'; # Flag for error reporting
 _lockFile='/tmp/kfocus-rollback/kfocus-rollback-set.lock';
 _lockDir='/tmp/kfocus-rollback';
+_snapshotMetaDb='/btrfs_main/kfocus-rollback-snapshot-metadb';
 ## . END Declare and assign global vars }
 
 ## BEGIN Run mainFn when script is NOT sourced {
@@ -1120,6 +1230,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     '_btrfsBalanceExe|/usr/bin/btrfs-balance-least-used'
     '_btduExe|/usr/bin/btdu'
     "_filefragExe|${_binDir}/kfocus-report-filefrag"
+    '_kwriteconfig5Exe|/usr/bin/kwriteconfig5'
+    '_kreadconfig5Exe|/usr/bin/kreadconfig5'
   );
 
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
