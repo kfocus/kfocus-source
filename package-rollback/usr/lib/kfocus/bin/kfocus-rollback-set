@@ -923,6 +923,13 @@ _setSnapshotMetadataFn () {
     || _exitERR 'The specified snapshot does not exist!'
   [[ "${_is_pinned}" =~ ^[yn]$ ]] || _exitERR 'Pinning data is not boolean!';
 
+  if ! [ -e "${_snapshotMetaDb}" ]; then
+    touch "${_snapshotMetaDb}";
+    chmod '0644' "${_snapshotMetaDb}";
+  elif ! [ -f "${_snapshotMetaDb}" ]; then
+    _exitERR 'Snapshot metadata database is not a normal file!';
+  fi
+
   "${_kwriteconfig5Exe}" \
     --file "${_snapshotMetaDb}" \
     --group "${_snapshot_id}" \
