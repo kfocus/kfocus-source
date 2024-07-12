@@ -1438,7 +1438,7 @@ _unsetMocksFn () {
 # bashsupport disable=BP2001
 _runTestFn () {
   declare _exe_file _fail_count _group_count _group_idx _group_line_str \
-    _arg_list _expect_file _check_str;
+    _arg_list _expect_file _check_str _assert_count;
 
   # Use function from _runUnitTests: clear out run dir and check expect dir
   if ! _t00ClearRunDirFn;    then return 1; fi
@@ -1556,10 +1556,11 @@ _runTestFn () {
   done
   ## End Iterate through tests }
 
+  _assert_count=$(( _assert_idx-- ));
   if [ "${_fail_count}" -gt 0 ]; then
-    _cm2EchoFn "FAIL: ${_fail_count} of ${_group_count} tests failed.";
+    _cm2EchoFn "FAIL: ${_fail_count} of ${_assert_count} asserts failed.";
   else
-    _cm2EchoFn 'OK  : Results match expected';
+    _cm2EchoFn "OK  : All ${_assert_count} asserts match expected";
   fi
 
   # Revert function names
