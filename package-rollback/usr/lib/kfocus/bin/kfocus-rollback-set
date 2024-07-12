@@ -780,7 +780,7 @@ _makeSnapshotDispIdFn () {
 
   _snapshot_id="${1:-}";
 
-  if [ -z "${_snapshot_id}" ] || [ -z "${_snapshot_reason_file}" ]; then
+  if [ -z "${_snapshot_id}" ]; then
     _cm2WarnStrFn 'Invalid arguments, cannot generate snapshot display ID';
     return 1;
   fi
