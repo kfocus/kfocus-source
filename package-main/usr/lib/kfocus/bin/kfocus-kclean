@@ -791,9 +791,9 @@ _EOW04
   ## Begin Purge packages {
   _end_msg='';
   if [ "${_isBtrfsYn}" = 'y' ]; then
-    _cmd_list=("${_kcleanSetExe}" 'optimize' "${_filtered_purge_list[@]}");
+    _cmd_list=("${_kcleanSetExe}" 'purge-pkgs-and-optimize' "${_filtered_purge_list[@]}");
   else
-    _cmd_list=("${_kcleanSetExe}" 'normal' "${_filtered_purge_list[@]}");
+    _cmd_list=("${_kcleanSetExe}" 'purge-pkgs' "${_filtered_purge_list[@]}");
   fi
   # Note: _cm2RunLongCmdFn prefixes commands with pkexec
   if _exit_str="$(
