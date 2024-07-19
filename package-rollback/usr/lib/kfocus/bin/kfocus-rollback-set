@@ -766,7 +766,7 @@ _getSnapshotReasonFn () {
       _snapshot_reason='Pre-Rollback';
       ;;
     *) # must be user-generated
-      _snapshot_reason="Created by ${_snapshot_reason_raw}";
+      _snapshot_reason="User Snapshot (${_snapshot_reason_raw})";
       ;;
   esac
 
@@ -916,8 +916,8 @@ _setSnapshotMetadataFn () {
   _is_pinned="${4:-}";
 
   [ -z "${_snapshot_id}" ] && _exitERR 'No snapshot ID provided!';
-  [ -z "${_name_str}" ] && _exitERR 'No name data provided!';
-  [ -z "${_desc_str}" ] && _exitERR 'No description data provided!';
+#  [ -z "${_name_str}" ] && _exitERR 'No name data provided!';
+#  [ -z "${_desc_str}" ] && _exitERR 'No description data provided!';
   [ -z "${_is_pinned}" ] && _exitERR 'No pinning information provided!';
   [ -d "${_rb2MainSnapshotDir}/${_snapshot_id}" ] \
     || _exitERR 'The specified snapshot does not exist!'
