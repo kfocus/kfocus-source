@@ -1,0 +1,27 @@
+Source:              kfocus-rollback-bin
+Section:             admin
+Priority:            optional
+Maintainer:          Kubuntu Focus Team <support@kfocus.org>
+Standards-Version:   4.6.0
+Build-Depends:       debhelper-compat (=13),
+                     qtdeclarative5-dev,
+                     qtbase5-dev,
+                     qtquickcontrols2-5-dev,
+                     cmake
+Rules-Requires-Root: no
+
+Package:      kfocus-rollback-bin
+Architecture: amd64
+Depends:      ${misc:Depends},
+              ${shlibs:Depends},
+              kfocus-common,
+              kfocus-main,
+              kfocus-rollback,
+              breeze-icon-theme,
+              pkexec,
+              polkitd,
+              qml-module-org-kde-kirigami2,
+Recommends:   plasma-welcome
+Description: Kubuntu Focus System Rollback
+ This tool provides a dashboard from which KFocus System Rollback snapshots
+ can be managed.
