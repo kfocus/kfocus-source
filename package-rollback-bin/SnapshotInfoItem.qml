@@ -93,6 +93,7 @@ RowLayout {
             Layout.bottomMargin : Kirigami.Units.gridUnit * 0.55
 
             text                : name
+            font.family         : 'courier'
             readOnly            : !editing
             color               : Kirigami.Theme.textColor
             placeholderText     : reason
@@ -117,6 +118,7 @@ RowLayout {
               + '<li><i>Change this description</i></li>'
               + '<li><i>Pin the Snapshot</i></li></ul></p>'
             text                : description
+            font.family         : 'courier'
             wrapMode            : Text.WordWrap
             readOnly            : !editing
             color               : Kirigami.Theme.textColor

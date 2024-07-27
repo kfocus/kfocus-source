@@ -14,6 +14,9 @@ bool BackendEngine::m_automaticSnapshotsEnabled = false;
 QList<QMap<QString, QString>> *BackendEngine::m_snapshotList = new QList<QMap<QString, QString>>();
 QMap<QString, QString> *BackendEngine::m_mainFsInfo = new QMap<QString, QString>();
 QMap<QString, QString> *BackendEngine::m_bootFsInfo = new QMap<QString, QString>();
+QStringList BackendEngine::m_snapshotIdList = QStringList();
+int BackendEngine::m_snapshotIdIdx = 0;
+bool BackendEngine::m_calcSize = false;
 
 int main(int argc, char *argv[])
 {

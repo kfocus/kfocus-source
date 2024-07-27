@@ -30,15 +30,20 @@ public:
     Q_INVOKABLE QString getSnapshotInfo(int index, QString key);
     Q_INVOKABLE QString getFsData(QString fs, QString key);
     Q_INVOKABLE QString toBase64(QString val);
-    Q_INVOKABLE void refreshSystemData();
+    Q_INVOKABLE void refreshSystemData(bool calcSize);
 
 signals:
     void rollbackSetExeChanged();
     void pkexecExeChanged();
     void automaticSnapshotsEnabledChanged();
+    void systemDataLoaded();
+
+private slots:
+    void onSystemDataReady();
 
 private:
     QString fieldSeek(QStringList lines, QString searchStr, int field);
+    QString bytesToGib(quint64 val);
 
     static QString m_rollbackSetExe;
     static QString m_pkexecExe;
@@ -46,6 +51,10 @@ private:
     static QList<QMap<QString, QString>> *m_snapshotList;
     static QMap<QString, QString> *m_mainFsInfo;
     static QMap<QString, QString> *m_bootFsInfo;
+
+    static QStringList m_snapshotIdList;
+    static int m_snapshotIdIdx;
+    static bool m_calcSize;
 };
 
 #endif // BACKENDENGINE_H

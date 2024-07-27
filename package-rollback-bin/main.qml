@@ -11,11 +11,32 @@ Kirigami.ApplicationWindow {
 
     // Connects the QML and C++ components of kfocus-rollback-bin.
     BackendEngine {
-        id: backend
+        id                 : backend
+        onSystemDataLoaded : {
+            populateSnapshotModelFn();
+            derivateSnapshotModelFn();
+            fillPartitionHealthTableFn();
+
+            createSnapshotView.actionsEnabled = true;
+            optimizeDiskView.actionsEnabled   = true;
+            deleteSnapshotView.actionsEnabled = true;
+
+            if ( !firstInitDone ) {
+                switchViewFn( snapshotView, snapshotView );
+                pageStack.initialPage = mainPage;
+                waitPage.visible = false;
+                firstInitDone = true;
+            } else {
+                switchViewFn( sysRefreshSourceView, sysRefreshTargetView );
+            }
+        }
     }
 
     // == BEGIN Models ================================================
     // Set Global Properties
+    property bool   firstInitDone            : false
+    property var    sysRefreshSourceView
+    property var    sysRefreshTargetView
     property int    disabledSnapshotBarIndex : 0
     property int    titleFontSize            : Kirigami.Units.gridUnit * 1.2
     property bool   uiLocked                 : false
@@ -40,9 +61,9 @@ Kirigami.ApplicationWindow {
 
     // == BEGIN Views =================================================
     // Define window size
-    width         : Kirigami.Units.gridUnit * 43
+    width         : Kirigami.Units.gridUnit * 45
     height        : Kirigami.Units.gridUnit * 30
-    minimumWidth  : Kirigami.Units.gridUnit * 43
+    minimumWidth  : Kirigami.Units.gridUnit * 45
     minimumHeight : Kirigami.Units.gridUnit * 30
 
     // BEGIN Define sidebar views
@@ -50,11 +71,12 @@ Kirigami.ApplicationWindow {
         id: enabledSnapshotBarDelegate
 
         Kirigami.BasicListItem {
-            label      : date
-            subtitle   : name
-            icon       : getIconForReasonFn( reason )
-            trailing   : Kirigami.Icon {
-                source : pinned ? 'pin' : ''
+            font.family : "courier"
+            label       : date + '    ' + size
+            subtitle    : name
+            icon        : getIconForReasonFn( reason )
+            trailing    : Kirigami.Icon {
+                source  : pinned ? 'pin' : ''
             }
         }
     }
@@ -63,10 +85,12 @@ Kirigami.ApplicationWindow {
         id: disabledSnapshotBarDelegate
 
         Kirigami.BasicListItem {
-            label       : date
+            font.family : "courier"
+            label       : date + '    ' + size
             subtitle    : name
             icon        : getIconForReasonFn( reason )
-            trailing    : Kirigami.Icon {
+            trailing    :
+            Kirigami.Icon {
                 source  : pinned ? 'pin' : ''
             }
             fadeContent : true
@@ -168,15 +192,28 @@ Kirigami.ApplicationWindow {
             compareText      : compareResultStr
         }
     }
-
     // . END Define popup windows
 
-    // Core App UI
-    pageStack.initialPage: mainPage
+    pageStack.initialPage: waitPage
+
+    Kirigami.Page {
+        id : waitPage
+
+        Controls.BusyIndicator {
+            anchors {
+                horizontalCenter: parent.horizontalCenter
+                verticalCenter: parent.verticalCenter
+            }
+
+            width: Kirigami.Units.gridUnit * 6
+            height: Kirigami.Units.gridUnit * 6
+        }
+    }
 
     Kirigami.Page {
         id    : mainPage
         title : 'Kubuntu Focus System Rollback'
+        visible: false
 
         ColumnLayout {
             anchors.fill: parent
@@ -228,30 +265,43 @@ Kirigami.ApplicationWindow {
                         Layout.maximumWidth : mainPage.width / 2
                         Layout.alignment    : Qt.AlignBottom
 
-                        Kirigami.Heading {
-                            text               : 'Automatic Snapshots'
-                            color              : uiLocked
-                              ? Kirigami.Theme.disabledTextColor
-                              : Kirigami.Theme.textColor
-                            Layout.alignment   : Qt.AlignRight
-                            Layout.rightMargin : Kirigami.Units.gridUnit
-                              * 0.125
-                            level              : 2
-                        }
-                        Controls.Switch {
-                            id                : automaticSnapshotsSwitch
-                            Layout.alignment  : Qt.AlignLeft
-                            Layout.leftMargin : Kirigami.Units.gridUnit
-                              * 0.125
-                            checked           :
-                              backend.automaticSnapshotsEnabled
-                            enabled           : !uiLocked
-                            onClicked         : switchAutomaticSnapshotsFn();
+                        RowLayout {
+                            Layout.preferredWidth: (mainPage.width / 4)
+                              - Kirigami.Units.gridUnit * 0.35
+                            Controls.Label {
+                                text               : 'Automatic Snapshots'
+                                color              : uiLocked
+                                  ? Kirigami.Theme.disabledTextColor
+                                  : Kirigami.Theme.textColor
+                                Layout.alignment   : Qt.AlignRight
+                                Layout.rightMargin : Kirigami.Units.gridUnit
+                                  * 0.125
+                            }
+                            Controls.Switch {
+                                id                : automaticSnapshotsSwitch
+                                Layout.alignment  : Qt.AlignRight
+                                Layout.leftMargin : Kirigami.Units.gridUnit
+                                  * 0.125
+                                checked           :
+                                  backend.automaticSnapshotsEnabled
+                                enabled           : !uiLocked
+                                onClicked         : switchAutomaticSnapshotsFn();
 
-                            HoverHandler {
-                                cursorShape: Qt.PointingHandCursor
+                                HoverHandler {
+                                    cursorShape: Qt.PointingHandCursor
+                                }
                             }
                         }
+                        Controls.Button {
+                            text                  : 'Show Snapshot Sizes'
+                            icon.name             : 'disk-quota'
+                            Layout.preferredWidth : (mainPage.width / 4)
+                              - Kirigami.Units.gridUnit * 0.35
+                            Layout.alignment      : Qt.AlignRight
+                            enabled               : !uiLocked
+                            onClicked             : calculateSnapshotSizesFn();
+                        }
+
                         Controls.Button {
                             text                  : 'Create New Snapshot'
                             icon.name             : 'document-new'
@@ -384,14 +434,16 @@ Kirigami.ApplicationWindow {
                         // -----
 
                         Controls.Label {
-                            text  : '/'
-                            color : uiLocked
+                            text        : '/'
+                            font.family : 'courier'
+                            color       : uiLocked
                               ? Kirigami.Theme.disabledTextColor
                               : Kirigami.Theme.textColor
                         }
                         Controls.Label {
-                            id    : mainPartStatusStr
-                            text  : ''
+                            id          : mainPartStatusStr
+                            text        : ''
+                            font.family : 'courier'
                             color : uiLocked
                               ? Kirigami.Theme.disabledTextColor
                               : text === 'Good'
@@ -401,6 +453,7 @@ Kirigami.ApplicationWindow {
                         Controls.Label {
                             id               : mainPartSizeStr
                             text             : ''
+                            font.family      : 'courier'
                             Layout.alignment : Qt.AlignRight
                             color            : uiLocked
                               ? Kirigami.Theme.disabledTextColor
@@ -409,6 +462,7 @@ Kirigami.ApplicationWindow {
                         Controls.Label {
                             id               : mainPartRemainStr
                             text             : ''
+                            font.family      : 'courier'
                             Layout.alignment : Qt.AlignRight
                             color            : uiLocked
                               ? Kirigami.Theme.disabledTextColor
@@ -417,6 +471,7 @@ Kirigami.ApplicationWindow {
                         Controls.Label {
                             id               : mainPartUnallocStr
                             text             : ''
+                            font.family      : 'courier'
                             Layout.alignment : Qt.AlignRight
                             color            : uiLocked
                               ? Kirigami.Theme.disabledTextColor
@@ -426,13 +481,15 @@ Kirigami.ApplicationWindow {
                         // -----
 
                         Controls.Label {
-                            text  : '/boot'
-                            color : uiLocked ? Kirigami.Theme.disabledTextColor : Kirigami.Theme.textColor
+                            text        : '/boot'
+                            font.family : 'courier'
+                            color       : uiLocked ? Kirigami.Theme.disabledTextColor : Kirigami.Theme.textColor
                         }
                         Controls.Label {
-                            id    : bootPartStatusStr
-                            text  : ''
-                            color : uiLocked
+                            id          : bootPartStatusStr
+                            text        : ''
+                            font.family : 'courier'
+                            color       : uiLocked
                               ? Kirigami.Theme.disabledTextColor
                               : text === 'Good'
                               ? Kirigami.Theme.positiveTextColor
@@ -441,6 +498,7 @@ Kirigami.ApplicationWindow {
                         Controls.Label {
                             id               : bootPartSizeStr
                             text             : ''
+                            font.family      : 'courier'
                             Layout.alignment : Qt.AlignRight
                             color: uiLocked
                               ? Kirigami.Theme.disabledTextColor
@@ -449,6 +507,7 @@ Kirigami.ApplicationWindow {
                         Controls.Label {
                             id               : bootPartRemainStr
                             text             : ''
+                            font.family      : 'courier'
                             Layout.alignment : Qt.AlignRight
                             color            : uiLocked
                               ? Kirigami.Theme.disabledTextColor
@@ -457,6 +516,7 @@ Kirigami.ApplicationWindow {
                         Controls.Label {
                             id               : bootPartUnallocStr
                             text             : ''
+                            font.family      : 'courier'
                             Layout.alignment : Qt.AlignRight
                             color            : uiLocked
                               ? Kirigami.Theme.disabledTextColor
@@ -519,7 +579,7 @@ Kirigami.ApplicationWindow {
                         topMargin    : Kirigami.Units.gridUnit * 2.75
                         bottomMargin : Kirigami.Units.gridUnit * 0.80
                     }
-                    width      : Kirigami.Units.gridUnit * 12
+                    width      : Kirigami.Units.gridUnit * 15
                     background : Rectangle {
                         color        : Kirigami.Theme.backgroundColor
                     }
@@ -715,6 +775,12 @@ Kirigami.ApplicationWindow {
                 }
 
                 WaitScreenItem {
+                    id         : calculateSnapshotWaitView
+                    visible    : false
+                    headerText : 'Calculating snapshot sizes...'
+                }
+
+                WaitScreenItem {
                     id         : automaticSnapshotSwitchView
                     visible    : false
                     headerText : 'Waiting for user authentication...'
@@ -826,51 +892,53 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id          : createSnapshotEngine
         onAppExited : {
-            refreshSystemDataFn();
-            createSnapshotView.actionsEnabled = true;
+            sysRefreshSourceView = createSnapshotView
             if ( exitCode === 0 || exitCode === 127 ) {
-                switchViewFn( createSnapshotView, snapshotView );
+                sysRefreshTargetView = snapshotView;
             } else if ( exitCode === 1 ) {
-                switchViewFn( createSnapshotView, createSnapshotErrorView );
+                sysRefreshTargetView = createSnapshotErrorView;
             } else {
-                switchViewFn( createSnapshotView, criticalErrorView );
+                sysRefreshTargetView = criticalErrorView;
             }
+            refreshSystemDataFn( false );
         }
     }
 
     ShellEngine {
         id          : optimizeDiskEngine
         onAppExited : {
-            refreshSystemDataFn();
-            optimizeDiskView.actionsEnabled = true;
             if ( exitCode === 0 || exitCode === 127 ) {
-                switchViewFn( optimizeDiskWaitView, snapshotView );
+                sysRefreshSourceView = optimizeDiskWaitView;
+                sysRefreshTargetView = snapshotView;
             } else {
-                switchViewFn( optimizeDiskView, criticalErrorView );
+                sysRefreshSourceView = optimizeDiskView
+                sysRefreshTargetView = criticalErrorView;
             }
+            refreshSystemDataFn( false );
         }
     }
 
     ShellEngine {
         id          : automaticSnapshotToggleEngine
         onAppExited : {
-            refreshSystemDataFn();
-            switchViewFn( automaticSnapshotSwitchView, snapshotView );
+            sysRefreshSourceView = automaticSnapshotSwitchView;
+            sysRefreshTargetView = snapshotView;
+            refreshSystemDataFn( false );
         }
     }
 
     ShellEngine {
         id          : deleteSnapshotEngine
         onAppExited : {
-            refreshSystemDataFn();
-            deleteSnapshotView.actionsEnabled = true;
+            sysRefreshSourceView = deleteSnapshotView;
             if ( exitCode === 0 || exitCode === 127 ) {
-                switchViewFn( deleteSnapshotView, snapshotView );
+                sysRefreshTargetView = snapshotView;
             } else if ( exitCode === 1 ) {
-                switchViewFn( deleteSnapshotView, deleteSnapshotErrorView );
+                sysRefreshTargetView = deleteSnapshotErrorView;
             } else {
-                switchViewFn( deleteSnapshotView, criticalErrorView );
+                sysRefreshTargetView = criticalErrorView;
             }
+            refreshSystemDataFn( false );
         }
     }
 
@@ -915,7 +983,9 @@ Kirigami.ApplicationWindow {
                 restoreSnapshotViewBindingsFn();
             } else {
                 restoreSnapshotViewBindingsFn();
-                refreshSystemDataFn();
+                sysRefreshSourceView = snapshotView;
+                sysRefreshTargetView = snapshotView;
+                refreshSystemDataFn( false );
             }
             snapshotView.saving = false;
             snapshotView.editing = false;
@@ -976,6 +1046,8 @@ Kirigami.ApplicationWindow {
             mainAreaLabel.text = 'Delete Snapshot';
         } else if ( target_view === compareSnapshotView ) {
             mainAreaLabel.text = 'Compare Snapshots';
+        } else if ( target_view === calculateSnapshotWaitView ) {
+            mainAreaLabel.text = 'Show Snapshot Sizes';
         }
 
         // Switch view
@@ -1002,6 +1074,13 @@ Kirigami.ApplicationWindow {
               ? 'auto'
               : 'manual')
         );
+    }
+
+    function calculateSnapshotSizesFn() {
+        switchViewFn( snapshotView, calculateSnapshotWaitView );
+        sysRefreshSourceView = calculateSnapshotWaitView;
+        sysRefreshTargetView = snapshotView;
+        refreshSystemDataFn( true );
     }
 
     function prepDeleteSnapshotFn( snapshot_idx ) {
@@ -1077,11 +1156,8 @@ Kirigami.ApplicationWindow {
         window.show();
     }
 
-    function refreshSystemDataFn() {
-        backend.refreshSystemData();
-        populateSnapshotModelFn();
-        derivateSnapshotModelFn();
-        fillPartitionHealthTableFn();
+    function refreshSystemDataFn( calc_size ) {
+        backend.refreshSystemData( calc_size );
     }
 
     function populateSnapshotModelFn() {
@@ -1095,6 +1171,7 @@ Kirigami.ApplicationWindow {
                 pinned      : backend.getSnapshotInfo(i, 'pinned') === 'true'
                   ? true
                   : false,
+                size        : backend.getSnapshotInfo(i, 'size'),
                 stateDir    : backend.getSnapshotInfo(i, 'stateDir'),
                 id          : backend.getSnapshotInfo(i, 'id')
             });
@@ -1142,8 +1219,7 @@ Kirigami.ApplicationWindow {
     // Kick-off rendering on completion
     Component.onCompleted: {
         mainAreaLabel.text = getSnapshotViewHeaderFn();
-        refreshSystemDataFn();
-        switchViewFn( snapshotView, snapshotView );
+        refreshSystemDataFn( false );
     }
     // == . END Controllers ===========================================
 }

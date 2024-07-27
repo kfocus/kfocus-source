@@ -890,10 +890,13 @@ _systemSnapshotFn () {
 
 ## BEGIN _getSnapshotMetadataFn {
 _getSnapshotMetadataFn () {
-  declare _snapshot_id _item;
+  declare _snapshot_id _mode _item _space_report;
 
   _snapshot_id="${1:-}";
+  _mode="${2:-}";
   [ -z "${_snapshot_id}" ] && _exitERR 'No snapshot ID provided!';
+  [ "${_mode}" != 'base' ] && [ "${_mode}" != 'full' ] \
+    && _exitERR 'No mode provided!';
   [ -d "${_rb2MainSnapshotDir}/${_snapshot_id}" ] \
     || _exitERR 'The specified snapshot does not exist!'
 
@@ -903,6 +906,15 @@ _getSnapshotMetadataFn () {
       --group "${_snapshot_id}" \
       --key "${_item}";
   done
+
+  if [ "${_mode}" = 'full' ]; then
+    "${_btrfsExe}" 'filesystem' 'du' '--raw' '-s' \
+      "${_rb2MainSnapshotDir}/${_snapshot_id}" \
+      | tail -n1 \
+      | awk '{ print $2 }'
+  else
+    echo '';
+  fi
 }
 ## . END _getSnapshotMetadataFn }
 
@@ -1170,30 +1182,31 @@ _mainFn () {
   fi
 
   case "${_mode_str}" in
-    'btrfsDeepClean')        _btrfsDeepCleanFn;;
-    'btrfsMaintain')         _btrfsMaintainFn;;
-    'checkMainUnallocSpace') _checkMainUnallocSpaceFn;;
-    'checkBootUnallocSpace') _checkBootUnallocSpaceFn;;
-    'clearRestore')          _clearRestoreFn;;
-    'createSnapshot')        _createSnapshotFn       "${1:-}";;
-    'deleteSnapshot')        _deleteSnapshotFn       "${1:-}";;
-    'finalizeRestore')       _finalizeRestoreFn;;
-    'getManualSwitchState')  _getManualSwitchStateFn;;
-    'getBootMinUnalloc')     _getBootMinUnallocFn;;
-    'getBootUnallocSpace')   _getBootUnallocSpaceFn;;
-    'getBtrfsStatus')        echo "${_btrfsStatus}";;
-    'getMainMinUnalloc')     _getMainMinUnallocFn;;
-    'getMainUnallocSpace')   _getMainUnallocSpaceFn;;
-    'getSnapshotList')       _getSnapshotListStrFn;;
-    'getSnapshotMetadata')   _getSnapshotMetadataFn  "${1:-}";;
-    'getSnapshotReason')     _getSnapshotReasonFn    "${1:-}";;
-    'makeSnapshotDispId')    _makeSnapshotDispIdFn   "${1:-}";;
-    'prepareSystem')         _prepareSystemFn;;
-    'restoreSnapshot')       _restoreSnapshotFn      "${1:-}";;
-    'setManualSwitchState')  _setManualSwitchStateFn "${1:-}";;
-    'setSnapshotMetadata')   _setSnapshotMetadataFn  "$@";;
-    'systemSnapshot')        _systemSnapshotFn       "${1:-}";;
-    'trimSnapshots')         _trimSnapshotsFn;;
+    'btrfsDeepClean')          _btrfsDeepCleanFn;;
+    'btrfsMaintain')           _btrfsMaintainFn;;
+    'checkMainUnallocSpace')   _checkMainUnallocSpaceFn;;
+    'checkBootUnallocSpace')   _checkBootUnallocSpaceFn;;
+    'clearRestore')            _clearRestoreFn;;
+    'createSnapshot')          _createSnapshotFn       "${1:-}";;
+    'deleteSnapshot')          _deleteSnapshotFn       "${1:-}";;
+    'finalizeRestore')         _finalizeRestoreFn;;
+    'getBootMinUnalloc')       _getBootMinUnallocFn;;
+    'getBootUnallocSpace')     _getBootUnallocSpaceFn;;
+    'getBtrfsStatus')          echo "${_btrfsStatus}";;
+    'getManualSwitchState')    _getManualSwitchStateFn;;
+    'getMainMinUnalloc')       _getMainMinUnallocFn;;
+    'getMainUnallocSpace')     _getMainUnallocSpaceFn;;
+    'getSnapshotList')         _getSnapshotListStrFn;;
+    'getBaseSnapshotMetadata') _getSnapshotMetadataFn  "${1:-}"   'base';;
+    'getFullSnapshotMetadata') _getSnapshotMetadataFn  "${1:-}"   'full';;
+    'getSnapshotReason')       _getSnapshotReasonFn    "${1:-}";;
+    'makeSnapshotDispId')      _makeSnapshotDispIdFn   "${1:-}";;
+    'prepareSystem')           _prepareSystemFn;;
+    'restoreSnapshot')         _restoreSnapshotFn      "${1:-}";;
+    'setManualSwitchState')    _setManualSwitchStateFn "${1:-}";;
+    'setSnapshotMetadata')     _setSnapshotMetadataFn  "$@";;
+    'systemSnapshot')          _systemSnapshotFn       "${1:-}";;
+    'trimSnapshots')           _trimSnapshotsFn;;
     *)
       _exitERR 'Invalid mode specified.';
       ;;
