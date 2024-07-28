@@ -23,12 +23,14 @@ Kirigami.ApplicationWindow {
 
             if ( !firstInitDone ) {
                 switchViewFn( snapshotView, snapshotView );
-                pageStack.initialPage = mainPage;
                 waitPage.visible = false;
+                pageStack.initialPage = mainPage;
                 firstInitDone = true;
             } else {
                 switchViewFn( sysRefreshSourceView, sysRefreshTargetView );
             }
+
+            backend.inhibitClose = false;
         }
     }
 
@@ -72,7 +74,7 @@ Kirigami.ApplicationWindow {
 
         Kirigami.BasicListItem {
             font.family : "courier"
-            label       : date + '    ' + size
+            label       : date + '     ' + size
             subtitle    : name
             icon        : getIconForReasonFn( reason )
             trailing    : Kirigami.Icon {
@@ -86,7 +88,7 @@ Kirigami.ApplicationWindow {
 
         Kirigami.BasicListItem {
             font.family : "courier"
-            label       : date + '    ' + size
+            label       : date + '     ' + size
             subtitle    : name
             icon        : getIconForReasonFn( reason )
             trailing    :
@@ -220,7 +222,7 @@ Kirigami.ApplicationWindow {
 
             RowLayout {
                 Layout.fillWidth     : true
-                Layout.maximumHeight : Kirigami.Units.gridUnit * 6.5
+                Layout.maximumHeight : Kirigami.Units.gridUnit * 7
 
                 ColumnLayout {
                     Layout.alignment    : Qt.AlignTop
@@ -236,7 +238,7 @@ Kirigami.ApplicationWindow {
                               * 1.2
                             Layout.leftMargin      : Kirigami.Units.gridUnit
                               * 0.2
-                            icon.name              : "help-contextual"
+                            icon.name              : 'documentinfo'
                             enabled                : !uiLocked
                             onClicked              : {
                                 showWindowFn( globalHelpWindowComponent )
@@ -268,6 +270,7 @@ Kirigami.ApplicationWindow {
                         RowLayout {
                             Layout.preferredWidth: (mainPage.width / 4)
                               - Kirigami.Units.gridUnit * 0.35
+                            Layout.bottomMargin: Kirigami.Units.gridUnit * 0.45
                             Controls.Label {
                                 text               : 'Automatic Snapshots'
                                 color              : uiLocked
@@ -293,6 +296,7 @@ Kirigami.ApplicationWindow {
                             }
                         }
                         Controls.Button {
+                            Layout.bottomMargin: Kirigami.Units.gridUnit * 0.45
                             text                  : 'Show Snapshot Sizes'
                             icon.name             : 'disk-quota'
                             Layout.preferredWidth : (mainPage.width / 4)
@@ -343,7 +347,7 @@ Kirigami.ApplicationWindow {
 
                 Rectangle {
                     Layout.preferredWidth  : 1
-                    Layout.preferredHeight : Kirigami.Units.gridUnit * 5.75
+                    Layout.preferredHeight : Kirigami.Units.gridUnit * 6.25
                     Layout.alignment       : Qt.AlignTop
                     color                  : Kirigami.Theme.disabledTextColor
                 }
@@ -483,7 +487,9 @@ Kirigami.ApplicationWindow {
                         Controls.Label {
                             text        : '/boot'
                             font.family : 'courier'
-                            color       : uiLocked ? Kirigami.Theme.disabledTextColor : Kirigami.Theme.textColor
+                            color       : uiLocked
+                              ? Kirigami.Theme.disabledTextColor
+                              : Kirigami.Theme.textColor
                         }
                         Controls.Label {
                             id          : bootPartStatusStr
@@ -604,15 +610,17 @@ Kirigami.ApplicationWindow {
                         bottom       : parent.bottom
                         leftMargin   : Kirigami.Units.gridUnit * 0.80
                         topMargin    : Kirigami.Units.gridUnit * 2.75
-                        bottomMargin : Kirigami.Units.gridUnit * 0.75
+                        bottomMargin : Kirigami.Units.gridUnit * 0.80
                     }
-                    width   : Kirigami.Units.gridUnit * 12
+                    width   : Kirigami.Units.gridUnit * 15
                     color   : Kirigami.Theme.backgroundColor
                     visible : snapshotModel.count === 0
 
                     Controls.Label {
                         anchors {
-                            fill       : parent
+                            top: parent.top;
+                            left: parent.left;
+                            right: parent.right;
                             leftMargin : Kirigami.Units.gridUnit * 0.5
                             topMargin  : Kirigami.Units.gridUnit * 0.5
                         }
@@ -769,21 +777,26 @@ Kirigami.ApplicationWindow {
                 }
 
                 WaitScreenItem {
-                    id         : optimizeDiskWaitView
-                    visible    : false
-                    headerText : 'Optimizing Boot Disk...'
+                    id          : optimizeDiskWaitView
+                    visible     : false
+                    headerText  : 'Optimizing Boot Disk...'
+                    description : 'This may take several minutes. Do not'
+                      + ' close the window until the process is complete.'
                 }
 
                 WaitScreenItem {
-                    id         : calculateSnapshotWaitView
-                    visible    : false
-                    headerText : 'Calculating snapshot sizes...'
+                    id          : calculateSnapshotWaitView
+                    visible     : false
+                    headerText  : 'Calculating snapshot sizes...'
+                    description : 'This generally takes about 30 seconds, '
+                      + 'but can take longer depending on how much data you '
+                      + 'have saved.'
                 }
 
                 WaitScreenItem {
-                    id         : automaticSnapshotSwitchView
-                    visible    : false
-                    headerText : 'Waiting for user authentication...'
+                    id          : automaticSnapshotSwitchView
+                    visible     : false
+                    headerText  : 'Toggling automatic snapshots...'
                 }
 
                 ConfirmSnapshotActionItem {
@@ -879,9 +892,10 @@ Kirigami.ApplicationWindow {
                 }
 
                 WaitScreenItem {
-                    id         : compareSnapshotWaitView
-                    visible    : false
-                    headerText : 'Comparing snapshots...'
+                    id          : compareSnapshotWaitView
+                    visible     : false
+                    headerText  : 'Comparing snapshots...'
+                    description : 'This may take several minutes.'
                 }
             }
         }
@@ -989,6 +1003,7 @@ Kirigami.ApplicationWindow {
             }
             snapshotView.saving = false;
             snapshotView.editing = false;
+            backend.inhibitClose = false;
         }
     }
 
@@ -1056,17 +1071,20 @@ Kirigami.ApplicationWindow {
     }
 
     function createSnapshotFn() {
+        backend.inhibitClose = true;
         createSnapshotEngine.exec(
           rollbackStr + 'createSnapshot "$(id -nu)"'
         );
     }
 
     function optimizeDiskFn() {
+        backend.inhibitClose = true;
         switchViewFn( optimizeDiskView, optimizeDiskWaitView );
         optimizeDiskEngine.exec( rollbackStr + 'btrfsDeepClean' );
     }
 
     function switchAutomaticSnapshotsFn() {
+        backend.inhibitClose = true;
         switchViewFn( snapshotView, automaticSnapshotSwitchView );
         automaticSnapshotToggleEngine.exec(
           rollbackStr + 'setManualSwitchState '
@@ -1091,6 +1109,7 @@ Kirigami.ApplicationWindow {
     }
 
     function deleteSnapshotFn( snapshot_idx ) {
+        backend.inhibitClose = true;
         deleteSnapshotEngine.exec(
           rollbackStr
             + 'deleteSnapshot '
@@ -1106,6 +1125,7 @@ Kirigami.ApplicationWindow {
     }
 
     function restoreSnapshotFn( snapshot_idx ) {
+        backend.inhibitClose = true;
         switchViewFn( restoreSnapshotView, restoreSnapshotWaitView );
         restoreSnapshotEngine.exec( rollbackStr + 'restoreSnapshot ' + snapshotModel.get(snapshot_idx).id );
     }
@@ -1122,6 +1142,7 @@ Kirigami.ApplicationWindow {
     }
 
     function saveSnapshotEditsFn( snapshot_idx ) {
+        backend.inhibitClose = true;
         let snapInfo = snapshotModel.get(snapshot_idx);
         saveEditsEngine.exec(
           rollbackStr

@@ -1,7 +1,5 @@
 #include <QDateTime>
 
-#include <cmath>
-
 #include "backendengine.h"
 #include "shellengine.h"
 
@@ -62,6 +60,14 @@ void BackendEngine::setBootFsInfo(QMap<QString, QString> *val) {
     m_mainFsInfo = val;
 }
 
+bool BackendEngine::inhibitClose() {
+    return m_inhibitClose;
+}
+
+void BackendEngine::setInhibitClose(bool val) {
+    m_inhibitClose = val;
+}
+
 int BackendEngine::getSnapshotCount() {
     return m_snapshotList->length();
 }
@@ -95,6 +101,7 @@ void BackendEngine::refreshSystemData(bool calcSize) {
     execEngine->execSync(m_rollbackSetExe + " getSnapshotList");
     m_snapshotIdList = execEngine->stdout().split('\n', Qt::SkipEmptyParts);
     if (m_snapshotIdList.count() == 0) {
+        loadGlobalInfo();
         return;
     }
     m_snapshotIdIdx = 0;
@@ -119,8 +126,8 @@ QString BackendEngine::fieldSeek(QStringList lines, QString searchStr, int field
 }
 
 QString BackendEngine::bytesToGib(quint64 val) {
-    double gibSize = (((((double)val) / 1024) / 1024) / 1024);
-    gibSize = std::round(gibSize * 100.0) / 100.0;
+    double gibSize = (((static_cast<double>(val) / 1024) / 1024) / 1024);
+    gibSize = qRound(gibSize * 100.0) / 100.0;
     QString gibSizeStr = QString::number(gibSize, 'f', 2) + " GiB";
     return gibSizeStr;
 }
@@ -135,6 +142,10 @@ void BackendEngine::onSystemDataReady() {
     execEngine->disconnect(this);
     QString snapshotItem = m_snapshotIdList.at(m_snapshotIdIdx);
     QStringList snapshotMetadataList = execEngine->stdout().split('\n');
+    QString metaSnapshotName = snapshotMetadataList.at(0);
+    QString metaSnapshotDesc = snapshotMetadataList.at(1);
+    QString metaSnapshotPinned = snapshotMetadataList.at(2);
+    QString metaSnapshotSize = snapshotMetadataList.at(3);
     if (snapshotMetadataList.count() < 4 || snapshotMetadataList.at(0) == "Invalid mode specified.") {
         qWarning() << "Snapshot metadata unsupported - kfocus-rollback-set too old?";
         return;
@@ -143,15 +154,15 @@ void BackendEngine::onSystemDataReady() {
     execEngine->execSync(m_rollbackSetExe + " getSnapshotReason " + snapshotItem);
     QString snapshotReason = execEngine->stdout().trimmed();
     QString snapshotStateDir = QString("/btrfs_main/@kfocus-rollback-snapshots/" + snapshotItem);
-    QString snapshotName = QString(QByteArray::fromBase64(snapshotMetadataList.at(0).toUtf8()));
+    QString snapshotName = QString(QByteArray::fromBase64(metaSnapshotName.toUtf8()));
     if (snapshotName.isEmpty()) {
         snapshotName = snapshotReason;
     }
-    QString snapshotDesc = QString(QByteArray::fromBase64(snapshotMetadataList.at(1).toUtf8()));
-    QString snapshotPinned = snapshotMetadataList.at(2) == "y" ? "true" : "false";
-    quint64 snapshotIntSize = snapshotMetadataList.at(3).toULongLong();
+    QString snapshotDesc = QString(QByteArray::fromBase64(metaSnapshotDesc.toUtf8()));
+    QString snapshotPinned = metaSnapshotPinned == "y" ? "true" : "false";
+    quint64 snapshotIntSize = metaSnapshotSize.toULongLong();
     QString snapshotSize;
-    if (snapshotIntSize == 0) {
+    if (metaSnapshotSize == "") {
         snapshotSize = "";
     } else {
         snapshotSize = bytesToGib(snapshotIntSize);
@@ -182,64 +193,70 @@ void BackendEngine::onSystemDataReady() {
             execEngine->exec(m_rollbackSetExe + " getBaseSnapshotMetadata " + m_snapshotIdList.at(m_snapshotIdIdx));
         }
     } else {
-        // Get disk usage info
-        execEngine->execSync("LC_ALL=C /usr/bin/btrfs filesystem usage '/btrfs_main'");
-        QStringList btrfsMainReport = execEngine->stdout().split('\n');
-        execEngine->execSync("LC_ALL=C /usr/bin/btrfs filesystem usage '/btrfs_boot'");
-        QStringList btrfsBootReport = execEngine->stdout().split('\n');
-        execEngine->execSync("LC_ALL=C /usr/bin/btrfs filesystem usage -b '/btrfs_main'");
-        QStringList btrfsMainRawReport = execEngine->stdout().split('\n');
-        execEngine->execSync("LC_ALL=C /usr/bin/btrfs filesystem usage -b '/btrfs_boot'");
-        QStringList btrfsBootRawReport = execEngine->stdout().split('\n');
-
-        btrfsMainReport = btrfsMainReport.replaceInStrings("\t", " ");
-        btrfsBootReport = btrfsBootReport.replaceInStrings("\t", " ");
-        btrfsMainRawReport = btrfsMainRawReport.replaceInStrings("\t", " ");
-        btrfsBootRawReport = btrfsBootRawReport.replaceInStrings("\t", " ");
-
-        quint64 btrfsMainRawSize = fieldSeek(btrfsMainRawReport, "Device size:", 2).toULongLong();
-        quint64 btrfsMainRawRemain = fieldSeek(btrfsMainRawReport, "Free (estimated):", 2).toULongLong();
-        quint64 btrfsMainRawUnalloc = fieldSeek(btrfsMainRawReport, "Device unallocated:", 2).toULongLong();
-        int btrfsMainUnalloc = qRound((static_cast<double>(btrfsMainRawUnalloc) / static_cast<double>(btrfsMainRawSize)) * 100);
-        QString btrfsMainStatus = btrfsMainUnalloc >= 15 ? "Good" : "ALERT";
-        QString btrfsMainSize = bytesToGib(btrfsMainRawSize);
-        QString btrfsMainRemain = bytesToGib(btrfsMainRawRemain);
-
-        quint64 btrfsBootRawSize = fieldSeek(btrfsBootRawReport, "Device size:", 2).toULongLong();
-        quint64 btrfsBootRawRemain = fieldSeek(btrfsBootRawReport, "Free (estimated):", 2).toULongLong();
-        quint64 btrfsBootRawUnalloc = fieldSeek(btrfsBootRawReport, "Device unallocated:", 2).toULongLong();
-        int btrfsBootUnalloc = qRound((static_cast<double>(btrfsBootRawUnalloc) / static_cast<double>(btrfsBootRawSize)) * 100);
-        QString btrfsBootStatus = btrfsBootUnalloc >= 15 ? "Good" : "ALERT";
-        QString btrfsBootSize = bytesToGib(btrfsBootRawSize);
-        QString btrfsBootRemain = bytesToGib(btrfsBootRawRemain);
-
-        m_mainFsInfo->clear();
-        m_mainFsInfo->insert(QMap<QString, QString>({
-            { "status", btrfsMainStatus },
-            { "size", QString(btrfsMainSize) },
-            { "remain", QString(btrfsMainRemain) },
-            { "unalloc", QString::number(btrfsMainUnalloc) + "%" }
-        }));
-        m_bootFsInfo->clear();
-        m_bootFsInfo->insert(QMap<QString, QString>({
-            { "status", btrfsBootStatus },
-            { "size", QString(btrfsBootSize) },
-            { "remain", QString(btrfsBootRemain) },
-            { "unalloc", QString::number(btrfsBootUnalloc) + "%" }
-        }));
-
-        // Get automatic snapshot state
-        execEngine->execSync(m_rollbackSetExe + " getBtrfsStatus");
-        QString btrfsStatus = execEngine->stdout().trimmed();
-        if (btrfsStatus == "SUPPORTED, MANUAL") {
-            m_automaticSnapshotsEnabled = false;
-        } else if (btrfsStatus == "SUPPORTED, AUTO") {
-            m_automaticSnapshotsEnabled = true;
-        } else {
-            qCritical() << "BTRFS status neither manual nor auto!";
-        }
+        loadGlobalInfo();
         execEngine->deleteLater();
-        emit automaticSnapshotsEnabledChanged();
-        emit systemDataLoaded();
     }
+}
+
+void BackendEngine::loadGlobalInfo() {
+    // Get disk usage info
+    ShellEngine execEngine;
+    execEngine.execSync("LC_ALL=C /usr/bin/btrfs filesystem usage '/btrfs_main'");
+    QStringList btrfsMainReport = execEngine.stdout().split('\n');
+    execEngine.execSync("LC_ALL=C /usr/bin/btrfs filesystem usage '/btrfs_boot'");
+    QStringList btrfsBootReport = execEngine.stdout().split('\n');
+    execEngine.execSync("LC_ALL=C /usr/bin/btrfs filesystem usage -b '/btrfs_main'");
+    QStringList btrfsMainRawReport = execEngine.stdout().split('\n');
+    execEngine.execSync("LC_ALL=C /usr/bin/btrfs filesystem usage -b '/btrfs_boot'");
+    QStringList btrfsBootRawReport = execEngine.stdout().split('\n');
+
+    btrfsMainReport = btrfsMainReport.replaceInStrings("\t", " ");
+    btrfsBootReport = btrfsBootReport.replaceInStrings("\t", " ");
+    btrfsMainRawReport = btrfsMainRawReport.replaceInStrings("\t", " ");
+    btrfsBootRawReport = btrfsBootRawReport.replaceInStrings("\t", " ");
+
+    quint64 btrfsMainRawSize = fieldSeek(btrfsMainRawReport, "Device size:", 2).toULongLong();
+    quint64 btrfsMainRawRemain = fieldSeek(btrfsMainRawReport, "Free (estimated):", 2).toULongLong();
+    quint64 btrfsMainRawUnalloc = fieldSeek(btrfsMainRawReport, "Device unallocated:", 2).toULongLong();
+    double btrfsMainUnalloc = qRound((static_cast<double>(btrfsMainRawUnalloc) / static_cast<double>(btrfsMainRawSize)) * 10000.0) / 100.0;
+    QString btrfsMainStatus = btrfsMainUnalloc >= 15 ? "Good" : "ALERT";
+    QString btrfsMainSize = bytesToGib(btrfsMainRawSize);
+    QString btrfsMainRemain = bytesToGib(btrfsMainRawRemain);
+
+    quint64 btrfsBootRawSize = fieldSeek(btrfsBootRawReport, "Device size:", 2).toULongLong();
+    quint64 btrfsBootRawRemain = fieldSeek(btrfsBootRawReport, "Free (estimated):", 2).toULongLong();
+    quint64 btrfsBootRawUnalloc = fieldSeek(btrfsBootRawReport, "Device unallocated:", 2).toULongLong();
+    double btrfsBootUnalloc = qRound((static_cast<double>(btrfsBootRawUnalloc) / static_cast<double>(btrfsBootRawSize)) * 10000.0) / 100.0;
+    QString btrfsBootStatus = btrfsBootUnalloc >= 15 ? "Good" : "ALERT";
+    QString btrfsBootSize = bytesToGib(btrfsBootRawSize);
+    QString btrfsBootRemain = bytesToGib(btrfsBootRawRemain);
+
+    m_mainFsInfo->clear();
+    m_mainFsInfo->insert(QMap<QString, QString>({
+        { "status", btrfsMainStatus },
+        { "size", QString(btrfsMainSize) },
+        { "remain", QString(btrfsMainRemain) },
+        { "unalloc", QString::number(btrfsMainUnalloc) + "%" }
+    }));
+    m_bootFsInfo->clear();
+    m_bootFsInfo->insert(QMap<QString, QString>({
+        { "status", btrfsBootStatus },
+        { "size", QString(btrfsBootSize) },
+        { "remain", QString(btrfsBootRemain) },
+        { "unalloc", QString::number(btrfsBootUnalloc) + "%" }
+    }));
+
+    // Get automatic snapshot state
+    execEngine.execSync(m_rollbackSetExe + " getBtrfsStatus");
+    QString btrfsStatus = execEngine.stdout().trimmed();
+    if (btrfsStatus == "SUPPORTED, MANUAL") {
+        m_automaticSnapshotsEnabled = false;
+    } else if (btrfsStatus == "SUPPORTED, AUTO") {
+        m_automaticSnapshotsEnabled = true;
+    } else {
+        qCritical() << "BTRFS status neither manual nor auto!";
+    }
+
+    emit automaticSnapshotsEnabledChanged();
+    emit systemDataLoaded();
 }

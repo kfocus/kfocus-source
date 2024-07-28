@@ -19,6 +19,8 @@ set(PROJECT_SOURCES
         backendengine.cpp
         shellengine.h
         backendengine.h
+        windoweventfilter.h
+        windoweventfilter.cpp
 )
 
 add_executable(kfocus-rollback-bin

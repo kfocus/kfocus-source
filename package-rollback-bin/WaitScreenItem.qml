@@ -4,7 +4,8 @@ import QtQuick.Controls 2.15 as Controls
 import org.kde.kirigami 2.20 as Kirigami
 
 ColumnLayout {
-    property string headerText: ''
+    property string headerText  : ''
+    property string description : ''
 
     anchors {
         right        : parent.right
@@ -28,9 +29,16 @@ ColumnLayout {
     }
 
     Kirigami.Heading {
-        Layout.alignment : Qt.AlignHCenter | Qt.AlignTop
-        text             : headerText
-        level            : 1
+        Layout.alignment    : Qt.AlignHCenter | Qt.AlignTop
+        Layout.bottomMargin : Kirigami.Units.gridUnit * 0.5
+        text                : headerText
+        level               : 1
+    }
+
+    Controls.Label {
+        Layout.fillWidth : true
+        text             : description
+        wrapMode         : Text.WordWrap
     }
 
     Item {

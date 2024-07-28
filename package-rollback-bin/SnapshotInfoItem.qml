@@ -95,10 +95,10 @@ RowLayout {
             text                : name
             font.family         : 'courier'
             readOnly            : !editing
-            color               : Kirigami.Theme.textColor
+            color               : editing ? Kirigami.Theme.textColor : Kirigami.Theme.disabledTextColor
             placeholderText     : reason
             background          : Rectangle {
-                color: editing ? Kirigami.Theme.backgroundColor : Kirigami.Theme.activeBackgroundColor
+                color: editing ? Kirigami.Theme.backgroundColor : Kirigami.Theme.alternateBackgroundColor
                 border.color: editing ? Kirigami.Theme.highlightColor : Kirigami.Theme.activeBackgroundColor
                 border.width: 1
                 radius: Kirigami.Units.gridUnit * 0.125
@@ -121,9 +121,9 @@ RowLayout {
             font.family         : 'courier'
             wrapMode            : Text.WordWrap
             readOnly            : !editing
-            color               : Kirigami.Theme.textColor
+            color               : editing ? Kirigami.Theme.textColor : Kirigami.Theme.disabledTextColor
             background          : Rectangle {
-                color: editing ? Kirigami.Theme.backgroundColor : Kirigami.Theme.activeBackgroundColor
+                color: editing ? Kirigami.Theme.backgroundColor : Kirigami.Theme.alternateBackgroundColor
                 border.color: editing ? Kirigami.Theme.highlightColor : Kirigami.Theme.activeBackgroundColor
                 border.width: 1
                 radius: Kirigami.Units.gridUnit * 0.125
