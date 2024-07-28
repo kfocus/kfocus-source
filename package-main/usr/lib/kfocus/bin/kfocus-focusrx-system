@@ -97,13 +97,13 @@ _manageSnapshotsOnBootFn () {
   _title='Manage Snapshots On Boot';
 
   _cm2SetMsgFn "${_title}";
-  if [ -z "${_rollbackSetExe}" ] || [ -z "${_btrfsExe}" ]; then
+  if [ -z "${_rollbackBackendExe}" ] || [ -z "${_btrfsExe}" ]; then
     _cm2WarnStrFn 'Required utils not available';
     _cm2WarnFn;
     return 1;
   fi
 
-  _btrfs_status="$("${_rollbackSetExe}" 'getBtrfsStatus')";
+  _btrfs_status="$("${_rollbackBackendExe}" 'getBtrfsStatus')";
   if [ "${_btrfs_status}" != 'SUPPORTED, AUTO' ] \
     && [ "${_btrfs_status}" != 'SUPPORTED, MANUAL' ]; then
     _cm2WarnStrFn 'BTRFS not setup';
@@ -111,15 +111,15 @@ _manageSnapshotsOnBootFn () {
     return 1;
   fi
   
-  _main_unalloc="$("${_rollbackSetExe}" 'getMainUnallocSpace')";
-  _main_min_unalloc="$("${_rollbackSetExe}" 'getMainMinUnalloc')";
-  _boot_unalloc="$("${_rollbackSetExe}" 'getBootUnallocSpace')";
-  _boot_min_unalloc="$("${_rollbackSetExe}" 'getBootMinUnalloc')";
+  _main_unalloc="$("${_rollbackBackendExe}" 'getMainUnallocSpace')";
+  _main_min_unalloc="$("${_rollbackBackendExe}" 'getMainMinUnalloc')";
+  _boot_unalloc="$("${_rollbackBackendExe}" 'getBootUnallocSpace')";
+  _boot_min_unalloc="$("${_rollbackBackendExe}" 'getBootMinUnalloc')";
   if (( _main_unalloc > _main_min_unalloc )) \
     && (( _boot_unalloc > _boot_min_unalloc )); then
-    "${_rollbackSetExe}" 'finalizeRestore'        || { _cm2WarnFn; return; };
-    "${_rollbackSetExe}" 'createSnapshot' 'Timed' || { _cm2WarnFn; return; };
-    "${_rollbackSetExe}" 'trimSnapshots'          || { _cm2WarnFn; return; };
+    "${_rollbackBackendExe}" 'finalizeRestore'        || { _cm2WarnFn; return; };
+    "${_rollbackBackendExe}" 'createSnapshot' 'Timed' || { _cm2WarnFn; return; };
+    "${_rollbackBackendExe}" 'trimSnapshots'          || { _cm2WarnFn; return; };
     _cm2SucFn;
   else
     _cm2WarnStrFn 'Main or boot disk space low!';
@@ -137,13 +137,13 @@ _maintainBtrfsFn () {
   _title='Maintain Snapshots';
 
   _cm2SetMsgFn "${_title}";
-  if [ -z "${_rollbackSetExe}" ] || [ -z "${_btrfsExe}" ]; then
+  if [ -z "${_rollbackBackendExe}" ] || [ -z "${_btrfsExe}" ]; then
     _cm2WarnStrFn 'Required utils not available';
     _cm2WarnFn;
     return 1;
   fi
 
-  _btrfs_status="$("${_rollbackSetExe}" 'getBtrfsStatus')";
+  _btrfs_status="$("${_rollbackBackendExe}" 'getBtrfsStatus')";
   if [ "${_btrfs_status}" != 'SUPPORTED, AUTO' ] \
     && [ "${_btrfs_status}" != 'SUPPORTED, MANUAL' ]; then
     _cm2WarnStrFn 'BTRFS not setup';
@@ -151,15 +151,15 @@ _maintainBtrfsFn () {
     return 1;
   fi
 
-  _main_unalloc="$("${_rollbackSetExe}" 'getMainUnallocSpace')";
-  _main_min_unalloc="$("${_rollbackSetExe}" 'getMainMinUnalloc')";
-  _boot_unalloc="$("${_rollbackSetExe}" 'getBootUnallocSpace')";
-  _boot_min_unalloc="$("${_rollbackSetExe}" 'getBootMinUnalloc')";
+  _main_unalloc="$("${_rollbackBackendExe}" 'getMainUnallocSpace')";
+  _main_min_unalloc="$("${_rollbackBackendExe}" 'getMainMinUnalloc')";
+  _boot_unalloc="$("${_rollbackBackendExe}" 'getBootUnallocSpace')";
+  _boot_min_unalloc="$("${_rollbackBackendExe}" 'getBootMinUnalloc')";
   if (( _main_unalloc > _main_min_unalloc )) \
     && (( _boot_unalloc > _boot_min_unalloc )); then
-    "${_rollbackSetExe}" 'createSnapshot' 'Timed' || { _cm2WarnFn; return; };
-    "${_rollbackSetExe}" 'trimSnapshots'          || { _cm2WarnFn; return; };
-    "${_rollbackSetExe}" 'btrfsMaintain'          || { _cm2WarnFn; return; };
+    "${_rollbackBackendExe}" 'createSnapshot' 'Timed' || { _cm2WarnFn; return; };
+    "${_rollbackBackendExe}" 'trimSnapshots'          || { _cm2WarnFn; return; };
+    "${_rollbackBackendExe}" 'btrfsMaintain'          || { _cm2WarnFn; return; };
     _cm2SucFn;
   else
     if (( _main_unalloc <= _main_min_unalloc )); then
@@ -213,7 +213,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _importCommonFn;
   _assignList=(
     "_powerSetExe|${_binDir}/kfocus-power-set||optional"
-    "_rollbackSetExe|${_binDir}/kfocus-rollback-set||optional"
+    "_rollbackBackendExe|${_binDir}/kfocus-rollback-backend||optional"
     '_btrfsExe|/usr/bin/btrfs'
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then

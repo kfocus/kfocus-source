@@ -47,7 +47,7 @@ Kirigami.ApplicationWindow {
     property string compareResultStr         : ''
     property string rollbackStr              : backend.pkexecExe
       + ' '
-      + backend.rollbackSetExe
+      + backend.rollbackBackendExe
       + ' '
 
     // Purpose: Contains list of snapshots and snapshot info

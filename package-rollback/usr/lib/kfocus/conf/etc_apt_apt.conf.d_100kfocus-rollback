@@ -1,1 +1,1 @@
-DPkg::Pre-Invoke { "/usr/lib/kfocus/bin/kfocus-rollback-set createSnapshot Apt"; "/usr/lib/kfocus/bin/kfocus-rollback-set trimSnapshots"; };
+DPkg::Pre-Invoke { "/usr/lib/kfocus/bin/kfocus-rollback-backend createSnapshot Apt"; "/usr/lib/kfocus/bin/kfocus-rollback-backend trimSnapshots"; };

@@ -46,8 +46,8 @@ _purgePkgsFn () {
   "${_cmd_list[@]}";
 
   if [ "${_mode}" = 'optimize' ] \
-    && [ -n "${_rollbackSetExe}" ]; then
-    "${_rollbackSetExe}" 'btrfsDeepClean';
+    && [ -n "${_rollbackBackendExe}" ]; then
+    "${_rollbackBackendExe}" 'btrfsDeepClean';
   fi
 }
 ## . END _purgePkgsFn }
@@ -78,7 +78,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _importCommonFn;
 
   _assignList=(
-    "_rollbackSetExe|${_binDir}/kfocus-rollback-set||optional"
+    "_rollbackBackendExe|${_binDir}/kfocus-rollback-backend||optional"
   );
   if ! _cm2AssignExeVarsFn  "${_assignList[@]}"; then
     _cm2ErrStrFn 'Could not assign variable';

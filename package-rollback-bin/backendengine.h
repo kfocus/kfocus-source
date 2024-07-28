@@ -7,7 +7,7 @@
 class BackendEngine : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(QString rollbackSetExe READ rollbackSetExe NOTIFY rollbackSetExeChanged)
+    Q_PROPERTY(QString rollbackBackendExe READ rollbackBackendExe NOTIFY rollbackBackendExeChanged)
     Q_PROPERTY(QString pkexecExe READ pkexecExe NOTIFY pkexecExeChanged)
     Q_PROPERTY(bool automaticSnapshotsEnabled READ automaticSnapshotsEnabled NOTIFY automaticSnapshotsEnabledChanged)
     Q_PROPERTY(bool inhibitClose READ inhibitClose WRITE setInhibitClose NOTIFY inhibitCloseChanged)
@@ -15,8 +15,8 @@ class BackendEngine : public QObject
 
 public:
     BackendEngine();
-    QString rollbackSetExe();
-    void setRollbackSetExe(QString val);
+    QString rollbackBackendExe();
+    void setRollbackBackendExe(QString val);
     QString pkexecExe();
     void setPkexecExe(QString val);
     bool automaticSnapshotsEnabled();
@@ -36,7 +36,7 @@ public:
     Q_INVOKABLE void refreshSystemData(bool calcSize);
 
 signals:
-    void rollbackSetExeChanged();
+    void rollbackBackendExeChanged();
     void pkexecExeChanged();
     void inhibitCloseChanged();
     void automaticSnapshotsEnabledChanged();
@@ -51,7 +51,7 @@ private:
 
     void loadGlobalInfo();
 
-    static QString m_rollbackSetExe;
+    static QString m_rollbackBackendExe;
     static QString m_pkexecExe;
     static bool m_automaticSnapshotsEnabled;
     static QList<QMap<QString, QString>> *m_snapshotList;

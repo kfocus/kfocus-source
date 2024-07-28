@@ -8,13 +8,13 @@ BackendEngine::BackendEngine()
 
 }
 
-QString BackendEngine::rollbackSetExe() {
-    return m_rollbackSetExe;
+QString BackendEngine::rollbackBackendExe() {
+    return m_rollbackBackendExe;
 }
 
-void BackendEngine::setRollbackSetExe(QString val) {
-    m_rollbackSetExe = val;
-    emit rollbackSetExeChanged();
+void BackendEngine::setRollbackBackendExe(QString val) {
+    m_rollbackBackendExe = val;
+    emit rollbackBackendExeChanged();
 }
 
 QString BackendEngine::pkexecExe() {
@@ -98,7 +98,7 @@ void BackendEngine::refreshSystemData(bool calcSize) {
     m_calcSize = calcSize;
     m_snapshotList->clear();
     ShellEngine *execEngine = new ShellEngine();
-    execEngine->execSync(m_rollbackSetExe + " getSnapshotList");
+    execEngine->execSync(m_rollbackBackendExe + " getSnapshotList");
     m_snapshotIdList = execEngine->stdout().split('\n', Qt::SkipEmptyParts);
     if (m_snapshotIdList.count() == 0) {
         loadGlobalInfo();
@@ -107,9 +107,9 @@ void BackendEngine::refreshSystemData(bool calcSize) {
     m_snapshotIdIdx = 0;
     connect(execEngine, &ShellEngine::appExited, this, &BackendEngine::onSystemDataReady);
     if (m_calcSize) {
-        execEngine->exec(m_rollbackSetExe + " getFullSnapshotMetadata " + m_snapshotIdList.at(0));
+        execEngine->exec(m_rollbackBackendExe + " getFullSnapshotMetadata " + m_snapshotIdList.at(0));
     } else {
-        execEngine->exec(m_rollbackSetExe + " getBaseSnapshotMetadata " + m_snapshotIdList.at(0));
+        execEngine->exec(m_rollbackBackendExe + " getBaseSnapshotMetadata " + m_snapshotIdList.at(0));
     }
 }
 
@@ -147,11 +147,11 @@ void BackendEngine::onSystemDataReady() {
     QString metaSnapshotPinned = snapshotMetadataList.at(2);
     QString metaSnapshotSize = snapshotMetadataList.at(3);
     if (snapshotMetadataList.count() < 4 || snapshotMetadataList.at(0) == "Invalid mode specified.") {
-        qWarning() << "Snapshot metadata unsupported - kfocus-rollback-set too old?";
+        qWarning() << "Snapshot metadata unsupported - kfocus-rollback-backend too old?";
         return;
     }
 
-    execEngine->execSync(m_rollbackSetExe + " getSnapshotReason " + snapshotItem);
+    execEngine->execSync(m_rollbackBackendExe + " getSnapshotReason " + snapshotItem);
     QString snapshotReason = execEngine->stdout().trimmed();
     QString snapshotStateDir = QString("/btrfs_main/@kfocus-rollback-snapshots/" + snapshotItem);
     QString snapshotName = QString(QByteArray::fromBase64(metaSnapshotName.toUtf8()));
@@ -188,9 +188,9 @@ void BackendEngine::onSystemDataReady() {
     if (m_snapshotIdIdx < m_snapshotIdList.count()) {
         connect(execEngine, &ShellEngine::appExited, this, &BackendEngine::onSystemDataReady);
         if (m_calcSize) {
-            execEngine->exec(m_rollbackSetExe + " getFullSnapshotMetadata " + m_snapshotIdList.at(m_snapshotIdIdx));
+            execEngine->exec(m_rollbackBackendExe + " getFullSnapshotMetadata " + m_snapshotIdList.at(m_snapshotIdIdx));
         } else {
-            execEngine->exec(m_rollbackSetExe + " getBaseSnapshotMetadata " + m_snapshotIdList.at(m_snapshotIdIdx));
+            execEngine->exec(m_rollbackBackendExe + " getBaseSnapshotMetadata " + m_snapshotIdList.at(m_snapshotIdIdx));
         }
     } else {
         loadGlobalInfo();
@@ -247,7 +247,7 @@ void BackendEngine::loadGlobalInfo() {
     }));
 
     // Get automatic snapshot state
-    execEngine.execSync(m_rollbackSetExe + " getBtrfsStatus");
+    execEngine.execSync(m_rollbackBackendExe + " getBtrfsStatus");
     QString btrfsStatus = execEngine.stdout().trimmed();
     if (btrfsStatus == "SUPPORTED, MANUAL") {
         m_automaticSnapshotsEnabled = false;

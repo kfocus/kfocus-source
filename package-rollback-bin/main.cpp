@@ -9,7 +9,7 @@
 #include "backendengine.h"
 #include "windoweventfilter.h"
 
-QString BackendEngine::m_rollbackSetExe = "/usr/lib/kfocus/bin/kfocus-rollback-set";
+QString BackendEngine::m_rollbackBackendExe = "/usr/lib/kfocus/bin/kfocus-rollback-backend";
 QString BackendEngine::m_pkexecExe = "/usr/bin/pkexec";
 bool BackendEngine::m_automaticSnapshotsEnabled = false;
 QList<QMap<QString, QString>> *BackendEngine::m_snapshotList = new QList<QMap<QString, QString>>();

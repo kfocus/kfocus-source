@@ -4,15 +4,15 @@
 #
 # Written for the Kubuntu Focus by A. Rainbolt and M. Mikowski
 #
-# Name     : kfocus-rollback-set
-# Summary  : kfocus-rollback-set 'createSnapshot' \
+# Name     : kfocus-rollback-backend
+# Summary  : kfocus-rollback-backend 'createSnapshot' \
 #              <Apt|Timed|Pre-Rollback|(username)>
 #              | restoreSnapshot @<timestamp> | deleteSnapshot @<timestamp>
 #              | labelAptSnapshot | finalizeRestore  | trimSnapshots
 #              | prepareSystem    | getBtrfsStatus
 #              | systemSnapshot
 # Purpose  : Performs snapshot management operations
-# Example  : kfocus-rollback-set restoreSnapshot @1234
+# Example  : kfocus-rollback-backend restoreSnapshot @1234
 # License  : GPLv2
 # Run By   : kfocus-rollback, kfocus-snapshot, system processes
 # Spec     : 4013
@@ -108,9 +108,10 @@ _exitCleanFn () {
   declare _int;
   _int="$(_cm2EchoIntFn "${1:-0}")";
   trap '' EXIT;
-  # If the lock file is deleted after a parallel kfocus-rollback-set process
+  # If the lock file is deleted after a parallel kfocus-rollback-backend process
   # opens it, but before it locks it, this will cause two parallel
-  # kfocus-rollback-set processes to be able to execute, which is very bad.
+  # kfocus-rollback-backend processes to be able to execute, which is very
+  # bad.
   # rm "${_lockFile}" || true;
   exit "${_int}";
 }
@@ -1226,7 +1227,7 @@ declare _binName _binDir _baseName _baseDir _manualSwitchFile \
 _manualSwitchFile='/var/lib/kfocus/rollback_manual_mode';
 _btrfsStatus='';
 _isPreparingSystem='n'; # Flag for error reporting
-_lockFile='/tmp/kfocus-rollback/kfocus-rollback-set.lock';
+_lockFile='/tmp/kfocus-rollback/kfocus-rollback-backend.lock';
 _lockDir='/tmp/kfocus-rollback';
 _snapshotMetaDb='/btrfs_main/kfocus-rollback-snapshot-metadb';
 ## . END Declare and assign global vars }
@@ -1259,7 +1260,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     exit 1;
   fi
 
-  _cm2SetLogTagFn 'kfocus-rollback-set';
+  _cm2SetLogTagFn 'kfocus-rollback-backend';
 
   # Set error messages
   _browStr='<tr><td style="padding:8px 32px 8px 0">';

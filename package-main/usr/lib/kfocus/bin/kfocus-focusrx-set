@@ -305,8 +305,8 @@ _chkHwConfigFn () {
 
   ## BEGIN Detect if kfocus-rollback should be removed {
   #
-  if [ -n "${_rollbackSetExe}" ]; then
-    _btrfs_status="$("${_rollbackSetExe}" 'getBtrfsStatus')";
+  if [ -n "${_rollbackBackendExe}" ]; then
+    _btrfs_status="$("${_rollbackBackendExe}" 'getBtrfsStatus')";
     if [ "${_btrfs_status}" = 'UNSUPPORTED' ] \
       || [ "${_btrfs_status}" = 'INCONSISTENT' ]; then
       _msg='purge-rollback;;';
@@ -362,32 +362,32 @@ _fixHwConfigFn () {
 ## BEGIN _prepareSnapshotFn {
 #
 _prepareSnapshotFn () {
-  [ -z "${_rollbackSetExe}" ] && return;
-  "${_rollbackSetExe}" 'prepareSystem';
+  [ -z "${_rollbackBackendExe}" ] && return;
+  "${_rollbackBackendExe}" 'prepareSystem';
 }
 ## . END _prepareSnapshotFn }
 
 ## BEGIN _chkBtrfsSpaceFn {
 #
 _chkBtrfsSpaceFn () {
-  [ -z "${_rollbackSetExe}" ] && return;
-  "${_rollbackSetExe}" 'checkMainUnallocSpace' || exit;
+  [ -z "${_rollbackBackendExe}" ] && return;
+  "${_rollbackBackendExe}" 'checkMainUnallocSpace' || exit;
 }
 ## . END _chkBtrfsStaceFn }
 
 ## BEGIN _clearRestoreFn {
 #
 _clearRestoreFn () {
-  [ -z "${_rollbackSetExe}" ] && return;
-  "${_rollbackSetExe}" 'clearRestore';
+  [ -z "${_rollbackBackendExe}" ] && return;
+  "${_rollbackBackendExe}" 'clearRestore';
 }
 ## . END _clearRestoreFn }
 
 ## BEGIN _getBtrfsStatusFn {
 #
 _getBtrfsStatusFn () {
-  [ -z "${_rollbackSetExe}" ] && return;
-  "${_rollbackSetExe}" 'getBtrfsStatus';
+  [ -z "${_rollbackBackendExe}" ] && return;
+  "${_rollbackBackendExe}" 'getBtrfsStatus';
 }
 ## . END _getBtrfsStatusFn }
 
@@ -428,7 +428,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   _assignList=(
     "_focusRxVersExe|${_binDir}/kfocus-rx-version"
-    "_rollbackSetExe|${_binDir}/kfocus-rollback-set||optional"
+    "_rollbackBackendExe|${_binDir}/kfocus-rollback-backend||optional"
   );
   if ! _cm2AssignExeVarsFn  "${_assignList[@]}"; then
     _cm2ErrStrFn 'Could not assign variable';

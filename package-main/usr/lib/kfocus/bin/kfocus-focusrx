@@ -313,7 +313,7 @@ _chkBtrfsSetUpFn () {
   declare _title;
 
   # Skip if required tool not installed
-  [ -z "${_rollbackSetExe}" ] && return;
+  [ -z "${_rollbackBackendExe}" ] && return;
 
   _title='Check BTRFS is Set Up';
   _cm2SetMsgFn "${_title}";
@@ -925,7 +925,7 @@ _postRollbackHandlerFn () {
   # Skip if required tools not installed
   [ -z "${_rollbackExe}" ] && return;
 
-  _btrfs_status="$("${_rollbackSetExe}" 'getBtrfsStatus')"
+  _btrfs_status="$("${_rollbackBackendExe}" 'getBtrfsStatus')"
 
   if [ "${_btrfs_status}" == 'SUPPORTED, AUTO' ] \
     || [ "${_btrfs_status}" == 'SUPPORTED, MANUAL' ]; then
@@ -1043,7 +1043,7 @@ declare _parentCmdStr _lookupList \
   _maxNagCount _binName _binDir _baseDir _baseName _escExe \
   _focusRxDropDir _kbdColorSetExe _rootTitle _assignList \
   _focusRxSetExe _focusRxVersExe _btoolExe _firstrunExe \
-  _fixIbusExe _kcleanExe _resetEffectsExe _rollbackSetExe \
+  _fixIbusExe _kcleanExe _resetEffectsExe _rollbackBackendExe \
   _sysVersStr;
 
 _parentCmdStr="$(ps -o comm= $PPID)";
@@ -1078,7 +1078,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     "_kcleanExe|${_binDir}/kfocus-kclean||optional"
     "_resetEffectsExe|${_binDir}/kfocus-reset-effects||optional"
     "_rollbackExe|${_binDir}/kfocus-rollback||optional"
-    "_rollbackSetExe|${_binDir}/kfocus-rollback-set||optional"
+    "_rollbackBackendExe|${_binDir}/kfocus-rollback-backend||optional"
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2ErrStrFn 'Could not assign variables';
