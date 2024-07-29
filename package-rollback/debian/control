@@ -1,20 +1,31 @@
-Source:            kfocus-rollback
-Section:           misc
-Priority:          optional
-Maintainer:        Kubuntu Focus Team <support@kfocus.org>
-Standards-Version: 4.6.0
-Build-Depends:     debhelper-compat (=13),
-                   libext2fs-dev
+Source:              kfocus-rollback
+Section:             misc
+Priority:            optional
+Maintainer:          Kubuntu Focus Team <support@kfocus.org>
+Standards-Version:   4.6.0
+Build-Depends:       cmake,
+                     debhelper-compat (=13),
+                     libext2fs-dev,
+                     qtdeclarative5-dev,
+                     qtbase5-dev,
+                     qtquickcontrols2-5-dev
+Rules-Requires-Root: no
 
 Package:      kfocus-rollback
 Architecture: any
 Depends:      ${misc:Depends}, ${shlibs:Depends},
+              breeze-icon-theme,
               btdu,
               kdialog,
+              kfocus-common,
               kfocus-main,
               kio-admin,
+              pkexec,
+              polkitd,
               python3-btrfs,
+              qml-module-org-kde-kirigami2,
               whiptail
-Description:  Kubuntu Focus Hardware Optimizations
+Recommends:   plasma-welcome
+Description:  Kubuntu Focus System Rollback
  This package provides advanced, user-friendly system snapshotting and
  rollback tools for Kubuntu Focus computers.

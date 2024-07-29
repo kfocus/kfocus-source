@@ -5,4 +5,5 @@
 
 override_dh_auto_build:
 	(cd src/kfocus-report-filefrag && ./build.sh)
+	(cd src/kfocus-rollback-bin && mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX=debian/kfocus-rollback .. && make)
 	dh_auto_build
