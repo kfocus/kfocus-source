@@ -1,0 +1,176 @@
+#!/bin/bash
+#
+# Copyright 2024 MindShare Inc.
+#
+# Written for the Kubuntu Focus by A. Rainbolt and M. Mikowski
+#
+# Name     : kfocus-rollback-set
+# Summary  : kfocus-rollback-set <mode>
+# Purpose  : Run safe snapshot operations as root without requiring
+#            authentication
+# Example  : kfocus-rollback-set listSnapshots
+# License  : GPLv2
+# Run By   : kfocus-rollback, system processes
+# Spec     : 4411
+#
+# shellcheck source=../lib/common.2.source
+#
+set -u;
+
+## BEGIN _loadLibTableFn {
+# Summary : _loadLibTableFn <lib_str1> <lib_str2> ...
+# Example : _loadLibTableFn "lib01:/usr/lib/lib01" "lib02";
+# Purpose :
+#   Import table of libs, one arg per lib.
+#     * Each arg can have alternates delimited by colons ':'
+#     * Fails if all alternates for a lib fails.
+#     * Starting lib string '#:' means the following libs are optional.
+#     * Diagnostics are sent to STDERR.
+#     * Libs without a directory use ${_binDir} as the path
+#
+_loadLibTableFn () {
+  declare _lib_table _lib_list _lib_line _raw_path _lib_file _is_loaded;
+  _lib_table=("$@");
+
+  ## Begin: Iterate over lib lines.
+  for _lib_line in "${_lib_table[@]}"; do
+    # Split line into alternates.
+    #   Note: Echo removes trailing newline.
+    readarray -d: -t _lib_list < <(echo -n "${_lib_line}");
+    _is_loaded='n';
+
+    ## Begin: Iterate over alternates.
+    for _raw_path in "${_lib_list[@]}"; do
+      [ -z "$(dirname "${_raw_path}")" ] \
+        && _lib_file="${_binDir}/${_raw_path}" \
+        || _lib_file="${_raw_path}";
+
+      # shellcheck disable=SC1090
+      if ! [ -r "${_lib_file}" ]; then
+        _stderrFn "warn: source |${_lib_file}| not readable.";
+      elif source "${_lib_file}"; then
+        _is_loaded='y';
+        break;
+      else
+        _stderrFn "${_baseName} Error: source |${_lib_file}| is non-zero.";
+        return 1;
+      fi
+    done
+    ## . End: Iterate over alternates.
+
+    if [ "${_is_loaded}" != 'y' ]; then
+      _stderrFn "${_baseName} error: no lib loaded";
+      return 1;
+    fi
+  done
+  ## . End: Iterate over lib lines.
+
+  return;
+}
+## . END _loadLibTableFn }
+
+## BEGIN _dispatchFn {
+_dispatchFn () {
+  declare _mode_str _arg_str;
+  
+  _mode_str="${1:-}";
+  _arg_str="${2:-}";
+
+  if [ -n "${_arg_str}" ]; then
+    if ! grep -q '@[0-9]\+' <<< "${_arg_str}"; then
+      _cm2WarnStrFn 'Argument passed to command is not a snapshot ID!';
+      exit 1;
+    fi
+  fi
+
+  case "${_mode_str}" in
+    'getBaseSnapshotMetadata')
+      "${_rollbackBackendExe}" "${_mode_str}" "${_arg_str}";;
+    'getFullSnapshotMetadata')
+      "${_rollbackBackendExe}" "${_mode_str}" "${_arg_str}";;
+    'getSnapshotReason')
+      "${_rollbackBackendExe}" "${_mode_str}" "${_arg_str}";;
+    'makeSnapshotDispId')
+      "${_rollbackBackendExe}" "${_mode_str}" "${_arg_str}";;
+    *)
+      "${_rollbackBackendExe}" "${_mode_str}";;
+  esac
+}
+## . END _dispatchFn }
+
+## BEGIN _mainFn {
+_mainFn () {
+  declare _mode_str;
+
+  _mode_str="${1:-}";
+  shift;
+
+  # This is a limited subset of functions that kfocus-rollback-set offers that
+  # are safe for any user to run as root. Features omitted include (but are
+  # not limited to):
+  #
+  # btrfsDeepClean
+  # btrfsMaintain
+  # clearRestore
+  # createSnapshot
+  # deleteSnapshot
+  # finalizeRestore
+  # prepareSystem
+  # restoreSnapshot
+  # setManualSwitchState
+  # setSnapshotMetadata
+  # systemSnapshot
+  # trimSnapshots
+
+  case "${_mode_str}" in
+    'checkBootUnallocSpace')   _dispatchFn 'checkBootUnallocSpace';;
+    'checkMainUnallocSpace')   _dispatchFn 'checkMainUnallocSpace';;
+    'getBaseSnapshotMetadata') _dispatchFn 'getBaseSnapshotMetadata' "${1}";;
+    'getBootMinUnalloc')       _dispatchFn 'getBootMinUnalloc';;
+    'getBootUnallocSpace')     _dispatchFn 'getBootUnallocSpace';;
+    'getBtrfsStatus')          _dispatchFn 'getBtrfsStatus';;
+    'getFullSnapshotMetadata') _dispatchFn 'getFullSnapshotMetadata' "${1}";;
+    'getMainMinUnalloc')       _dispatchFn 'getMainMinUnalloc';;
+    'getMainUnallocSpace')     _dispatchFn 'getMainUnallocSpace';;
+    'getManualSwitchState')    _dispatchFn 'getManualSwitchState';;
+    'getSnapshotList')         _dispatchFn 'getSnapshotList';;
+    'getSnapshotReason')       _dispatchFn 'getSnapshotReason'       "${1}";;
+    'makeSnapshotDispId')      _dispatchFn 'makeSnapshotDispId'      "${1}";;
+    *)
+      _cm2WarnStrFn 'Invalid mode specified.';
+      exit 1;
+      ;;
+  esac
+}
+## . END _mainFn }
+
+## BEGIN Declare and assign global vars {
+declare _binName _binDir _baseName _baseDir;
+## . END Declare and assign global vars }
+
+## BEGIN Run mainFn when script is NOT sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+
+  # Import libs and assign more global vars
+  _libTable=(
+    "${_baseDir}/lib/common.2.source"
+    "${_baseDir}/lib/rollback.2.source"
+  );
+  _loadLibTableFn "${_libTable[@]}" || exit 1;
+
+  _assignList=(
+    "_rollbackBackendExe|${_binDir}/kfocus-rollback-backend"
+  );
+
+  if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
+    _cm2ErrStrFn 'Could not assign variables';
+    exit 1;
+  fi
+
+  _mainFn "$@";
+fi
+## . END Run mainFn when script is NOT sourced }

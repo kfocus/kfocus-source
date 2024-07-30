@@ -15,6 +15,7 @@ RowLayout {
 
     // Private
     property bool oldPinned     : pinned
+    property var  focusedBox    : undefined
 
     signal saved()
     signal cancelled()
@@ -97,9 +98,25 @@ RowLayout {
             readOnly            : !editing
             color               : editing ? Kirigami.Theme.textColor : Kirigami.Theme.disabledTextColor
             placeholderText     : reason
+
+            onActiveFocusChanged: {
+                if (activeFocus) {
+                    focusedBox = this;
+                }
+            }
             background          : Rectangle {
-                color: editing ? Kirigami.Theme.backgroundColor : Kirigami.Theme.alternateBackgroundColor
-                border.color: editing ? Kirigami.Theme.highlightColor : Kirigami.Theme.activeBackgroundColor
+                id: nameFieldBackground
+                color: editing
+                  ? Kirigami.Theme.backgroundColor
+                  : Kirigami.Theme.alternateBackgroundColor
+                border.color: {
+                    if (editing) {
+                        if (focusedBox === nameField) {
+                            return Kirigami.Theme.highlightColor
+                        }
+                    }
+                    return Kirigami.Theme.activeBackgroundColor
+                }
                 border.width: 1
                 radius: Kirigami.Units.gridUnit * 0.125
             }
@@ -114,19 +131,41 @@ RowLayout {
 
             placeholderText     : '<p><i>Press the "Edit" button to:</i></p>'
               + '<br>'
-              + '<p><ul><li><i>Rename the Snapshot</i></li>'
-              + '<li><i>Change this description</i></li>'
-              + '<li><i>Pin the Snapshot</i></li></ul></p>'
+              + '<p><i>* Rename the Snapshot</i><br>'
+              + '<i>* Change this description</i><br>'
+              + '<i>* Pin the Snapshot</i></p>'
             text                : description
             font.family         : 'courier'
             wrapMode            : Text.WordWrap
             readOnly            : !editing
-            color               : editing ? Kirigami.Theme.textColor : Kirigami.Theme.disabledTextColor
+            color               : editing
+              ? Kirigami.Theme.textColor
+              : Kirigami.Theme.disabledTextColor
+
+            activeFocusOnPress  : true
+            activeFocusOnTab    : true
+            onActiveFocusChanged: {
+                if (activeFocus) {
+                    focusedBox = this;
+                }
+            }
+
             background          : Rectangle {
-                color: editing ? Kirigami.Theme.backgroundColor : Kirigami.Theme.alternateBackgroundColor
-                border.color: editing ? Kirigami.Theme.highlightColor : Kirigami.Theme.activeBackgroundColor
-                border.width: 1
-                radius: Kirigami.Units.gridUnit * 0.125
+                id           : descFieldBackground
+                color        : editing
+                  ? Kirigami.Theme.backgroundColor
+                  : Kirigami.Theme.alternateBackgroundColor
+                border.color : {
+                    if (editing) {
+                        if (focusedBox === descField) {
+                            return Kirigami.Theme.highlightColor
+                        }
+                    }
+                    return Kirigami.Theme.activeBackgroundColor
+                }
+
+                border.width : 1
+                radius       : Kirigami.Units.gridUnit * 0.125
             }
         }
 

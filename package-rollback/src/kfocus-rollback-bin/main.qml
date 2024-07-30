@@ -202,6 +202,8 @@ Kirigami.ApplicationWindow {
         id : waitPage
 
         Controls.BusyIndicator {
+            id: waitPageSpinner
+
             anchors {
                 horizontalCenter: parent.horizontalCenter
                 verticalCenter: parent.verticalCenter
@@ -209,6 +211,57 @@ Kirigami.ApplicationWindow {
 
             width: Kirigami.Units.gridUnit * 6
             height: Kirigami.Units.gridUnit * 6
+        }
+
+        Item {
+            anchors {
+                top: waitPageSpinner.bottom
+                bottom: parent.bottom
+                horizontalCenter: parent.horizontalCenter
+            }
+
+            Controls.Label {
+                id: waitPageWarningLabel
+                anchors {
+                    verticalCenter: parent.verticalCenter
+                    horizontalCenter: parent.horizontalCenter
+                }
+
+                visible: false
+                width: Kirigami.Units.gridUnit * 14
+                verticalAlignment: Qt.AlignVCenter
+                wrapMode: Text.WordWrap
+
+                background: Rectangle {
+                    anchors {
+                        verticalCenter: parent.verticalCenter
+                        horizontalCenter: parent.horizontalCenter
+                    }
+
+                    width: parent.width + Kirigami.Units.gridUnit * 1.5
+                    height: parent.height + Kirigami.Units.gridUnit * 1
+                    color: Kirigami.Theme.neutralBackgroundColor
+                    border.width: 2
+                    border.color: Kirigami.Theme.neutralTextColor
+                    radius: Kirigami.Units.gridUnit * 0.5
+                }
+            }
+        }
+
+        Timer {
+            interval: 5000
+            running: true
+            repeat: false
+            onTriggered: {
+                if (backend.isBackgroundRollbackRunning()) {
+                    waitPageWarningLabel.text
+                      = 'Waiting for background processes to complete. Please wait, this may take five minutes or more...';
+                } else {
+                    waitPageWarningLabel.text
+                      = 'Loading snapshot data is taking longer than expected. You may need to reboot your system.';
+                }
+                waitPageWarningLabel.visible = true;
+            }
         }
     }
 
@@ -233,12 +286,14 @@ Kirigami.ApplicationWindow {
 
                         Controls.Button {
                             Layout.preferredWidth  : Kirigami.Units.gridUnit
-                              * 1.2
+                              * 1.3
                             Layout.preferredHeight : Kirigami.Units.gridUnit
-                              * 1.2
+                              * 1.3
                             Layout.leftMargin      : Kirigami.Units.gridUnit
                               * 0.2
-                            icon.name              : 'documentinfo'
+                            icon.name              : 'help-contextual'
+                            icon.width             : Kirigami.Units.gridUnit
+                            icon.height            : Kirigami.Units.gridUnit
                             enabled                : !uiLocked
                             onClicked              : {
                                 showWindowFn( globalHelpWindowComponent )
@@ -303,6 +358,12 @@ Kirigami.ApplicationWindow {
                               - Kirigami.Units.gridUnit * 0.35
                             Layout.alignment      : Qt.AlignRight
                             enabled               : !uiLocked
+                            palette {
+                                button: backend.mainSpaceLow
+                                  ? Kirigami.Theme.negativeBackgroundColor
+                                  : Kirigami.Theme.backgroundColor
+                            }
+
                             onClicked             : calculateSnapshotSizesFn();
                         }
 
@@ -310,7 +371,7 @@ Kirigami.ApplicationWindow {
                             text                  : 'Create New Snapshot'
                             icon.name             : 'document-new'
                             Layout.preferredWidth : (mainPage.width / 4)
-                              - Kirigami.Units.gridUnit * 0.35
+                              - Kirigami.Units.gridUnit * 0.36
                             Layout.alignment      : Qt.AlignLeft
                             enabled               : !uiLocked
                             onClicked             : {
@@ -327,7 +388,7 @@ Kirigami.ApplicationWindow {
                             text                  : 'Optimize Disk'
                             icon.name             : 'edit-clear-all'
                             Layout.preferredWidth : (mainPage.width / 4)
-                              - Kirigami.Units.gridUnit * 0.35
+                              - Kirigami.Units.gridUnit * 0.36
                             Layout.alignment      : Qt.AlignRight
                             enabled               : !uiLocked;
                             onClicked             : {
@@ -366,12 +427,14 @@ Kirigami.ApplicationWindow {
 
                         Controls.Button {
                             Layout.preferredWidth  : Kirigami.Units.gridUnit
-                              * 1.2
+                              * 1.3
                             Layout.preferredHeight : Kirigami.Units.gridUnit
-                              * 1.2
+                              * 1.3
                             Layout.leftMargin      : Kirigami.Units.gridUnit
                               * 0.2
                             icon.name              : "help-contextual"
+                            icon.width             : Kirigami.Units.gridUnit
+                            icon.height            : Kirigami.Units.gridUnit
                             enabled                : !uiLocked
                             onClicked              : {
                                 showWindowFn(
@@ -553,10 +616,12 @@ Kirigami.ApplicationWindow {
                         rightMargin    : Kirigami.Units.gridUnit * 0.25
                     }
 
-                    width     : Kirigami.Units.gridUnit * 1.2
-                    height    : Kirigami.Units.gridUnit * 1.2
-                    icon.name : "help-contextual"
-                    onClicked : showWindowFn( snapshotsHelpWindowComponent )
+                    width       : Kirigami.Units.gridUnit * 1.3
+                    height      : Kirigami.Units.gridUnit * 1.3
+                    icon.name   : "help-contextual"
+                    icon.width  : Kirigami.Units.gridUnit
+                    icon.height : Kirigami.Units.gridUnit
+                    onClicked   : showWindowFn( snapshotsHelpWindowComponent )
 
                     HoverHandler {
                         cursorShape: Qt.PointingHandCursor
@@ -724,6 +789,12 @@ Kirigami.ApplicationWindow {
                     }
                 }
 
+                WaitScreenItem {
+                    id         : createSnapshotWaitView
+                    visible    : false
+                    headerText : 'Creating new snapshot...'
+                }
+
                 ErrorScreenItem {
                     id          : createSnapshotErrorView
                     visible     : false
@@ -780,8 +851,9 @@ Kirigami.ApplicationWindow {
                     id          : optimizeDiskWaitView
                     visible     : false
                     headerText  : 'Optimizing Boot Disk...'
-                    description : 'This may take several minutes. Do not'
-                      + ' close the window until the process is complete.'
+                    description : 'This may take several minutes. '
+                      + 'You may continue to use your system in the mean '
+                      + 'time.'
                 }
 
                 WaitScreenItem {
@@ -816,6 +888,12 @@ Kirigami.ApplicationWindow {
                     onCancelled   : {
                         switchViewFn( deleteSnapshotView, snapshotView );
                     }
+                }
+
+                WaitScreenItem {
+                    id         : deleteSnapshotWaitView
+                    visible    : false
+                    headerText : 'Deleting snapshot...'
                 }
 
                 ErrorSnapshotActionItem {
@@ -895,7 +973,15 @@ Kirigami.ApplicationWindow {
                     id          : compareSnapshotWaitView
                     visible     : false
                     headerText  : 'Comparing snapshots...'
-                    description : 'This may take several minutes.'
+                    description : 'All data in the selected snapshots '
+                      + 'is being compared. This may take five minutes or '
+                      + 'more.'
+                }
+
+                WaitScreenItem {
+                    id         : saveEditsWaitView
+                    visible    : false
+                    headerText : 'Saving edits...'
                 }
             }
         }
@@ -906,7 +992,7 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id          : createSnapshotEngine
         onAppExited : {
-            sysRefreshSourceView = createSnapshotView
+            sysRefreshSourceView = createSnapshotWaitView
             if ( exitCode === 0 || exitCode === 127 ) {
                 sysRefreshTargetView = snapshotView;
             } else if ( exitCode === 1 ) {
@@ -944,7 +1030,7 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id          : deleteSnapshotEngine
         onAppExited : {
-            sysRefreshSourceView = deleteSnapshotView;
+            sysRefreshSourceView = deleteSnapshotWaitView;
             if ( exitCode === 0 || exitCode === 127 ) {
                 sysRefreshTargetView = snapshotView;
             } else if ( exitCode === 1 ) {
@@ -1004,6 +1090,7 @@ Kirigami.ApplicationWindow {
             snapshotView.saving = false;
             snapshotView.editing = false;
             backend.inhibitClose = false;
+            switchViewFn( saveEditsWaitView, snapshotView );
         }
     }
 
@@ -1075,6 +1162,7 @@ Kirigami.ApplicationWindow {
         createSnapshotEngine.exec(
           rollbackStr + 'createSnapshot "$(id -nu)"'
         );
+        switchViewFn( createSnapshotView, createSnapshotWaitView )
     }
 
     function optimizeDiskFn() {
@@ -1115,6 +1203,7 @@ Kirigami.ApplicationWindow {
             + 'deleteSnapshot '
             + snapshotModel.get(snapshot_idx).id
         );
+        switchViewFn( deleteSnapshotView, deleteSnapshotWaitView )
     }
 
     function prepRestoreSnapshotFn( snapshot_idx ) {
@@ -1158,6 +1247,7 @@ Kirigami.ApplicationWindow {
               : 'n')
             + '"'
         );
+        switchViewFn( snapshotView, saveEditsWaitView )
     }
 
     function restoreSnapshotViewBindingsFn() {

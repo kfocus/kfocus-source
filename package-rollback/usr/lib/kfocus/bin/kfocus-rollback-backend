@@ -5,18 +5,12 @@
 # Written for the Kubuntu Focus by A. Rainbolt and M. Mikowski
 #
 # Name     : kfocus-rollback-backend
-# Summary  : kfocus-rollback-backend 'createSnapshot' \
-#              <Apt|Timed|Pre-Rollback|(username)>
-#              | restoreSnapshot @<timestamp> | deleteSnapshot @<timestamp>
-#              | labelAptSnapshot | finalizeRestore  | trimSnapshots
-#              | prepareSystem    | getBtrfsStatus
-#              | systemSnapshot
+# Summary  : kfocus-rollback-backend <mode> [<args...>]
 # Purpose  : Performs snapshot management operations
 # Example  : kfocus-rollback-backend restoreSnapshot @1234
 # License  : GPLv2
-# Run By   : kfocus-rollback, kfocus-snapshot, system processes
+# Run By   : kfocus-rollback, system processes
 # Spec     : 4013
-# Note     : WORK IN PROGRESS, DO NOT USE IN PRODUCTION
 #
 # shellcheck source=../lib/common.2.source
 # shellcheck source=../lib/rollback.2.source
@@ -908,6 +902,8 @@ _getSnapshotMetadataFn () {
       --key "${_item}";
   done
 
+  _getSnapshotReasonFn "${_snapshot_id}";
+
   if [ "${_mode}" = 'full' ]; then
     "${_btrfsExe}" 'filesystem' 'du' '--raw' '-s' \
       "${_rb2MainSnapshotDir}/${_snapshot_id}" \
@@ -1185,21 +1181,21 @@ _mainFn () {
   case "${_mode_str}" in
     'btrfsDeepClean')          _btrfsDeepCleanFn;;
     'btrfsMaintain')           _btrfsMaintainFn;;
-    'checkMainUnallocSpace')   _checkMainUnallocSpaceFn;;
     'checkBootUnallocSpace')   _checkBootUnallocSpaceFn;;
+    'checkMainUnallocSpace')   _checkMainUnallocSpaceFn;;
     'clearRestore')            _clearRestoreFn;;
     'createSnapshot')          _createSnapshotFn       "${1:-}";;
     'deleteSnapshot')          _deleteSnapshotFn       "${1:-}";;
     'finalizeRestore')         _finalizeRestoreFn;;
+    'getBaseSnapshotMetadata') _getSnapshotMetadataFn  "${1:-}"   'base';;
     'getBootMinUnalloc')       _getBootMinUnallocFn;;
     'getBootUnallocSpace')     _getBootUnallocSpaceFn;;
     'getBtrfsStatus')          echo "${_btrfsStatus}";;
-    'getManualSwitchState')    _getManualSwitchStateFn;;
+    'getFullSnapshotMetadata') _getSnapshotMetadataFn  "${1:-}"   'full';;
     'getMainMinUnalloc')       _getMainMinUnallocFn;;
     'getMainUnallocSpace')     _getMainUnallocSpaceFn;;
+    'getManualSwitchState')    _getManualSwitchStateFn;;
     'getSnapshotList')         _getSnapshotListStrFn;;
-    'getBaseSnapshotMetadata') _getSnapshotMetadataFn  "${1:-}"   'base';;
-    'getFullSnapshotMetadata') _getSnapshotMetadataFn  "${1:-}"   'full';;
     'getSnapshotReason')       _getSnapshotReasonFn    "${1:-}";;
     'makeSnapshotDispId')      _makeSnapshotDispIdFn   "${1:-}";;
     'prepareSystem')           _prepareSystemFn;;
@@ -1208,6 +1204,7 @@ _mainFn () {
     'setSnapshotMetadata')     _setSnapshotMetadataFn  "$@";;
     'systemSnapshot')          _systemSnapshotFn       "${1:-}";;
     'trimSnapshots')           _trimSnapshotsFn;;
+    'hang') while true; do sleep 1000; done;;
     *)
       _exitERR 'Invalid mode specified.';
       ;;

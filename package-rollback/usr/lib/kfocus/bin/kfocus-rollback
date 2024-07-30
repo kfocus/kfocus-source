@@ -820,11 +820,6 @@ _mainFn () {
     _disk_usage_line2_str _main_unalloc _main_min_unalloc _boot_unalloc \
     _boot_min_unalloc _manual_onoff _auto_onoff;
 
-  if [ "${_cm2IsTty}" = 'n' ]; then
-    "${_rollbackBinExe}";
-    exit 0;
-  fi
-
   _arg_str="${1:-}";
   _btrfs_status_str="$(_getBtrfsStatusFn)";
 
@@ -872,6 +867,13 @@ _mainFn () {
     exit "${_rb2NOTICE}";
   fi
   ## . END handle after-restore action }
+  
+  ## BEGIN Chain to dashboard if GUI available {
+  if [ "${_cm2IsTty}" = 'n' ]; then
+    "${_rollbackBinExe}";
+    exit 0;
+  fi
+  ## . END Chain to dashboard if GUI available }
 
   # Create main menu selector
   _mode_str="$(
