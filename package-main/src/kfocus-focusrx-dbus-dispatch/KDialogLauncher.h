@@ -4,9 +4,6 @@
 #include <QObject>
 #include <QDBusAbstractAdaptor>
 #include <QDBusVariant>
-#include <QMap>
-
-//#include "ProcessContainer.h"
 
 class QProcess;
 

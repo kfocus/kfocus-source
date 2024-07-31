@@ -4,7 +4,6 @@
 #include <QIcon>
 #include <QMap>
 #include <QList>
-#include <QDateTime>
 #include "shellengine.h"
 #include "backendengine.h"
 #include "windoweventfilter.h"
@@ -21,6 +20,7 @@ QStringList BackendEngine::m_snapshotIdList = QStringList();
 int BackendEngine::m_snapshotIdIdx = 0;
 bool BackendEngine::m_calcSize = false;
 bool BackendEngine::m_mainSpaceLow = false;
+bool BackendEngine::m_updateInProgress = false;
 
 int main(int argc, char *argv[])
 {
@@ -53,6 +53,7 @@ int main(int argc, char *argv[])
         },
         Qt::QueuedConnection);
     engine.load(url);
+    // The event filter allows inhibiting window close
     engine.rootObjects().at(0)->installEventFilter(eventFilter);
 
     return app.exec();

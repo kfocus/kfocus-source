@@ -41,10 +41,10 @@ QProcess *ShellEngine::execCore(QString args, QString stdinFeed) {
 }
 
 void ShellEngine::triggerExited() {
-    QProcess *proc = ((QProcess *)sender());
+    QProcess *proc = static_cast<QProcess *>(sender());
     m_stdout = extractStdout(proc);
-    sender()->deleteLater();
-    emit appExited(proc == lastProcess, proc->exitCode());
+    proc->deleteLater();
+    appExited(proc == lastProcess, proc->exitCode());
 }
 
 QString ShellEngine::extractStdout(QProcess *proc) {

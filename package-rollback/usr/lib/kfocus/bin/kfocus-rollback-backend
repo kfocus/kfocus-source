@@ -102,8 +102,8 @@ _exitCleanFn () {
   declare _int;
   _int="$(_cm2EchoIntFn "${1:-0}")";
   trap '' EXIT;
-  # If the lock file is deleted after a parallel kfocus-rollback-backend process
-  # opens it, but before it locks it, this will cause two parallel
+  # If the lock file is deleted after a parallel kfocus-rollback-backend
+  # process opens it, but before it locks it, this will cause two parallel
   # kfocus-rollback-backend processes to be able to execute, which is very
   # bad.
   # rm "${_lockFile}" || true;
@@ -637,7 +637,6 @@ _trimSnapshotsFn () {
 
   # Remove holes left by unset
   _main_snapshot_list=( "${_main_snapshot_list[@]}" );
-  _cm2EchoFn "${_main_snapshot_list[@]}";
 
   if [ "${#_main_snapshot_list[@]}" -gt '5' ]; then
     _snapshot_remove_count=$((${#_main_snapshot_list[@]} - 5));
@@ -748,7 +747,6 @@ _getSnapshotReasonFn () {
     return 1;
   fi
 
-  _snapshot_reason_raw="$(cat "${_snapshot_reason_file}")";
   _snapshot_reason_raw="$(cat "${_snapshot_reason_file}")";
   case "${_snapshot_reason_raw}" in
     'Apt')
@@ -891,7 +889,7 @@ _getSnapshotMetadataFn () {
   _mode="${2:-}";
   [ -z "${_snapshot_id}" ] && _exitERR 'No snapshot ID provided!';
   [ "${_mode}" != 'base' ] && [ "${_mode}" != 'full' ] \
-    && _exitERR 'No mode provided!';
+    && _exitERR 'No mode or invalid mode provided!';
   [ -d "${_rb2MainSnapshotDir}/${_snapshot_id}" ] \
     || _exitERR 'The specified snapshot does not exist!'
 
@@ -925,8 +923,6 @@ _setSnapshotMetadataFn () {
   _is_pinned="${4:-}";
 
   [ -z "${_snapshot_id}" ] && _exitERR 'No snapshot ID provided!';
-#  [ -z "${_name_str}" ] && _exitERR 'No name data provided!';
-#  [ -z "${_desc_str}" ] && _exitERR 'No description data provided!';
   [ -z "${_is_pinned}" ] && _exitERR 'No pinning information provided!';
   [ -d "${_rb2MainSnapshotDir}/${_snapshot_id}" ] \
     || _exitERR 'The specified snapshot does not exist!'
@@ -1204,7 +1200,7 @@ _mainFn () {
     'setSnapshotMetadata')     _setSnapshotMetadataFn  "$@";;
     'systemSnapshot')          _systemSnapshotFn       "${1:-}";;
     'trimSnapshots')           _trimSnapshotsFn;;
-    'hang') while true; do sleep 1000; done;;
+    'hang') while true; do sleep 1000; done;; # TODO: Remove before release
     *)
       _exitERR 'Invalid mode specified.';
       ;;

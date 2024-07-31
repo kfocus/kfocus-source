@@ -367,14 +367,6 @@ _prepareSnapshotFn () {
 }
 ## . END _prepareSnapshotFn }
 
-## BEGIN _chkBtrfsSpaceFn {
-#
-_chkBtrfsSpaceFn () {
-  [ -z "${_rollbackBackendExe}" ] && return;
-  "${_rollbackBackendExe}" 'checkMainUnallocSpace' || exit;
-}
-## . END _chkBtrfsStaceFn }
-
 ## BEGIN _clearRestoreFn {
 #
 _clearRestoreFn () {
@@ -382,14 +374,6 @@ _clearRestoreFn () {
   "${_rollbackBackendExe}" 'clearRestore';
 }
 ## . END _clearRestoreFn }
-
-## BEGIN _getBtrfsStatusFn {
-#
-_getBtrfsStatusFn () {
-  [ -z "${_rollbackBackendExe}" ] && return;
-  "${_rollbackBackendExe}" 'getBtrfsStatus';
-}
-## . END _getBtrfsStatusFn }
 
 ## BEGIN _mainFn {
 _mainFn () {
@@ -401,9 +385,7 @@ _mainFn () {
     'force-hw-config' ) _chkHwConfigFn 'y';;
     'fix-hw-config'   ) _fixHwConfigFn "${2:-}";;
     'prep-snapshot'   ) _prepareSnapshotFn;;
-    'chk-btrfs-space' ) _chkBtrfsSpaceFn;;
     'clear-restore'   ) _clearRestoreFn;;
-    'get-btrfs-status') _getBtrfsStatusFn;;
     *) _cm2WarnStrFn "Unrecognized directive |${_arg_str}|";;
   esac
 }

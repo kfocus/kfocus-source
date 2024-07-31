@@ -14,8 +14,6 @@ find_package(Qt5 COMPONENTS
 add_executable(kfocus-focusrx-dbus-dispatch main.cpp
         KDialogLauncher.cpp
         KDialogLauncher.h)
-#        ProcessContainer.cpp
-#        ProcessContainer.h)
 target_link_libraries(kfocus-focusrx-dbus-dispatch
         Qt5::Core
         Qt5::DBus

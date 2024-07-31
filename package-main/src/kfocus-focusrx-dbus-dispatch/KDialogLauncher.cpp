@@ -49,7 +49,7 @@ void KDialogLauncher::launchDialog(const KDialogType &type, const QString &msg) 
 }
 
 void KDialogLauncher::cleanupDialog() {
-    QProcess *proc = (QProcess *)(QObject::sender());
+    QProcess *proc = static_cast<QProcess *>(QObject::sender());
     KDialogType type;
     int procIdx;
     for (int i = 0;i < m_processList.count();i++) {
@@ -59,8 +59,10 @@ void KDialogLauncher::cleanupDialog() {
             break;
         }
     }
+
     QProcess *subProc = new QProcess();
     bool runSubProc = true;
+
     switch (type) {
         case RollbackLowMainSpace:
             switch (proc->exitCode()) {
@@ -76,6 +78,7 @@ void KDialogLauncher::cleanupDialog() {
                     break;
             }
             break;
+
         case RollbackLowBootSpace:
             switch (proc->exitCode()) {
                 case 0:
@@ -88,14 +91,17 @@ void KDialogLauncher::cleanupDialog() {
                     break;
             }
             break;
+
         default:
             delete subProc;
             runSubProc = false;
     }
+
     if (runSubProc) {
         connect(subProc, SIGNAL(finished(int)), this, SLOT(cleanupSubproc()));
         subProc->start();
     }
+
     m_processList.removeAt(procIdx);
     m_typeList.removeAt(procIdx);
     proc->deleteLater();

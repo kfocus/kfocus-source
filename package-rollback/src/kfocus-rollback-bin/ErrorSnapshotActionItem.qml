@@ -4,12 +4,12 @@ import QtQuick.Controls 2.15 as Controls
 import org.kde.kirigami 2.20 as Kirigami
 
 ColumnLayout {
-    property string startInfoText: ''
-    property string endInfoText: ''
-    property string date: ''
-    property string name: ''
-    property string reason: ''
-    property bool isCritical: false
+    property string startInfoText : ''
+    property string endInfoText   : ''
+    property string date          : ''
+    property string name          : ''
+    property string reason        : ''
+    property bool   isCritical    : false
 
     signal okClicked();
 
@@ -51,10 +51,10 @@ ColumnLayout {
                     source             : reason === 'System Schedule'
                       ? 'clock'
                       : reason === 'Before Package Change'
-                      ? 'system-upgrade'
-                      : reason === 'Pre-Rollback'
-                      ? 'edit-undo'
-                      : 'user'
+                        ? 'system-upgrade'
+                        : reason === 'Pre-Rollback'
+                          ? 'edit-undo'
+                          : 'user'
                 }
                 ColumnLayout {
                     Kirigami.Heading {

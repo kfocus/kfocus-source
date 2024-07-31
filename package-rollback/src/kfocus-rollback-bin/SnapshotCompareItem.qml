@@ -40,12 +40,12 @@ ColumnLayout {
             icon     : reason === 'System Schedule'
               ? 'clock'
               : reason === 'Before Package Change'
-              ? 'system-upgrade'
-              : reason === 'Pre-Rollback'
-              ? 'edit-undo'
-              : reason === 'current'
-              ? 'drive-harddisk-root'
-              : 'user'
+                ? 'system-upgrade'
+                : reason === 'Pre-Rollback'
+                  ? 'edit-undo'
+                  : reason === 'current'
+                    ? 'drive-harddisk-root'
+                    : 'user'
             trailing : Kirigami.Icon {
                 source: pinned ? 'pin' : ''
             }
@@ -78,7 +78,7 @@ ColumnLayout {
         onClicked             : compareClicked()
 
         HoverHandler {
-            cursorShape: Qt.PointingHandCursor
+            cursorShape : Qt.PointingHandCursor
         }
     }
 
@@ -91,7 +91,7 @@ ColumnLayout {
         onClicked             : cancelled()
 
         HoverHandler {
-            cursorShape: Qt.PointingHandCursor
+            cursorShape : Qt.PointingHandCursor
         }
     }
 

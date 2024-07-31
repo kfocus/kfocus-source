@@ -73,6 +73,15 @@ _loadLibTableFn () {
 }
 ## . END _loadLibTableFn }
 
+## BEGIN Rollback backend wrapeprs {
+_rollbackSetFn () {
+  "${_escExe}" "${_rollbackSetExe}" "$@";
+}
+_rollbackBackendFn () {
+  "${_escExe}" "${_rollbackBackendExe}" "$@";
+}
+## . END Rollback backend wrappers }
+
 _assignGlobalUiVarsFn () {
   declare _bold_str _brow_lp_str _brow_rp_str _center_header_str \
     _code_str _erow_str _left_header_str _table_str;
@@ -663,7 +672,7 @@ _chooseSnapshotFn () {
     return 1;
   fi
 
-  _snapshot_list_str="$("${_rollbackBackendExe}" 'getSnapshotList')";
+  _snapshot_list_str="$(_rollbackSetFn 'getSnapshotList')";
   readarray -t _snapshot_list <<< "${_snapshot_list_str}";
   _snapshot_disp_list=();
   _radio_list=();
@@ -671,7 +680,7 @@ _chooseSnapshotFn () {
   for (( _snapshot_idx=0; _snapshot_idx < ${#_snapshot_list[@]}; \
     _snapshot_idx++ )); do
     _snapshot_disp_list[_snapshot_idx]="$(
-      "${_rollbackBackendExe}" 'makeSnapshotDispId' \
+      _rollbackSetFn 'makeSnapshotDispId' \
         "${_snapshot_list[_snapshot_idx]}";
     )";
     _radio_list+=( "${_snapshot_idx}" \
@@ -731,9 +740,10 @@ _handleOperationExitIntFn () {
       ;;
     'create')
       if [ "${_exit_int}" = "${_rb2NOTICE}" ]; then
-        _snapshot_id="$("${_rollbackBackendExe}" 'getSnapshotList' | head -n1)";
+        _snapshot_id="$(_rollbackSetFn 'getSnapshotList' \
+          | head -n1)";
         _snapshot_disp_id="$(
-          "$_rollbackBackendExe" 'makeSnapshotDispId' "${_snapshot_id}"
+          _rollbackSetFn 'makeSnapshotDispId' "${_snapshot_id}"
         )";
         _snapshotCreatedMsg="${_snapshotCreatedMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
         _cm2PromptUserFn "${_snapshotCreatedMsg}" "${_winTitle}";
@@ -793,7 +803,7 @@ _handleOperationExitIntFn () {
 _getBtrfsStatusFn () {
   declare _btrfs_status_str _exit_int;
 
-  _btrfs_status_str="$("${_rollbackBackendExe}" 'getBtrfsStatus')";
+  _btrfs_status_str="$(_rollbackSetFn 'getBtrfsStatus')";
   _exit_int="$?";
 
   # Override false positive due to complex exit code handling
@@ -855,7 +865,8 @@ _mainFn () {
   if [ "${_arg_str}" = 'afterRestore' ]; then
     # Refresh desktop database after restore
     [ -n "${_kbuildSyCoca5Exe}" ] && "${_kbuildSyCoca5Exe}";
-    _snapshot_id="$("${_rollbackBackendExe}" 'getSnapshotList' | head -n1)";
+    _snapshot_id="$(_rollbackSetFn 'getSnapshotList' \
+      | head -n1)";
     _restored_snapshot_disp_id="$(cat "${_rb2RestoreCompleteFile}")";
     _rollbackSuccessfulMsg="${_rollbackSuccessfulMsg//XXX_SNAPSHOT_NAME_XXX/${_restored_snapshot_disp_id}}";
     if [ "$(_cm2PromptUserFn "${_rollbackSuccessfulMsg}" \
@@ -891,10 +902,10 @@ _mainFn () {
   ## Begin Dispatch on selection {
   case "${_mode_str}" in
     'create')
-      _main_unalloc="$("${_rollbackBackendExe}" 'getMainUnallocSpace')";
-      _main_min_unalloc="$("${_rollbackBackendExe}" 'getMainMinUnalloc')";
-      _boot_unalloc="$("${_rollbackBackendExe}" 'getBootUnallocSpace')";
-      _boot_min_unalloc="$("${_rollbackBackendExe}" 'getBootMinUnalloc')";
+      _main_unalloc="$(_rollbackSetFn 'getMainUnallocSpace')";
+      _main_min_unalloc="$(_rollbackSetFn 'getMainMinUnalloc')";
+      _boot_unalloc="$(_rollbackSetFn 'getBootUnallocSpace')";
+      _boot_min_unalloc="$(_rollbackSetFn 'getBootMinUnalloc')";
       if (( _main_unalloc <= _main_min_unalloc )); then
         _cm2PromptUserFn "${_lowDiskMsg}" "${_winTitle}" 's';
         exit 1;
@@ -908,7 +919,7 @@ _mainFn () {
       )";
 
       if [  "${_reply_str}" = 'y' ]; then
-        "${_escExe}" "${_rollbackBackendExe}" 'systemSnapshot' "${_userName}";
+        _rollbackBackendFn 'systemSnapshot' "${_userName}";
         _handleOperationExitIntFn 'create' "$?";
       else
         _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
@@ -916,10 +927,10 @@ _mainFn () {
       fi
       ;;
     'restore')
-      _main_unalloc="$("${_rollbackBackendExe}" 'getMainUnallocSpace')";
-      _main_min_unalloc="$("${_rollbackBackendExe}" 'getMainMinUnalloc')";
-      _boot_unalloc="$("${_rollbackBackendExe}" 'getBootUnallocSpace')";
-      _boot_min_unalloc="$("${_rollbackBackendExe}" 'getBootMinUnalloc')";
+      _main_unalloc="$(_rollbackSetFn 'getMainUnallocSpace')";
+      _main_min_unalloc="$(_rollbackSetFn 'getMainMinUnalloc')";
+      _boot_unalloc="$(_rollbackSetFn 'getBootUnallocSpace')";
+      _boot_min_unalloc="$(_rollbackSetFn 'getBootMinUnalloc')";
       if (( _main_unalloc <= _main_min_unalloc )); then
         _cm2PromptUserFn "${_lowDiskMsg}" "${_winTitle}" 's';
         exit 1;
@@ -928,7 +939,7 @@ _mainFn () {
         exit 1;
       fi
 
-      if [ -z "$("${_rollbackBackendExe}" 'getSnapshotList')" ]; then
+      if [ -z "$(_rollbackSetFn 'getSnapshotList')" ]; then
         _cm2PromptUserFn "${_noSnapshotsFoundMsg}" "${_winTitle}";
         exit "${_rb2NOTICE}";
       fi
@@ -947,7 +958,7 @@ _mainFn () {
         _cm2PromptUserFn "${_restoreConfirmMsg}" "${_winTitle}" 'o'
        )";
       if [ "${_reply_str}" = 'y' ]; then
-        "${_escExe}" "${_rollbackBackendExe}" 'restoreSnapshot' "${_snapshot_id}";
+        _rollbackBackendFn 'restoreSnapshot' "${_snapshot_id}";
         _handleOperationExitIntFn 'restore' "$?" "${_snapshot_disp_id}";
       else
         _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
@@ -955,7 +966,7 @@ _mainFn () {
       fi
       ;;
     'delete')
-      if [ -z "$("${_rollbackBackendExe}" 'getSnapshotList')" ]; then
+      if [ -z "$(_rollbackSetFn 'getSnapshotList')" ]; then
         _cm2PromptUserFn "${_noSnapshotsFoundMsg}" "${_winTitle}";
         exit "${_rb2NOTICE}";
       fi
@@ -974,7 +985,7 @@ _mainFn () {
         _cm2PromptUserFn "${_deleteConfirmMsg}" "${_winTitle}" 'o'
       )";
       if [ "${_reply_str}" = 'y' ]; then
-        "${_escExe}" "${_rollbackBackendExe}" 'deleteSnapshot' "${_snapshot_id}";
+        _rollbackBackendFn 'deleteSnapshot' "${_snapshot_id}";
         _handleOperationExitIntFn 'delete' "$?" "${_snapshot_disp_id}";
       else
         _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
@@ -997,7 +1008,7 @@ _mainFn () {
       exit "${_rb2NOTICE}";
       ;;
     'explain')
-      if [ -z "$("${_rollbackBackendExe}" 'getSnapshotList')" ]; then
+      if [ -z "$(_rollbackSetFn 'getSnapshotList')" ]; then
         _cm2PromptUserFn "${_noSnapshotsFoundMsg}" "${_winTitle}";
         exit "${_rb2NOTICE}";
       fi
@@ -1121,7 +1132,7 @@ _mainFn () {
       ;;
     'switch')
       # _switch_state is uppercase, _new_switch_state is lowercase
-      _switch_state="$("${_rollbackBackendExe}" 'getManualSwitchState')";
+      _switch_state="$(_rollbackSetFn 'getManualSwitchState')";
       _switchSelectMsg="${_switchSelectMsg//XXX_SNAPSHOT_MODE_XXX/${_switch_state}}";
       _manual_onoff=''
       _auto_onoff='';
@@ -1147,7 +1158,7 @@ _mainFn () {
         _switchUnchangedMsg="${_switchUnchangedMsg//XXX_SNAPSHOT_MODE_XXX/${_new_switch_state^^}}";
         _cm2PromptUserFn "${_switchUnchangedMsg}" "${_winTitle}";
         exit "${_rb2NOTICE}";
-      elif "${_escExe}" "${_rollbackBackendExe}" 'setManualSwitchState' \
+      elif _rollbackBackendFn 'setManualSwitchState' \
         "${_new_switch_state}"; then
         _switchSuccessfulMsg="${_switchSuccessfulMsg//XXX_SNAPSHOT_MODE_XXX/${_new_switch_state^^}}";
         _cm2PromptUserFn "${_switchSuccessfulMsg}" "${_winTitle}";
@@ -1180,7 +1191,7 @@ declare _binName _binDir _baseName _baseDir _libTable _assignList \
   _systemUnsupportedMsg _restoreIncompleteMsg _noSnapshotsFoundMsg \
   _strangeSubvolsMsg _restoreFailedMsg _deletionFailedMsg _creationFailedMsg \
   _criticalErrorMsg _operationCancelledMsg _lowDiskMsg _lowBootMsg \
-  _rollbackBinExe;
+  _rollbackBinExe _rollbackSetExe;
 
 _userName="$(id -un)";
 _warnStr='<b style="color:#da4453">';
@@ -1206,6 +1217,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     '_kbuildSyCoca5Exe|/usr/bin/kbuildsycoca5||optional'
     "_rollbackBackendExe|${_binDir}/kfocus-rollback-backend"
     "_rollbackBinExe|${_binDir}/kfocus-rollback-bin"
+    "_rollbackSetExe|${_binDir}/kfocus-rollback-set"
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2ErrStrFn 'Could not assign variables';

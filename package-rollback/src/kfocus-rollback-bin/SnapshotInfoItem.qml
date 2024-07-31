@@ -36,7 +36,7 @@ RowLayout {
       - (Kirigami.Units.gridUnit * 2.40)
 
     ColumnLayout {
-        Layout.fillHeight: true
+        Layout.fillHeight : true
 
         RowLayout {
             Layout.fillWidth    : true
@@ -72,7 +72,8 @@ RowLayout {
                     case 'System Schedule':
                         return '<i>(Created by <b>System Schedule</b>)</i>';
                     case 'Before Package Change':
-                        return '<i>(Created before <b>Package Change</b>)</i>';
+                        return '<i>(Created before '
+                          + '<b>Package Change</b>)</i>';
                     case 'Pre-Rollback':
                         return '<i>(Created before '
                           + '<b>Snapshot Rollback</b>)</i>';
@@ -96,7 +97,9 @@ RowLayout {
             text                : name
             font.family         : 'courier'
             readOnly            : !editing
-            color               : editing ? Kirigami.Theme.textColor : Kirigami.Theme.disabledTextColor
+            color               : editing
+              ? Kirigami.Theme.textColor
+              : Kirigami.Theme.disabledTextColor
             placeholderText     : reason
 
             onActiveFocusChanged: {
@@ -117,40 +120,40 @@ RowLayout {
                     }
                     return Kirigami.Theme.activeBackgroundColor
                 }
-                border.width: 1
-                radius: Kirigami.Units.gridUnit * 0.125
+                border.width    : 1
+                radius          : Kirigami.Units.gridUnit * 0.125
             }
         }
 
         Controls.TextArea {
-            id                  : descField
-            Layout.alignment    : Qt.AlignTop
-            Layout.fillWidth    : true
-            Layout.fillHeight   : true
-            Layout.bottomMargin : Kirigami.Units.gridUnit * 0.5
+            id                   : descField
+            Layout.alignment     : Qt.AlignTop
+            Layout.fillWidth     : true
+            Layout.fillHeight    : true
+            Layout.bottomMargin  : Kirigami.Units.gridUnit * 0.5
 
-            placeholderText     : '<p><i>Press the "Edit" button to:</i></p>'
+            placeholderText      : '<p><i>Press the "Edit" button to:</i></p>'
               + '<br>'
               + '<p><i>* Rename the Snapshot</i><br>'
               + '<i>* Change this description</i><br>'
               + '<i>* Pin the Snapshot</i></p>'
-            text                : description
-            font.family         : 'courier'
-            wrapMode            : Text.WordWrap
-            readOnly            : !editing
-            color               : editing
+            text                 : description
+            font.family          : 'courier'
+            wrapMode             : Text.WordWrap
+            readOnly             : !editing
+            color                : editing
               ? Kirigami.Theme.textColor
               : Kirigami.Theme.disabledTextColor
 
-            activeFocusOnPress  : true
-            activeFocusOnTab    : true
-            onActiveFocusChanged: {
+            activeFocusOnPress   : true
+            activeFocusOnTab     : true
+            onActiveFocusChanged : {
                 if (activeFocus) {
                     focusedBox = this;
                 }
             }
 
-            background          : Rectangle {
+            background           : Rectangle {
                 id           : descFieldBackground
                 color        : editing
                   ? Kirigami.Theme.backgroundColor
@@ -170,30 +173,30 @@ RowLayout {
         }
 
         RowLayout {
-            Layout.preferredHeight: Kirigami.Units.gridUnit * 1.5
+            Layout.preferredHeight : Kirigami.Units.gridUnit * 1.5
             Kirigami.Heading {
                 text  : 'Pin This Snapshot'
                 level : 2
             }
 
             Controls.Switch {
-                Layout.leftMargin: Kirigami.Units.gridUnit * 0.5
-                id        : pinSwitch
-                checked   : pinned
-                onClicked : {
+                Layout.leftMargin : Kirigami.Units.gridUnit * 0.5
+                id                : pinSwitch
+                checked           : pinned
+                onClicked         : {
                     if ( !editing ) {
                         editButton.clicked();
                     }
                 }
 
                 HoverHandler {
-                    cursorShape: Qt.PointingHandCursor
+                    cursorShape : Qt.PointingHandCursor
                 }
             }
 
             Kirigami.Icon {
-                source: 'pin'
-                visible: pinSwitch.checked
+                source  : 'pin'
+                visible : pinSwitch.checked
             }
         }
     }
@@ -211,7 +214,7 @@ RowLayout {
             onClicked             : deleteClicked()
 
             HoverHandler {
-                cursorShape: Qt.PointingHandCursor
+                cursorShape : Qt.PointingHandCursor
             }
         }
 
@@ -225,7 +228,7 @@ RowLayout {
             onClicked             : restoreClicked()
 
             HoverHandler {
-                cursorShape: Qt.PointingHandCursor
+                cursorShape : Qt.PointingHandCursor
             }
         }
 
@@ -238,7 +241,7 @@ RowLayout {
             onClicked             : compareClicked()
 
             HoverHandler {
-                cursorShape: Qt.PointingHandCursor
+                cursorShape : Qt.PointingHandCursor
             }
         }
 
@@ -260,7 +263,7 @@ RowLayout {
             }
 
             HoverHandler {
-                cursorShape: Qt.PointingHandCursor
+                cursorShape : Qt.PointingHandCursor
             }
         }
 
@@ -291,7 +294,7 @@ RowLayout {
             }
 
             HoverHandler {
-                cursorShape: Qt.PointingHandCursor
+                cursorShape : Qt.PointingHandCursor
             }
         }
 
@@ -314,7 +317,7 @@ RowLayout {
             }
 
             HoverHandler {
-                cursorShape: Qt.PointingHandCursor
+                cursorShape : Qt.PointingHandCursor
             }
         }
     }

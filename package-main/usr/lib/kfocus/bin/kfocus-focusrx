@@ -314,10 +314,11 @@ _chkBtrfsSetUpFn () {
 
   # Skip if required tool not installed
   [ -z "${_rollbackBackendExe}" ] && return;
+  [ -z "${_rollbackSetExe}" ] && return;
 
   _title='Check BTRFS is Set Up';
   _cm2SetMsgFn "${_title}";
-  if [ "$("${_escExe}" "${_focusRxSetExe}" 'get-btrfs-status')" \
+  if [ "$("${_escExe}" "${_rollbackSetExe}" 'getBtrfsStatus')" \
     = 'SUPPORTED, NOT SET UP' ]; then
     if "${_escExe}" "${_focusRxSetExe}" 'prep-snapshot'; then
       _cm2SucFn;
@@ -924,14 +925,15 @@ _postRollbackHandlerFn () {
 
   # Skip if required tools not installed
   [ -z "${_rollbackExe}" ] && return;
+  [ -z "${_rollbackSetExe}" ] && return;
 
-  _btrfs_status="$("${_rollbackBackendExe}" 'getBtrfsStatus')"
+  _btrfs_status="$("${_escExe}" "${_rollbackSetExe}" 'getBtrfsStatus')"
 
   if [ "${_btrfs_status}" == 'SUPPORTED, AUTO' ] \
     || [ "${_btrfs_status}" == 'SUPPORTED, MANUAL' ]; then
     # If drop file is found, run _rollbackExe, so it can use the contents
     #   of that file to display the name of the restored snapshot to the user.
-    if "${_escExe}" "${_focusRxSetExe}" 'chk-btrfs-space'; then
+    if "${_escExe}" "${_rollbackSetExe}" 'checkMainUnallocSpace'; then
       if [ -e "${_restoreCompleteFile}" ]; then
         "${_rollbackExe}" 'afterRestore';
 
@@ -1044,7 +1046,7 @@ declare _parentCmdStr _lookupList \
   _focusRxDropDir _kbdColorSetExe _rootTitle _assignList \
   _focusRxSetExe _focusRxVersExe _btoolExe _firstrunExe \
   _fixIbusExe _kcleanExe _resetEffectsExe _rollbackBackendExe \
-  _sysVersStr;
+  _rollbackSetExe _sysVersStr;
 
 _parentCmdStr="$(ps -o comm= $PPID)";
 # These domain names exist here only for the purposes of looking them up via
@@ -1079,6 +1081,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     "_resetEffectsExe|${_binDir}/kfocus-reset-effects||optional"
     "_rollbackExe|${_binDir}/kfocus-rollback||optional"
     "_rollbackBackendExe|${_binDir}/kfocus-rollback-backend||optional"
+    "_rollbackSetExe|${_binDir}/kfocus-rollback-set||optional"
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2ErrStrFn 'Could not assign variables';

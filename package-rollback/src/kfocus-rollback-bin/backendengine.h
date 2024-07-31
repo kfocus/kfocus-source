@@ -9,10 +9,10 @@ class BackendEngine : public QObject
     Q_OBJECT
     Q_PROPERTY(QString rollbackBackendExe READ rollbackBackendExe CONSTANT)
     Q_PROPERTY(QString rollbackSetExe READ rollbackSetExe CONSTANT)
-    Q_PROPERTY(QString pkexecExe READ pkexecExe NOTIFY pkexecExeChanged)
+    Q_PROPERTY(QString pkexecExe READ pkexecExe CONSTANT)
     Q_PROPERTY(bool automaticSnapshotsEnabled READ automaticSnapshotsEnabled NOTIFY automaticSnapshotsEnabledChanged)
     Q_PROPERTY(bool inhibitClose READ inhibitClose WRITE setInhibitClose NOTIFY inhibitCloseChanged)
-    Q_PROPERTY(bool mainSpaceLow READ mainSpaceLow WRITE setMainSpaceLow NOTIFY mainSpaceLowChanged)
+    Q_PROPERTY(bool mainSpaceLow READ mainSpaceLow NOTIFY mainSpaceLowChanged)
     QML_ELEMENT 
 
 public:
@@ -20,9 +20,7 @@ public:
     QString rollbackBackendExe();
     QString rollbackSetExe();
     QString pkexecExe();
-    void setPkexecExe(QString val);
     bool automaticSnapshotsEnabled();
-    void setAutomaticSnapshotsEnabled(bool val);
     QList<QMap<QString, QString>> *snapshotList();
     void setSnapshotList(QList<QMap<QString, QString>> *val);
     QMap<QString, QString> *mainFsInfo();
@@ -32,7 +30,6 @@ public:
     bool inhibitClose();
     void setInhibitClose(bool val);
     bool mainSpaceLow();
-    void setMainSpaceLow(bool val);
     Q_INVOKABLE int getSnapshotCount();
     Q_INVOKABLE QString getSnapshotInfo(int index, QString key);
     Q_INVOKABLE QString getFsData(QString fs, QString key);
@@ -41,11 +38,10 @@ public:
     Q_INVOKABLE void refreshSystemData(bool calcSize);
 
 signals:
-    void pkexecExeChanged();
     void inhibitCloseChanged();
     void automaticSnapshotsEnabledChanged();
-    void systemDataLoaded();
     void mainSpaceLowChanged();
+    void systemDataLoaded();
 
 private slots:
     void onSystemDataReady();
@@ -69,6 +65,7 @@ private:
     static QStringList m_snapshotIdList;
     static int m_snapshotIdIdx;
     static bool m_calcSize;
+    static bool m_updateInProgress;
 };
 
 #endif // BACKENDENGINE_H

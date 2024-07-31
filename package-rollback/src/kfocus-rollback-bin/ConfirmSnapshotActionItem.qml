@@ -42,10 +42,10 @@ ColumnLayout {
             source             : reason === 'System Schedule'
               ? 'clock'
               : reason === 'Before Package Change'
-              ? 'system-upgrade'
-              : reason === 'Pre-Rollback'
-              ? 'edit-undo'
-              : 'user'
+                ? 'system-upgrade'
+                : reason === 'Pre-Rollback'
+                  ? 'edit-undo'
+                  : 'user'
         }
         ColumnLayout {
             Kirigami.Heading {

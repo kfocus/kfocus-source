@@ -18,21 +18,11 @@ QString BackendEngine::rollbackSetExe() {
 
 QString BackendEngine::pkexecExe() {
     return m_pkexecExe;
-    emit pkexecExeChanged();
-}
-
-void BackendEngine::setPkexecExe(QString val) {
-    m_pkexecExe = val;
 }
 
 bool BackendEngine::automaticSnapshotsEnabled()
 {
     return m_automaticSnapshotsEnabled;
-}
-
-void BackendEngine::setAutomaticSnapshotsEnabled(bool val)
-{
-    m_automaticSnapshotsEnabled = val;
 }
 
 QList<QMap<QString, QString>> *BackendEngine::snapshotList() {
@@ -72,11 +62,6 @@ bool BackendEngine::mainSpaceLow() {
     return m_mainSpaceLow;
 }
 
-void BackendEngine::setMainSpaceLow(bool val) {
-    m_mainSpaceLow = val;
-    mainSpaceLowChanged();
-}
-
 int BackendEngine::getSnapshotCount() {
     return m_snapshotList->length();
 }
@@ -109,34 +94,6 @@ bool BackendEngine::isBackgroundRollbackRunning() {
     }
 }
 
-void BackendEngine::refreshSystemData(bool calcSize) {
-    /*
-     * This is the "kickoff" method. It starts an asynchronous processing loop
-     * that does most of the real work.
-     */
-    m_calcSize = calcSize;
-    m_snapshotList->clear();
-    ShellEngine *execEngine = new ShellEngine();
-
-    connect(execEngine, &ShellEngine::appExited, this, [&](){
-        ShellEngine *execEngine = ((ShellEngine *)sender());
-        execEngine->disconnect(this);
-        m_snapshotIdList = execEngine->stdout().split('\n', Qt::SkipEmptyParts);
-        if (m_snapshotIdList.count() == 0) {
-            loadGlobalInfo();
-        } else {
-            m_snapshotIdIdx = 0;
-            connect(execEngine, &ShellEngine::appExited, this, &BackendEngine::onSystemDataReady);
-            if (m_calcSize) {
-                execEngine->exec(m_pkexecExe + ' ' + m_rollbackSetExe + " getFullSnapshotMetadata " + m_snapshotIdList.at(0));
-            } else {
-                execEngine->exec(m_pkexecExe + ' ' + m_rollbackSetExe + " getBaseSnapshotMetadata " + m_snapshotIdList.at(0));
-            }
-        }
-    });
-    execEngine->exec(m_pkexecExe + ' ' + m_rollbackSetExe + " getSnapshotList");
-}
-
 QString BackendEngine::fieldSeek(QStringList lines, QString searchStr, int field) {
     for (int i = 0; i < lines.count(); i++) {
         if (lines[i].contains(searchStr)) {
@@ -156,14 +113,59 @@ QString BackendEngine::bytesToGib(quint64 val) {
     return gibSizeStr;
 }
 
+void BackendEngine::refreshSystemData(bool calcSize) {
+    /*
+     * This is the "kickoff" method. It starts a refresh process using an
+     * asynchronous "loop" implemented with ShellEngine connections. It's
+     * ugly, but this was the only way I could think of to leverage the
+     * kfocus-rollback-backend API in an asynchronous fashion.
+     *
+     * WARNING: It is mandatory that this function is NOT executed while a
+     * refresh process is actively running! This is not re-entrant, it is not
+     * thread-safe, and if you call it multiple times in quick succession,
+     * behavior is undefined.
+     */
+    if (m_updateInProgress) {
+      return;
+    }
+
+    m_calcSize = calcSize;
+    ShellEngine *execEngine = new ShellEngine();
+
+    m_snapshotList->clear();
+
+    // NOTE: Callback is connected before execution, this is confusing but it's the only safe way to do this
+    connect(execEngine, &ShellEngine::appExited, this, [&, execEngine](){
+        execEngine->disconnect(this);
+
+        m_snapshotIdList = execEngine->stdout().split('\n', Qt::SkipEmptyParts);
+        if (m_snapshotIdList.count() == 0) {
+            loadGlobalInfo();
+        } else {
+            m_snapshotIdIdx = 0;
+            connect(execEngine, &ShellEngine::appExited, this, &BackendEngine::onSystemDataReady);
+            if (m_calcSize) {
+                execEngine->exec(m_pkexecExe + ' ' + m_rollbackSetExe + " getFullSnapshotMetadata " + m_snapshotIdList.at(0));
+            } else {
+                execEngine->exec(m_pkexecExe + ' ' + m_rollbackSetExe + " getBaseSnapshotMetadata " + m_snapshotIdList.at(0));
+            }
+        }
+    });
+    execEngine->exec(m_pkexecExe + ' ' + m_rollbackSetExe + " getSnapshotList");
+    m_updateInProgress = true;
+}
+
 void BackendEngine::onSystemDataReady() {
     /*
      * This function essentially calls itself via a signal handler in order to
      * loop asynchronously (i.e., while the work being done is handled in a
-     * worker process, the UI remains responsive rather than hanging.
+     * worker process, the UI remains responsive rather than hanging).
      */
+
     ShellEngine *execEngine = ((ShellEngine *)sender());
     execEngine->disconnect(this);
+
+    // Get raw data from the ShellEngine
     QString snapshotItem = m_snapshotIdList.at(m_snapshotIdIdx);
     QStringList snapshotMetadataList = execEngine->stdout().split('\n');
     QString metaSnapshotName = snapshotMetadataList.at(0);
@@ -176,14 +178,18 @@ void BackendEngine::onSystemDataReady() {
         return;
     }
 
+    // Parse trivial snapshot info
     QString snapshotReason = metaSnapshotReason.trimmed();
-    QString snapshotStateDir = QString("/btrfs_main/@kfocus-rollback-snapshots/" + snapshotItem);
     QString snapshotName = QString(QByteArray::fromBase64(metaSnapshotName.toUtf8()));
     if (snapshotName.isEmpty()) {
         snapshotName = snapshotReason;
     }
     QString snapshotDesc = QString(QByteArray::fromBase64(metaSnapshotDesc.toUtf8()));
     QString snapshotPinned = metaSnapshotPinned == "y" ? "true" : "false";
+    QString snapshotStateDir = QString("/btrfs_main/@kfocus-rollback-snapshots/" + snapshotItem);
+    QString snapshotId = snapshotItem;
+
+    // Parse snapshot size
     quint64 snapshotIntSize = metaSnapshotSize.toULongLong();
     QString snapshotSize;
     if (metaSnapshotSize == "") {
@@ -194,20 +200,24 @@ void BackendEngine::onSystemDataReady() {
             snapshotSize.insert(0, ' ');
         }
     }
-    QString snapshotId = snapshotItem;
+
+    // Parse snapshot date (this mangles the snapshotItem string so we have to do it last)
     QDateTime snapshotTs = QDateTime::fromSecsSinceEpoch(snapshotItem.remove(0, 1).toULong());
     QString snapshotDate = snapshotTs.toString(Qt::ISODate).split('T').at(0);
+
+    // Load parsed data into the snapshot list
     m_snapshotList->append(QMap<QString, QString>({
-        { "date", snapshotDate },
-        { "name", snapshotName },
         { "reason", snapshotReason },
+        { "name", snapshotName },
         { "description", snapshotDesc },
         { "pinned", snapshotPinned },
-        { "size", snapshotSize },
         { "stateDir", snapshotStateDir },
-        { "id", snapshotId }
+        { "id", snapshotId },
+        { "size", snapshotSize },
+        { "date", snapshotDate }
     }));
 
+    // Loop if necessary, otherwise get global disk info
     m_snapshotIdIdx++;
     if (m_snapshotIdIdx < m_snapshotIdList.count()) {
         connect(execEngine, &ShellEngine::appExited, this, &BackendEngine::onSystemDataReady);
@@ -233,6 +243,7 @@ void BackendEngine::loadGlobalInfo() {
     btrfsMainRawReport = btrfsMainRawReport.replaceInStrings("\t", " ");
     btrfsBootRawReport = btrfsBootRawReport.replaceInStrings("\t", " ");
 
+    // Get main FS space consumption info
     quint64 btrfsMainRawSize = fieldSeek(btrfsMainRawReport, "Device size:", 2).toULongLong();
     quint64 btrfsMainRawRemain = fieldSeek(btrfsMainRawReport, "Free (estimated):", 2).toULongLong();
     quint64 btrfsMainRawUnalloc = fieldSeek(btrfsMainRawReport, "Device unallocated:", 2).toULongLong();
@@ -240,14 +251,17 @@ void BackendEngine::loadGlobalInfo() {
     QString btrfsMainStatus;
     if (btrfsMainUnalloc >= 15) {
         btrfsMainStatus = "Good";
-        setMainSpaceLow(false);
+        m_mainSpaceLow = false;
+        mainSpaceLowChanged();
     } else {
         btrfsMainStatus = "ALERT";
-        setMainSpaceLow(true);
+        m_mainSpaceLow = true;
+        mainSpaceLowChanged();
     }
     QString btrfsMainSize = bytesToGib(btrfsMainRawSize);
     QString btrfsMainRemain = bytesToGib(btrfsMainRawRemain);
 
+    // Get boot FS space consumption info
     quint64 btrfsBootRawSize = fieldSeek(btrfsBootRawReport, "Device size:", 2).toULongLong();
     quint64 btrfsBootRawRemain = fieldSeek(btrfsBootRawReport, "Free (estimated):", 2).toULongLong();
     quint64 btrfsBootRawUnalloc = fieldSeek(btrfsBootRawReport, "Device unallocated:", 2).toULongLong();
@@ -261,6 +275,7 @@ void BackendEngine::loadGlobalInfo() {
     QString btrfsBootSize = bytesToGib(btrfsBootRawSize);
     QString btrfsBootRemain = bytesToGib(btrfsBootRawRemain);
 
+    // Load all the info into the fs info objects
     m_mainFsInfo->clear();
     m_mainFsInfo->insert(QMap<QString, QString>({
         { "status", btrfsMainStatus },
@@ -277,21 +292,25 @@ void BackendEngine::loadGlobalInfo() {
     }));
 
     // Get automatic snapshot state
-    connect(execEngine, &ShellEngine::appExited, this, [&](){
-        ShellEngine *execEngine = ((ShellEngine *)sender());
+    // NOTE: Callback is connected before execution, this is confusing but it's the only safe way to do this
+    connect(execEngine, &ShellEngine::appExited, this, [&, execEngine](){
         execEngine->disconnect(this);
+
         QString btrfsStatus = execEngine->stdout().trimmed();
         if (btrfsStatus == "SUPPORTED, MANUAL") {
             m_automaticSnapshotsEnabled = false;
+            automaticSnapshotsEnabledChanged();
         } else if (btrfsStatus == "SUPPORTED, AUTO") {
             m_automaticSnapshotsEnabled = true;
+            automaticSnapshotsEnabledChanged();
         } else {
             qCritical() << "BTRFS status neither manual nor auto!";
         }
         execEngine->deleteLater();
 
-        emit automaticSnapshotsEnabledChanged();
-        emit systemDataLoaded();
+        automaticSnapshotsEnabledChanged();
+        systemDataLoaded();
+        m_updateInProgress = false;
     });
     execEngine->exec(m_pkexecExe + ' ' + m_rollbackSetExe + " getBtrfsStatus");
 }
