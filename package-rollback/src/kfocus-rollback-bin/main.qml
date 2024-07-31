@@ -23,8 +23,11 @@ Kirigami.ApplicationWindow {
 
             if ( !firstInitDone ) {
                 switchViewFn( snapshotView, snapshotView );
-                waitPage.visible = false;
-                pageStack.initialPage = mainPage;
+                if (backend.mainSpaceLow) {
+                    lowDiskOverlay.visible = true;
+                }
+                pageStack.pop();
+                pageStack.push( mainPage );
                 firstInitDone = true;
             } else {
                 switchViewFn( sysRefreshSourceView, sysRefreshTargetView );
@@ -130,7 +133,7 @@ Kirigami.ApplicationWindow {
     Component {
         id: partitionHealthHelpWindowComponent
         HelpWindow {
-            helpText: `<p><b><font color="#f7941d">To avoid problems, we
+            /*helpText: `<p><b><font color="#f7941d">To avoid problems, we
               recommend</font></b> you maintain unallocated space greater
               than 15% for the root filesystem (/), and 25% for boot
               filesystem (/boot). Running out of unallocated space may result
@@ -148,11 +151,37 @@ Kirigami.ApplicationWindow {
               and reclaim additional unused space.</p>
 
               <p><b><font color="#f7941d">Unallocated and free
-              space are related but not the same.</font></b>. Free space is
+              space are related but not the same.</font></b> Free space is
               always larger than unallocated, but typically not by much on
               Focus systems. This is because FocusRx checks the disk on boot
               and every four hours, and balances the disk if needed in the
-              background.</p>`
+              background.</p>`*/
+            helpText: `<p><font color="#f7941d"><b>Mount:</b></font>
+              Indicates which filesystem each row corresponds to. System
+              Rollback keeps snapshots for both the root (<code>/</code>)
+              and boot (<code>/boot</code>) filesystems correlated so
+              there are no data inconsistencies.</p>
+
+              <p><font color="#f7941d"><b>Status:</b></font> Shows whether
+              the filesystem's disk space is sufficient or not. A status of
+              "<font color="#27ae60"><code>Good</code></font>" means that disk
+              space is sufficient, while a status of
+              "<font color="#da4453"><code>ALERT</code></font>" means that
+              disk space is low. Delete files or snapshots to free up disk
+              space.</p>
+
+              <p><font color="#f7941d"><b>Size GiB:</b></font> Shows the size
+              of the filesystem, in gigabytes.</p>
+
+              <p><font color="#f7941d"><b>Remain GiB:</b></font> Shows the
+              remaining free space on the filesystem.</p>
+
+              <p><font color="#f7941d"><b>Unalloc %:</b></font> Shows the
+              percentage of unallocated space left on the filesystem.
+              Unallocated space can be exhausted quicker than free space,
+              which will cause problems. We recommend having at least 15%
+              unallocated space on the root and boot filesystems at all
+              times.</p>`
             helpTitle: 'Partition Health Help'
         }
     }
@@ -358,10 +387,9 @@ Kirigami.ApplicationWindow {
                               - Kirigami.Units.gridUnit * 0.35
                             Layout.alignment      : Qt.AlignRight
                             enabled               : !uiLocked
-                            palette {
-                                button: backend.mainSpaceLow
-                                  ? Kirigami.Theme.negativeBackgroundColor
-                                  : Kirigami.Theme.backgroundColor
+
+                            HoverHandler {
+                                cursorShape: Qt.PointingHandCursor
                             }
 
                             onClicked             : calculateSnapshotSizesFn();
@@ -455,14 +483,11 @@ Kirigami.ApplicationWindow {
                         }
                     }
 
-                    Item {
-                        Layout.fillHeight: true
-                    }
-
                     GridLayout {
                         columns             : 5
                         Layout.maximumWidth : mainPage.width / 2
                         Layout.alignment    : Qt.AlignTop
+                        Layout.topMargin    : Kirigami.Units.gridUnit * 0.7
 
                         Controls.Label {
                             text  : 'Mount'
@@ -982,6 +1007,79 @@ Kirigami.ApplicationWindow {
                     id         : saveEditsWaitView
                     visible    : false
                     headerText : 'Saving edits...'
+                }
+            }
+        }
+
+        Rectangle {
+            id: lowDiskOverlay
+            visible: false
+
+            anchors.fill: parent
+            color: Kirigami.Theme.backgroundColor
+
+            ColumnLayout {
+                anchors {
+                    verticalCenter: parent.verticalCenter
+                    horizontalCenter: parent.horizontalCenter
+                }
+                RowLayout {
+                    Kirigami.Icon {
+                        Layout.alignment: Qt.AlignTop
+                        Layout.preferredHeight: Kirigami.Units.gridUnit * 4
+                        Layout.preferredWidth: Kirigami.Units.gridUnit * 4
+                        Layout.rightMargin: Kirigami.Units.gridUnit * 1.05
+                        Layout.topMargin: Kirigami.Units.gridUnit * 1.90
+                        source: 'dialog-error'
+                    }
+                    ColumnLayout {
+                        Kirigami.Heading {
+                            Layout.bottomMargin: Kirigami.Units.gridUnit * 0.5
+                            text: 'Low Disk Space Warning'
+                            level: 1
+                        }
+                        Controls.Label {
+                            Layout.preferredWidth: Kirigami.Units.gridUnit * 20
+                            Layout.bottomMargin: Kirigami.Units.gridUnit * 0.5
+                            text: 'This system needs more disk space. You '
+                              + 'could delete some files to open up space, '
+                              + 'which is often a good idea.'
+                            wrapMode: Text.WordWrap
+                        }
+                        Controls.Label {
+                            Layout.preferredWidth: Kirigami.Units.gridUnit * 20
+                            Layout.bottomMargin: Kirigami.Units.gridUnit * 0.5
+                            text: 'Another way to free space is to remove '
+                              + 'snapshots. Click on “Show Snapshot Sizes” '
+                              + 'below to calculate and show the size of all '
+                              + 'snapshots. This usually takes 30 to 90 '
+                              + 'seconds to complete, so please be patient.'
+                            wrapMode: Text.WordWrap
+                        }
+                    }
+                }
+                Controls.Button {
+                    Layout.alignment: Qt.AlignHCenter
+                    Layout.topMargin: Kirigami.Units.gridUnit * 1.15
+                    id: ldSnapshotSizeButton
+                    text: 'Show Snapshot Sizes'
+                    icon.name: 'disk-quota'
+                    onClicked: {
+                        calculateSnapshotSizesFn();
+                        lowDiskOverlay.visible = false;
+                    }
+                }
+            }
+
+            Controls.Button {
+                text: 'Skip'
+                icon.name: 'go-next-skip'
+                anchors {
+                    right: parent.right
+                    bottom: parent.bottom
+                }
+                onClicked: {
+                    lowDiskOverlay.visible = false;
                 }
             }
         }

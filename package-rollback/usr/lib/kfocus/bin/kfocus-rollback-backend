@@ -360,7 +360,7 @@ _checkMainUnallocSpaceFn () {
   _main_unalloc="$(_getMainUnallocSpaceFn)";
 
   if (( _main_unalloc < _main_min_unalloc )); then
-    _promptAllUsersFn 'warning' "${_lowDiskMsg}";
+    _promptAllUsersFn 'rollbackLowMainSpace' "${_lowDiskMsg}";
     _exitERR 'Low disk space detected.';
   fi
 }
@@ -373,7 +373,7 @@ _checkBootUnallocSpaceFn () {
   _boot_unalloc="$(_getBootUnallocSpaceFn)";
 
   if (( _boot_unalloc < _boot_min_unalloc )); then
-    _promptAllUsersFn 'warning' "${_lowBootMsg}";
+    _promptAllUsersFn 'rollbackLowBootSpace' "${_lowBootMsg}";
     _exitERR 'Low boot space detected.';
   fi
 }
@@ -1280,33 +1280,37 @@ EOF
 
   _lowDiskMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browStr}<h3 style="color:#f7941d">Low Disk Space</h3>${_erowStr}
+${_browStr}<h3 style="color:#f7941d">System Rollback: Low Disk Space</h3>
+${_erowStr}
 
-${_browStr}Your system is running low on disk space. This could result in<br>
-filesystem corruption if not corrected. It is highly recommended<br>
-that you delete all snapshots and optimize the drive using System<br>
-Rollback. You may also need to delete excess files or move them to<br>
-other drives. You can access System Rollback by clicking <code>Start<br>
-Menu &gt; Kubuntu Focus Tools &gt; System Rollback</code>.
-
-${_browStr}For your safety, no snapshot-related actions have been
-performed.${_erowStr}</table>
+${_browStr}System Rollback has detected that the system's disk space is<br>
+low. This could result in filesystem corruption if not corrected.<br>
+Snapshot maintenance has been paused until this is corrected.<br>
+<br>
+It is highly recommended that you delete large snapshots<br>
+using System Rollback. You may also need to delete excess files<br>
+or move them to other drives.<br>
+<br>
+You can access System Rollback by clicking <code>Start Menu &gt;<br>
+Kubuntu Focus Tools &gt; System Rollback</code>. Click "Show<br>
+Snapshot Sizes" when prompted to quickly find large snapshots.<br>
 ${_cm2HtmEndStr}
 EOF
   )";
 
   _lowBootMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browStr}<h3 style="color:#f7941d">Low Boot Space</h3>${_erowStr}
+${_browStr}<h3 style="color:#f7941d">System Rollback: Low Boot Space</h3>
+${_erowStr}
 
-${_browStr}Your system is running low on boot space. This could result in<br>
-failed upgrades and kernel-related system issues if not corrected.<br>
-It is highly recommended that you run the Kernel Cleaner utility to<br>
-free boot space. You can access the Kernel Cleaner by clicking<br>
-<code>Start Menu &gt; Kubuntu Focus Tools &gt; Kernel Cleaner</code>.
-
-${_browStr}For your safety, no snapshot-related actions have been
-performed.${_erowStr}</table>
+${_browStr}System Rollback has detected that the system's boot<br>
+filesystem is low on space. This could result in failure to<br>
+boot. Snapshot maintenance has been paused until this<br>
+is corrected.<br>
+<br>
+It is highly recommended that you run the Kernel Cleaner<br>
+utility. You can access the Kernel Cleaner by clicking <code>Start<br>
+Menu &gt; Kubuntu Focus Tools &gt; Kernel Cleaner</code>.
 ${_cm2HtmEndStr}
 EOF
   )";
