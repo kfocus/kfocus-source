@@ -789,7 +789,8 @@ _makeSnapshotDispIdFn () {
 ## BEGIN _restoreSnapshotFn {
 _restoreSnapshotFn () {
   declare _older_snapshot_list_str _target_snapshot_id _snapshot_path \
-    _boot_snapshot_path _snapshot_disp_id _umount_cnt _efi_umount_yn;
+    _boot_snapshot_path _snapshot_name _snapshot_date _snapshot_reason \
+    _umount_cnt _efi_umount_yn;
 
   _checkBtrfsStatusSetUpFn;
   _checkMainUnallocSpaceFn;
@@ -844,7 +845,9 @@ _restoreSnapshotFn () {
     _trimSnapshotsFn || exit;
   fi
 
-  _snapshot_disp_id="$(_makeSnapshotDispIdFn "${_target_snapshot_id}")";
+  _snapshot_name="$("${_kreadconfig5Exe}" --file "${_snapshotMetaDb}" --group "${_target_snapshot_id}" --key 'name')";
+  _snapshot_date="$(sed 's/@//' <<< "${_target_snapshot_id}")";
+  _snapshot_reason="$(_getSnapshotReasonFn "${_target_snapshot_id}")";
 
   # mv '/btrfs_main/@' '/btrfs_main/@kfocus-rollback-working'
   mv '/btrfs_main/@' "${_rb2MainWorkingDir}" \
@@ -863,8 +866,11 @@ _restoreSnapshotFn () {
   mount /boot/efi || _exitALERT 'Unable to remount EFI system partition!';
 
   # Let the user know that a restore has completed
-  echo "${_snapshot_disp_id}" \
-    > "/btrfs_main/@${_rb2RestoreCompleteFile}" \
+  {
+    echo "${_snapshot_name}";
+    echo "${_snapshot_date}";
+    echo "${_snapshot_reason}";
+  } > "/btrfs_main/@${_rb2RestoreCompleteFile}" \
     || _exitALERT 'Unable to prepare system for post-snapshot cleanup!';
 
   _cm2LogFn 'notice' "Snapshot ${_target_snapshot_id} restored.";

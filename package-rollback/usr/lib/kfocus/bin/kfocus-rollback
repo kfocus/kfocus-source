@@ -861,31 +861,36 @@ _mainFn () {
     exit "${_rb2ERR}"
   fi
 
-  ## Begin Handle after-restore action {
-  if [ "${_arg_str}" = 'afterRestore' ]; then
-    # Refresh desktop database after restore
-    [ -n "${_kbuildSyCoca5Exe}" ] && "${_kbuildSyCoca5Exe}";
-    _snapshot_id="$(_rollbackSetFn 'getSnapshotList' \
-      | head -n1)";
-    _restored_snapshot_disp_id="$(cat "${_rb2RestoreCompleteFile}")";
-    _rollbackSuccessfulMsg="${_rollbackSuccessfulMsg//XXX_SNAPSHOT_NAME_XXX/${_restored_snapshot_disp_id}}";
-    if [ "$(_cm2PromptUserFn "${_rollbackSuccessfulMsg}" \
-      "FocusRx: System Rollback" 'm')" = 'n' ]; then
-      _snapshot_dir="/btrfs_main/@kfocus-rollback-snapshots/${_snapshot_id}";
-      _rollbackMoreInfoMsg="${_rollbackMoreInfoMsg//XXX_SNAPSHOT_DIR_XXX/${_snapshot_dir}}";
-      _cm2PromptUserFn "${_rollbackMoreInfoMsg}" "${_winTitle}";
-    fi
-    exit "${_rb2NOTICE}";
-  fi
-  ## . END handle after-restore action }
-  
   ## BEGIN Chain to dashboard if GUI available {
   if [ "${_cm2IsTty}" = 'n' ]; then
-    "${_rollbackBinExe}";
+    if [ -n "${_arg_str}" ]; then
+      "${_rollbackBinExe}" "${_arg_str}";
+    else
+      "${_rollbackBinExe}";
+    fi
     exit 0;
   fi
   ## . END Chain to dashboard if GUI available }
 
+  ## Begin Handle after-restore action {
+  # # Replaced by kfocus-rollback-bin
+  # if [ "${_arg_str}" = 'afterRestore' ]; then
+  #   # Refresh desktop database after restore
+  #   [ -n "${_kbuildSyCoca5Exe}" ] && "${_kbuildSyCoca5Exe}";
+  #   _snapshot_id="$(_rollbackSetFn 'getSnapshotList' \
+  #     | head -n1)";
+  #   _restored_snapshot_disp_id="$(cat "${_rb2RestoreCompleteFile}")";
+  #   _rollbackSuccessfulMsg="${_rollbackSuccessfulMsg//XXX_SNAPSHOT_NAME_XXX/${_restored_snapshot_disp_id}}";
+  #   if [ "$(_cm2PromptUserFn "${_rollbackSuccessfulMsg}" \
+  #     "FocusRx: System Rollback" 'm')" = 'n' ]; then
+  #     _snapshot_dir="/btrfs_main/@kfocus-rollback-snapshots/${_snapshot_id}";
+  #     _rollbackMoreInfoMsg="${_rollbackMoreInfoMsg//XXX_SNAPSHOT_DIR_XXX/${_snapshot_dir}}";
+  #     _cm2PromptUserFn "${_rollbackMoreInfoMsg}" "${_winTitle}";
+  #   fi
+  #   exit "${_rb2NOTICE}";
+  # fi
+  ## . END handle after-restore action }
+  
   # Create main menu selector
   _mode_str="$(
     _cm2PromptUserFn "${_chooseModeMsg/XXX_STATE_MSG_XXX/${_state_msg}}" \

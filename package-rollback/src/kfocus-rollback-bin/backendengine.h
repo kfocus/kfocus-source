@@ -13,6 +13,10 @@ class BackendEngine : public QObject
     Q_PROPERTY(bool automaticSnapshotsEnabled READ automaticSnapshotsEnabled NOTIFY automaticSnapshotsEnabledChanged)
     Q_PROPERTY(bool inhibitClose READ inhibitClose WRITE setInhibitClose NOTIFY inhibitCloseChanged)
     Q_PROPERTY(bool mainSpaceLow READ mainSpaceLow NOTIFY mainSpaceLowChanged)
+    Q_PROPERTY(bool isPostRestore READ isPostRestore CONSTANT)
+    Q_PROPERTY(QString postRestoreName READ postRestoreName CONSTANT)
+    Q_PROPERTY(QString postRestoreDate READ postRestoreDate CONSTANT)
+    Q_PROPERTY(QString postRestoreReason READ postRestoreReason CONSTANT)
     QML_ELEMENT 
 
 public:
@@ -30,6 +34,14 @@ public:
     bool inhibitClose();
     void setInhibitClose(bool val);
     bool mainSpaceLow();
+    bool isPostRestore();
+    void setIsPostRestore(bool val);
+    QString postRestoreName();
+    void setPostRestoreName(QString val);
+    QString postRestoreDate();
+    void setPostRestoreDate(QString val);
+    QString postRestoreReason();
+    void setPostRestoreReason(QString val);
     Q_INVOKABLE int getSnapshotCount();
     Q_INVOKABLE QString getSnapshotInfo(int index, QString key);
     Q_INVOKABLE QString getFsData(QString fs, QString key);
@@ -61,6 +73,10 @@ private:
     static QMap<QString, QString> *m_bootFsInfo;
     static bool m_inhibitClose;
     static bool m_mainSpaceLow;
+    static bool m_isPostRestore;
+    static QString m_postRestoreName;
+    static QString m_postRestoreDate;
+    static QString m_postRestoreReason;
 
     static QStringList m_snapshotIdList;
     static int m_snapshotIdIdx;

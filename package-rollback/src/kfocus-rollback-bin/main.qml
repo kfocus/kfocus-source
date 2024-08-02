@@ -25,7 +25,10 @@ Kirigami.ApplicationWindow {
                 switchViewFn( snapshotView, snapshotView );
                 if (backend.mainSpaceLow) {
                     lowDiskOverlay.visible = true;
+                } else if (backend.isPostRestore) {
+                    postRestoreOverlay.visible = true;
                 }
+
                 pageStack.pop();
                 pageStack.push( mainPage );
                 firstInitDone = true;
@@ -1077,6 +1080,123 @@ Kirigami.ApplicationWindow {
                 }
             }
         }
+
+        Rectangle {
+            id: postRestoreOverlay
+            visible: false
+
+            anchors.fill: parent
+            color: Kirigami.Theme.backgroundColor
+
+            ColumnLayout {
+                anchors {
+                    verticalCenter: parent.verticalCenter
+                    horizontalCenter: parent.horizontalCenter
+                }
+
+                RowLayout {
+                    Kirigami.Icon {
+                        Layout.alignment: Qt.AlignTop
+                        Layout.preferredHeight: Kirigami.Units.gridUnit * 4
+                        Layout.preferredWidth: Kirigami.Units.gridUnit * 4
+                        Layout.rightMargin:
+                          Kirigami.Units.gridUnit * 1.05
+                        Layout.topMargin:
+                          Kirigami.Units.gridUnit * 1.90
+                        source: 'dialog-information'
+                    }
+
+                    ColumnLayout {
+                        Kirigami.Heading {
+                            Layout.bottomMargin:
+                              Kirigami.Units.gridUnit * 0.5
+                            text: 'Rollback Successful'
+                            level: 1
+                        }
+
+                        Controls.Label {
+                            Layout.preferredWidth:
+                              Kirigami.Units.gridUnit * 20
+                            Layout.bottomMargin:
+                              Kirigami.Units.gridUnit * 0.5
+                            text:
+                              'Files from the snapshot below have been '
+                              + 'restored to the system.'
+                            wrapMode: Text.WordWrap
+                        }
+
+                        RowLayout {
+                            Layout.preferredWidth:
+                              Kirigami.Units.gridUnit * 20
+                            Layout.bottomMargin:
+                              Kirigami.Units.gridUnit * 0.5
+
+                            Kirigami.Icon {
+                                Layout.alignment: Qt.AlignVCenter
+                                Layout.rightMargin: Kirigami.Units.gridUnit * 0.25
+                                source: getIconForReasonFn( backend.postRestoreReason )
+                            }
+
+                            ColumnLayout {
+                                Kirigami.Heading {
+                                    text: backend.postRestoreDate
+                                    level: 2
+                                }
+
+                                Controls.Label {
+                                    text: '<i>' + backend.postRestoreName + '</i>'
+                                    color: Kirigami.Theme.disabledTextColor
+                                }
+                            }
+
+                            Item {
+                                Layout.fillWidth: true
+                            }
+                        }
+
+                        Controls.Label {
+                            Layout.preferredWidth:
+                              Kirigami.Units.gridUnit * 20
+                            Layout.bottomMargin:
+                              Kirigami.Units.gridUnit * 0.5
+                            text:
+                              'Click "OK" to return to the rollback '
+                              + 'dashboard, or "Compare" to see what files '
+                              + 'changed during the rollback.'
+                            wrapMode: Text.WordWrap
+                        }
+
+                        RowLayout {
+                            Layout.preferredWidth:
+                              Kirigami.Units.gridUnit * 20
+
+                            Item {
+                                Layout.fillWidth: true
+                            }
+
+                            Controls.Button {
+                                Layout.rightMargin:
+                                  Kirigami.Units.gridUnit * 0.5
+                                text: 'OK'
+                                icon.name: 'dialog-ok'
+                                onClicked: {
+                                    postRestoreOverlay.visible = false;
+                                }
+                            }
+
+                            Controls.Button {
+                                text: 'Compare'
+                                icon.name: 'document-duplicate'
+                                onClicked: {
+                                    postRestoreOverlay.visible = false;
+                                    compareSnapshotsFn( 0, 0 );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
     // == . END Views =================================================
 
@@ -1263,7 +1383,7 @@ Kirigami.ApplicationWindow {
         backend.inhibitClose = true;
         switchViewFn( createSnapshotView, createSnapshotWaitView )
         createSnapshotEngine.exec(
-          rollbackStr + 'createSnapshot "$(id -nu)"'
+          rollbackStr + 'systemSnapshot "$(id -nu)"'
         );
     }
 
@@ -1333,7 +1453,11 @@ Kirigami.ApplicationWindow {
             + derivSnapshotModel.get(target_idx).stateDir
             + '"'
         );
-        switchViewFn( compareSnapshotView, compareSnapshotWaitView );
+        if (compareSnapshotView.visible) {
+            switchViewFn( compareSnapshotView, compareSnapshotWaitView );
+        } else {
+            switchViewFn( snapshotView, compareSnapshotWaitView );
+        }
     }
 
     function saveSnapshotEditsFn( snapshot_idx ) {

@@ -4,6 +4,8 @@
 #include <QIcon>
 #include <QMap>
 #include <QList>
+#include <QFile>
+#include <QDateTime>
 #include "shellengine.h"
 #include "backendengine.h"
 #include "windoweventfilter.h"
@@ -21,9 +23,15 @@ int BackendEngine::m_snapshotIdIdx = 0;
 bool BackendEngine::m_calcSize = false;
 bool BackendEngine::m_mainSpaceLow = false;
 bool BackendEngine::m_updateInProgress = false;
+bool BackendEngine::m_isPostRestore = false;
+QString BackendEngine::m_postRestoreName = "";
+QString BackendEngine::m_postRestoreDate = "";
+QString BackendEngine::m_postRestoreReason = "";
 
 int main(int argc, char *argv[])
 {
+    BackendEngine eng;
+
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
@@ -32,6 +40,25 @@ int main(int argc, char *argv[])
 
     qmlRegisterType<ShellEngine>("shellengine", 1, 1, "ShellEngine");
     qmlRegisterType<BackendEngine>("backendengine", 1, 0, "BackendEngine");
+
+    if (argc > 1 && QString(argv[1]) == "afterRestore") {
+        eng.setIsPostRestore(true);
+        QFile restoreReasonFile("/var/lib/kfocus/rollback_restore_complete");
+        restoreReasonFile.open(QIODevice::ReadOnly);
+        QStringList postRestoreLines = QString(restoreReasonFile.readAll()).split('\n');
+        restoreReasonFile.close();
+        if (postRestoreLines.count() >= 3) {
+            eng.setPostRestoreName(QString(QByteArray::fromBase64(postRestoreLines.at(0).toUtf8())));
+            QDateTime postRestoreTs = QDateTime::fromSecsSinceEpoch(postRestoreLines.at(1).toULong());
+            QString postRestoreDate = postRestoreTs.toString(Qt::ISODate).split('T').at(0);
+            eng.setPostRestoreDate(postRestoreDate);
+            eng.setPostRestoreReason(postRestoreLines.at(2));
+
+            if (eng.postRestoreName() == QString()) {
+                eng.setPostRestoreName(eng.postRestoreReason());
+            }
+        }
+    }
 
     // Launch the UI
     if (qEnvironmentVariableIsEmpty("QT_QUICK_CONTROLS_STYLE")) {

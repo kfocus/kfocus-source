@@ -62,6 +62,38 @@ bool BackendEngine::mainSpaceLow() {
     return m_mainSpaceLow;
 }
 
+bool BackendEngine::isPostRestore() {
+    return m_isPostRestore;
+}
+
+void BackendEngine::setIsPostRestore(bool val) {
+    m_isPostRestore = val;
+}
+
+QString BackendEngine::postRestoreName() {
+    return m_postRestoreName;
+}
+
+void BackendEngine::setPostRestoreName(QString val) {
+    m_postRestoreName = val;
+}
+
+QString BackendEngine::postRestoreDate() {
+    return m_postRestoreDate;
+}
+
+void BackendEngine::setPostRestoreDate(QString val) {
+    m_postRestoreDate = val;
+}
+
+QString BackendEngine::postRestoreReason() {
+    return m_postRestoreReason;
+}
+
+void BackendEngine::setPostRestoreReason(QString val) {
+    m_postRestoreReason = val;
+}
+
 int BackendEngine::getSnapshotCount() {
     return m_snapshotList->length();
 }
@@ -291,11 +323,11 @@ void BackendEngine::loadGlobalInfo() {
         { "unalloc", QString::number(btrfsBootUnalloc) + "%" }
     }));
 
-    // Get automatic snapshot state
     // NOTE: Callback is connected before execution, this is confusing but it's the only safe way to do this
     connect(execEngine, &ShellEngine::appExited, this, [&, execEngine](){
         execEngine->disconnect(this);
 
+        // Get automatic snapshot state
         QString btrfsStatus = execEngine->stdout().trimmed();
         if (btrfsStatus == "SUPPORTED, MANUAL") {
             m_automaticSnapshotsEnabled = false;
