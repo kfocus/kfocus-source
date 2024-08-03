@@ -210,7 +210,7 @@ RowLayout {
             Layout.preferredWidth : Kirigami.Units.gridUnit * 7
             Layout.bottomMargin   : Kirigami.Units.gridUnit * 0.5
             text                  : 'Delete'
-            icon.name             : 'delete'
+            icon.name             : 'edit-delete-remove'
             onClicked             : deleteClicked()
 
             HoverHandler {

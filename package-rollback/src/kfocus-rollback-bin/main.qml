@@ -55,6 +55,12 @@ Kirigami.ApplicationWindow {
       + backend.rollbackBackendExe
       + ' '
 
+    // Set Constant Names
+    property string optimizeDiskLabel           : 'Clean Up Disk'
+    property string createSnapshotLabel         : 'Create New Snapshot'
+    property string calculateSnapshotSizesLabel : 'Show Snapshot Sizes'
+    property string automaticSnapshotsLabel     : 'Automatic Snapshots'
+
     // Purpose: Contains list of snapshots and snapshot info
     ListModel {
         id: snapshotModel
@@ -113,22 +119,32 @@ Kirigami.ApplicationWindow {
     Component {
         id: globalHelpWindowComponent
         HelpWindow {
-            helpText: `<p><b><font color="#f7941d">Create New
-              Snapshot:</b></font> Immediately create a snapshot of the
+            helpText: `<p>These are actions that do not pertain to a specific
+              snapshot.</p>
+
+              <p><b><font color="#f7941d">`
+              + automaticSnapshotsLabel
+              + `:</b></font> When enabled, take snapshots without
+              intervention before apt software changes; or at least once a
+              week.</p>
+
+              <p><b><font color="#f7941d">` + calculateSnapshotSizesLabel
+              + `:</b></font>
+              Calculate and display the estimated space used by each
+              snapshot. Deleting a snapshot will free the amount of space
+              shown.</p>
+
+              <p><b><font color="#f7941d">` + createSnapshotLabel
+              + `:</b></font> Immediately create a snapshot of the
               current system state. This includes the /boot and root
               filesystems. This snapshot can be restored later as needed.</p>
 
-              <p><b><font color="#f7941d">Optimize Disk:</font></b>
-              Maximize available free space. This deletes all
-              snapshots, defragments files as needed, recovers unreachable
-              space, and consolidates data on the boot disk. Use this if
-              databases, virtual machines, or other apps have become
-              sluggish; or if the system prompts you to run it to recover
-              disk space.</p>
-
-              <p><b><font color="#f7941d">Automatic Snapshots:</font></b>
-              Enable this to take snapshots without intervention before apt
-              software changes, or at least once a week.</p>`
+              <p><b><font color="#f7941d">` + optimizeDiskLabel
+              + `:</font></b> Delete all snapshots, defragment files as
+              needed, recover unreachable space, and consolidate data on the
+              boot disk. Use this to maximize available free space and improve
+              performance.</p>
+              `
             helpTitle: 'Global Actions Help'
         }
     }
@@ -136,32 +152,30 @@ Kirigami.ApplicationWindow {
     Component {
         id: partitionHealthHelpWindowComponent
         HelpWindow {
-            helpText: `<p><font color="#f7941d"><b>Mount:</b></font>
-              Indicates which filesystem each row corresponds to. System
-              Rollback keeps snapshots for both the root (<code>/</code>)
-              and boot (<code>/boot</code>) filesystems correlated so
-              there are no data inconsistencies.</p>
+            helpText: `<p>This table shows disk usage for the system
+              partitions that this tool may affect.</p>
 
-              <p><font color="#f7941d"><b>Status:</b></font> Shows whether
-              the filesystem's disk space is sufficient or not. A status of
-              "<font color="#27ae60"><code>Good</code></font>" means that disk
-              space is sufficient, while a status of
+              <p><font color="#f7941d"><b>Mount:</b></font>
+              The filesystem's mount point. System Rollback keeps snapshots
+              for both the root (<code>/</code>) and boot (<code>/boot</code>)
+              filesystems correlated so there are no data inconsistencies.</p>
+
+              <p><font color="#f7941d"><b>Status:</b></font> Disk space
+              status. "<font color="#27ae60"><code>Good</code></font>" means
+              that disk space is sufficient.
               "<font color="#da4453"><code>ALERT</code></font>" means that
               disk space is low. Delete files or snapshots to free up disk
               space.</p>
 
-              <p><font color="#f7941d"><b>Size GiB:</b></font> Shows the size
-              of the filesystem, in gigabytes.</p>
+              <p><font color="#f7941d"><b>Size GiB:</b></font>
+              Filesystem size, in gigabytes.</p>
 
-              <p><font color="#f7941d"><b>Remain GiB:</b></font> Shows the
-              remaining free space on the filesystem.</p>
+              <p><font color="#f7941d"><b>Remain GiB:</b></font>
+              Remaining free space on the filesystem.</p>
 
-              <p><font color="#f7941d"><b>Unalloc %:</b></font> Shows the
-              percentage of unallocated space left on the filesystem.
-              Unallocated space can be exhausted quicker than free space,
-              which will cause problems. We recommend having at least 15%
-              unallocated space on the root and boot filesystems at all
-              times.</p>`
+              <p><font color="#f7941d"><b>Unalloc %:</b></font>
+              Percentage of unallocated space left on the filesystem.
+              Unallocated space should exceed 15% at all times.</p>`
             helpTitle: 'Partition Health Help'
         }
     }
@@ -169,27 +183,27 @@ Kirigami.ApplicationWindow {
     Component {
         id: snapshotsHelpWindowComponent
         HelpWindow {
-            helpText: `<p><b><font color="#f7941d">Delete</font></b> -
-              Removes the selected snapshot from the disk permanently.</p>
-              <br>
-              <p><b><font color="#f7941d">Restore</font></b> - Rolls back
-              the system to the state saved in the selected snapshot. The
-              system will reboot automatically during the restore
-              process.</p>
-              <br>
+            helpText: `<p>These are snapshot-specific view and edit
+              controls.</p>
+
+              <p><b><font color="#f7941d">Delete</font></b> -
+              Remove the selected snapshot from the disk permanently.</p>
+
+              <p><b><font color="#f7941d">Restore</font></b> - Roll back
+              the system to the selected snapshot. The system will reboot
+              automatically during the restore process.</p>
+
               <p><b><font color="#f7941d">Compare With</font></b> -
-              Allows you to see what files are different between any two
-              snapshots, or between a snapshot and the current system
-              state.</p>
-              <br>
-              <p><b><font color="#f7941d">Edit</font></b> - Allows you to
-              edit the name, description, and pinning of the selected
+              Shows the difference between any two snapshots, or between a
+              snapshot and the current system state.</p>
+
+              <p><b><font color="#f7941d">Edit</font></b> - Change
+              the name, description, or pinning of the selected
               snapshot.</p>
-              <br>
-              <p><b><font color="#f7941d">Pin this Snapshot</font></b> -
-              Pinned snapshots will not be removed during automatic
-              snapshot maintenance. They can be deleted manually by the
-              user. You may pin and unpin a snapshot by editing it.</p>`
+
+              <p><b><font color="#f7941d">Pin This Snapshot</font></b> -
+              Pin or unpin the selected snapshot. Pinned snapshots will not be
+              deleted until unpinned.</p>`
             helpTitle: 'Snapshots Help'
         }
     }
@@ -340,7 +354,7 @@ Kirigami.ApplicationWindow {
                             Layout.bottomMargin    :
                               Kirigami.Units.gridUnit * 0.45
                             Controls.Label {
-                                text               : 'Automatic Snapshots'
+                                text               : automaticSnapshotsLabel
                                 color              : uiLocked
                                   ? Kirigami.Theme.disabledTextColor
                                   : Kirigami.Theme.textColor
@@ -366,7 +380,7 @@ Kirigami.ApplicationWindow {
                         Controls.Button {
                             Layout.bottomMargin   :
                               Kirigami.Units.gridUnit * 0.45
-                            text                  : 'Show Snapshot Sizes'
+                            text                  : calculateSnapshotSizesLabel
                             icon.name             : 'disk-quota'
                             Layout.preferredWidth : (mainPage.width / 4)
                               - Kirigami.Units.gridUnit * 0.35
@@ -381,7 +395,7 @@ Kirigami.ApplicationWindow {
                         }
 
                         Controls.Button {
-                            text                  : 'Create New Snapshot'
+                            text                  : createSnapshotLabel
                             icon.name             : 'document-new'
                             Layout.preferredWidth : (mainPage.width / 4)
                               - Kirigami.Units.gridUnit * 0.36
@@ -398,8 +412,8 @@ Kirigami.ApplicationWindow {
                             }
                         }
                         Controls.Button {
-                            text                  : 'Optimize Disk'
-                            icon.name             : 'edit-clear-all'
+                            text                  : optimizeDiskLabel
+                            icon.name             : 'clean-up-destructive'
                             Layout.preferredWidth : (mainPage.width / 4)
                               - Kirigami.Units.gridUnit * 0.36
                             Layout.alignment      : Qt.AlignRight
@@ -760,7 +774,8 @@ Kirigami.ApplicationWindow {
                     infoText : {
                         let outputStr
                           = '<p>No snapshots exist. Create one '
-                          + 'by clicking "Create New Snapshot" above.</p>'
+                          + 'by clicking "' + createSnapshotLabel + '" '
+                          + 'above.</p>'
                           + '<br>';
                         if ( automaticSnapshotsSwitch.checked ) {
                               outputStr
@@ -843,19 +858,20 @@ Kirigami.ApplicationWindow {
                 }
 
                 ConfirmScreenItem {
-                    id          : optimizeDiskView
-                    visible     : false
-                    infoText    : '<p>System Rollback is now ready to '
-                      + 'optimize the boot disk.</p>'
+                    id            : optimizeDiskView
+                    visible       : false
+                    infoText      : '<p>System Rollback is now ready to '
+                      + 'clean up the boot disk.</p>'
                       + '<br>'
                       + '<p><b><font color="#da4453">WARNING: This will '
                       + 'delete all snapshots on the system! This cannot be '
                       + 'undone!</font></b></p>'
-                    acceptText  : 'Optimize'
-                    acceptIcon  : 'edit-clear-all'
+                    acceptText    : 'Clean Up'
+                    acceptIcon    : 'clean-up-destructive'
+                    isDestructive : true
 
-                    onOkAction  : optimizeDiskFn()
-                    onCancelled : {
+                    onOkAction    : optimizeDiskFn()
+                    onCancelled   : {
                         switchViewFn( optimizeDiskView, snapshotView );
                     }
                 }
@@ -863,7 +879,7 @@ Kirigami.ApplicationWindow {
                 WaitScreenItem {
                     id          : optimizeDiskWaitView
                     visible     : false
-                    headerText  : 'Optimizing Boot Disk...'
+                    headerText  : 'Cleaning Up Boot Disk...'
                     description : 'This may take several minutes. '
                       + 'You may continue to use your system in the mean '
                       + 'time.'
@@ -884,6 +900,17 @@ Kirigami.ApplicationWindow {
                     headerText  : 'Toggling automatic snapshots...'
                 }
 
+                ErrorScreenItem {
+                    id          : deleteSnapshotDeniedView
+                    visible     : false
+                    infoText    : 'This snapshot cannot be deleted because it is '
+                      + 'pinned. To delete this item, unpin it first.'
+                    isCritical  : false
+                    onOkClicked : {
+                        switchViewFn( deleteSnapshotDeniedView, snapshotView )
+                    }
+                }
+
                 ConfirmSnapshotActionItem {
                     id            : deleteSnapshotView
                     visible       : false
@@ -893,7 +920,8 @@ Kirigami.ApplicationWindow {
                       + 'WARNING: Deleting a snapshot cannot be undone!'
                       + '</font></b></p>'
                     acceptText    : 'Delete'
-                    acceptIcon    : 'delete'
+                    acceptIcon    : 'edit-delete-remove'
+                    isDestructive : true
 
                     onOkAction    : {
                         deleteSnapshotFn( snapshotBar.currentIndex );
@@ -952,6 +980,7 @@ Kirigami.ApplicationWindow {
                       + 'will immediately reboot the system!</font></b></p>'
                     acceptText    : 'Restore'
                     acceptIcon    : 'edit-undo-symbolic'
+                    isDestructive : true
 
                     onOkAction    : {
                         restoreSnapshotFn( snapshotBar.currentIndex );
@@ -1047,9 +1076,10 @@ Kirigami.ApplicationWindow {
                               Kirigami.Units.gridUnit * 0.5
                             text                  :
                               'Another way to free space is to remove '
-                              + 'snapshots. Click on “Show Snapshot Sizes” '
-                              + 'below to calculate and show the size of all '
-                              + 'snapshots. This usually takes 30 to 90 '
+                              + 'snapshots. Click on “'
+                              + calculateSnapshotSizesLabel
+                              + '” below to calculate and show the size of '
+                              + 'all snapshots. This usually takes 30 to 90 '
                               + 'seconds to complete, so please be patient.'
                             wrapMode              : Text.WordWrap
                         }
@@ -1059,7 +1089,7 @@ Kirigami.ApplicationWindow {
                     Layout.alignment : Qt.AlignHCenter
                     Layout.topMargin : Kirigami.Units.gridUnit * 1.15
                     id               : ldSnapshotSizeButton
-                    text             : 'Show Snapshot Sizes'
+                    text             : calculateSnapshotSizesLabel
                     icon.name        : 'disk-quota'
                     onClicked        : {
                         calculateSnapshotSizesFn();
@@ -1359,19 +1389,21 @@ Kirigami.ApplicationWindow {
             uiLocked                   = false;
             mainAreaHelpButton.visible = true;
         } else if ( target_view === createSnapshotView ) {
-            mainAreaLabel.text = 'Create New Snapshot';
+            mainAreaLabel.text = createSnapshotLabel;
         } else if ( target_view === createSnapshotErrorView ) {
             mainAreaLabel.text = 'Snapshot Creation Failed';
         } else if ( target_view === optimizeDiskView ) {
-            mainAreaLabel.text = 'Optimize Disk';
+            mainAreaLabel.text = optimizeDiskLabel;
         } else if ( target_view === automaticSnapshotSwitchView ) {
-            mainAreaLabel.text = 'Automatic Snapshots';
+            mainAreaLabel.text = automaticSnapshotsLabel;
         } else if ( target_view === deleteSnapshotView ) {
             mainAreaLabel.text = 'Delete Snapshot';
         } else if ( target_view === compareSnapshotView ) {
             mainAreaLabel.text = 'Compare Snapshots';
-        } else if ( target_view === calculateSnapshotWaitView ) {
-            mainAreaLabel.text = 'Show Snapshot Sizes';
+        } else if ( target_view === deleteSnapshotDeniedView ) {
+            mainAreaLabel.text = 'Cannot Delete Pinned Snapshot';
+        }else if ( target_view === calculateSnapshotWaitView ) {
+            mainAreaLabel.text = calculateSnapshotSizesLabel;
         }
 
         // Switch view
@@ -1412,10 +1444,14 @@ Kirigami.ApplicationWindow {
     }
 
     function prepDeleteSnapshotFn( snapshot_idx ) {
-        deleteSnapshotView.reason = snapshotModel.get(snapshot_idx).reason;
-        deleteSnapshotView.date   = snapshotModel.get(snapshot_idx).date;
-        deleteSnapshotView.name   = snapshotModel.get(snapshot_idx).name;
-        switchViewFn( snapshotView, deleteSnapshotView );
+        if ( snapshotView.pinned ) {
+            switchViewFn( snapshotView, deleteSnapshotDeniedView );
+        } else {
+            deleteSnapshotView.reason = snapshotModel.get(snapshot_idx).reason;
+            deleteSnapshotView.date   = snapshotModel.get(snapshot_idx).date;
+            deleteSnapshotView.name   = snapshotModel.get(snapshot_idx).name;
+            switchViewFn( snapshotView, deleteSnapshotView );
+        }
     }
 
     function deleteSnapshotFn( snapshot_idx ) {

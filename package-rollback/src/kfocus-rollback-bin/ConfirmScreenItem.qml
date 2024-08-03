@@ -8,6 +8,7 @@ ColumnLayout {
     property string acceptText     : ''
     property string acceptIcon     : ''
     property bool   actionsEnabled : true
+    property bool   isDestructive  : false
 
     signal okAction()
     signal cancelled()
@@ -36,6 +37,9 @@ ColumnLayout {
     }
 
     Controls.Button {
+        palette.buttonText: isDestructive
+          ? Kirigami.Theme.negativeTextColor
+          : Kirigami.Theme.textColor
         text                  : acceptText
         icon.name             : acceptIcon
         Layout.preferredWidth : Kirigami.Units.gridUnit * 7
