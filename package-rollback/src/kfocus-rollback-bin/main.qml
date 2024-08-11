@@ -1227,6 +1227,77 @@ Kirigami.ApplicationWindow {
                 }
             }
         }
+
+        OverlayAlertItem {
+            isVisible: backend.btrfsStateUnusable
+            mainIcon: 'dialog-warning'
+            headerText: 'System Unsupported'
+            mainText: 'This system does not appear to support '
+              + 'snapshotting and rollback. Please see '
+              + '<a href="https://kfocus.org/wf/recovery">https://kfocus.org/wf/recovery</a> '
+              + 'for other recovery steps you can take.'
+            primaryButtonText: 'Exit'
+            primaryButtonIcon: 'go-previous-symbolic'
+            showSecondaryButton: false
+
+            onPrimaryButtonClicked: {
+                Qt.quit();
+            }
+        }
+
+        OverlayAlertItem {
+            isVisible: backend.postRestoreSubvolsMounted
+            mainIcon: 'dialog-warning'
+            headerText: 'Restore Incomplete'
+            mainText: 'A snapshot was restored, but the system has not been '
+              + 'rebooted. Please reboot to finalize the restore. If this '
+              + 'does not fix the system, you can attempt another rollback.'
+            primaryButtonText: 'Exit'
+            primaryButtonIcon: 'go-previous-symbolic'
+            showSecondaryButton: false
+
+            onPrimaryButtonClicked: {
+                Qt.quit();
+            }
+        }
+
+        OverlayAlertItem {
+            isVisible: backend.mainWorkingSubvolExists
+            mainIcon: 'dialog-warning'
+            headerText: 'Strange BTRFS Subvolume Exists'
+            mainText: 'The BTRFS subvolume at '
+              + backend.rollbackMainWorkingDir
+              + ' should not exist, but does. System Rollback cannot proceed '
+              + 'with this subvolume present. Please ensure this subvolume '
+              + 'does not contain any important data, then remove it with '
+              + '<code>sudo btrfs subvolume delete</code>.'
+            primaryButtonText: 'Exit'
+            primaryButtonIcon: 'go-previous-symbolic'
+            showSecondaryButton: false
+
+            onPrimaryButtonClicked: {
+                Qt.quit();
+            }
+        }
+
+        OverlayAlertItem {
+            isVisible: backend.bootWorkingSubvolExists
+            mainIcon: 'dialog-warning'
+            headerText: 'Strange BTRFS Subvolume Exists'
+            mainText: 'The BTRFS subvolume at '
+              + backend.rollbackBootWorkingDir
+              + ' should not exist, but does. System Rollback cannot proceed '
+              + 'with this subvolume present. Please ensure this subvolume '
+              + 'does not contain any important data, then remove it with '
+              + '<code>sudo btrfs subvolume delete</code>.'
+            primaryButtonText: 'Exit'
+            primaryButtonIcon: 'go-previous-symbolic'
+            showSecondaryButton: false
+
+            onPrimaryButtonClicked: {
+                Qt.quit();
+            }
+        }
     }
     // == . END Views =================================================
 

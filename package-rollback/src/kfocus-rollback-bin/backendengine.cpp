@@ -1,4 +1,5 @@
 #include <QDateTime>
+#include <QDir>
 
 #include "backendengine.h"
 #include "shellengine.h"
@@ -14,6 +15,14 @@ QString BackendEngine::rollbackBackendExe() {
 
 QString BackendEngine::rollbackSetExe() {
     return m_rollbackSetExe;
+}
+
+QString BackendEngine::rollbackMainWorkingDir() {
+    return m_rollbackMainWorkingDir;
+}
+
+QString BackendEngine::rollbackBootWorkingDir() {
+    return m_rollbackBootWorkingDir;
 }
 
 QString BackendEngine::pkexecExe() {
@@ -94,6 +103,22 @@ void BackendEngine::setPostRestoreReason(QString val) {
     m_postRestoreReason = val;
 }
 
+bool BackendEngine::btrfsStateUnusable() {
+    return m_btrfsStateUnusable;
+}
+
+bool BackendEngine::postRestoreSubvolsMounted() {
+    return m_postRestoreSubvolsMounted;
+}
+
+bool BackendEngine::mainWorkingSubvolExists() {
+    return m_mainWorkingSubvolExists;
+}
+
+bool BackendEngine::bootWorkingSubvolExists() {
+    return m_bootWorkingSubvolExists;
+}
+
 int BackendEngine::getSnapshotCount() {
     return m_snapshotList->length();
 }
@@ -101,7 +126,6 @@ int BackendEngine::getSnapshotCount() {
 QString BackendEngine::getSnapshotInfo(int index, QString key) {
     return m_snapshotList->at(index).value(key);
 }
-
 QString BackendEngine::getFsData(QString fs, QString key) {
     if (fs == "main") {
         return m_mainFsInfo->value(key);
@@ -336,9 +360,32 @@ void BackendEngine::loadGlobalInfo() {
             m_automaticSnapshotsEnabled = true;
             automaticSnapshotsEnabledChanged();
         } else {
-            qCritical() << "BTRFS status neither manual nor auto!";
+            m_btrfsStateUnusable = true;
+            btrfsStateUnusableChanged();
         }
+
+        // Determine if post-restore subvols are mounted or not
+        execEngine->execSync("mount | grep 'btrfs' | grep -q '@kfocus-rollback-working'");
+        QString prMountCheckStr = execEngine->stdout().trimmed();
+        if (prMountCheckStr != QString()) {
+            m_postRestoreSubvolsMounted = true;
+        }
+        execEngine->execSync("mount | grep 'btrfs' | grep -q '@kfocus-rollback-working-boot'");
+        prMountCheckStr = execEngine->stdout().trimmed();
+        if (prMountCheckStr != QString()) {
+            m_postRestoreSubvolsMounted = true;
+        }
+
         execEngine->deleteLater();
+
+        // Check post-restore subvol locations
+        if (QDir(m_rollbackMainWorkingDir).exists()) {
+            m_mainWorkingSubvolExists = true;
+            mainWorkingSubvolExistsChanged();
+        } else if (QDir(m_rollbackBootWorkingDir).exists()) {
+            m_bootWorkingSubvolExists = true;
+            bootWorkingSubvolExistsChanged();
+        }
 
         automaticSnapshotsEnabledChanged();
         systemDataLoaded();

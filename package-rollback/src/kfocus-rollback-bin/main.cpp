@@ -12,6 +12,8 @@
 
 QString BackendEngine::m_rollbackBackendExe = "/usr/lib/kfocus/bin/kfocus-rollback-backend";
 QString BackendEngine::m_rollbackSetExe = "/usr/lib/kfocus/bin/kfocus-rollback-set";
+QString BackendEngine::m_rollbackMainWorkingDir = "/btrfs_main/@kfocus-rollback-working";
+QString BackendEngine::m_rollbackBootWorkingDir = "/btrfs_boot/@kfocus-rollback-working-boot";
 QString BackendEngine::m_pkexecExe = "/usr/bin/pkexec";
 bool BackendEngine::m_automaticSnapshotsEnabled = false;
 QList<QMap<QString, QString>> *BackendEngine::m_snapshotList = new QList<QMap<QString, QString>>();
@@ -27,10 +29,15 @@ bool BackendEngine::m_isPostRestore = false;
 QString BackendEngine::m_postRestoreName = "";
 QString BackendEngine::m_postRestoreDate = "";
 QString BackendEngine::m_postRestoreReason = "";
+bool BackendEngine::m_mainWorkingSubvolExists = false;
+bool BackendEngine::m_bootWorkingSubvolExists = false;
+bool BackendEngine::m_btrfsStateUnusable = false;
+bool BackendEngine::m_postRestoreSubvolsMounted = false;
 
 int main(int argc, char *argv[])
 {
     BackendEngine eng;
+    ShellEngine shell;
 
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
@@ -41,6 +48,7 @@ int main(int argc, char *argv[])
     qmlRegisterType<ShellEngine>("shellengine", 1, 1, "ShellEngine");
     qmlRegisterType<BackendEngine>("backendengine", 1, 0, "BackendEngine");
 
+    // Check after-restore state
     if (argc > 1 && QString(argv[1]) == "afterRestore") {
         eng.setIsPostRestore(true);
         QFile restoreReasonFile("/var/lib/kfocus/rollback_restore_complete");

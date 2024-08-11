@@ -9,6 +9,8 @@ class BackendEngine : public QObject
     Q_OBJECT
     Q_PROPERTY(QString rollbackBackendExe READ rollbackBackendExe CONSTANT)
     Q_PROPERTY(QString rollbackSetExe READ rollbackSetExe CONSTANT)
+    Q_PROPERTY(QString rollbackMainWorkingDir READ rollbackMainWorkingDir CONSTANT)
+    Q_PROPERTY(QString rollbackBootWorkingDir READ rollbackBootWorkingDir CONSTANT)
     Q_PROPERTY(QString pkexecExe READ pkexecExe CONSTANT)
     Q_PROPERTY(bool automaticSnapshotsEnabled READ automaticSnapshotsEnabled NOTIFY automaticSnapshotsEnabledChanged)
     Q_PROPERTY(bool inhibitClose READ inhibitClose WRITE setInhibitClose NOTIFY inhibitCloseChanged)
@@ -17,12 +19,18 @@ class BackendEngine : public QObject
     Q_PROPERTY(QString postRestoreName READ postRestoreName CONSTANT)
     Q_PROPERTY(QString postRestoreDate READ postRestoreDate CONSTANT)
     Q_PROPERTY(QString postRestoreReason READ postRestoreReason CONSTANT)
+    Q_PROPERTY(bool btrfsStateUnusable READ btrfsStateUnusable NOTIFY btrfsStateUnusableChanged)
+    Q_PROPERTY(bool postRestoreSubvolsMounted READ postRestoreSubvolsMounted NOTIFY postRestoreSubvolsMountedChanged)
+    Q_PROPERTY(bool mainWorkingSubvolExists READ mainWorkingSubvolExists NOTIFY mainWorkingSubvolExistsChanged)
+    Q_PROPERTY(bool bootWorkingSubvolExists READ bootWorkingSubvolExists NOTIFY bootWorkingSubvolExistsChanged)
     QML_ELEMENT 
 
 public:
     BackendEngine();
     QString rollbackBackendExe();
     QString rollbackSetExe();
+    QString rollbackMainWorkingDir();
+    QString rollbackBootWorkingDir();
     QString pkexecExe();
     bool automaticSnapshotsEnabled();
     QList<QMap<QString, QString>> *snapshotList();
@@ -42,6 +50,10 @@ public:
     void setPostRestoreDate(QString val);
     QString postRestoreReason();
     void setPostRestoreReason(QString val);
+    bool btrfsStateUnusable();
+    bool postRestoreSubvolsMounted();
+    bool mainWorkingSubvolExists();
+    bool bootWorkingSubvolExists();
     Q_INVOKABLE int getSnapshotCount();
     Q_INVOKABLE QString getSnapshotInfo(int index, QString key);
     Q_INVOKABLE QString getFsData(QString fs, QString key);
@@ -54,6 +66,10 @@ signals:
     void automaticSnapshotsEnabledChanged();
     void mainSpaceLowChanged();
     void systemDataLoaded();
+    void btrfsStateUnusableChanged();
+    void postRestoreSubvolsMountedChanged();
+    void mainWorkingSubvolExistsChanged();
+    void bootWorkingSubvolExistsChanged();
 
 private slots:
     void onSystemDataReady();
@@ -66,6 +82,8 @@ private:
 
     static QString m_rollbackBackendExe;
     static QString m_rollbackSetExe;
+    static QString m_rollbackMainWorkingDir;
+    static QString m_rollbackBootWorkingDir;
     static QString m_pkexecExe;
     static bool m_automaticSnapshotsEnabled;
     static QList<QMap<QString, QString>> *m_snapshotList;
@@ -77,6 +95,10 @@ private:
     static QString m_postRestoreName;
     static QString m_postRestoreDate;
     static QString m_postRestoreReason;
+    static bool m_btrfsStateUnusable;
+    static bool m_postRestoreSubvolsMounted;
+    static bool m_mainWorkingSubvolExists;
+    static bool m_bootWorkingSubvolExists;
 
     static QStringList m_snapshotIdList;
     static int m_snapshotIdIdx;
