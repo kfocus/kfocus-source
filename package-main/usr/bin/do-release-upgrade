@@ -1,0 +1,137 @@
+#!/bin/bash
+#
+# Copyright 2019-2024 MindShare Inc.
+#
+# Written for the Kubuntu Focus by A. Rainbolt.
+#
+# Name     : do-release-upgrade
+# Summary  : do-release-upgrade [args...]
+# Purpose  : Wrap Ubuntu's do-release-upgrade to show a dire warning to the
+#            user before they attempt to do an in-place upgrade.
+# Example  : do-release-upgrade
+# License  : GPLv2
+# Run By   : Users
+# Spec     : 4573
+#
+set -u;
+
+## BEGIN _importCommonFn {
+# Summary   : _importCommonFn
+# Purpose   : Load common routines, prefer relative dir
+# Example   : _importCommonFn;
+# Arguments : none
+# Globals   : Package vars _baseDir _baseName
+# Outputs   : none
+# Returns   : none
+#
+_importCommonFn () {
+  declare _lib_list _is_loaded _lib_file;
+  _lib_list=(
+    "${_baseDir}/lib/common.2.source"
+    '/usr/lib/kfocus/lib/common.2.source'
+  );
+  _is_loaded='n';
+  for _lib_file in "${_lib_list[@]}"; do
+    if [ -r "${_lib_file}" ]; then
+      # shellcheck source=/usr/lib/kfocus/lib/common.2.source
+      if source "${_lib_file}"; then
+        _is_loaded='y';
+        break;
+      fi
+    fi
+  done
+
+  if [ "${_is_loaded}" = 'n' ]; then
+    echo 1>&2 "${_baseName}: ABORT - Cannot source common lib";
+    exit 202;
+  fi
+}
+## . END _importCommonFn }
+
+## BEGIN _mainFn {
+_mainFn () {
+  declare _arg_list _ans _idx;
+
+  _arg_list=( "$@" );
+
+  _cm2EchoFn "${_direWarningStr}";
+  _cm2EchoFn '';
+
+  read -p 'Are you sure you want to attempt the upgrade anyway? ' -r _ans;
+  _cm2EchoFn '';
+
+  if [ "${_ans}" = "${_overrideStr}" ]; then
+    read -p 'Are you really sure? [y/N] ' -r _ans;
+    if [ "${_ans,,}" = 'y' ]; then
+      "${_escExe}" "${_releaseUpgradeExe}" "${_arg_list[@]}";
+      exit;
+    fi
+  fi
+  
+  _cm2EchoFn "${_exitUpgraderStr}";
+}
+## . END _mainFn }
+
+## BEGIN Declare and assign global vars {
+declare _binName _binDir _baseName _baseDir _direWarningStr _exitUpgraderStr \
+  _overrideStr _assignList _releaseUpgradeExe _escExe;
+
+_overrideStr='Yes, upgrade anyway and break the system!';
+
+_direWarningStr="$(cat <<'EOF'
+
+##      ##    ###    ########  ##    ## #### ##    ##  ######   
+##  ##  ##   ## ##   ##     ## ###   ##  ##  ###   ## ##    ##  
+##  ##  ##  ##   ##  ##     ## ####  ##  ##  ####  ## ##        
+##  ##  ## ##     ## ########  ## ## ##  ##  ## ## ## ##   #### 
+##  ##  ## ######### ##   ##   ##  ####  ##  ##  #### ##    ##  
+##  ##  ## ##     ## ##    ##  ##   ###  ##  ##   ### ##    ##  
+ ###  ###  ##     ## ##     ## ##    ## #### ##    ##  ######  
+
+We strongly discourage attempting to upgrade this system in-place. This could
+cause data loss, system instability, and inability to boot.
+
+The only supported way to upgrade from Kubuntu Focus Suite 22.04 to 24.04 is
+to back up your data and perform a clean install. This is safe, fast, and
+thorough. Please visit https://kfocus.org/wf/reinstall.html for the
+instructions.
+
+A clean install is required to provide system snapshot and rollback
+capabilities. In addition, some Snaps have migrated to system-native Debian
+packages. For key apps like Firefox and Thunderbird, this provides better
+performance and system integration.
+EOF
+)";
+
+_direWarningStr+="$(cat <<EOF
+
+
+Press Enter now to exit the upgrader. Alternatively, to try the upgrade
+anyway, type "${_overrideStr}" and press Enter.
+EOF
+)";
+
+_exitUpgraderStr='Exiting upgrader.';
+## . END Declare and assign global vars }
+
+## BEGIN Run mainFn when script is NOT sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+
+  _importCommonFn;
+
+  _assignList=(
+    '_releaseUpgradeExe|/usr/bin/do-release-upgrade.real'
+  );
+  if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
+    _cm2ErrStrFn 'Required commands not found.';
+    exit 1;
+  fi
+  _escExe="$(_cm2GetEscExeFn)" || exit 1;
+
+  _mainFn "$@";
+fi
+## . END Run mainFn when script is NOT sourced }

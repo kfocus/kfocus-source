@@ -1,0 +1,120 @@
+#!/bin/bash
+#
+# Copyright 2019-2024 MindShare Inc.
+#
+# Written for the Kubuntu Focus by M. Mikowski and A. Rainbolt
+#
+# Name     : kfocus-upgrade-guide
+# Summary  : kfocus-upgrade-guide
+# Purpose  : Instructs the user how to do a clean install of Kubuntu Focus
+#            Suite 24.04 over the top of an existing 22.04 installation.
+# Example  : kfocus-upgrade-guide
+# License  : GPLv2
+# Run By   : plasma-distro-release-notifier
+# Spec     : 4573
+#
+set -u;
+
+## BEGIN _importCommonFn {
+# Summary   : _importCommonFn
+# Purpose   : Load common routines, prefer relative dir
+# Example   : _importCommonFn;
+# Arguments : none
+# Globals   : Package vars _baseDir _baseName
+# Outputs   : none
+# Returns   : none
+#
+_importCommonFn () {
+  declare _lib_list _is_loaded _lib_file;
+  _lib_list=(
+    "${_baseDir}/lib/common.2.source"
+    '/usr/lib/kfocus/lib/common.2.source'
+  );
+  _is_loaded='n';
+  for _lib_file in "${_lib_list[@]}"; do
+    if [ -r "${_lib_file}" ]; then
+      # shellcheck source=/usr/lib/kfocus/lib/common.2.source
+      if source "${_lib_file}"; then
+        _is_loaded='y';
+        break;
+      fi
+    fi
+  done
+
+  if [ "${_is_loaded}" = 'n' ]; then
+    echo 1>&2 "${_baseName}: ABORT - Cannot source common lib";
+    exit 202;
+  fi
+}
+## . END _importCommonFn }
+
+_assignGlobalUiVarsFn () {
+  declare _brow_str _erow_str _table_str _header_str;
+
+  _brow_str='<tr><td style="padding:8px 32px 8px 0">';
+  _erow_str='</td></tr>';
+  _table_str='<table style="width:100%;margin-right:32px">';
+  _header_str='<h3 style="color:#f7941d">';
+
+  _windowTitle='KFocus Upgrade Guide';
+
+  _queryUserMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_str}${_header_str}Show Upgrade Instructions?</h3>${_erow_str}
+
+${_brow_str}Kubuntu Focus Suite 24.04 comes with many new features,<br>
+updated software, and improved resilience to system breakage.<br>
+Part of these new features include substantial filesystem and<br>
+disk setup changes.${_erow_str}
+
+${_brow_str}Due to these changes, in-place upgrades are not supported.<br>
+Doing an in-place upgrade anyway may result in system<br>
+damage, and will not allow all features to function as intended.<br>
+A clean installation is likely to be much faster, easier, and<br>
+less error-prone.${_erow_str}
+
+${_brow_str}Would you like to view the instructions for doing a clean<br>
+install of Kubuntu Focus Suite 24.04? This will open the Clean<br>
+Install Guided Solution in a new browser window.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+}
+
+## BEGIN _mainFn {
+_mainFn () {
+  declare _ans;
+
+  _ans="$(_cm2PromptUserFn "${_queryUserMsg}" "${_windowTitle}" 'a')";
+  if [ "${_ans}" = 'y' ]; then
+    "${_webLauncherExe}" --new-window 'https://kfocus.org/wf/reinstall.html';
+  fi
+}
+## . END _mainFn }
+
+## BEGIN Declare and assign global vars {
+declare _binName _binDir _baseDir _baseName _kfocusBinDir _webLauncherExe \
+  _assignList _windowTitle _queryUserMsg;
+## . END Declare and assign global vars }
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+
+  # Import libs and assign more global vars
+  _importCommonFn;
+
+  _assignList=(
+    "_webLauncherExe|${_binDir}/kfocus-web-launcher"
+  );
+  if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
+    _cm2ErrStrFn 'Could not assign variables';
+    exit 1;
+  fi
+
+  _assignGlobalUiVarsFn;
+
+  _mainFn;
+fi
