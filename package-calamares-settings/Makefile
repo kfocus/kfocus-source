@@ -6,7 +6,7 @@ all:
 	# basicwallpaper
 	(cd common/basicwallpaper && mkdir build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Release && make)
 	# kfocus OEM setup stuff
-	(cd kfocus && mkdir oemconfig && cd oemconfig && mkdir -p usr/bin && mkdir -p etc/calamares && mkdir -p usr/share/xsessions && mkdir -p usr/libexec && mkdir -p etc && mkdir -p usr/share/applications && mkdir -p home/oem/Desktop)
+	(cd kfocus && mkdir oemconfig && cd oemconfig && mkdir -p usr/bin && mkdir -p etc/calamares && mkdir -p usr/share/xsessions && mkdir -p usr/libexec && mkdir -p etc && mkdir -p usr/share/applications && mkdir -p home/oem/Desktop && mkdir -p usr/lib/kfocus/bin)
 	(cp kfocus/calamares-logs-helper kfocus/oemconfig/usr/bin/)
 	(cp kfocus/kfocus-prep-user kfocus/oemconfig/usr/libexec/)
 	(cp kfocus/oem/sddm.conf kfocus/oemconfig/etc/)
@@ -21,6 +21,8 @@ all:
 	(cp kfocus/oem/kubuntu-oem-env/start-kubuntu-oem-env kfocus/oemconfig/usr/libexec/)
 	(cp common/basicwallpaper/build/basicwallpaper kfocus/oemconfig/usr/bin/)
 	(cp kfocus/oem/calamares-finish-oem.desktop kfocus/oemconfig/home/oem/Desktop/)
+	(cp kfocus/oem/kfocus-chain-helper/kfocus-chain-helper-* kfocus/oemconfig/usr/lib/kfocus/bin/)
+	(cp kfocus/oem/kfocus-chain-helper/kfocus-chain-helper.desktop kfocus/oemconfig/usr/share/applications/)
 	(fakeroot bash -c "chown -R root:root kfocus/oemconfig && tar cvzf kfocus/oemconfig.tar.gz kfocus/oemconfig")
 	# Get rid of the unnecessary files
 	find kfocus/ -type f -iname "*.in" | xargs rm -f
