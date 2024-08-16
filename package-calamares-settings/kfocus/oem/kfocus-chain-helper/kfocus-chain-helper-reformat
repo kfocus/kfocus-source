@@ -84,15 +84,19 @@ _mainFn () {
   _echoDebugFn "_key_tgt   : ${_key_tgt}";
 
   # Unmount everything on the target disk
-  readarray -t _umount_list < <(ls ${_disk_tgt}*);
-  for (( _umount_idx=0; _umount_idx < ${#_umount_list[@]}; \
-    _umount_idx++ )); do
-    if [ "${_umount_list[_umount_idx]}" != "${_disk_tgt}" ]; then
-      if grep -q "${_umount_list[_umount_idx]}" < <(cat '/proc/mounts'); then
-        umount "${_umount_list[_umount_idx]}" || exit 1;
-      fi
-    fi
-  done
+  #
+  # Commented out because the UI script shouldn't let the user select a disk
+  # with anything mounted anyway.
+  #
+  # readarray -t _umount_list < <(ls ${_disk_tgt}*);
+  # for (( _umount_idx=0; _umount_idx < ${#_umount_list[@]}; \
+  #   _umount_idx++ )); do
+  #   if [ "${_umount_list[_umount_idx]}" != "${_disk_tgt}" ]; then
+  #     if grep -q "${_umount_list[_umount_idx]}" < <(cat '/proc/mounts'); then
+  #       umount "${_umount_list[_umount_idx]}" || exit 1;
+  #     fi
+  #   fi
+  # done
 
   # Partition the disk
   echo -e 'label:gpt\n- - L -' | sfdisk -w always "${_disk_tgt}" || exit 2;
