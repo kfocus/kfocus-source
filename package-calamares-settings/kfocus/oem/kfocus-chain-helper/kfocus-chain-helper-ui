@@ -121,6 +121,7 @@ _mainFn () {
     _full_prepare_yn _existing_part _part_incompat_yn _encrypted_yn \
     _crypt_passphrase_str _confirm_str _mount_point;
 
+  _encrypted_yn='n';
   _disk_str="$(_selectDiskFn)"
   [ -z "${_disk_str}" ] && exit;
 
@@ -137,7 +138,7 @@ _mainFn () {
     _luks_yn='n';
   fi
 
-  _part_count="$(_cm2LsFn "${_disk_str}"* | wc -l)";
+  _part_count="$(ls "${_disk_str}"* | wc -l)";
   _part_count=$(( _part_count - 1 )) || true;
   if [ "${_part_count}" = '0' ]; then
     # This is a blank disk.
@@ -179,8 +180,8 @@ _mainFn () {
     else
       _full_prepare_yn="$(_cm2PromptUserFn "${_chooseReuseDiskMsg}" \
         "${_winTitle}" 'd' \
-        'y' 'Reuse the existing partition' 'on' \
-        'n' 'Wipe and reformat the disk' 'off')";
+        'n' 'Reuse the existing partition' 'on' \
+        'y' 'Wipe and reformat the disk' 'off')";
       [ -z "${_full_prepare_yn}" ] && exit;
     fi
   fi
@@ -212,8 +213,12 @@ _mainFn () {
   echo "${_fullPrepareDiskExe}";
 
   if [ "${_full_prepare_yn}" = 'y' ]; then
-    _cm2RunLongCmdFn 'Preparing disk...' "${_fullPrepareDiskExe}" \
-      "${_target_mount_point}" "${_luks_yn}" "${_disk_str}";
+    if _cm2RunLongCmdFn 'Preparing disk...' "${_fullPrepareDiskExe}" \
+      "${_target_mount_point}" "${_luks_yn}" "${_disk_str}"; then
+      _cm2PromptUserFn "${_configSuccessMsg}" "${_winTitle}";
+    else
+      _cm2PromptUserFn "${_configFailureMsg}" "${_winTitle}" 'e';
+    fi
   else
     if [ "${_encrypted_yn}" = 'n' ]; then
       if _cm2RunLongCmdFn 'Preparing disk...' "${_reuseDiskExe}" \
