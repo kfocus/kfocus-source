@@ -2,11 +2,10 @@
 #
 # Copyright 2019-2024 MindShare Inc.
 #
-# Written for the Kubuntu Focus by M. Mikowski
-#   See recommended practice in kfocus-example-app.
+# Written for the Kubuntu Focus by M. Mikowski and A. Rainbolt.
 #
 # Name     : kfocus-chain-helper-reuse
-# Summary  : kfocus-chain-helper-reuse <target_mountpoint_path>
+# Summary  : kfocus-chain-helper-reuse <target_mount_point_path>
 #              <target_disk_path> [<old_luks_passphrase>]
 # Purpose  : Reuses an existing secondary disk and sets it up.
 # Example  : kfocus-chain-helper-reuse /home /dev/nvme1n1 passphrase
@@ -60,8 +59,7 @@ _echoDebugFn () {
 _mainFn () {
   declare _target_mount_point _disk_tgt _crypt_passphrase_str _disk_tgt \
     _part_tgt _crypt_tgt _key_tgt _part_top _mount_dev _mount_src _uuid \
-    _umount_list _umount_idx _luks_dump_str _key_capacity _key_size_list \
-    _key_size _key_size_idx;
+    _luks_dump_str _key_capacity _key_size_list _key_size _key_size_idx;
 
   _key_size=0;
 
@@ -90,6 +88,7 @@ _mainFn () {
   # Commented out because the UI script shouldn't let the user select a disk
   # with anything mounted anyway.
   #
+  # declare _umount_list _umount_idx;
   # readarray -t _umount_list < <(ls ${_disk_tgt}*);
   # for (( _umount_idx=0; _umount_idx < ${#_umount_list[@]}; \
   #   _umount_idx++ )); do
@@ -135,6 +134,7 @@ _mainFn () {
     _mount_dev="${_part_tgt}";
   fi
 
+  # Determine partition UUID
   _uuid="UUID=$(blkid | grep "^${_part_tgt}" | sed 's/^.*: [A-Z]*UUID="\([^"]\+\)".*$/\1/')";
   [ -z "${_uuid}" ] && exit 2;
 
@@ -170,8 +170,8 @@ _mainFn () {
 ## . END _mainFn }
 
 ## BEGIN Declare and assign global vars {
-declare _binName _binDir _baseDir _baseName _debugMode _cryptsetupExe \
-  _btrfsExe;
+declare _binName _binDir _baseDir _baseName _debugMode _assignList \
+  _btrfsExe _cryptsetupExe;
 
 _debugMode='y';
 ## . END Declare and assign global vars }
@@ -187,8 +187,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _importCommonFn;
 
   _assignList=(
-    '_cryptsetupExe|/usr/sbin/cryptsetup'
     '_btrfsExe|/usr/bin/btrfs'
+    '_cryptsetupExe|/usr/sbin/cryptsetup'
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2WarnStrFn 'ABORT: Required commands not found';

@@ -5,7 +5,7 @@
 # Written for the Kubuntu Focus by M. Mikowski and A. Rainbolt.
 #
 # Name     : kfocus-chain-helper-reformat
-# Summary  : kfocus-chain-helper-reformat <target_mountpoint_path> <luks_yn>
+# Summary  : kfocus-chain-helper-reformat <target_mount_path> <luks_yn>
 #              <target_disk_path>
 # Purpose  : Reformats a disk and sets it up as a secondary disk.
 # Example  : kfocus-chain-helper-reformat /home y /dev/nvme1n1
@@ -58,8 +58,7 @@ _echoDebugFn () {
 ## BEGIN _mainFn {
 _mainFn () {
   declare _target_mount_point _luks_yn _disk_tgt _part_tgt _crypt_tgt \
-    _key_tgt _part_top _default_str _mount_dev _mount_src _uuid _umount_list \
-    _umount_idx;
+    _key_tgt _part_top _default_str _mount_dev _mount_src _uuid;
 
   # Determine useful paths and names
   _target_mount_point="${1:-}";
@@ -76,7 +75,7 @@ _mainFn () {
   _part_top="$(basename "${_part_tgt}")";
   _crypt_tgt="${_part_top}_crypt";
   _key_tgt="luks-key-${_part_top}";
-  _default_str="$(echo 6b7562756e74750a |xxd -r -p)";
+  _default_str="$(xxd -r -p <<< '6b7562756e74750a')";
 
   _echoDebugFn "_disk_tgt  : ${_disk_tgt}";
   _echoDebugFn "_part_tgt  : ${_part_tgt}";
@@ -88,6 +87,7 @@ _mainFn () {
   # Commented out because the UI script shouldn't let the user select a disk
   # with anything mounted anyway.
   #
+  # declare _umount_list _umount_idx;
   # readarray -t _umount_list < <(ls ${_disk_tgt}*);
   # for (( _umount_idx=0; _umount_idx < ${#_umount_list[@]}; \
   #   _umount_idx++ )); do
@@ -171,10 +171,10 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _importCommonFn;
 
   _assignList=(
-    '_cryptsetupExe|/usr/sbin/cryptsetup'
-    '_sfdiskExe|/usr/sbin/sfdisk'
-    '_ext4FormatExe|/usr/sbin/mkfs.ext4'
     '_btrfsExe|/usr/bin/btrfs'
+    '_cryptsetupExe|/usr/sbin/cryptsetup'
+    '_ext4FormatExe|/usr/sbin/mkfs.ext4'
+    '_sfdiskExe|/usr/sbin/sfdisk'
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2WarnStrFn 'ABORT: Required commands not found';

@@ -24,11 +24,13 @@ for _dev_file in "${_block_list[@]}"; do
     _byte_int="$(blockdev --getsize64 "${_dev_file}")";
   _mib_int=$(( _byte_int / 1048576 ));
   _trans_key="$(lsblk -ndo tran "${_dev_file}")";
-  # TODO: can we just make this a negative condition?
-  if [[ "${_trans_key}" =~ ^(sata|nvme|virtio)$ ]]; then
-    true; else continue;
+
+  # Skip device if not the right disk type
+  if ! [[ "${_trans_key}" =~ ^(sata|nvme|virtio)$ ]]; then
+    continue;
   fi
 
+  # Skip device if less than 64 GB
   if (( "${_mib_int}" < 65536 )); then
     continue;
   fi
@@ -36,7 +38,8 @@ for _dev_file in "${_block_list[@]}"; do
   (( _disk_count++ )) || true;
 done
 
-if (( _disk_count >= 2 )); then
+# Report multi-disk
+if (( _disk_count > 1 )); then
   _msg="$(cat <<EOL
 The system has multiple disks present. If you intend to use one of these disks
 as a home or data disk, you should install Kubuntu Focus Suite using OEM mode.

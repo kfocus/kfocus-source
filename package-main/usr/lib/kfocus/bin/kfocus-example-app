@@ -59,7 +59,7 @@ _importCommonFn () {
 # Returns   : none
 #
 _incCountFn () {
-  declare _count_idx _final_val;
+  declare _count_idx _final_idx;
   for (( _count_idx = 0; _count_idx < 10; _count_idx++ )); do
     _cm2EchoFn "${_count_idx}";
     # Use ((...)) when making mathematical comparisons, only use [ ... ] and
@@ -69,12 +69,12 @@ _incCountFn () {
 
   # Use `printf -v` when copying one variable to another, do not use
   # constructs like `_var="$(echo ...)"`.
-  printf -v _final_val '%s' "${_count_idx}";
+  printf -v _final_idx '%s' "${_count_idx}";
 
   # When assigning the results of an algorithm to a variable, do the
   # assignment within (( ... )), rather than using a subshell like
   # `_var=$(( ... ))`.
-  (( _final_idx += val ));
+  (( _final_idx += 1 ));
 }
 ## . END _incCountFn }
 
