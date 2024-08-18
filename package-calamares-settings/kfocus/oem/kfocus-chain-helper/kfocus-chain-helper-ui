@@ -69,6 +69,11 @@ ${_brow_lp_str}This system appears to have more than one permanent <br>
 disk installed. Using this tool, you can reuse or create <br>
 a home or data partition from one of these disks.${_erow_str}
 
+${_brow_lp_str}<b>Please back up any important data before proceeding. <br>
+Per the GPLv2 governing license, Kubuntu Focus cannot <br>
+be responsible for any data loss resulting from use of <br>
+this tool.</b>${_erow_str}
+
 ${_brow_lp_str}Select the disk you'd like to use below, or click "Cancel" <br>
 to exit.${_erow_str}</table>
 ${_cm2HtmEndStr}
@@ -223,8 +228,6 @@ ${_erow_str}</table>
 ${_cm2HtmEndStr}
 EOF
 )";
-
-# xxxxxxxxxxxxx This is target line length xxxxxxxxxxxxxx
 
   _configSuccessMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_table_str}
