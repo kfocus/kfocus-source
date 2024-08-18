@@ -1,0 +1,186 @@
+#!/bin/bash
+#
+# Copyright 2019-2024 MindShare Inc.
+#
+# Written for the Kubuntu Focus by M. Mikowski and A. Rainbolt.
+#
+# Name     : kfocus-chain-helper-reformat
+# Summary  : kfocus-chain-helper-reformat <target_mount_path> <luks_yn>
+#              <target_disk_path>
+# Purpose  : Reformats a disk and sets it up as a secondary disk.
+# Example  : kfocus-chain-helper-reformat /home y /dev/nvme1n1
+# License  : GPLv2
+# Run By   : kfocus-chain-helper-ui
+# Spec     : 4574
+#
+set -u;
+
+## BEGIN _importCommonFn {
+# Summary   : _importCommonFn
+# Purpose   : Load common routines, prefer relative dir
+# Example   : _importCommonFn;
+# Arguments : none
+# Globals   : Package vars _baseDir _baseName
+# Outputs   : none
+# Returns   : none
+#
+_importCommonFn () {
+  declare _lib_list _is_loaded _lib_file;
+  _lib_list=(
+    "${_baseDir}/lib/common.2.source"
+    '/usr/lib/kfocus/lib/common.2.source'
+  );
+  _is_loaded='n';
+  for _lib_file in "${_lib_list[@]}"; do
+    if [ -r "${_lib_file}" ]; then
+      # shellcheck source=/usr/lib/kfocus/lib/common.2.source
+      if source "${_lib_file}"; then
+        _is_loaded='y';
+        break;
+      fi
+    fi
+  done
+
+  if [ "${_is_loaded}" = 'n' ]; then
+    echo 1>&2 "${_baseName}: ABORT - Cannot source common lib";
+    exit 202;
+  fi
+}
+## . END _importCommonFn }
+
+## BEGIN _echoDebugFn {
+_echoDebugFn () {
+  [ "${_debugMode}" = 'n' ] && return;
+  printf '%-10s: %s\n' 'DEBUG' "${1:-}" 1>&2;
+}
+## . END _echoDebugFn }
+
+## BEGIN _mainFn {
+_mainFn () {
+  declare _target_mount_point _luks_yn _disk_tgt _part_tgt _crypt_tgt \
+    _key_tgt _part_top _default_str _mount_dev _mount_src _uuid;
+
+  # Determine useful paths and names
+  _target_mount_point="${1:-}";
+  [ -z "${_target_mount_point}" ] && exit 1;
+  _luks_yn="${2:-}";
+  [ -z "${_luks_yn}" ] && exit 1;
+  _disk_tgt="${3:-}";
+  [ -z "${_disk_tgt}" ] && exit 1;
+  if [[ "${_disk_tgt}" =~ ^/dev/nvme ]]; then
+    _part_tgt="${_disk_tgt}p1";
+  else
+    _part_tgt="${_disk_tgt}1";
+  fi
+  _part_top="$(basename "${_part_tgt}")";
+  _crypt_tgt="${_part_top}_crypt";
+  _key_tgt="luks-key-${_part_top}";
+  _default_str="$(xxd -r -p <<< '6b7562756e74750a')";
+
+  _echoDebugFn "_disk_tgt  : ${_disk_tgt}";
+  _echoDebugFn "_part_tgt  : ${_part_tgt}";
+  _echoDebugFn "_crypt_tgt : ${_crypt_tgt}";
+  _echoDebugFn "_key_tgt   : ${_key_tgt}";
+
+  # Unmount everything on the target disk
+  #
+  # Commented out because the UI script shouldn't let the user select a disk
+  # with anything mounted anyway.
+  #
+  # declare _umount_list _umount_idx;
+  # readarray -t _umount_list < <(ls ${_disk_tgt}*);
+  # for (( _umount_idx=0; _umount_idx < ${#_umount_list[@]}; \
+  #   _umount_idx++ )); do
+  #   if [ "${_umount_list[_umount_idx]}" != "${_disk_tgt}" ]; then
+  #     if grep -q "${_umount_list[_umount_idx]}" < <(cat '/proc/mounts'); then
+  #       umount "${_umount_list[_umount_idx]}" || exit 1;
+  #     fi
+  #   fi
+  # done
+
+  # Partition the disk
+  echo -e 'label:gpt\n- - L -' | sfdisk -w always "${_disk_tgt}" || exit 2;
+
+  # Format the disk
+  if [ "${_luks_yn}" = 'y' ]; then
+    _mount_dev="/dev/mapper/${_crypt_tgt}";
+    echo "${_default_str}" | "${_cryptsetupExe}" luksFormat "${_part_tgt}" \
+      || exit 2;
+    echo "${_default_str}" \
+      | "${_cryptsetupExe}" luksOpen "${_part_tgt}" "${_crypt_tgt}" \
+      || exit 2;
+    dd if=/dev/urandom of="/root/.${_key_tgt}" bs=1024 count=4 || exit 2;
+    echo "${_default_str}" \
+      | "${_cryptsetupExe}" luksAddKey "${_part_tgt}" "/root/.${_key_tgt}" \
+      || exit 2;
+  else
+    _mount_dev="${_part_tgt}";
+  fi
+  "${_ext4FormatExe}" "${_mount_dev}" || exit 2;
+
+  # Determine partition UUID
+  _uuid="UUID=$(blkid | grep "^${_part_tgt}" | sed 's/^.*: [A-Z]*UUID="\([^"]\+\)".*$/\1/')";
+  [ -z "${_uuid}" ] && exit 2;
+
+  # Configure the disk to mount at boot
+  if [ "${_luks_yn}" = 'y' ]; then
+    _mount_src="${_mount_dev}";
+    echo "${_crypt_tgt} ${_uuid} /root/.${_key_tgt} luks,discard" \
+      >> /etc/crypttab || exit 2;
+  else
+    _mount_src="${_uuid}";
+  fi
+  echo -e "# ${_target_mount_point} is on ${_mount_dev}\n${_mount_src} ${_target_mount_point} ext4 defaults 0 2" >> /etc/fstab || exit 2;
+
+  # Move the home directory if needed
+  if [ "${_target_mount_point}" = '/home' ]; then
+    # Unmount in preparation to move
+    umount '/home' || exit 2;
+    # Delete the unneeded home subvolume
+    "${_btrfsExe}" subvolume delete '/btrfs_main/@home' || exit 2;
+    # Comment out the old /home mount line in fstab
+    sed -i 's|^\(.*/home.*btrfs.*subvol=/@home.*\)$|# KFOCUS Replaced /home btrfs with secondary disk\n# \1|' /etc/fstab || exit 2;
+    # Re-parse fstab
+    systemctl daemon-reload;
+    # Remount /home
+    mount '/home' || exit 2;
+
+  # Otherwise make sure /srv/data actually exists
+  else
+    mkdir -p '/srv/data';
+    mount '/srv/data' || exit 2;
+  fi
+}
+## . END _mainFn }
+
+## BEGIN Declare and assign global vars {
+declare _binName _binDir _baseDir _baseName _debugMode _assignList \
+  _cryptsetupExe _sfdiskExe _ext4FormatExe _btrfsExe;
+
+_debugMode='y';
+## . END Declare and assign global vars }
+
+## BEGIN Run mainFn when script is NOT sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+
+  # Import libs and assign more global vars
+  _importCommonFn;
+
+  _assignList=(
+    '_btrfsExe|/usr/bin/btrfs'
+    '_cryptsetupExe|/usr/sbin/cryptsetup'
+    '_ext4FormatExe|/usr/sbin/mkfs.ext4'
+    '_sfdiskExe|/usr/sbin/sfdisk'
+  );
+  if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
+    _cm2WarnStrFn 'ABORT: Required commands not found';
+    exit 1;
+  fi
+
+  _mainFn "$@";
+fi
+## . END Run mainFn when script is NOT sourced }

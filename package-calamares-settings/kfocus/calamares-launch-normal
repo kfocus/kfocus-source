@@ -3,14 +3,56 @@
 # Launch Calamares normally.
 
 if [ -e '/etc/calamares/OEM_MODE_ACTIVATED' ]; then
-  msg="$(cat <<EOL
+  _msg="$(cat <<EOL
 The installer was previously run in OEM mode. Please reboot to reset the
 configuration and try again.
 EOL
   )";
-  kdialog --msgbox "${msg}";
+  kdialog --msgbox "${_msg}";
   exit 1;
 fi
 
 export BROWSER='sudo -H -u kubuntu firefox'
+
+# Detect multi-disk and offer OEM mode if so
+_disk_count=0;
+IFS=$'\n' read -r -d '' -a _block_list <<< "$( 
+  find /dev/ -maxdepth 1 -type b \
+  | grep -E '^/dev/(sd[a-z]|nvme[0-9]n1|vd[a-z])$'
+)";
+for _dev_file in "${_block_list[@]}"; do
+    _byte_int="$(blockdev --getsize64 "${_dev_file}")";
+  _mib_int=$(( _byte_int / 1048576 ));
+  _trans_key="$(lsblk -ndo tran "${_dev_file}")";
+
+  # Skip device if not the right disk type
+  if ! [[ "${_trans_key}" =~ ^(sata|nvme|virtio)$ ]]; then
+    continue;
+  fi
+
+  # Skip device if less than 64 GB
+  if (( "${_mib_int}" < 65536 )); then
+    continue;
+  fi
+
+  (( _disk_count++ )) || true;
+done
+
+# Report multi-disk
+if (( _disk_count > 1 )); then
+  _msg="$(cat <<EOL
+<p>The system has multiple disks present. If you intend to use one of these
+disks as a home or data disk, you should install Kubuntu Focus Suite using OEM
+mode. You will be able to configure the second disk after installation using
+the Multi-Disk Configuration Tool after installation.</p>
+
+<p>Launch OEM installer now?</p>
+EOL
+  )";
+  _ans="$(kdialog --yesno "${_msg}"; [ "$?" = '0' ] && echo 'y' || echo 'n')";
+  if [ "${_ans}" = 'y' ]; then
+    exec calamares-launch-oem;
+  fi
+fi
+
 calamares -D8;
