@@ -144,11 +144,15 @@ _mainFn () {
     systemctl daemon-reload;
     # Remount /home
     mount '/home' || exit 2;
+    # Get rid of a useless directory
+    rmdir '/home/lost+found' || true;
 
   # Otherwise make sure /srv/data actually exists
   else
     mkdir -p '/srv/data';
     mount '/srv/data' || exit 2;
+    # Get rid of a useless directory
+    rmdir '/srv/data/lost+found' || true;
   fi
 }
 ## . END _mainFn }
