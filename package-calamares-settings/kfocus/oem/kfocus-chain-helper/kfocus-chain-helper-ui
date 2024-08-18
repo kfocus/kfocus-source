@@ -404,6 +404,10 @@ _getDiskContentStrFn () {
     _item_list_str _item_list_len _threshold_val _last_str _trim_count \
     _dir_count;
 
+  # Avoid cluttering up the user interface when fstab has changed before this
+  # function runs.
+  systemctl daemon-reload;
+
   _part_tgt="${1:-}";
   [ -z "${_part_tgt}" ] && exit 1;
   _crypt_passphrase_str="${2:-}";
