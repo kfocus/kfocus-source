@@ -59,18 +59,18 @@ _assignUiStringsFn () {
   _left_header_str='<h3 style="color:#f7941d">';
   _center_header_str='<h3 style="color:#f7941d;text-align:center">';
 
-  _winTitle='Kubuntu Focus Installer';
+  _winTitle='Multi-Disk Configuration Tool';
 
   _chooseDiskMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_table_str}
 ${_brow_lp_str}${_center_header_str}Set Up Secondary Disk?</h3>${_erow_str}
 
 ${_brow_lp_str}This system appears to have more than one permanent <br>
-disk installed. Using this tool, you can reuse or create<br>
-a home or data partition from one of these disks.<br><br>
+disk installed. Using this tool, you can reuse or create <br>
+a home or data partition from one of these disks.${_erow_str}
 
-Select the disk you'd like to use below, or click <br>
-"Cancel" to exit.${_erow_str}</table>
+${_brow_lp_str}Select the disk you'd like to use below, or click "Cancel" <br>
+to exit.${_erow_str}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
@@ -80,13 +80,13 @@ ${_cm2HtmBeginStr}${_table_str}
 ${_brow_lp_str}${_center_header_str}Select Mount Point</h3>${_erow_str}
 
 ${_brow_lp_str}Select the mount point for XXX_SELECTED_DISK_XXX.<br>
-The partition will be mounted to selected directory. <br>
+The partition will be mounted to the selected directory. <br>
 If you select "/home", the storage space will be used <br>
-by user directories, such as "/home/fred". <br>
-If you select "/srv/data", the storage space will be <br>
-available for you to use as you see fit.<br><br>
+by user directories, such as "/home/fred". If you select <br>
+"/srv/data", the storage space will be available for you <br>
+to use as you see fit.${_erow_str}
 
-Select your preference below, or click "Cancel" to exit.
+${_brow_lp_str}Select your preference below, or click "Cancel" to exit.
 ${_erow_str}</table>
 ${_cm2HtmEndStr}
 EOF
@@ -109,62 +109,60 @@ ${_cm2HtmBeginStr}${_table_str}
 ${_brow_rp_str}${_left_header_str}Wipe and Prepare Disk?</h3>${_erow_str}
 
 ${_brow_rp_str}The selected disk, XXX_SELECTED_DISK_XXX, has more<br>
-has more than one partition. This tool is not designed <br>
-to handle this condition. If you know what you are <br>
-doing, you can inspect the drive and then proceed <br>
-to reformat it. <b>This WILL delete any existing <br>
-partitions and data</b>.<br><br>
+than one partition. This tool is not designed to handle <br>
+this condition. If you know what you are doing, you can <br>
+inspect the drive and then proceed to reformat it. <b> This <br>
+WILL delete any existing partitions and data</b>.${_erow_str}
 
-If you are unsure, we suggest you click "Cancel" to<br>
-exit this tool and manually mount this disk later.<br><br>
+${_brow_rp_str}If you are unsure, we suggest you click "Cancel" to<br>
+exit this tool and manually mount this disk later.${_erow_str}
 
-Click "OK" to wipe and reformat the entire disk, <br>
+${_brow_rp_str}Click "OK" to wipe and reformat the entire disk, <br>
 otherwise click "Cancel" to exit.
 ${_erow_str}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
 
-  _confirmHighDangerDiskMsg="$(cat <<EOF
+  _confirmFormatHighDangerMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_table_str}
 ${_brow_rp_str}${_left_header_str}Wipe and Prepare Disk?</h3>${_erow_str}
 
-${_brow_rp_str}<b>The selected disk, XXX_SELECTED_DISK_XXX, appears<br>
+${_brow_rp_str}<b>The selected disk, XXX_SELECTED_DISK_XXX, appears <br>
 to have previously been a secondary disk</b>, but its <br>
-encryption state is incompatible with the root disk.<br><br>
+encryption state is incompatible with the root disk.${_erow_str}
 
-If you know what you are doing, you can inspect the<br>
+${_brow_rp_str}If you know what you are doing, you can inspect the <br>
 drive and then proceed to reformat it. <b>This WILL <br>
-delete any existing partitions and data</b>.<br><br>
+delete any existing partitions and data</b>.${_erow_str}
 
-If you are unsure, we suggest you click "Cancel" to<br>
-exit this tool and manually mount this disk later.<br><br>
+${_brow_rp_str}If you are unsure, we suggest you click "Cancel" to <br>
+exit this tool and manually mount this disk later.${_erow_str}
 
-Click "OK" to wipe and reformat the entire disk, <br>
+${_brow_rp_str}Click "OK" to wipe and reformat the entire disk, <br>
 otherwise click "Cancel" to exit.
 ${_erow_str}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
 
-# xxxxxxxxxxxxx This is target line length xxxxxxxxxxxxxx
   _chooseReuseDiskMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_table_str}
 ${_brow_lp_str}${_center_header_str}Reuse Disk?</h3>${_erow_str}
 
-${_brow_rp_str}<b>The selected disk, XXX_SELECTED_DISK_XXX, appears<br>
+${_brow_lp_str}<b>The selected disk, XXX_SELECTED_DISK_XXX, appears<br>
 to have been a secondary disk previously, and can be <br>
-used again while keeping any existing data. <br><br>
+used again while keeping any existing data.${_erow_str}
 
-Alternately, you may elect to reformat the drive.<br>
-<b>This WILL delete any existing partitions and data</b>.<br>
-If you are unsure, we suggest you click "Cancel" to<br>
-exit this tool and manually mount this disk later.<br><br>
+${_brow_lp_str}Alternately, you may elect to reformat the drive. <b>This <br>
+WILL delete any existing partitions and data</b>. If you <br>
+are unsure, we suggest you click "Cancel" to exit <br>
+this tool and manually mount this disk later.${_erow_str}
 
-Select "Reuse the existing partition" to preserve <br>
-the data. Select "Wipe and reformat the disk" to <br>
-delete all data and start fresh. Otherwise, click <br>
-"Cancel" to exit.
+${_brow_lp_str}Select "Reuse the existing partition" to preserve the <br>
+data. Select "Wipe and reformat the disk" to delete <br>
+all data and start fresh. Otherwise, click "Cancel" <br>
+to exit.
 ${_erow_str}</table>
 ${_cm2HtmEndStr}
 EOF
@@ -203,10 +201,11 @@ EOF
 ${_cm2HtmBeginStr}${_table_str}
 ${_brow_rp_str}${_left_header_str}Final Confirmation</h3>${_erow_str}
 
-${_brow_rp_str}The Multi-Disk Configuration Tool is now ready to configure<br>
-the secondary disk. <b>This is the last confirmation message<br>
-before changes are written to the disks.</b> Click "OK" to confirm,<br>
-or click "Cancel" to back out.${_erow_str}</table>
+${_brow_rp_str}The Multi-Disk Configuration Tool is now ready to configure <br>
+the secondary disk, XXX_SELECTED_DISK_XXX. <b>This is the <br>
+last confirmation message before changes are written to <br>
+the disks.</b> Click "OK" to confirm, or click "Cancel" to back out.
+${_erow_str}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
@@ -215,13 +214,17 @@ EOF
 ${_cm2HtmBeginStr}${_table_str}
 ${_brow_rp_str}${_left_header_str}Final Confirmation</h3>${_erow_str}
 
-${_brow_rp_str}The Multi-Disk Configuration Tool is now ready to configure<br>
-the secondary disk. <b>This is the last confirmation message<br>
-before changes are written to the disks.</b> Click "OK" to confirm,<br>
-or click "Cancel" to back out.${_erow_str}</table>
+${_brow_rp_str}The Multi-Disk Configuration Tool is now ready to configure <br>
+the secondary disk, XXX_SELECTED_DISK_XXX. <b>The disk will <br>
+be reformatted and all data on it will be lost! This is the last <br>
+confirmation message before changes are written to the <br>
+disks.</b> Click "OK" to confirm, or click "Cancel" to back out.
+${_erow_str}</table>
 ${_cm2HtmEndStr}
 EOF
 )";
+
+# xxxxxxxxxxxxx This is target line length xxxxxxxxxxxxxx
 
   _configSuccessMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_table_str}
@@ -237,8 +240,8 @@ EOF
 ${_cm2HtmBeginStr}${_table_str}
 ${_brow_rp_str}${_left_header_str}No Secondary Disks</h3>${_erow_str}
 
-${_brow_rp_str}There do not appear to be any secondary disks on this system.<br>
-Click 'OK' to exit this tool.${_erow_str}</table>
+${_brow_rp_str}There do not appear to be any secondary disks on this <br>
+system. Click 'OK' to exit this tool.${_erow_str}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
@@ -247,7 +250,7 @@ EOF
 ${_cm2HtmBeginStr}${_table_str}
 ${_brow_rp_str}${_left_header_str}Bad Passphrase</h3>${_erow_str}
 
-${_brow_rp_str}The provided passphrase is incorrect. Click 'OK' to exit<br>
+${_brow_rp_str}The provided passphrase is incorrect. Click 'OK' to exit <br>
 this tool.${_erow_str}</table>
 ${_cm2HtmEndStr}
 EOF
@@ -257,12 +260,12 @@ EOF
 ${_cm2HtmBeginStr}${_table_str}
 ${_brow_rp_str}${_left_header_str}Configuration Failed</h3>${_erow_str}
 
-${_brow_rp_str}The secondary disk could not be configured! No changes<br>
+${_brow_rp_str}The secondary disk could not be configured! No changes <br>
 have been made to the system.${_erow_str}
 
-${_brow_rp_str}Please make sure all partitions on the secondary disk have<br>
-been unmounted. Then try again. You may try restarting<br>
-the system if the issue persists.${_erow_str}</table>
+${_brow_rp_str}Please make sure all partitions on the secondary disk have <br>
+been unmounted. Then try again. You may try restarting <br>
+the system if this issue persists.${_erow_str}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
@@ -271,8 +274,8 @@ EOF
 ${_cm2HtmBeginStr}${_table_str}
 ${_brow_rp_str}${_left_header_str}Configuration Failed</h3>${_erow_str}
 
-${_brow_rp_str}The secondary disk could not be configured! Please contact<br>
-technical support.${_erow_str}</table>
+${_brow_rp_str}The secondary disk configuration failed part way through! <br>
+Please contact technical support.${_erow_str}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
@@ -398,7 +401,7 @@ _mainFn () {
   _part_count="$(lsblk "${_disk_str}" -o TYPE |grep -c 'part')";
   _part_count="$(_cm2EchoIntFn "${_part_count}")";
 
-  if (( _part_count = 0 )); then
+  if (( _part_count == 0 )); then
     # This is a blank disk.
     _confirmFormatSafeMsg="${_confirmFormatSafeMsg/XXX_SELECTED_DISK_XXX/${_disk_str}}";
     _full_prepare_yn="$(_cm2PromptUserFn "${_confirmFormatSafeMsg}" \
@@ -434,11 +437,12 @@ _mainFn () {
     fi
 
     if [ "${_part_incompat_yn}" = 'y' ]; then
-    _confirmHighDangerDiskMsg="${_confirmHighDangerDiskMsg//XXX_SELECTED_DISK_XXX/${_disk_str}}";
-      _full_prepare_yn="$(_cm2PromptUserFn "${_confirmHighDangerDiskMsg}" \
+    _confirmFormatHighDangerMsg="${_confirmFormatHighDangerMsg//XXX_SELECTED_DISK_XXX/${_disk_str}}";
+      _full_prepare_yn="$(_cm2PromptUserFn "${_confirmFormatHighDangerMsg}" \
         "${_winTitle}" 'o')";
       [ "${_full_prepare_yn}" = 'n' ] && exit;
     else
+      _chooseReuseDiskMsg="${_chooseReuseDiskMsg//XXX_SELECTED_DISK_XXX/${_disk_str}}";
       _full_prepare_yn="$(_cm2PromptUserFn "${_chooseReuseDiskMsg}" \
         "${_winTitle}" 'd' \
         'n' 'Reuse the existing partition' 'on' \
@@ -459,8 +463,12 @@ _mainFn () {
 
   _confirmOverviewMsg="${_confirmOverviewMsg//'XXX_SECONDARY_DISK_XXX'/"${_disk_str}"}";
   _confirmOverviewMsg="${_confirmOverviewMsg//'XXX_MOUNT_POINT_XXX'/"${_target_mount_point}"}";
-  _confirmOverviewMsg="${_confirmOverviewMsg//'XXX_ENCRYPTED_XXX'/"${_luks_yn}"}";
-  _confirmOverviewMsg="${_confirmOverviewMsg//'XXX_REFORMAT_XXX'/"${_full_prepare_yn}"}";
+  [ "${_luks_yn}" = 'y' ] \
+    && _confirmOverviewMsg="${_confirmOverviewMsg//XXX_ENCRYPTED_XXX/Yes}" \
+    || _confirmOverviewMsg="${_confirmOverviewMsg//XXX_ENCRYPTED_XXX/No}";
+  [ "${_full_prepare_yn}" = 'y' ] \
+    && _confirmOverviewMsg="${_confirmOverviewMsg//XXX_REFORMAT_XXX/Yes}" \
+    || _confirmOverviewMsg="${_confirmOverviewMsg//XXX_REFORMAT_XXX/No}";
 
   _confirm_str="$(_cm2PromptUserFn "${_confirmOverviewMsg}" "${_winTitle}" \
     'o')";
@@ -539,6 +547,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     _cm2WarnStrFn 'ABORT: Required commands not found';
     exit 1;
   fi
+
+  _assignUiStringsFn;
 
   _mainFn "$@";
 fi
