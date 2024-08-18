@@ -4,9 +4,10 @@
 #
 # Written for the Kubuntu Focus by M. Mikowski and A. Rainbolt
 #
-# Name     : kfocus-chain-helper
-# Summary  : ./kfocus-chain-helper
-# Purpose  : Assists with the process of setting up disk chaining.
+# Name     : kfocus-chain-helper-ui
+# Summary  : ./kfocus-chain-helper-ui
+# Purpose  : Assists with the process of setting up disk chaining. This is the
+#            user interface component.
 # Example  : kfocus-chain-helper
 # License  : GPLv2
 # Run By   : User
@@ -84,7 +85,7 @@ EOF
 ${_cm2HtmBeginStr}${_table_str}
 ${_brow_lp_str}${_center_header_str}Select Mount Point</h3>${_erow_str}
 
-${_brow_lp_str}Select the mount point for XXX_SELECTED_DISK_XXX.<br>
+${_brow_lp_str}Select the mount point for <code>XXX_SELECTED_DISK_XXX</code>.<br>
 The partition will be mounted to the selected directory. <br>
 If you select "/home", the storage space will be used <br>
 by user directories, such as "/home/fred". If you select <br>
@@ -101,7 +102,7 @@ EOF
 ${_cm2HtmBeginStr}${_table_str}
 ${_brow_rp_str}${_left_header_str}Prepare Disk?</h3>${_erow_str}
 
-${_brow_rp_str}The selected disk, XXX_SELECTED_DISK_XXX, appears to<br>
+${_brow_rp_str}The selected disk, <code>XXX_SELECTED_DISK_XXX</code>, appears to<br>
 be blank. It must be formatted before use. Click "OK" <br>
 to format and proceed, or click "Cancel" to exit.
 ${_erow_str}</table>
@@ -113,7 +114,7 @@ EOF
 ${_cm2HtmBeginStr}${_table_str}
 ${_brow_rp_str}${_left_header_str}Wipe and Prepare Disk?</h3>${_erow_str}
 
-${_brow_rp_str}The selected disk, XXX_SELECTED_DISK_XXX, has more<br>
+${_brow_rp_str}The selected disk, <code>XXX_SELECTED_DISK_XXX</code>, has more<br>
 than one partition. This tool is not designed to handle <br>
 this condition. If you know what you are doing, you can <br>
 inspect the drive and then proceed to reformat it. <b> This <br>
@@ -133,9 +134,11 @@ EOF
 ${_cm2HtmBeginStr}${_table_str}
 ${_brow_rp_str}${_left_header_str}Wipe and Prepare Disk?</h3>${_erow_str}
 
-${_brow_rp_str}<b>The selected disk, XXX_SELECTED_DISK_XXX, appears <br>
-to have previously been a secondary disk</b>, but its <br>
-encryption state is incompatible with the root disk.${_erow_str}
+${_brow_rp_str}<b>The selected disk, <code>XXX_SELECTED_DISK_XXX</code>, appears <br>
+to have previously been a secondary disk</b>, but it <br>
+is unable to be used for the following reason:${_erow_str}
+
+${_brow_rp_str}XXX_INCOMPAT_REASON_XXX${_erow_str}
 
 ${_brow_rp_str}If you know what you are doing, you can inspect the <br>
 drive and then proceed to reformat it. <b>This WILL <br>
@@ -155,19 +158,19 @@ EOF
 ${_cm2HtmBeginStr}${_table_str}
 ${_brow_lp_str}${_center_header_str}Reuse Disk?</h3>${_erow_str}
 
-${_brow_lp_str}<b>The selected disk, XXX_SELECTED_DISK_XXX, appears<br>
-to have been a secondary disk previously, and can be <br>
-used again while keeping any existing data.${_erow_str}
+${_brow_lp_str}The selected disk, <code>XXX_SELECTED_DISK_XXX</code>, <br>
+appears to have been a secondary disk previously, <br>
+and can be used again while keeping any existing <br>
+data.${_erow_str}
 
-${_brow_lp_str}Alternately, you may elect to reformat the drive. <b>This <br>
-WILL delete any existing partitions and data</b>. If you <br>
-are unsure, we suggest you click "Cancel" to exit <br>
-this tool and manually mount this disk later.${_erow_str}
+${_brow_lp_str}Here's a preview of the disk's top-level directory:${_erow_str}
+
+${_brow_lp_str}<code>XXX_CONTENT_LIST_XXX</code>${_erow_str}
 
 ${_brow_lp_str}Select "Reuse the existing partition" to preserve the <br>
-data. Select "Wipe and reformat the disk" to delete <br>
-all data and start fresh. Otherwise, click "Cancel" <br>
-to exit.
+data. Select "Wipe and reformat the disk" to <b>delete <br>
+all data</b> and start fresh. If both of these are <br>
+undesirable, click "Cancel" to exit.
 ${_erow_str}</table>
 ${_cm2HtmEndStr}
 EOF
@@ -207,7 +210,7 @@ ${_cm2HtmBeginStr}${_table_str}
 ${_brow_rp_str}${_left_header_str}Final Confirmation</h3>${_erow_str}
 
 ${_brow_rp_str}The Multi-Disk Configuration Tool is now ready to configure <br>
-the secondary disk, XXX_SELECTED_DISK_XXX. <b>This is the <br>
+the secondary disk, <code>XXX_SELECTED_DISK_XXX</code>. <b>This is the <br>
 last confirmation message before changes are written to <br>
 the disks.</b> Click "OK" to confirm, or click "Cancel" to back out.
 ${_erow_str}</table>
@@ -220,7 +223,7 @@ ${_cm2HtmBeginStr}${_table_str}
 ${_brow_rp_str}${_left_header_str}Final Confirmation</h3>${_erow_str}
 
 ${_brow_rp_str}The Multi-Disk Configuration Tool is now ready to configure <br>
-the secondary disk, XXX_SELECTED_DISK_XXX. <b>The disk will <br>
+the secondary disk, <code>XXX_SELECTED_DISK_XXX</code>. <b>The disk will <br>
 be reformatted and all data on it will be lost! This is the last <br>
 confirmation message before changes are written to the <br>
 disks.</b> Click "OK" to confirm, or click "Cancel" to back out.
@@ -253,8 +256,9 @@ EOF
 ${_cm2HtmBeginStr}${_table_str}
 ${_brow_rp_str}${_left_header_str}Bad Passphrase</h3>${_erow_str}
 
-${_brow_rp_str}The provided passphrase is incorrect. Click 'OK' to exit <br>
-this tool.${_erow_str}</table>
+${_brow_rp_str}The provided passphrase is incorrect. The tool cannot <br>
+inspect the files on the disk to help determine if it <br>
+contains important data. Try decrypting again?${_erow_str}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
@@ -375,14 +379,106 @@ _selectDiskFn () {
 }
 ## . END _selectDiskFn }
 
+## BEGIN _getDiskSizeStr {
+_getDiskSizeStr () {
+  declare _df_str _disk_size_kib _disk_used_kib _disk_size_gib _disk_used_gib;
+
+  _df_str="$(LC_ALL='C' df '/crypt_scan' | tail -n1)";
+  _disk_size_kib="$(awk '{ print $2 }' <<< "${_df_str}")";
+  _disk_used_kib="$(awk '{ print $3 }' <<< "${_df_str}")";
+  _disk_size_gib="$(bc <<< "scale=2; ${_disk_size_kib}/1024/1024") GiB";
+  _disk_used_gib="$(bc <<< "scale=2; ${_disk_used_kib}/1024/1024") GiB";
+
+  echo "${_disk_used_gib} of ${_disk_size_gib} space used.";
+}
+## . END _getDiskSizeStr }
+
+## BEGIN _getDiskContentStrFn {
+#
+# Shellcheck doesn't understand that I need full regex capability in the sed
+# commands here, which ${variable//search/replace} does not provide.
+#
+# shellcheck disable=SC2001
+_getDiskContentStrFn () {
+  declare _part_tgt _crypt_passphrase_str _mount_str _crypt_name \
+    _item_list_str _item_list_len _threshold_val _last_str _trim_count \
+    _dir_count;
+
+  _part_tgt="${1:-}";
+  [ -z "${_part_tgt}" ] && exit 1;
+  _crypt_passphrase_str="${2:-}";
+
+  # Output format:
+  # item1 <br>
+  # item2 <br>
+  # itemN <br>                        # up to 10 items can be shown
+  # ...                               # verbatim, include when items > 10
+  # Truncated, X files, Y directories # include when items > 10
+
+  mkdir -p '/crypt_scan'
+
+  if [ -n "${_crypt_passphrase_str}" ]; then
+    _crypt_name="$(basename "${_part_tgt}")_crypt";
+    echo "${_crypt_passphrase_str}" | "${_cryptsetupExe}" luksOpen \
+      "${_part_tgt}" "${_crypt_name}";
+    _mount_str="/dev/mapper/${_crypt_name}";
+  else
+    _mount_str="${_part_tgt}";
+  fi
+
+  mount "${_mount_str}" '/crypt_scan' || exit 1;
+  cd '/crypt_scan' || exit 1;
+  _item_list_str="$(LC_ALL='C' tree -L 1)";
+  _last_str="$(_getDiskSizeStr)";
+  cd '/' || exit 1;
+  umount '/crypt_scan';
+  rmdir '/crypt_scan';
+  [ -n "${_crypt_passphrase_str}" ] && "${_cryptsetupExe}" 'luksClose' \
+    "/dev/mapper/${_crypt_name}";
+
+  _item_list_len="$(wc -l <<< "${_item_list_str}")";
+  _threshold_val=13; # ten items plus header and footer of tree
+  _max_main_count=11; # ten items plus header of tree
+
+  _item_list_str="$(sed 's/$/ <br>/' <<< "${_item_list_str}")";
+
+#  _last_str="$(tail -n1 <<< "${_item_list_str}")";
+#  _dir_count="$(cut -d' ' -f1 <<< "${_last_str}")";
+#  (( _dir_count-- )) || true;
+#  if (( _dir_count == 0 )); then
+#    _last_str="$(sed "s/[0-9]\+ directory/${_dir_count} directories/" \
+#      <<< "${_last_str}")";
+#  elif (( _dir_count == 1 )); then
+#    _last_str="$(sed "s/[0-9]\+ directories/${_dir_count} directory/" \
+#      <<< "${_last_str}")";
+#  else
+#    _last_str="$(sed "s/[0-9]\+ /${_dir_count} /" <<< "${_last_str}")";
+#  fi
+#  _last_str="$(sed 's/ <br>$//' <<< "${_last_str}")";
+
+  if (( _item_list_len < _threshold_val )); then
+    (( _max_main_count -= (_threshold_val - _item_list_len) )) || true;
+  fi
+
+  head "-n${_max_main_count}" <<< "${_item_list_str}" \
+    | tail "-n$(( _max_main_count - 1 ))";
+
+  if (( _item_list_len > _threshold_val )); then
+    echo '... (list truncated) <br>';
+  fi
+  echo "${_last_str}";
+}
+## . END _getDiskContentStrFn }
+
 ## BEGIN _mainFn {
 _mainFn () {
   declare _disk_str _target_mount_point _root_dev_str _luks_yn \
     _part_count _full_prepare_yn _existing_part _part_incompat_yn \
     _encrypted_yn _crypt_passphrase_str _confirm_str _prompt_msg \
-    _exit_code;
+    _exit_code _disk_content_str;
 
   _encrypted_yn='n';
+  _crypt_passphrase_str='';
   _disk_str="$(_selectDiskFn)";
   [ -z "${_disk_str}" ] && exit;
 
@@ -440,27 +536,46 @@ _mainFn () {
     fi
 
     if [ "${_part_incompat_yn}" = 'y' ]; then
-    _confirmFormatHighDangerMsg="${_confirmFormatHighDangerMsg//XXX_SELECTED_DISK_XXX/${_disk_str}}";
+      _confirmFormatHighDangerMsg="${_confirmFormatHighDangerMsg//XXX_SELECTED_DISK_XXX/${_disk_str}}";
+      _confirmFormatHighDangerMsg="${_confirmFormatHighDangerMsg//XXX_INCOMPAT_REASON_XXX/Cannot use an encrypted disk with unencrypted root.}";
       _full_prepare_yn="$(_cm2PromptUserFn "${_confirmFormatHighDangerMsg}" \
         "${_winTitle}" 'o')";
       [ "${_full_prepare_yn}" = 'n' ] && exit;
     else
-      _chooseReuseDiskMsg="${_chooseReuseDiskMsg//XXX_SELECTED_DISK_XXX/${_disk_str}}";
-      _full_prepare_yn="$(_cm2PromptUserFn "${_chooseReuseDiskMsg}" \
-        "${_winTitle}" 'd' \
-        'n' 'Reuse the existing partition' 'on' \
-        'y' 'Wipe and reformat the disk' 'off')";
-      [ -z "${_full_prepare_yn}" ] && exit;
-    fi
-  fi
+      if [ "${_encrypted_yn}" = 'y' ]; then
+        while true; do
+          _crypt_passphrase_str="$(kdialog --title "${_winTitle}" \
+            --password "Please enter the secondary disk's passphrase.")";
+          if ! "${_cryptsetupExe}" luksOpen --test-passphrase "${_existing_part}" \
+            <<< "${_crypt_passphrase_str}" 1>&2 2>/dev/null; then
+            if [ "$(_cm2PromptUserFn "${_badPassphraseMsg}" "${_winTitle}" \
+              'a')" = 'n' ];
+              then _crypt_passphrase_str=''; break;
+            fi
+          else
+            break;
+          fi
+        done
+      fi
 
-  if [ "${_encrypted_yn}" = 'y' ]; then
-    _crypt_passphrase_str="$(kdialog --title "${_winTitle}" \
-      --inputbox "Please enter the secondary disk's passphrase.")";
-    if ! "${_cryptsetupExe}" luksOpen --test-passphrase "${_existing_part}" \
-      <<< "${_crypt_passphrase_str}" 1>&2 2>/dev/null; then
-      _cm2PromptUserFn "${_badPassphraseMsg}" "${_winTitle}";
-      exit;
+      if [ "${_encrypted_yn}" = 'y' ] \
+        && [ -z "${_crypt_passphrase_str}" ]; then
+        _confirmFormatHighDangerMsg="${_confirmFormatHighDangerMsg//XXX_SELECTED_DISK_XXX/${_disk_str}}";
+        _confirmFormatHighDangerMsg="${_confirmFormatHighDangerMsg//XXX_INCOMPAT_REASON_XXX/Disk passphrase not provided.}";
+        _full_prepare_yn="$(_cm2PromptUserFn "${_confirmFormatHighDangerMsg}" \
+          "${_winTitle}" 'o')";
+        [ "${_full_prepare_yn}" = 'n' ] && exit;
+      else
+        _disk_content_str="$(_getDiskContentStrFn "${_existing_part}" \
+          "${_crypt_passphrase_str}")";
+        _chooseReuseDiskMsg="${_chooseReuseDiskMsg//XXX_SELECTED_DISK_XXX/${_disk_str}}";
+        _chooseReuseDiskMsg="${_chooseReuseDiskMsg//XXX_CONTENT_LIST_XXX/${_disk_content_str}}";
+        _full_prepare_yn="$(_cm2PromptUserFn "${_chooseReuseDiskMsg}" \
+          "${_winTitle}" 'd' \
+          'n' 'Reuse the existing partition' 'on' \
+          'y' 'Wipe and reformat the disk' 'off')";
+        [ -z "${_full_prepare_yn}" ] && exit;
+      fi
     fi
   fi
 
