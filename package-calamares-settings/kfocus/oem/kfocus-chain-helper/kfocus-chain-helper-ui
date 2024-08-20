@@ -303,6 +303,19 @@ Please contact technical support.${_erow_str}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
+
+  _contentListFailureMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}Disk Inspection Failed</h3>${_erow_str}
+
+${_brow_rp_str}The secondary disk's contents could not be inspected! This <br>
+prevents the tool from helping determine whether the drive<br>
+can be safely wiped or reused.${_erow_str}
+
+${_brow_rp_str}Please contact technical support.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
 }
 ## . END _assignUiStringsFn } 
 
@@ -431,15 +444,15 @@ _getDiskSizeStr () {
 # shellcheck disable=SC2001
 _getDiskContentStrFn () {
   declare _part_tgt _crypt_passphrase_str _mount_str _crypt_name \
-    _item_list_str _item_list_len _threshold_val _last_str _trim_count \
-    _dir_count;
+    _item_list_str _item_list_withhidden_len _item_list_len _threshold_val \
+    _last_str _trim_count _dir_count _output_str;
 
   # Avoid cluttering up the user interface when fstab has changed before this
   # function runs.
   systemctl daemon-reload;
 
   _part_tgt="${1:-}";
-  [ -z "${_part_tgt}" ] && exit 1;
+  [ -z "${_part_tgt}" ] && return 1;
   _crypt_passphrase_str="${2:-}";
 
   # Output format:
@@ -448,6 +461,9 @@ _getDiskContentStrFn () {
   # itemN <br>                        # up to 10 items can be shown
   # ...                               # verbatim, include when items > 10
   # Truncated, X files, Y directories # include when items > 10
+  # TODO this is out of date
+  
+  _output_str='';
 
   mkdir -p '/crypt_scan'
 
@@ -460,15 +476,21 @@ _getDiskContentStrFn () {
     _mount_str="${_part_tgt}";
   fi
 
-  mount "${_mount_str}" '/crypt_scan' || exit 1;
-  cd '/crypt_scan' || exit 1;
+  if [ -z "$(lsblk -no fstype "${_mount_str}")" ]; then
+    "${_cryptsetupExe}" luksClose "/dev/mapper/${_crypt_name}";
+    rmdir '/crypt_scan';
+    return 2;
+  fi
+
+  mount "${_mount_str}" '/crypt_scan' || return 1;
+  cd '/crypt_scan' || return 1;
   _item_list_str="$(LC_ALL='C' tree -L 1)";
-  _last_str="$(_getDiskSizeStr)";
-  cd '/' || exit 1;
-  umount '/crypt_scan';
-  rmdir '/crypt_scan';
-  [ -n "${_crypt_passphrase_str}" ] && "${_cryptsetupExe}" 'luksClose' \
-    "/dev/mapper/${_crypt_name}";
+  _item_list_withhidden_str="$(LC_ALL='C' tree -a -L 1)";
+  # If there are only three items in the list string, no non-hidden files or
+  # directories exist.
+  if [ "$(wc -l <<< "${_item_list_str}")" = '3' ]; then
+    _item_list_str="${_item_list_withhidden_str}";
+  fi
 
   _item_list_len="$(wc -l <<< "${_item_list_str}")";
   _threshold_val=13; # ten items plus header and footer of tree
@@ -476,31 +498,42 @@ _getDiskContentStrFn () {
 
   _item_list_str="$(sed 's/$/ <br>/' <<< "${_item_list_str}")";
 
-#  _last_str="$(tail -n1 <<< "${_item_list_str}")";
-#  _dir_count="$(cut -d' ' -f1 <<< "${_last_str}")";
-#  (( _dir_count-- )) || true;
-#  if (( _dir_count == 0 )); then
-#    _last_str="$(sed "s/[0-9]\+ directory/${_dir_count} directories/" \
-#      <<< "${_last_str}")";
-#  elif (( _dir_count == 1 )); then
-#    _last_str="$(sed "s/[0-9]\+ directories/${_dir_count} directory/" \
-#      <<< "${_last_str}")";
-#  else
-#    _last_str="$(sed "s/[0-9]\+ /${_dir_count} /" <<< "${_last_str}")";
-#  fi
+  _last_str="$(tail -n1 <<< "${_item_list_withhidden_str}"; echo -e ' <br>\n')";
+  _dir_count="$(cut -d' ' -f1 <<< "${_last_str}";)";
+  (( _dir_count-- )) || true;
+  if (( _dir_count == -1 )); then
+    # Skip this condition
+    true;
+  elif (( _dir_count == 0 )); then
+    _last_str="$(sed "s/[0-9]\+ directory/${_dir_count} directories/" \
+      <<< "${_last_str}")";
+  elif (( _dir_count == 1 )); then
+    _last_str="$(sed "s/[0-9]\+ directories/${_dir_count} directory/" \
+      <<< "${_last_str}")";
+  else
+    _last_str="$(sed "s/[0-9]\+ /${_dir_count} /" <<< "${_last_str}")";
+  fi
 #  _last_str="$(sed 's/ <br>$//' <<< "${_last_str}")";
-
+  _last_str+="$(echo -e '\n'; _getDiskSizeStr)";
+  
+  cd '/' || return 1;
+  umount '/crypt_scan';
+  rmdir '/crypt_scan';
+  [ -n "${_crypt_passphrase_str}" ] && "${_cryptsetupExe}" 'luksClose' \
+    "/dev/mapper/${_crypt_name}";
+  
   if (( _item_list_len < _threshold_val )); then
     (( _max_main_count -= (_threshold_val - _item_list_len) )) || true;
   fi
-
-  head "-n${_max_main_count}" <<< "${_item_list_str}" \
-    | tail "-n$(( _max_main_count - 1 ))";
-
+  
+  _output_str="$(head "-n${_max_main_count}" <<< "${_item_list_str}" \
+    | tail "-n$(( _max_main_count - 1 ))")";
   if (( _item_list_len > _threshold_val )); then
-    echo '... (list truncated) <br>';
+    _output_str+="$(echo -e '\n... (list truncated) <br>')";
   fi
-  echo "${_last_str}";
+  _output_str+="$(echo -e "\n${_last_str}")";
+
+  echo "${_output_str}";
 }
 ## . END _getDiskContentStrFn }
 
@@ -602,13 +635,25 @@ _mainFn () {
       else
         _disk_content_str="$(_getDiskContentStrFn "${_existing_part}" \
           "${_crypt_passphrase_str}")";
-        _chooseReuseDiskMsg="${_chooseReuseDiskMsg//XXX_SELECTED_DISK_XXX/${_disk_str}}";
-        _chooseReuseDiskMsg="${_chooseReuseDiskMsg//XXX_CONTENT_LIST_XXX/${_disk_content_str}}";
-        _full_prepare_yn="$(_cm2PromptUserFn "${_chooseReuseDiskMsg}" \
-          "${_winTitle}" 'd' \
-          'n' 'Reuse the existing partition' 'on' \
-          'y' 'Wipe and reformat the disk' 'off')";
-        [ -z "${_full_prepare_yn}" ] && exit;
+        _exit_code="$?";
+        if (( _exit_code == 0 )); then
+          _chooseReuseDiskMsg="${_chooseReuseDiskMsg//XXX_SELECTED_DISK_XXX/${_disk_str}}";
+          _chooseReuseDiskMsg="${_chooseReuseDiskMsg//XXX_CONTENT_LIST_XXX/${_disk_content_str}}";
+          _full_prepare_yn="$(_cm2PromptUserFn "${_chooseReuseDiskMsg}" \
+            "${_winTitle}" 'd' \
+            'n' 'Reuse the existing partition' 'on' \
+            'y' 'Wipe and reformat the disk' 'off')";
+          [ -z "${_full_prepare_yn}" ] && exit;
+        elif (( _exit_code == 2 )); then
+          _confirmFormatHighDangerMsg="${_confirmFormatHighDangerMsg//XXX_SELECTED_DISK_XXX/${_disk_str}}";
+          _confirmFormatHighDangerMsg="${_confirmFormatHighDangerMsg//XXX_INCOMPAT_REASON_XXX/LUKS volume contains no filesystem.}";
+          _full_prepare_yn="$(_cm2PromptUserFn \
+            "${_confirmFormatHighDangerMsg}" "${_winTitle}" 'o')";
+          [ "${_full_prepare_yn}" = 'n' ] && exit;
+        else
+          _cm2PromptUserFn "${_contentListFailureMsg}" "${_winTitle}" 's';
+          exit 1;
+        fi
       fi
     fi
   fi
@@ -696,7 +741,8 @@ declare _binName _binDir _baseDir _baseName _assignList _cryptsetupExe \
   _chooseMountMsg _confirmFormatSafeMsg _confirmFormatDangerMsg \
   _chooseReuseDiskMsg _noSecondaryDisksMsg _configSuccessMsg \
   _configSoftFailureMsg _configLuksOverflowFailureMsg _configHardFailureMsg \
-  _confirmOverviewMsg _finalConfirmMsg _finalReformatMsg;
+  _confirmOverviewMsg _finalConfirmMsg _finalReformatMsg \
+  _contentListFailureMsg;
 ## . END Declare and assign global vars }
 
 ## BEGIN Run mainFn when script is NOT sourced {
