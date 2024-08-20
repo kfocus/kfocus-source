@@ -613,14 +613,19 @@ _mainFn () {
     fi
   fi
 
-  _confirmOverviewMsg="${_confirmOverviewMsg//'XXX_SECONDARY_DISK_XXX'/"${_disk_str}"}";
-  _confirmOverviewMsg="${_confirmOverviewMsg//'XXX_MOUNT_POINT_XXX'/"${_target_mount_point}"}";
-  [ "${_luks_yn}" = 'y' ] \
-    && _confirmOverviewMsg="${_confirmOverviewMsg//XXX_ENCRYPTED_XXX/Yes}" \
-    || _confirmOverviewMsg="${_confirmOverviewMsg//XXX_ENCRYPTED_XXX/No}";
-  [ "${_full_prepare_yn}" = 'y' ] \
-    && _confirmOverviewMsg="${_confirmOverviewMsg//XXX_REFORMAT_XXX/Yes}" \
-    || _confirmOverviewMsg="${_confirmOverviewMsg//XXX_REFORMAT_XXX/No}";
+  _confirmOverviewMsg="${_confirmOverviewMsg//XXX_SECONDARY_DISK_XXX/${_disk_str}}";
+  _confirmOverviewMsg="${_confirmOverviewMsg//XXX_MOUNT_POINT_XXX/${_target_mount_point}}";
+  if [ "${_full_prepare_yn}" = 'y' ]; then
+    [ "${_luks_yn}" = 'y' ] \
+      && _confirmOverviewMsg="${_confirmOverviewMsg//XXX_ENCRYPTED_XXX/Yes}" \
+      || _confirmOverviewMsg="${_confirmOverviewMsg//XXX_ENCRYPTED_XXX/No}";
+    _confirmOverviewMsg="${_confirmOverviewMsg//XXX_REFORMAT_XXX/Yes}";
+  else
+    [ -n "${_crypt_passphrase_str}" ] \
+      && _confirmOverviewMsg="${_confirmOverviewMsg//XXX_ENCRYPTED_XXX/Yes}" \
+      || _confirmOverviewMsg="${_confirmOverviewMsg//XXX_ENCRYPTED_XXX/No}";
+    _confirmOverviewMsg="${_confirmOverviewMsg//XXX_REFORMAT_XXX/No}";
+  fi
 
   _confirm_str="$(_cm2PromptUserFn "${_confirmOverviewMsg}" "${_winTitle}" \
     'o')";
