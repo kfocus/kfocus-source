@@ -47,9 +47,11 @@ if (( _disk_count > 1 )); then
 <p>The system has multiple disks present. To properly configure a secondary
 disk after installation, you MUST install the Kubuntu Focus Suite to a single
 disk using a default installation option (such as Erase Disk). Do NOT use
-manual partitioning. It is fine to enable encryption or disable the creation
-of a swap file if desired. See <a
-href="http://localhost:8080/wf/reinstall.html#bkm_multi_disk_configuration">http://localhost:8080/wf/reinstall.html#bkm_multi_disk_configuration</a>
+manual partitioning, and do NOT change the default filesystem.</p>
+
+<p>It is fine to enable encryption or disable the creation of a swap file if
+desired. See <a
+href="http://kfocus.org/wf/reinstall.html#bkm_multi_disk_configuration">http://kfocus.org/wf/reinstall.html#bkm_multi_disk_configuration</a>
 for more information.</p>
 EOL
   )";

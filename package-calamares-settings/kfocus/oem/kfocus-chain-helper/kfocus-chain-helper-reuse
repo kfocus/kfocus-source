@@ -116,7 +116,7 @@ _mainFn () {
 
     if (( _key_size >= _key_capacity )); then
       _cm2WarnStrFn 'Not enough room for another LUKS key!';
-      exit 1;
+      exit 2;
     fi
 
     _mount_dev="/dev/mapper/${_crypt_tgt}";
@@ -129,42 +129,42 @@ _mainFn () {
       || exit 1;
     echo "${_crypt_passphrase_str}" \
       | "${_cryptsetupExe}" luksAddKey "${_part_tgt}" "/root/.${_key_tgt}" \
-      || exit 2;
+      || exit 3;
   else
     _mount_dev="${_part_tgt}";
   fi
 
   # Determine partition UUID
   _uuid="UUID=$(blkid | grep "^${_part_tgt}" | sed 's/^.*: [A-Z]*UUID="\([^"]\+\)".*$/\1/')";
-  [ -z "${_uuid}" ] && exit 2;
+  [ -z "${_uuid}" ] && exit 3;
 
   # Configure the disk to mount at boot
   if [ -n "${_crypt_passphrase_str}" ]; then
     _mount_src="${_mount_dev}";
     echo "${_crypt_tgt} ${_uuid} /root/.${_key_tgt} luks,discard" \
-      >> /etc/crypttab || exit 2;
+      >> /etc/crypttab || exit 3;
   else
     _mount_src="${_uuid}";
   fi
-  echo -e "# ${_target_mount_point} is on ${_mount_dev}\n${_mount_src} ${_target_mount_point} ext4 defaults 0 2" >> /etc/fstab || exit 2;
+  echo -e "# ${_target_mount_point} is on ${_mount_dev}\n${_mount_src} ${_target_mount_point} ext4 defaults 0 2" >> /etc/fstab || exit 3;
 
   # Move the home directory if needed
   if [ "${_target_mount_point}" = '/home' ]; then
     # Unmount in preparation to move
-    umount '/home' || exit 2;
+    umount '/home' || exit 3;
     # Delete the unneeded home subvolume
-    "${_btrfsExe}" subvolume delete '/btrfs_main/@home' || exit 2;
+    "${_btrfsExe}" subvolume delete '/btrfs_main/@home' || exit 3;
     # Comment out the old /home mount line in fstab
-    sed -i 's|^\(.*/home.*btrfs.*subvol=/@home.*\)$|# KFOCUS Replaced /home btrfs with secondary disk\n# \1|' /etc/fstab || exit 2;
+    sed -i 's|^\(.*/home.*btrfs.*subvol=/@home.*\)$|# KFOCUS Replaced /home btrfs with secondary disk\n# \1|' /etc/fstab || exit 3;
     # Re-parse fstab
     systemctl daemon-reload;
     # Remount /home
-    mount '/home' || exit 2;
+    mount '/home' || exit 3;
 
   # Otherwise make sure /srv/data actually exists
   else
     mkdir -p '/srv/data';
-    mount '/srv/data' || exit 2;
+    mount '/srv/data' || exit 3;
   fi
 }
 ## . END _mainFn }

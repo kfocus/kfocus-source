@@ -277,6 +277,23 @@ ${_cm2HtmEndStr}
 EOF
   )";
 
+  _configLuksOverflowFailureMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}Configuration Failed</h3>${_erow_str}
+
+${_brow_rp_str}
+The secondary disk is out of space for additional LUKS <br>
+keys! No changes have been made to the system.${_erow_str}
+
+${_brow_rp_str}You can rectify this issue by removing unused LUKS keys <br>
+from the disk using cryptsetup. If the disk contains no <br>
+important data, reformatting it is also an option. If both <br>
+of these are undesirable, you can skip using this tool <br>
+and mount the disk separately later.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
   _configHardFailureMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_table_str}
 ${_brow_rp_str}${_left_header_str}Configuration Failed</h3>${_erow_str}
@@ -533,8 +550,8 @@ _mainFn () {
         lsblk -ndo fstype "${_existing_part}"
       ) && echo 'y' || echo 'n'
     )"
-    if [ "${_encrypted_yn}" = 'n' ]; then
-      if [ "${_luks_yn}" = 'y' ]; then
+    if [ "${_encrypted_yn}" = 'y' ]; then
+      if [ "${_luks_yn}" = 'n' ]; then
         _part_incompat_yn='y';
       fi
     fi
@@ -618,24 +635,38 @@ _mainFn () {
       _cm2RunLongCmdFn 'Preparing disk...' "${_reuseDiskExe}" \
         "${_target_mount_point}" "${_disk_str}";
       _exit_code="$?";
-      if [ "${_exit_code}" = '0' ]; then
-        _cm2PromptUserFn "${_configSuccessMsg}" "${_winTitle}";
-      elif [ "${_exit_code}" = '1' ]; then
-        _cm2PromptUserFn "${_configSoftFailureMsg}" "${_winTitle}";
-      else
-        _cm2PromptUserFn "${_configHardFailureMsg}" "${_winTitle}" 'e';
-      fi
+      case "${_exit_code}" in
+        '0')
+          _cm2PromptUserFn "${_configSuccessMsg}" "${_winTitle}";
+          ;;
+        '1')
+          _cm2PromptUserFn "${_configSoftFailureMsg}" "${_winTitle}";
+          ;;
+        '2')
+          _cm2PromptUserFn "${_configLuksOverflowFailureMsg}" "${_winTitle}";
+          ;;
+        '3')
+          _cm2PromptUserFn "${_configHardFailureMsg}" "${_winTitle}" 'e';
+          ;;
+      esac
     else
       _cm2RunLongCmdFn 'Preparing disk...' "${_reuseDiskExe}" \
         "${_target_mount_point}" "${_disk_str}" "${_crypt_passphrase_str}";
       _exit_code="$?";
-      if [ "${_exit_code}" = '0' ]; then
-        _cm2PromptUserFn "${_configSuccessMsg}" "${_winTitle}";
-      elif [ "${_exit_code}" = '1' ]; then
-        _cm2PromptUserFn "${_configSoftFailureMsg}" "${_winTitle}";
-      else
-        _cm2PromptUserFn "${_configHardFailureMsg}" "${_winTitle}" 'e';
-      fi
+      case "${_exit_code}" in
+        '0')
+          _cm2PromptUserFn "${_configSuccessMsg}" "${_winTitle}";
+          ;;
+        '1')
+          _cm2PromptUserFn "${_configSoftFailureMsg}" "${_winTitle}";
+          ;;
+        '2')
+          _cm2PromptUserFn "${_configLuksOverflowFailureMsg}" "${_winTitle}";
+          ;;
+        '3')
+          _cm2PromptUserFn "${_configHardFailureMsg}" "${_winTitle}" 'e';
+          ;;
+      esac
     fi
   fi
 }
@@ -646,8 +677,8 @@ declare _binName _binDir _baseDir _baseName _assignList _cryptsetupExe \
   _fullPrepareDiskExe _reuseDiskExe _winTitle _chooseDiskMsg \
   _chooseMountMsg _confirmFormatSafeMsg _confirmFormatDangerMsg \
   _chooseReuseDiskMsg _noSecondaryDisksMsg _configSuccessMsg \
-  _configSoftFailureMsg _configHardFailureMsg _confirmOverviewMsg \
-  _finalConfirmMsg _finalReformatMsg;
+  _configSoftFailureMsg _configLuksOverflowFailureMsg _configHardFailureMsg \
+  _confirmOverviewMsg _finalConfirmMsg _finalReformatMsg;
 ## . END Declare and assign global vars }
 
 ## BEGIN Run mainFn when script is NOT sourced {
