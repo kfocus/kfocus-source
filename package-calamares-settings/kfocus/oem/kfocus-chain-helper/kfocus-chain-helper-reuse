@@ -119,6 +119,11 @@ _mainFn () {
       exit 2;
     fi
 
+    if (( ${#_key_size_list[@]} >= 32 )); then
+      _cm2WarnStrFn 'Too many LUKS keys!';
+      exit 2;
+    fi
+
     _mount_dev="/dev/mapper/${_crypt_tgt}";
 
     # Insert the key
