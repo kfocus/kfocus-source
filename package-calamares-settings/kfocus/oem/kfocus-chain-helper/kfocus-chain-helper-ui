@@ -445,7 +445,7 @@ _getDiskSizeStr () {
 _getDiskContentStrFn () {
   declare _part_tgt _crypt_passphrase_str _mount_str _crypt_name \
     _item_list_str _item_list_withhidden_len _item_list_len _threshold_val \
-    _last_str _trim_count _dir_count _output_str;
+    _last_str _max_main_count _dir_count _output_str;
 
   # Avoid cluttering up the user interface when fstab has changed before this
   # function runs.
@@ -458,10 +458,10 @@ _getDiskContentStrFn () {
   # Output format:
   # item1 <br>
   # item2 <br>
-  # itemN <br>                        # up to 10 items can be shown
-  # ...                               # verbatim, include when items > 10
-  # Truncated, X files, Y directories # include when items > 10
-  # TODO this is out of date
+  # itemN <br> # up to 10 items can be shown
+  # ... (list truncated)
+  # X directories, Y files
+  # Z.A Gib of B.C GiB used.
   
   _output_str='';
 
