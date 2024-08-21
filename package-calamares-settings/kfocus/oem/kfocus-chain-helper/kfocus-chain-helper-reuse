@@ -151,7 +151,7 @@ _mainFn () {
   else
     _mount_src="${_uuid}";
   fi
-  echo -e "# ${_target_mount_point} is on ${_mount_dev}\n${_mount_src} ${_target_mount_point} ext4 defaults 0 2" >> /etc/fstab || exit 3;
+  echo -e "# KFOCUS ${_target_mount_point} is on ${_mount_dev}\n${_mount_src} ${_target_mount_point} ext4 defaults 0 2" >> /etc/fstab || exit 3;
 
   # Move the home directory if needed
   if [ "${_target_mount_point}" = '/home' ]; then

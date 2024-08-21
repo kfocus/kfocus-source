@@ -62,6 +62,16 @@ _assignUiStringsFn () {
 
   _winTitle='Multi-Disk Configuration Tool';
 
+  _alreadySetupMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}Disk Already Configured</h3>${_erow_str}
+
+${_brow_rp_str}This system appears to already have a secondary disk <br>
+configured. Click "OK" to exit this tool.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
   _chooseDiskMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_table_str}
 ${_brow_lp_str}${_center_header_str}Set Up Secondary Disk?</h3>${_erow_str}
@@ -118,9 +128,11 @@ ${_brow_rp_str}${_left_header_str}Wipe and Prepare Disk?</h3>${_erow_str}
 
 ${_brow_rp_str}The selected disk, <code>XXX_SELECTED_DISK_XXX</code>, has more<br>
 than one partition. This tool is not designed to handle <br>
-this condition. If you know what you are doing, you can <br>
-inspect the drive and then proceed to reformat it. <b> This <br>
-WILL delete any existing partitions and data</b>.${_erow_str}
+this condition.${_erow_str}
+
+${_brow_rp_str}If you know what you are doing, you can inspect the <br>
+drive and then proceed to reformat it. <b> This WILL <br>
+delete any existing partitions and data</b>.${_erow_str}
 
 ${_brow_rp_str}If you are unsure, we suggest you click "Cancel" to<br>
 exit this tool and manually mount this disk later.${_erow_str}
@@ -558,6 +570,9 @@ _getDiskContentStrFn () {
   if (( _item_list_len > _threshold_val )); then
     _output_str+="$(echo -e ' <br>\n... (list truncated)')";
   fi
+  if [ -z "${_output_str}" ]; then
+    _output_str='No files or directories.';
+  fi
 
   _chooseReuseDiskMsg="${_chooseReuseDiskMsg//XXX_DISK_USAGE_XXX/"${_disk_size_str}"}";
   _chooseReuseDiskMsg="${_chooseReuseDiskMsg//XXX_CONTENT_LIST_XXX/"${_output_str}"}";
@@ -573,6 +588,12 @@ _mainFn () {
 
   _encrypted_yn='n';
   _crypt_passphrase_str='';
+
+  if grep -q '# KFOCUS.*is on.*' '/etc/fstab'; then
+    _cm2PromptUserFn "${_alreadySetupMsg}" "${_winTitle}";
+    exit;
+  fi
+
   _disk_str="$(_selectDiskFn)";
   [ -z "${_disk_str}" ] && exit;
 
@@ -599,7 +620,7 @@ _mainFn () {
     # user wants to wipe it and prepare it, and bail out if they say no.
     _confirmFormatDangerMsg="${_confirmFormatDangerMsg/XXX_SELECTED_DISK_XXX/${_disk_str}}";
     _full_prepare_yn="$(_cm2PromptUserFn "${_confirmFormatDangerMsg}" \
-      "${_winTitle}" 'i')";
+      "${_winTitle}" 'o')";
     [ "${_full_prepare_yn}" = 'n' ] && exit;
   else
     # This is likely an old secondary disk. See if it's reusable and offer the
@@ -773,7 +794,7 @@ declare _binName _binDir _baseDir _baseName _assignList _cryptsetupExe \
   _chooseReuseDiskMsg _noSecondaryDisksMsg _configSuccessMsg \
   _configSoftFailureMsg _configLuksOverflowFailureMsg _configHardFailureMsg \
   _confirmOverviewMsg _finalConfirmMsg _finalReformatMsg \
-  _contentListFailureMsg _queryPassphraseMsg;
+  _contentListFailureMsg _queryPassphraseMsg _alreadySetupMsg;
 ## . END Declare and assign global vars }
 
 ## BEGIN Run mainFn when script is NOT sourced {
