@@ -284,8 +284,8 @@ EOF
 ${_cm2HtmBeginStr}${_table_str}
 ${_brow_rp_str}${_left_header_str}No Secondary Disks</h3>${_erow_str}
 
-${_brow_rp_str}There do not appear to be any secondary disks on this <br>
-system. Click 'OK' to exit this tool.${_erow_str}</table>
+${_brow_rp_str}There do not appear to be any unused secondary disks on <br>
+this system. Click "OK" to exit this tool.${_erow_str}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
@@ -614,7 +614,6 @@ _mainFn () {
     _full_prepare_yn="$(_cm2PromptUserFn "${_confirmFormatSafeMsg}" \
       "${_winTitle}" 'o')";
     [ "${_full_prepare_yn}" = 'n' ] && exit;
-    echo 'doing it';
   elif (( _part_count > 1 )); then
     # This is not an old secondary disk and can't be reused. Confirm that the
     # user wants to wipe it and prepare it, and bail out if they say no.
@@ -725,11 +724,10 @@ _mainFn () {
 
   if [ "${_full_prepare_yn}" = 'y' ]; then
     _prompt_msg="${_finalReformatMsg//XXX_SELECTED_DISK_XXX/${_disk_str}}";
-    _prompt_msg="${_prompt_msg//XXX_MOUNT_POINT_XXX/${_target_mount_point}}";
   else
     _prompt_msg="${_finalConfirmMsg//XXX_SELECTED_DISK_XXX/${_disk_str}}";
-    _prompt_msg="${_prompt_msg//XXX_MOUNT_POINT_XXX/${_target_mount_point}}";
   fi
+  _prompt_msg="${_prompt_msg//XXX_MOUNT_POINT_XXX/${_target_mount_point}}";
   _confirm_str="$(
     _cm2PromptUserFn "${_prompt_msg}" "${_winTitle}" 'o'
   )";
@@ -739,12 +737,20 @@ _mainFn () {
   _configSuccessMsg="${_configSuccessMsg//XXX_MOUNT_POINT_XXX/${_target_mount_point}}";
 
   if [ "${_full_prepare_yn}" = 'y' ]; then
-    if _cm2RunLongCmdFn 'Preparing disk...' "${_fullPrepareDiskExe}" \
-      "${_target_mount_point}" "${_luks_yn}" "${_disk_str}"; then
-      _cm2PromptUserFn "${_configSuccessMsg}" "${_winTitle}";
-    else
-      _cm2PromptUserFn "${_configHardFailureMsg}" "${_winTitle}" 'e';
-    fi
+    _cm2RunLongCmdFn 'Preparing disk...' "${_fullPrepareDiskExe}" \
+      "${_target_mount_point}" "${_luks_yn}" "${_disk_str}";
+    _exit_code="$?";
+    case "${_exit_code}" in
+      '0')
+        _cm2PromptUserFn "${_configSuccessMsg}" "${_winTitle}";
+        ;;
+      '1')
+        _cm2PromptUserFn "${_configSoftFailureMsg}" "${_winTitle}";
+        ;;
+      '2')
+        _cm2PromptUserFn "${_configHardFailureMsg}" "${_winTitle}" 'e';
+        ;;
+    esac
   else
     if [ "${_encrypted_yn}" = 'n' ]; then
       _cm2RunLongCmdFn 'Preparing disk...' "${_reuseDiskExe}" \

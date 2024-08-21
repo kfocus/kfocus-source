@@ -135,7 +135,9 @@ _mainFn () {
   # Move the home directory if needed
   if [ "${_target_mount_point}" = '/home' ]; then
     # Unmount in preparation to move
-    umount '/home' || exit 2;
+    if mountpoint '/home' >/dev/null; then
+      umount '/home' || exit 2;
+    fi
 
     # Delete the unneeded home subvolume
     # Commented out because it makes the home dir conversion hard to revert.
