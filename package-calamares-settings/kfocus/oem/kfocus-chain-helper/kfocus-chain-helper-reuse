@@ -157,8 +157,11 @@ _mainFn () {
   if [ "${_target_mount_point}" = '/home' ]; then
     # Unmount in preparation to move
     umount '/home' || exit 3;
+
     # Delete the unneeded home subvolume
-    "${_btrfsExe}" subvolume delete '/btrfs_main/@home' || exit 3;
+    # # Commented out because it makes the home dir conversion hard to revert.
+    # "${_btrfsExe}" subvolume delete '/btrfs_main/@home' || exit 3;
+
     # Comment out the old /home mount line in fstab
     sed -i 's|^\(.*/home.*btrfs.*subvol=/@home.*\)$|# KFOCUS Replaced /home btrfs with secondary disk\n# \1|' /etc/fstab || exit 3;
     # Re-parse fstab

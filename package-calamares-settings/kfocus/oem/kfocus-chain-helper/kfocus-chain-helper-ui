@@ -70,10 +70,10 @@ ${_brow_lp_str}This system appears to have more than one permanent <br>
 disk installed. Using this tool, you can reuse or create <br>
 a home or data partition from one of these disks.${_erow_str}
 
-${_brow_lp_str}<b>Please back up any important data before proceeding. <br>
+${_brow_lp_str}<b>Please back up any important data before proceeding. </b><br>
 Per the GPLv2 governing license, Kubuntu Focus cannot <br>
 be responsible for any data loss resulting from use of <br>
-this tool.</b>${_erow_str}
+this tool.${_erow_str}
 
 ${_brow_lp_str}Select the disk you'd like to use below, or click "Cancel" <br>
 to exit.${_erow_str}</table>
@@ -86,8 +86,9 @@ ${_cm2HtmBeginStr}${_table_str}
 ${_brow_lp_str}${_center_header_str}Select Mount Point</h3>${_erow_str}
 
 ${_brow_lp_str}Select the mount point for <code>XXX_SELECTED_DISK_XXX</code>.<br>
-The partition will be mounted to the selected directory. <br>
-If you select "/home", the storage space will be used <br>
+The partition will be mounted to the selected directory.${_erow_str}
+
+${_brow_lp_str}If you select "/home", the storage space will be used <br>
 by user directories, such as "/home/fred". If you select <br>
 "/srv/data", the storage space will be available for you <br>
 to use as you see fit.${_erow_str}
@@ -103,9 +104,10 @@ ${_cm2HtmBeginStr}${_table_str}
 ${_brow_rp_str}${_left_header_str}Prepare Disk?</h3>${_erow_str}
 
 ${_brow_rp_str}The selected disk, <code>XXX_SELECTED_DISK_XXX</code>, appears to<br>
-be blank. It must be formatted before use. Click "OK" <br>
-to format and proceed, or click "Cancel" to exit.
-${_erow_str}</table>
+be blank. It must be formatted before use.${_erow_str}
+
+${_brow_rp_str}Click "OK" to format and proceed, or click <br>
+"Cancel" to exit.${_erow_str}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
@@ -154,6 +156,17 @@ ${_cm2HtmEndStr}
 EOF
   )";
 
+  _queryPassphraseMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}Decrypt Disk</h3>${_erow_str}
+
+${_brow_rp_str}The selected disk, <code>XXX_SELECTED_DISK_XXX</code>, <br>
+is encrypted. Please enter the passphrase <br>
+to continue.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
   _chooseReuseDiskMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_table_str}
 ${_brow_lp_str}${_center_header_str}Reuse Disk?</h3>${_erow_str}
@@ -163,7 +176,8 @@ appears to have been a secondary disk previously, <br>
 and can be used again while keeping any existing <br>
 data.${_erow_str}
 
-${_brow_lp_str}Here's a preview of the disk's top-level directory:${_erow_str}
+${_brow_lp_str}XXX_DISK_USAGE_XXX <br>
+Here's a preview of the disk's top-level directory:${_erow_str}
 
 ${_brow_lp_str}<code>XXX_CONTENT_LIST_XXX</code>${_erow_str}
 
@@ -184,8 +198,8 @@ td { padding: 0 5px; }
 ${_table_str}
 ${_brow_rp_str}${_left_header_str}Config Overview</h3>${_erow_str}
 
-${_brow_rp_str}You are about to configure a secondary disk as specified<br>
-below:${_erow_str}</table>
+${_brow_rp_str}You are about to configure a secondary disk as <br>
+shown below:${_erow_str}</table>
 
 <table style="width:100%;">
   <tr><td align="right"><b>Disk:</b></td>
@@ -199,8 +213,8 @@ below:${_erow_str}</table>
 </table>
 
 ${_table_str}${_brow_rp_str}
-Click "OK" to confirm these changes, or click "Cancel" to<br>
-back out.${_erow_str}</table>
+Click "OK" to confirm these changes, or click <br>
+"Cancel" to exit.${_erow_str}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
@@ -210,9 +224,14 @@ ${_cm2HtmBeginStr}${_table_str}
 ${_brow_rp_str}${_left_header_str}Final Confirmation</h3>${_erow_str}
 
 ${_brow_rp_str}The Multi-Disk Configuration Tool is now ready to configure <br>
-the secondary disk, <code>XXX_SELECTED_DISK_XXX</code>. <b>This is the <br>
-last confirmation message before changes are written to <br>
-the disks.</b> Click "OK" to confirm, or click "Cancel" to back out.
+the system to mount the secondary disk, <br>
+<code>XXX_SELECTED_DISK_XXX</code>, on <code>XXX_MOUNT_POINT_XXX</code>.
+${_erow_str}
+
+${_brow_rp_str}<b>This is the last confirmation message before changes <br>
+are made to reuse the disk.</b>${_erow_str}
+
+${_brow_rp_str}Click "OK" to confirm, or click "Cancel" to exit.
 ${_erow_str}</table>
 ${_cm2HtmEndStr}
 EOF
@@ -223,10 +242,15 @@ ${_cm2HtmBeginStr}${_table_str}
 ${_brow_rp_str}${_left_header_str}Final Confirmation</h3>${_erow_str}
 
 ${_brow_rp_str}The Multi-Disk Configuration Tool is now ready to configure <br>
-the secondary disk, <code>XXX_SELECTED_DISK_XXX</code>. <b>The disk will <br>
-be reformatted and all data on it will be lost! This is the last <br>
-confirmation message before changes are written to the <br>
-disks.</b> Click "OK" to confirm, or click "Cancel" to back out.
+the system to mount the secondary disk, <br>
+<code>XXX_SELECTED_DISK_XXX</code>, on <code>XXX_MOUNT_POINT_XXX</code>.
+${_erow_str}
+
+${_brow_rp_str}<b>The disk will be reformatted and all data on it will be <br>
+lost!</b> This is the last confirmation message before <br>
+reformatting and configuring the disk.</b>${_erow_str}
+
+${_brow_rp_str}Click "OK" to confirm, or click "Cancel" to exit.
 ${_erow_str}</table>
 ${_cm2HtmEndStr}
 EOF
@@ -236,8 +260,10 @@ EOF
 ${_cm2HtmBeginStr}${_table_str}
 ${_brow_rp_str}${_left_header_str}Configuration Successful</h3>${_erow_str}
 
-${_brow_rp_str}The secondary disk has been successfully configured.
-${_erow_str}</table>
+${_brow_rp_str}The secondary disk, <code>XXX_SELECTED_DISK_XXX</code>, <br>
+has been successfully prepared. It is mounted at <br>
+<code>XXX_MOUNT_POINT_XXX</code>, and the system is configured to mount <br>
+it on boot.${_erow_str}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
@@ -429,10 +455,10 @@ _getDiskSizeStr () {
   _df_str="$(LC_ALL='C' df '/crypt_scan' | tail -n1)";
   _disk_size_kib="$(awk '{ print $2 }' <<< "${_df_str}")";
   _disk_used_kib="$(awk '{ print $3 }' <<< "${_df_str}")";
-  _disk_size_gib="$(bc <<< "scale=2; ${_disk_size_kib}/1024/1024") GiB";
-  _disk_used_gib="$(bc <<< "scale=2; ${_disk_used_kib}/1024/1024") GiB";
+  _disk_size_gib="$(bc <<< "scale=2; ${_disk_size_kib}/1024/1024")";
+  _disk_used_gib="$(bc <<< "scale=2; ${_disk_used_kib}/1024/1024")";
 
-  echo "${_disk_used_gib} of ${_disk_size_gib} space used.";
+  echo "The entire disk has ${_disk_used_gib} of ${_disk_size_gib} GiB used.";
 }
 ## . END _getDiskSizeStr }
 
@@ -445,7 +471,7 @@ _getDiskSizeStr () {
 _getDiskContentStrFn () {
   declare _part_tgt _crypt_passphrase_str _mount_str _crypt_name \
     _item_list_str _item_list_withhidden_len _item_list_len _threshold_val \
-    _last_str _max_main_count _dir_count _output_str;
+    _disk_size_str _max_main_count _dir_count _output_str;
 
   # Avoid cluttering up the user interface when fstab has changed before this
   # function runs.
@@ -498,24 +524,24 @@ _getDiskContentStrFn () {
 
   _item_list_str="$(sed 's/$/ <br>/' <<< "${_item_list_str}")";
 
-  _last_str="$(tail -n1 <<< "${_item_list_withhidden_str}"; echo -e ' <br>\n')";
-  _dir_count="$(cut -d' ' -f1 <<< "${_last_str}";)";
-  (( _dir_count-- )) || true;
-  if (( _dir_count == -1 )); then
-    # Skip this condition
-    true;
-  elif (( _dir_count == 0 )); then
-    _last_str="$(sed "s/[0-9]\+ directory/${_dir_count} directories/" \
-      <<< "${_last_str}")";
-  elif (( _dir_count == 1 )); then
-    _last_str="$(sed "s/[0-9]\+ directories/${_dir_count} directory/" \
-      <<< "${_last_str}")";
-  else
-    _last_str="$(sed "s/[0-9]\+ /${_dir_count} /" <<< "${_last_str}")";
-  fi
-#  _last_str="$(sed 's/ <br>$//' <<< "${_last_str}")";
-  _last_str+="$(echo -e '\n'; _getDiskSizeStr)";
-  
+# TODO: Calculate file and directory count here
+#  _last_str="$(tail -n1 <<< "${_item_list_withhidden_str}"; echo -e ' <br>\n')";
+#  _dir_count="$(cut -d' ' -f1 <<< "${_last_str}";)";
+#  (( _dir_count-- )) || true;
+#  if (( _dir_count == -1 )); then
+#    # Skip this condition
+#    true;
+#  elif (( _dir_count == 0 )); then
+#    _last_str="$(sed "s/[0-9]\+ directory/${_dir_count} directories/" \
+#      <<< "${_last_str}")";
+#  elif (( _dir_count == 1 )); then
+#    _last_str="$(sed "s/[0-9]\+ directories/${_dir_count} directory/" \
+#      <<< "${_last_str}")";
+#  else
+#    _last_str="$(sed "s/[0-9]\+ /${_dir_count} /" <<< "${_last_str}")";
+#  fi
+
+  _disk_size_str="$(_getDiskSizeStr)";
   cd '/' || return 1;
   umount '/crypt_scan';
   rmdir '/crypt_scan';
@@ -528,12 +554,13 @@ _getDiskContentStrFn () {
   
   _output_str="$(head "-n${_max_main_count}" <<< "${_item_list_str}" \
     | tail "-n$(( _max_main_count - 1 ))")";
+  _output_str="$(sed '$ s/ <br>//' <<< "${_output_str}")";
   if (( _item_list_len > _threshold_val )); then
-    _output_str+="$(echo -e '\n... (list truncated) <br>')";
+    _output_str+="$(echo -e ' <br>\n... (list truncated)')";
   fi
-  _output_str+="$(echo -e "\n${_last_str}")";
 
-  echo "${_output_str}";
+  _chooseReuseDiskMsg="${_chooseReuseDiskMsg//XXX_DISK_USAGE_XXX/"${_disk_size_str}"}";
+  _chooseReuseDiskMsg="${_chooseReuseDiskMsg//XXX_CONTENT_LIST_XXX/"${_output_str}"}";
 }
 ## . END _getDiskContentStrFn }
 
@@ -548,13 +575,6 @@ _mainFn () {
   _crypt_passphrase_str='';
   _disk_str="$(_selectDiskFn)";
   [ -z "${_disk_str}" ] && exit;
-
-  _chooseMountMsg="${_chooseMountMsg/XXX_SELECTED_DISK_XXX/${_disk_str}}";
-  _target_mount_point="$(_cm2PromptUserFn "${_chooseMountMsg}" \
-    "${_winTitle}" 'd' \
-    '/home' 'Set up as a HOME disk' 'on' \
-    '/srv/data' 'Set up as a DATA disk' 'off')";
-  [ -z "${_target_mount_point}" ] && exit;
 
   _root_dev_str="$(mount | grep ' / ' | cut -d' ' -f1)";
   if grep -q '/dev/mapper' <<< "${_root_dev_str}"; then
@@ -611,8 +631,9 @@ _mainFn () {
     else
       if [ "${_encrypted_yn}" = 'y' ]; then
         while true; do
+          _queryPassphraseMsg="${_queryPassphraseMsg//XXX_SELECTED_DISK_XXX/${_disk_str}}";
           _crypt_passphrase_str="$(kdialog --title "${_winTitle}" \
-            --password "Please enter the secondary disk's passphrase.")";
+            --password "${_queryPassphraseMsg}")";
           if ! "${_cryptsetupExe}" luksOpen --test-passphrase "${_existing_part}" \
             <<< "${_crypt_passphrase_str}" 1>&2 2>/dev/null; then
             if [ "$(_cm2PromptUserFn "${_badPassphraseMsg}" "${_winTitle}" \
@@ -633,12 +654,10 @@ _mainFn () {
           "${_winTitle}" 'o')";
         [ "${_full_prepare_yn}" = 'n' ] && exit;
       else
-        _disk_content_str="$(_getDiskContentStrFn "${_existing_part}" \
-          "${_crypt_passphrase_str}")";
+        _getDiskContentStrFn "${_existing_part}" "${_crypt_passphrase_str}";
         _exit_code="$?";
         if (( _exit_code == 0 )); then
           _chooseReuseDiskMsg="${_chooseReuseDiskMsg//XXX_SELECTED_DISK_XXX/${_disk_str}}";
-          _chooseReuseDiskMsg="${_chooseReuseDiskMsg//XXX_CONTENT_LIST_XXX/${_disk_content_str}}";
           _full_prepare_yn="$(_cm2PromptUserFn "${_chooseReuseDiskMsg}" \
             "${_winTitle}" 'd' \
             'n' 'Reuse the existing partition' 'on' \
@@ -657,6 +676,13 @@ _mainFn () {
       fi
     fi
   fi
+
+  _chooseMountMsg="${_chooseMountMsg/XXX_SELECTED_DISK_XXX/${_disk_str}}";
+  _target_mount_point="$(_cm2PromptUserFn "${_chooseMountMsg}" \
+    "${_winTitle}" 'd' \
+    '/home' 'Set up as a HOME disk (/home)' 'on' \
+    '/srv/data' 'Set up as a DATA disk (/srv/data)' 'off')";
+  [ -z "${_target_mount_point}" ] && exit;
 
   _confirmOverviewMsg="${_confirmOverviewMsg//XXX_SECONDARY_DISK_XXX/${_disk_str}}";
   _confirmOverviewMsg="${_confirmOverviewMsg//XXX_MOUNT_POINT_XXX/${_target_mount_point}}";
@@ -678,13 +704,18 @@ _mainFn () {
 
   if [ "${_full_prepare_yn}" = 'y' ]; then
     _prompt_msg="${_finalReformatMsg//XXX_SELECTED_DISK_XXX/${_disk_str}}";
+    _prompt_msg="${_prompt_msg//XXX_MOUNT_POINT_XXX/${_target_mount_point}}";
   else
     _prompt_msg="${_finalConfirmMsg//XXX_SELECTED_DISK_XXX/${_disk_str}}";
+    _prompt_msg="${_prompt_msg//XXX_MOUNT_POINT_XXX/${_target_mount_point}}";
   fi
   _confirm_str="$(
     _cm2PromptUserFn "${_prompt_msg}" "${_winTitle}" 'o'
   )";
   [ "${_confirm_str}" = 'n' ] && exit;
+
+  _configSuccessMsg="${_configSuccessMsg//XXX_SELECTED_DISK_XXX/${_disk_str}}";
+  _configSuccessMsg="${_configSuccessMsg//XXX_MOUNT_POINT_XXX/${_target_mount_point}}";
 
   if [ "${_full_prepare_yn}" = 'y' ]; then
     if _cm2RunLongCmdFn 'Preparing disk...' "${_fullPrepareDiskExe}" \
@@ -742,7 +773,7 @@ declare _binName _binDir _baseDir _baseName _assignList _cryptsetupExe \
   _chooseReuseDiskMsg _noSecondaryDisksMsg _configSuccessMsg \
   _configSoftFailureMsg _configLuksOverflowFailureMsg _configHardFailureMsg \
   _confirmOverviewMsg _finalConfirmMsg _finalReformatMsg \
-  _contentListFailureMsg;
+  _contentListFailureMsg _queryPassphraseMsg;
 ## . END Declare and assign global vars }
 
 ## BEGIN Run mainFn when script is NOT sourced {
