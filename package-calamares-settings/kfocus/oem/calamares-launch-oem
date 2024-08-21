@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Enables OEM installaiton mode in Calamares.
+# Enables OEM installation mode in Calamares.
 
 if [ -e '/etc/calamares/OEM_MODE_ACTIVATED' ]; then
   export BROWSER='sudo -H -u kubuntu firefox'
@@ -51,7 +51,7 @@ manual partitioning, and do NOT change the default filesystem.</p>
 
 <p>It is fine to enable encryption or disable the creation of a swap file if
 desired. See <a
-href="http://kfocus.org/wf/reinstall.html#bkm_multi_disk_configuration">http://kfocus.org/wf/reinstall.html#bkm_multi_disk_configuration</a>
+href="https://kfocus.org/wf/reinstall.html#bkm_multi_disk_configuration">https://kfocus.org/wf/reinstall.html#bkm_multi_disk_configuration</a>
 for more information.</p>
 EOL
   )";

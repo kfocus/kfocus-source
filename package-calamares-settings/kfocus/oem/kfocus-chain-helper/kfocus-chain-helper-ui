@@ -383,8 +383,8 @@ _findOpenCryptStrFn () {
 _selectDiskFn () {
   declare _found_name_list _found_size_list _mount_str _block_list _dev_file \
     _byte_int _mib_int _trans_key _match_str _option_list _idx _onoff_state \
-    _ans_str _open_crypt_str _disk_basename _disk_part_list _disk_open_yn \
-    _holders_dir;
+    _ans_str _open_crypt_str _disk_basename _disk_part_list _disk_part \
+    _disk_open_yn _holders_dir;
 
   _found_name_list=();
   _found_size_list=();
@@ -482,8 +482,8 @@ _getDiskSizeStr () {
 # shellcheck disable=SC2001
 _getDiskContentStrFn () {
   declare _part_tgt _crypt_passphrase_str _mount_str _crypt_name \
-    _item_list_str _item_list_withhidden_len _item_list_len _threshold_val \
-    _disk_size_str _max_main_count _dir_count _output_str;
+    _item_list_str _item_list_all_str _item_list_count _threshold_val \
+    _disk_size_str _max_main_count _output_str;
 
   # Avoid cluttering up the user interface when fstab has changed before this
   # function runs.
@@ -523,35 +523,18 @@ _getDiskContentStrFn () {
   mount "${_mount_str}" '/crypt_scan' || return 1;
   cd '/crypt_scan' || return 1;
   _item_list_str="$(LC_ALL='C' tree -L 1)";
-  _item_list_withhidden_str="$(LC_ALL='C' tree -a -L 1)";
+  _item_list_all_str="$(LC_ALL='C' tree -a -L 1)";
   # If there are only three items in the list string, no non-hidden files or
   # directories exist.
   if [ "$(wc -l <<< "${_item_list_str}")" = '3' ]; then
-    _item_list_str="${_item_list_withhidden_str}";
+    _item_list_str="${_item_list_all_str}";
   fi
 
-  _item_list_len="$(wc -l <<< "${_item_list_str}")";
+  _item_list_count="$(wc -l <<< "${_item_list_str}")";
   _threshold_val=13; # ten items plus header and footer of tree
   _max_main_count=11; # ten items plus header of tree
 
   _item_list_str="$(sed 's/$/ <br>/' <<< "${_item_list_str}")";
-
-# TODO: Calculate file and directory count here
-#  _last_str="$(tail -n1 <<< "${_item_list_withhidden_str}"; echo -e ' <br>\n')";
-#  _dir_count="$(cut -d' ' -f1 <<< "${_last_str}";)";
-#  (( _dir_count-- )) || true;
-#  if (( _dir_count == -1 )); then
-#    # Skip this condition
-#    true;
-#  elif (( _dir_count == 0 )); then
-#    _last_str="$(sed "s/[0-9]\+ directory/${_dir_count} directories/" \
-#      <<< "${_last_str}")";
-#  elif (( _dir_count == 1 )); then
-#    _last_str="$(sed "s/[0-9]\+ directories/${_dir_count} directory/" \
-#      <<< "${_last_str}")";
-#  else
-#    _last_str="$(sed "s/[0-9]\+ /${_dir_count} /" <<< "${_last_str}")";
-#  fi
 
   _disk_size_str="$(_getDiskSizeStr)";
   cd '/' || return 1;
@@ -560,14 +543,14 @@ _getDiskContentStrFn () {
   [ -n "${_crypt_passphrase_str}" ] && "${_cryptsetupExe}" 'luksClose' \
     "/dev/mapper/${_crypt_name}";
   
-  if (( _item_list_len < _threshold_val )); then
-    (( _max_main_count -= (_threshold_val - _item_list_len) )) || true;
+  if (( _item_list_count < _threshold_val )); then
+    (( _max_main_count -= (_threshold_val - _item_list_count) )) || true;
   fi
   
   _output_str="$(head "-n${_max_main_count}" <<< "${_item_list_str}" \
     | tail "-n$(( _max_main_count - 1 ))")";
   _output_str="$(sed '$ s/ <br>//' <<< "${_output_str}")";
-  if (( _item_list_len > _threshold_val )); then
+  if (( _item_list_count > _threshold_val )); then
     _output_str+="$(echo -e ' <br>\n... (list truncated)')";
   fi
   if [ -z "${_output_str}" ]; then
@@ -584,7 +567,7 @@ _mainFn () {
   declare _disk_str _target_mount_point _root_dev_str _luks_yn \
     _part_count _full_prepare_yn _existing_part _part_incompat_yn \
     _encrypted_yn _crypt_passphrase_str _confirm_str _prompt_msg \
-    _exit_code _disk_content_str;
+    _exit_code;
 
   _encrypted_yn='n';
   _crypt_passphrase_str='';
