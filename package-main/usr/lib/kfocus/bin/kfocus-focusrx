@@ -332,6 +332,29 @@ _chkBtrfsSetUpFn () {
   _cm2SucFn;
 }
 ## . END _chkBtrfsSetUpFn }
+  
+## BEGIN _chkOemMultiDiskFn {
+_chkOemMultiDiskFn () {
+
+  # Skip if required tool not installed
+  [ -z "${_chainHelperExe}" ] && return;
+
+  _title='Launch Disk Chaining Helper';
+  _cm2SetMsgFn "${_title}";
+  # Skip if not OEM user
+  if [ "$(id -u)" != '60999' ]; then
+    _cm2WarnStrFn 'Chain helper exe exists but OEM user not active!';
+    _cm2WarnFn;
+    return;
+  fi
+
+  # Use sudo here always, pkexec wrecks the GUI. We can do this here
+  # because the OEM user has passwordless sudo.
+  sudo -E "${_chainHelperExe}" 'quietExit';
+
+  _cm2SucFn;
+}
+## . END _chkOemMultiDiskFn }
 
 ## BEGIN _chkHwConfigFn {
 # _cm2PromptUserFn \
@@ -1014,6 +1037,7 @@ _mainFn () {
   _announceStartFn;
   _chkUpdateBiosFn;
   _chkBtrfsSetUpFn;
+  _chkOemMultiDiskFn;
   _chkHwConfigFn;
   _chkRollbackPresence;
   _chkKbdLedFn;      # Issue 3735
@@ -1044,7 +1068,7 @@ declare _parentCmdStr _lookupList \
   _focusRxDropDir _kbdColorSetExe _rootTitle _assignList \
   _focusRxSetExe _focusRxVersExe _btoolExe _firstrunExe \
   _fixIbusExe _kcleanExe _resetEffectsExe _rollbackSetExe \
-  _sysVersStr;
+  _chainHelperExe _sysVersStr;
 
 _parentCmdStr="$(ps -o comm= $PPID)";
 # These domain names exist here only for the purposes of looking them up via
@@ -1079,6 +1103,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     "_resetEffectsExe|${_binDir}/kfocus-reset-effects||optional"
     "_rollbackExe|${_binDir}/kfocus-rollback||optional"
     "_rollbackSetExe|${_binDir}/kfocus-rollback-set||optional"
+    "_chainHelperExe|${_binDir}/kfocus-chain-helper-ui||optional"
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2ErrStrFn 'Could not assign variables';

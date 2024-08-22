@@ -432,7 +432,9 @@ _selectDiskFn () {
 
   if [ "${#_found_name_list[@]}" = '0' ]; then
     # No disks found, bail out
-    _cm2PromptUserFn "${_noSecondaryDisksMsg}" "${_winTitle}";
+    if [ "${_quietExitStr}" != 'quietExit' ]; then
+      _cm2PromptUserFn "${_noSecondaryDisksMsg}" "${_winTitle}";
+    fi
     return;
   fi
 
@@ -569,11 +571,14 @@ _mainFn () {
     _encrypted_yn _crypt_passphrase_str _confirm_str _prompt_msg \
     _exit_code;
 
+  _quietExitStr="${1:-}";
   _encrypted_yn='n';
   _crypt_passphrase_str='';
 
   if grep -q '# KFOCUS.*is on.*' '/etc/fstab'; then
-    _cm2PromptUserFn "${_alreadySetupMsg}" "${_winTitle}";
+    if [ "${_quietExitStr}" != 'quietExit' ]; then
+      _cm2PromptUserFn "${_alreadySetupMsg}" "${_winTitle}";
+    fi
     exit;
   fi
 
@@ -778,7 +783,7 @@ _mainFn () {
 
 ## BEGIN Declare and assign global vars {
 declare _binName _binDir _baseDir _baseName _assignList _cryptsetupExe \
-  _fullPrepareDiskExe _reuseDiskExe _winTitle _chooseDiskMsg \
+  _quietExitStr _fullPrepareDiskExe _reuseDiskExe _winTitle _chooseDiskMsg \
   _chooseMountMsg _confirmFormatSafeMsg _confirmFormatDangerMsg \
   _chooseReuseDiskMsg _noSecondaryDisksMsg _configSuccessMsg \
   _configSoftFailureMsg _configLuksOverflowFailureMsg _configHardFailureMsg \
