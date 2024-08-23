@@ -1,0 +1,818 @@
+#!/bin/bash
+#
+# Copyright 2019-2024 MindShare Inc.
+#
+# Written for the Kubuntu Focus by M. Mikowski and A. Rainbolt
+#
+# Name     : kfocus-chain-helper-ui
+# Summary  : ./kfocus-chain-helper-ui
+# Purpose  : Assists with the process of setting up disk chaining. This is the
+#            user interface component.
+# Example  : kfocus-chain-helper
+# License  : GPLv2
+# Run By   : User
+# Spec     : 4574
+#
+set -u;
+
+## BEGIN _importCommonFn {
+# Summary   : _importCommonFn
+# Purpose   : Load common routines, prefer relative dir
+# Example   : _importCommonFn;
+# Arguments : none
+# Globals   : Package vars _baseDir _baseName
+# Outputs   : none
+# Returns   : none
+#
+_importCommonFn () {
+  declare _lib_list _is_loaded _lib_file;
+  _lib_list=(
+    "${_baseDir}/lib/common.2.source"
+    '/usr/lib/kfocus/lib/common.2.source'
+  );
+  _is_loaded='n';
+  for _lib_file in "${_lib_list[@]}"; do
+    if [ -r "${_lib_file}" ]; then
+      # shellcheck source=/usr/lib/kfocus/lib/common.2.source
+      if source "${_lib_file}"; then
+        _is_loaded='y';
+        break;
+      fi
+    fi
+  done
+
+  if [ "${_is_loaded}" = 'n' ]; then
+    echo 1>&2 "${_baseName}: ABORT - Cannot source common lib";
+    exit 202;
+  fi
+}
+## . END _importCommonFn }
+
+## BEGIN _assignUiStringsFn {
+_assignUiStringsFn () {
+  declare _table_str _brow_lp_str _brow_rp_str _erow_str _left_header_str \
+    _center_header_str;
+
+  _table_str='<table style="width:100%;margin-right:32px">';
+  _brow_lp_str='<tr><td style="padding:8px 0 8px 32px">';
+  _brow_rp_str='<tr><td style="padding:8px 32px 8px 0">';
+  _erow_str='</td></tr>';
+  _left_header_str='<h3 style="color:#f7941d">';
+  _center_header_str='<h3 style="color:#f7941d;text-align:center">';
+
+  _winTitle='Multi-Disk Configuration Tool';
+
+  _alreadySetupMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}Disk Already Configured</h3>${_erow_str}
+
+${_brow_rp_str}This system appears to already have a secondary disk <br>
+configured. Click "OK" to exit this tool.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _chooseDiskMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_lp_str}${_center_header_str}Set Up Secondary Disk?</h3>${_erow_str}
+
+${_brow_lp_str}This system appears to have more than one permanent <br>
+disk installed. Using this tool, you can reuse or create <br>
+a home or data partition from one of these disks.${_erow_str}
+
+${_brow_lp_str}<b>Please back up any important data before proceeding. </b><br>
+Per the GPLv2 governing license, Kubuntu Focus cannot <br>
+be responsible for any data loss resulting from use of <br>
+this tool.${_erow_str}
+
+${_brow_lp_str}Select the disk you'd like to use below, or click "Cancel" <br>
+to exit.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _chooseMountMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_lp_str}${_center_header_str}Select Mount Point</h3>${_erow_str}
+
+${_brow_lp_str}Select the mount point for <code>XXX_SELECTED_DISK_XXX</code>.<br>
+The partition will be mounted to the selected directory.${_erow_str}
+
+${_brow_lp_str}If you select "/home", the storage space will be used <br>
+by user directories, such as "/home/fred". If you select <br>
+"/srv/data", the storage space will be available for you <br>
+to use as you see fit.${_erow_str}
+
+${_brow_lp_str}Select your preference below, or click "Cancel" to exit.
+${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _confirmFormatSafeMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}Prepare Disk?</h3>${_erow_str}
+
+${_brow_rp_str}The selected disk, <code>XXX_SELECTED_DISK_XXX</code>, appears to<br>
+be blank. It must be formatted before use.${_erow_str}
+
+${_brow_rp_str}Click "OK" to format and proceed, or click <br>
+"Cancel" to exit.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _confirmFormatDangerMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}Wipe and Prepare Disk?</h3>${_erow_str}
+
+${_brow_rp_str}The selected disk, <code>XXX_SELECTED_DISK_XXX</code>, has more<br>
+than one partition. This tool is not designed to handle <br>
+this condition.${_erow_str}
+
+${_brow_rp_str}If you know what you are doing, you can inspect the <br>
+drive and then proceed to reformat it. <b> This WILL <br>
+delete any existing partitions and data</b>.${_erow_str}
+
+${_brow_rp_str}If you are unsure, we suggest you click "Cancel" to<br>
+exit this tool and manually mount this disk later.${_erow_str}
+
+${_brow_rp_str}Click "OK" to wipe and reformat the entire disk, <br>
+otherwise click "Cancel" to exit.
+${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _confirmFormatHighDangerMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}Wipe and Prepare Disk?</h3>${_erow_str}
+
+${_brow_rp_str}<b>The selected disk, <code>XXX_SELECTED_DISK_XXX</code>, appears <br>
+to have previously been a secondary disk</b>, but it <br>
+is unable to be used for the following reason:${_erow_str}
+
+${_brow_rp_str}XXX_INCOMPAT_REASON_XXX${_erow_str}
+
+${_brow_rp_str}If you know what you are doing, you can inspect the <br>
+drive and then proceed to reformat it. <b>This WILL <br>
+delete any existing partitions and data</b>.${_erow_str}
+
+${_brow_rp_str}If you are unsure, we suggest you click "Cancel" to <br>
+exit this tool and manually mount this disk later.${_erow_str}
+
+${_brow_rp_str}Click "OK" to wipe and reformat the entire disk, <br>
+otherwise click "Cancel" to exit.
+${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _queryPassphraseMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}Decrypt Disk</h3>${_erow_str}
+
+${_brow_rp_str}The selected disk, <code>XXX_SELECTED_DISK_XXX</code>, <br>
+is encrypted. Please enter the passphrase <br>
+to continue.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _chooseReuseDiskMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_lp_str}${_center_header_str}Reuse Disk?</h3>${_erow_str}
+
+${_brow_lp_str}The selected disk, <code>XXX_SELECTED_DISK_XXX</code>, <br>
+appears to have been a secondary disk previously, <br>
+and can be used again while keeping any existing <br>
+data.${_erow_str}
+
+${_brow_lp_str}XXX_DISK_USAGE_XXX <br>
+Here's a preview of the disk's top-level directory:${_erow_str}
+
+${_brow_lp_str}<code>XXX_CONTENT_LIST_XXX</code>${_erow_str}
+
+${_brow_lp_str}Select "Reuse the existing partition" to preserve the <br>
+data. Select "Wipe and reformat the disk" to <b>delete <br>
+all data</b> and start fresh. If both of these are <br>
+undesirable, click "Cancel" to exit.
+${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _confirmOverviewMsg="$(cat <<EOF
+${_cm2HtmBeginStr}
+<style type="text/css">
+td { padding: 0 5px; }
+</style>
+${_table_str}
+${_brow_rp_str}${_left_header_str}Config Overview</h3>${_erow_str}
+
+${_brow_rp_str}You are about to configure a secondary disk as <br>
+shown below:${_erow_str}</table>
+
+<table style="width:100%;">
+  <tr><td align="right"><b>Disk:</b></td>
+    <td>XXX_SECONDARY_DISK_XXX</td></tr>
+  <tr><td align="right"><b>Mount point:</b></td>
+    <td>XXX_MOUNT_POINT_XXX</td></tr>
+  <tr><td align="right"><b>Encrypted:</b></td>
+    <td>XXX_ENCRYPTED_XXX</td></tr>
+  <tr><td align="right"><b>Reformat:</b></td>
+    <td>XXX_REFORMAT_XXX</td></tr>
+</table>
+
+${_table_str}${_brow_rp_str}
+Click "OK" to confirm these changes, or click <br>
+"Cancel" to exit.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _finalConfirmMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}Final Confirmation</h3>${_erow_str}
+
+${_brow_rp_str}The Multi-Disk Configuration Tool is now ready to configure <br>
+the system to mount the secondary disk, <br>
+<code>XXX_SELECTED_DISK_XXX</code>, on <code>XXX_MOUNT_POINT_XXX</code>.
+${_erow_str}
+
+${_brow_rp_str}<b>This is the last confirmation message before changes <br>
+are made to reuse the disk.</b>${_erow_str}
+
+${_brow_rp_str}Click "OK" to confirm, or click "Cancel" to exit.
+${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _finalReformatMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}Final Confirmation</h3>${_erow_str}
+
+${_brow_rp_str}The Multi-Disk Configuration Tool is now ready to configure <br>
+the system to mount the secondary disk, <br>
+<code>XXX_SELECTED_DISK_XXX</code>, on <code>XXX_MOUNT_POINT_XXX</code>.
+${_erow_str}
+
+${_brow_rp_str}<b>The disk will be reformatted and all data on it will be <br>
+lost!</b> This is the last confirmation message before <br>
+reformatting and configuring the disk.</b>${_erow_str}
+
+${_brow_rp_str}Click "OK" to confirm, or click "Cancel" to exit.
+${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+)";
+
+  _configSuccessMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}Configuration Successful</h3>${_erow_str}
+
+${_brow_rp_str}The secondary disk, <code>XXX_SELECTED_DISK_XXX</code>, <br>
+has been successfully prepared. It is mounted at <br>
+<code>XXX_MOUNT_POINT_XXX</code>, and the system is configured to mount <br>
+it on boot.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _noSecondaryDisksMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}No Secondary Disks</h3>${_erow_str}
+
+${_brow_rp_str}There do not appear to be any unused secondary disks on <br>
+this system. Click "OK" to exit this tool.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _badPassphraseMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}Bad Passphrase</h3>${_erow_str}
+
+${_brow_rp_str}The provided passphrase is incorrect. The tool cannot <br>
+inspect the files on the disk to help determine if it <br>
+contains important data. Try decrypting again?${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _configSoftFailureMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}Configuration Failed</h3>${_erow_str}
+
+${_brow_rp_str}The secondary disk could not be configured! No changes <br>
+have been made to the system.${_erow_str}
+
+${_brow_rp_str}Please make sure all partitions on the secondary disk have <br>
+been unmounted. Then try again. You may try restarting <br>
+the system if this issue persists.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _configLuksOverflowFailureMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}Configuration Failed</h3>${_erow_str}
+
+${_brow_rp_str}
+The secondary disk is out of space for additional LUKS <br>
+keys! No changes have been made to the system.${_erow_str}
+
+${_brow_rp_str}You can rectify this issue by removing unused LUKS keys <br>
+from the disk using cryptsetup. If the disk contains no <br>
+important data, reformatting it is also an option. If both <br>
+of these are undesirable, you can skip using this tool <br>
+and mount the disk separately later.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _configHardFailureMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}Configuration Failed</h3>${_erow_str}
+
+${_brow_rp_str}The secondary disk configuration failed part way through! <br>
+Please contact technical support.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _contentListFailureMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}Disk Inspection Failed</h3>${_erow_str}
+
+${_brow_rp_str}The secondary disk's contents could not be inspected! This <br>
+prevents the tool from helping determine whether the drive<br>
+can be safely wiped or reused.${_erow_str}
+
+${_brow_rp_str}Please contact technical support.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+}
+## . END _assignUiStringsFn } 
+
+## BEGIN _findOpenCryptStrFn {
+_findOpenCryptStrFn () {
+  declare _virt_dev_list _virt_dev _dev_report _phys_dev;
+
+  _virt_dev_list="$(_cm2LsFn /dev/mapper)";
+
+  for _virt_dev in "${_virt_dev_list[@]}"; do
+    [ "${_virt_dev}" = 'control' ] && continue;
+
+    _dev_report="$(LC_ALL='C' cryptsetup status "${_virt_dev}")";
+    # No Shellcheck, I'm not rewriting this to look like an unintelligible
+    # lump of garbage to satisfy your code style requirements.
+    #   - Aaron
+    #
+    # shellcheck disable=SC2181
+    [ "$?" != '0' ] && continue;
+    _phys_dev="$(awk '/device:/{ print $2 }' <<< "${_dev_report}")";
+    [ -n "${_phys_dev}" ] && echo "${_phys_dev}";
+  done
+}
+## . END _findOpenCryptStrFn }
+
+## BEGIN _selectDiskFn {
+_selectDiskFn () {
+  declare _found_name_list _found_size_list _mount_str _block_list _dev_file \
+    _byte_int _mib_int _trans_key _match_str _option_list _idx _onoff_state \
+    _ans_str _open_crypt_str _disk_basename _disk_part_list _disk_part \
+    _disk_open_yn _holders_dir;
+
+  _found_name_list=();
+  _found_size_list=();
+  _open_crypt_str="$(_findOpenCryptStrFn)";
+  _mount_str="$(cat /proc/mounts)";
+  IFS=$'\n' read -r -d '' -a _block_list <<< "$(
+    find /dev/ -maxdepth 1 -type b \
+    | grep -E '^/dev/(sd[a-z]|nvme[0-9]n1|vd[a-z])$'
+  )";
+
+  for _dev_file in "${_block_list[@]}"; do # begin dev-block
+    _byte_int="$(blockdev --getsize64 "${_dev_file}")";
+    _mib_int=$(( _byte_int / 1048576 ));
+    _trans_key="$(lsblk -ndo tran "${_dev_file}")";
+    if ! [[ "${_trans_key}" =~ ^(sata|nvme|virtio)$ ]]; then
+      continue;
+    fi
+
+    (( "${_mib_int}" < 65536 )) && continue;
+
+    _match_str="$(
+      grep "^${_dev_file}" <<< "${_mount_str}" | cut -f1 -d' '
+    )";
+    [ -n "${_match_str}" ] && continue;
+
+    _disk_basename="$(basename "${_dev_file}")";
+    readarray -t _disk_part_list < <(lsblk -no name --list "${_dev_file}");
+    _disk_open_yn='n';
+    for _disk_part in "${_disk_part_list[@]}"; do
+      _holders_dir="/sys/block/${_disk_basename}/${_disk_part}/holders";
+      [ -d "${_holders_dir}" ] || continue;
+      if [ -n "$(_cm2LsFn "${_holders_dir}")" ]; then
+        _disk_open_yn='y';
+        break;
+      fi
+    done
+    [ "${_disk_open_yn}" = 'y' ] && continue;
+
+    _match_str="$(grep "^${_dev_file}" <<< "${_open_crypt_str}")";
+    [ -n "${_match_str}" ] && continue;
+
+    _found_name_list+=( "${_dev_file}" );
+    _found_size_list+=( "${_mib_int}" );
+  done
+
+  if [ "${#_found_name_list[@]}" = '0' ]; then
+    # No disks found, bail out
+    if [ "${_quietExitStr}" != 'quietExit' ]; then
+      _cm2PromptUserFn "${_noSecondaryDisksMsg}" "${_winTitle}";
+    fi
+    return;
+  fi
+
+  _option_list=();
+  for (( _idx=0; _idx < "${#_found_name_list[@]}"; _idx++ )); do
+    if [ "${_idx}" = '0' ]; then
+      _onoff_state='on';
+    else
+      _onoff_state='off';
+    fi
+
+    _option_list+=(
+      "${_idx}"
+      "Disk: ${_found_name_list[_idx]} - Size: ${_found_size_list[_idx]} MiB"
+      "${_onoff_state}"
+    );
+  done
+
+  _ans_str="$(_cm2PromptUserFn "${_chooseDiskMsg}" "${_winTitle}" 'd' \
+    "${_option_list[@]}")";
+  
+  if [ -n "${_ans_str}" ]; then
+    echo "${_found_name_list[_ans_str]}";
+  fi
+}
+## . END _selectDiskFn }
+
+## BEGIN _getDiskSizeStr {
+_getDiskSizeStr () {
+  declare _df_str _disk_size_kib _disk_used_kib _disk_size_gib _disk_used_gib;
+
+  _df_str="$(LC_ALL='C' df '/crypt_scan' | tail -n1)";
+  _disk_size_kib="$(awk '{ print $2 }' <<< "${_df_str}")";
+  _disk_used_kib="$(awk '{ print $3 }' <<< "${_df_str}")";
+  _disk_size_gib="$(bc <<< "scale=2; ${_disk_size_kib}/1024/1024")";
+  _disk_used_gib="$(bc <<< "scale=2; ${_disk_used_kib}/1024/1024")";
+
+  echo "The entire disk has ${_disk_used_gib} of ${_disk_size_gib} GiB used.";
+}
+## . END _getDiskSizeStr }
+
+## BEGIN _getDiskContentStrFn {
+#
+# Shellcheck doesn't understand that I need full regex capability in the sed
+# commands here, which ${variable//search/replace} does not provide.
+#
+# shellcheck disable=SC2001
+_getDiskContentStrFn () {
+  declare _part_tgt _crypt_passphrase_str _mount_str _crypt_name \
+    _item_list_str _item_list_all_str _item_list_count _threshold_val \
+    _disk_size_str _max_main_count _output_str;
+
+  # Avoid cluttering up the user interface when fstab has changed before this
+  # function runs.
+  systemctl daemon-reload;
+
+  _part_tgt="${1:-}";
+  [ -z "${_part_tgt}" ] && return 1;
+  _crypt_passphrase_str="${2:-}";
+
+  # Output format:
+  # item1 <br>
+  # item2 <br>
+  # itemN <br> # up to 10 items can be shown
+  # ... (list truncated)
+  # X directories, Y files
+  # Z.A Gib of B.C GiB used.
+  
+  _output_str='';
+
+  mkdir -p '/crypt_scan'
+
+  if [ -n "${_crypt_passphrase_str}" ]; then
+    _crypt_name="$(basename "${_part_tgt}")_crypt";
+    echo "${_crypt_passphrase_str}" | "${_cryptsetupExe}" luksOpen \
+      "${_part_tgt}" "${_crypt_name}";
+    _mount_str="/dev/mapper/${_crypt_name}";
+  else
+    _mount_str="${_part_tgt}";
+  fi
+
+  if [ -z "$(lsblk -no fstype "${_mount_str}")" ]; then
+    "${_cryptsetupExe}" luksClose "/dev/mapper/${_crypt_name}";
+    rmdir '/crypt_scan';
+    return 2;
+  fi
+
+  mount "${_mount_str}" '/crypt_scan' || return 1;
+  cd '/crypt_scan' || return 1;
+  _item_list_str="$(LC_ALL='C' tree -L 1)";
+  _item_list_all_str="$(LC_ALL='C' tree -a -L 1)";
+  # If there are only three items in the list string, no non-hidden files or
+  # directories exist.
+  if [ "$(wc -l <<< "${_item_list_str}")" = '3' ]; then
+    _item_list_str="${_item_list_all_str}";
+  fi
+
+  _item_list_count="$(wc -l <<< "${_item_list_str}")";
+  _threshold_val=13; # ten items plus header and footer of tree
+  _max_main_count=11; # ten items plus header of tree
+
+  _item_list_str="$(sed 's/$/ <br>/' <<< "${_item_list_str}")";
+
+  _disk_size_str="$(_getDiskSizeStr)";
+  cd '/' || return 1;
+  umount '/crypt_scan';
+  rmdir '/crypt_scan';
+  [ -n "${_crypt_passphrase_str}" ] && "${_cryptsetupExe}" 'luksClose' \
+    "/dev/mapper/${_crypt_name}";
+  
+  if (( _item_list_count < _threshold_val )); then
+    (( _max_main_count -= (_threshold_val - _item_list_count) )) || true;
+  fi
+  
+  _output_str="$(head "-n${_max_main_count}" <<< "${_item_list_str}" \
+    | tail "-n$(( _max_main_count - 1 ))")";
+  _output_str="$(sed '$ s/ <br>//' <<< "${_output_str}")";
+  if (( _item_list_count > _threshold_val )); then
+    _output_str+="$(echo -e ' <br>\n... (list truncated)')";
+  fi
+  if [ -z "${_output_str}" ]; then
+    _output_str='No files or directories.';
+  fi
+
+  _chooseReuseDiskMsg="${_chooseReuseDiskMsg//XXX_DISK_USAGE_XXX/"${_disk_size_str}"}";
+  _chooseReuseDiskMsg="${_chooseReuseDiskMsg//XXX_CONTENT_LIST_XXX/"${_output_str}"}";
+}
+## . END _getDiskContentStrFn }
+
+## BEGIN _mainFn {
+_mainFn () {
+  declare _disk_str _target_mount_point _root_dev_str _luks_yn \
+    _part_count _full_prepare_yn _existing_part _part_incompat_yn \
+    _encrypted_yn _crypt_passphrase_str _confirm_str _prompt_msg \
+    _exit_code;
+
+  _quietExitStr="${1:-}";
+  _encrypted_yn='n';
+  _crypt_passphrase_str='';
+
+  if grep -q '# KFOCUS.*is on.*' '/etc/fstab'; then
+    if [ "${_quietExitStr}" != 'quietExit' ]; then
+      _cm2PromptUserFn "${_alreadySetupMsg}" "${_winTitle}";
+    fi
+    exit;
+  fi
+
+  _disk_str="$(_selectDiskFn)";
+  [ -z "${_disk_str}" ] && exit;
+
+  _root_dev_str="$(mount | grep ' / ' | cut -d' ' -f1)";
+  if grep -q '/dev/mapper' <<< "${_root_dev_str}"; then
+    _luks_yn='y';
+  else
+    _luks_yn='n';
+  fi
+
+  # Get count of partitions only from selected disk
+  _part_count="$(lsblk "${_disk_str}" -o TYPE |grep -c 'part')";
+  _part_count="$(_cm2EchoIntFn "${_part_count}")";
+
+  if (( _part_count == 0 )); then
+    # This is a blank disk.
+    _confirmFormatSafeMsg="${_confirmFormatSafeMsg/XXX_SELECTED_DISK_XXX/${_disk_str}}";
+    _full_prepare_yn="$(_cm2PromptUserFn "${_confirmFormatSafeMsg}" \
+      "${_winTitle}" 'o')";
+    [ "${_full_prepare_yn}" = 'n' ] && exit;
+  elif (( _part_count > 1 )); then
+    # This is not an old secondary disk and can't be reused. Confirm that the
+    # user wants to wipe it and prepare it, and bail out if they say no.
+    _confirmFormatDangerMsg="${_confirmFormatDangerMsg/XXX_SELECTED_DISK_XXX/${_disk_str}}";
+    _full_prepare_yn="$(_cm2PromptUserFn "${_confirmFormatDangerMsg}" \
+      "${_winTitle}" 'o')";
+    [ "${_full_prepare_yn}" = 'n' ] && exit;
+  else
+    # This is likely an old secondary disk. See if it's reusable and offer the
+    # user the chance to reuse it if possible.
+    _part_incompat_yn='n';
+    if grep -q '/dev/nvme' <<< "${_disk_str}"; then
+      _existing_part="${_disk_str}p1";
+    else
+      _existing_part="${_disk_str}1";
+    fi
+
+    _encrypted_yn="$(
+      grep -q 'crypto_LUKS' < <(
+        lsblk -ndo fstype "${_existing_part}"
+      ) && echo 'y' || echo 'n'
+    )"
+    if [ "${_encrypted_yn}" = 'y' ]; then
+      if [ "${_luks_yn}" = 'n' ]; then
+        _part_incompat_yn='y';
+      fi
+    fi
+
+    if [ "${_part_incompat_yn}" = 'y' ]; then
+      _confirmFormatHighDangerMsg="${_confirmFormatHighDangerMsg//XXX_SELECTED_DISK_XXX/${_disk_str}}";
+      _confirmFormatHighDangerMsg="${_confirmFormatHighDangerMsg//XXX_INCOMPAT_REASON_XXX/Cannot use an encrypted disk with unencrypted root.}";
+      _full_prepare_yn="$(_cm2PromptUserFn "${_confirmFormatHighDangerMsg}" \
+        "${_winTitle}" 'o')";
+      [ "${_full_prepare_yn}" = 'n' ] && exit;
+    else
+      if [ "${_encrypted_yn}" = 'y' ]; then
+        while true; do
+          _queryPassphraseMsg="${_queryPassphraseMsg//XXX_SELECTED_DISK_XXX/${_disk_str}}";
+          _crypt_passphrase_str="$(kdialog --title "${_winTitle}" \
+            --password "${_queryPassphraseMsg}")";
+          if ! "${_cryptsetupExe}" luksOpen --test-passphrase "${_existing_part}" \
+            <<< "${_crypt_passphrase_str}" 1>&2 2>/dev/null; then
+            if [ "$(_cm2PromptUserFn "${_badPassphraseMsg}" "${_winTitle}" \
+              'a')" = 'n' ];
+              then _crypt_passphrase_str=''; break;
+            fi
+          else
+            break;
+          fi
+        done
+      fi
+
+      if [ "${_encrypted_yn}" = 'y' ] \
+        && [ -z "${_crypt_passphrase_str}" ]; then
+        _confirmFormatHighDangerMsg="${_confirmFormatHighDangerMsg//XXX_SELECTED_DISK_XXX/${_disk_str}}";
+        _confirmFormatHighDangerMsg="${_confirmFormatHighDangerMsg//XXX_INCOMPAT_REASON_XXX/Disk passphrase not provided.}";
+        _full_prepare_yn="$(_cm2PromptUserFn "${_confirmFormatHighDangerMsg}" \
+          "${_winTitle}" 'o')";
+        [ "${_full_prepare_yn}" = 'n' ] && exit;
+      else
+        _getDiskContentStrFn "${_existing_part}" "${_crypt_passphrase_str}";
+        _exit_code="$?";
+        if (( _exit_code == 0 )); then
+          _chooseReuseDiskMsg="${_chooseReuseDiskMsg//XXX_SELECTED_DISK_XXX/${_disk_str}}";
+          _full_prepare_yn="$(_cm2PromptUserFn "${_chooseReuseDiskMsg}" \
+            "${_winTitle}" 'd' \
+            'n' 'Reuse the existing partition' 'on' \
+            'y' 'Wipe and reformat the disk' 'off')";
+          [ -z "${_full_prepare_yn}" ] && exit;
+        elif (( _exit_code == 2 )); then
+          _confirmFormatHighDangerMsg="${_confirmFormatHighDangerMsg//XXX_SELECTED_DISK_XXX/${_disk_str}}";
+          _confirmFormatHighDangerMsg="${_confirmFormatHighDangerMsg//XXX_INCOMPAT_REASON_XXX/LUKS volume contains no filesystem.}";
+          _full_prepare_yn="$(_cm2PromptUserFn \
+            "${_confirmFormatHighDangerMsg}" "${_winTitle}" 'o')";
+          [ "${_full_prepare_yn}" = 'n' ] && exit;
+        else
+          _cm2PromptUserFn "${_contentListFailureMsg}" "${_winTitle}" 's';
+          exit 1;
+        fi
+      fi
+    fi
+  fi
+
+  _chooseMountMsg="${_chooseMountMsg/XXX_SELECTED_DISK_XXX/${_disk_str}}";
+  _target_mount_point="$(_cm2PromptUserFn "${_chooseMountMsg}" \
+    "${_winTitle}" 'd' \
+    '/home' 'Set up as a HOME disk (/home)' 'on' \
+    '/srv/data' 'Set up as a DATA disk (/srv/data)' 'off')";
+  [ -z "${_target_mount_point}" ] && exit;
+
+  _confirmOverviewMsg="${_confirmOverviewMsg//XXX_SECONDARY_DISK_XXX/${_disk_str}}";
+  _confirmOverviewMsg="${_confirmOverviewMsg//XXX_MOUNT_POINT_XXX/${_target_mount_point}}";
+  if [ "${_full_prepare_yn}" = 'y' ]; then
+    [ "${_luks_yn}" = 'y' ] \
+      && _confirmOverviewMsg="${_confirmOverviewMsg//XXX_ENCRYPTED_XXX/Yes}" \
+      || _confirmOverviewMsg="${_confirmOverviewMsg//XXX_ENCRYPTED_XXX/No}";
+    _confirmOverviewMsg="${_confirmOverviewMsg//XXX_REFORMAT_XXX/Yes}";
+  else
+    [ -n "${_crypt_passphrase_str}" ] \
+      && _confirmOverviewMsg="${_confirmOverviewMsg//XXX_ENCRYPTED_XXX/Yes}" \
+      || _confirmOverviewMsg="${_confirmOverviewMsg//XXX_ENCRYPTED_XXX/No}";
+    _confirmOverviewMsg="${_confirmOverviewMsg//XXX_REFORMAT_XXX/No}";
+  fi
+
+  _confirm_str="$(_cm2PromptUserFn "${_confirmOverviewMsg}" "${_winTitle}" \
+    'o')";
+  [ "${_confirm_str}" = 'n' ] && exit;
+
+  if [ "${_full_prepare_yn}" = 'y' ]; then
+    _prompt_msg="${_finalReformatMsg//XXX_SELECTED_DISK_XXX/${_disk_str}}";
+  else
+    _prompt_msg="${_finalConfirmMsg//XXX_SELECTED_DISK_XXX/${_disk_str}}";
+  fi
+  _prompt_msg="${_prompt_msg//XXX_MOUNT_POINT_XXX/${_target_mount_point}}";
+  _confirm_str="$(
+    _cm2PromptUserFn "${_prompt_msg}" "${_winTitle}" 'o'
+  )";
+  [ "${_confirm_str}" = 'n' ] && exit;
+
+  _configSuccessMsg="${_configSuccessMsg//XXX_SELECTED_DISK_XXX/${_disk_str}}";
+  _configSuccessMsg="${_configSuccessMsg//XXX_MOUNT_POINT_XXX/${_target_mount_point}}";
+
+  if [ "${_full_prepare_yn}" = 'y' ]; then
+    _cm2RunLongCmdFn 'Preparing disk...' "${_fullPrepareDiskExe}" \
+      "${_target_mount_point}" "${_luks_yn}" "${_disk_str}";
+    _exit_code="$?";
+    case "${_exit_code}" in
+      '0')
+        _cm2PromptUserFn "${_configSuccessMsg}" "${_winTitle}";
+        ;;
+      '1')
+        _cm2PromptUserFn "${_configSoftFailureMsg}" "${_winTitle}";
+        ;;
+      '2')
+        _cm2PromptUserFn "${_configHardFailureMsg}" "${_winTitle}" 'e';
+        ;;
+    esac
+  else
+    if [ "${_encrypted_yn}" = 'n' ]; then
+      _cm2RunLongCmdFn 'Preparing disk...' "${_reuseDiskExe}" \
+        "${_target_mount_point}" "${_disk_str}";
+      _exit_code="$?";
+      case "${_exit_code}" in
+        '0')
+          _cm2PromptUserFn "${_configSuccessMsg}" "${_winTitle}";
+          ;;
+        '1')
+          _cm2PromptUserFn "${_configSoftFailureMsg}" "${_winTitle}";
+          ;;
+        '2')
+          _cm2PromptUserFn "${_configLuksOverflowFailureMsg}" "${_winTitle}";
+          ;;
+        '3')
+          _cm2PromptUserFn "${_configHardFailureMsg}" "${_winTitle}" 'e';
+          ;;
+      esac
+    else
+      _cm2RunLongCmdFn 'Preparing disk...' "${_reuseDiskExe}" \
+        "${_target_mount_point}" "${_disk_str}" "${_crypt_passphrase_str}";
+      _exit_code="$?";
+      case "${_exit_code}" in
+        '0')
+          _cm2PromptUserFn "${_configSuccessMsg}" "${_winTitle}";
+          ;;
+        '1')
+          _cm2PromptUserFn "${_configSoftFailureMsg}" "${_winTitle}";
+          ;;
+        '2')
+          _cm2PromptUserFn "${_configLuksOverflowFailureMsg}" "${_winTitle}";
+          ;;
+        '3')
+          _cm2PromptUserFn "${_configHardFailureMsg}" "${_winTitle}" 'e';
+          ;;
+      esac
+    fi
+  fi
+}
+## . END _mainFn }
+
+## BEGIN Declare and assign global vars {
+declare _binName _binDir _baseDir _baseName _assignList _cryptsetupExe \
+  _quietExitStr _fullPrepareDiskExe _reuseDiskExe _winTitle _chooseDiskMsg \
+  _chooseMountMsg _confirmFormatSafeMsg _confirmFormatDangerMsg \
+  _chooseReuseDiskMsg _noSecondaryDisksMsg _configSuccessMsg \
+  _configSoftFailureMsg _configLuksOverflowFailureMsg _configHardFailureMsg \
+  _confirmOverviewMsg _finalConfirmMsg _finalReformatMsg \
+  _contentListFailureMsg _queryPassphraseMsg _alreadySetupMsg;
+## . END Declare and assign global vars }
+
+## BEGIN Run mainFn when script is NOT sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+
+  # Import libs and assign more global vars
+  _importCommonFn;
+
+  _assignList=(
+    '_cryptsetupExe|/usr/sbin/cryptsetup'
+    "_fullPrepareDiskExe|${_binDir}/kfocus-chain-helper-reformat"
+    "_reuseDiskExe|${_binDir}/kfocus-chain-helper-reuse"
+  );
+  if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
+    _cm2WarnStrFn 'ABORT: Required commands not found';
+    exit 1;
+  fi
+
+  _assignUiStringsFn;
+
+  _mainFn "$@";
+fi
+## . END Run mainFn when script is NOT sourced }

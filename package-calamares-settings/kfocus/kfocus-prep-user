@@ -7,7 +7,7 @@ declare _username _uid _gid _home_dir;
 _username="${1:-}";
 _uid="$(id -u "${_username}")";
 _gid="$(id -g "${_username}")";
-_home_dir="/home/${_username}";
+_home_dir="$(awk -F':' "/${_username}/{ print \$6 }" '/etc/passwd')";
 
-/usr/local/sbin/adduser.local "${_username}" "${_uid}" "${_gid}" \
-  "${_home_dir}";
+/usr/local/sbin/adduser.local \
+  "${_username}" "${_uid}" "${_gid}" "${_home_dir}";

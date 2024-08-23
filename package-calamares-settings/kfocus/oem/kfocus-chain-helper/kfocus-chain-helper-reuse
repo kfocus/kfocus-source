@@ -1,0 +1,208 @@
+#!/bin/bash
+#
+# Copyright 2019-2024 MindShare Inc.
+#
+# Written for the Kubuntu Focus by M. Mikowski and A. Rainbolt.
+#
+# Name     : kfocus-chain-helper-reuse
+# Summary  : kfocus-chain-helper-reuse <target_mount_point_path>
+#              <target_disk_path> [<old_luks_passphrase>]
+# Purpose  : Reuses an existing secondary disk and sets it up.
+# Example  : kfocus-chain-helper-reuse /home /dev/nvme1n1 passphrase
+# License  : GPLv2
+# Run By   : kfocus-chain-helper-ui
+# Spec     : 4574
+#
+set -u;
+
+## BEGIN _importCommonFn {
+# Summary   : _importCommonFn
+# Purpose   : Load common routines, prefer relative dir
+# Example   : _importCommonFn;
+# Arguments : none
+# Globals   : Package vars _baseDir _baseName
+# Outputs   : none
+# Returns   : none
+#
+_importCommonFn () {
+  declare _lib_list _is_loaded _lib_file;
+  _lib_list=(
+    "${_baseDir}/lib/common.2.source"
+    '/usr/lib/kfocus/lib/common.2.source'
+  );
+  _is_loaded='n';
+  for _lib_file in "${_lib_list[@]}"; do
+    if [ -r "${_lib_file}" ]; then
+      # shellcheck source=/usr/lib/kfocus/lib/common.2.source
+      if source "${_lib_file}"; then
+        _is_loaded='y';
+        break;
+      fi
+    fi
+  done
+
+  if [ "${_is_loaded}" = 'n' ]; then
+    echo 1>&2 "${_baseName}: ABORT - Cannot source common lib";
+    exit 202;
+  fi
+}
+## . END _importCommonFn }
+
+## BEGIN _echoDebugFn {
+_echoDebugFn () {
+  [ "${_debugMode}" = 'n' ] && return;
+  printf '%-10s: %s\n' 'DEBUG' "${1:-}" 1>&2;
+}
+## . END _echoDebugFn }
+
+## BEGIN _mainFn {
+_mainFn () {
+  declare _target_mount_point _disk_tgt _crypt_passphrase_str _disk_tgt \
+    _part_tgt _crypt_tgt _key_tgt _part_top _mount_dev _mount_src _uuid \
+    _luks_dump_str _key_capacity _key_size_list _key_size _key_size_idx;
+
+  _key_size=0;
+
+  # Determine useful paths and names
+  _target_mount_point="${1:-}";
+  [ -z "${_target_mount_point}" ] && exit 1;
+  _disk_tgt="${2:-}";
+  [ -z "${_disk_tgt}" ] && exit 1;
+  _crypt_passphrase_str="${3:-}";
+  if [[ "${_disk_tgt}" =~ ^/dev/nvme ]]; then
+    _part_tgt="${_disk_tgt}p1";
+  else
+    _part_tgt="${_disk_tgt}1";
+  fi
+  _part_top="$(basename "${_part_tgt}")";
+  _crypt_tgt="${_part_top}_crypt";
+  _key_tgt="luks-key-${_part_top}";
+
+  _echoDebugFn "_disk_tgt  : ${_disk_tgt}";
+  _echoDebugFn "_part_tgt  : ${_part_tgt}";
+  _echoDebugFn "_crypt_tgt : ${_crypt_tgt}";
+  _echoDebugFn "_key_tgt   : ${_key_tgt}";
+
+  # Unmount everything on the target disk
+  #
+  # Commented out because the UI script shouldn't let the user select a disk
+  # with anything mounted anyway.
+  #
+  # declare _umount_list _umount_idx;
+  # readarray -t _umount_list < <(ls ${_disk_tgt}*);
+  # for (( _umount_idx=0; _umount_idx < ${#_umount_list[@]}; \
+  #   _umount_idx++ )); do
+  #   if [ "${_umount_list[_umount_idx]}" != "${_disk_tgt}" ]; then
+  #     if grep -q "${_umount_list[_umount_idx]}" < <(cat '/proc/mounts'); then
+  #       umount "${_umount_list[_umount_idx]}" || exit 1;
+  #     fi
+  #   fi
+  # done
+
+  if [ -n "${_crypt_passphrase_str}" ]; then
+    # Make sure there's room for a new key
+    _luks_dump_str="$(LC_ALL='C' cryptsetup luksDump "${_part_tgt}")";
+    _key_capacity="$(awk '/Keyslots area/{ print $3 }' \
+      <<< "${_luks_dump_str}")";
+    readarray -t _key_size_list < <(
+      awk -F '[: ]' '/Area length:/{ print $3 }' <<< "${_luks_dump_str}"
+    );
+
+    for (( _key_size_idx=0; _key_size_idx < ${#_key_size_list[@]}; \
+      _key_size_idx++ )); do
+      (( _key_size += _key_size_list[_key_size_idx] )) || true;
+    done
+    (( _key_size += 258048 )) || true;
+
+    if (( _key_size >= _key_capacity )); then
+      _cm2WarnStrFn 'Not enough room for another LUKS key!';
+      exit 2;
+    fi
+
+    if (( ${#_key_size_list[@]} >= 32 )); then
+      _cm2WarnStrFn 'Too many LUKS keys!';
+      exit 2;
+    fi
+
+    _mount_dev="/dev/mapper/${_crypt_tgt}";
+
+    # Insert the key
+    echo "${_crypt_passphrase_str}" \
+      | "${_cryptsetupExe}" luksOpen "${_part_tgt}" "${_crypt_tgt}" \
+      || exit 1;
+    dd if=/dev/urandom of="/root/.${_key_tgt}" bs=1024 count=4 \
+      || exit 1;
+    echo "${_crypt_passphrase_str}" \
+      | "${_cryptsetupExe}" luksAddKey "${_part_tgt}" "/root/.${_key_tgt}" \
+      || exit 3;
+  else
+    _mount_dev="${_part_tgt}";
+  fi
+
+  # Determine partition UUID
+  _uuid="UUID=$(blkid | grep "^${_part_tgt}" | sed 's/^.*: [A-Z]*UUID="\([^"]\+\)".*$/\1/')";
+  [ -z "${_uuid}" ] && exit 3;
+
+  # Configure the disk to mount at boot
+  if [ -n "${_crypt_passphrase_str}" ]; then
+    _mount_src="${_mount_dev}";
+    echo "${_crypt_tgt} ${_uuid} /root/.${_key_tgt} luks,discard" \
+      >> /etc/crypttab || exit 3;
+  else
+    _mount_src="${_uuid}";
+  fi
+  echo -e "# KFOCUS ${_target_mount_point} is on ${_mount_dev}\n${_mount_src} ${_target_mount_point} ext4 defaults 0 2" >> /etc/fstab || exit 3;
+
+  # Move the home directory if needed
+  if [ "${_target_mount_point}" = '/home' ]; then
+    # Unmount in preparation to move
+    umount '/home' || exit 3;
+
+    # Delete the unneeded home subvolume
+    # # Commented out because it makes the home dir conversion hard to revert.
+    # "${_btrfsExe}" subvolume delete '/btrfs_main/@home' || exit 3;
+
+    # Comment out the old /home mount line in fstab
+    sed -i 's|^\(.*/home.*btrfs.*subvol=/@home.*\)$|# KFOCUS Replaced /home btrfs with secondary disk\n# \1|' /etc/fstab || exit 3;
+    # Re-parse fstab
+    systemctl daemon-reload;
+    # Remount /home
+    mount '/home' || exit 3;
+
+  # Otherwise make sure /srv/data actually exists
+  else
+    mkdir -p '/srv/data';
+    mount '/srv/data' || exit 3;
+  fi
+}
+## . END _mainFn }
+
+## BEGIN Declare and assign global vars {
+declare _binName _binDir _baseDir _baseName _debugMode _assignList \
+  _btrfsExe _cryptsetupExe;
+
+_debugMode='y';
+## . END Declare and assign global vars }
+
+## BEGIN Run mainFn when script is NOT sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+
+  # Import libs and assign more global vars
+  _importCommonFn;
+
+  _assignList=(
+    '_btrfsExe|/usr/bin/btrfs'
+    '_cryptsetupExe|/usr/sbin/cryptsetup'
+  );
+  if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
+    _cm2WarnStrFn 'ABORT: Required commands not found';
+    exit 1;
+  fi
+
+  _mainFn "$@";
+fi
+## . END Run mainFn when script is NOT sourced }
