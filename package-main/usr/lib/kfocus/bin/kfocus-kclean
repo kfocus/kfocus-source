@@ -285,12 +285,11 @@ _echoIsBootMountPointFn () {
 # Mock this for tests
 #
 _echoBootMegsFn() {
-  declare _arg_str _btrfs_report _int;
+  declare _arg_str _int;
 
   _arg_str="${1:-size}";
 
   if [ "${_isBtrfsYn}" = 'y' ]; then
-    _btrfs_report="$(LC_ALL=C "${_btrfsExe}" filesystem usage -b /btrfs_boot)";
     if [ "${_arg_str}" = 'avail' ]; then
       _int="$("${_rollbackBackendExe}" 'getBootUnallocSpace')";
       (( _int = _int / 1048576 ));

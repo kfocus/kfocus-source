@@ -256,6 +256,7 @@ _checkBtrfsStatusFn () {
     if [ -n "$(ls -A /var/lib/portables)" ] || \
        [ -n "$(ls -A /var/lib/machines )" ]; then
       _btrfsStatus='UNSUPPORTED';
+      return;
     fi
   fi
 
@@ -671,15 +672,7 @@ _createSnapshotFn () {
     _snapshot_path="${_rb2MainSnapshotDir}/@${_timestamp_str}";
     _boot_snapshot_path="${_rb2BootSnapshotDir}/@${_timestamp_str}";
 
-    # TODO: There's a time-of-check to time-of-use bug here, I don't *think*
-    # we care since it can only be triggered by a locking failure or a malicious
-    # process with root privileges, but review to see if this should be worked
-    # around.
-    if [ -e "${_snapshot_path}" ]; then
-      sleep 1;
-      continue;
-    fi
-    if [ -e "${_boot_snapshot_path}" ]; then
+    if [ -e "${_snapshot_path}" ] || [ -e "${_boot_snapshot_path}" ]; then
       sleep 1;
       continue;
     fi
@@ -788,7 +781,7 @@ _makeSnapshotDispIdFn () {
 
 ## BEGIN _restoreSnapshotFn {
 _restoreSnapshotFn () {
-  declare _older_snapshot_list_str _target_snapshot_id _snapshot_path \
+  declare _target_snapshot_id _snapshot_path \
     _boot_snapshot_path _snapshot_name _snapshot_date _snapshot_reason \
     _umount_cnt _efi_umount_yn;
 
@@ -796,10 +789,6 @@ _restoreSnapshotFn () {
   _checkMainUnallocSpaceFn;
   _checkBootUnallocSpaceFn;
 
-  # Any snapshots that are at number 5 or older will end up trimmed if we
-  # don't purposefully exclude them, so get the list of all but the four
-  # newest snapshots and exclude them a bit later.
-  _older_snapshot_list_str="$(_getSnapshotListStrFn | tail -n+5)";
   _target_snapshot_id="${1:-}";
 
   if [ -z "${_target_snapshot_id}" ]; then
@@ -840,10 +829,6 @@ _restoreSnapshotFn () {
   fi
 
   _createSnapshotFn 'Pre-Rollback' || exit;
-  # Exclude the fifth and older snapshots.
-  if ! [[ "${_older_snapshot_list_str}" =~ ${_target_snapshot_id} ]]; then
-    _trimSnapshotsFn || exit;
-  fi
 
   _snapshot_name="$("${_kreadconfig5Exe}" --file "${_snapshotMetaDb}" --group "${_target_snapshot_id}" --key 'name')";
   _snapshot_date="$(sed 's/@//' <<< "${_target_snapshot_id}")";
@@ -872,6 +857,8 @@ _restoreSnapshotFn () {
     echo "${_snapshot_reason}";
   } > "/btrfs_main/@${_rb2RestoreCompleteFile}" \
     || _exitALERT 'Unable to prepare system for post-snapshot cleanup!';
+  
+  _trimSnapshotsFn || exit;
 
   _cm2LogFn 'notice' "Snapshot ${_target_snapshot_id} restored.";
 }
@@ -890,6 +877,8 @@ _systemSnapshotFn () {
 ## BEGIN _getSnapshotMetadataFn {
 _getSnapshotMetadataFn () {
   declare _snapshot_id _mode _item _space_report;
+  
+  _checkBtrfsStatusSetUpFn;
 
   _snapshot_id="${1:-}";
   _mode="${2:-}";
@@ -922,6 +911,8 @@ _getSnapshotMetadataFn () {
 ## BEGIN _setSnapshotMetadataFn {
 _setSnapshotMetadataFn () {
   declare _snapshot_id _name_str _desc_str _is_pinned
+  
+  _checkBtrfsStatusSetUpFn;
 
   _snapshot_id="${1:-}";
   _name_str="${2:-}";
@@ -1036,7 +1027,7 @@ _deleteAllSnapshotsFn () {
 
   if [ "${#_snapshot_list[@]}" = '0' ] || [ -z "${_snapshot_list[0]}" ]; then
     _cm2WarnStrFn 'No snapshots found.';
-    return 1;
+    return;
   fi
 
   for _current_snapshot in "${_snapshot_list[@]}"; do
