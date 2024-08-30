@@ -5,8 +5,8 @@ Maintainer: Ubuntu Kernel Team <kernel-team@lists.ubuntu.com>
 Standards-Version: 3.9.8
 Build-Depends: dpkg (>= 1.13.19), debhelper (>= 11), gawk
 Build-Depends-Arch:
- linux-kfocus-headers-6.8.0-36,
- linux-headers-6.8.0-36-kfocus,
+ linux-kfocus-headers-6.8.0-41,
+ linux-headers-6.8.0-41-kfocus,
 Vcs-Git: git://git.launchpad.net/~ubuntu-kernel/ubuntu/+source/linux-meta/+git/noble
 
 Package: linux-headers-kfocus-24.04-kfocus
@@ -22,7 +22,7 @@ Description: KFocus Linux kernel headers
 Package: linux-image-kfocus-24.04-kfocus
 Architecture: amd64 armhf arm64 ppc64el s390x
 Section: kernel
-Provides: ${dkms:v4l2loopback-modules} ${dkms:zfs-modules} ${dkms:virtualbox-guest-modules} ${dkms:wireguard-linux-compat-modules}
+Provides: ${dkms:v4l2loopback-modules} ${dkms:zfs-modules} ${dkms:ivsc-modules} ${dkms:virtualbox-guest-modules} ${dkms:wireguard-linux-compat-modules}
 Replaces: linux-image-kfocus-24.04, linux-image-generic-hwe-24.04-kfocus
 Conflicts: linux-image-kfocus-24.04, linux-image-generic-hwe-24.04-kfocus
 Depends: ${misc:Depends}, linux-image-unsigned-${kernel-abi-version}-kfocus, linux-modules-extra-${kernel-abi-version}-kfocus [amd64 arm64 ppc64el s390x], linux-firmware [amd64 armhf arm64 ppc64el], intel-microcode [amd64], amd64-microcode [amd64]
