@@ -8,6 +8,7 @@ Rectangle {
     property string mainIcon: ''
     property string headerText: ''
     property string mainText: ''
+    property string secondaryText: ''
     property string primaryButtonText: 'Ok'
     property string secondaryButtonText: 'Cancel'
     property string primaryButtonIcon: ''
@@ -55,6 +56,17 @@ Rectangle {
                     Layout.bottomMargin:
                       Kirigami.Units.gridUnit * 0.5
                     text: mainText
+                    wrapMode: Text.WordWrap
+                    onLinkActivated: Qt.openUrlExternally(link)
+                }
+
+                Controls.Label {
+                    Layout.preferredWidth:
+                      Kirigami.Units.gridUnit * 20
+                    Layout.bottomMargin:
+                      Kirigami.Units.gridUnit * 0.5
+                    text: secondaryText
+                    visible: secondaryText !== ''
                     wrapMode: Text.WordWrap
                     onLinkActivated: Qt.openUrlExternally(link)
                 }

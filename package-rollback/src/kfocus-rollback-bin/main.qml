@@ -56,10 +56,17 @@ Kirigami.ApplicationWindow {
       + ' '
 
     // Set Constant Names
-    property string optimizeDiskLabel           : 'Clean Up Disk'
-    property string createSnapshotLabel         : 'Create New Snapshot'
-    property string calculateSnapshotSizesLabel : 'Show Snapshot Sizes'
     property string automaticSnapshotsLabel     : 'Automatic Snapshots'
+    property string calculateSnapshotSizesLabel : 'Show Snapshot Sizes'
+    property string compareSnapshotLabel        : 'Compare Snapshots'
+    property string createSnapshotErrorLabel    : 'Snapshot Creation Failed'
+    property string createSnapshotLabel         : 'Create New Snapshot'
+    property string deleteSnapshotDeniedLabel   : 'Cannot Delete Pinned Snapshot'
+    property string deleteSnapshotErrorLabel    : 'Snapshot Deletion Failed'
+    property string deleteSnapshotLabel         : 'Delete Snapshot'
+    property string optimizeDiskLabel           : 'Clean Up Disk'
+    property string restoreSnapshotErrorLabel   : 'Snapshot Restore Failed'
+    property string restoreSnapshotLabel        : 'Restore Snapshot'
 
     // Purpose: Contains list of snapshots and snapshot info
     ListModel {
@@ -952,29 +959,11 @@ Kirigami.ApplicationWindow {
                     }
                 }
 
-                ErrorSnapshotActionItem {
-                    id            : deleteSnapshotCriticalErrorView
-                    visible       : false
-                    startInfoText : '<p>System Rollback was interrupted '
-                      + 'while deleting the following snapshot:</p>';
-                    endInfoText   : '<br><p>This may be the result of '
-                      + 'failing hardware or a software conflict. Please do '
-                      + 'NOT reboot. Back up your data as soon as possible. '
-                      + 'Failure to do so may result in data loss. See '
-                      + '<a href="https://kfocus.org/wf/backup#bkm_take_a_snapshot">'
-                      + 'https://kfocus.org/wf/backup#bkm_take_a_snapshot'
-                      + '</a> for instructions on how to safeguard your '
-                      + 'data.</p>'
-                    isCritical    : true
-
-                    onOkClicked   : Qt.quit()
-                }
-
                 ConfirmSnapshotActionItem {
                     id            : restoreSnapshotView
                     visible       : false
-                    startInfoText : '<p>The following snapshot is now ready '
-                     + 'to be restored:</p>'
+                    startInfoText : '<p>System Rollback is ready to restore '
+                      + 'the following snapshot:</p>'
                     endInfoText   : '<br><p>Please save any open work before '
                       + 'restoring. <b><font color="#da4453">WARNING: This '
                       + 'will immediately reboot the system!</font></b></p>'
@@ -994,6 +983,23 @@ Kirigami.ApplicationWindow {
                     id         : restoreSnapshotWaitView
                     visible    : false
                     headerText : 'Restoring snapshot...';
+                }
+
+                ErrorSnapshotActionItem {
+                    id            : restoreSnapshotErrorView
+                    visible       : false
+                    startInfoText : '<p>The following snapshot could NOT be '
+                      + 'restored:</p>';
+                    endInfoText   : '<br><p>No changes have been made to the '
+                      + 'system. Please try to restore again. If this fails, '
+                      + 'see <a href="https://kfocus.org/wf/recovery">'
+                      + 'https://kfocus.org/wf/recovery</a> for other '
+                      + 'recovery options. Contact support if this issue '
+                      + 'persists.</p>'
+
+                    onOkClicked   : {
+                        switchViewFn( restoreSnapshotErrorView, snapshotView )
+                    }
                 }
 
                 SnapshotCompareItem {
@@ -1028,86 +1034,32 @@ Kirigami.ApplicationWindow {
             }
         }
 
-        Rectangle {
-            id           : lowDiskOverlay
-            visible      : false
+        OverlayAlertItem {
+            id: lowDiskOverlay
+            isVisible: false
+            mainIcon: 'dialog-error'
+            headerText: 'Low Disk Space Warning'
+            mainText: 'This system needs more disk space. You '
+              + 'could delete some files to open up space, '
+              + 'which is often a good idea.'
+            secondaryText: 'Another way to free space is to remove '
+              + 'snapshots. Click on “'
+              + calculateSnapshotSizesLabel
+              + '” below to calculate and show the size of '
+              + 'all snapshots. This usually takes 30 to 90 '
+              + 'seconds to complete, so please be patient.'
+            primaryButtonText: 'Show Snapshot Sizes'
+            primaryButtonIcon: 'disk-quota'
+            secondaryButtonText: 'Skip'
+            secondaryButtonIcon: 'go-next-skip'
+            showSecondaryButton: true
 
-            anchors.fill : parent
-            color        : Kirigami.Theme.backgroundColor
-
-            ColumnLayout {
-                anchors {
-                    verticalCenter: parent.verticalCenter
-                    horizontalCenter: parent.horizontalCenter
-                }
-                RowLayout {
-                    Kirigami.Icon {
-                        Layout.alignment       : Qt.AlignTop
-                        Layout.preferredHeight : Kirigami.Units.gridUnit * 4
-                        Layout.preferredWidth  : Kirigami.Units.gridUnit * 4
-                        Layout.rightMargin     :
-                          Kirigami.Units.gridUnit * 1.05
-                        Layout.topMargin       :
-                          Kirigami.Units.gridUnit * 1.90
-                        source                 : 'dialog-error'
-                    }
-                    ColumnLayout {
-                        Kirigami.Heading {
-                            Layout.bottomMargin :
-                              Kirigami.Units.gridUnit * 0.5
-                            text                : 'Low Disk Space Warning'
-                            level               : 1
-                        }
-                        Controls.Label {
-                            Layout.preferredWidth :
-                              Kirigami.Units.gridUnit * 20
-                            Layout.bottomMargin   :
-                              Kirigami.Units.gridUnit * 0.5
-                            text                  :
-                              'This system needs more disk space. You '
-                              + 'could delete some files to open up space, '
-                              + 'which is often a good idea.'
-                            wrapMode              : Text.WordWrap
-                        }
-                        Controls.Label {
-                            Layout.preferredWidth :
-                              Kirigami.Units.gridUnit * 20
-                            Layout.bottomMargin   :
-                              Kirigami.Units.gridUnit * 0.5
-                            text                  :
-                              'Another way to free space is to remove '
-                              + 'snapshots. Click on “'
-                              + calculateSnapshotSizesLabel
-                              + '” below to calculate and show the size of '
-                              + 'all snapshots. This usually takes 30 to 90 '
-                              + 'seconds to complete, so please be patient.'
-                            wrapMode              : Text.WordWrap
-                        }
-                    }
-                }
-                Controls.Button {
-                    Layout.alignment : Qt.AlignHCenter
-                    Layout.topMargin : Kirigami.Units.gridUnit * 1.15
-                    id               : ldSnapshotSizeButton
-                    text             : calculateSnapshotSizesLabel
-                    icon.name        : 'disk-quota'
-                    onClicked        : {
-                        calculateSnapshotSizesFn();
-                        lowDiskOverlay.visible = false;
-                    }
-                }
+            onPrimaryButtonClicked: {
+                calculateSnapshotSizesFn();
+                lowDiskOverlay.visible = false;
             }
-
-            Controls.Button {
-                text      : 'Skip'
-                icon.name : 'go-next-skip'
-                anchors {
-                    right  : parent.right
-                    bottom : parent.bottom
-                }
-                onClicked : {
-                    lowDiskOverlay.visible = false;
-                }
+            onSecondaryButtonClicked: {
+                lowDiskOverlay.visible = false;
             }
         }
 
@@ -1270,7 +1222,7 @@ Kirigami.ApplicationWindow {
               + ' should not exist, but does. System Rollback cannot proceed '
               + 'with this subvolume present. Please ensure this subvolume '
               + 'does not contain any important data, then remove it with '
-              + '<code>sudo btrfs subvolume delete</code>.'
+              + '"sudo btrfs subvolume delete".'
             primaryButtonText: 'Exit'
             primaryButtonIcon: 'go-previous-symbolic'
             showSecondaryButton: false
@@ -1289,7 +1241,7 @@ Kirigami.ApplicationWindow {
               + ' should not exist, but does. System Rollback cannot proceed '
               + 'with this subvolume present. Please ensure this subvolume '
               + 'does not contain any important data, then remove it with '
-              + '<code>sudo btrfs subvolume delete</code>.'
+              + '"sudo btrfs subvolume delete".'
             primaryButtonText: 'Exit'
             primaryButtonIcon: 'go-previous-symbolic'
             showSecondaryButton: false
@@ -1389,8 +1341,6 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id: saveEditsEngine
         onAppExited: {
-            sysRefreshSourceView = saveEditsWaitView;
-            sysRefreshTargetView = snapshotView;
             if ( exitCode === 0 ) {
                 snapshotModel.get(snapshotBar.currentIndex).name
                   = snapshotView.name;
@@ -1405,7 +1355,7 @@ Kirigami.ApplicationWindow {
                 switchViewFn( saveEditsWaitView, snapshotView );
             } else {
                 restoreSnapshotViewBindingsFn();
-                sysRefreshSourceView = snapshotView;
+                sysRefreshSourceView = saveEditsWaitView;
                 sysRefreshTargetView = snapshotView;
                 snapshotView.saving  = false;
                 snapshotView.editing = false;
@@ -1462,18 +1412,24 @@ Kirigami.ApplicationWindow {
         } else if ( target_view === createSnapshotView ) {
             mainAreaLabel.text = createSnapshotLabel;
         } else if ( target_view === createSnapshotErrorView ) {
-            mainAreaLabel.text = 'Snapshot Creation Failed';
+            mainAreaLabel.text = createSnapshotErrorLabel;
         } else if ( target_view === optimizeDiskView ) {
             mainAreaLabel.text = optimizeDiskLabel;
         } else if ( target_view === automaticSnapshotSwitchView ) {
             mainAreaLabel.text = automaticSnapshotsLabel;
         } else if ( target_view === deleteSnapshotView ) {
-            mainAreaLabel.text = 'Delete Snapshot';
+            mainAreaLabel.text = deleteSnapshotLabel;
+        } else if ( target_view === restoreSnapshotView ) {
+            mainAreaLabel.text = restoreSnapshotLabel;
         } else if ( target_view === compareSnapshotView ) {
-            mainAreaLabel.text = 'Compare Snapshots';
+            mainAreaLabel.text = compareSnapshotLabel;
         } else if ( target_view === deleteSnapshotDeniedView ) {
-            mainAreaLabel.text = 'Cannot Delete Pinned Snapshot';
-        }else if ( target_view === calculateSnapshotWaitView ) {
+            mainAreaLabel.text = deleteSnapshotDeniedLabel;
+        } else if ( target_view === deleteSnapshotErrorView ) {
+            mainAreaLabel.text = deleteSnapshotErrorLabel;
+        } else if ( target_view === restoreSnapshotErrorView ) {
+            mainAreaLabel.text = restoreSnapshotErrorLabel;
+        } else if ( target_view === calculateSnapshotWaitView ) {
             mainAreaLabel.text = calculateSnapshotSizesLabel;
         }
 
@@ -1518,16 +1474,19 @@ Kirigami.ApplicationWindow {
         if ( snapshotView.pinned ) {
             switchViewFn( snapshotView, deleteSnapshotDeniedView );
         } else {
-            deleteSnapshotView.reason = snapshotModel.get(snapshot_idx).reason;
-            deleteSnapshotView.date   = snapshotModel.get(snapshot_idx).date;
-            deleteSnapshotView.name   = snapshotModel.get(snapshot_idx).name;
+            deleteSnapshotView.reason      = snapshotModel.get(snapshot_idx).reason;
+            deleteSnapshotView.date        = snapshotModel.get(snapshot_idx).date;
+            deleteSnapshotView.name        = snapshotModel.get(snapshot_idx).name;
+            deleteSnapshotErrorView.date   = snapshotModel.get(snapshot_idx).date;
+            deleteSnapshotErrorView.name   = snapshotModel.get(snapshot_idx).name;
+            deleteSnapshotErrorView.reason = snapshotModel.get(snapshot_idx).reason;
             switchViewFn( snapshotView, deleteSnapshotView );
         }
     }
 
     function deleteSnapshotFn( snapshot_idx ) {
         backend.inhibitClose = true;
-        switchViewFn( deleteSnapshotView, deleteSnapshotWaitView )
+        switchViewFn( deleteSnapshotView, deleteSnapshotWaitView );
         deleteSnapshotEngine.exec(
           rollbackStr
             + 'deleteSnapshot '
@@ -1539,6 +1498,9 @@ Kirigami.ApplicationWindow {
         restoreSnapshotView.reason = snapshotModel.get(snapshot_idx).reason;
         restoreSnapshotView.date   = snapshotModel.get(snapshot_idx).date;
         restoreSnapshotView.name   = snapshotModel.get(snapshot_idx).name;
+        restoreSnapshotErrorView.reason = snapshotModel.get(snapshot_idx).reason;
+        restoreSnapshotErrorView.date   = snapshotModel.get(snapshot_idx).date;
+        restoreSnapshotErrorView.name   = snapshotModel.get(snapshot_idx).name;
         switchViewFn( snapshotView, restoreSnapshotView );
     }
 

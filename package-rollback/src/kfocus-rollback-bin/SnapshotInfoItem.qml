@@ -212,6 +212,7 @@ RowLayout {
             text                  : 'Delete'
             icon.name             : 'edit-delete-remove'
             onClicked             : deleteClicked()
+            enabled               : !editing
 
             HoverHandler {
                 cursorShape : Qt.PointingHandCursor
@@ -226,6 +227,7 @@ RowLayout {
             text                  : 'Restore'
             icon.name             : 'edit-undo-symbolic'
             onClicked             : restoreClicked()
+            enabled               : !editing
 
             HoverHandler {
                 cursorShape : Qt.PointingHandCursor
@@ -239,6 +241,7 @@ RowLayout {
             text                  : 'Compare With'
             icon.name             : 'document-duplicate'
             onClicked             : compareClicked()
+            enabled               : !editing
 
             HoverHandler {
                 cursorShape : Qt.PointingHandCursor

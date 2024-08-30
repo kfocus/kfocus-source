@@ -29,10 +29,10 @@ Kirigami.ApplicationWindow {
             }
 
             Controls.Label {
-                text : '<p>Base snapshot: <b><font color="#f7941d">'
+                text : '<p>Base state: <b><font color="#f7941d">'
                   + sourceSnapshotId
                   + '</font></b></p>'
-                  + 'Snapshot being compared to: <b><font color="#f7941d">'
+                  + 'State being compared to: <b><font color="#f7941d">'
                   + targetSnapshotId
                   + '</font></b>'
                 Layout.bottomMargin : Kirigami.Units.gridUnit * 0.25
