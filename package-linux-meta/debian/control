@@ -1,13 +1,12 @@
-Source: linux-meta-hwe-6.5-kfocus
+Source: linux-meta-hwe-6.8-kfocus
 Section: devel
 Priority: optional
 Maintainer: Ubuntu Kernel Team <kernel-team@lists.ubuntu.com>
 Standards-Version: 3.9.8
-Build-Depends: dpkg (>= 1.13.19), debhelper (>= 11), gawk, kmod
+Build-Depends: dpkg (>= 1.13.19), debhelper (>= 11), gawk
 Build-Depends-Arch:
- linux-hwe-6.5-headers-6.5.0-25,
- linux-headers-6.5.0-25-generic,
- linux-modules-6.5.0-25-generic,
+ linux-hwe-6.8-headers-6.8.0-40,
+ linux-headers-6.8.0-40-generic,
 Vcs-Git: git://git.launchpad.net/~ubuntu-kernel/ubuntu/+source/linux-meta/+git/jammy
 
 Package: linux-headers-generic-hwe-22.04-kfocus
@@ -23,7 +22,7 @@ Description: Generic Linux kernel headers
 Package: linux-image-generic-hwe-22.04-kfocus
 Architecture: amd64 armhf arm64 ppc64el s390x
 Section: kernel
-Provides: ${dkms:v4l2loopback-modules} ${dkms:zfs-modules} ${dkms:virtualbox-guest-modules} ${dkms:wireguard-linux-compat-modules}
+Provides: ${dkms:v4l2loopback-modules} ${dkms:zfs-modules} ${dkms:ivsc-modules} ${dkms:virtualbox-guest-modules} ${dkms:wireguard-linux-compat-modules}
 Replaces: linux-image-generic-hwe-22.04, linux-image-oem-22.04a-kfocus
 Conflicts: linux-image-generic-hwe-22.04, linux-image-oem-22.04a-kfocus
 Depends: ${misc:Depends}, linux-image-${kernel-abi-version}-generic, linux-modules-extra-${kernel-abi-version}-generic [amd64 arm64 ppc64el s390x], linux-firmware [amd64 armhf arm64 ppc64el], intel-microcode [amd64], amd64-microcode [amd64]
@@ -70,10 +69,11 @@ Description: Generic Linux kernel cloud tools
 Package: linux-generic-hwe-22.04-kfocus
 Architecture: amd64 armhf arm64 ppc64el s390x
 Section: kernel
-Provides: kernel-testing--linux-hwe-6.5-kfocus--full--generic, kernel-testing--linux-hwe-6.5-kfocus--full--preferred,
+Provides: kernel-testing--linux-hwe-6.8-kfocus--full--generic, kernel-testing--linux-hwe-6.8-kfocus--full--preferred,
 Replaces: linux-generic-hwe-22.04, linux-oem-22.04a-kfocus
 Conflicts: linux-generic-hwe-22.04, linux-oem-22.04a-kfocus
 Depends: ${misc:Depends}, linux-image-generic-hwe-22.04-kfocus (= ${binary:Version}), linux-headers-generic-hwe-22.04-kfocus (= ${binary:Version})
+Recommends: linux-tools-${kernel-abi-version}-generic, ubuntu-kernel-accessories
 Description: Complete Generic Linux kernel and headers
  This package will always depend on the latest complete generic Linux kernel
  and headers.
@@ -92,7 +92,7 @@ Description: Generic Linux kernel headers
 Package: linux-image-generic-hwe-22.04-edge-kfocus
 Architecture: amd64 armhf arm64 ppc64el s390x
 Section: kernel
-Provides: ${dkms:v4l2loopback-modules} ${dkms:zfs-modules} ${dkms:virtualbox-guest-modules} ${dkms:wireguard-linux-compat-modules}
+Provides: ${dkms:v4l2loopback-modules} ${dkms:zfs-modules} ${dkms:ivsc-modules} ${dkms:virtualbox-guest-modules} ${dkms:wireguard-linux-compat-modules}
 Replaces: linux-image-generic-hwe-22.04-edge, linux-image-oem-22.04a-kfocus
 Conflicts: linux-image-generic-hwe-22.04-edge, linux-image-oem-22.04a-kfocus
 Depends: ${misc:Depends}, linux-image-${kernel-abi-version}-generic, linux-modules-extra-${kernel-abi-version}-generic [amd64 arm64 ppc64el s390x], linux-firmware [amd64 armhf arm64 ppc64el], intel-microcode [amd64], amd64-microcode [amd64]
@@ -143,6 +143,7 @@ Provides:
 Replaces: linux-generic-hwe-22.04-edge, linux-oem-22.04a-kfocus
 Conflicts: linux-generic-hwe-22.04-edge, linux-oem-22.04a-kfocus
 Depends: ${misc:Depends}, linux-image-generic-hwe-22.04-edge-kfocus (= ${binary:Version}), linux-headers-generic-hwe-22.04-edge-kfocus (= ${binary:Version})
+Recommends: linux-tools-${kernel-abi-version}-generic, ubuntu-kernel-accessories
 Description: Complete Generic Linux kernel and headers
  This package will always depend on the latest complete generic Linux kernel
  and headers.
@@ -171,28 +172,6 @@ Description: Extra drivers for ipu6 for the generic flavour
  Install extra signed ipu6 modules compatible with the generic flavour.
 
 
-Package: linux-modules-ivsc-generic-hwe-22.04
-Architecture: amd64
-Section: kernel
-Provides: ${dkms:ivsc-modules}
-Depends:
- ${misc:Depends},
- linux-modules-ivsc-${kernel-abi-version}-generic,
-Description: Extra drivers for ivsc for the generic flavour
- Install extra signed ivsc modules compatible with the generic flavour.
-
-
-Package: linux-modules-ivsc-generic-hwe-22.04-edge
-Architecture: amd64
-Section: kernel
-Provides: ${dkms:ivsc-modules}
-Depends:
- ${misc:Depends},
- linux-modules-ivsc-${kernel-abi-version}-generic,
-Description: Extra drivers for ivsc for the generic flavour
- Install extra signed ivsc modules compatible with the generic flavour.
-
-
 Package: linux-modules-iwlwifi-generic-hwe-22.04
 Architecture: amd64
 Section: kernel
@@ -213,4 +192,26 @@ Depends:
  linux-modules-iwlwifi-${kernel-abi-version}-generic,
 Description: Extra drivers for iwlwifi for the generic flavour
  Install extra signed iwlwifi modules compatible with the generic flavour.
+
+
+Package: linux-modules-usbio-generic-hwe-22.04
+Architecture: amd64
+Section: kernel
+Provides: ${dkms:usbio-modules}
+Depends:
+ ${misc:Depends},
+ linux-modules-usbio-${kernel-abi-version}-generic,
+Description: Extra drivers for usbio for the generic flavour
+ Install extra signed usbio modules compatible with the generic flavour.
+
+
+Package: linux-modules-usbio-generic-hwe-22.04-edge
+Architecture: amd64
+Section: kernel
+Provides: ${dkms:usbio-modules}
+Depends:
+ ${misc:Depends},
+ linux-modules-usbio-${kernel-abi-version}-generic,
+Description: Extra drivers for usbio for the generic flavour
+ Install extra signed usbio modules compatible with the generic flavour.
 
