@@ -108,7 +108,7 @@ _mainFn () {
   case "${_ans}" in
     '0')
       "${_webLauncherExe}" \
-        --new-window 'https://kfocus.org/wf/reinstall.html';
+        --new-window 'https://kfocus.org/wf/upgrade.html';
       ;;
     '1')
       echo $(( $(date +%s) + (7 * 86400) )) > "$HOME/.config/kfocus-upgrade-notifier";
