@@ -62,18 +62,17 @@ _assignGlobalUiVarsFn () {
 
   _queryUserMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_table_str}
-${_brow_str}${_header_str}Continue with Upgrade from 22.04 to 24.04 LTS?</h3>${_erow_str}
+${_brow_str}${_header_str}View Guide to Upgrade to 24.04 LTS?</h3>${_erow_str}
 
-${_brow_str}This version, 22.04 LTS, remains supported until April 2025.
-${_erow_str}
+${_brow_str}This version, 22.04 LTS, XXX_EOL_XXX 17 April 2025,
+XXX_DAYS_XXX.${_erow_str}
 
-${_brow_str}<ul><li>Click on "Proceed with Upgrade" to open web<br>
-instructions on how to best upgrade your Kubuntu<br>
-Focus system to 24.04 LTS.<br></li>
-<li>Click "Remind me Later" to hide this notification<br>
-for the next week.<br></li>
-<li>Click "Suppress Notification" to hide tihs notification<br>
-until a week before the EOL date.</li></ul>${_erow_str}
+${_brow_str}<ul><li>Click on "View Guide In Browser" to view the steps to
+upgrade your Kubuntu Focus <br>
+system to 24.04 LTS.<br></li>
+<li>Click "Remind Next Week" to hide this notification for a week.<br></li>
+<li>Click "Remind Next Month" to hide this notification for a
+month.<br></li></ul>${_erow_str}
 ${_cm2HtmEndStr}
 EOF
   )";
@@ -81,13 +80,29 @@ EOF
 
 ## BEGIN _mainFn {
 _mainFn () {
-  declare _ans;
+  declare _ans _current_ts _eol_ts _days_remain_str _eol_notif_str;
+
+  _current_ts="$(date +%s)";
+  _eol_ts='1744848000'; # Timestamp of April 17, 2025 UTC
+  _eol_notif_str='remains supported until';
+  _days_remain_str="$(( (_eol_ts - _current_ts) / 86400 ))";
+  if (( _days_remain_str > 1 )); then
+    _days_remain_str="which is ${_days_remain_str} days from now";
+  elif (( _days_remain_str == 1)); then
+    _days_remain_str="which is 1 day from now";
+  else
+    _eol_notif_str='went end-of-life on';
+    _days_remain_str="meaning that the OS is unsupported";
+  fi
+
+  _queryUserMsg="${_queryUserMsg//XXX_EOL_XXX/${_eol_notif_str}}";
+  _queryUserMsg="${_queryUserMsg//XXX_DAYS_XXX/${_days_remain_str}}";
 
   _ans="$(kdialog --warningyesnocancel "${_queryUserMsg}" \
     --title "${_windowTitle}" \
-    --yes-label='Proceed with Upgrade' \
-    --no-label='Remind me Later' \
-    --cancel-label="Suppress Notification";
+    --yes-label='View Guide in Browser' \
+    --no-label='Remind Next Week' \
+    --cancel-label="Remind Next Month";
     echo $?)";
 
   case "${_ans}" in
@@ -96,13 +111,10 @@ _mainFn () {
         --new-window 'https://kfocus.org/wf/reinstall.html';
       ;;
     '1')
-      date +%s > "$HOME/.config/kfocus-upgrade-notifier";
+      echo $(( $(date +%s) + (7 * 86400) )) > "$HOME/.config/kfocus-upgrade-notifier";
       ;;
     '2')
-      # Thursday, April 10, 2025, which is one week (plus or minus a day
-      # potentially) before the EOL date as given by
-      # plasma-distro-release-notifier.
-      echo '1744261200' > "$HOME/.config/kfocus-upgrade-notifier";
+      echo $(( $(date +%s) + (30 * 86400) )) > "$HOME/.config/kfocus-upgrade-notifier";
       ;;
   esac
 }
