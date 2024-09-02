@@ -726,6 +726,28 @@ _createSnapshotFn () {
 }
 ## . END _createSnapshotFn
 
+## BEGIN _compareSnapshotsFn {
+_compareStateFn () {
+  declare _source_state_dir _target_state_dir;
+
+  _checkBtrfsStatusSetUpFn;
+  _checkRootFn || _exitNOTICE 'State comparison requires root privileges.';
+
+  _source_state_dir="${1:-}";
+  [ -z "${_source_state_dir}" ] \
+    && _exitERR 'No source state dir provided to comparer!';
+  ! [ -d "${_source_state_dir}" ] \
+    && _exitERR 'Specified source state dir does not exist or is not a dir!';
+  _target_state_dir="${2:-}";
+  [ -z "${_target_state_dir}" ] \
+    && _exitERR 'No target state dir provided to comparer!';
+  ! [ -d "${_target_state_dir}" ] \
+    && _exitERR 'Specified target state dir does not exist or is not a dir!';
+
+  "${_diffExe}" -r --brief "${_source_state_dir}" "${_target_state_dir}";
+}
+## . END _compareSnapshotsFn }
+
 ## BEGIN _getSnapshotReasonFn {
 _getSnapshotReasonFn () {
   declare _snapshot_id _snapshot_reason_file _snapshot_reason_raw \
@@ -831,7 +853,7 @@ _restoreSnapshotFn () {
   _createSnapshotFn 'Pre-Rollback' || exit;
 
   _snapshot_name="$("${_kreadconfig5Exe}" --file "${_snapshotMetaDb}" --group "${_target_snapshot_id}" --key 'name')";
-  _snapshot_date="$(sed 's/@//' <<< "${_target_snapshot_id}")";
+  _snapshot_date="${_target_snapshot_id//@/}";
   _snapshot_reason="$(_getSnapshotReasonFn "${_target_snapshot_id}")";
 
   # mv '/btrfs_main/@' '/btrfs_main/@kfocus-rollback-working'
@@ -1177,6 +1199,7 @@ _mainFn () {
     'checkBootUnallocSpace')   _checkBootUnallocSpaceFn;;
     'checkMainUnallocSpace')   _checkMainUnallocSpaceFn;;
     'clearRestore')            _clearRestoreFn;;
+    'compareState')            _compareStateFn         "$@";;
     'createSnapshot')          _createSnapshotFn       "${1:-}";;
     'deleteSnapshot')          _deleteSnapshotFn       "${1:-}";;
     'finalizeRestore')         _finalizeRestoreFn;;
@@ -1212,7 +1235,7 @@ declare _binName _binDir _baseName _baseDir _manualSwitchFile \
   _isPreparingSystem _lockFile _btrfsStatus _snapshotMetaDb \
   _libTable _browStr _erowStr _tableStr _prepareFailMsg \
   _lowDiskMsg _lowBootMsg _inconsistentMsg _btrfsExe _btduExe _filefragExe \
-  _btrfsBalanceExe _kwriteconfig5Exe _kreadconfig5Exe;
+  _btrfsBalanceExe _kwriteconfig5Exe _kreadconfig5Exe _diffExe;
 
 _manualSwitchFile='/var/lib/kfocus/rollback_manual_mode';
 _btrfsStatus='';
@@ -1240,6 +1263,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     '_btrfsExe|/usr/bin/btrfs'
     '_btrfsBalanceExe|/usr/bin/btrfs-balance-least-used'
     '_btduExe|/usr/bin/btdu'
+    '_diffExe|/usr/bin/diff'
     "_filefragExe|${_binDir}/kfocus-report-filefrag"
     '_kwriteconfig5Exe|/usr/bin/kwriteconfig5'
     '_kreadconfig5Exe|/usr/bin/kreadconfig5'

@@ -1516,11 +1516,11 @@ Kirigami.ApplicationWindow {
 
     function compareSnapshotsFn( source_idx, target_idx ) {
         compareSnapshotsEngine.exec(
-          'pkexec diff -r --brief "'
+          rollbackStr + "compareState '"
             + snapshotModel.get(source_idx).stateDir
-            + '" "'
+            + "' '"
             + derivSnapshotModel.get(target_idx).stateDir
-            + '"'
+            + "'"
         );
         if (compareSnapshotView.visible) {
             switchViewFn( compareSnapshotView, compareSnapshotWaitView );
