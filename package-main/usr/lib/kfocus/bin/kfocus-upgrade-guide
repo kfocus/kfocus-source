@@ -87,10 +87,25 @@ EOF
 _mainFn () {
   declare _ans;
 
-  _ans="$(_cm2PromptUserFn "${_queryUserMsg}" "${_windowTitle}" 'a')";
-  if [ "${_ans}" = 'y' ]; then
-    "${_webLauncherExe}" --new-window 'https://kfocus.org/wf/reinstall.html';
-  fi
+  _ans="$(kdialog --warningyesnocancel "${_queryUserMsg}" \
+    --title "${_windowTitle}" \
+    --yes-label='View Instructions' \
+    --no-label='Remind Me Later' \
+    --cancel-label="Don't Ask Again";
+    echo $?)";
+
+  case "${_ans}" in
+    '0')
+      "${_webLauncherExe}" \
+        --new-window 'https://kfocus.org/wf/reinstall.html';
+      ;;
+    '1')
+      date +%s > "$HOME/.config/kfocus-upgrade-notifier";
+      ;;
+    '2')
+      echo 'never' > "$HOME/.config/kfocus-upgrade-notifier";
+      ;;
+  esac
 }
 ## . END _mainFn }
 
