@@ -62,22 +62,18 @@ _assignGlobalUiVarsFn () {
 
   _queryUserMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_table_str}
-${_brow_str}${_header_str}Show Upgrade Instructions?</h3>${_erow_str}
+${_brow_str}${_header_str}Continue with Upgrade from 22.04 to 24.04 LTS?</h3>${_erow_str}
 
-${_brow_str}Kubuntu Focus Suite 24.04 comes with many new features,<br>
-updated software, and improved resilience to system breakage.<br>
-Part of these new features include substantial filesystem and<br>
-disk setup changes.${_erow_str}
+${_brow_str}This version, 22.04 LTS, remains supported until April 2025.
+${_erow_str}
 
-${_brow_str}Due to these changes, in-place upgrades are not supported.<br>
-Doing an in-place upgrade anyway may result in system<br>
-damage, and will not allow all features to function as intended.<br>
-A clean installation is likely to be much faster, easier, and<br>
-less error-prone.${_erow_str}
-
-${_brow_str}Would you like to view the instructions for doing a clean<br>
-install of Kubuntu Focus Suite 24.04? This will open the Clean<br>
-Install Guided Solution in a new browser window.${_erow_str}</table>
+${_brow_str}<ul><li>Click on "Proceed with Upgrade" to open web<br>
+instructions on how to best upgrade your Kubuntu<br>
+Focus system to 24.04 LTS.<br></li>
+<li>Click "Remind me Later" to hide this notification<br>
+for the next week.<br></li>
+<li>Click "Suppress Notification" to hide tihs notification<br>
+until a week before the EOL date.</li></ul>${_erow_str}
 ${_cm2HtmEndStr}
 EOF
   )";
@@ -89,9 +85,9 @@ _mainFn () {
 
   _ans="$(kdialog --warningyesnocancel "${_queryUserMsg}" \
     --title "${_windowTitle}" \
-    --yes-label='View Instructions' \
-    --no-label='Remind Me Later' \
-    --cancel-label="Don't Ask Again";
+    --yes-label='Proceed with Upgrade' \
+    --no-label='Remind me Later' \
+    --cancel-label="Suppress Notification";
     echo $?)";
 
   case "${_ans}" in
@@ -103,7 +99,10 @@ _mainFn () {
       date +%s > "$HOME/.config/kfocus-upgrade-notifier";
       ;;
     '2')
-      echo 'never' > "$HOME/.config/kfocus-upgrade-notifier";
+      # Thursday, April 10, 2025, which is one week (plus or minus a day
+      # potentially) before the EOL date as given by
+      # plasma-distro-release-notifier.
+      echo '1744261200' > "$HOME/.config/kfocus-upgrade-notifier";
       ;;
   esac
 }
