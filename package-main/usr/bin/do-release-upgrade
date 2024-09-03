@@ -78,7 +78,7 @@ _mainFn () {
 declare _binName _binDir _baseName _baseDir _direWarningStr _exitUpgraderStr \
   _overrideStr _assignList _releaseUpgradeExe _escExe;
 
-_overrideStr='Yes, upgrade anyway and break the system!';
+_overrideStr='Risk breakage and attempt upgrade anyway';
 
 _direWarningStr="$(cat <<'EOF'
 
@@ -109,7 +109,7 @@ _direWarningStr+="$(cat <<EOF
 
 
 Press Enter now to exit the upgrader. Alternatively, to try the upgrade
-anyway, type "${_overrideStr}" and press Enter.
+anyway, type "${_overrideStr}", then press Enter.
 EOF
 )";
 
