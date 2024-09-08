@@ -87,7 +87,7 @@ ColumnLayout {
         Layout.alignment      : Qt.AlignRight
         Layout.preferredWidth : Kirigami.Units.gridUnit * 7
         text                  : 'Cancel'
-        icon.name             : 'cancel'
+        icon.name             : 'dialog-cancel'
         onClicked             : cancelled()
 
         HoverHandler {

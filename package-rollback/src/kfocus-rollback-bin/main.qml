@@ -1021,7 +1021,7 @@ Kirigami.ApplicationWindow {
                     id          : compareSnapshotWaitView
                     visible     : false
                     headerText  : 'Comparing snapshots...'
-                    description : 'All data in the selected snapshots '
+                    description : 'All data in the selected system states '
                       + 'is being compared. This may take five minutes or '
                       + 'more.'
                 }
