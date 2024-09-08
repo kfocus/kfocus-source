@@ -816,6 +816,26 @@ _getBtrfsStatusFn () {
 }
 ## . END _getBtrfsStatusFn }
 
+## BEGIN Define error and exit handling {
+_chkSetFlockFn () {
+  mkdir -p "${_lockDir}";
+  if [ "$(id -u)" = '0' ]; then
+    chmod 0777 "${_lockDir}";
+  fi
+  if ! [ -e "${_lockFile}" ]; then
+    install -m 666 /dev/null "${_lockFile}";
+  fi
+  exec 211>"${_lockFile}" || {
+    echo 'Lock file permission denied';
+    return 21;
+  };
+  if ! flock -n -e 211; then
+    1>&2 echo "Cannot get lock on ${_lockFile}";
+    return 20;
+  fi
+}
+## . END Define error and exit handling }
+
 ## BEGIN _mainFn {
 _mainFn () {
   declare _arg_str _state_msg _reply_str \
@@ -829,6 +849,8 @@ _mainFn () {
     _restored_snapshot_disp_id _snapshot_dir _disk_usage_line1_str \
     _disk_usage_line2_str _main_unalloc _main_min_unalloc _boot_unalloc \
     _boot_min_unalloc _manual_onoff _auto_onoff;
+
+  _chkSetFlockFn || exit 1;
 
   _arg_str="${1:-}";
   _btrfs_status_str="$(_getBtrfsStatusFn)";
@@ -1186,7 +1208,7 @@ _mainFn () {
 
 ## BEGIN Declare and assign global vars {
 declare _binName _binDir _baseName _baseDir _libTable _assignList \
-  _btrfsExe _userName \
+  _btrfsExe _lockDir _lockFile _userName \
   _rollbackBackendExe _btrfsOptimizeExe _escExe _winTitle _warnStr \
   _chooseModeMsg _chooseRestoreSnapshotMsg _chooseRestoreModeMsg \
   _totalRestoreConfirmMsg _rollbackSuccessfulMsg \
@@ -1201,6 +1223,8 @@ declare _binName _binDir _baseName _baseDir _libTable _assignList \
 _userName="$(id -un)";
 _warnStr='<b style="color:#da4453">';
 _winTitle='System Rollback';
+_lockDir='/tmp/kfocus-rollback-frontend';
+_lockFile='/tmp/kfocus-rollback-frontend/kfocus-rollback-frontend.lock';
 ## . END Declare and assign global vars }
 
 ## BEGIN Run mainFn when script is NOT sourced {

@@ -78,7 +78,11 @@ _trapExitFn () {
   if [ "${_isPreparingSystem}" = 'y' ]; then
     _promptAllUsersFn 'error' "${_prepareFailMsg}";
   fi
-  rm "${_lockFile}" || true;
+  # If the lock file is deleted after a parallel kfocus-rollback-backend
+  # process opens it, but before it locks it, this will cause two parallel
+  # kfocus-rollback-backend processes to be able to execute, which is very
+  # bad.
+  # rm "${_lockFile}" || true;
 }
 
 _chkSetFlockFn () {
@@ -94,7 +98,7 @@ _chkSetFlockFn () {
     1>&2 echo "Cannot get lock on ${_lockFile}";
     return 20;
   fi
-  # Trap unexpected exits to clean up lock file
+  # Trap unexpected exits to show warnings if needed
   trap _trapExitFn EXIT;
 }
 
