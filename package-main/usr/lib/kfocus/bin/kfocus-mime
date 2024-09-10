@@ -31,6 +31,7 @@ _exeLookupList=(
   'cpupower-gui|cpupower-gui|cpupower-gui|cpupower-gui|CPU Power GUI: Manage CPU power'
   'darktable|darktable||darktable||DarkTable: Edit RAW Photos'
   'dolphin|dolphin||dolphin|Dolphin: Manage Files'
+  'element-desktop|element-desktop||element-desktop|Element: Open-Source Instant Messaging'
   'elisa|elisa||elisa|Elisa Music Player'
   'ffmpeg|konsole;-e;man ffmpeg|ffmpeg|ffmpeg|Tools for Transcoding|FFMpeg: Stream and Play Multimedia Files'
   'filezilla|filezilla||filezilla|Filezilla: Transfer Files'
@@ -208,6 +209,13 @@ function deb_dropbox() {
   APT_REPO_URL="deb [arch=amd64] http://linux.dropbox.com/ubuntu disco main"
   PRETTY_NAME="Dropbox"
   WEBSITE="https://www.dropbox.com/"
+}
+function deb_element-desktop() {
+  GPG_KEY_URL="https://packages.element.io/debian/element-io-archive-keyring.gpg"
+  APT_LIST_NAME="element-io"
+  APT_REPO_URL="deb [signed-by=/usr/share/keyrings/element-io-archive-keyring.gpg] https://packages.element.io/debian/ default main"
+  PRETTY_NAME="Element"
+  WEBSITE="https://element.io/"
 }
 function deb_google-chrome-stable() {
   APT_KEY_URL="http://dl.google.com/linux/linux_signing_key.pub"
