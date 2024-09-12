@@ -13,6 +13,7 @@ class StartupData : public QObject
     Q_PROPERTY(QString userName READ userName WRITE setUserName)
     Q_PROPERTY(QString rollbackCmd READ rollbackCmd WRITE setRollbackCmd)
     Q_PROPERTY(bool isLiveSession READ isLiveSession WRITE setIsLiveSession)
+    Q_PROPERTY(QString startPage READ startPage WRITE setStartPage)
     QML_ELEMENT 
 
 public:
@@ -35,6 +36,9 @@ public:
     bool isLiveSession() {
         return m_isLiveSession;
     }
+    QString startPage() {
+        return m_startPage;
+    }
 
     void setCryptDiskList(QStringList val) {
         m_cryptDiskList = val;
@@ -54,6 +58,9 @@ public:
     void setIsLiveSession(bool val) {
         m_isLiveSession = val;
     }
+    void setStartPage(QString val) {
+        m_startPage = val;
+    }
 
 private:
     static QStringList m_cryptDiskList;
@@ -62,6 +69,7 @@ private:
     static QString m_userName;
     static QString m_rollbackCmd;
     static bool m_isLiveSession;
+    static QString m_startPage;
 };
 
 #endif // STARTUPDATA_H

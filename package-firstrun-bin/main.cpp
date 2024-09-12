@@ -14,6 +14,7 @@ QString StartupData::m_homeDir    = "";
 QString StartupData::m_userName   = "";
 QString StartupData::m_rollbackCmd = "";
 bool StartupData::m_isLiveSession = false;
+QString StartupData::m_startPage  = QString::fromUtf8("introductionItem");
 
 const qint64 min_disk_int = 1073741824;
 
@@ -21,6 +22,18 @@ int main(int argc, char *argv[])
 {
     // Early system info gathering
     StartupData dat;
+    QStringList args;
+    bool forced = false;
+    for (int i = 1;i < argc;i++) {
+        args.append(QString::fromUtf8(argv[i]));
+    }
+    if (args.contains("-f")) {
+        forced = true;
+        args.removeAll("-f");
+    }
+    if (args.count() != 0) {
+        dat.setStartPage(args[0]);
+    }
 
     // This must be called early to get applicationDirPath
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
@@ -30,7 +43,7 @@ int main(int argc, char *argv[])
 
     // Determine path for kfocus-fixup-set. Prefer dev path if available.
     QString exeDir = app.applicationDirPath();
-    QString dirList[2] = { "../../package-main/usr/lib/kfocus/bin", exeDir };
+    QString dirList[2] = { "../../../package-main/usr/lib/kfocus/bin", exeDir };
     for ( QString testDir : dirList ) {
       if (QFile::exists(testDir + "/kfocus-firstrun-set")) {
         dat.setBinDir(testDir);
@@ -47,7 +60,7 @@ int main(int argc, char *argv[])
 
     // Check for the presence of a drop file
     if (QFile::exists(dat.homeDir() + "/.config/kfocus-firstrun-wizard")) {
-        if (argc == 1 || QString(argv[1]) != QString("-f")) {
+        if (!forced) {
             qWarning() << "User has directed to not run again. Use -f to override.";
             return 1;
         }
