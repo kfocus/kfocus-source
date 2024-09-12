@@ -109,6 +109,13 @@ int main(int argc, char *argv[])
     cryptDisks.removeLast();
     dat.setCryptDiskList(cryptDisks);
 
+    if (cryptDisks.count() == 0 && args.contains("diskPassphraseItem")) {
+        msgbox.execSync("kdialog --title \"Kubuntu Focus Welcome Wizard\" \
+            --msgbox \"No encrypted disks are present on this system.\""
+        );
+        return 1;
+    }
+
     // Check for the presence of a second kfocus-firstrun-bin instance
     ShellEngine duplicateFinder;
     // NOTE: We only search for "kfocus-firstrun" and not "kfocus-firstrun-bin"
