@@ -214,6 +214,7 @@ function deb_element-desktop() {
   GPG_KEY_URL="https://packages.element.io/debian/element-io-archive-keyring.gpg"
   APT_LIST_NAME="element-io"
   APT_REPO_URL="deb [signed-by=/usr/share/keyrings/element-io-archive-keyring.gpg] https://packages.element.io/debian/ default main"
+  APT_EXTRA_PKGLIST=('element-io-archive-keyring')
   PRETTY_NAME="Element"
   WEBSITE="https://element.io/"
 }
