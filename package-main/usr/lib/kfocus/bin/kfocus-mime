@@ -30,6 +30,7 @@ _exeLookupList=(
   'code|code||code|Microsoft Visual Studio Code: Development IDE'
   'cpupower-gui|cpupower-gui|cpupower-gui|cpupower-gui|CPU Power GUI: Manage CPU power'
   'darktable|darktable||darktable||DarkTable: Edit RAW Photos'
+  'discord|discord||discord|Discord: Group Chat Messenger'
   'dolphin|dolphin||dolphin|Dolphin: Manage Files'
   'element-desktop|element-desktop||element-desktop|Element: Open-Source Instant Messaging'
   'elisa|elisa||elisa|Elisa Music Player'
@@ -192,6 +193,12 @@ function deb_code() {
   APT_REPO_URL="deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main"
   PRETTY_NAME="Visual Studio Code"
   WEBSITE="https://code.visualstudio.com/"
+}
+function deb_discord() {
+  URL=$(unroll_url "https://discord.com/api/download?platform=linux&format=deb")
+  VERSION_PUBLISHED="$(echo "${URL}" | cut -d'/' -f6)"
+  PRETTY_NAME="Discord"
+  WEBSITE="https://discord.com/"
 }
 function deb_docker-ce() {
   ARCHS_SUPPORTED="amd64 arm64 armhf"
