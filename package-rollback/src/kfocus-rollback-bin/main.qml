@@ -316,6 +316,7 @@ Kirigami.ApplicationWindow {
 
                     RowLayout {
                         Layout.bottomMargin: Kirigami.Units.gridUnit * 0.5
+                        Layout.maximumWidth : mainPage.width / 2
 
                         Controls.Button {
                             Layout.preferredWidth  : Kirigami.Units.gridUnit
@@ -343,6 +344,20 @@ Kirigami.ApplicationWindow {
                               : Kirigami.Theme.textColor
                             Layout.alignment : Qt.AlignTop
                             level            : 1
+                        }
+                        Item {
+                            Layout.fillWidth: true
+                        }
+                        Controls.Label {
+                            text: "Running a large database? See <a href=\"https://kfocus.org/wf/db#bkm_move_large_databases\">this advice</a>."
+                            enabled: !uiLocked
+                            color            : uiLocked
+                              ? Kirigami.Theme.disabledTextColor
+                              : Kirigami.Theme.textColor
+                            linkColor        : uiLocked
+                              ? Kirigami.Theme.disabledTextColor
+                              : Kirigami.Theme.linkColor
+                            onLinkActivated: Qt.openUrlExternally(link)
                         }
                     }
 
@@ -384,29 +399,15 @@ Kirigami.ApplicationWindow {
                                 }
                             }
                         }
+
                         Controls.Button {
                             Layout.bottomMargin   :
                               Kirigami.Units.gridUnit * 0.45
-                            text                  : calculateSnapshotSizesLabel
-                            icon.name             : 'disk-quota'
-                            Layout.preferredWidth : (mainPage.width / 4)
-                              - Kirigami.Units.gridUnit * 0.35
-                            Layout.alignment      : Qt.AlignRight
-                            enabled               : !uiLocked
-
-                            HoverHandler {
-                                cursorShape: Qt.PointingHandCursor
-                            }
-
-                            onClicked             : calculateSnapshotSizesFn();
-                        }
-
-                        Controls.Button {
                             text                  : createSnapshotLabel
                             icon.name             : 'document-new'
                             Layout.preferredWidth : (mainPage.width / 4)
                               - Kirigami.Units.gridUnit * 0.36
-                            Layout.alignment      : Qt.AlignLeft
+                            Layout.alignment      : Qt.AlignRight
                             enabled               : !uiLocked
                             onClicked             : {
                                 switchViewFn(
@@ -418,6 +419,22 @@ Kirigami.ApplicationWindow {
                                 cursorShape: Qt.PointingHandCursor
                             }
                         }
+
+                        Controls.Button {
+                            text                  : calculateSnapshotSizesLabel
+                            icon.name             : 'disk-quota'
+                            Layout.preferredWidth : (mainPage.width / 4)
+                              - Kirigami.Units.gridUnit * 0.36
+                            Layout.alignment      : Qt.AlignLeft
+                            enabled               : !uiLocked
+
+                            HoverHandler {
+                                cursorShape: Qt.PointingHandCursor
+                            }
+
+                            onClicked             : calculateSnapshotSizesFn();
+                        }
+
                         Controls.Button {
                             text                  : optimizeDiskLabel
                             icon.name             : 'clean-up-destructive'
