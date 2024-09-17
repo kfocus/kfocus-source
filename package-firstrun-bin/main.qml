@@ -2029,6 +2029,9 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id          : handleDefaultCryptListEngine
         onAppExited : {
+            // No crypt disks are changed after a scan, clear the change count
+            // so the UI doesn't imply that they are
+            cryptDiskChangeCount = 0;
             if ( exitCode > 0 ) {
                 switchPageFn( 'pkexecDeclineCryptCheckItem' );
             } else {

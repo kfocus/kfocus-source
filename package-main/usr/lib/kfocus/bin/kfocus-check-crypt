@@ -169,7 +169,7 @@ _modifyDiskPassFn () {
     fi
 
     if { echo "${_old_pass}"; echo "${_new_pass}"; echo "${_new_pass}"; } \
-     | cryptsetup luksChangeKey "${_dev_str}"; then
+     | cryptsetup luksChangeKey "${_dev_str}" 1>&2 2>/dev/null; then
        true;
     else
       _fail_list+=( "${_dev_str}" );
