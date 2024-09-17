@@ -41,6 +41,7 @@ Kirigami.ApplicationWindow {
 
     // Purpose: Describes steps used in wizard
     // See property currentIndex
+    // TODO 2024-09-16 cool arainbolt: add CLI argument to list in terminal
     //
     ListModel {
         id: sidebarModel
@@ -154,7 +155,7 @@ Kirigami.ApplicationWindow {
             Rectangle {
                 anchors.fill : disabledSidebar
                 color        : '#000000'
-                opacity      : 0
+                opacity      : 0.3
 
                 MouseArea {
                     anchors.fill : parent
@@ -2028,6 +2029,9 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id          : handleDefaultCryptListEngine
         onAppExited : {
+            // No crypt disks are changed after a scan, clear the change count
+            // so the UI doesn't imply that they are
+            cryptDiskChangeCount = 0;
             if ( exitCode > 0 ) {
                 switchPageFn( 'pkexecDeclineCryptCheckItem' );
             } else {
