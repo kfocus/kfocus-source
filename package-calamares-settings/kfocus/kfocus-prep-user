@@ -2,12 +2,47 @@
 
 set -u;
 
+## BEGIN _parseHomeDirFromPasswdFn
+# From package-calamares-settings/kfocus/kfocus-prep-user
+# Purpose: Parse a passwd file, taking a username as input and returning that
+#   user's home directory as output.
+#
+_parseHomeDirFromPasswdFn () {
+  declare _passwd_file _user_name _passwd_list _passwd_str;
+
+  _passwd_file="${1:-}";
+  _user_name="${2:-}";
+
+  [ -z "${_passwd_file}" ] && {
+    1>&2 echo 'No passwd file!';
+    return 1;
+  }
+  [ -z "${_user_name}" ] && {
+    1>&2 echo 'No username!';
+    return 1;
+  }
+
+  # Using tac here rather than cat to get the LAST matching line, this is more
+  # likely to be correct because new users are appended to the end of the
+  # username list
+  readarray -t _passwd_list < <(tac "${_passwd_file}")
+  for _passwd_str in "${_passwd_list[@]}"; do
+    if [ "$(cut -f1 -d':' <<< "${_passwd_str}" )" = "${_user_name}" ]; then
+      cut -f6 -d':' <<< "${_passwd_str}";
+      return 0;
+    fi
+  done
+
+  return 1;
+}
+## . END _parseHomeDirFromPasswdFn }
+
 declare _username _uid _gid _home_dir;
 
 _username="${1:-}";
 _uid="$(id -u "${_username}")";
 _gid="$(id -g "${_username}")";
-_home_dir="$(awk -F':' "/${_username}/{ print \$6 }" '/etc/passwd')";
+_home_dir="$(_parseHomeDirFromPasswdFn '/etc/passwd' "${_username}")";
 
 /usr/local/sbin/adduser.local \
   "${_username}" "${_uid}" "${_gid}" "${_home_dir}";
