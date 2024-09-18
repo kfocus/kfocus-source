@@ -1,0 +1,151 @@
+#!/bin/bash
+#
+# Test for /etc/passwd parsing code from kfocus-prep-user
+#
+# set -u is set in _runUnitTests (the test harness)
+#
+
+## BEGIN _parseHomeDirFromPasswdFn
+# From package-calamares-settings/kfocus/kfocus-prep-user
+# Purpose: Parse a passwd file, taking a username as input and returning that
+#   user's home directory as output.
+#
+_parseHomeDirFromPasswdFn () {
+  declare _passwd_file _user_name _passwd_list _passwd_str;
+
+  _passwd_file="${1:-}";
+  _user_name="${2:-}";
+
+  [ -z "${_passwd_file}" ] && {
+    1>&2 echo 'No passwd file!';
+    return 1;
+  }
+  [ -z "${_user_name}" ] && {
+    1>&2 echo 'No username!';
+    return 1;
+  }
+
+  # Using tac here rather than cat to get the LAST matching line, this is more
+  # likely to be correct because new users are appended to the end of the
+  # username list
+  readarray -t _passwd_list < <(tac "${_passwd_file}")
+  for _passwd_str in "${_passwd_list[@]}"; do
+    if [ "$(cut -f1 -d':' <<< "${_passwd_str}" )" = "${_user_name}" ]; then
+      cut -f6 -d':' <<< "${_passwd_str}";
+      return 0;
+    fi  
+  done
+
+  return 1;
+}
+## . END _parseHomeDirFromPasswdFn }
+
+## BEGIN _runTestFn {
+# This MUST be called '_runTestFn' for use by the _runUnitTests
+_runTestFn () {
+  declare _rootDir _assert_table _fail_count _assert_count _assert_idx \
+    _assert_line _assert_user_name _assert_home_str _home_str _count_str;
+
+  # Clear out run dir, copy init dir
+  if ! _t00ClearRunDirFn;    then return 1; fi
+  if ! _t00CopyInitDirFn;    then return 1; fi
+
+  _rootDir="${_t00RunDir}";
+
+  # WE DO NOT NEED TO IMPORT COMMON FOR sourced scripts, as the common lib
+  #   is already imported by _runUnitTests.
+  # _importCommonFn;
+
+  _assert_table=(
+    'root|/root'
+    'daemon|/usr/sbin'
+    'bin|/bin'
+    'sys|/dev'
+    'sync|/bin'
+    'games|/usr/games'
+    'man|/var/cache/man'
+    'lp|/var/spool/lpd'
+    'mail|/var/mail'
+    'news|/var/spool/news'
+    'uucp|/var/spool/uucp'
+    'proxy|/bin'
+    'www-data|/var/www'
+    'backup|/var/backups'
+    'list|/var/list'
+    'irc|/run/ircd'
+    '_apt|/nonexistent'
+    'nobody|/nonexistent'
+    'systemd-network|/'
+    'systemd-timesync|/'
+    'dhcpcd|/usr/lib/dhcpcd'
+    'messagebus|/nonexistent'
+    'syslog|/nonexistent'
+    'systemd-resolve|/'
+    'uuidd|/run/uuidd'
+    'usbmux|/var/lib/usbmux'
+    'tss|/var/lib/tpm'
+    'kernoops|/'
+    'whoopsie|/nonexistent'
+    'dnsmasq|/var/lib/misc'
+    'avahi|/run/avahi-daemon'
+    'tcpdump|/nonexistent'
+    'speech-dispatcher|/run/speech-dispatcher'
+    'cups-pk-helper|/nonexistent'
+    'fwupd-refresh|/var/lib/fwupd'
+    'sddm|/var/lib/sddm'
+    'saned|/var/lib/saned'
+    'geoclue|/var/lib/geoclue'
+    'cups-browsed|/nonexistent'
+    'hplip|/run/hplip'
+    'polkitd|/'
+    'rtkit|/proc'
+    'colord|/var/lib/colord'
+    'nm-openconnect|/var/lib/NetworkManager'
+    'sshd|/run/sshd'
+    'aaron|/home/aaron'
+    '_flatpak|/nonexistent'
+    'snapd-range-524288-root|/nonexistent'
+    'snap_daemon|/nonexistent'
+    'sshrepo|/srv/data/sshrepo'
+    'mysql|/nonexistent'
+  );
+
+  ## Begin Iterate through assertions {
+  _fail_count=0;
+  _assert_count="${#_assert_table[@]}";
+  _assert_idx=1;
+
+  for _assert_line in "${_assert_table[@]}"; do
+    IFS='|' read -r -d '' -a _bit_list < <(echo -n "${_assert_line}");
+    _assert_user_name="${_bit_list[0]}";
+    _assert_home_str="${_bit_list[1]}";
+    _home_str="$(_parseHomeDirFromPasswdFn \
+      "${_rootDir}/etc/passwd" \
+      "${_assert_user_name}")";
+
+    # shellcheck disable=SC2154
+    _count_str="$(_t00MakeCountStrFn "${_assert_idx}" "${_assert_count}")";
+
+    ## Begin Check results
+    if [ "${_assert_home_str}" = "${_home_str}" ]; then
+      _cm2EchoFn "  ok  : ${_count_str} ${_assert_user_name}";
+    else
+      _cm2EchoFn "  fail: ${_count_str} ${_assert_user_name}";
+      _cm2EchoFn "    expected : ${_assert_home_str}";
+      _cm2EchoFn "    got      : ${_home_str}";
+      (( _fail_count++ ));
+    fi
+    ## . End Check diffs }
+      (( _assert_idx++ ));
+  done
+  ## End Iterate through assertions }
+
+  if [ "${_fail_count}" -gt 0 ]; then
+    _cm2EchoFn "FAIL: ${_fail_count} of ${_assert_count} asserts failed.";
+  else
+    _cm2EchoFn 'OK  : Results match expected';
+  fi
+
+  return "${_fail_count}";
+}
+## . END _runTestFn }

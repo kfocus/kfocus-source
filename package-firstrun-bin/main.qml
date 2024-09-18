@@ -1,5 +1,5 @@
 // vim: set syntax=javascript:
-import QtQuick 2.6
+import QtQuick 2.15
 import QtQuick.Controls 2.0 as Controls
 import QtQuick.Layouts 1.2
 import QtQuick.Window 2.2
@@ -41,6 +41,7 @@ Kirigami.ApplicationWindow {
 
     // Purpose: Describes steps used in wizard
     // See property currentIndex
+    // TODO 2024-09-16 cool arainbolt: add CLI argument to list in terminal
     //
     ListModel {
         id: sidebarModel
@@ -115,7 +116,7 @@ Kirigami.ApplicationWindow {
         id: systemDataMap
         // Provided by main.cpp:
         //   binDir, cryptDiskList, homeDir,
-        //   isLiveSession, userName, WelcomeCmd
+        //   isLiveSession, userName, WelcomeCmd, startPage
         //
     }
     // == . END Models ================================================
@@ -146,9 +147,22 @@ Kirigami.ApplicationWindow {
         visible: false // Avoids a graphical glitch, DO NOT SET TO TRUE
 
         ListView {
-            id       : disabledSidebar
-            model    : sidebarModel
-            delegate : disabledSidebarDelegate
+            id          : disabledSidebar
+            model       : sidebarModel
+            delegate    : disabledSidebarDelegate
+            interactive : false
+
+            Rectangle {
+                anchors.fill : disabledSidebar
+                color        : '#000000'
+                opacity      : 0.3
+
+                MouseArea {
+                    anchors.fill : parent
+                }
+
+                HoverHandler {}
+            }
         }
     }
 
@@ -840,6 +854,15 @@ Kirigami.ApplicationWindow {
                 break;
             }
         }
+    }
+
+    function findSidebarItemFn ( js_id ) {
+        for ( var i = 0; i < sidebarModel.count; i++ ) {
+            if ( sidebarModel.get(i).jsId === js_id ) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     function setLiveUsbFieldsFn () {
@@ -2006,6 +2029,9 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id          : handleDefaultCryptListEngine
         onAppExited : {
+            // No crypt disks are changed after a scan, clear the change count
+            // so the UI doesn't imply that they are
+            cryptDiskChangeCount = 0;
             if ( exitCode > 0 ) {
                 switchPageFn( 'pkexecDeclineCryptCheckItem' );
             } else {
@@ -2270,6 +2296,7 @@ Kirigami.ApplicationWindow {
 
     // Kick-off rendering on completion
     Component.onCompleted: {
+        let startPageIdx = 0;
         stateMatrix = { check_map: {} }; // Default stateMatrix
         if ( systemDataMap.cryptDiskList.length === 0 ) {
             removeSidebarItemFn('diskPassphraseItem');
@@ -2279,7 +2306,15 @@ Kirigami.ApplicationWindow {
           removeSidebarItemFn( 'systemRollbackItem' );
         }
 
-        switchPageFn( 'introductionItem' );
+        startPageIdx = findSidebarItemFn( systemDataMap.startPage );
+        if ( startPageIdx === -1 ) {
+            startPageIdx = 0;
+            systemDataMap.startPage = "introductionItem";
+        }
+
+        switchPageFn( systemDataMap.startPage );
+        enabledSidebar.currentIndex = startPageIdx;
+        disabledSidebar.currentIndex = startPageIdx;
 
         const json_file = systemDataMap.homeDir
             + '/.config/kfocus-firstrun-wizard-data.json';
