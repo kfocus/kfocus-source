@@ -1374,20 +1374,16 @@ Kirigami.ApplicationWindow {
             headerHighlightRect.color = '#27ae60';
             interTopHeading.text      = 'Proceed with System Rollback...';
             instructionsText.text
-              = '<p>' + ding01Str + '<b>Click on the drop-down menu</b> to '
-              + 'view all available actions.<br></p>'
+              = '<p>' + ding01Str + '<b>To enable automatic snapshots</b>, '
+              + 'switch the <b>Automatic Snapshots</b> switch on.<br></p>'
 
-              + '<p>' + ding02Str + '<b>To enable automatic snapshots</b>, '
-              + 'select <b>SWITCH between AUTO and MANUAL modes</b>, and '
-              + 'select <b>AUTO</b> on the next screen.<br></p>'
-
-              + '<p>' + ding03Str + '<b>The rollback quick launch icon</b> '
+              + '<p>' + ding02Str + '<b>The rollback quick launch icon</b> '
               + 'will immediately display the System Rollback app. You can '
               + 'create snapshots here at any time.<br></p>'
 
-              + '<p>' + ding04Str + '<b>To restore a snapshot</b>, select '
-              + '<b>RESTORE Snapshot</b>, then select the desired snapshot. '
-              + 'The system will reboot.<br></p>'
+              + '<p>' + ding03Str + '<b>To restore a snapshot</b>, select '
+              + 'the snapshot to restore, then click <b>Restore</b>. The '
+              + 'system will reboot.<br></p>'
 
               + '<p><b>See more in the</b> '
               + '<a href="https://kfocus.org/wf/tools#rollback">Tools Guided '
@@ -1396,9 +1392,9 @@ Kirigami.ApplicationWindow {
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
             interImageList = [
-              'rollback-welcome.svg',
+              'rollback-autosnapshot.webp',
               'rollback-systray.svg',
-              'rollback-restore.svg'
+              'rollback-restore.webp'
             ];
             actionName = 'nextPage';
             regenUiFn( interTemplatePage, false );
