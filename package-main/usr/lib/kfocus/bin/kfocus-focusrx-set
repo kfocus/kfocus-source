@@ -393,24 +393,17 @@ _getBtrfsStatusFn () {
 
 ## BEGIN _cleanFirefoxSnapFn {
 _cleanFirefoxSnapFn () {
-  [ -f "${_varLibDir}/snap_cleanup_done" ] && return 0;
   snap remove firefox || return 1;
+  touch "${_varLibDir}/snap_cleanup_done";
 }
 ## . END _cleanFirefoxSnapFn }
 
 ## BEGIN _cleanThunderbirdSnapFn {
 _cleanThunderbirdSnapFn () {
-  [ -f "${_varLibDir}/snap_cleanup_done" ] && return 0;
   snap remove thunderbird || return 1;
-}
-## . END _cleanThunderbirdSnapFn }
-
-## BEGIN _cleanDoneSnapFn {
-#
-_cleanDoneSnapFn () {
   touch "${_varLibDir}/snap_cleanup_done";
 }
-## . END _cleanDoneSnapFn }
+## . END _cleanThunderbirdSnapFn }
 
 ## BEGIN _mainFn {
 _mainFn () {
@@ -427,7 +420,6 @@ _mainFn () {
     'get-btrfs-status') _getBtrfsStatusFn;;
     'clean-ff-snap'   ) _cleanFirefoxSnapFn;;
     'clean-tb-snap'   ) _cleanThunderbirdSnapFn;;
-    'clean-done-snap' ) _cleanDoneSnapFn;;
     *) _cm2WarnStrFn "Unrecognized directive |${_arg_str}|";;
   esac
 }

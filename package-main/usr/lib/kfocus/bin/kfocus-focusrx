@@ -497,7 +497,6 @@ _chkSnapCleanupFn () {
   fi
 
   if [ "${_is_successful}" = 'y' ]; then
-    "${_escExe}" "${_focusRxSetExe}" 'clean-done-snap';
     _cm2SucFn;
   else
     _cm2WarnFn;
