@@ -443,66 +443,16 @@ _EOH07
 }
 ## . END _chkHwConfigFn }
 
-## BEGIN _chkRollbackPresenceFn {
+## BEGIN _chkRollbackPresence {
 # Purpose: Get rid of the kfocus-rollback icon in the panel if kfocus-rollback
 # is not installed
 #
-_chkRollbackPresenceFn () {
+_chkRollbackPresence () {
   if ! dpkg-query -s 'kfocus-rollback' 2>/dev/null; then
     _cm2RunPlasmaScriptFn 'rmRollbackIcon.js';
   fi
 }
-## . END _chkRollbackPresenceFn }
-
-## BEGIN _chkSnapCleanupFn {
-# Purpose: Clean broken Firefox and Thunderbird Snaps if they exist and this
-# cleanup has never been run on this system before.
-#
-_chkSnapCleanupFn () {
-  declare _title _snap_list_str _ff_snap_state _tb_snap_state _is_successful;
-
-  _title='Check for unneeded Snap leftovers';
-  _cm2SetMsgFn "${_title}";
-  _is_successful='y';
-
-  if [ -f "${_snapCleanupDoneFile}" ]; then
-    _cm2SucFn;
-    return;
-  fi
-
-  _snap_list_str="$("${_snapExe}" list)";
-  _ff_snap_state="$(
-    grep '^firefox' <<< "${_snap_list_str}" | awk '{ print $NF }'
-  )";
-  _tb_snap_state="$(
-    grep '^thunderbird' <<< "${_snap_list_str}" | awk '{ print $NF }'
-  )";
-
-  if [ "${_ff_snap_state}" = 'broken' ]; then
-    if "${_escExe}" "${_focusRxSetExe}" 'clean-ff-snap'; then
-      _cm2EchoFn 'Firefox snap remnants successfully removed.';
-    else
-      _cm2WarnStrFn 'Firefox snap has remnants that cannot be removed!';
-      _is_successful='n';
-    fi
-  fi
-
-  if [ "${_tb_snap_state}" = 'broken' ]; then
-    if "${_escExe}" "${_focusRxSetExe}" 'clean-tb-snap'; then
-      _cm2EchoFn 'Thunderbird snap remnants successfully removed.';
-    else
-      _cm2WarnStrFn 'Thunderbird snap has remnants that cannot be removed!';
-      _is_successful='n';
-    fi
-  fi
-
-  if [ "${_is_successful}" = 'y' ]; then
-    _cm2SucFn;
-  else
-    _cm2WarnFn;
-  fi
-}
-## . END _chkSnapCleanupFn }
+## . END _chkRollbackPresence }
 
 ## BEGIN _chkKbdLedFn {
 # Purpose: Restore keyboard colors for specific models.
@@ -1089,8 +1039,7 @@ _mainFn () {
   _chkBtrfsSetUpFn;
   _chkOemMultiDiskFn;
   _chkHwConfigFn;
-  _chkRollbackPresenceFn;
-  _chkSnapCleanupFn;
+  _chkRollbackPresence;
   _chkKbdLedFn;      # Issue 3735
   _offerKfRollbackFn;
   # _chkKernelPkgFn; # Disabled: See    66226a00c
@@ -1119,7 +1068,7 @@ declare _parentCmdStr _lookupList \
   _focusRxDropDir _kbdColorSetExe _rootTitle _assignList \
   _focusRxSetExe _focusRxVersExe _btoolExe _firstrunExe \
   _fixIbusExe _kcleanExe _resetEffectsExe _rollbackSetExe \
-  _chainHelperExe _sysVersStr _snapExe _snapCleanupDoneFile;
+  _chainHelperExe _sysVersStr;
 
 _parentCmdStr="$(ps -o comm= $PPID)";
 # These domain names exist here only for the purposes of looking them up via
@@ -1128,7 +1077,6 @@ _parentCmdStr="$(ps -o comm= $PPID)";
 _lookupList=( 'example.com' 'cloudflare.com' 'fastly.com' 'akamai.com' );
 _maxNagCount=6;
 _restoreCompleteFile='/var/lib/kfocus/rollback_restore_complete';
-_snapCleanupDoneFile='/var/lib/kfocus/snap_cleanup_done';
 ## . END Declare and assign global vars }
 
 ## BEGIN Run main if script is not sourced {
@@ -1156,7 +1104,6 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     "_rollbackExe|${_binDir}/kfocus-rollback||optional"
     "_rollbackSetExe|${_binDir}/kfocus-rollback-set||optional"
     "_chainHelperExe|${_binDir}/kfocus-chain-helper-ui||optional"
-    "_snapExe|/usr/bin/snap"
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2ErrStrFn 'Could not assign variables';
