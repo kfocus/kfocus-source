@@ -14,6 +14,15 @@ if has('syntax') && has('eval')
   packadd! matchit
 endif
 
+" A vim native way to match tags:
+" https://stackoverflow.com/questions/6270396
+" Use :help v_it OR :help visual-operators
+" 1. Place cursor on Tag
+" 2. Type `vat` for outer tag block, `vit` for inner tag
+" 3. Type `o` or `O` to jump to opening or closing tag
+" Optional: Type `it` or `at` to expand or shrink selection
+" Optional: Type `esc` to exit, `c` to change, `y` to cop
+
 " ====[ Git Configs ]=================================================
 " Keep All HEAD content in merge
 map ;g1 :%s?^<<<\+ HEAD\s*\n\(\_.\{-}\)\n===\+\n\(\_.\{-}\)>>>\+.*$?\1?gc<CR>
