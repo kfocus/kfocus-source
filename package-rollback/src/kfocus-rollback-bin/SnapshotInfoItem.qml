@@ -130,13 +130,12 @@ RowLayout {
             Layout.alignment     : Qt.AlignTop
             Layout.fillWidth     : true
             Layout.fillHeight    : true
-            Layout.bottomMargin  : Kirigami.Units.gridUnit * 0.5
 
             placeholderText      : '<p><i>Press the "Edit" button to:</i></p>'
               + '<br>'
               + '<p><i>* Rename the Snapshot</i><br>'
               + '<i>* Change this description</i><br>'
-              + '<i>* Pin the Snapshot</i></p>'
+              + '<i>* Protect the Snapshot</i></p>'
             text                 : description
             font.family          : 'courier'
             wrapMode             : Text.WordWrap
@@ -171,11 +170,60 @@ RowLayout {
                 radius       : Kirigami.Units.gridUnit * 0.125
             }
         }
+    }
+
+    ColumnLayout {
+        Layout.leftMargin : Kirigami.Units.gridUnit * 0.45
+
+        Controls.Button {
+            id                    : restoreButton
+            Layout.alignment      : Qt.AlignTop
+            Layout.preferredWidth : Kirigami.Units.gridUnit * 7.5
+            Layout.bottomMargin   : Kirigami.Units.gridUnit * 0.5
+            text                  : 'Restore'
+            icon.name             : 'edit-undo-symbolic'
+            onClicked             : restoreClicked()
+            enabled               : !editing
+
+            HoverHandler {
+                cursorShape : Qt.PointingHandCursor
+            }
+        }
+
+        Controls.Button {
+            id                    : compareButton
+            Layout.alignment      : Qt.AlignTop
+            Layout.preferredWidth : Kirigami.Units.gridUnit * 7.5
+            Layout.bottomMargin   : Kirigami.Units.gridUnit * 0.5
+            text                  : 'Compare With'
+            icon.name             : 'document-duplicate'
+            onClicked             : compareClicked()
+            enabled               : !editing
+
+            HoverHandler {
+                cursorShape : Qt.PointingHandCursor
+            }
+        }
+
+        Controls.Button {
+            id                    : deleteButton
+            Layout.alignment      : Qt.AlignTop
+            Layout.preferredWidth : Kirigami.Units.gridUnit * 7.5
+            Layout.bottomMargin   : Kirigami.Units.gridUnit * 0.5
+            text                  : 'Delete'
+            icon.name             : 'edit-delete-remove'
+            onClicked             : deleteClicked()
+            enabled               : !editing & !pinned
+
+            HoverHandler {
+                cursorShape : Qt.PointingHandCursor
+            }
+        }
 
         RowLayout {
             Layout.preferredHeight : Kirigami.Units.gridUnit * 1.5
             Kirigami.Heading {
-                text  : 'Pin This Snapshot'
+                text  : 'Protect'
                 level : 2
             }
 
@@ -195,56 +243,8 @@ RowLayout {
             }
 
             Kirigami.Icon {
-                source  : 'pin'
+                source  : 'lock'
                 visible : pinSwitch.checked
-            }
-        }
-    }
-
-    ColumnLayout {
-        Layout.leftMargin : Kirigami.Units.gridUnit * 0.45
-
-        Controls.Button {
-            id                    : deleteButton
-            Layout.alignment      : Qt.AlignTop
-            Layout.preferredWidth : Kirigami.Units.gridUnit * 7
-            Layout.bottomMargin   : Kirigami.Units.gridUnit * 0.5
-            text                  : 'Delete'
-            icon.name             : 'edit-delete-remove'
-            onClicked             : deleteClicked()
-            enabled               : !editing
-
-            HoverHandler {
-                cursorShape : Qt.PointingHandCursor
-            }
-        }
-
-        Controls.Button {
-            id                    : restoreButton
-            Layout.alignment      : Qt.AlignTop
-            Layout.preferredWidth : Kirigami.Units.gridUnit * 7
-            Layout.bottomMargin   : Kirigami.Units.gridUnit * 0.5
-            text                  : 'Restore'
-            icon.name             : 'edit-undo-symbolic'
-            onClicked             : restoreClicked()
-            enabled               : !editing
-
-            HoverHandler {
-                cursorShape : Qt.PointingHandCursor
-            }
-        }
-
-        Controls.Button {
-            id                    : compareButton
-            Layout.alignment      : Qt.AlignTop
-            Layout.preferredWidth : Kirigami.Units.gridUnit * 7
-            text                  : 'Compare With'
-            icon.name             : 'document-duplicate'
-            onClicked             : compareClicked()
-            enabled               : !editing
-
-            HoverHandler {
-                cursorShape : Qt.PointingHandCursor
             }
         }
 
@@ -255,7 +255,7 @@ RowLayout {
         Controls.Button {
             id                    : editButton
             Layout.alignment      : Qt.AlignBottom
-            Layout.preferredWidth : Kirigami.Units.gridUnit * 7
+            Layout.preferredWidth : Kirigami.Units.gridUnit * 7.5
             text                  : 'Edit'
             icon.name             : 'document-edit'
             visible               : !editing
@@ -273,7 +273,7 @@ RowLayout {
         Controls.Button {
             id                    : saveButton
             Layout.alignment      : Qt.AlignBottom
-            Layout.preferredWidth : Kirigami.Units.gridUnit * 7
+            Layout.preferredWidth : Kirigami.Units.gridUnit * 7.5
             Layout.bottomMargin   : Kirigami.Units.gridUnit * 0.5
             text                  : 'Save'
             icon.name             : 'document-save'
@@ -304,7 +304,7 @@ RowLayout {
         Controls.Button {
             id                    : cancelButton
             Layout.alignment      : Qt.AlignBottom
-            Layout.preferredWidth : Kirigami.Units.gridUnit * 7
+            Layout.preferredWidth : Kirigami.Units.gridUnit * 7.5
             text                  : 'Cancel'
             icon.name             : 'dialog-cancel'
             visible               : editing

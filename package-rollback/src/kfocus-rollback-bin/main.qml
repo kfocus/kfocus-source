@@ -61,7 +61,6 @@ Kirigami.ApplicationWindow {
     property string compareSnapshotLabel        : 'Compare Snapshots'
     property string createSnapshotErrorLabel    : 'Snapshot Creation Failed'
     property string createSnapshotLabel         : 'Create New Snapshot'
-    property string deleteSnapshotDeniedLabel   : 'Cannot Delete Pinned Snapshot'
     property string deleteSnapshotErrorLabel    : 'Snapshot Deletion Failed'
     property string deleteSnapshotLabel         : 'Delete Snapshot'
     property string optimizeDiskLabel           : 'Clean Up Disk'
@@ -98,7 +97,7 @@ Kirigami.ApplicationWindow {
             subtitle    : name
             icon        : getIconForReasonFn( reason )
             trailing    : Kirigami.Icon {
-                source  : pinned ? 'pin' : ''
+                source  : pinned ? 'lock' : ''
             }
         }
     }
@@ -112,7 +111,7 @@ Kirigami.ApplicationWindow {
             subtitle    : name
             icon        : getIconForReasonFn( reason )
             trailing    : Kirigami.Icon {
-                source  : pinned ? 'pin' : ''
+                source  : pinned ? 'lock' : ''
             }
             fadeContent : true
             onClicked   : {
@@ -193,9 +192,6 @@ Kirigami.ApplicationWindow {
             helpText: `<p>These are snapshot-specific view and edit
               controls.</p>
 
-              <p><b><font color="#f7941d">Delete</font></b> -
-              Remove the selected snapshot from the disk permanently.</p>
-
               <p><b><font color="#f7941d">Restore</font></b> - Roll back
               the system to the selected snapshot. The system will reboot
               automatically during the restore process.</p>
@@ -204,13 +200,16 @@ Kirigami.ApplicationWindow {
               Shows the difference between any two snapshots, or between a
               snapshot and the current system state.</p>
 
-              <p><b><font color="#f7941d">Edit</font></b> - Change
-              the name, description, or pinning of the selected
-              snapshot.</p>
+              <p><b><font color="#f7941d">Delete</font></b> -
+              Remove the selected snapshot from the disk permanently.</p>
 
-              <p><b><font color="#f7941d">Pin This Snapshot</font></b> -
-              Pin or unpin the selected snapshot. Pinned snapshots will not be
-              deleted until unpinned.</p>`
+              <p><b><font color="#f7941d">Protect</font></b> -
+              Toggle protection on the selected snapshot. Older unprotected
+              snapshots may be automatically removed to reclaim disk space.</p>
+
+              <p><b><font color="#f7941d">Edit</font></b> - Change
+              the name, description, or protction of the selected
+              snapshot.</p>`
             helpTitle: 'Snapshots Help'
         }
     }
@@ -924,17 +923,6 @@ Kirigami.ApplicationWindow {
                     headerText  : 'Toggling automatic snapshots...'
                 }
 
-                ErrorScreenItem {
-                    id          : deleteSnapshotDeniedView
-                    visible     : false
-                    infoText    : 'This snapshot cannot be deleted because it is '
-                      + 'pinned. To delete this item, unpin it first.'
-                    isCritical  : false
-                    onOkClicked : {
-                        switchViewFn( deleteSnapshotDeniedView, snapshotView )
-                    }
-                }
-
                 ConfirmSnapshotActionItem {
                     id            : deleteSnapshotView
                     visible       : false
@@ -1440,8 +1428,6 @@ Kirigami.ApplicationWindow {
             mainAreaLabel.text = restoreSnapshotLabel;
         } else if ( target_view === compareSnapshotView ) {
             mainAreaLabel.text = compareSnapshotLabel;
-        } else if ( target_view === deleteSnapshotDeniedView ) {
-            mainAreaLabel.text = deleteSnapshotDeniedLabel;
         } else if ( target_view === deleteSnapshotErrorView ) {
             mainAreaLabel.text = deleteSnapshotErrorLabel;
         } else if ( target_view === restoreSnapshotErrorView ) {
@@ -1488,17 +1474,13 @@ Kirigami.ApplicationWindow {
     }
 
     function prepDeleteSnapshotFn( snapshot_idx ) {
-        if ( snapshotView.pinned ) {
-            switchViewFn( snapshotView, deleteSnapshotDeniedView );
-        } else {
-            deleteSnapshotView.reason      = snapshotModel.get(snapshot_idx).reason;
-            deleteSnapshotView.date        = snapshotModel.get(snapshot_idx).date;
-            deleteSnapshotView.name        = snapshotModel.get(snapshot_idx).name;
-            deleteSnapshotErrorView.date   = snapshotModel.get(snapshot_idx).date;
-            deleteSnapshotErrorView.name   = snapshotModel.get(snapshot_idx).name;
-            deleteSnapshotErrorView.reason = snapshotModel.get(snapshot_idx).reason;
-            switchViewFn( snapshotView, deleteSnapshotView );
-        }
+        deleteSnapshotView.reason      = snapshotModel.get(snapshot_idx).reason;
+        deleteSnapshotView.date        = snapshotModel.get(snapshot_idx).date;
+        deleteSnapshotView.name        = snapshotModel.get(snapshot_idx).name;
+        deleteSnapshotErrorView.date   = snapshotModel.get(snapshot_idx).date;
+        deleteSnapshotErrorView.name   = snapshotModel.get(snapshot_idx).name;
+        deleteSnapshotErrorView.reason = snapshotModel.get(snapshot_idx).reason;
+        switchViewFn( snapshotView, deleteSnapshotView );
     }
 
     function deleteSnapshotFn( snapshot_idx ) {

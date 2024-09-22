@@ -257,6 +257,68 @@ ${_cm2HtmEndStr}
 EOF
   )";
 
+  _choosePinSwitchSnapshotMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_lp_str}${_center_header_str}Switch Protect (1 of 3)</h3>${_erow_str}
+
+${_brow_lp_str}${_bold_str}Select a snapshot</b> to toggle protection
+on.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _confirmPinSwitchMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}Switch Protect (2 of 3)</h3>${_erow_str}
+
+${_brow_rp_str}The following snapshot is ready to have its protection <br>
+toggled:${_erow_str}
+
+${_brow_rp_str}"XXX_SNAPSHOT_NAME_XXX"${_erow_str}
+
+${_brow_rp_str}The snapshot is currently XXX_PIN_STATUS_XXX.${_erow_str}
+
+${_brow_rp_str}Click "OK" to change the snapshot to XXX_OTHER_PIN_STATUS_XXX,
+or "Cancel" to back out.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _pinSwitchSuccessfulMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}Switch Protect (3 of 3)</h3>${_erow_str}
+
+${_brow_rp_str}The following snapshot has been successfully made
+XXX_PIN_STATUS_XXX:${_erow_str}
+
+${_brow_rp_str}"XXX_SNAPSHOT_NAME_XXX"${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _chooseEditSnapshotMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_lp_str}${_center_header_str}Edit (1 of 3)</h3>${_erow_str}
+
+${_brow_lp_str}${_bold_str}Select a snapshot</b> to edit.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  # Edit (3 of 3) here is not a typo. 2 of 3 is inline in the 'edit' section
+  # of _mainFn.
+  _editSuccessfulMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}Edit (3 of 3)</h3>${_erow_str}
+
+${_brow_rp_str}The following snapshot has been edited
+successfully:${_erow_str}
+
+${_brow_rp_str}XXX_SNAPSHOT_NAME_XXX${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
   _chooseExplainSnapshotMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_table_str}
 ${_brow_lp_str}${_center_header_str}Explain (1 of 2)</h3>${_erow_str}
@@ -552,6 +614,35 @@ ${_cm2HtmEndStr}
 EOF
   )";
 
+  _pinSwitchFailedMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}Protect Switch Failed</h3>${_erow_str}
+
+${_brow_rp_str}The following snapshot could NOT have its protection
+toggled:${_erow_str}
+
+${_brow_rp_str}${_bold_str}"XXX_SNAPSHOT_NAME_XXX"</b>${_erow_str}
+
+${_brow_rp_str}
+Please contact support if this issue persists.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+  
+  _editFailedMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}Edit (3 of 3)</h3>${_erow_str}
+
+${_brow_rp_str}The following snapshot could NOT be edited:${_erow_str}
+
+${_brow_rp_str}XXX_SNAPSHOT_NAME_XXX${_erow_str}
+
+${_brow_rp_str}
+Please contact support if this issue persists.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
   _creationFailedMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_table_str}
 ${_brow_rp_str}${_left_header_str}Creation Failed</h3>${_erow_str}
@@ -705,6 +796,7 @@ _handleOperationExitIntFn () {
   _op_type="${1:-}";
   _exit_int="${2:-}";
   _snapshot_disp_id="${3:-}";
+  _state_str="${4:-}";
 
   if [ -z "${_op_type}" ]; then
     _cm2WarnStrFn 'No operation type provided.';
@@ -780,6 +872,49 @@ _handleOperationExitIntFn () {
         exit "${_exit_int}";
       fi
       ;;
+    'protect')
+      if [ -z "${_snapshot_disp_id}" ]; then
+        _cm2WarnStrFn 'No snapshot display ID provided.';
+        return 1;
+      fi
+      if [ -z "${_state_str}" ]; then
+        _cm2WarnStrFn 'No pin status provided.';
+        return 1;
+      fi
+
+      if [ "${_exit_int}" = "${_rb2NOTICE}" ]; then
+        _pinSwitchSuccessfulMsg="${_pinSwitchSuccessfulMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
+        _pinSwitchSuccessfulMsg="${_pinSwitchSuccessfulMsg//XXX_PIN_STATUS_XXX/${_state_str}}";
+        _cm2PromptUserFn "${_pinSwitchSuccessfulMsg}" "${_winTitle}";
+        exit "${_rb2NOTICE}";
+      elif [ "${_exit_int}" = "${_rb2ERR}" ]; then
+        _pinSwitchFailedMsg="${_pinSwitchFailedMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
+        _cm2PromptUserFn "${_pinSwitchFailedMsg}" "${_winTitle}";
+        exit "${_rb2ERR}";
+      else
+        _cm2PromptUserFn "${_criticalErrorMsg}" "${_winTitle}" 'e';
+        exit "${_exit_int}";
+      fi
+      ;;
+    'edit')
+      if [ -z "${_snapshot_disp_id}" ]; then
+        _cm2WarnStrFn 'No snapshot display ID provided.';
+        return 1;
+      fi
+
+      if [ "${_exit_int}" = "${_rb2NOTICE}" ]; then
+        _editSuccessfulMsg="${_editSuccessfulMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
+        _cm2PromptUserFn "${_editSuccessfulMsg}" "${_winTitle}";
+        exit "${_rb2NOTICE}";
+      elif [ "${_exit_int}" = "${_rb2ERR}" ]; then
+        _editFailedMsg="${_editFailedMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
+        _cm2PromptUserFn "${_editFailedMsg}" "${_winTitle}";
+        exit "${_rb2ERR}";
+      else
+        _cm2PromptUserFn "${_criticalErrorMsg}" "${_winTitle}" 'e';
+        exit "${_exit_int}";
+      fi
+      ;;
     'optimize')
       if [ "${_exit_int}" = "${_rb2NOTICE}" ]; then
         _cm2PromptUserFn "${_optimizeSuccessfulMsg}" "${_winTitle}";
@@ -848,7 +983,8 @@ _mainFn () {
     _btrfs_boot_unalloc _switch_state _new_switch_state \
     _restored_snapshot_disp_id _snapshot_dir _disk_usage_line1_str \
     _disk_usage_line2_str _main_unalloc _main_min_unalloc _boot_unalloc \
-    _boot_min_unalloc _manual_onoff _auto_onoff;
+    _boot_min_unalloc _manual_onoff _auto_onoff _snapshot_metadata_list \
+    _snapshot_name _snapshot_desc _snapshot_desc_line _exit_int;
 
   _chkSetFlockFn || exit 1;
 
@@ -921,6 +1057,8 @@ _mainFn () {
     'restore' 'RESTORE Snapshot' 'off' \
     'delete' 'DELETE Snapshot' 'off' \
     'optimize' 'DELETE ALL and Optimize Disk' 'off' \
+    'protect' 'SWITCH snapshot protection' 'off' \
+    'edit' 'EDIT snapshot name and description' 'off' \
     'bound' '——————' 'off' \
     'explain' 'EXPLAIN How to Compare Snapshots' 'off' \
     'show' 'SHOW BTRFS Disk-Use Estimate' 'off' \
@@ -1008,9 +1146,8 @@ _mainFn () {
       fi
 
       _deleteConfirmMsg="${_deleteConfirmMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
-      _reply_str="$(
-        _cm2PromptUserFn "${_deleteConfirmMsg}" "${_winTitle}" 'o'
-      )";
+      _reply_str="$(_cm2PromptUserFn \
+        "${_deleteConfirmMsg}" "${_winTitle}" 'o')";
       if [ "${_reply_str}" = 'y' ]; then
         _rollbackBackendFn 'deleteSnapshot' "${_snapshot_id}";
         _handleOperationExitIntFn 'delete' "$?" "${_snapshot_disp_id}";
@@ -1029,6 +1166,98 @@ _mainFn () {
       else
         _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
       fi
+      ;;
+    'protect')
+      if [ -z "$(_rollbackSetFn 'getSnapshotList')" ]; then
+        _cm2PromptUserFn "${_noSnapshotsFoundMsg}" "${_winTitle}";
+        exit "${_rb2NOTICE}";
+      fi
+
+      # Read first two lines
+      IFS=$'\n'; read -r -d '' _snapshot_id _snapshot_disp_id \
+        < <(_chooseSnapshotFn "${_choosePinSwitchSnapshotMsg}");
+
+      readarray -t _snapshot_metadata_list < <(_rollbackSetFn \
+        'getBaseSnapshotMetadata' "${_snapshot_id}");
+
+      _confirmPinSwitchMsg="${_confirmPinSwitchMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
+      if [ "${_snapshot_metadata_list[2]}" = 'y' ]; then
+        _pin_status_str='PROTECTED'
+        _pin_other_status_str='NOT PROTECTED';
+        _new_is_pinned='n';
+      else
+        _pin_status_str='NOT PROTECTED'
+        _pin_other_status_str='PROTECTED';
+        _new_is_pinned='y';
+      fi
+      _confirmPinSwitchMsg="${_confirmPinSwitchMsg//XXX_PIN_STATUS_XXX/${_pin_status_str}}";
+      _confirmPinSwitchMsg="${_confirmPinSwitchMsg//XXX_OTHER_PIN_STATUS_XXX/${_pin_other_status_str}}";
+
+      _reply_str="$(_cm2PromptUserFn \
+        "${_confirmPinSwitchMsg}" "${_winTitle}" 'o')";
+      if [ "${_reply_str}" = 'y' ]; then
+        _rollbackBackendFn 'setSnapshotMetadata' \
+          "${_snapshot_id}" \
+          "${_snapshot_metadata_list[0]}" \
+          "${_snapshot_metadata_list[1]}" \
+          "${_new_is_pinned}";
+        _handleOperationExitIntFn 'protect' "$?" "${_snapshot_disp_id}" \
+          "${_pin_other_status_str}";
+      else
+        _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
+        exit "${_rb2NOTICE}";
+      fi
+      ;;
+    'edit')
+      if [ -z "$(_rollbackSetFn 'getSnapshotList')" ]; then
+        _cm2PromptUserFn "${_noSnapshotsFoundMsg}" "${_winTitle}";
+        exit "${_rb2NOTICE}";
+      fi
+      
+      # Read first two lines
+      IFS=$'\n'; read -r -d '' _snapshot_id _snapshot_disp_id \
+        < <(_chooseSnapshotFn "${_chooseEditSnapshotMsg}");
+
+      readarray -t _snapshot_metadata_list < <(_rollbackSetFn \
+        'getBaseSnapshotMetadata' "${_snapshot_id}");
+
+      _snapshot_name="$(base64 -d <<< "${_snapshot_metadata_list[0]}")";
+      _cm2EchoFn '\n\nEdit (2 of 3)';
+      _cm2EchoFn "\nCurrent snapshot name: ${_snapshot_name}";
+      _cm2EchoFn 'Please enter the new snapshot name below:';
+      read -r _snapshot_name;
+
+      _snapshot_desc="$(base64 -d <<< "${_snapshot_metadata_list[1]}")";
+      _cm2EchoFn '\n\nCurrent snapshot description:';
+      _cm2EchoFn "${_snapshot_desc}";
+      _cm2EchoFn 'Please enter the new snapshot description below.';
+      _cm2EchoFn 'Type END on its own line to finish.';
+      _snapshot_desc='';
+      while true; do
+        read -r _snapshot_desc_line;
+        if [ "${_snapshot_desc_line}" = 'END' ]; then
+          break;
+        elif [ -z "${_snapshot_desc}" ]; then
+          _snapshot_desc="${_snapshot_desc_line}";
+        else
+          _snapshot_desc="${_snapshot_desc}"$'\n'"${_snapshot_desc_line}";
+        fi
+      done
+
+      _snapshot_name="$(base64 -w0 <<< "${_snapshot_name}")";
+      _snapshot_desc="$(base64 -w0 <<< "${_snapshot_desc}")";
+
+      _rollbackBackendFn 'setSnapshotMetadata' \
+        "${_snapshot_id}" \
+        "${_snapshot_name}" \
+        "${_snapshot_desc}" \
+        "${_snapshot_metadata_list[2]}";
+      _exit_int="$?";
+      if [ "${_exit_int}" = '0' ]; then
+        _snapshot_disp_id="$(_rollbackSetFn 'makeSnapshotDispId' \
+          "${_snapshot_id}")";
+      fi
+      _handleOperationExitIntFn 'edit' "${_exit_int}" "${_snapshot_disp_id}";
       ;;
     'bound')
       _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
@@ -1214,11 +1443,13 @@ declare _binName _binDir _baseName _baseDir _libTable _assignList \
   _totalRestoreConfirmMsg _rollbackSuccessfulMsg \
   _selectiveRestoreConfirmMsg _createSnapshotMsg _snapshotCreatedMsg \
   _chooseDeleteSnapshotMsg _deleteConfirmMsg _snapshotDeletedMsg \
-  _doOptimizeMsg _optimizeSuccessfulMsg _optimizeFailedMsg \
-  _systemUnsupportedMsg _restoreIncompleteMsg _noSnapshotsFoundMsg \
-  _strangeSubvolsMsg _restoreFailedMsg _deletionFailedMsg _creationFailedMsg \
-  _criticalErrorMsg _operationCancelledMsg _lowDiskMsg _lowBootMsg \
-  _rollbackBinExe _rollbackSetExe;
+  _doOptimizeMsg _choosePinSwitchSnapshotMsg _chooseEditSnapshotMsg \
+  _editSuccessfulMsg _optimizeSuccessfulMsg \
+  _optimizeFailedMsg _systemUnsupportedMsg _restoreIncompleteMsg \
+  _noSnapshotsFoundMsg _strangeSubvolsMsg _restoreFailedMsg \
+  _deletionFailedMsg _creationFailedMsg _pinSwitchFailedMsg \
+  _editFailedMsg _criticalErrorMsg _operationCancelledMsg _lowDiskMsg \
+  _lowBootMsg _rollbackBinExe _rollbackSetExe;
 
 _userName="$(id -un)";
 _warnStr='<b style="color:#da4453">';

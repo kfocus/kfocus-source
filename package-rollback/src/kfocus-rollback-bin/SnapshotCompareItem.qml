@@ -47,7 +47,7 @@ ColumnLayout {
                     ? 'drive-harddisk-root'
                     : 'user'
             trailing : Kirigami.Icon {
-                source: pinned ? 'pin' : ''
+                source: pinned ? 'lock' : ''
             }
 
             HoverHandler {
