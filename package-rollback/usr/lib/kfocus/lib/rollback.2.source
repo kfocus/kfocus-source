@@ -15,7 +15,7 @@ declare -g _rb2NOTICE _rb2ERR _rb2CRIT _rb2ALERT _rb2EMERG _rb2LOCK \
   _rb2MainDir _rb2BootDir _rb2MainSnapshotId _rb2MainWorkingId \
   _rb2BootSnapshotId _rb2BootWorkingId _rb2MainSnapshotDir _rb2MainWorkingDir \
   _rb2BootSnapshotDir _rb2BootWorkingDir _rb2KfocusStateDir \
-  _rb2RestoreCompleteFile _rb2OptimizeStateFile;
+  _rb2RestoreCompleteFile;
 
 _rb2NOTICE='0';
 _rb2ERR='1';
@@ -38,4 +38,3 @@ _rb2BootWorkingDir="${_rb2BootDir}/${_rb2BootWorkingId}";
 
 _rb2KfocusStateDir='/var/lib/kfocus';
 _rb2RestoreCompleteFile="${_rb2KfocusStateDir}/rollback_restore_complete";
-_rb2OptimizeStateFile="${_rb2KfocusStateDir}/rollback_optimize_state";

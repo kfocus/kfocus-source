@@ -66,6 +66,11 @@ int main(int argc, char *argv[])
                 eng.setPostRestoreName(eng.postRestoreReason());
             }
         }
+
+        // Ensure stale app entries aren't left in the start menu
+        if (QFile("/usr/bin/kbuildsycoca5").exists()) {
+            shell.execSync("/usr/bin/kbuildsycoca5");
+        }
     }
 
     // Launch the UI

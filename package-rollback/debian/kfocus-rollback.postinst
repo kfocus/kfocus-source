@@ -11,6 +11,11 @@ _cmXEchoFn    () { 1>&2 echo -e "$*";  }
 _cmXSetMsgFn  () { _cmXBlockMsg="$*"; _cmXEchoFn "== BEGIN : ${_cmXBlockMsg}"; }
 _cmXSucFn     () { _cmXEchoFn "== . END : OK   ${_cmXBlockMsg}\n\n"; }
 ## . END Declare common.2.source symbols }
+
+## BEGIN Declare global variables {
+_snapshotMetaDb='/btrfs_main/kfocus-rollback-snapshot-metadb';
+_manualSwitchFile='/var/lib/kfocus/rollback_manual_mode';
+## . END Declare global variables }
  
 ## BEGIN Enable scheduled snapshotting {
 #
@@ -18,6 +23,30 @@ _cmXSetMsgFn 'Enable scheduled snapshotting';
 2>/dev/null deb-systemd-helper enable kfocus-rollback-btrfs-maintain.timer || true;
 _cmXSucFn;
 ## . END Enable scheduled snapshotting }
+
+## BEGIN Migrate manual switch state to metadb if needed {
+if [ -f '/usr/bin/kwriteconfig5' ]; then
+  if ! [ -e "${_snapshotMetaDb}" ]; then
+    touch "${_snapshotMetaDb}";
+    chmod '0644' "${_snapshotMetaDb}";
+  fi
+  if [ -f "${_snapshotMetaDb}" ]; then
+    if [ -f "${_manualSwitchFile}" ]; then
+      /usr/bin/kwriteconfig5 \
+        --file "${_snapshotMetaDb}" \
+        --group 'global' \
+        --key 'manualSwitchState' \
+        'MANUAL';
+    else
+      /usr/bin/kwriteconfig5 \
+        --file "${_snapshotMetaDb}" \
+        --group 'global' \
+        --key 'manualSwitchState' \
+        'AUTO';
+    fi
+  fi
+fi
+## . END Migrate manual switch state to metadb if needed }
 
 # Tag to allow some debhelper commands to inject relevant code
 #DEBHELPER#

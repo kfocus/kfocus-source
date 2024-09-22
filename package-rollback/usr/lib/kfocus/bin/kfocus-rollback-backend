@@ -178,6 +178,18 @@ _checkRootFn () {
 }
 ## . END _checkRootFn }
 
+## BEGIN _checkSnapshotMetaDbFn {
+_checkSnapshotMetaDbFn () {
+  # Ensure snapshot metadb exists, creating it if not
+  if ! [ -e "${_snapshotMetaDb}" ]; then
+    touch "${_snapshotMetaDb}";
+    chmod '0644' "${_snapshotMetaDb}";
+  elif ! [ -f "${_snapshotMetaDb}" ]; then
+    _exitERR 'Snapshot metadata database is not a normal file!';
+  fi
+}
+## . END _checkSnapshotMetaDbFn }
+
 ## BEGIN _clearRestoreFn {
 _clearRestoreFn () {
   _checkBtrfsStatusSetUpFn;
@@ -237,6 +249,9 @@ _setManualSwitchStateFn () {
     _exitERR 'Empty state string provided.';
   fi
   _current_state_str="$(_getManualSwitchStateBackendFn)";
+  
+  # Ensure snapshot metadb exists, creating it if not
+  _checkSnapshotMetaDbFn;
 
   case "${_state_str}" in
     'auto')
@@ -784,8 +799,12 @@ _createSnapshotFn () {
       ;;
   esac
 
-  # Save snapshot creation reason in the to-be-snapshotted main filesystem
-  echo "${_snapshot_event_type}" > '/var/lib/kfocus/rollback_snapshot_reason';
+  # Save snapshot creation reason in the metadata database
+  "${_kwriteconfig5Exe}" \
+    --file "${_snapshotMetaDb}" \
+    --group "@${_timestamp_str}" \
+    --key 'reason' \
+    "${_snapshot_event_type}";
 
   # Snapshot and sync main and boot filesystems
   "${_btrfsExe}" subvolume snapshot -r '/btrfs_main/@' "${_snapshot_path}" \
@@ -843,7 +862,21 @@ _getSnapshotReasonFn () {
     return 1;
   fi
 
-  _snapshot_reason_raw="$(cat "${_snapshot_reason_file}")";
+  _snapshot_reason_raw="$("${_kreadconfig5Exe}" \
+    --file "${_snapshotMetaDb}" \
+    --group "${_snapshot_id}" \
+    --key 'reason')";
+
+  # Migrate reason to metadb if stored old-style inside the snapshot
+  if [ -z "${_snapshot_reason_raw}" ]; then
+    _snapshot_reason_raw="$(cat "${_snapshot_reason_file}")";
+    "${_kwriteconfig5Exe}" \
+      --file "${_snapshotMetaDb}" \
+      --group "${_snapshot_id}" \
+      --key 'reason' \
+      "${_snapshot_reason_raw}";
+  fi
+
   case "${_snapshot_reason_raw}" in
     'Apt')
       _snapshot_reason='Before Package Change';
@@ -1068,12 +1101,7 @@ _setSnapshotMetadataFn () {
   fi
 
   # Ensure snapshot metadb exists, creating it if not
-  if ! [ -e "${_snapshotMetaDb}" ]; then
-    touch "${_snapshotMetaDb}";
-    chmod '0644' "${_snapshotMetaDb}";
-  elif ! [ -f "${_snapshotMetaDb}" ]; then
-    _exitERR 'Snapshot metadata database is not a normal file!';
-  fi
+  _checkSnapshotMetaDbFn;
 
   # Write snapshot name, description, pin status to snapshot metadb
   "${_kwriteconfig5Exe}" \
@@ -1099,8 +1127,8 @@ _setSnapshotMetadataFn () {
 ## BEGIN _balanceMainFn {
 _balanceMainFn () {
   declare _do_force_balance _main_report _main_unalloc_int _main_free_int \
-    _old_report_str _last_unalloc_int _last_free_int _trigger_threshold \
-    _balance_percent _do_balance;
+    _last_unalloc_int _last_free_int _trigger_threshold _balance_percent \
+    _do_balance;
   
   _do_force_balance="${1:-n}";
   _do_balance='n';
@@ -1113,15 +1141,21 @@ _balanceMainFn () {
     | awk '{ print $3 }')";
   _main_free_int="$(grep $'Free (estimated):\t' <<< "${_main_report}" \
     | awk '{ print $3 }')";
-  _last_unalloc_int=-1;
-  _last_free_int=0;
 
-  # Read previous space values from state file
-  if [ -f "${_rb2OptimizeStateFile}" ]; then
-    _old_report_str="$(cat "${_rb2OptimizeStateFile}")";
-    _last_unalloc_int="$(grep 'unallocd' <<< "${_old_report_str}" | cut -d'|' -f2)";
-    _last_free_int="$(grep 'free' <<< "${_old_report_str}" | cut -d'|' -f2)";
-  fi  
+  # Read previous space values from snapshot metadb
+  _last_unalloc_int="$("${_kreadconfig5Exe}" \
+    --file "${_snapshotMetaDb}" \
+    --group 'global' \
+    --key 'lastUnallocInt')";
+  _last_free_int="$("${_kreadconfig5Exe}" \
+    --file "${_snapshotMetaDb}" \
+    --group 'global' \
+    --key 'lastFreeInt')";
+  if [ -z "${_last_unalloc_unt}" ] \
+    || [ -z "${_last_free_int}" ]; then
+    _last_unalloc_int=-1;
+    _last_free_int=0;
+  fi
 
   # Always balance if forced, and balance more intensively
   if [ "${_do_force_balance}" = 'y' ]; then
@@ -1146,8 +1180,16 @@ _balanceMainFn () {
       | awk '{ print $3 }')";
     _main_free_int="$(grep $'Free (estimated):\t' <<< "${_main_report}" \
       | awk '{ print $3 }')";
-    echo "unallocd|${_main_unalloc_int}" > "${_rb2OptimizeStateFile}";
-    echo "free|${_main_free_int}" >> "${_rb2OptimizeStateFile}";
+    "${_kwriteconfig5Exe}" \
+      --file "${_snapshotMetaDb}" \
+      --group 'global' \
+      --key 'lastUnallocInt' \
+      "${_main_unalloc_int}";
+    "${_kwriteconfig5Exe}" \
+      --file "${_snapshotMetaDb}" \
+      --group 'global' \
+      --key 'lastFreeInt' \
+      "${_main_free_int}";
 
     _cm2LogFn 'notice' "Main filesystem balanced.";
   else

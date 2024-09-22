@@ -710,6 +710,20 @@ Kirigami.ApplicationWindow {
                         delegate     : !uiLocked
                           ? enabledSnapshotBarDelegate
                           : disabledSnapshotBarDelegate
+                        interactive : !uiLocked
+
+                        Rectangle {
+                            anchors.fill : snapshotBar
+                            color        : '#000000'
+                            opacity      : 0.3
+                            visible      : uiLocked
+
+                            MouseArea {
+                                anchors.fill : parent
+                            }
+
+                            HoverHandler {}
+                        }
                     }
                 }
 
@@ -1323,6 +1337,8 @@ Kirigami.ApplicationWindow {
             } else {
                 switchViewFn( restoreSnapshotWaitView, criticalErrorView );
             }
+            backend.inhibitClose = false;
+            restoreSnapshotView.actionsEnabled = true;
         }
     }
 
