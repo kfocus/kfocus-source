@@ -1,22 +1,35 @@
-linux-meta-kfocus (6.8.0-41.41+kfocus1) noble; urgency=medium
+linux-meta-kfocus (6.8.0-45.45+kfocus1) noble; urgency=medium
 
   * Release for Kubuntu Focus (#4632)
-  * Upstream Ubuntu linux-meta 6.8.0-41.41
+  * Upstream Ubuntu linux-meta 6.8.0-45.45
   * Applied patch: Cherry-pick ITMT adjustment from 6.10
     (https://lore.kernel.org/linux-acpi/12460110.O9o76ZdvQC@rjwysocki.net)
-  * Applied patch: Cherry-pick RCU soft lock fix from 6.10.7
-    (https://bugs.launchpad.net/ubuntu/noble/+source/linux/+bug/2077044)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 29 Aug 2024 18:18:00 -0500
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Sun, 22 Sep 2024 01:37:38 -0500
 
-linux-meta (6.8.0-41.41) noble; urgency=medium
+linux-meta (6.8.0-45.45) noble; urgency=medium
 
-  * Main version: 6.8.0-41.41
+  * Main version: 6.8.0-45.45
 
   * Packaging resync (LP: #1786013)
     - [Packaging] debian/dkms-versions -- resync from main package
 
- -- Manuel Diewald <manuel.diewald@canonical.com>  Fri, 02 Aug 2024 16:38:45 +0200
+ -- Manuel Diewald <manuel.diewald@canonical.com>  Fri, 30 Aug 2024 11:02:01 +0200
+
+linux-meta (6.8.0-44.44) noble; urgency=medium
+
+  * Main version: 6.8.0-44.44
+
+ -- Roxana Nicolescu <roxana.nicolescu@canonical.com>  Tue, 13 Aug 2024 12:22:42 +0200
+
+linux-meta (6.8.0-43.43) noble; urgency=medium
+
+  * Main version: 6.8.0-43.43
+
+  * Packaging resync (LP: #1786013)
+    - [Packaging] debian/dkms-versions -- resync from main package
+
+ -- Roxana Nicolescu <roxana.nicolescu@canonical.com>  Fri, 02 Aug 2024 20:12:27 +0200
 
 linux-meta (6.8.0-40.40) noble; urgency=medium
 
