@@ -82,9 +82,9 @@ Kirigami.ApplicationWindow {
 
     // == BEGIN Views =================================================
     // Define window size
-    width         : Kirigami.Units.gridUnit * 45
+    width         : Kirigami.Units.gridUnit * 46
     height        : Kirigami.Units.gridUnit * 30
-    minimumWidth  : Kirigami.Units.gridUnit * 45
+    minimumWidth  : Kirigami.Units.gridUnit * 46
     minimumHeight : Kirigami.Units.gridUnit * 30
 
     // BEGIN Define sidebar views
@@ -715,7 +715,7 @@ Kirigami.ApplicationWindow {
                         Rectangle {
                             anchors.fill : snapshotBar
                             color        : '#000000'
-                            opacity      : 0.3
+                            opacity      : 0
                             visible      : uiLocked
 
                             MouseArea {

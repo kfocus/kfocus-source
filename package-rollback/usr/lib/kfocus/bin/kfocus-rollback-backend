@@ -249,9 +249,6 @@ _setManualSwitchStateFn () {
     _exitERR 'Empty state string provided.';
   fi
   _current_state_str="$(_getManualSwitchStateBackendFn)";
-  
-  # Ensure snapshot metadb exists, creating it if not
-  _checkSnapshotMetaDbFn;
 
   case "${_state_str}" in
     'auto')
@@ -1036,7 +1033,7 @@ _systemSnapshotFn () {
 
 ## BEGIN _getSnapshotMetadataFn {
 _getSnapshotMetadataFn () {
-  declare _snapshot_id _mode _item _space_report;
+  declare _snapshot_id _mode _item _space_report _metadata_str;
   
   _checkBtrfsStatusSetUpFn;
 
@@ -1050,10 +1047,14 @@ _getSnapshotMetadataFn () {
 
   # Return snapshot name, description, pin status from snapshot metadb
   for _item in 'name' 'desc' 'pinned'; do
-    "${_kreadconfig5Exe}" \
+    _metadata_str="$("${_kreadconfig5Exe}" \
       --file "${_snapshotMetaDb}" \
       --group "${_snapshot_id}" \
-      --key "${_item}";
+      --key "${_item}")";
+    if [ "${_item}" = 'pinned' ] && [ -z "${_metadata_str}" ]; then
+      _cm2WarnStrFn "Missing metadata entry for snapshot ${_snapshot_id} in ${_snapshotMetaDb}";
+    fi
+    echo "${_metadata_str}";
   done
 
   # Return human-readable snapshot reason
@@ -1099,9 +1100,6 @@ _setSnapshotMetadataFn () {
       _checkBootUnallocSpaceFn;
     fi
   fi
-
-  # Ensure snapshot metadb exists, creating it if not
-  _checkSnapshotMetaDbFn;
 
   # Write snapshot name, description, pin status to snapshot metadb
   "${_kwriteconfig5Exe}" \
@@ -1151,7 +1149,7 @@ _balanceMainFn () {
     --file "${_snapshotMetaDb}" \
     --group 'global' \
     --key 'lastFreeInt')";
-  if [ -z "${_last_unalloc_unt}" ] \
+  if [ -z "${_last_unalloc_int}" ] \
     || [ -z "${_last_free_int}" ]; then
     _last_unalloc_int=-1;
     _last_free_int=0;
@@ -1393,6 +1391,9 @@ _mainFn () {
     _promptAllUsersFn 'warning' "${_inconsistentMsg}";
     _exitERR 'BTRFS state is inconsistent!';
   fi
+
+  # Ensure snapshot metadb exists, creating it if not
+  _checkSnapshotMetaDbFn;
 
   case "${_mode_str}" in
     'btrfsDeepClean')          _btrfsDeepCleanFn;;
