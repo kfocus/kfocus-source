@@ -71,6 +71,10 @@ bool BackendEngine::mainSpaceLow() {
     return m_mainSpaceLow;
 }
 
+bool BackendEngine::bootSpaceLow() {
+    return m_bootSpaceLow;
+}
+
 bool BackendEngine::isPostRestore() {
     return m_isPostRestore;
 }
@@ -325,8 +329,12 @@ void BackendEngine::loadGlobalInfo() {
     QString btrfsBootStatus;
     if (btrfsBootUnalloc >= 15) {
         btrfsBootStatus = "Good";
+        m_bootSpaceLow = false;
+        bootSpaceLowChanged();
     } else {
         btrfsBootStatus = "ALERT";
+        m_bootSpaceLow = true;
+        bootSpaceLowChanged();
     }
     QString btrfsBootSize = bytesToGib(btrfsBootRawSize);
     QString btrfsBootRemain = bytesToGib(btrfsBootRawRemain);

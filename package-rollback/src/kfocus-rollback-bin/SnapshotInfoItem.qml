@@ -12,6 +12,7 @@ RowLayout {
     property bool pinned        : false
     property bool editing       : false
     property bool saving        : false
+    property bool diskLow       : false
 
     // Private
     property bool oldPinned     : pinned
@@ -183,7 +184,7 @@ RowLayout {
             text                  : 'Restore'
             icon.name             : 'edit-undo-symbolic'
             onClicked             : restoreClicked()
-            enabled               : !editing
+            enabled               : !editing && !diskLow
 
             HoverHandler {
                 cursorShape : Qt.PointingHandCursor
@@ -213,7 +214,7 @@ RowLayout {
             text                  : 'Delete'
             icon.name             : 'edit-delete-remove'
             onClicked             : deleteClicked()
-            enabled               : !editing & !pinned
+            enabled               : !editing && !pinned
 
             HoverHandler {
                 cursorShape : Qt.PointingHandCursor
@@ -231,6 +232,7 @@ RowLayout {
                 Layout.leftMargin : Kirigami.Units.gridUnit * 0.5
                 id                : pinSwitch
                 checked           : pinned
+
                 onClicked         : {
                     if ( !editing ) {
                         editButton.clicked();

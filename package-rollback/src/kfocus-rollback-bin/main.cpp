@@ -24,6 +24,7 @@ QStringList BackendEngine::m_snapshotIdList = QStringList();
 int BackendEngine::m_snapshotIdIdx = 0;
 bool BackendEngine::m_calcSize = false;
 bool BackendEngine::m_mainSpaceLow = false;
+bool BackendEngine::m_bootSpaceLow = false;
 bool BackendEngine::m_updateInProgress = false;
 bool BackendEngine::m_isPostRestore = false;
 QString BackendEngine::m_postRestoreName = "";

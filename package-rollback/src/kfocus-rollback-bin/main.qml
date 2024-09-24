@@ -23,9 +23,11 @@ Kirigami.ApplicationWindow {
 
             if ( !firstInitDone ) {
                 switchViewFn( snapshotView, snapshotView );
-                if (backend.mainSpaceLow) {
+                if ( backend.mainSpaceLow ) {
                     lowDiskOverlay.visible = true;
-                } else if (backend.isPostRestore) {
+                } else if ( backend.bootSpaceLow ) {
+                    lowBootOverlay.visible = true;
+                } else if ( backend.isPostRestore ) {
                     postRestoreOverlay.visible = true;
                 }
 
@@ -408,6 +410,8 @@ Kirigami.ApplicationWindow {
                               - Kirigami.Units.gridUnit * 0.36
                             Layout.alignment      : Qt.AlignRight
                             enabled               : !uiLocked
+                              && !backend.mainSpaceLow
+                              && !backend.bootSpaceLow
                             onClicked             : {
                                 switchViewFn(
                                   snapshotView, createSnapshotView
@@ -783,6 +787,7 @@ Kirigami.ApplicationWindow {
                       snapshotBar.currentIndex).pinned
                     description : snapshotModel.get(
                       snapshotBar.currentIndex).description
+                    diskLow     : backend.mainSpaceLow || backend.bootSpaceLow
                     visible     : false
 
                     onDeleteClicked  : {
@@ -1079,6 +1084,36 @@ Kirigami.ApplicationWindow {
             }
             onSecondaryButtonClicked: {
                 lowDiskOverlay.visible = false;
+            }
+        }
+
+        OverlayAlertItem {
+            id: lowBootOverlay
+            isVisible: false
+            mainIcon: 'dialog-error'
+            headerText: 'Low Boot Space Warning'
+            mainText: 'This system needs more boot space. You '
+              + 'should run the Kernel Cleaner utility by clicking Start '
+              + 'Menu > Kubuntu Focus Tools > Kernel Cleaner. This will '
+              + 'delete unused kernel and purge ALL snapshots on the system.'
+            secondaryText: 'Another way to free space is to remove '
+              + 'snapshots. Click on “'
+              + calculateSnapshotSizesLabel
+              + '” below to calculate and show the size of '
+              + 'all snapshots. This usually takes 30 to 90 '
+              + 'seconds to complete, so please be patient.'
+            primaryButtonText: 'Show Snapshot Sizes'
+            primaryButtonIcon: 'disk-quota'
+            secondaryButtonText: 'Skip'
+            secondaryButtonIcon: 'go-next-skip'
+            showSecondaryButton: true
+
+            onPrimaryButtonClicked: {
+                calculateSnapshotSizesFn();
+                lowBootOverlay.visible = false;
+            }
+            onSecondaryButtonClicked: {
+                lowBootOverlay.visible = false;
             }
         }
 

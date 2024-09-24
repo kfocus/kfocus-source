@@ -15,6 +15,7 @@ class BackendEngine : public QObject
     Q_PROPERTY(bool automaticSnapshotsEnabled READ automaticSnapshotsEnabled NOTIFY automaticSnapshotsEnabledChanged)
     Q_PROPERTY(bool inhibitClose READ inhibitClose WRITE setInhibitClose NOTIFY inhibitCloseChanged)
     Q_PROPERTY(bool mainSpaceLow READ mainSpaceLow NOTIFY mainSpaceLowChanged)
+    Q_PROPERTY(bool bootSpaceLow READ bootSpaceLow NOTIFY bootSpaceLowChanged)
     Q_PROPERTY(bool isPostRestore READ isPostRestore CONSTANT)
     Q_PROPERTY(QString postRestoreName READ postRestoreName CONSTANT)
     Q_PROPERTY(QString postRestoreDate READ postRestoreDate CONSTANT)
@@ -42,6 +43,7 @@ public:
     bool inhibitClose();
     void setInhibitClose(bool val);
     bool mainSpaceLow();
+    bool bootSpaceLow();
     bool isPostRestore();
     void setIsPostRestore(bool val);
     QString postRestoreName();
@@ -65,6 +67,7 @@ signals:
     void inhibitCloseChanged();
     void automaticSnapshotsEnabledChanged();
     void mainSpaceLowChanged();
+    void bootSpaceLowChanged();
     void systemDataLoaded();
     void btrfsStateUnusableChanged();
     void postRestoreSubvolsMountedChanged();
@@ -91,6 +94,7 @@ private:
     static QMap<QString, QString> *m_bootFsInfo;
     static bool m_inhibitClose;
     static bool m_mainSpaceLow;
+    static bool m_bootSpaceLow;
     static bool m_isPostRestore;
     static QString m_postRestoreName;
     static QString m_postRestoreDate;
