@@ -178,18 +178,6 @@ _checkRootFn () {
 }
 ## . END _checkRootFn }
 
-## BEGIN _checkSnapshotMetaDbFn {
-_checkSnapshotMetaDbFn () {
-  # Ensure snapshot metadb exists, creating it if not
-  if ! [ -e "${_snapshotMetaDb}" ]; then
-    touch "${_snapshotMetaDb}";
-    chmod '0644' "${_snapshotMetaDb}";
-  elif ! [ -f "${_snapshotMetaDb}" ]; then
-    _exitERR 'Snapshot metadata database is not a normal file!';
-  fi
-}
-## . END _checkSnapshotMetaDbFn }
-
 ## BEGIN _clearRestoreFn {
 _clearRestoreFn () {
   _checkBtrfsStatusSetUpFn;
@@ -198,6 +186,93 @@ _clearRestoreFn () {
   _cm2LogFn 'notice' 'Restore flag cleared.';
 }
 ## . END _clearRestoreFn }
+
+## BEGIN _readMetadbFn {
+_readMetadbFn () {
+  # We intentionally do not check the BTRFS state here as _checkBtrfsStatusFn
+  # has to read the metadb.
+  declare _group_str _key_str;
+
+  _group_str="${1:-}";
+  _key_str="${2:-}";
+  [ -n "${_group_str}" ] || {
+    _cm2WarnStrFn 'No group string provided!';
+    return 1;
+  }
+  [ -n "${_key_str}" ] || {
+    _cm2WarnStrFn 'No key string provided!';
+    return 1;
+  }
+
+  if ! [ -d '/btrfs_main' ]; then
+    # The system may be legitimately unsupported, so we don't print an error
+    # here.
+    return 1;
+  fi
+
+  if [ -f "${_snapshotMetaDb}" ]; then
+    "${_kreadconfig5Exe}" \
+      --file "${_snapshotMetaDb}" \
+      --group "${_group_str}" \
+      --key "${_key_str}" \
+      || _exitALERT 'Failed to read metadb!';
+  elif [ -e "${_snapshotMetaDb}" ]; then
+    _cm2WarnStrFn 'Snapshot metadb is not a regular file!';
+    return 1;
+  else
+    touch "${_snapshotMetaDb}";
+    chmod '0644' "${_snapshotMetaDb}";
+    echo '';
+  fi
+}
+## . END _readMetadbFn }
+
+## BEGIN _writeMetadbFn {
+_writeMetadbFn () {
+  declare _group_str _key_str _val_str;
+
+  _group_str="${1:-}";
+  _key_str="${2:-}";
+  _val_str="${3:-}";
+  [ -n "${_group_str}" ] || {
+    _cm2WarnStrFn 'No group string provided!';
+    return 1;
+  }
+  [ -n "${_key_str}" ] || {
+    _cm2WarnStrFn 'No key string provided!';
+    return 1;
+  }
+
+  if ! [ -d '/btrfs_main' ]; then
+    # The system may be legitimately unsupported, so we don't print an error
+    # here.
+    return 1;
+  fi
+
+  if ! [ -e "${_snapshotMetaDb}" ]; then
+    touch "${_snapshotMetaDb}";
+    chmod '0644' "${_snapshotMetaDb}";
+  elif ! [ -f "${_snapshotMetaDb}" ] ; then
+    _cm2WarnStrFn 'Snapshot metadb is not a regular file!';
+    return 1;
+  fi
+
+  if [ -z "${_val_str}" ]; then
+    "${_kwriteconfig5Exe}" \
+      --file "${_snapshotMetaDb}" \
+      --group "${_group_str}" \
+      --key "${_key_str}" --delete \
+      || _exitALERT 'Failed to delete metadb key!';
+  else
+    "${_kwriteconfig5Exe}" \
+      --file "${_snapshotMetaDb}" \
+      --group "${_group_str}" \
+      --key "${_key_str}" \
+      "${_val_str}" \
+      || _exitALERT 'Failed to write metadb key!';
+  fi
+}
+## . END _writeMetadbFn }
 
 ## BEGIN _getManualSwitchStateBackendFn {
 # Purpose: Reads the manual switch state from the snapshot metadb. This is
@@ -209,10 +284,7 @@ _clearRestoreFn () {
 _getManualSwitchStateBackendFn () {
   declare _manual_state_str;
 
-  _manual_state_str="$( "${_kreadconfig5Exe}" \
-    --file "${_snapshotMetaDb}" \
-    --group 'global' \
-    --key 'manualSwitchState')";
+  _manual_state_str="$(_readMetadbFn 'global' 'manualSwitchState')";
 
   if [ -z "${_manual_state_str}" ]; then
     _manual_state_str='MANUAL';
@@ -257,11 +329,7 @@ _setManualSwitchStateFn () {
         _exitERR 'Cannot change manual switch state to existing state!';
       else
         # Write new state to db
-        "${_kwriteconfig5Exe}" \
-          --file "${_snapshotMetaDb}" \
-          --group 'global' \
-          --key 'manualSwitchState' \
-          'AUTO';
+        _writeMetadbFn 'global' 'manualSwitchState' 'AUTO';
       fi
       ;;
     'manual')
@@ -270,11 +338,7 @@ _setManualSwitchStateFn () {
         _exitERR 'Cannot change manual switch state to existing state!';
       else
         # Write new state to db
-        "${_kwriteconfig5Exe}" \
-          --file "${_snapshotMetaDb}" \
-          --group 'global' \
-          --key 'manualSwitchState' \
-          'MANUAL';
+        _writeMetadbFn 'global' 'manualSwitchState' 'MANUAL';
       fi
       ;;
     *)
@@ -532,9 +596,13 @@ _prepareSystemFn () {
   "${_btrfsExe}" subvolume create /btrfs_boot/@boot \
     || _exitEMERG 'Failed to create @boot';
 
-  # This will always throw a warning about not being able to move a directory
-  # into itself, therefore we have to ignore it
-  mv /btrfs_boot/* /btrfs_boot/@boot/ 2>/dev/null || true;
+  # mv /btrfs_boot/* /btrfs_boot/@boot/ 2>/dev/null || true;
+  while read -r _path; do
+    if [ "${_path}" != '/btrfs_boot/@boot' ]; then
+      mv "${_path}" '/btrfs_boot/@boot/' \
+        || _exitALERT "Failed to move ${_path} to /btrfs_boot/@boot!";
+    fi
+  done < <(find '/btrfs_boot' -maxdepth 1 -mindepth 1)
 
   # Mount /boot again after successful rearrange
   mount /boot     || _exitALERT 'Failed to mount /boot';
@@ -600,10 +668,7 @@ _deleteSnapshotFn () {
   fi
 
   # Refuse deleting a pinned snapshot
-  if [ "$("${_kreadconfig5Exe}" \
-    --file "${_snapshotMetaDb}" \
-    --group "${_target_snapshot_id}" \
-    --key 'pinned')" = 'y' ]; then
+  if [ "$(_readMetadbFn "${_target_snapshot_id}" 'pinned')" = 'y' ]; then
     _exitERR 'Cannot delete a pinned snapshot!';
   fi
 
@@ -618,20 +683,9 @@ _deleteSnapshotFn () {
   fi
 
   # Ensure any and all snapshot metadata is deleted
-  "${_kwriteconfig5Exe}" \
-    --file "${_snapshotMetaDb}" \
-    --group "${_target_snapshot_id}" \
-    --key 'name' --delete;
-
-  "${_kwriteconfig5Exe}" \
-    --file "${_snapshotMetaDb}" \
-    --group "${_target_snapshot_id}" \
-    --key 'desc' --delete;
-
-  "${_kwriteconfig5Exe}" \
-    --file "${_snapshotMetaDb}" \
-    --group "${_target_snapshot_id}" \
-    --key 'pinned' --delete;
+  _writeMetadbFn "${_target_snapshot_id}" 'name' '';
+  _writeMetadbFn "${_target_snapshot_id}" 'desc' '';
+  _writeMetadbFn "${_target_snapshot_id}" 'pinned' '';
   
   _cm2LogFn 'notice' "Snapshot ${_target_snapshot_id} deleted.";
 }
@@ -711,10 +765,8 @@ _trimSnapshotsFn () {
   _main_list_count="${#_main_snapshot_list[@]}";
   for ((_snapshot_idx = 0; _snapshot_idx < _main_list_count; \
     _snapshot_idx++)); do
-    if [ "$("${_kreadconfig5Exe}" \
-        --file "${_snapshotMetaDb}" \
-        --group "${_main_snapshot_list[_snapshot_idx]}" \
-        --key 'pinned')" = 'y' ]; then
+    if [ "$(_readMetadbFn "${_main_snapshot_list[_snapshot_idx]}" \
+      'pinned')" = 'y' ]; then
       unset "_main_snapshot_list[_snapshot_idx]";
     fi
   done
@@ -797,11 +849,7 @@ _createSnapshotFn () {
   esac
 
   # Save snapshot creation reason in the metadata database
-  "${_kwriteconfig5Exe}" \
-    --file "${_snapshotMetaDb}" \
-    --group "@${_timestamp_str}" \
-    --key 'reason' \
-    "${_snapshot_event_type}";
+  _writeMetadbFn "@${_timestamp_str}" 'reason' "${_snapshot_event_type}";
 
   # Snapshot and sync main and boot filesystems
   "${_btrfsExe}" subvolume snapshot -r '/btrfs_main/@' "${_snapshot_path}" \
@@ -859,19 +907,12 @@ _getSnapshotReasonFn () {
     return 1;
   fi
 
-  _snapshot_reason_raw="$("${_kreadconfig5Exe}" \
-    --file "${_snapshotMetaDb}" \
-    --group "${_snapshot_id}" \
-    --key 'reason')";
+  _snapshot_reason_raw="$(_readMetadbFn "${_snapshot_id}" 'reason')";
 
   # Migrate reason to metadb if stored old-style inside the snapshot
   if [ -z "${_snapshot_reason_raw}" ]; then
     _snapshot_reason_raw="$(cat "${_snapshot_reason_file}")";
-    "${_kwriteconfig5Exe}" \
-      --file "${_snapshotMetaDb}" \
-      --group "${_snapshot_id}" \
-      --key 'reason' \
-      "${_snapshot_reason_raw}";
+    _writeMetadbFn "${_snapshot_id}" 'reason' "${_snapshot_reason_raw}";
   fi
 
   case "${_snapshot_reason_raw}" in
@@ -907,10 +948,7 @@ _makeSnapshotDispIdFn () {
     return 1;
   fi
 
-  _snapshot_name="$("${_kreadconfig5Exe}" \
-    --file "${_snapshotMetaDb}" \
-    --group "${_snapshot_id}" \
-    --key 'name')";
+  _snapshot_name="$(_readMetadbFn "${_snapshot_id}" 'name')";
   if [ -z "${_snapshot_name}" ]; then
     _snapshot_name="$(_getSnapshotReasonFn "${_snapshot_id}")";
   else
@@ -978,10 +1016,7 @@ _restoreSnapshotFn () {
   _createSnapshotFn 'Pre-Rollback' || exit;
 
   # Retrieve relevant metadata from snapshot being restored
-  _snapshot_name="$("${_kreadconfig5Exe}" \
-    --file "${_snapshotMetaDb}" \
-    --group "${_target_snapshot_id}" \
-    --key 'name')";
+  _snapshot_name="$(_readMetadbFn "${_target_snapshot_id}" 'name')";
   _snapshot_date="${_target_snapshot_id//@/}";
   _snapshot_reason="$(_getSnapshotReasonFn "${_target_snapshot_id}")";
 
@@ -1047,10 +1082,7 @@ _getSnapshotMetadataFn () {
 
   # Return snapshot name, description, pin status from snapshot metadb
   for _item in 'name' 'desc' 'pinned'; do
-    _metadata_str="$("${_kreadconfig5Exe}" \
-      --file "${_snapshotMetaDb}" \
-      --group "${_snapshot_id}" \
-      --key "${_item}")";
+    _metadata_str="$(_readMetadbFn "${_snapshot_id}" "${_item}")";
     if [ "${_item}" = 'pinned' ] && [ -z "${_metadata_str}" ]; then
       _cm2WarnStrFn "Missing metadata entry for snapshot ${_snapshot_id} in ${_snapshotMetaDb}";
     fi
@@ -1091,10 +1123,7 @@ _setSnapshotMetadataFn () {
 
   # If pinning an unpinned snapshot, check disk space
   if [ "${_is_pinned}" = 'y' ]; then
-    _was_pinned="$("${_kreadconfig5Exe}" \
-      --file "${_snapshotMetaDb}" \
-      --group "${_snapshot_id}" \
-      --key 'pinned')";
+    _was_pinned="$(_readMetadbFn "${_snapshot_id}" 'pinned')";
     if [ "${_was_pinned}" = 'n' ]; then
       _checkMainUnallocSpaceFn;
       _checkBootUnallocSpaceFn;
@@ -1102,23 +1131,9 @@ _setSnapshotMetadataFn () {
   fi
 
   # Write snapshot name, description, pin status to snapshot metadb
-  "${_kwriteconfig5Exe}" \
-    --file "${_snapshotMetaDb}" \
-    --group "${_snapshot_id}" \
-    --key 'name' \
-    "${_name_str}";
-
-  "${_kwriteconfig5Exe}" \
-    --file "${_snapshotMetaDb}" \
-    --group "${_snapshot_id}" \
-    --key 'desc' \
-    "${_desc_str}";
-
-  "${_kwriteconfig5Exe}" \
-    --file "${_snapshotMetaDb}" \
-    --group "${_snapshot_id}" \
-    --key 'pinned' \
-    "${_is_pinned}";
+  _writeMetadbFn "${_snapshot_id}" 'name' "${_name_str}";
+  _writeMetadbFn "${_snapshot_id}" 'desc' "${_desc_str}";
+  _writeMetadbFn "${_snapshot_id}" 'pinned' "${_is_pinned}";
 }
 ## . END _setSnapshotMetadataFn }
 
@@ -1141,14 +1156,8 @@ _balanceMainFn () {
     | awk '{ print $3 }')";
 
   # Read previous space values from snapshot metadb
-  _last_unalloc_int="$("${_kreadconfig5Exe}" \
-    --file "${_snapshotMetaDb}" \
-    --group 'global' \
-    --key 'lastUnallocInt')";
-  _last_free_int="$("${_kreadconfig5Exe}" \
-    --file "${_snapshotMetaDb}" \
-    --group 'global' \
-    --key 'lastFreeInt')";
+  _last_unalloc_int="$(_readMetadbFn 'global' 'lastUnallocInt')";
+  _last_free_int="$(_readMetadbFn 'global' 'lastFreeInt')";
   if [ -z "${_last_unalloc_int}" ] \
     || [ -z "${_last_free_int}" ]; then
     _last_unalloc_int=-1;
@@ -1178,16 +1187,8 @@ _balanceMainFn () {
       | awk '{ print $3 }')";
     _main_free_int="$(grep $'Free (estimated):\t' <<< "${_main_report}" \
       | awk '{ print $3 }')";
-    "${_kwriteconfig5Exe}" \
-      --file "${_snapshotMetaDb}" \
-      --group 'global' \
-      --key 'lastUnallocInt' \
-      "${_main_unalloc_int}";
-    "${_kwriteconfig5Exe}" \
-      --file "${_snapshotMetaDb}" \
-      --group 'global' \
-      --key 'lastFreeInt' \
-      "${_main_free_int}";
+    _writeMetadbFn 'global' 'lastUnallocInt' "${_main_unalloc_int}";
+    _writeMetadbFn 'global' 'lastFreeInt' "${_main_free_int}";
 
     _cm2LogFn 'notice' "Main filesystem balanced.";
   else
@@ -1227,14 +1228,8 @@ _deleteAllSnapshotsFn () {
 
   # Delete each snapshot, unpinning if needed
   for _current_snapshot in "${_snapshot_list[@]}"; do
-    if [ "$("${_kreadconfig5Exe}" \
-      --file "${_snapshotMetaDb}" \
-      --group "${_current_snapshot}" \
-      --key 'pinned')" = 'y' ]; then
-      "${_kwriteconfig5Exe}" \
-        --file "${_snapshotMetaDb}" \
-        --group "${_current_snapshot}" \
-        --key 'pinned' 'n';
+    if [ "$(_readMetadbFn "${_current_snapshot}" 'pinned')" = 'y' ]; then
+      _writeMetadbFn "${_current_snapshot}" 'pinned' 'n';
     fi
     _deleteSnapshotFn "${_current_snapshot}";
   done
@@ -1349,9 +1344,9 @@ _defragmentFn () {
 # Purpose: Runs both main and boot balance operations at once.
 #
 _btrfsMaintainFn () {
-  _checkBtrfsStatusSetUpFn;
   _checkRootFn       || _exitNOTICE \
     'BTRFS maintenance requires root privileges.';
+  _checkBtrfsStatusSetUpFn;
   _balanceMainFn 'n' || _exitALERT  'Failed to balance main filesystem!';
   _balanceBootFn     || _exitALERT  'Failed to balance boot filesystem!';
   _cm2LogFn 'notice' "Routine BTRFS maintenance complete.";
@@ -1363,9 +1358,9 @@ _btrfsMaintainFn () {
 # defragment operations at once.
 #
 _btrfsDeepCleanFn () {
-  _checkBtrfsStatusSetUpFn;
   _checkRootFn       || _exitNOTICE \
     'BTRFS deep cleaning requires root privileges.';
+  _checkBtrfsStatusSetUpFn;
   _deleteAllSnapshotsFn;
   _balanceMainFn 'y' || _exitALERT 'Failed to balance main filesystem!';
   _balanceBootFn     || _exitALERT 'Failed to balance boot filesystem!';
@@ -1391,9 +1386,6 @@ _mainFn () {
     _promptAllUsersFn 'warning' "${_inconsistentMsg}";
     _exitERR 'BTRFS state is inconsistent!';
   fi
-
-  # Ensure snapshot metadb exists, creating it if not
-  _checkSnapshotMetaDbFn;
 
   case "${_mode_str}" in
     'btrfsDeepClean')          _btrfsDeepCleanFn;;
@@ -1422,7 +1414,6 @@ _mainFn () {
     'setSnapshotMetadata')     _setSnapshotMetadataFn  "$@";;
     'systemSnapshot')          _systemSnapshotFn       "${1:-}";;
     'trimSnapshots')           _trimSnapshotsFn;;
-    'hang') while true; do sleep 1000; done;; # TODO: Remove before release
     *)
       _exitERR 'Invalid mode specified.';
       ;;

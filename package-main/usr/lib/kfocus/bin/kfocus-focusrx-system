@@ -117,9 +117,18 @@ _manageSnapshotsOnBootFn () {
   _boot_min_unalloc="$("${_rollbackBackendExe}" 'getBootMinUnalloc')";
   if (( _main_unalloc > _main_min_unalloc )) \
     && (( _boot_unalloc > _boot_min_unalloc )); then
-    "${_rollbackBackendExe}" 'finalizeRestore'        || { _cm2WarnFn; return; };
-    "${_rollbackBackendExe}" 'createSnapshot' 'Timed' || { _cm2WarnFn; return; };
-    "${_rollbackBackendExe}" 'trimSnapshots'          || { _cm2WarnFn; return; };
+    "${_rollbackBackendExe}" 'finalizeRestore'
+    if [ "$?" != '0' ] && [ "$?" != '1' ]; then
+      _cm2WarnFn; return;
+    fi
+    "${_rollbackBackendExe}" 'createSnapshot' 'Timed'
+    if [ "$?" != '0' ] && [ "$?" != '1' ]; then
+      _cm2WarnFn; return;
+    fi
+    "${_rollbackBackendExe}" 'trimSnapshots'
+    if [ "$?" != '0' ] && [ "$?" != '1' ]; then
+      _cm2WarnFn; return;
+    fi
     _cm2SucFn;
   else
     _cm2WarnStrFn 'Main or boot disk space low!';
@@ -157,9 +166,18 @@ _maintainBtrfsFn () {
   _boot_min_unalloc="$("${_rollbackBackendExe}" 'getBootMinUnalloc')";
   if (( _main_unalloc > _main_min_unalloc )) \
     && (( _boot_unalloc > _boot_min_unalloc )); then
-    "${_rollbackBackendExe}" 'createSnapshot' 'Timed' || { _cm2WarnFn; return; };
-    "${_rollbackBackendExe}" 'trimSnapshots'          || { _cm2WarnFn; return; };
-    "${_rollbackBackendExe}" 'btrfsMaintain'          || { _cm2WarnFn; return; };
+    "${_rollbackBackendExe}" 'createSnapshot' 'Timed';
+    if [ "$?" != '0' ] && [ "$?" != '1' ]; then
+      _cm2WarnFn; return;
+    fi
+    "${_rollbackBackendExe}" 'trimSnapshots';
+    if [ "$?" != '0' ] && [ "$?" != '1' ]; then
+      _cm2WarnFn; return;
+    fi
+    "${_rollbackBackendExe}" 'btrfsMaintain';
+    if [ "$?" != '0' ] && [ "$?" != '1' ]; then
+      _cm2WarnFn; return;
+    fi
     _cm2SucFn;
   else
     if (( _main_unalloc <= _main_min_unalloc )); then

@@ -763,7 +763,7 @@ ${_brow_str}Doc: <a style="color:#1d99f3" href="https://kfocus.org/wf/tools#kcle
 ${_brow_str}${_run_msg}${_erow_str}
 
 ${_brow_str}Removing unused kernels prevents the system<br>
-from running out of disk space in <code>/boot</code>.${_erow_str}
+from running out of disk space in <code>/boot</code>.${_erow_str}XXX_SNAPSHOT_PURGE_XXX
 
 ${_brow_str}<h4 style="color:#f7941d">Packages to Keep</h4>${_erow_str}
 ${_brow_str}<code>${_keep_pkg_list_str}</code>${_erow_str}
@@ -778,6 +778,21 @@ ${_brow_str}Do you wish to purge ${_kernel_purge_count} of ${_inst_kvers_count} 
 ${_cm2HtmEndStr}
 _EOW04
   )";
+
+  if [ "${_isBtrfsYn}" = 'y' ]; then
+    _snapshot_purge_msg="$(cat <<EOF
+
+
+${_brow_str}<b style="color:#da4453">WARNING: All System Rollback Snapshots
+will <br>
+be deleted, INCLUDING PINNED SNAPSHOTS! <br>
+This cannot be undone!</b>${_erow_str}
+EOF
+    )";
+    _purge_msg="${_purge_msg//XXX_SNAPSHOT_PURGE_XXX/${_snapshot_purge_msg}}";
+  else
+    _purge_msg="${_purge_msg//XXX_SNAPSHOT_PURGE_XXX/''}";
+  fi
 
   _reply="$(_cm2PromptUserFn "${_purge_msg}" "${_win_title}" 'w')";
   if [ "${_reply}" = 'n' ]; then

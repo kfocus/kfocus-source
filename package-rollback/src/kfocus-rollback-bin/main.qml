@@ -906,7 +906,8 @@ Kirigami.ApplicationWindow {
                       + 'clean up the boot disk.</p>'
                       + '<br>'
                       + '<p><b><font color="#da4453">WARNING: This will '
-                      + 'delete all snapshots on the system! This cannot be '
+                      + 'delete all snapshots on the system, INCLUDING '
+                      + 'PINNED SNAPSHOTS! This cannot be '
                       + 'undone!</font></b></p>'
                     acceptText    : 'Clean Up'
                     acceptIcon    : 'clean-up-destructive'
@@ -1054,6 +1055,19 @@ Kirigami.ApplicationWindow {
                     id         : saveEditsWaitView
                     visible    : false
                     headerText : 'Saving edits...'
+                }
+
+                ErrorScreenItem {
+                    id          : saveEditsFailedView
+                    visible     : false
+                    infoText    : '<p>System Rollback failed to save your '
+                      + 'changes to this snapshot. The snapshot may have '
+                      + 'been removed by automatic snapshot maintenance, or '
+                      + 'you may have failed to enter your password when '
+                      + 'prompted.</p>'
+                    onOkClicked : {
+                        switchViewFn( saveEditsFailedView, snapshotView );
+                    }
                 }
             }
         }
@@ -1412,7 +1426,7 @@ Kirigami.ApplicationWindow {
             } else {
                 restoreSnapshotViewBindingsFn();
                 sysRefreshSourceView = saveEditsWaitView;
-                sysRefreshTargetView = snapshotView;
+                sysRefreshTargetView = saveEditsFailedView;
                 snapshotView.saving  = false;
                 snapshotView.editing = false;
                 backend.inhibitClose = false;
