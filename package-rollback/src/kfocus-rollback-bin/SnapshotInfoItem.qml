@@ -6,6 +6,8 @@ import org.kde.kirigami 2.20 as Kirigami
 RowLayout {
     // Public
     property string date        : ''
+    property string daytime     : ''
+    property string size        : ''
     property string reason      : ''
     property string name        : ''
     property string description : ''
@@ -44,6 +46,7 @@ RowLayout {
             Layout.bottomMargin : Kirigami.Units.gridUnit * 0.3
 
             Kirigami.Icon {
+                Layout.alignment: Qt.AlignTop
                 source : reason === 'System Schedule'
                   ? 'clock'
                   : reason === 'Before Package Change'
@@ -53,12 +56,25 @@ RowLayout {
                   : 'user'
             }
 
-            Kirigami.Heading {
-                id               : snapshotTitle
-                Layout.alignment : Qt.AlignVCenter
+            ColumnLayout {
+                Layout.topMargin: Kirigami.Units.gridUnit * 0.15
+                Kirigami.Heading {
+                    id               : snapshotTitle
+                    Layout.alignment : Qt.AlignVCenter
 
-                text             : date
-                level            : 2
+                    text             : date
+                    level            : 2
+                }
+                Controls.Label {
+                    font.pixelSize: 12
+                    text: {
+                        if (size === '') {
+                            return daytime
+                        } else {
+                            return daytime + ' | ' + size
+                        }
+                    }
+                }
             }
 
             Item {
@@ -71,19 +87,17 @@ RowLayout {
                 text             : {
                     switch ( reason ) {
                     case 'System Schedule':
-                        return '<i>(Created by <b>System Schedule</b>)</i>';
+                        return '<i>System Schedule</i>';
                     case 'Before Package Change':
-                        return '<i>(Created before '
-                          + '<b>Package Change</b>)</i>';
+                        return '<i>Before Package Change</i>';
                     case 'Pre-Rollback':
-                        return '<i>(Created before '
-                          + '<b>Snapshot Rollback</b>)</i>';
+                        return '<i>Pre-Rollback</i>';
                     default:
                         let input_str = reason;
                         let out_list  = input_str.match( /^[^(]+\(([^)]+)\)/ )
                           || [];
                         let user_str = out_list[1] || 'user';
-                        return '<i>(Created by <b>' + user_str + '</b>)</i>';
+                        return '<i>User Snapshot (' + user_str + ')</i>';
                     }
                 }
             }

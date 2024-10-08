@@ -264,6 +264,7 @@ void BackendEngine::onSystemDataReady() {
     // Parse snapshot date (this mangles the snapshotItem string so we have to do it last)
     QDateTime snapshotTs = QDateTime::fromSecsSinceEpoch(snapshotItem.remove(0, 1).toULong());
     QString snapshotDate = snapshotTs.toString(Qt::ISODate).split('T').at(0);
+    QString snapshotDayTime = snapshotTs.toString("dddd hh:mm");
 
     // Load parsed data into the snapshot list
     m_snapshotList->append(QMap<QString, QString>({
@@ -274,7 +275,8 @@ void BackendEngine::onSystemDataReady() {
         { "stateDir", snapshotStateDir },
         { "id", snapshotId },
         { "size", snapshotSize },
-        { "date", snapshotDate }
+        { "date", snapshotDate },
+        { "daytime", snapshotDayTime }
     }));
 
     // Loop if necessary, otherwise get global disk info

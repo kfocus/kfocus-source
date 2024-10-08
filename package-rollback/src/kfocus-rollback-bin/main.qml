@@ -779,6 +779,10 @@ Kirigami.ApplicationWindow {
                     id          : snapshotView
                     date        : snapshotModel.get(
                       snapshotBar.currentIndex).date
+                    daytime     : snapshotModel.get(
+                      snapshotBar.currentIndex).daytime
+                    size        : snapshotModel.get(
+                      snapshotBar.currentIndex).size
                     name        : snapshotModel.get(
                       snapshotBar.currentIndex).name
                     reason      : snapshotModel.get(
@@ -1639,6 +1643,7 @@ Kirigami.ApplicationWindow {
         for ( let i = 0; i < backend.getSnapshotCount(); i++ ) {
             snapshotModel.append({
                 date        : backend.getSnapshotInfo(i, 'date'),
+                daytime     : backend.getSnapshotInfo(i, 'daytime'),
                 name        : backend.getSnapshotInfo(i, 'name'),
                 description : backend.getSnapshotInfo(i, 'description'),
                 reason      : backend.getSnapshotInfo(i, 'reason'),
