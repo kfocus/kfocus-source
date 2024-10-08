@@ -68,3 +68,36 @@ Description: Complete KFocus Linux kernel and headers
  and headers.
 
 
+
+Package: linux-modules-ipu6-kfocus-24.04
+Architecture: amd64
+Section: kernel
+Provides: ${dkms:ipu6-modules}
+Depends:
+ ${misc:Depends},
+ linux-modules-ipu6-${kernel-abi-version}-kfocus,
+Description: Extra drivers for ipu6 for the kfocus flavour
+ Install extra signed ipu6 modules compatible with the kfocus flavour.
+
+
+Package: linux-modules-iwlwifi-kfocus-24.04
+Architecture: amd64
+Section: kernel
+Provides: ${dkms:iwlwifi-modules}
+Depends:
+ ${misc:Depends},
+ linux-modules-iwlwifi-${kernel-abi-version}-kfocus,
+Description: Extra drivers for iwlwifi for the kfocus flavour
+ Install extra signed iwlwifi modules compatible with the kfocus flavour.
+
+
+Package: linux-modules-usbio-kfocus-24.04
+Architecture: amd64
+Section: kernel
+Provides: ${dkms:usbio-modules}
+Depends:
+ ${misc:Depends},
+ linux-modules-usbio-${kernel-abi-version}-kfocus,
+Description: Extra drivers for usbio for the kfocus flavour
+ Install extra signed usbio modules compatible with the kfocus flavour.
+
