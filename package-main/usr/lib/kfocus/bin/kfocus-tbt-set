@@ -77,17 +77,10 @@ _stopThunderboltFn () {
 
 ## BEGIN _wipeThunderboltPersistFn {
 _wipeThunderboltPersistFn () {
-  if [ -f "${_tbtDisableTarget}" ] || [ -h "${_tbtDisableTarget}" ]; then
-    rm "${_tbtDisableTarget}";
-  elif [ -e "${_tbtDisableTarget}" ]; then
+  if [ -f "${_tbtSymlink}" ] || [ -h "${_tbtSymlink}" ]; then
+    rm "${_tbtSymlink}";
+  elif [ -e "${_tbtSymlink}" ]; then
     _cm2WarnStrFn 'Thunderbolt disable location occupied and is not a symbolic link!';
-    return 1;
-  fi
-
-  if [ -f "${_tbtEnableTarget}" ] || [ -h "${_tbtEnableTarget}" ]; then
-    rm "${_tbtEnableTarget}";
-  elif [ -e "${_tbtEnableTarget}" ]; then
-    _cm2WarnStrFn 'Thunderbolt enable location occupied and is not a symbolic link!';
     return 1;
   fi
 }
@@ -95,8 +88,8 @@ _wipeThunderboltPersistFn () {
 
 ## BEGIN _enableThunderboltFn {
 _enableThunderboltFn () {
-  _wipeThunderboltPersistFn;
-  ln -s "${_tbtEnableFile}" "${_tbtEnableTarget}" || {
+  _wipeThunderboltPersistFn || return;
+  ln -s "${_tbtEnableFile}" "${_tbtSymlink}" || {
     _cm2WarnStrFn 'Failed to install Thunderbolt enable file!';
     return 1;
   }
@@ -107,8 +100,8 @@ _enableThunderboltFn () {
 
 ## BEGIN _disableThunderboltFn {
 _disableThunderboltFn () {
-  _wipeThunderboltPersistFn;
-  ln -s "${_tbtDisableFile}" "${_tbtDisableTarget}" || {
+  _wipeThunderboltPersistFn || return;
+  ln -s "${_tbtDisableFile}" "${_tbtSymlink}" || {
     _cm2WarnStrFn 'Failed to install Thunderbolt disable file!';
     return 1;
   }
@@ -127,7 +120,8 @@ _queryThunderboltFn () {
     _run_state='stopped';
   fi
 
-  if [ -h "${_tbtDisableTarget}" ]; then
+  if grep -Eq 'GRUB_CMDLINE[^#]+modprobe.blacklist=thunderbolt' \
+    "${_tbtSymlink}"; then
     _persist_state='disabled';
   else
     _persist_state='enabled';
@@ -160,13 +154,12 @@ _mainFn () {
 ## . END _mainFn }
 
 ## BEGIN Declare and assign global vars {
-declare _binName _binDir _baseDir _baseName _tbtEnableFile _tbtDisableFile \
-  _tbtEnableTarget _tbtDisableTarget _acpiWakeupFile;
+declare _binName _binDir _baseDir _baseName \
+  _tbtEnableFile _tbtDisableFile _tbtSymlink _acpiWakeupFile;
 
-_tbtEnableFile='usr/lib/kfocus/conf/m2g5p1-etc_default_grub.d_10_kfocus-tbt-on.cfg';
+_tbtEnableFile='usr/lib/kfocus/conf/m2g5p1-etc_default_grub.d_10_kfocus-tbt-default.cfg';
 _tbtDisableFile='/usr/lib/kfocus/conf/m2g5p1-etc_default_grub.d_10_kfocus-tbt-blacklist.cfg';
-_tbtEnableTarget='/etc/default/grub.d/10_kfocus-tbt-on.cfg';
-_tbtDisableTarget='/etc/default/grub.d/10_kfocus-tbt-blacklist.cfg';
+_tbtSymlink='/etc/default/grub.d/10_kfocus-tbt.cfg';
 _acpiWakeupFile='/proc/acpi/wakeup';
 ## . END Declare and assign global vars }
 

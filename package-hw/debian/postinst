@@ -1,7 +1,8 @@
 #!/bin/bash
 #
-# Copyright 2020-2023 MindShare Inc.
-# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
+# Copyright 2020-2024 MindShare Inc.
+# Written for the Kubuntu Focus by 
+#   Michael Mikowski, Erich Eickmeyer, and Aaron Rainbolt
 #
 set -e;
 
@@ -257,7 +258,7 @@ _handle_m2g5Fn () {
     # Otherwise, set it to blacklist thunderbolt with OFF name
     else
       _target_file='/usr/lib/kfocus/conf/';
-      _target_file+='m2g5p1-etc_default_grub.d_10_kfocus-tbt-off.cfg';
+      _target_file+='m2g5p1-etc_default_grub.d_10_kfocus-tbt-blacklist.cfg';
       _symlinkTable+=( "${_symlink}|${_target_file}" );
     fi
   # Always remove file for non-m2g5p1 systems

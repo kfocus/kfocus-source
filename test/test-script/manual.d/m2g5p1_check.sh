@@ -17,7 +17,7 @@ _handlerFn () {
     # Otherwise, set it to blacklist thunderbolt with OFF name
     else
       _target_file='/usr/lib/kfocus/conf/';
-      _target_file+='m2g5p1-etc_default_grub.d_10_kfocus-tbt-off.cfg';
+      _target_file+='m2g5p1-etc_default_grub.d_10_kfocus-tbt-blacklist.cfg';
       _symlinkTable+=( "${_symlink}|${_target_file}" );
     fi
   # Always remove file for non-m2g5p1 systems
@@ -34,7 +34,6 @@ _setupFn () {
   _lib_file='/usr/lib/kfocus/lib/common.2.source';
   _config_code='';
   _model_code='';
-  _dmiName='';
 
   if [ -r "${_lib_file}" ]; then
     # shellcheck disable=1091,1090 source=/usr/lib/kfocus/lib/common.2.source
