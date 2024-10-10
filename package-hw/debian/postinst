@@ -219,6 +219,8 @@ _handle_m2g4Fn () {
 # shellcheck disable=SC2317
 #
 _handle_m2g5Fn () {
+  declare _symlink _tgt_file;
+
   if [ -x "/usr/bin/deb-systemd-helper" ]; then
     deb-systemd-helper mask \
       systemd-backlight@backlight:nvidia_0.service >/dev/null;
@@ -243,8 +245,26 @@ _handle_m2g5Fn () {
     # Remove old TLP config
     '/etc/tlp.d/kfocus.conf|'
   );
-  # Deprecated by _supplementXdgConfigsFn
-  # _setScaleFactorFn '';
+
+  ## Begin Add or remove symlink for m2g5p1 thunderbolt blacklist
+  _symlink='/etc/default/grub.d/10_kfocus-tbt.cfg';
+  _tgt_file='';
+  # Consider only if m2g5p1 system
+  if [[ "${_dmiName:-}" =~ ^X370SN.*1$ ]]; then
+    # Skip changing this file if it already exists
+    if [ -f "${_symlink}" ] || [ -h "${_symlink}" ]; then
+      true;
+    # Otherwise, set it to blacklist thunderbolt with OFF name
+    else
+      _target_file='/usr/lib/kfocus/conf/';
+      _target_file+='m2g5p1-etc_default_grub.d_10_kfocus-tbt-off.cfg';
+      _symlinkTable+=( "${_symlink}|${_target_file}" );
+    fi
+  # Always remove file for non-m2g5p1 systems
+  else
+    _symlinkTable+=( "${_symlink}|" );
+  fi
+  ## . End Add or remove symlink for m2g5p1 thunderbolt blacklist
 }
 # hw_config_code 'nxg1' handles models nxg1 and nxg2
 # shellcheck disable=SC2317
@@ -481,6 +501,9 @@ _configFn () {
       _model_code="$(_cm2EchoModelStrFn 'code')";
       _config_code="$(_cm2EchoModelStrFn 'config_code')";
     fi
+    if [ -f "${_cm2DmiProductNameFile}" ]; then
+      _dmiName="$(_cm2CatStripEchoFn "${_cm2DmiProductNameFile}")";
+    fi
   fi
   if [ -z "${_config_code:-}" ]; then _config_code='other'; fi
   if [ -z "${_model_code:-}"  ]; then  _model_code='other'; fi
@@ -525,7 +548,8 @@ _configFn () {
 }
 
 ## BEGIN declare and assign package vars {
-declare _effectsExe _kf5SettingsDir;
+declare _effectsExe _kf5SettingsDir _dmiName;
+_dmiName='';
 _effectsExe="$(command -v /usr/lib/kfocus/bin/kfocus-reset-effects || true)";
 _kf5SettingsDir='/usr/share/kfocus/kf5-settings';
 ## . END declare and assign package vars }
