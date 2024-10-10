@@ -161,8 +161,10 @@ set timeout timeoutlen=300 ttimeoutlen=300
 " e Edit a file
 map e :n
 
-" ;k Remove trailing space
-map ;k :%s?\s\+$??<CR>
+" nnoremap works non-recursively in normal mode.
+" ;k Remove trailing space, ;kk clears checkboxes
+map <silent> ;k  :%s?\s\+$??<CR>
+map <silent> ;kk :%s?\(\W\)\[.\] ?\1[ ] ?<CR>
 
 " ;n Highlight or replace non-ascii characters
 map ;n /[^\x00-\x7F]<CR>
@@ -220,7 +222,8 @@ set backspace=indent,eol,start      "BS past autoindents, boundaries, insertion
 
 " Turn off stupid-huge html indents
 " per https://vi.stackexchange.com/questions/10128
-au FileType html setlocal indentexpr=''
+au FileType html setlocal shiftwidth=2 tabstop=2 indentexpr=''
+au FileType md setlocal   shiftwidth=2 tabstop=2 indentexpr=''
 
 " Execute from selected lines
 " See https://stackoverflow.com/questions/14385998
@@ -250,6 +253,18 @@ set thesaurus+=/usr/local/share/thesaurus/mthesaur.txt
 "
 let g:markdown_fenced_languages = ['bash','css','erb=eruby','javascript','js=javascript','json','html','node=javascript','perl','php=perl','python','ruby','sass','xml','vim']
 
+" =====[ Wrap for vimdiff, both panes ] =============================== 
+"   https://stackoverflow.com/questions/16840433
+au VimEnter * if &diff | execute 'windo set wrap' | endif
+set ai
+
+" =====[ Wrap for vimdiff, both panes ] =============================== 
+" =====[ Fix for pattern uses more memory than 'maxmempattern' ] ======
+" See https://github.com/vim/vim/issues/2049
+" MAY be resolved in vim 9.0. Tends to happen in Markdown syntax
+set mmp=20000 " was set mmp=5000
+
 " ====[ Use this to size comment lines ]===============================
 " =====================================================================
 " ====[ END ]==========================================================
+
