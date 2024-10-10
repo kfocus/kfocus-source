@@ -1,0 +1,241 @@
+#!/bin/bash
+#
+# Copyright 2019-2024 MindShare Inc.
+#
+# Written for the Kubuntu Focus by M. Mikowski and A. Rainbolt
+#
+# Name     : kfocus-tbt
+# Summary  : kfocus-tbt
+# Purpose  : Allows the user to enable or disable Thunderbolt
+# Example  : kfocus-tbt
+# License  : GPLv2
+# Run By   : Users
+# Spec     : 4777
+#
+set -u;
+
+## BEGIN _importCommonFn {
+# Summary   : _importCommonFn
+# Purpose   : Load common routines, prefer relative dir
+# Example   : _importCommonFn;
+# Arguments : none
+# Globals   : Package vars _baseDir _baseName
+# Outputs   : none
+# Returns   : none
+#
+_importCommonFn () {
+  declare _lib_list _is_loaded _lib_file;
+  _lib_list=(
+    "${_baseDir}/lib/common.2.source"
+    '/usr/lib/kfocus/lib/common.2.source'
+  );
+  _is_loaded='n';
+  for _lib_file in "${_lib_list[@]}"; do
+    if [ -r "${_lib_file}" ]; then
+      # shellcheck source=/usr/lib/kfocus/lib/common.2.source
+      if source "${_lib_file}"; then
+        _is_loaded='y';
+        break;
+      fi
+    fi
+  done
+
+  if [ "${_is_loaded}" = 'n' ]; then
+    echo 1>&2 "${_baseName}: ABORT - Cannot source common lib";
+    exit 202;
+  fi
+}
+## . END _importCommonFn }
+
+## BEGIN _setGuiStringsFn {
+_assignGlobalUiVarsFn () {
+  declare _bold_str _brow_str _erow_str _header_str _table_str;
+
+  _bold_str='<b style="color:#f7941d">';
+  _brow_lp_str='<tr><td style="padding:8px 0 8px 32px">';
+  _brow_rp_str='<tr><td style="padding:8px 32px 8px 0">';
+  _center_header_str='<h3 style="color:#f7941d;text-align:center">';
+  _code_str='<code style="color:#4daa4d">';
+  _erow_str='</td></tr>';
+  _left_header_str='<h3 style="color:#f7941d">';
+  _table_str='<table style="width:100%;margin-right:32px">';
+
+  _chooseModeMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_lp_str}${_center_header_str}KFocus Thunderbolt Tool</h3>${_erow_str}
+
+${_brow_lp_str}Thunderbolt is ${_bold_str}XXX_RUNNING_XXX</b> in this <br>
+session.${_erow_str}
+
+${_brow_lp_str}Thunderbolt is ${_bold_str}XXX_ENABLED_XXX</b> and will <br>
+XXX_STATE_XXX on next boot.${_erow_str}
+
+${_brow_lp_str}Thunderbolt should be running if you are <br>
+actively using Thunderbolt devices, such as <br>
+a dock, SSD, or eGPU with Thunderbolt <br>
+support. Thunderbolt should be stopped if <br>
+you are using a DisplayPort-compatible <br>
+monitor that connects via USB-C.${_erow_str}
+
+${_brow_lp_str}Choose whether to start or stop Thunderbolt. <br>
+If you want your changes to survive a reboot, <br>
+choose one of the "persistent" options to <br>
+enable it or disable it.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _thunderboltChangedMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}Thunderbolt XXX_TITLE_STATE_XXX</h3>${_erow_str}
+
+${_brow_rp_str}Thunderbolt has been XXX_STATE_XXX.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _thunderboltChangeFailedMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}Thunderbolt XXX_TITLE_STATE_XXX Failed</h3>${_erow_str}
+
+${_brow_rp_str}Thunderbolt could not be XXX_STATE_XXX!${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _operationCancelledMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}Operation Cancelled</h3>${_erow_str}
+
+${_brow_rp_str}No changes have been made to the system.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _unneededMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}KFocus Thunderbolt Tool</h3>${_erow_str}
+
+${_brow_rp_str}This system's Thunderbolt hardware does not require <br>
+configuration. Click OK to close the tool.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+}
+## . END _setGuiStringsFn }
+
+## BEGIN _mainFn {
+_mainFn () {
+  declare _dmi_name _run_state _persist_state _mode_str;
+
+  
+  if [ -f "${_cm2DmiProductNameFile}" ]; then
+    _dmi_name="$(_cm2CatStripEchoFn "${_cm2DmiProductNameFile}")";
+  fi
+
+  if ! [[ "${_dmiName:-}" =~ ^X370SN.*1$ ]]; then
+    _cm2PromptUserFn "${_unneededMsg}" "${_winTitle}";
+    exit 0;
+  fi
+
+  IFS=$'\n'; read -r -d '' _run_state _persist_state < <("${_escExe}" \
+    "${_tbtSetExe}" 'query')
+
+  _chooseModeMsg="${_chooseModeMsg//XXX_RUNNING_XXX/${_run_state}}";
+  _chooseModeMsg="${_chooseModeMsg//XXX_ENABLED_XXX/${_persist_state}}";
+  if [ "${_persist_state}" = 'enabled' ]; then
+    _chooseModeMsg="${_chooseModeMsg//XXX_STATE_XXX/be running}";
+  else
+    _chooseModeMsg="${_chooseModeMsg//XXX_STATE_XXX/not be running}";
+  fi
+
+  _mode_str="$(_cm2PromptUserFn "${_chooseModeMsg}" "${_winTitle}" 'd' \
+    'start'   'Start Thunderbolt in this session' 'on' \
+    'stop'    'Stop Thunderbolt in this session'  'off' \
+    'enable'  'Enable Thunderbolt (persistent)'   'off' \
+    'disable' 'Disable Thunderbolt (persistent)'  'off')";
+
+  case "${_mode_str}" in
+    'start')
+      if "${_escExe}" "${_tbtSetExe}" 'start'; then
+        _thunderboltChangedMsg="${_thunderboltChangedMsg//XXX_TITLE_STATE_XXX/Started}";
+        _thunderboltChangedMsg="${_thunderboltChangedMsg//XXX_STATE_XXX/started}";
+        _cm2PromptUserFn "${_thunderboltChangedMsg}" "${_winTitle}";
+      else
+        _thunderboltChangeFailedMsg="${_thunderboltChangeFailedMsg//XXX_TITLE_STATE_XXX/Start}";
+        _thunderboltChangeFailedMsg="${_thunderboltChangeFailedMsg//XXX_STATE_XXX/started}";
+        _cm2PromptUserFn "${_thunderboltChangeFailedMsg}" "${_winTitle}" 's';
+      fi
+      ;;
+    'stop')
+      if "${_escExe}" "${_tbtSetExe}" 'stop'; then
+        _thunderboltChangedMsg="${_thunderboltChangedMsg//XXX_TITLE_STATE_XXX/Stopped}";
+        _thunderboltChangedMsg="${_thunderboltChangedMsg//XXX_STATE_XXX/stopped}";
+        _cm2PromptUserFn "${_thunderboltChangedMsg}" "${_winTitle}";
+      else
+        _thunderboltChangeFailedMsg="${_thunderboltChangeFailedMsg//XXX_TITLE_STATE_XXX/Stop}";
+        _thunderboltChangeFailedMsg="${_thunderboltChangeFailedMsg//XXX_STATE_XXX/stopped}";
+        _cm2PromptUserFn "${_thunderboltChangeFailedMsg}" "${_winTitle}" 's';
+      fi
+      ;;
+    'enable')
+      if "${_escExe}" "${_tbtSetExe}" 'enable'; then
+        _thunderboltChangedMsg="${_thunderboltChangedMsg//XXX_TITLE_STATE_XXX/Enabled}";
+        _thunderboltChangedMsg="${_thunderboltChangedMsg//XXX_STATE_XXX/enabled}";
+        _cm2PromptUserFn "${_thunderboltChangedMsg}" "${_winTitle}";
+      else
+        _thunderboltChangeFailedMsg="${_thunderboltChangeFailedMsg//XXX_TITLE_STATE_XXX/Enable}";
+        _thunderboltChangeFailedMsg="${_thunderboltChangeFailedMsg//XXX_STATE_XXX/enabled}";
+        _cm2PromptUserFn "${_thunderboltChangeFailedMsg}" "${_winTitle}" 's';
+      fi
+      ;;
+    'disable')
+      if "${_escExe}" "${_tbtSetExe}" 'disable'; then
+        _thunderboltChangedMsg="${_thunderboltChangedMsg//XXX_TITLE_STATE_XXX/Disabled}";
+        _thunderboltChangedMsg="${_thunderboltChangedMsg//XXX_STATE_XXX/disabled}";
+        _cm2PromptUserFn "${_thunderboltChangedMsg}" "${_winTitle}";
+      else
+        _thunderboltChangeFailedMsg="${_thunderboltChangeFailedMsg//XXX_TITLE_STATE_XXX/Disable}";
+        _thunderboltChangeFailedMsg="${_thunderboltChangeFailedMsg//XXX_STATE_XXX/disabled}";
+        _cm2PromptUserFn "${_thunderboltChangeFailedMsg}" "${_winTitle}" 's';
+      fi
+      ;;
+    *)
+      _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}"
+      ;;
+  esac
+}
+## . END _mainFn }
+
+## BEGIN Declare and assign global vars {
+declare _binName _binDir _baseDir _baseName _escExe _winTitle _chooseModeMsg \
+  _thunderboltChangedMsg _thunderboltChangeFailedMsg _operationCancelledMsg \
+  _unneededMsg _assignList _tbtSetExe;
+
+_winTitle='KFocus Thunderbolt Tool';
+## . END Declare and assign global vars }
+
+## BEGIN Run mainFn when script is NOT sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+
+  # Import libs and assign more global vars
+  _importCommonFn;
+
+  _assignList=(
+    "_tbtSetExe|${_binDir}/kfocus-tbt-set"
+  );
+
+  if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then 
+    _cm2ErrStrFn 'Could not assign variables';
+    exit 1;
+  fi
+  _escExe="$(_cm2GetEscExeFn)" || exit;
+  _assignGlobalUiVarsFn;
+
+  _mainFn "$@";
+fi
+## . END Run mainFn when script is NOT sourced }
