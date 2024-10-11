@@ -29,12 +29,12 @@ _handlerFn () {
 }
 
 _setupFn () {
-  declare _lib_file _config_code _model_code
+  declare _config_code _lib_file _model_code _symlink cat_str;
   # Import common and determine config_code from model matrix
-  _lib_file='/usr/lib/kfocus/lib/common.2.source';
-  _config_code='';
-  _model_code='';
 
+  _lib_file='/usr/lib/kfocus/lib/common.2.source';
+  _model_code='';
+  _config_code='';
   if [ -r "${_lib_file}" ]; then
     # shellcheck disable=1091,1090 source=/usr/lib/kfocus/lib/common.2.source
     source "${_lib_file}" || true;
@@ -49,9 +49,18 @@ _setupFn () {
   if [ -z "${_config_code:-}" ]; then _config_code='other'; fi
   if [ -z "${_model_code:-}"  ]; then  _model_code='other'; fi
 
+  
+  _symlink='/etc/default/grub.d/10_kfocus-tbt.cfg';
   echo "_config_code : ${_config_code}";
   echo "_model_code  : ${_model_code}";
   echo "_dmiName     : ${_dmiName}";
+  if [ -f "${_symlink}" ]; then
+    echo "_symlink     : ${_symlink}";
+    echo "Contents     : $(cat "${_symlink}")";
+  else
+    echo "_symlink NOT FOUND: ${_symlink}";
+  fi
+  
 }
 declare _dmiName _symlinkTable;
 _dmiName='';
