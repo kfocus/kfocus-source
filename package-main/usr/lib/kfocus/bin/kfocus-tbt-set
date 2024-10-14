@@ -94,7 +94,6 @@ _enableThunderboltFn () {
     return 1;
   }
   update-grub;
-  _startThunderboltFn;
 }
 ## . END _enableThunderboltFn }
 
@@ -106,13 +105,12 @@ _disableThunderboltFn () {
     return 1;
   }
   update-grub;
-  _stopThunderboltFn;
 }
 ## . END _disableThunderboltFn }
 
 ## BEGIN _queryThunderboltFn {
 _queryThunderboltFn () {
-  declare _run_state _persist_state;
+  declare _run_state _readlink_file _persist_state;
 
   if grep -q 'thunderbolt' < <(lsmod); then
     _run_state='running';
@@ -120,15 +118,15 @@ _queryThunderboltFn () {
     _run_state='stopped';
   fi
 
-  if grep -Eq 'GRUB_CMDLINE[^#]+modprobe.blacklist=thunderbolt' \
-    "${_tbtSymlink}"; then
-    _persist_state='disabled';
-  else
+  _readlink_file="$(readlink -fn "${_tbtSymlink}" )";
+  if [ "${_readlink_file}" = "${_tbtEnableFile}" ]; then
     _persist_state='enabled';
+  else
+    _persist_state='disabled';
   fi
 
-  echo "${_run_state}";
-  echo "${_persist_state}";
+  echo "${_run_state:-}";
+  echo "${_persist_state:-}";
 }
 ## . END _queryThunderboltFn }
 
@@ -153,7 +151,8 @@ _mainFn () {
 }
 ## . END _mainFn }
 
-## BEGIN Declare and assign global vars {
+## BEGIN Declare and assign global vars
+## {
 declare _binName _binDir _baseDir _baseName \
   _tbtEnableFile _tbtDisableFile _tbtSymlink _acpiWakeupFile;
 
