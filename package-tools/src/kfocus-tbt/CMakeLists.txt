@@ -29,8 +29,4 @@ add_executable(kfocus-tbt
 target_link_libraries(kfocus-tbt PRIVATE Qt5::Widgets)
 
 include(GNUInstallDirs)
-install(TARGETS kfocus-tbt
-    BUNDLE DESTINATION .
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
+install(TARGETS kfocus-tbt DESTINATION "/usr/lib/kfocus/bin")
