@@ -5,8 +5,8 @@ Maintainer: Ubuntu Kernel Team <kernel-team@lists.ubuntu.com>
 Standards-Version: 3.9.8
 Build-Depends: dpkg (>= 1.13.19), debhelper (>= 11), gawk
 Build-Depends-Arch:
- linux-hwe-6.8-headers-6.8.0-40,
- linux-headers-6.8.0-40-generic,
+ linux-hwe-6.8-headers-6.8.0-47,
+ linux-headers-6.8.0-47-generic,
 Vcs-Git: git://git.launchpad.net/~ubuntu-kernel/ubuntu/+source/linux-meta/+git/jammy
 
 Package: linux-headers-generic-hwe-22.04-kfocus
@@ -73,7 +73,7 @@ Provides: kernel-testing--linux-hwe-6.8-kfocus--full--generic, kernel-testing--l
 Replaces: linux-generic-hwe-22.04, linux-oem-22.04a-kfocus
 Conflicts: linux-generic-hwe-22.04, linux-oem-22.04a-kfocus
 Depends: ${misc:Depends}, linux-image-generic-hwe-22.04-kfocus (= ${binary:Version}), linux-headers-generic-hwe-22.04-kfocus (= ${binary:Version})
-Recommends: linux-tools-${kernel-abi-version}-generic, ubuntu-kernel-accessories
+Recommends: linux-tools-${kernel-abi-version}-generic-kfocus, ubuntu-kernel-accessories
 Description: Complete Generic Linux kernel and headers
  This package will always depend on the latest complete generic Linux kernel
  and headers.
@@ -143,7 +143,7 @@ Provides:
 Replaces: linux-generic-hwe-22.04-edge, linux-oem-22.04a-kfocus
 Conflicts: linux-generic-hwe-22.04-edge, linux-oem-22.04a-kfocus
 Depends: ${misc:Depends}, linux-image-generic-hwe-22.04-edge-kfocus (= ${binary:Version}), linux-headers-generic-hwe-22.04-edge-kfocus (= ${binary:Version})
-Recommends: linux-tools-${kernel-abi-version}-generic, ubuntu-kernel-accessories
+Recommends: linux-tools-${kernel-abi-version}-generic-kfocus, ubuntu-kernel-accessories
 Description: Complete Generic Linux kernel and headers
  This package will always depend on the latest complete generic Linux kernel
  and headers.

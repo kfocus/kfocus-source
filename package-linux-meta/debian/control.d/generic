@@ -62,7 +62,7 @@ Provides: ${test:provides-full-generic} ${test:provides-full-preferred}
 Replaces: linux-generic${variant:suffix}, linux-oem-22.04a-kfocus
 Conflicts: linux-generic${variant:suffix}, linux-oem-22.04a-kfocus
 Depends: ${misc:Depends}, linux-image-generic${variant:suffix}-kfocus (= ${binary:Version}), linux-headers-generic${variant:suffix}-kfocus (= ${binary:Version})
-Recommends: linux-tools-${kernel-abi-version}-generic, ubuntu-kernel-accessories
+Recommends: linux-tools-${kernel-abi-version}-generic-kfocus, ubuntu-kernel-accessories
 Description: Complete Generic Linux kernel and headers
  This package will always depend on the latest complete generic Linux kernel
  and headers.
