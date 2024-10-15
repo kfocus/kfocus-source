@@ -48,6 +48,8 @@ _importCommonFn () {
 ## . END _importCommonFn }
 
 ## BEGIN _startThunderboltFn {
+# The wake file manipulation turns the interface off and on.
+#
 _startThunderboltFn () {
   if ! grep -q 'thunderbolt' < <(lsmod); then
     grep -q '^XHCI.*enable' "${_acpiWakeupFile}" \
@@ -62,6 +64,8 @@ _startThunderboltFn () {
 ## . END _startThunderboltFn }
 
 ## BEGIN _stopThunderboltFn {
+# The wake file manipulation turns the interface off and on.
+#
 _stopThunderboltFn () {
   if grep -q 'thunderbolt' < <(lsmod); then
     grep -q '^XHCI.*enable' "${_acpiWakeupFile}" \
@@ -110,7 +114,7 @@ _disableThunderboltFn () {
 
 ## BEGIN _queryThunderboltFn {
 _queryThunderboltFn () {
-  declare _run_state _readlink_file _persist_state;
+  declare _run_state _readlink_file _persist_state _dmi_name _model_code;
 
   if grep -q 'thunderbolt' < <(lsmod); then
     _run_state='running';
@@ -125,8 +129,19 @@ _queryThunderboltFn () {
     _persist_state='disabled';
   fi
 
+  _model_code="$(_cm2EchoModelStrFn 'code')";
+  if [ -f "${_cm2DmiProductNameFile}" ]; then
+    _dmi_name="$(_cm2CatStripEchoFn "${_cm2DmiProductNameFile}")";
+    # Hack for m2g5p1 which has Barlow Ridge Thunderbolt 5
+    if [ "${_model_code}" = 'm2g5p' ] \
+      && [[ "${_dmi_name:-}" =~ ^X370SN.*1$ ]]; then
+        _model_code='m2g5p1';
+    fi
+  fi
+
   echo "${_run_state:-}";
   echo "${_persist_state:-}";
+  echo "${_model_code:-}";
 }
 ## . END _queryThunderboltFn }
 

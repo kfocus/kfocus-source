@@ -220,7 +220,7 @@ _handle_m2g4Fn () {
 # shellcheck disable=SC2317
 #
 _handle_m2g5Fn () {
-  declare _symlink _tgt_file;
+  declare _symlink _target_file;
 
   if [ -x "/usr/bin/deb-systemd-helper" ]; then
     deb-systemd-helper mask \
@@ -249,7 +249,6 @@ _handle_m2g5Fn () {
 
   ## Begin Add or remove symlink for m2g5p1 thunderbolt blacklist
   _symlink='/etc/default/grub.d/10_kfocus-tbt.cfg';
-  _tgt_file='';
   # Consider only if m2g5p1 system
   if [[ "${_dmiName:-}" =~ ^X370SN.*1$ ]]; then
     # Skip changing this file if it already exists
