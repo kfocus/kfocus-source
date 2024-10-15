@@ -3,7 +3,10 @@ Section:           misc
 Priority:          optional
 Maintainer:        Kubuntu Focus Team <support@kfocus.org>
 Standards-Version: 4.6.0
-Build-Depends:     debhelper-compat (=13)
+Build-Depends:     cmake,
+                   debhelper-compat (=13),
+                   qtbase5-dev,
+                   qtbase5-dev-tools
 
 Package:      kfocus-tools
 Architecture: all
@@ -116,3 +119,9 @@ Depends:      ${misc:Depends}, ${shlibs:Depends},
 Description:  Transitional Dummy Package for kfocus-power-bin
  This is a transitional dummy package.
  It can be safely removed.
+
+Package:      kfocus-tbt
+Architecture: any
+Depends:      ${misc:Depends}, ${shlibs:Depends}
+Description:  KFocus Thunderbolt control tool
+ Allows enabling and disabling Thunderbolt temporarily or permanently.

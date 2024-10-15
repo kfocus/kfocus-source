@@ -12,14 +12,30 @@ TbtCtlDialog::TbtCtlDialog(QWidget *parent)
 {
     ui->setupUi(this);
     m_engine = new TbtCtlEngine();
-    QList<bool> tbtQueryResult = m_engine->tbtQuery();
-    m_tbtEnabled = tbtQueryResult[0];
-    m_tbtPersistEnabled = tbtQueryResult[1];
-    ui->tbtEnabledCheckBox->setChecked(m_tbtEnabled);
-    ui->tbtPersistEnabledCheckBox->setChecked (m_tbtPersistEnabled);
+    m_tbtQueryResult = m_engine->tbtQuery();
+    ui->tbtEnabledCheckBox->setChecked(m_tbtQueryResult->isEnabled());
+    ui->tbtPersistEnabledCheckBox->setChecked (m_tbtQueryResult->isPersistEnabled());
+    if (m_tbtQueryResult->deviceModelCode() == "m2g5p1") {
+        ui->instructionsLabel->setText(
+            QStringLiteral("<p>This model uses the Barlow Ridge Thunderbolt 5 chip. As of ")
+            + QStringLiteral("late 2024, support for this chip is still evolving, and ")
+            + QStringLiteral("displays attached via USB-C can time-out and go ")
+            + QStringLiteral("blank after 15 seconds. Disabling Thunderbolt can fix ")
+            + QStringLiteral("this while retaining almost all other capabilities.<br></p>"));
+    } else {
+        ui->instructionsLabel->setText(
+            QStringLiteral("<p>For most systems and situations, you want Thunderbolt ")
+            + QStringLiteral("running and enabled. However, there are some situations where ")
+            + QStringLiteral("it is useful to disable Thunderbolt, either temporarily or ")
+            + QStringLiteral("permanently.<br></p>"));
+    }
+
     m_checkboxNormalPalette = ui->tbtEnabledCheckBox->palette();
     m_checkboxChangedPalette = m_checkboxNormalPalette;
     m_checkboxChangedPalette.setColor(QPalette::WindowText, QColor(0xf7, 0x94, 0x1d)); // Orange color used by KFocus
+
+    ui->tbtLogoLabel->setText("");
+    ui->tbtLogoLabel->setPixmap(QIcon::fromTheme("kfocus-tbt-symbolic").pixmap(QSize(64,64)));
 
     setOkButtonState();
 
@@ -39,8 +55,8 @@ TbtCtlDialog::~TbtCtlDialog()
 }
 
 void TbtCtlDialog::setOkButtonState() {
-    if (ui->tbtEnabledCheckBox->isChecked() == m_tbtEnabled
-        && ui->tbtPersistEnabledCheckBox->isChecked() == m_tbtPersistEnabled) {
+    if (ui->tbtEnabledCheckBox->isChecked() == m_tbtQueryResult->isEnabled()
+        && ui->tbtPersistEnabledCheckBox->isChecked() == m_tbtQueryResult->isPersistEnabled()) {
         ui->okButton->setEnabled(false);
     } else {
         ui->okButton->setEnabled(true);
@@ -48,7 +64,7 @@ void TbtCtlDialog::setOkButtonState() {
 }
 
 void TbtCtlDialog::onTbtEnabledCheckboxChanged() {
-    if (ui->tbtEnabledCheckBox->isChecked() != m_tbtEnabled) {
+    if (ui->tbtEnabledCheckBox->isChecked() != m_tbtQueryResult->isEnabled()) {
         ui->tbtEnabledCheckBox->setPalette(m_checkboxChangedPalette);
     } else {
         ui->tbtEnabledCheckBox->setPalette(m_checkboxNormalPalette);
@@ -57,7 +73,7 @@ void TbtCtlDialog::onTbtEnabledCheckboxChanged() {
 }
 
 void TbtCtlDialog::onTbtPersistEnabledCheckboxChanged() {
-    if (ui->tbtPersistEnabledCheckBox->isChecked() != m_tbtPersistEnabled) {
+    if (ui->tbtPersistEnabledCheckBox->isChecked() != m_tbtQueryResult->isPersistEnabled()) {
         ui->tbtPersistEnabledCheckBox->setPalette(m_checkboxChangedPalette);
     } else {
         ui->tbtPersistEnabledCheckBox->setPalette(m_checkboxNormalPalette);
@@ -68,7 +84,7 @@ void TbtCtlDialog::onTbtPersistEnabledCheckboxChanged() {
 void TbtCtlDialog::onEnableInfoButtonClicked() {
     QMessageBox msgBox;
     msgBox.setIcon(QMessageBox::Information);
-    msgBox.setText("Enables or disables Thunderbolt in this session.");
+    msgBox.setText("Check this to load the Thunderbolt driver now.<br>Uncheck to unload the driver now.");
     msgBox.setWindowTitle("KFocus Thunderbolt Control");
     msgBox.exec();
 }
@@ -76,7 +92,7 @@ void TbtCtlDialog::onEnableInfoButtonClicked() {
 void TbtCtlDialog::onEnablePersistInfoButtonClicked() {
     QMessageBox msgBox;
     msgBox.setIcon(QMessageBox::Information);
-    msgBox.setText("Enables or disables Thunderbolt for the next time the system is booted.");
+    msgBox.setText("Check this to load the Thunderbolt driver at boot.<br>Uncheck to prevent the driver from loading at boot.");
     msgBox.setWindowTitle("KFocus Thunderbolt Control");
     msgBox.exec();
 }

@@ -11,6 +11,7 @@ class TbtCtlDialog;
 QT_END_NAMESPACE
 
 class TbtCtlEngine;
+class TbtQueryResult;
 
 class TbtCtlDialog : public QDialog
 {
@@ -23,8 +24,7 @@ public:
 private:
     Ui::TbtCtlDialog *ui;
     TbtCtlEngine *m_engine;
-    bool m_tbtEnabled;
-    bool m_tbtPersistEnabled;
+    TbtQueryResult *m_tbtQueryResult;
     QPalette m_checkboxNormalPalette;
     QPalette m_checkboxChangedPalette;
 

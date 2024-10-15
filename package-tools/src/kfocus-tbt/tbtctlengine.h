@@ -1,6 +1,8 @@
 #ifndef TBTCTLENGINE_H
 #define TBTCTLENGINE_H
 
+#include "tbtqueryresult.h"
+
 #include <QObject>
 #include <QString>
 #include <QList>
@@ -11,7 +13,7 @@ class TbtCtlEngine : public QObject
 public:
     explicit TbtCtlEngine(QObject *parent = nullptr);
     void tbtSetState(bool enabled, bool persistEnabled);
-    QList<bool> tbtQuery();
+    TbtQueryResult *tbtQuery();
 
 signals:
     void stateSetSuccess();

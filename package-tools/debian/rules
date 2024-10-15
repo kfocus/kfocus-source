@@ -2,3 +2,13 @@
 
 %:
 	dh $@
+
+override_dh_auto_build:
+	mkdir src/kfocus-tbt/build
+	cmake -S src/kfocus-tbt -B src/kfocus-tbt/build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=$(CURDIR)/debian/kfocus-tbt/usr/
+	(cd src/kfocus-tbt/build && $(MAKE))
+	dh_auto_build
+
+override_dh_auto_install:
+	(cd src/kfocus-tbt/build && $(MAKE) install)
+	dh_auto_install

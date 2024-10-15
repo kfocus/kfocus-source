@@ -27,8 +27,9 @@ void TbtCtlEngine::tbtSetState(bool enabled, bool persistEnabled) {
     emit stateSetSuccess();
 }
 
-QList<bool> TbtCtlEngine::tbtQuery() {
-    QList<bool> result;
+TbtQueryResult *TbtCtlEngine::tbtQuery() {
+    TbtQueryResult *result = new TbtQueryResult();
+
     QProcess proc;
     proc.setProgram("/usr/bin/pkexec");
     proc.setArguments(QStringList() << m_tbtSetExe << "query");
@@ -39,22 +40,23 @@ QList<bool> TbtCtlEngine::tbtQuery() {
     QString outputStr = QString::fromUtf8(outputBytes);
     QStringList output = outputStr.split('\n', Qt::SkipEmptyParts);
 
-    if (output.length() != 2) {
-        result << false << false;
+    if (output.length() != 3) {
         return result;
     }
 
     if (output[0] == "running") {
-        result << true;
+        result->setIsEnabled(true);
     } else {
-        result << false;
+        result->setIsEnabled(false);
     }
 
     if (output[1] == "enabled") {
-        result << true;
+        result->setIsPersistEnabled(true);
     } else {
-        result << false;
+        result->setIsPersistEnabled(false);
     }
+
+    result->setDeviceModelCode(output[2]);
 
     return result;
 }
