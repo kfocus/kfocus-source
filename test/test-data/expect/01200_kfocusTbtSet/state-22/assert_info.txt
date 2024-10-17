@@ -1,0 +1,8 @@
+22 / 27
+  assert_line: m2g5p1|start
+_mainFn start
+  lsmod # output ||
+  _disableXhciFn: XHCI	  S3	*disabled  pci:0000:00:14.0
+  modprobe thunderbolt
+  Mock lsmod set to |thunderbolt|
+  _enableXhciFn: XHCI	  S3	*enabled   pci:0000:00:14.0

@@ -47,18 +47,34 @@ _importCommonFn () {
 }
 ## . END _importCommonFn }
 
-## BEGIN _startThunderboltFn {
-# The wake file manipulation turns the interface off and on.
-#
-_startThunderboltFn () {
-  if ! grep -q 'thunderbolt' < <(lsmod); then
+## BEGIN _disableXhciFn {
+_disableXhciFn () {
+  if [ -e "${_acpiWakeupFile}" ]; then
     grep -q '^XHCI.*enable' "${_acpiWakeupFile}" \
       && echo 'XHCI' > "${_acpiWakeupFile}";
     sleep 1;
-    modprobe thunderbolt;
+  fi
+}
+## . END _disableXhciFn }
+
+## BEGIN _enableXhciFn {
+_enableXhciFn () {
+  if [ -e "${_acpiWakeupFile}" ]; then
     sleep 1;
     grep -q '^XHCI.*disable' "${_acpiWakeupFile}" \
       && echo 'XHCI' > "${_acpiWakeupFile}";
+  fi
+}
+## . END _enableXhciFn }
+
+## BEGIN _startThunderboltFn {
+# The acpiWakeupFile manipulation turns the interface off and on.
+#
+_startThunderboltFn () {
+  if ! grep -q 'thunderbolt' < <(lsmod); then
+    _disableXhciFn;
+    modprobe thunderbolt;
+    _enableXhciFn;
   fi
 }
 ## . END _startThunderboltFn }
@@ -68,23 +84,35 @@ _startThunderboltFn () {
 #
 _stopThunderboltFn () {
   if grep -q 'thunderbolt' < <(lsmod); then
-    grep -q '^XHCI.*enable' "${_acpiWakeupFile}" \
-      && echo 'XHCI' > "${_acpiWakeupFile}";
-    sleep 1;
+    _disableXhciFn;
     modprobe -r thunderbolt;
-    sleep 1;
-    grep -q '^XHCI.*disable' "${_acpiWakeupFile}" \
-      && echo 'XHCI' > "${_acpiWakeupFile}";
+    _enableXhciFn;
   fi
 }
 ## . END _stopThunderboltFn }
+
+## BEGIN _getModelCodeFn {
+_getModelCodeFn () {
+  declare _model_code _dmi_name;
+  _model_code="$(_cm2EchoModelStrFn 'code')";
+  if [ -f "${_cm2DmiProductNameFile}" ]; then
+    _dmi_name="$(_cm2CatStripEchoFn "${_cm2DmiProductNameFile}")";
+    # Hack for m2g5p1 which has Barlow Ridge Thunderbolt 5
+    if [ "${_model_code}" = 'm2g5p' ] \
+      && [[ "${_dmi_name:-}" =~ ^X370SN.*1$ ]]; then
+        _model_code='m2g5p1';
+    fi
+  fi
+  echo "${_model_code:-}";
+}
+## . END _getModelCodeFn }
 
 ## BEGIN _wipeThunderboltPersistFn {
 _wipeThunderboltPersistFn () {
   if [ -f "${_tbtSymlink}" ] || [ -h "${_tbtSymlink}" ]; then
     rm "${_tbtSymlink}";
   elif [ -e "${_tbtSymlink}" ]; then
-    _cm2WarnStrFn 'Thunderbolt disable location occupied and is not a file or symlink!';
+    _cm2WarnStrFn 'Did not remove kernel param path: not a file or symlink';
     return 1;
   fi
 }
@@ -94,7 +122,7 @@ _wipeThunderboltPersistFn () {
 _enableThunderboltFn () {
   _wipeThunderboltPersistFn || return;
   ln -s "${_tbtEnableFile}" "${_tbtSymlink}" || {
-    _cm2WarnStrFn 'Failed to install Thunderbolt enable file!';
+    _cm2WarnStrFn 'Could not create kernel param enable symlink';
     return 1;
   }
   update-grub;
@@ -105,7 +133,7 @@ _enableThunderboltFn () {
 _disableThunderboltFn () {
   _wipeThunderboltPersistFn || return;
   ln -s "${_tbtDisableFile}" "${_tbtSymlink}" || {
-    _cm2WarnStrFn 'Failed to install Thunderbolt disable file!';
+    _cm2WarnStrFn 'Could not create kernel param disable symlink';
     return 1;
   }
   update-grub;
@@ -114,7 +142,7 @@ _disableThunderboltFn () {
 
 ## BEGIN _queryThunderboltFn {
 _queryThunderboltFn () {
-  declare _run_state _readlink_file _persist_state _dmi_name _model_code;
+  declare _run_state _readlink_file _persist_state;
 
   if grep -q 'thunderbolt' < <(lsmod); then
     _run_state='running';
@@ -123,38 +151,36 @@ _queryThunderboltFn () {
   fi
 
   _readlink_file="$(readlink -fn "${_tbtSymlink}" )";
-  if [ "${_readlink_file}" = "${_tbtEnableFile}" ]; then
+  if [ "${_readlink_file}"   = "${_tbtSymlink}" ] \
+    || [ "${_readlink_file}" = "${_tbtEnableFile}" ]; then
     _persist_state='enabled';
   else
     _persist_state='disabled';
   fi
 
-  _model_code="$(_cm2EchoModelStrFn 'code')";
-  if [ -f "${_cm2DmiProductNameFile}" ]; then
-    _dmi_name="$(_cm2CatStripEchoFn "${_cm2DmiProductNameFile}")";
-    # Hack for m2g5p1 which has Barlow Ridge Thunderbolt 5
-    if [ "${_model_code}" = 'm2g5p' ] \
-      && [[ "${_dmi_name:-}" =~ ^X370SN.*1$ ]]; then
-        _model_code='m2g5p1';
-    fi
-  fi
-
   echo "${_run_state:-}";
   echo "${_persist_state:-}";
-  echo "${_model_code:-}";
+  _getModelCodeFn;
 }
 ## . END _queryThunderboltFn }
 
 ## BEGIN _mainFn {
 _mainFn () {
-  # TODO Bail out if this isn't an m2g5p1
-  declare _arg;
+  declare _arg _conf_dir;
 
   _arg="${1:-}";
   if [ -z "${_arg}" ]; then
     _cm2WarnStrFn 'No argument provided.';
     return 1;
   fi
+
+  _conf_dir="${_rootDir}/usr/lib/kfocus/conf";
+  _tbtEnableFile="${_conf_dir}";
+  _tbtEnableFile+='/m2g5p1-etc_default_grub.d_10_kfocus-tbt-default.cfg';
+  _tbtDisableFile="${_conf_dir}";
+  _tbtDisableFile+='/m2g5p1-etc_default_grub.d_10_kfocus-tbt-blacklist.cfg';
+  _tbtSymlink="${_rootDir}/etc/default/grub.d/10_kfocus-tbt.cfg";
+  _acpiWakeupFile="${_rootDir}/proc/acpi/wakeup";
 
   case "${_arg}" in
     'start'  ) _startThunderboltFn   ;;
@@ -166,16 +192,12 @@ _mainFn () {
 }
 ## . END _mainFn }
 
-## BEGIN Declare and assign global vars
-## {
-declare _binName _binDir _baseDir _baseName \
+## BEGIN Declare and assign default global vars {
+declare _rootDir _binName _binDir _baseDir _baseName \
   _tbtEnableFile _tbtDisableFile _tbtSymlink _acpiWakeupFile;
 
-_tbtEnableFile='/usr/lib/kfocus/conf/m2g5p1-etc_default_grub.d_10_kfocus-tbt-default.cfg';
-_tbtDisableFile='/usr/lib/kfocus/conf/m2g5p1-etc_default_grub.d_10_kfocus-tbt-blacklist.cfg';
-_tbtSymlink='/etc/default/grub.d/10_kfocus-tbt.cfg';
-_acpiWakeupFile='/proc/acpi/wakeup';
-## . END Declare and assign global vars }
+_rootDir='';
+## . END Declare and assign default global vars }
 
 ## BEGIN Run mainFn when script is NOT sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
