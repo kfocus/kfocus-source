@@ -142,6 +142,18 @@ _exitEMERG ()  { _exitWithCodeFn  "${_rb2EMERG}"  "$@"; }
 ## . END Define error and exit handling }
 
 ## BEGIN _promptAllUsersFn {
+# Summary   : _promptAllUsersFn _mode_str _msg_str
+# Purpose   : Displays a graphical message to all users with an active
+#             graphical login
+# Example   : _promptAllUsersFn 'error' 'An error has occurred!'
+# Arguments :
+#   _mode_str - What kind of message to display, see package-main ->
+#     kfocus-focusrx-dbus-dispatch for possible values
+#   _msg_str - The message to display to the user.
+# Globals   : none
+# Outputs   : none
+# Returns   : none
+#
 # See https://stackoverflow.com/a/49533938
 _promptAllUsersFn () {
   declare _mode _msg _xserver_id _user_name;
@@ -179,6 +191,15 @@ _checkRootFn () {
 ## . END _checkRootFn }
 
 ## BEGIN _clearRestoreFn {
+# Summary   : _clearRestoreFn
+# Purpose   : Deletes a flag file indicating that the system has rebooted
+#             after a successful snapshot restore
+# Example   : clearRestoreFn
+# Arguments : none
+# Globals   : none
+# Outputs   : none
+# Returns   : none
+#
 _clearRestoreFn () {
   _checkBtrfsStatusSetUpFn;
   # TODO: Through a serious error here if cannot remove
@@ -188,6 +209,19 @@ _clearRestoreFn () {
 ## . END _clearRestoreFn }
 
 ## BEGIN _readMetadbFn {
+# Summary   : _readMetadbFn _group_str _key_str
+# Purpose   : Reads a value from the kfocus-rollback snapshot metadata
+#             database (metadb).
+# Example   : _readMetadbFn '@1234' 'name'
+# Arguments :
+#   _group_str - Which data group should the key be searched for in.
+#   _key_str - The key associated with the desired data.
+# Globals   : _snapshotMetaDb
+# Outputs   : A string representing the desired data. Note that for data
+#             representing user-defined strings, this will always be
+#             base64-encoded.
+# Returns   : 0 on success, 1 on faliure
+#
 _readMetadbFn () {
   # We intentionally do not check the BTRFS state here as _checkBtrfsStatusFn
   # has to read the metadb.
@@ -228,6 +262,18 @@ _readMetadbFn () {
 ## . END _readMetadbFn }
 
 ## BEGIN _writeMetadbFn {
+# Summary   : _writeMetadbFn _group_str _key_str _val_str
+# Purpose   : Writes a value to or deletes a value from the kfocus-rollback
+#             snapshot metadata database (metadb).
+# Example   : _writeMetadbFn '@1234' 'name' 'bmV3IG5hbWU='
+# Arguments :
+#   _group_str - Which data group should the key be placed in.
+#   _key_str - The key to associate with the provided data.
+#   _val_str - The data to be stored. If blank, the specified key is deleted.
+# Globals   : _snapshotMetaDb
+# Outputs   : none
+# Returns   : 0 on success, 1 on faliure
+#
 _writeMetadbFn () {
   declare _group_str _key_str _val_str;
 
@@ -275,11 +321,13 @@ _writeMetadbFn () {
 ## . END _writeMetadbFn }
 
 ## BEGIN _getManualSwitchStateBackendFn {
-# Purpose: Reads the manual switch state from the snapshot metadb. This is
-# only used internally. It is split from _getManualSwitchStateFn because
-# _checkBtrfsStatusFn needs to get the manual switch state, but external calls
-# to this function need to call _checkBtrfsStatusSetUpFn, which will not
-# return accurate results at that point.
+# Summary   : _getManualSwitchStateBackendFn
+# Purpose   : Reads the manual switch state from the snapshot metadb. This is
+#             only used internally. It is split from _getManualSwitchStateFn
+#             because _checkBtrfsStatusFn needs to get the manual switch
+#             state, but external calls to this function need to call
+#             _checkBtrfsStatusSetUpFn, which will not return accurate results
+#             at that point.
 #
 _getManualSwitchStateBackendFn () {
   declare _manual_state_str;
