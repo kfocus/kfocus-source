@@ -1,7 +1,23 @@
-07 / 27
-  assert_line: m2g5|query
-_mainFn query
-  lsmod # output ||
-  #> stopped
-  #> enabled
-  #> m2g5
+_mainFn stop # (07 / 14 m2g5p1)
+  MOCK lsmod # output ||
+----
+_mainFn 'query'
+  MOCK lsmod # output ||
+  Expected Query Found |stopped,enabled,m2g5p1,|
+----
+
+PostOp-Tree:
+├── assert_info.txt
+├── etc
+│   └── default
+│       └── grub.d
+│           └── 10_kfocus-tbt.cfg -> /usr/lib/kfocus/conf/m2g5p1-etc_default_grub.d_10_kfocus-tbt-default.cfg
+├── proc
+│   └── acpi
+│       └── wakeup
+└── usr
+    └── lib
+        └── kfocus
+            └── conf
+                ├── m2g5p1-etc_default_grub.d_10_kfocus-tbt-blacklist.cfg
+                └── m2g5p1-etc_default_grub.d_10_kfocus-tbt-default.cfg

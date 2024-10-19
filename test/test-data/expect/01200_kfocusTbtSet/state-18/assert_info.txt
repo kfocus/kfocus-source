@@ -1,8 +1,0 @@
-18 / 27
-  assert_line: ir1Xg2|stop
-_mainFn stop
-  lsmod # output |thunderbolt|
-  _disableXhciFn: XHCI	  S3	*disabled  pci:0000:00:14.0
-  modprobe -r thunderbolt
-  Mock lsmod set to ||
-  _enableXhciFn: XHCI	  S3	*enabled   pci:0000:00:14.0

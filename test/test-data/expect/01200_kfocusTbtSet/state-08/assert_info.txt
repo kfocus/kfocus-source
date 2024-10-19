@@ -1,8 +1,23 @@
-08 / 27
-  assert_line: m2g5|start
-_mainFn start
-  lsmod # output ||
-  _disableXhciFn: XHCI	  S3	*disabled  pci:0000:00:14.0
-  modprobe thunderbolt
-  Mock lsmod set to |thunderbolt|
-  _enableXhciFn: XHCI	  S3	*enabled   pci:0000:00:14.0
+_mainFn stop # (08 / 14 m2g5p1)
+  MOCK lsmod # output ||
+----
+_mainFn 'query'
+  MOCK lsmod # output ||
+  Expected Query Found |stopped,enabled,m2g5p1,|
+----
+
+PostOp-Tree:
+├── assert_info.txt
+├── etc
+│   └── default
+│       └── grub.d
+│           └── 10_kfocus-tbt.cfg -> /usr/lib/kfocus/conf/m2g5p1-etc_default_grub.d_10_kfocus-tbt-default.cfg
+├── proc
+│   └── acpi
+│       └── wakeup
+└── usr
+    └── lib
+        └── kfocus
+            └── conf
+                ├── m2g5p1-etc_default_grub.d_10_kfocus-tbt-blacklist.cfg
+                └── m2g5p1-etc_default_grub.d_10_kfocus-tbt-default.cfg

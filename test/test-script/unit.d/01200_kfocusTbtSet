@@ -21,12 +21,12 @@ _overwriteWithMocksFn () {
   lsmod () {
     declare _lsmod_state_str;
     _lsmod_state_str="$(cat "${_lsmodStateFile}")";
-    echo "  lsmod # output |${_lsmod_state_str}|" >> "${_assertInfoFile}";
+    echo "  MOCK lsmod # output |${_lsmod_state_str}|" >> "${_assertInfoFile}";
     echo "${_lsmod_state_str}";
   }
   modprobe () {
     declare _lsmod_state_str;
-    echo "  modprobe ${@}" >> "${_assertInfoFile}";
+    echo "  MOCK modprobe $*" >> "${_assertInfoFile}";
 
     if [ "${*}" = 'thunderbolt' ]; then
       _lsmod_state_str='thunderbolt';
@@ -34,18 +34,20 @@ _overwriteWithMocksFn () {
       _lsmod_state_str='';
     fi
 
-    echo "  Mock lsmod set to |${_lsmod_state_str}|" >> "${_assertInfoFile}";
     echo -n "${_lsmod_state_str}" > "${_lsmodStateFile}";
+    echo "  MOCK lsmod set to |${_lsmod_state_str}|" >> "${_assertInfoFile}";
   }
 
+  update-grub () {
+    echo "  MOCK update-grub $*" >> "${_assertInfoFile}";
+  }
   # _modelCode is set from the assert table
   _getModelCodeFn () { echo "${_modelCode}"; }
   _disableXhciFn () {
     if [ -e "${_acpiWakeupFile}" ]; then
-      sed -i 's/^\(XHCI\t.*\t\)\*enabled /\1\*disabled/' \
-        "${_acpiWakeupFile}";
+      sed -i 's/^\(XHCI\t.*\t\)\*enabled /\1\*disabled/' "${_acpiWakeupFile}";
     fi
-    echo "  _disableXhciFn: $(grep -E '^XHCI' "${_acpiWakeupFile}")" \
+    echo "  MOCK _disableXhciFn: $(grep -E '^XHCI' "${_acpiWakeupFile}")" \
       >> "${_assertInfoFile}";
   }
   ## . END _disableXhciFn }
@@ -56,7 +58,7 @@ _overwriteWithMocksFn () {
       sed -i 's/^\(XHCI\t.*\t\)\*disabled/\1\*enabled /' \
         "${_acpiWakeupFile}";
     fi
-    echo "  _enableXhciFn: $(grep -E '^XHCI' "${_acpiWakeupFile}")" \
+    echo "  MOCK  _enableXhciFn: $(grep -E '^XHCI' "${_acpiWakeupFile}")" \
       >> "${_assertInfoFile}";
   }
   ## . END _enableXhciFn }
@@ -69,7 +71,8 @@ _overwriteWithMocksFn () {
 #   reset here; instead they are re-source after every test in runUnitTests
 #   (the test harness). See more notes in 00900.
 _unsetMocksFn () {
-  unset lsmod modprobe _getModelCodeFn _disableXhciFn _enableXhciFn;
+  unset lsmod modprobe update-grub \
+    _getModelCodeFn _disableXhciFn _enableXhciFn;
 }
 ## . END _unsetMocksFn }
 
@@ -82,7 +85,8 @@ echo -n 'thunderbolt' > "${_lsmodStateFile}";
 # This MUST be called '_runTestFn' for use by the _runUnitTests
 _runTestFn () {
   declare _assert_table _fail_count _assert_count _assert_idx \
-    _assert_line _bit_list _action_str _count_str _expect_subdir;
+    _assert_line _bit_list _action_str _count_str _expect_subdir \
+    _pre_tree _post_tree _post_diff_str _expect_query_str _found_query_str;
 
   # Clear out run dir, copy init dir, check expect dir
   if ! _t00ClearRunDirFn; then return 1; fi
@@ -94,23 +98,21 @@ _runTestFn () {
 
   # Assert table: '_modelCode|action_str'
   _assert_table=(
-    'initial'
-    'xeg1|start'     'xeg1|query'
-    'xeg1|stop'      'xeg1|query'
+    '|xeg1|           running,enabled,xeg1,    '
+    'start|xeg1|      running,enabled,xeg1,    '
+    'stop|xeg1|       stopped,enabled,xeg1,    '
+    'disable|xeg1|    stopped,disabled,xeg1,   '
 
-    'm2g5|stop'      'm2g5|query'
-    'm2g5|start'     'm2g5|query'
-    'm2g5|stop'      'm2g5|query'
-
-    'ir1Xg2|start'   'ir1Xg2|query'
-    'ir1Xg2|enable'  'ir1Xg2|query'
-    'ir1Xg2|disable' 'ir1Xg2|query'
-    'ir1Xg2|stop'    'ir1Xg2|query'
-
-    'm2g5p1|stop'    'm2g5p1|query'
-    'm2g5p1|start'   'm2g5p1|query'
-    'm2g5p1|disable' 'm2g5p1|query'
-    'm2g5p1|enable'  'm2g5p1|query'
+    'disable|m2g5p1|  stopped,disabled,m2g5p1, '
+    'enable|m2g5p1|   stopped,enabled,m2g5p1,  '
+    'stop|m2g5p1|     stopped,enabled,m2g5p1,  '
+    'stop|m2g5p1|     stopped,enabled,m2g5p1,  '
+    'start|m2g5p1|    running,enabled,m2g5p1,  '
+    'start|m2g5p1|    running,enabled,m2g5p1,  '
+    'disable|m2g5p1|  running,disabled,m2g5p1, '
+    'disable|m2g5p1|  running,disabled,m2g5p1, '
+    'enable|m2g5p1|   running,enabled,m2g5p1,  '
+    'enable|m2g5p1|   running,enabled,m2g5p1,  '
   );
 
   ## Begin Iterate through assertions {
@@ -119,24 +121,54 @@ _runTestFn () {
   _assert_idx=1;
 
   for _assert_line in "${_assert_table[@]}"; do
-    # shellcheck disable=SC2154
+    # Parse assert line to create header info 
     _count_str="$(_t00MakeCountStrFn "${_assert_idx}" "${_assert_count}")";
-
-    # Calculate expect dir and create if needed
-    printf -v _expect_subdir '%s/state-%02d' "${_t00ExpectDir}" "${_assert_idx}";
     _assertInfoFile="${_t00RunDir}/assert_info.txt";
-    echo -e "${_count_str}\n  assert_line: ${_assert_line}" > "${_assertInfoFile}";
-
-    # Run action and record output
     readarray -d'|' -t _bit_list < <(echo -n "${_assert_line}");
-    _modelCode="${_bit_list[0]:-}";
-    _action_str="${_bit_list[1]:-}";
-    if [ "${_action_str}" ]; then
-      echo -e "_mainFn ${_action_str}" >> "${_assertInfoFile}";
-      _mainFn "${_action_str}" | sed 's/^/  #> /' >> "${_assertInfoFile}";
-    fi
+    _action_str="${_bit_list[0]:-}";
+    _modelCode="${_bit_list[1]:-}";
+    _expect_query_str="$(xargs <<< "${_bit_list[2]:-}")";
 
-    # Create expect subdir if not found
+    # Grab a snapshot of the tree prior to any action
+    # shellcheck disable=SC2154
+    _pre_tree="$(tree "${_t00RunDir}"|head -n-2|tail -n+2)";
+
+    # Write header and any action output
+    { echo -n "_mainFn ${_action_str} ";
+      echo "# (${_count_str} ${_modelCode})";
+    } > "${_assertInfoFile}";
+
+    [ -n "${_action_str}" ] && _mainFn "${_action_str}" \
+      | sed 's/^/  #> /' >> "${_assertInfoFile}";
+
+    { echo '----';
+      echo "_mainFn 'query'";
+      _found_query_str="$(_mainFn 'query' | tr '\n' ',')";
+      if [ "${_found_query_str}" = "${_expect_query_str}" ]; then
+        echo "  Expected Query Found |${_found_query_str}|";
+      else
+        echo "  ERROR: Unexpected Query found!";
+        echo "     ${_found_query_str}";
+        echo "  != ${_expect_query_str}";
+        (( _fail_count++ ));
+      fi
+      echo '----';
+    } >> "${_assertInfoFile}";
+
+    # Add diff between pre- and post-op trees
+    _post_tree="$(tree "${_t00RunDir}"|head -n-2|tail -n+2)";
+    _post_diff_str="$(
+      diff -U0 <(echo -n "${_pre_tree}") <(echo -n "${_post_tree}");
+    )";
+    { echo -e "\nPostOp-Tree:\n${_post_tree}";
+      if [ -n "${_post_diff_str:-}" ]; then
+        echo -e "\nDiff with PreOP-Tree:";
+        echo "${_post_diff_str}" | grep -vE '^(---|\+\+\+) ';
+      fi
+    } | sed "s|${_t00RunDir}||g" >> "${_assertInfoFile}";
+
+    # Cacluate expect_subdir, create if not found
+    printf -v _expect_subdir '%s/state-%02d' "${_t00ExpectDir}" "${_assert_idx}";
     if ! [ -d "${_expect_subdir}" ]; then
       mkdir -p "${_expect_subdir}" || {
         _cm2EchoFn "  fail: ${_count_str} ${_expect_subdir}";
@@ -153,7 +185,6 @@ _runTestFn () {
       _cm2EchoFn "  Please compare directories ....";
       meld "${_expect_subdir}" "${_t00RunDir}";
     fi
-
     (( _assert_idx++ ));
   done
   ## End Iterate through assertions }
