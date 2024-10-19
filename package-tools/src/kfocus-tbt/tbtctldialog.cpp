@@ -35,7 +35,7 @@ TbtCtlDialog::TbtCtlDialog(QWidget *parent)
     m_checkboxChangedPalette.setColor(QPalette::WindowText, QColor(0xf7, 0x94, 0x1d)); // Orange color used by KFocus
 
     ui->tbtLogoLabel->setText("");
-    ui->tbtLogoLabel->setPixmap(QIcon::fromTheme("kfocus-tbt-symbolic").pixmap(QSize(64,64)));
+    ui->tbtLogoLabel->setPixmap(QIcon::fromTheme("kfocus-tbt-symbolic").pixmap(QSize(78,78)));
 
     setOkButtonState();
 
