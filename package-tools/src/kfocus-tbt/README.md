@@ -11,3 +11,8 @@ cd kfocus-tbt/build
 build
 make
 ```
+
+old: 442 x 404
+tgt: 480 x 480
+
+
