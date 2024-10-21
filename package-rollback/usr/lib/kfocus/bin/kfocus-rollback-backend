@@ -153,6 +153,7 @@ _exitEMERG ()  { _exitWithCodeFn  "${_rb2EMERG}"  "$@"; }
 # Globals   : none
 # Outputs   : none
 # Returns   : none
+# Throws    : none
 #
 # See https://stackoverflow.com/a/49533938
 _promptAllUsersFn () {
@@ -199,6 +200,7 @@ _checkRootFn () {
 # Globals   : none
 # Outputs   : none
 # Returns   : none
+# Throws    : _NOTICE - _checkBtrfsStatusSetUp check failed.
 #
 _clearRestoreFn () {
   _checkBtrfsStatusSetUpFn;
@@ -221,6 +223,7 @@ _clearRestoreFn () {
 #             representing user-defined strings, this will always be
 #             base64-encoded.
 # Returns   : 0 on success, 1 on faliure
+# Throws    : none
 #
 _readMetadbFn () {
   # We intentionally do not check the BTRFS state here as _checkBtrfsStatusFn
@@ -273,6 +276,7 @@ _readMetadbFn () {
 # Globals   : _snapshotMetaDb
 # Outputs   : none
 # Returns   : 0 on success, 1 on faliure
+# Throws    : none
 #
 _writeMetadbFn () {
   declare _group_str _key_str _val_str;
@@ -327,7 +331,7 @@ _writeMetadbFn () {
 #             because _checkBtrfsStatusFn needs to get the manual switch
 #             state, but external calls to this function need to call
 #             _checkBtrfsStatusSetUpFn, which will not return accurate results
-#             at that point.
+#             at that point. See _getManualSwitchStateFn for more info.
 #
 _getManualSwitchStateBackendFn () {
   declare _manual_state_str;
@@ -348,8 +352,19 @@ _getManualSwitchStateBackendFn () {
 ## . END _getManualSwitchStateBackendFn }
 
 ## BEGIN _getManualSwitchStateFn {
-# Purpose: Wraps _getManualSwitchStateBackendFn for external use by adding a
-# BTRFS status check to it.
+# Summary   : _getManualSwitchStateFn
+# Purpose   : Reads the manual switch state from the snapshot metadb. This
+#             value indicates whether kfocus-rollback is taking automatic
+#             snapshots or not.
+# Example   : _getManualSwitchStateFn
+# Arguments : none
+# Globals   : _snapshotMetaDb
+# Outputs   :
+#   If automatic snapshotting is enabled, outputs 'AUTO'.
+#   If automatic snapshotting is NOT enabled, outputs 'MANUAL'.
+# Returns   : none
+# Throws    : _NOTICE - _checkBtrfsStatusSetUpFn check failed.
+#
 _getManualSwitchStateFn () {
   _checkBtrfsStatusSetUpFn;
   _getManualSwitchStateBackendFn;
@@ -357,11 +372,27 @@ _getManualSwitchStateFn () {
 ## . END _getManualSwitchStateFn }
 
 ## BEGIN _setManualSwitchStateFn {
+# Summary   : _setManualSwitchStateFn mode
+# Purpose   : Sets the manual switch state in the snapshot metadb. This is
+#             used to turn automatic snapshots on or off.
+# Example   : _setManualSwitchStateFn 'auto'
+# Arguments :
+#   mode - One of 'auto' or 'manual'. Sets the manual switch state to the
+#     desired value. Note that this MUST be passed in as a *lowercase* string.
+# Globals   : _snapshotMetaDb
+# Outputs   : none
+# Returns   : none
+# Throws    :
+#   _NOTICE - _checkBtrfsStatusSetUpFn or _checkRootFn check failed.
+#   _ERR - No argument provided, invalid argument provided, or the specified
+#     switch state is the same as the current switch state.
+#
 _setManualSwitchStateFn () {
   declare _state_str _current_state_str;
 
   _checkBtrfsStatusSetUpFn;
-  _checkRootFn;
+  _checkRootFn \
+    || _exitNOTICE 'Setting manual switch state requires root privileges.';
 
   # Get new and current switch states
   _state_str="${1:-}";
@@ -419,6 +450,29 @@ _getMainFragReportFn () {
 ## . END BTRFS maintenance helper functions }
 
 ## BEGIN _checkBtrfsStatusFn {
+# Summary   : _checkBtrfsStatusFn
+# Purpose   : Determines the state of the system's BTRFS setup and outputs an
+#             easily manageable code corresponding to the BTRFS status. This
+#             is mainly used for determining whether the system is able to
+#             use rollback snapshots, and whether automatic snapshotting is
+#             enabled.
+# Example   : _checkBtrfsStatusFn
+# Arguments : none
+# Globals   : _btrfsStatus
+# Outputs   :
+#   'UNSUPPORTED' - the system does not support rollback snapshots.
+#   'SUPPORTED, MANUAL' - the system supports rollback snapshots. Do NOT take
+#     automatic snapshots.
+#   'SUPPORTED, AUTO' - the system supports rollback snapshots. Take automatic
+#     snapshots.
+#   'SUPPORTED, NOT SET UP' - the system can support rollback snapshots, but
+#     it has not yet gone through the initial setup process.
+#   'INCONSISTENT' - the system supported rollback snapshots at one point, but
+#     is damaged and cannot support them now. This should only ever happen if
+#     the disk becomes corrupted or the user does something wrong.
+# Returns   : none
+# Throws    : none
+#
 _checkBtrfsStatusFn () {
   declare _main_fs _boot_fs _main_subvols_str _boot_subvols_str;
 
@@ -492,6 +546,20 @@ _checkBtrfsStatusFn () {
 ## . END _checkBtrfsStatusFn }
 
 ## BEGIN _checkBtrfsStatusSetUpFn {
+# Summary   : _checkBtrfsStatusSetUpFn
+# Purpose   : Ensures that the BTRFS status is either 'SUPPORTED, AUTO' or
+#             'SUPPORTED, MANUAL'. Exits the script immediately if not. This
+#             function will only behave as intended if _checkBtrfsStatusFn is
+#             called first.
+# Example   : _checkBtrfsStatusSetUpFn
+# Arguments : none
+# Globals   : _btrfsStatus
+# Outputs   : none
+# Returns   : none
+# Throws    :
+#   _NOTICE - The BTRFS status is not 'SUPPORTED, AUTO' or
+#     'SUPPORTED, MANUAL'.
+#
 _checkBtrfsStatusSetUpFn () {
   if [ "${_btrfsStatus}" != 'SUPPORTED, AUTO' ] \
     && [ "${_btrfsStatus}" != 'SUPPORTED, MANUAL' ]; then
@@ -530,6 +598,22 @@ _getBootMinUnallocFn () {
   # Return number of bytes in 1 GiB
   echo 1073741824;
 }
+
+## BEGIN _checkMainUnallocSpaceFn {
+# Summary   : _checkMainUnallocSpaceFn
+# Purpose   : Ensures that the amount of unallocated space on the main
+#             filesystem is greater than a minimum threshold. Exits the script
+#             and displays a warning to all graphically logged-in users if the
+#             check fails.
+# Example   : _checkMainUnallocSpaceFn
+# Arguments : none
+# Globals   : _lowDiskMsg
+# Outputs   : none
+# Returns   : none
+# Throws    :
+#   _NOTICE - _checkBtrfsStatusSetUpFn check failed.
+#   _ERR - Main unallocated space is low.
+#
 _checkMainUnallocSpaceFn () {
   declare _main_min_unalloc _main_unalloc;
 
@@ -544,6 +628,21 @@ _checkMainUnallocSpaceFn () {
     _exitERR 'Low disk space detected.';
   fi
 }
+## . END _checkMainUnallocSpaceFn }
+
+## BEGIN _checkBootUnallocSpaceFn {
+# Summary   : _checkBootUnallocSpaceFn
+# Purpose   : Same as _checkMainUnallocSpaceFn, but for the boot filesystem
+#             rather than the main filesystem.
+# Example   : _checkBootUnallocSpaceFn
+# Arguments : none
+# Globals   : _lowBootMsg
+# Outputs   : none
+# Returns   : none
+# Throws    : 
+#   _NOTICE - _checkBtrfsStatusSetUpFn check failed.
+#   _ERR - Boot unallocated space is low.
+#
 _checkBootUnallocSpaceFn () {
   declare _boot_min_unalloc _boot_unalloc;
 
@@ -558,9 +657,22 @@ _checkBootUnallocSpaceFn () {
     _exitERR 'Low boot space detected.';
   fi
 }
+## . END _checkBootUnallocSpaceFn }
+
 ## . END Space checking functions }
 
 ## BEGIN _getSnapshotListStrFn {
+# Summary   : _getSnapshotListStrFn
+# Purpose   : Gets a list of rollback snapshots on the system.
+# Example   : _getSnapshotListStrFn
+# Arguments : none
+# Globals   : none
+# Outputs   : A newline-separated list of snapshot IDs formatted as '@1234',
+#             where '1234' is the timestamp of the snapshot. The list is
+#             sorted from newest to oldest.
+# Returns   : none
+# Throws    : _NOTICE - _checkBtrfsStatusSetUpFn check failed.
+#
 _getSnapshotListStrFn () {
   _checkBtrfsStatusSetUpFn;
 
@@ -572,7 +684,30 @@ _getSnapshotListStrFn () {
 }
 ## . END _getSnapshotListStrFn }
 
-## BEGIN _prepareSystemFn () {
+## BEGIN _prepareSystemFn {
+# Summary   : _prepareSystemFn
+# Purpose   : Prepares a system for rollback snapshots. The system must start
+#             in the 'SUPPORTED, NOT SET UP' state, and will be transitioned
+#             to the 'SUPPORTED, MANUAL' state.
+# Example   : _prepareSystemFn
+# Arguments : none
+# Globals   : _isPreparingSystem, _btrfsStatus
+# Outputs   : none
+# Returns   : none
+# Throws    :
+#   _NOTICE - System is already snapshot-enabled.
+#   _ERR - System does not support snapshotting, or libvirt was installed
+#     before attempting system setup, thus making it impossible to run the
+#     setup routine safely.
+#   _CRIT - Something went wrong that prevents the setup process from
+#     continuing. Changes have already been made to the system's
+#     configuration. Manually undoing the changes so far may be easy enough.
+#   _ALERT - Something went wrong that prevents the setup process from
+#     continuing. Changes have already been made to the system's
+#     configuration. Manually undoing the changes so far may be difficult.
+#   _EMERG - Something went wrong that suggests filesystem corruption or disk
+#     failure. This is usually only thrown when a BTRFS command fails.
+#
 _prepareSystemFn () {
   declare _root_mount_id _boot_mount_id _btrfs_defaults_str \
     _dir _subvolume_list _subvolume_id;
@@ -694,13 +829,27 @@ _prepareSystemFn () {
 ## . END _prepareSystemFn }
 
 ## BEGIN _deleteSnapshotFn {
+# Summary   : _deleteSnapshotFn snapshotId
+# Purpose   : Deletes a rollback snapshot from the system.
+# Example   : _deleteSnapshotFn '@1234'
+# Arguments : snapshotId - The ID of the snapshot to delete.
+# Globals   : none
+# Outputs   : none
+# Returns   : none
+# Throws    :
+#   _NOTICE - _checkBtrfsStatusSetUpFn check failed.
+#   _ERR - No snapshot ID provided, specified snapshot does not exist, or
+#     specified snapshot is pinned.
+#   _EMERG - One of the BTRFS snapshot deletion commands failed, suggesting
+#     filesystem corruption or disk failure.
+#
 _deleteSnapshotFn () {
   declare _target_snapshot_id _snapshot_dir _boot_snapshot_dir;
 
   # Ensure target snapshot exists
   _target_snapshot_id="${1:-}";
   if [ -z "${_target_snapshot_id}" ]; then
-    _exitERR 'No snapshot name provided to delete!';
+    _exitERR 'No snapshot ID provided to delete!';
   fi
 
   _checkBtrfsStatusSetUpFn;
@@ -734,12 +883,31 @@ _deleteSnapshotFn () {
   _writeMetadbFn "${_target_snapshot_id}" 'name' '';
   _writeMetadbFn "${_target_snapshot_id}" 'desc' '';
   _writeMetadbFn "${_target_snapshot_id}" 'pinned' '';
+  _writeMetadbFn "${_target_snapshot_id}" 'reason' '';
   
   _cm2LogFn 'notice' "Snapshot ${_target_snapshot_id} deleted.";
 }
 ## . END _deleteSnapshotFn }
 
 ## BEGIN _finalizeRestoreFn {
+# Summary   : _finaliseRestoreFn
+# Purpose   : Cleans up leftover subvolumes after a snapshot restore. The
+#             restoration process leaves two subvolumes behind that are needed
+#             during snapshot restoration, but that are unnecessary
+#             once the system is rebooted after the restore is complete.
+# Example   : _finalizeRestoreFn
+# Arguments : none
+# Globals   : none
+# Outputs   : none
+# Returns   : none
+# Throws    :
+#   _NOTICE - _checkBtrfsStatusSetUpFn check failed.
+#   _ERR - The system has not been rebooted after a restore operation was
+#     done, thus the "leftover" subvolumes are actually still in use and
+#     cannot be deleted.
+#   _EMERG - One of the BTRFS snapshot deletion commands failed, suggesting
+#     filesystem corruption or disk failure.
+#
 _finalizeRestoreFn () {
   _checkBtrfsStatusSetUpFn;
 
@@ -768,6 +936,21 @@ _finalizeRestoreFn () {
 ## . END _finalizeRestoreFn }
 
 ## BEGIN _trimSnapshotsFn {
+# Summary   : _trimSnapshotsFn
+# Purpose   : Finds old unpinned snapshots, and deletes them. All pinned
+#             snapshots will be preserved regardless of age, and the five
+#             newest unpinned snapshots will also be preserved. All other
+#             snapshots are deleted.
+# Example   : _trimSnapshotsFn
+# Arguments : none
+# Globals   : none
+# Outputs   : none
+# Returns   : none
+# Throws    :
+#   _NOTICE - _checkBtrfsStatusSetUpFn check failed.
+#   _EMERG - One of the BTRFS snapshot deletion commands failed, suggesting
+#     filesystem corruption or disk failure.
+#
 _trimSnapshotsFn () {
   declare _main_snapshot_list _boot_snapshot_list _snapshot_id \
     _snapshot_remove_count _snapshot_idx _delete_count _main_list_count;
@@ -811,8 +994,8 @@ _trimSnapshotsFn () {
 
   # Exclude pinned snapshots, avoid unset shrinkage bug
   _main_list_count="${#_main_snapshot_list[@]}";
-  for ((_snapshot_idx = 0; _snapshot_idx < _main_list_count; \
-    _snapshot_idx++)); do
+  for (( _snapshot_idx = 0; _snapshot_idx < _main_list_count; \
+    _snapshot_idx++ )); do
     if [ "$(_readMetadbFn "${_main_snapshot_list[_snapshot_idx]}" \
       'pinned')" = 'y' ]; then
       unset "_main_snapshot_list[_snapshot_idx]";
@@ -825,8 +1008,8 @@ _trimSnapshotsFn () {
   # Trim unpinned snapshots down to no more than 5
   if [ "${#_main_snapshot_list[@]}" -gt '5' ]; then
     _snapshot_remove_count=$((${#_main_snapshot_list[@]} - 5));
-    for ((_snapshot_idx = 0; _snapshot_idx < _snapshot_remove_count; \
-      _snapshot_idx++)); do
+    for (( _snapshot_idx = 0; _snapshot_idx < _snapshot_remove_count; \
+      _snapshot_idx++ )); do
       _deleteSnapshotFn "${_main_snapshot_list[_snapshot_idx]}";
       (( _delete_count++ )) || true;
     done
@@ -838,6 +1021,39 @@ _trimSnapshotsFn () {
 ## . END _trimSnapshotsFn }
 
 ## BEGIN _createSnapshotFn {
+# Summary   : _createSnapshotFn snapshotReason
+# Purpose   : Creates a rollback snapshot if necessary.
+# Example   : _createSnapshotFn 'Apt'
+# Arguments :
+#   snapshotReason - The "reason" to assign to the snapshot. This reason
+#     indicates why the snapshot was taken, and is also used to determine
+#     whether a snapshot actually should be taken or not. Possible values for
+#     snapshotReason are:
+#     Apt - The snapshot is being automatically created because the apt
+#       packages on the system are being modified. The snapshot should not be
+#       created if it has been less than an hour since the last snapshot, or
+#       if the system is in OEM configuration mode.
+#     Timed - The snapshot is being automatically created because a
+#       maintenance timer has triggered. The snapshot should not be created if
+#       it has been less than a week since the last snapshot, or if the system
+#       is in OEM configuration mode.
+#     Pre-Rollback - The snapshot is being created immediately before
+#       restoring an existing snapshot.
+#     Anything else - The snapshot is being created manually by the user. The
+#       snapshot "reason" is assumed to be the username of the user taking the
+#       snapshot.
+# Globals   : _btrfsStatus
+# Outputs   : none
+# Returns   : none
+# Throws    :
+#   _NOTICE - checkBtrfsStatusSetUpFn check failed, or an automatic snapshot
+#     creation request was denied due to insufficient elapsed time or OEM
+#     configuration mode being active,
+#   _ERR - _checkMainUnallocSpaceFn check failed, or _checkBootUnallocSpaceFn
+#     check failed.
+#   _EMERG - One of the BTRFS snapshot creation commands failed, indicating
+#     filesystem corruption or disk failure.
+#
 _createSnapshotFn () {
   declare _snapshot_event_type _timestamp_str _prev_timestamp_str \
     _snapshot_path _boot_snapshot_path _hour_seconds _week_seconds;
@@ -846,6 +1062,7 @@ _createSnapshotFn () {
   _checkMainUnallocSpaceFn;
   _checkBootUnallocSpaceFn;
 
+  _snapshot_event_type="${1:-}"
   _hour_seconds=3600;
   _week_seconds=604800;
 
@@ -867,7 +1084,6 @@ _createSnapshotFn () {
     _cm2LsFn "${_rb2MainSnapshotDir}" \
       | sed 's/@//' | sort -n | tail -n1
   )";
-  _snapshot_event_type="${1:-}"
 
   # Disallow automatic snapshots when insufficient time has passed, OEM
   # configuration mode is active, or automatic snapshots are turned off
@@ -912,9 +1128,34 @@ _createSnapshotFn () {
 
   _cm2LogFn 'notice' "Snapshot @${_timestamp_str} created.";
 }
-## . END _createSnapshotFn
+## . END _createSnapshotFn }
 
-## BEGIN _compareSnapshotsFn {
+## BEGIN _compareStateFn {
+# Summary   : _compareSnapshotsFn dir1 dir2
+# Purpose   : Compares two directories to each other using `diff -r --brief`.
+#             Intended to be used for comparing two snapshots, or a snapshot
+#             and the actively running system.
+# Example   : _compareSnapshotsFn /btrfs_main/@kfocus-rollback-snapshots/@1234
+#               /btrfs_main/@
+# Arguments :
+#   dir1 - The directory containing the 'source' system state. This will
+#     usually (but not always) be the path to a snapshot.
+#   dir2 - The directory containing the 'target' system state. This will
+#     usually (but not always) be the path to a newer snapshot or the current
+#     system state.
+#   Note that dir1 and dir2 could point to any two directories - dir1 may
+#   point to a newer system state than dir2, or theoretically they could even
+#   point to typical directories rather than system state directories.
+# Globals   : none
+# Outputs   : The `diff -r --brief` output resulting from diffing dir1 and
+#             dir2.
+# Returns   : none
+# Throws    :
+#   _NOTICE - _checkBtrfsStatusSetUpFn check failed, or _checkRootFn check
+#     failed.
+#   _ERR - One or both arguments are blank, or one of the specified
+#     directories does not exist or is not a directory.
+#
 _compareStateFn () {
   declare _source_state_dir _target_state_dir;
 
@@ -936,11 +1177,20 @@ _compareStateFn () {
   # Diff directories, return filenames only
   "${_diffExe}" -r --brief "${_source_state_dir}" "${_target_state_dir}";
 }
-## . END _compareSnapshotsFn }
+## . END _compareStateFn }
 
 ## BEGIN _getSnapshotReasonFn {
-# Purpose: Reads the snapshot reason string from a snapshot, converts it to a
-# human-readable form, and returns it.
+# Summary   : _getSnapshotReasonFn snapshotId
+# Purpose   : Gets a snapshot's 'reason' and outputs it.
+# Example   : _getSnapshotReasonFn '@1234'
+# Arguments : snapshotId - the ID of the snapshot to query.
+# Globals   : none
+# Outputs   : A human-readable string specifying the snapshot reason. The
+#             string is one of 'Before Package Change', 'System Schedule',
+#             'Pre-Rollback', or 'User Snapshot (username)' where 'username'
+#             is replaced with the name of the user who took the snapshot.
+# Returns   : 0 on success, 1 on failure
+# Throws    : none
 #
 _getSnapshotReasonFn () {
   declare _snapshot_id _snapshot_reason_file _snapshot_reason_raw \
@@ -983,8 +1233,17 @@ _getSnapshotReasonFn () {
 ## . END _getSnapshotReasonFn }
 
 ## BEGIN _makeSnapshotDispIdFn {
-# Purpose: Gets snapshot date of creation and name, and combines them into a
-# human-readable name.
+# Summary   : _makeSnapshotDispIdFn snapshotId
+# Purpose   : Generates a human-readable string that can be used to identify a
+#             particular snapshot.
+# Example   : _makeSnapshotDispIdFn '@1234'
+# Arguments : snapshotId - the ID of the snapshot to query.
+# Globals   : none
+# Outputs   :
+#   A human-readable snapshot ID string, in the format
+#     'snapshotName - Day YYYY-MM-DD 23:45'
+# Returns   : 0 on success, 1 on failure
+# Throws    : none
 #
 _makeSnapshotDispIdFn () {
   declare _snapshot_id _snapshot_name _snapshot_datetime _snapshot_disp_id;
@@ -1010,6 +1269,31 @@ _makeSnapshotDispIdFn () {
 ## . END _makeSnapshotDispIdFn }
 
 ## BEGIN _restoreSnapshotFn {
+# Summary   : _restoreSnapshotFn snapshotId
+# Purpose   : Restores a rollback snapshot, writing metadata for a
+#             post-restore handler to use and trimming excess snapshots once
+#             the restore is complete.
+# Example   : _restoreSnapshotFn '@1234'
+# Arguments : snapshotId - the ID of the snapshot to restore.
+# Globals   : none
+# Returns   : none
+# Throws    :
+#   _NOTICE - _checkBtrfsStatusSetUpFn check failed.
+#   _ERR - _checkMainUnallocSpaceFn check failed, _checkBootUnallocSpaceFn
+#     check failed, no snapshot ID provided, system has not been rebooted
+#     since the last restore, part or all of specified snapshot does not
+#     exist, or EFI system partition could not be unmounted during the restore
+#     process.
+#   _CRIT - Root subvolume could not be relocated during restore process.
+#   _ALERT - Boot subvolume coult not be relocated during restore process.
+#     This is considered more severe than a root subvolume relocation failure
+#     because at this point the root filesystem has already been restored, but
+#     the boot filesystem has not been and cannot be. _ALERT will also be
+#     thrown if metadata needed by the post-restore handler cannot be written,
+#     or if the post-restore snapshot trim operation cannot be run.
+#  _EMERG - One of the BTRFS snapshot manipulation commands failed, indicating
+#    filesystem corruption or disk failure.
+#
 _restoreSnapshotFn () {
   declare _target_snapshot_id _snapshot_path \
     _boot_snapshot_path _snapshot_name _snapshot_date _snapshot_reason \
@@ -1102,8 +1386,20 @@ _restoreSnapshotFn () {
 ## . END _restoreSnapshotFn }
 
 ## BEGIN _systemSnapshotFn {
-# Purpose: Wraps _createSnapshotFn with safety checks and post-creation
-# trimming. Used when the end-user creates a snapshot.
+# Summary   : _systemSnapshotFn reason
+# Purpose   : Wraps _createSnapshotFn with safety checks and post-creation
+#             trimming. Used when the end-user creates a snapshot.
+# Example   : _systemSnapshotFn 'user'
+# Arguments : reason - the snapshot reason to use when creating the snapshot.
+# Globals   : none
+# Outputs   : none
+# Returns   : none
+# Throws    :
+#   _NOTICE - _checkBtrfsStatusSetUpFn check failed.
+#   _ERR - _checkMainUnallocSpaceFn check failed, or _checkBootUnallocSpaceFn
+#     check failed.
+#   See _createSnapshotFn and _trimSnapshotsFn for other possible throw
+#   reasons.
 #
 _systemSnapshotFn () {
   _checkBtrfsStatusSetUpFn;
@@ -1115,6 +1411,27 @@ _systemSnapshotFn () {
 ## . END _systemSnapshotFn }
 
 ## BEGIN _getSnapshotMetadataFn {
+# Summary   : _getSnapshotMetadataFn snapshotId mode
+# Purpose   : Gets metadata from a snapshot.
+# Example   : _getSnapshotMetadataFn '@1234' 'base'
+# Arguments :
+#   snapshotId - the ID of the snapshot to query.
+#   mode - Whether to get base or full metadata. Base snapshot metadata is the
+#     snapshot's name, description, pin status, and reason. Full snapshot
+#     metadata is the same as base metadata, but also includes snapshot size
+#     in bytes.
+# Globals   : none
+# Outputs   :
+#   Five newline-separated strings. Those strings are, in order output:
+#   Name (base64-encoded)
+#   Description (base64-encoded)
+#   Pin status ('y' if pinned, 'n' otherwise)
+#   Size (in bytes, value is blank if getting base snapshot metadata)
+# Throws    :
+#   _NOTICE - _checkBtrfsStatusSetUpFn check failed.
+#   _ERR - One or both arguments are blank, the specified mode is invalid, or
+#     the specified snapshot does not exist.
+#
 _getSnapshotMetadataFn () {
   declare _snapshot_id _mode _item _space_report _metadata_str;
   
@@ -1153,6 +1470,24 @@ _getSnapshotMetadataFn () {
 ## . END _getSnapshotMetadataFn }
 
 ## BEGIN _setSnapshotMetadataFn {
+# Summary   : _setSnapshotMetadataFn snapshotId name description pin
+# Purpose   : Sets the name, description, and pin status of a snapshot.
+# Example   : _setSnapshotMetadataFn '@1234' 'dGVzdE5hbWU=' 'dGVzdERlc2M=' 'y'
+# Arguments :
+#   snapshotId - the ID of the snapshot to modify.
+#   name - the base64-encoded name to assign to the snapshot.
+#   description - the base64-encoded description to assign to the snapshot.
+#   pin - One of either 'y' or 'n'. Sets whether the snapshot is pinned ('y')
+#     or it not pinned ('n').
+# Globals   : none
+# Outputs   : none
+# Returns   : none
+# Throws    :
+#   _NOTICE - _checkBtrfsStatusSetUpFn check failed.
+#   _ERR - _checkMainUnallocSpaceFn check failed, _checkBootUnallocSpaceFn
+#     check failed, one of the arguments is blank, specified snapshot does not
+#     exist, or pin argument is not one of 'y' or 'n', 
+#
 _setSnapshotMetadataFn () {
   declare _snapshot_id _name_str _desc_str _is_pinned _was_pinned;
   
@@ -1186,6 +1521,18 @@ _setSnapshotMetadataFn () {
 ## . END _setSnapshotMetadataFn }
 
 ## BEGIN _balanceMainFn {
+# Summary   : _balanceMainFn doForce
+# Purpose   : Checks to see if the main filesystem needs balanced, and does so
+#             if necessary.
+# Example   : _balanceMainFn 'n'
+# Arguments :
+#   doForce - Whether to force a balance or not. Argument must be one of
+#     either 'y' or 'n'. Defaults to 'n'.
+# Globals   : none
+# Outputs   : none
+# Returns   : none
+# Throws    : _NOTICE - _checkBtrfsStatusSetUpFn check failed.
+#
 _balanceMainFn () {
   declare _do_force_balance _main_report _main_unalloc_int _main_free_int \
     _last_unalloc_int _last_free_int _trigger_threshold _balance_percent \
@@ -1227,7 +1574,7 @@ _balanceMainFn () {
   # Balance if conditions met
   if [ "${_do_balance}" = 'y' ]; then
     # Balance main fs
-    "${_btrfsBalanceExe}" -u "${_balance_percent}" '/btrfs_main';
+    "${_btrfsBalanceExe}" -u "${_balance_percent}" '/btrfs_main' || return;
 
     # Save new unallocated and free space data to state file
     _main_report="$(_getMainUsageReportFn)";
@@ -1247,17 +1594,38 @@ _balanceMainFn () {
 ## . END _balanceMainFn }
 
 ## BEGIN _balanceBootFn {
+# Summary   : _balanceBootFn
+# Purpose   : Unconditionally balances the boot filesystem.
+# Example   : _balanceBootFn
+# Arguments : none
+# Globals   : none
+# Outputs   : none
+# Returns   : none
+# Throws    : _NOTICE - _checkBtrfsStatusSetUpFn check failed.
+#
 _balanceBootFn () {
   _checkBtrfsStatusSetUpFn;
 
   # Unconditionally balance boot space
-  "${_btrfsBalanceExe}" -u 85 '/btrfs_boot';
+  "${_btrfsBalanceExe}" -u 85 '/btrfs_boot' || return;
 
   _cm2LogFn 'notice' "Boot filesystem balanced.";
 }
 ## . END _balanceBootFn }
 
 ## BEGIN _deleteAllSnapshotsFn {
+# Summary   : _deleteAllSnapshotsFn
+# Purpose   : Deletes all rollback snapshots on the system, including pinned
+#             snapshots.
+# Example   : _deleteAllSnapshotsFn
+# Arguments : none
+# Globals   : none
+# Outputs   : none
+# Returns   : none
+# Throws    :
+#   _NOTICE - _checkBtrfsStatusSetUpFn check failed.
+#   See _deleteSnapshotFn for other possible throw reasons.
+#
 _deleteAllSnapshotsFn () {
   declare _snapshot_list _current_snapshot;
   
@@ -1287,6 +1655,16 @@ _deleteAllSnapshotsFn () {
 ## . END _deleteAllSnapshotsFn }
 
 ## BEGIN _defragmentFn {
+# Summary   : _defragmentFn
+# Purpose   : Defragments heavily fragmented files on the main filesystem,
+#             improving performance and reclaiming unreachable space.
+# Example   : _defragmentFn
+# Arguments : none
+# Globals   : none
+# Outputs   : none
+# Returns   : none
+# Throws    : none
+#
 _defragmentFn () {
   declare _frag_report _frag_count_list _target_frag_list _frag_file_list \
     _defrag_file_list _report_idx _btdu_report _btdu_val_list \
@@ -1380,7 +1758,8 @@ _defragmentFn () {
 
   # Defragment all files in clean list, use lzo compression
   if (( ${#_defrag_file_list[@]} > 0 )); then
-    "${_btrfsExe}" filesystem defragment -clzo "${_clean_file_list[@]}";
+    "${_btrfsExe}" filesystem defragment -clzo "${_clean_file_list[@]}" \
+      || return;
   fi
 
   _cm2LogFn 'notice' \
@@ -1389,7 +1768,18 @@ _defragmentFn () {
 ## . END _defragmentFn }
 
 ## BEGIN _btrfsMaintainFn {
-# Purpose: Runs both main and boot balance operations at once.
+# Summary   : _btrfsMaintainFn
+# Purpose   : Runs routine snapshot maintenance. Currently this simply
+#             balances main and boot filesystems.
+# Example   : _btrfsMaintainFn
+# Arguments : none
+# Globals   : none
+# Outputs   : none
+# Returns   : none
+# Throws    :
+#   _NOTICE - _checkRootFn check failed, or _checkBtrfsStatusSetUpFn check
+#     failed.
+#   _ALERT - Main or boot filesystem balance failed.
 #
 _btrfsMaintainFn () {
   _checkRootFn       || _exitNOTICE \
@@ -1402,8 +1792,21 @@ _btrfsMaintainFn () {
 ## . END _btrfsMaintainFn }
 
 ## BEGIN _btrfsDeepCleanFn {
-# Purpoes: Runs snapshot wipe, forced main balance, boot balance, and
-# defragment operations at once.
+# Summary   : _btrfsDeepCleanFn
+# Purpose   : Runs an intensive BTRFS optimization routine. Currently this
+#             balances main and boot filesystems (forcing a balance on the
+#             main FS), and defragments the main filesystem.
+# Example   : _btrfsDeepCleanFn
+# Arguments : none
+# Globals   : none
+# Outputs   : none
+# Returns   : none
+# Throws    :
+#   _NOTICE - _checkRootFn check failed, or _checkBtrfsStatusSetUpFn check
+#     failed.
+#   _ALERT - Main or boot filesystem balance failed, or main filesystem
+#     defrag failed.
+#
 #
 _btrfsDeepCleanFn () {
   _checkRootFn       || _exitNOTICE \
