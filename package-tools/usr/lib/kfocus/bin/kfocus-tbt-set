@@ -1,0 +1,214 @@
+#!/bin/bash
+#
+# Copyright 2019-2024 MindShare Inc.
+#
+# Written for the Kubuntu Focus by M. Mikowski and A. Rainbolt
+#
+# Name     : kfocus-tbt-set
+# Summary  : kfocus-tbt (start|stop|enable|disable|query)
+# Purpose  : Backend component for kfocus-tbt
+# Example  : kfocus-tbt-set query
+# License  : GPLv2
+# Run By   : kfocus-tbt
+# Spec     : 4777
+#
+set -u;
+
+## BEGIN _importCommonFn {
+# Summary   : _importCommonFn
+# Purpose   : Load common routines, prefer relative dir
+# Example   : _importCommonFn;
+# Arguments : none
+# Globals   : Package vars _baseDir _baseName
+# Outputs   : none
+# Returns   : none
+#
+_importCommonFn () {
+  declare _lib_list _is_loaded _lib_file;
+  _lib_list=(
+    "${_baseDir}/lib/common.2.source"
+    '/usr/lib/kfocus/lib/common.2.source'
+  );
+  _is_loaded='n';
+  for _lib_file in "${_lib_list[@]}"; do
+    if [ -r "${_lib_file}" ]; then
+      # shellcheck source=/usr/lib/kfocus/lib/common.2.source
+      if source "${_lib_file}"; then
+        _is_loaded='y';
+        break;
+      fi
+    fi
+  done
+
+  if [ "${_is_loaded}" = 'n' ]; then
+    echo 1>&2 "${_baseName}: ABORT - Cannot source common lib";
+    exit 202;
+  fi
+}
+## . END _importCommonFn }
+
+## BEGIN _disableXhciFn {
+_disableXhciFn () {
+  if [ -e "${_acpiWakeupFile}" ]; then
+    grep -q '^XHCI.*enable' "${_acpiWakeupFile}" \
+      && echo 'XHCI' > "${_acpiWakeupFile}";
+    sleep 1;
+  fi
+}
+## . END _disableXhciFn }
+
+## BEGIN _enableXhciFn {
+_enableXhciFn () {
+  if [ -e "${_acpiWakeupFile}" ]; then
+    sleep 1;
+    grep -q '^XHCI.*disable' "${_acpiWakeupFile}" \
+      && echo 'XHCI' > "${_acpiWakeupFile}";
+  fi
+}
+## . END _enableXhciFn }
+
+## BEGIN _startThunderboltFn {
+# The acpiWakeupFile manipulation turns the interface off and on.
+#
+_startThunderboltFn () {
+  if ! grep -q 'thunderbolt' < <(lsmod); then
+    _disableXhciFn;
+    modprobe thunderbolt;
+    _enableXhciFn;
+  fi
+}
+## . END _startThunderboltFn }
+
+## BEGIN _stopThunderboltFn {
+# The wake file manipulation turns the interface off and on.
+#
+_stopThunderboltFn () {
+  if grep -q 'thunderbolt' < <(lsmod); then
+    _disableXhciFn;
+    modprobe -r thunderbolt;
+    _enableXhciFn;
+  fi
+}
+## . END _stopThunderboltFn }
+
+## BEGIN _getModelCodeFn {
+_getModelCodeFn () {
+  declare _model_code _dmi_name;
+  _model_code="$(_cm2EchoModelStrFn 'code')";
+  if [ -f "${_cm2DmiProductNameFile}" ]; then
+    _dmi_name="$(_cm2CatStripEchoFn "${_cm2DmiProductNameFile}")";
+    # Hack for m2g5p1 which has Barlow Ridge Thunderbolt 5
+    if [ "${_model_code}" = 'm2g5p' ] \
+      && [[ "${_dmi_name:-}" =~ ^X370SN.*1$ ]]; then
+        _model_code='m2g5p1';
+    fi
+  fi
+  echo "${_model_code:-}";
+}
+## . END _getModelCodeFn }
+
+## BEGIN _wipeThunderboltPersistFn {
+_wipeThunderboltPersistFn () {
+  if [ -f "${_tbtSymlink}" ] || [ -h "${_tbtSymlink}" ]; then
+    rm "${_tbtSymlink}";
+  elif [ -e "${_tbtSymlink}" ]; then
+    _cm2WarnStrFn 'Did not remove kernel param path: not a file or symlink';
+    return 1;
+  fi
+}
+## . END _wipeThunderboltPersistFn }
+
+## BEGIN _enableThunderboltFn {
+_enableThunderboltFn () {
+  _wipeThunderboltPersistFn || return;
+  ln -s "${_tbtEnableFile}" "${_tbtSymlink}" || {
+    _cm2WarnStrFn 'Could not create kernel param enable symlink';
+    return 1;
+  }
+  update-grub;
+}
+## . END _enableThunderboltFn }
+
+## BEGIN _disableThunderboltFn {
+_disableThunderboltFn () {
+  _wipeThunderboltPersistFn || return;
+  ln -s "${_tbtDisableFile}" "${_tbtSymlink}" || {
+    _cm2WarnStrFn 'Could not create kernel param disable symlink';
+    return 1;
+  }
+  update-grub;
+}
+## . END _disableThunderboltFn }
+
+## BEGIN _queryThunderboltFn {
+_queryThunderboltFn () {
+  declare _run_state _readlink_file _persist_state;
+
+  if grep -q 'thunderbolt' < <(lsmod); then
+    _run_state='running';
+  else
+    _run_state='stopped';
+  fi
+
+  _readlink_file="$(readlink -fn "${_tbtSymlink}" )";
+  if [ "${_readlink_file}"   = "${_tbtSymlink}" ] \
+    || [ "${_readlink_file}" = "${_tbtEnableFile}" ]; then
+    _persist_state='enabled';
+  else
+    _persist_state='disabled';
+  fi
+
+  echo "${_run_state:-}";
+  echo "${_persist_state:-}";
+  _getModelCodeFn;
+}
+## . END _queryThunderboltFn }
+
+## BEGIN _mainFn {
+_mainFn () {
+  declare _arg _conf_dir;
+
+  _arg="${1:-}";
+  if [ -z "${_arg}" ]; then
+    _cm2WarnStrFn 'No argument provided.';
+    return 1;
+  fi
+
+  _conf_dir="${_rootDir}/usr/lib/kfocus/conf";
+  _tbtEnableFile="${_conf_dir}";
+  _tbtEnableFile+='/m2g5p1-etc_default_grub.d_10_kfocus-tbt-default.cfg';
+  _tbtDisableFile="${_conf_dir}";
+  _tbtDisableFile+='/m2g5p1-etc_default_grub.d_10_kfocus-tbt-blacklist.cfg';
+  _tbtSymlink="${_rootDir}/etc/default/grub.d/10_kfocus-tbt.cfg";
+  _acpiWakeupFile="${_rootDir}/proc/acpi/wakeup";
+
+  case "${_arg}" in
+    'start'  ) _startThunderboltFn   ;;
+    'stop'   ) _stopThunderboltFn    ;;
+    'enable' ) _enableThunderboltFn  ;;
+    'disable') _disableThunderboltFn ;;
+    'query'  ) _queryThunderboltFn   ;;
+  esac
+}
+## . END _mainFn }
+
+## BEGIN Declare and assign default global vars {
+declare _rootDir _binName _binDir _baseDir _baseName \
+  _tbtEnableFile _tbtDisableFile _tbtSymlink _acpiWakeupFile;
+
+_rootDir='';
+## . END Declare and assign default global vars }
+
+## BEGIN Run mainFn when script is NOT sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+
+  # Import libs and assign more global vars
+  _importCommonFn;
+
+  _mainFn "$@";
+fi
+## . END Run mainFn when script is NOT sourced }

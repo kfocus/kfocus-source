@@ -2,3 +2,9 @@
 
 %:
 	dh $@
+
+override_dh_auto_build:
+	mkdir src/kfocus-tbt/build
+	cmake -S src/kfocus-tbt -B src/kfocus-tbt/build -DCMAKE_BUILD_TYPE=RelWithDebInfo
+	(cd src/kfocus-tbt/build && $(MAKE))
+	dh_auto_build
