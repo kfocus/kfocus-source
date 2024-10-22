@@ -863,7 +863,7 @@ _getSnapshotListStrFn () {
 #
 _prepareSystemFn () {
   declare _root_mount_id _boot_mount_id _btrfs_defaults_str \
-    _dir _subvolume_list _subvolume_id;
+    _dir _subvolume_list _subvolume_id _path;
 
   _isPreparingSystem='y';
 
@@ -1586,7 +1586,7 @@ _systemSnapshotFn () {
 #     the specified snapshot does not exist.
 #
 _getSnapshotMetadataFn () {
-  declare _snapshot_id _mode _item _space_report _metadata_str;
+  declare _snapshot_id _mode _item _metadata_str;
 
   _checkBtrfsStatusSetUpFn;
 
@@ -1975,7 +1975,7 @@ _btrfsDeepCleanFn () {
 
 ## BEGIN _mainFn {
 _mainFn () {
-  declare _mode_str _arg2_str;
+  declare _mode_str;
   _mode_str="${1:-}";
   shift;
 
