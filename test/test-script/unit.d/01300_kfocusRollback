@@ -1,0 +1,678 @@
+#!/bin/bash
+#
+# Tests for _checkBtrfsStatusFn from kfocus-rollback-backend
+#
+# set -u is set in _runUnitTests (the test harness)
+#
+
+## BEGIN _overwriteWithMocksFn {
+_overwriteWithMocksFn () {
+  # Source executable
+  # bashsupport disable=BP2001
+  _rootDir="${_t00RunDir}";
+  # shellcheck disable=SC2154
+  _exeFile="${_t00TopDir}";
+  _exeFile+='/package-rollback/usr/lib/kfocus/bin/kfocus-rollback-backend';
+  # shellcheck disable=SC1090,SC2154
+  source "${_exeFile}" || exit 1;
+  _libFile="${_t00TopDir}";
+  _libFile+='/package-rollback/usr/lib/kfocus/lib/rollback.2.source';
+  source "${_libFile}" || exit 1;
+
+  # Reset globals
+  ls () {
+    declare _arg_list;
+    _arg_list=( "$@" );
+    _last_arg="${_arg_list[(( ${#_arg_list[@]} - 1 ))]}"
+    2>/dev/null _cm2LsFn "${_t00RunDir}/${_last_arg}" || true;
+  }
+
+  mount () {
+    echo "${_mountResultStr}";
+  }
+
+  _getManualSwitchStateBackendFn () {
+    echo "${_manualSwitchStateStr}";
+  }
+
+  _btrfsExe () {
+    if [ "${1}" = 'subvolume' ]; then
+      if [ "${2}" = 'list' ]; then
+        if [ "${3}" = '/' ]; then
+          echo "${_btrfsMainResultStr}";
+        elif [ "${3}" = '/boot' ]; then
+          echo "${_btrfsBootResultStr}";
+        else
+          _cm2WarnStrFn "BTRFS mock cannot handle filesystem path |${3}|.";
+          return 1;
+        fi
+      else
+        _cm2WarnStrFn "Unmocked BTRFS feature |${1} ${2}|.";
+        return 1;
+      fi
+    else
+      _cm2WarnStrFn "Unmocked BTRFS feature |${1}|.";
+      return 1;
+    fi
+  }
+
+  declare -g _btrfsExe="_btrfsExe";
+
+  _rb2MainDir="${_t00RunDir}/${_rb2MainDir}";
+  _rb2MainSnapshotDir="${_t00RunDir}/${_rb2MainSnapshotDir}";
+  _rb2BootDir="${_t00RunDir}/${_rb2BootDir}";
+  _rb2BootSnapshotDir="${_t00RunDir}/${_rb2BootSnapshotDir}";
+}
+## . END _overwriteWithMocksFn }
+
+# These are dynamically changed by mocks.
+_mountResultStr='';
+_manualSwitchStateStr='';
+_btrfsMainResultStr='';
+_btrfsBootResultStr='';
+
+# This is dynamically changed by the SUT.
+_btrfsStatus='';
+
+## BEGIN State preparation functions {
+
+# Variables in the process:
+# Presence of var/lib/portables and var/lib/machines subvolumes
+# Presence of /var/lib/portables and /var/lib/machines directories, both
+#   empty and non-empty
+# Presence of /btrfs_main
+# Presence of /btrfs_boot
+# Presence of /btrfs_main/@kfocus-rollback-snapshots
+# Presence of /btrfs_boot/@kfocus-rollback-boot-snapshots
+# Presence of /btrfs_main/@
+# Presence of /btrfs_main/@boot
+# Disk that / is mounted from
+# Disk that /boot is mounted from
+# Manual switch state
+# List of subvolumes on the main filesystem
+# List of subvolumes on the boot filesystem
+
+## BEGIN _machinesPortablesTest1Fn {
+# TEST CASE: portables/machines subvols present but empty, results in
+#   |SUPPORTED, NOT SET UP|
+#
+_machinesPortablesTest1Fn () {
+  _btrfsMainResultStr="$(cat <<'EOF'
+ID 257 gen 157562 top level 5 path @home
+ID 322 gen 157562 top level 5 path @
+ID 000 gen 123456 top level 5 path var/lib/portables
+ID 001 gen 123456 top level 5 path var/lib/machines
+EOF
+  )";
+  _btrfsBootResultStr='';
+  _mountResultStr="$(cat <<'EOF'
+/dev/nvme1n1p2 on /boot type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag)
+/dev/mapper/luks-a60360c5-79de-4dbb-a034-fe2de6ccc2ef on / type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=322,subvol=/@)
+/dev/mapper/luks-a60360c5-79de-4dbb-a034-fe2de6ccc2ef on /home type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=257,subvol=/@home)
+EOF
+  )";
+  _manualSwitchStateStr='';
+}
+## . END _machinesPortablesTest1Fn }
+
+## BEGIN _machinesPortablesTest2Fn {
+# TEST CASE: portables/machines subvols present with data, results in
+#   |UNSUPPORTED|
+#
+_machinesPortablesTest2Fn () {
+  _btrfsMainResultStr="$(cat <<'EOF'
+ID 257 gen 157562 top level 5 path @home
+ID 322 gen 157562 top level 5 path @
+ID 000 gen 123456 top level 5 path var/lib/portables
+ID 001 gen 123456 top level 5 path var/lib/machines
+EOF
+  )";
+  _btrfsBootResultStr='';
+  _mountResultStr="$(cat <<'EOF'
+/dev/nvme1n1p2 on /boot type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag)
+/dev/mapper/luks-a60360c5-79de-4dbb-a034-fe2de6ccc2ef on / type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=322,subvol=/@)
+/dev/mapper/luks-a60360c5-79de-4dbb-a034-fe2de6ccc2ef on /home type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=257,subvol=/@home)
+EOF
+  )";
+  _manualSwitchStateStr='';
+  mkdir -p "${_t00RunDir}/var/lib/portables";
+  mkdir -p "${_t00RunDir}/var/lib/machines";
+  touch "${_t00RunDir}/var/lib/portables/ouch";
+  touch "${_t00RunDir}/var/lib/machines/ouch";
+}
+## . END _machinesPortablesTest2Fn }
+
+## BEGIN _machinesPortablesTest3Fn {
+# TEST CASE: portables/machines subvols absent, directories contain data,
+#   results in |SUPPORTED, NOT SET UP|
+#
+_machinesPortablesTest3Fn () {
+  _btrfsMainResultStr="$(cat <<'EOF'
+ID 257 gen 157562 top level 5 path @home
+ID 322 gen 157562 top level 5 path @
+EOF
+  )";
+  _btrfsBootResultStr='';
+  _mountResultStr="$(cat <<'EOF'
+/dev/nvme1n1p2 on /boot type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag)
+/dev/mapper/luks-a60360c5-79de-4dbb-a034-fe2de6ccc2ef on / type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=322,subvol=/@)
+/dev/mapper/luks-a60360c5-79de-4dbb-a034-fe2de6ccc2ef on /home type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=257,subvol=/@home)
+EOF
+  )";
+  _manualSwitchStateStr='';
+  mkdir -p "${_t00RunDir}/var/lib/portables";
+  mkdir -p "${_t00RunDir}/var/lib/machines";
+  touch "${_t00RunDir}/var/lib/portables/fine";
+  touch "${_t00RunDir}/var/lib/machines/fine";
+}
+## . END _machinesPortablesTest3Fn }
+
+## BEGIN _machinesPortablesTest4Fn {
+# TEST CASE: machines subvol present, portables subvol absent, only portables
+#   directory contains data. Results in |UNSUPPORTED|
+# TODO: This is a very minor bug - technically the system could proceed as
+#   |SUPPORTED, NOT SET UP| in this scenario. However this is an obscure
+#   enough edge case it probably doesn't matter.
+#
+_machinesPortablesTest4Fn () {
+  _btrfsMainResultStr="$(cat <<'EOF'
+ID 257 gen 157562 top level 5 path @home
+ID 322 gen 157562 top level 5 path @
+ID 001 gen 123456 top level 5 path var/lib/machines
+EOF
+  )";
+  _btrfsBootResultStr='';
+  _mountResultStr="$(cat <<'EOF'
+/dev/nvme1n1p2 on /boot type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag)
+/dev/mapper/luks-a60360c5-79de-4dbb-a034-fe2de6ccc2ef on / type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=322,subvol=/@)
+/dev/mapper/luks-a60360c5-79de-4dbb-a034-fe2de6ccc2ef on /home type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=257,subvol=/@home)
+EOF
+  )";
+  _manualSwitchStateStr='';
+  mkdir -p "${_t00RunDir}/var/lib/portables";
+  touch "${_t00RunDir}/var/lib/portables/ouch";
+}
+## . END _machinesPortablesTest4Fn () }
+
+## BEGIN _supportedManualFn {
+# TEST CASE: machine supported and set up, manual switch state is set to
+#   |MANUAL|
+#
+_supportedManualFn () {
+  _btrfsMainResultStr="$(cat <<'EOF'
+ID 257 gen 157562 top level 5 path @home
+ID 322 gen 157562 top level 5 path @
+ID 259 gen 155190 top level 5 path @kfocus-rollback-snapshots
+ID 261 gen 110390 top level 260 path @libvirt-machines/@etc-libvirt
+ID 262 gen 34 top level 260 path @libvirt-machines/@var-lib-libvirt
+EOF
+  )";
+  _btrfsBootResultStr="$(cat <<'EOF'
+ID 257 gen 5406 top level 5 path @kfocus-rollback-boot-snapshots
+ID 317 gen 5556 top level 5 path @boot
+EOF
+  )";
+  _mountResultStr="$(cat <<'EOF'
+/dev/nvme1n1p2 on /boot type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=317,subvol=/@boot)
+/dev/mapper/luks-a60360c5-79de-4dbb-a034-fe2de6ccc2ef on / type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=322,subvol=/@)
+/dev/mapper/luks-a60360c5-79de-4dbb-a034-fe2de6ccc2ef on /home type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=257,subvol=/@home)
+EOF
+  )";
+  _manualSwitchStateStr='MANUAL';
+  mkdir -p "${_rb2MainDir}/@";
+  mkdir -p "${_rb2MainSnapshotDir}";
+  mkdir -p "${_rb2BootDir}/@boot";
+  mkdir -p "${_rb2BootSnapshotDir}";
+  mkdir -p "${_rb2MainDir}/@home";
+}
+## . END _supportedManualFn }
+
+## BEGIN _supportedAutoFn {
+# TEST CASE: machine supported and set up, manual switch state is set to
+#   |AUTO|
+#
+_supportedAutoFn () {
+  _btrfsMainResultStr="$(cat <<'EOF'
+ID 257 gen 157562 top level 5 path @home
+ID 322 gen 157562 top level 5 path @
+ID 259 gen 155190 top level 5 path @kfocus-rollback-snapshots
+ID 261 gen 110390 top level 260 path @libvirt-machines/@etc-libvirt
+ID 262 gen 34 top level 260 path @libvirt-machines/@var-lib-libvirt
+EOF
+  )";
+  _btrfsBootResultStr="$(cat <<'EOF'
+ID 257 gen 5406 top level 5 path @kfocus-rollback-boot-snapshots
+ID 317 gen 5556 top level 5 path @boot
+EOF
+  )";
+  _mountResultStr="$(cat <<'EOF'
+/dev/nvme1n1p2 on /boot type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=317,subvol=/@boot)
+/dev/mapper/luks-a60360c5-79de-4dbb-a034-fe2de6ccc2ef on / type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=322,subvol=/@)
+/dev/mapper/luks-a60360c5-79de-4dbb-a034-fe2de6ccc2ef on /home type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=257,subvol=/@home)
+EOF
+  )";
+  _manualSwitchStateStr='AUTO';
+  mkdir -p "${_rb2MainDir}/@";
+  mkdir -p "${_rb2MainSnapshotDir}";
+  mkdir -p "${_rb2BootDir}/@boot";
+  mkdir -p "${_rb2BootSnapshotDir}";
+  mkdir -p "${_rb2MainDir}/@home";
+}
+## . END _supportedManualFn }
+
+## BEGIN _supportedHomeOnSecondaryFn {
+# TEST CASE: machine supported and set up, manual switch state is set to
+#   |AUTO|, home dir is on a secondary disk
+#
+_supportedHomeOnSecondaryFn () {
+  _btrfsMainResultStr="$(cat <<'EOF'
+ID 322 gen 157562 top level 5 path @
+ID 259 gen 155190 top level 5 path @kfocus-rollback-snapshots
+ID 261 gen 110390 top level 260 path @libvirt-machines/@etc-libvirt
+ID 262 gen 34 top level 260 path @libvirt-machines/@var-lib-libvirt
+EOF
+  )";
+  _btrfsBootResultStr="$(cat <<'EOF'
+ID 257 gen 5406 top level 5 path @kfocus-rollback-boot-snapshots
+ID 317 gen 5556 top level 5 path @boot
+EOF
+  )";
+  _mountResultStr="$(cat <<'EOF'
+/dev/nvme1n1p2 on /boot type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=317,subvol=/@boot)
+/dev/mapper/luks-a60360c5-79de-4dbb-a034-fe2de6ccc2ef on / type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=322,subvol=/@)
+/dev/nvme1n1p3 on /home type xfs (rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota)
+EOF
+  )";
+  _manualSwitchStateStr='AUTO';
+  mkdir -p "${_rb2MainDir}/@";
+  mkdir -p "${_rb2MainSnapshotDir}";
+  mkdir -p "${_rb2BootDir}/@boot";
+  mkdir -p "${_rb2BootSnapshotDir}";
+}
+## . END _supportedHomeOnSecondaryFn }
+
+## BEGIN _unsupportedMainBootMerge1Fn {
+# TEST CASE: Mostly same as _supportedAutoFn, but with main and boot
+#   filesystems on the same filesystem
+#
+_unsupportedMainBootMerge1Fn () {
+  _btrfsMainResultStr="$(cat <<'EOF'
+ID 257 gen 157562 top level 5 path @home
+ID 322 gen 157562 top level 5 path @
+ID 259 gen 155190 top level 5 path @kfocus-rollback-snapshots
+ID 261 gen 110390 top level 260 path @libvirt-machines/@etc-libvirt
+ID 262 gen 34 top level 260 path @libvirt-machines/@var-lib-libvirt
+ID 263 gen 5406 top level 5 path @kfocus-rollback-boot-snapshots
+ID 364 gen 5556 top level 5 path @boot
+EOF
+  )";
+  _btrfsBootResultStr="$(cat <<'EOF'
+ID 257 gen 157562 top level 5 path @home
+ID 322 gen 157562 top level 5 path @
+ID 259 gen 155190 top level 5 path @kfocus-rollback-snapshots
+ID 261 gen 110390 top level 260 path @libvirt-machines/@etc-libvirt
+ID 262 gen 34 top level 260 path @libvirt-machines/@var-lib-libvirt
+ID 263 gen 5406 top level 5 path @kfocus-rollback-boot-snapshots
+ID 364 gen 5556 top level 5 path @boot
+EOF
+  )";
+  _mountResultStr="$(cat <<'EOF'
+/dev/nvme1n1p2 on /boot type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=364,subvol=/@boot)
+/dev/nvme1n1p2 on / type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=322,subvol=/@)
+/dev/mapper/luks-a60360c5-79de-4dbb-a034-fe2de6ccc2ef on /home type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=257,subvol=/@home)
+EOF
+  )";
+  _manualSwitchStateStr='AUTO';
+  mkdir -p "${_rb2MainDir}/@";
+  mkdir -p "${_rb2MainSnapshotDir}";
+  mkdir -p "${_rb2BootDir}/@boot";
+  mkdir -p "${_rb2BootSnapshotDir}";
+}
+## . END _unsupportedMainBootMerge1Fn }
+
+## BEGIN _unsupportedMainBootMerge2Fn {
+# TEST CASE: Mostly same as _unsupportedMainBootMerge1Fn, but no separate
+#   mount for /boot.
+#
+_unsupportedMainBootMerge2Fn () {
+  _btrfsMainResultStr="$(cat <<'EOF'
+ID 257 gen 157562 top level 5 path @home
+ID 322 gen 157562 top level 5 path @
+ID 259 gen 155190 top level 5 path @kfocus-rollback-snapshots
+ID 261 gen 110390 top level 260 path @libvirt-machines/@etc-libvirt
+ID 262 gen 34 top level 260 path @libvirt-machines/@var-lib-libvirt
+EOF
+  )";
+  _btrfsBootResultStr="$(cat <<'EOF'
+ID 257 gen 157562 top level 5 path @home
+ID 322 gen 157562 top level 5 path @
+ID 259 gen 155190 top level 5 path @kfocus-rollback-snapshots
+ID 261 gen 110390 top level 260 path @libvirt-machines/@etc-libvirt
+ID 262 gen 34 top level 260 path @libvirt-machines/@var-lib-libvirt
+EOF
+  )";
+  _mountResultStr="$(cat <<'EOF'
+/dev/nvme1n1p2 on / type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=322,subvol=/@)
+/dev/mapper/luks-a60360c5-79de-4dbb-a034-fe2de6ccc2ef on /home type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=257,subvol=/@home)
+EOF
+  )";
+  _manualSwitchStateStr='AUTO';
+  mkdir -p "${_rb2MainDir}/@";
+  mkdir -p "${_rb2MainSnapshotDir}";
+  mkdir -p "${_rb2BootDir}/@boot";
+  mkdir -p "${_rb2BootSnapshotDir}";
+}
+## . END _unsupportedMainBootMerge2Fn }
+
+## BEGIN _unsupportedMissingSnapshotDirs1Fn {
+# TEST CASE: _rb2MainSnapshotDir and _rb2BootSnapshotDir missing
+#
+_unsupportedMissingSnapshotDirs1Fn () {
+  _btrfsMainResultStr="$(cat <<'EOF'
+ID 257 gen 157562 top level 5 path @home
+ID 322 gen 157562 top level 5 path @
+ID 261 gen 110390 top level 260 path @libvirt-machines/@etc-libvirt
+ID 262 gen 34 top level 260 path @libvirt-machines/@var-lib-libvirt
+EOF
+  )";
+  _btrfsBootResultStr="$(cat <<'EOF'
+ID 317 gen 5556 top level 5 path @boot
+EOF
+  )";
+  _mountResultStr="$(cat <<'EOF'
+/dev/nvme1n1p2 on /boot type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=317,subvol=/@boot)
+/dev/mapper/luks-a60360c5-79de-4dbb-a034-fe2de6ccc2ef on / type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=322,subvol=/@)
+/dev/mapper/luks-a60360c5-79de-4dbb-a034-fe2de6ccc2ef on /home type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=257,subvol=/@home)
+EOF
+  )";
+  _manualSwitchStateStr='MANUAL';
+  mkdir -p "${_rb2MainDir}/@";
+  mkdir -p "${_rb2BootDir}/@boot";
+}
+## . END _unsupportedMissingSnapshotDirs1Fn }
+
+## BEGIN _unsupportedMissingSnapshotDirs2Fn {
+# TEST CASE: _rb2MainSnapshotDir present but _rb2BootSnapshotDir missing
+#
+_unsupportedMissingSnapshotDirs2Fn () {
+  _btrfsMainResultStr="$(cat <<'EOF'
+ID 257 gen 157562 top level 5 path @home
+ID 322 gen 157562 top level 5 path @
+ID 259 gen 155190 top level 5 path @kfocus-rollback-snapshots
+ID 261 gen 110390 top level 260 path @libvirt-machines/@etc-libvirt
+ID 262 gen 34 top level 260 path @libvirt-machines/@var-lib-libvirt
+EOF
+  )";
+  _btrfsBootResultStr="$(cat <<'EOF'
+ID 317 gen 5556 top level 5 path @boot
+EOF
+  )";
+  _mountResultStr="$(cat <<'EOF'
+/dev/nvme1n1p2 on /boot type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=317,subvol=/@boot)
+/dev/mapper/luks-a60360c5-79de-4dbb-a034-fe2de6ccc2ef on / type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=322,subvol=/@)
+/dev/mapper/luks-a60360c5-79de-4dbb-a034-fe2de6ccc2ef on /home type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=257,subvol=/@home)
+EOF
+  )";
+  _manualSwitchStateStr='AUTO';
+  mkdir -p "${_rb2MainDir}/@";
+  mkdir -p "${_rb2MainSnapshotDir}";
+  mkdir -p "${_rb2BootDir}/@boot";
+}
+## . END _unsupportedMissingSnapshotDirs2Fn }
+
+## BEGIN _supportedNotSetUpFn {
+# TEST CASE: System in |SUPPORTED, NOT SET UP| state with no
+#   machines/portables subvols involved
+#
+_supportedNotSetUpFn () {
+  _btrfsMainResultStr="$(cat <<'EOF'
+ID 257 gen 157562 top level 5 path @home
+ID 322 gen 157562 top level 5 path @
+EOF
+  )";
+  _btrfsBootResultStr='';
+  _mountResultStr="$(cat <<'EOF'
+/dev/nvme1n1p2 on /boot type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag)
+/dev/mapper/luks-a60360c5-79de-4dbb-a034-fe2de6ccc2ef on / type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=322,subvol=/@)
+/dev/mapper/luks-a60360c5-79de-4dbb-a034-fe2de6ccc2ef on /home type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=257,subvol=/@home)
+EOF
+  )";
+  _manualSwitchStateStr='';
+}
+## . END _supportedNotSetUpFn }
+
+## BEGIN _inconsistentStrangeMainSnapshotSubvolFn {
+# TEST CASE: System is mostly SUPPORTED, NOT SET UP, but a
+#   @kfocus-rollback-snapshots subvolume is present
+#
+_inconsistentStrangeMainSnapshotSubvolFn () {
+  _btrfsMainResultStr="$(cat <<'EOF'
+ID 257 gen 157562 top level 5 path @home
+ID 322 gen 157562 top level 5 path @
+ID 323 gen 157562 top level 5 path @kfocus-rollback-snapshots
+EOF
+  )";
+  _btrfsBootResultStr='';
+  _mountResultStr="$(cat <<'EOF'
+/dev/nvme1n1p2 on /boot type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag)
+/dev/mapper/luks-a60360c5-79de-4dbb-a034-fe2de6ccc2ef on / type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=322,subvol=/@)
+/dev/mapper/luks-a60360c5-79de-4dbb-a034-fe2de6ccc2ef on /home type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=257,subvol=/@home)
+EOF
+  )";
+  _manualSwitchStateStr='';
+}
+## . END _inconsistentStrangeMainSnapshotSubvolFn }
+
+## BEGIN _unsupportedBadRootSubvolFn {
+# TEST CASE: System is mostly SUPPORTED, NOT SET UP, but the @ subvolume for
+#   the root fs is missing (it's named 'root' for some reason)
+#
+_unsupportedBadRootSubvolFn () {
+  _btrfsMainResultStr="$(cat <<'EOF'
+ID 257 gen 157562 top level 5 path @home
+ID 322 gen 157562 top level 5 path root
+EOF
+  )";
+  _btrfsBootResultStr='';
+  _mountResultStr="$(cat <<'EOF'
+/dev/nvme1n1p2 on /boot type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag)
+/dev/mapper/luks-a60360c5-79de-4dbb-a034-fe2de6ccc2ef on / type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=322,subvol=/@)
+/dev/mapper/luks-a60360c5-79de-4dbb-a034-fe2de6ccc2ef on /home type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=257,subvol=/@home)
+EOF
+  )";
+  _manualSwitchStateStr='';
+}
+## . END _unsupportedBadRootSubvolFn }
+
+## BEGIN _unsupportedRootHomeMergeFn
+# TEST CASE: System is mostly SUPPORTED, NOT SET UP, but the home mount point
+#   is part of the root mount point
+#
+_unsupportedRootHomeMergeFn () {
+  _btrfsMainResultStr="$(cat <<'EOF'
+ID 322 gen 157562 top level 5 path @
+EOF
+  )";
+  _btrfsBootResultStr='';
+  _mountResultStr="$(cat <<'EOF'
+/dev/nvme1n1p2 on /boot type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag)
+/dev/mapper/luks-a60360c5-79de-4dbb-a034-fe2de6ccc2ef on / type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=322,subvol=/@)
+EOF
+  )";
+  _manualSwitchStateStr='';
+}
+## . END _unsupportedRootHomeMergeFn
+
+## BEGIN _unsupportedMainBootMerge3Fn {
+# TEST CASE: System is mostly SUPPORTED, NOT SET UP, but with main and boot
+#   filesystems on the same filesystem
+#
+_unsupportedMainBootMerge3Fn () {
+  _btrfsMainResultStr="$(cat <<'EOF'
+ID 257 gen 157562 top level 5 path @home
+ID 322 gen 157562 top level 5 path @
+ID 364 gen 5556 top level 5 path @boot
+EOF
+  )";
+  _btrfsBootResultStr="$(cat <<'EOF'
+ID 257 gen 157562 top level 5 path @home
+ID 322 gen 157562 top level 5 path @
+ID 364 gen 5556 top level 5 path @boot
+EOF
+  )";
+  _mountResultStr="$(cat <<'EOF'
+/dev/nvme1n1p2 on /boot type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=364,subvol=/@boot)
+/dev/nvme1n1p2 on / type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=322,subvol=/@)
+/dev/mapper/luks-a60360c5-79de-4dbb-a034-fe2de6ccc2ef on /home type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=257,subvol=/@home)
+EOF
+  )";
+  _manualSwitchStateStr='';
+}
+## . END _unsupportedMainBootMerge3Fn }
+
+## BEGIN _unsupportedMainBootMerge4Fn {
+# TEST CASE: Mostly same as _unsupportedMainBootMerge3Fn, but no separate
+#   mount for /boot.
+#
+_unsupportedMainBootMerge4Fn () {
+  _btrfsMainResultStr="$(cat <<'EOF'
+ID 257 gen 157562 top level 5 path @home
+ID 322 gen 157562 top level 5 path @
+ID 364 gen 5556 top level 5 path @boot
+EOF
+  )";
+  _btrfsBootResultStr="$(cat <<'EOF'
+ID 257 gen 157562 top level 5 path @home
+ID 322 gen 157562 top level 5 path @
+ID 364 gen 5556 top level 5 path @boot
+EOF
+  )";
+  _mountResultStr="$(cat <<'EOF'
+/dev/nvme1n1p2 on / type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=322,subvol=/@)
+/dev/mapper/luks-a60360c5-79de-4dbb-a034-fe2de6ccc2ef on /home type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=257,subvol=/@home)
+EOF
+  )";
+  _manualSwitchStateStr='';
+}
+## . END _unsupportedMainBootMerge4Fn }
+
+## BEGIN _inconsistentOnlyOneBtrfsDirFn {
+# TEST CASE: Only _rb2MainDir exists, not _rb2BootDir
+_inconsistentOnlyOneBtrfsDirFn () {
+  _btrfsMainResultStr="$(cat <<'EOF'
+ID 257 gen 157562 top level 5 path @home
+ID 322 gen 157562 top level 5 path @
+ID 259 gen 155190 top level 5 path @kfocus-rollback-snapshots
+ID 261 gen 110390 top level 260 path @libvirt-machines/@etc-libvirt
+ID 262 gen 34 top level 260 path @libvirt-machines/@var-lib-libvirt
+EOF
+  )";
+  _btrfsBootResultStr="";
+  _mountResultStr="$(cat <<'EOF'
+/dev/nvme1n1p2 on /boot type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag)
+/dev/mapper/luks-a60360c5-79de-4dbb-a034-fe2de6ccc2ef on / type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=322,subvol=/@)
+/dev/mapper/luks-a60360c5-79de-4dbb-a034-fe2de6ccc2ef on /home type btrfs (rw,noatime,compress=lzo,ssd,discard,space_cache=v2,autodefrag,subvolid=257,subvol=/@home)
+EOF
+  )";
+  _manualSwitchStateStr='AUTO';
+  mkdir -p "${_rb2MainDir}/@";
+  mkdir -p "${_rb2MainSnapshotDir}";
+  mkdir -p "${_rb2MainDir}/@home";
+}
+## . END _inconsistentOnlyOneBtrfsDirFn }
+
+## . END State preparation functions }
+
+## BEGIN _unsetMocksFn {
+# Purpose : Unset mocked functions and other globals to prevent
+#   pollution of namespaces. Mocked functions from commons.2.source are not
+#   reset here; instead they are re-source after every test in runUnitTests
+#   (the test harness). See more notes in 00900.
+_unsetMocksFn () {
+  unset ls mount _getManualSwitchStateBackendFn _btrfsExe;
+}
+## . END _unsetMocksFn }
+
+## BEGIN _runTestFn {
+# This MUST be called '_runTestFn' for use by the _runUnitTests
+_runTestFn () {
+  declare _rootDir _assert_table _fail_count _assert_count _assert_idx \
+    _assert_line _assert_prep_fn _assert_result _count_str;
+
+  # Clear out run dir
+  if ! _t00ClearRunDirFn;    then return 1; fi
+
+  # WE DO NOT NEED TO IMPORT COMMON FOR sourced scripts, as the common lib
+  #   is already imported by _runUnitTests.
+  # _importCommonFn;
+
+  # Mock functions and variables as needed
+  _overwriteWithMocksFn;
+
+  _assert_table=(
+    'machinesPortablesTest1|SUPPORTED, NOT SET UP'
+    'machinesPortablesTest2|UNSUPPORTED'
+    'machinesPortablesTest3|SUPPORTED, NOT SET UP'
+    'machinesPortablesTest4|UNSUPPORTED'
+    'supportedManual|SUPPORTED, MANUAL'
+    'supportedAuto|SUPPORTED, AUTO'
+    'supportedHomeOnSecondary|SUPPORTED, AUTO'
+    'unsupportedMainBootMerge1|UNSUPPORTED'
+    'unsupportedMainBootMerge2|UNSUPPORTED'
+    'unsupportedMissingSnapshotDirs1|UNSUPPORTED'
+    'unsupportedMissingSnapshotDirs2|UNSUPPORTED'
+    'supportedNotSetUp|SUPPORTED, NOT SET UP'
+    'inconsistentStrangeMainSnapshotSubvol|INCONSISTENT'
+    'unsupportedBadRootSubvol|UNSUPPORTED'
+    'unsupportedRootHomeMerge|UNSUPPORTED'
+    'unsupportedMainBootMerge3|UNSUPPORTED'
+    'unsupportedMainBootMerge4|UNSUPPORTED'
+    'inconsistentOnlyOneBtrfsDir|INCONSISTENT'
+  );
+
+  ## Begin Iterate through assertions {
+  _fail_count=0;
+  _assert_count="${#_assert_table[@]}";
+  _assert_idx=1;
+
+  for _assert_line in "${_assert_table[@]}"; do
+    IFS='|' read -r -d '' -a _bit_list < <(echo -n "${_assert_line}");
+    _assert_prep_fn="${_bit_list[0]}";
+    _assert_result="${_bit_list[1]}";
+    # Place bits from _bit_list into variables
+
+    # Run system under test here and extract results
+    "_${_assert_prep_fn}Fn";
+    _checkBtrfsStatusFn;
+
+    # shellcheck disable=SC2154
+    _count_str="$(_t00MakeCountStrFn "${_assert_idx}" "${_assert_count}")";
+
+    ## Begin Check results
+    if [ "${_btrfsStatus}" = "${_assert_result}" ]; then
+      _cm2EchoFn "  ok  : ${_count_str} ${_assert_prep_fn} |${_assert_result}|";
+    else
+      _cm2EchoFn "  fail: ${_count_str} ${_assert_prep_fn}";
+      _cm2EchoFn "    expected : ${_assert_result}";
+      _cm2EchoFn "    got      : ${_btrfsStatus}";
+      (( _fail_count++ ));
+    fi
+    ## . End Check diffs }
+      (( _assert_idx++ ));
+    
+    # Make sure the next assert doesn't have garbage from the previous one in
+    # the way
+    if ! _t00ClearRunDirFn; then return 1; fi
+  done
+  ## End Iterate through assertions }
+
+  _unsetMocksFn;
+  if [ "${_fail_count}" -gt 0 ]; then
+    _cm2EchoFn "FAIL: ${_fail_count} of ${_assert_count} asserts failed.";
+  else
+    _cm2EchoFn 'OK  : Results match expected';
+  fi
+
+  return "${_fail_count}";
+}
+## . END _runTestFn }

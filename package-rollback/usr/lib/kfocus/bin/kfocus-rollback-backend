@@ -506,129 +506,25 @@ _getMainFragReportFn () {
 # TODO: Use this gauntlet code AFTER A-B unit testing and ensure
 #   match to existing and expected logic
 #
-# _readMainFsFn () {
-#   LC_ALL='C' mount | grep btrfs | grep ' on / ' \
-#     | cut -d' ' -f1;
-# }
-# _readBootFsFn () {
-#   LC_ALL='C' mount | grep btrfs | grep ' on /boot ' \
-#     | cut -d' ' -f1;
-# }
-# _chkDirListFn () {
-#   declare _good_count _dir_list _loop_dir;
-#   _good_count=0;
-#   readarray -t -d'|' _dir_list < <(echo -n "${1:-}");
-#   for _loop_dir in "${_dir_list[@]}"; do
-#     if [ -d "${_loop_dir}" ]; then (( _good_count++ )); fi
-#   done
-#   echo "${_good_count}";
-# }
-#
-# _checkBtrfsStatusFn () {
-#   # The presence of /var/lib/portables or /var/lib/machines subvolumes will
-#   # interfere with snapshotting. These subvolumes may be created automatically
-#   # by systemd if it is not configured otherwise.
-#   if grep -q 'var/lib/portables' < <("${_btrfsExe}" subvolume list /) || \
-#      grep -q 'var/lib/machines' < <("${_btrfsExe}" subvolume list /); then
-#     if [ -n "$(ls -A /var/lib/portables)" ] || \
-#        [ -n "$(ls -A /var/lib/machines )" ]; then
-#       _btrfsStatus='UNSUPPORTED';
-#       return;
-#     fi
-#   fi
-#
-#   # Gauntlet for INCONSISTENT, UNSUPPORTED, SUPPORTED
-#   _main_fs="$(_readMainFsFn)";
-#   _boot_fs="$(_readBootFsFn)";
-#   for _idx in {1..1}; do
-#     # Check top directories
-#     _good_count=$(_chkDirListFn '/btrfs_main|/btrfs_boot');
-#
-#     # Only one directory means INCONSISTENT
-#     [ "${_good_count}" = '1' ] && {
-#       _btrfsStatus='INCONSISTENT'; break;
-#     }
-#
-#     # No directories mean we should CHECK_SETUP
-#     [ "${_good_count}" ='0' ] && {
-#       _btrfsStatus='CHECK_CAN_SETUP'; break;
-#     }
-#
-#     # Unless 4 dirs exist, means UNSUPPORTED
-#     _chk_str="/btrfs_main/@|${_rb2MainSnapshotDir}";
-#     _chk_str+="|/btrfs_boot/@boot|${_rb2BootSnapshotDir}";
-#     _good_count=$(_chkDirListFn "${_chk_str}");
-#     [ "${_good_count}" != 4 ] && {
-#       _btrfsStatus='UNSUPPORTED'; break;
-#     }
-#
-#     # Unless main, boot fs exists and distinct, means UNSUPPORTED
-#     [ -z "${_main_fs}" ] || [ -z "${_boot_fs}" ] \
-#       || [ "${_main_fs}" = "${_boot_fs}" ] && {
-#       _btrfsStatus='UNSUPPORTED'; break;
-#     }
-#
-#     # Gauntlet passed.
-#     _btrfsStatus='SUPPORTED';
-#   done
-#
-#   # Append MANUAL, AUTO, NOT SETUP to SUPPORTED condition
-#   if [ "${_btrfsStatus}" = 'SUPPORTED' ]; then
-#     if [ "$(_getManualSwitchStateBackendFn)" = 'MANUAL' ]; then
-#       _btrfsStatus+=', MANUAL';
-#     else
-#       _btrfsStatus+=', AUTO';
-#     fi
-#   fi
-#
-#   # Bail if btrfStatus is already set
-#   if [ "${_btrfsStatus}" != 'CHECK_CAN_SETUP' ]; then return; fi
-#
-#   # Gauntlet to run on CHECK_CAN_SETUP condition,
-#   #   where _main_fs, _boot_fs are not setup per above
-#   for _idx in {1..1}; do
-#
-#     # Unless main, boot fs exists and distinct, means UNSUPPORTED
-#     if [ -z "${_main_fs}" ] || [ -z "${_boot_fs}" ] \
-#       || [ "${_main_fs}" = "${_boot_fs}" ]; then
-#       _btrfsStatus='UNSUPPORTED'; break;
-#     fi
-#     _main_subvols_str="$(
-#       "${_btrfsExe}" subvolume list / | awk '{ print $9 }' | sort
-#     )";
-#     _boot_subvols_str="$(
-#       "${_btrfsExe}" subvolume list /boot | awk '{ print $9 }' | sort
-#     )";
-#
-#     # If root subvol is misnamed or absent, means UNSUPPORTED
-#     if ! grep -qE '^@$' <<< "${_main_subvols_str}";
-#       _btrfsStatus='UNSUPPORTED'; break;
-#     fi
-#
-#     # If /home mount is not found, means UNSUPPORTED
-#     if ! LC_ALL='C' mount | grep -q ' on /home '; then
-#       _btrfsStatus='UNSUPPORTED'; break;
-#     fi
-#
-#     # If main_subvol_str is not empty, means UNSUPPORTED
-#     if [ -n "${_boot_subvol_str}" ]; then
-#       _btrfsStatus='UNSUPPORTED'; break;
-#     fi
-#
-#     # If snapshots are found, means INCONSISTENT
-#     if grep -qE '^@kfocus-rollback-snapshots$' \
-#       <<< "${_main_subvols_str}"; then
-#       _btrfsStatus='INCONSISTENT'; break;
-#     fi
-#
-#     # Gauntlet passed
-#     _btrfsStatus='SUPPORTED, NOT SET UP';
-#   done
-# }
+_readMainFsFn () {
+  LC_ALL='C' mount | grep btrfs | grep ' on / ' \
+    | cut -d' ' -f1;
+}
+_readBootFsFn () {
+  LC_ALL='C' mount | grep btrfs | grep ' on /boot ' \
+    | cut -d' ' -f1;
+}
+_chkDirListFn () {
+  declare _good_count _dir_list _loop_dir;
+  _good_count=0;
+  readarray -t -d'|' _dir_list < <(echo -n "${1:-}");
+  for _loop_dir in "${_dir_list[@]}"; do
+    if [ -d "${_loop_dir}" ]; then (( _good_count++ )); fi
+  done
+  echo "${_good_count}";
+}
 
 _checkBtrfsStatusFn () {
-  declare _main_fs _boot_fs _main_subvols_str _boot_subvols_str;
-
   # The presence of /var/lib/portables or /var/lib/machines subvolumes will
   # interfere with snapshotting. These subvolumes may be created automatically
   # by systemd if it is not configured otherwise.
@@ -641,61 +537,165 @@ _checkBtrfsStatusFn () {
     fi
   fi
 
-  if [ -d '/btrfs_main' ] && [ -d '/btrfs_boot' ]; then
-    if [ -d '/btrfs_main/@' ] \
-      && [ -d "${_rb2MainSnapshotDir}" ] \
-      && [ -d '/btrfs_boot/@boot' ] \
-      && [ -d "${_rb2BootSnapshotDir}" ]; then
-      _main_fs="$(LC_ALL='C' mount | grep btrfs | grep ' on / ' \
-        | cut -d' ' -f1)";
-      _boot_fs="$(LC_ALL='C' mount | grep btrfs | grep ' on /boot ' \
-        | cut -d' ' -f1)";
-      if [ -n "${_main_fs}" ] && [ -n "${_boot_fs}" ] \
-        && [ "${_main_fs}" != "${_boot_fs}" ]; then
-        if [ "$(_getManualSwitchStateBackendFn)" = 'MANUAL' ]; then
-          _btrfsStatus='SUPPORTED, MANUAL';
-        else
-          _btrfsStatus='SUPPORTED, AUTO';
-        fi
-      else
-        _btrfsStatus='UNSUPPORTED';
-      fi
+  # Gauntlet for INCONSISTENT, UNSUPPORTED, SUPPORTED
+  _main_fs="$(_readMainFsFn)";
+  _boot_fs="$(_readBootFsFn)";
+  for _idx in {1..1}; do
+    # Check top directories
+    _good_count=$(_chkDirListFn "${_rb2MainDir}|${_rb2BootDir}");
+
+    # Only one directory means INCONSISTENT
+    [ "${_good_count}" = '1' ] && {
+      _btrfsStatus='INCONSISTENT'; break;
+    }
+
+    # No directories mean we should CHECK_SETUP
+    [ "${_good_count}" = '0' ] && {
+      _btrfsStatus='CHECK_CAN_SETUP'; break;
+    }
+
+    # Unless 4 dirs exist, means UNSUPPORTED
+    _chk_str="/btrfs_main/@|${_rb2MainSnapshotDir}";
+    _chk_str+="|/btrfs_boot/@boot|${_rb2BootSnapshotDir}";
+    _good_count=$(_chkDirListFn "${_chk_str}");
+    [ "${_good_count}" != 4 ] && {
+      _btrfsStatus='UNSUPPORTED'; break;
+    }
+
+    # Unless main, boot fs exists and distinct, means UNSUPPORTED
+    [ -z "${_main_fs}" ] || [ -z "${_boot_fs}" ] \
+      || [ "${_main_fs}" = "${_boot_fs}" ] && {
+      _btrfsStatus='UNSUPPORTED'; break;
+    }
+
+    # Gauntlet passed.
+    _btrfsStatus='SUPPORTED';
+  done
+
+  # Append MANUAL, AUTO, NOT SETUP to SUPPORTED condition
+  if [ "${_btrfsStatus}" = 'SUPPORTED' ]; then
+    if [ "$(_getManualSwitchStateBackendFn)" = 'MANUAL' ]; then
+      _btrfsStatus+=', MANUAL';
     else
-      _btrfsStatus='UNSUPPORTED';
-    fi
-  else
-    if ! [ -d '/btrfs_main' ] && ! [ -d '/btrfs_boot' ]; then
-      _main_fs="$(LC_ALL='C' mount | grep btrfs | grep ' on / ' \
-        | cut -d' ' -f1)";
-      _boot_fs="$(LC_ALL='C' mount | grep btrfs | grep ' on /boot ' \
-        | cut -d' ' -f1)";
-      if [ -n "${_main_fs}" ] && [ -n "${_boot_fs}" ] \
-        && [ "${_main_fs}" != "${_boot_fs}" ]; then
-        _main_subvols_str="$("${_btrfsExe}" subvolume list / | awk '{ print $9 }' | sort)";
-        _boot_subvols_str="$("${_btrfsExe}" subvolume list /boot | awk '{ print $9 }' | sort)";
-        if grep -qE '^@$' <<< "${_main_subvols_str}" && \
-          LC_ALL='C' mount | grep -q ' on /home '; then
-          if [ -z "${_boot_subvols_str}" ]; then
-            if ! grep -qE '^@kfocus-rollback-snapshots$' \
-              <<< "${_main_subvols_str}"; then
-              _btrfsStatus='SUPPORTED, NOT SET UP';
-            else
-              _btrfsStatus='INCONSISTENT';
-            fi
-          else
-            _btrfsStatus='UNSUPPORTED';
-          fi
-        else
-          _btrfsStatus='UNSUPPORTED';
-        fi
-      else
-        _btrfsStatus='UNSUPPORTED';
-      fi
-    else
-      _btrfsStatus='INCONSISTENT';
+      _btrfsStatus+=', AUTO';
     fi
   fi
+
+  # Bail if btrfStatus is already set
+  if [ "${_btrfsStatus}" != 'CHECK_CAN_SETUP' ]; then return; fi
+
+  # Gauntlet to run on CHECK_CAN_SETUP condition,
+  #   where _main_fs, _boot_fs are not setup per above
+  for _idx in {1..1}; do
+
+    # Unless main, boot fs exists and distinct, means UNSUPPORTED
+    if [ -z "${_main_fs}" ] || [ -z "${_boot_fs}" ] \
+      || [ "${_main_fs}" = "${_boot_fs}" ]; then
+      _btrfsStatus='UNSUPPORTED'; break;
+    fi
+    _main_subvols_str="$(
+      "${_btrfsExe}" subvolume list / | awk '{ print $9 }' | sort
+    )";
+    _boot_subvols_str="$(
+      "${_btrfsExe}" subvolume list /boot | awk '{ print $9 }' | sort
+    )";
+
+    # If root subvol is misnamed or absent, means UNSUPPORTED
+    if ! grep -qE '^@$' <<< "${_main_subvols_str}"; then
+      _btrfsStatus='UNSUPPORTED'; break;
+    fi
+
+    # If /home mount is not found, means UNSUPPORTED
+    if ! LC_ALL='C' mount | grep -q ' on /home '; then
+      _btrfsStatus='UNSUPPORTED'; break;
+    fi
+
+    # If main_subvols_str is not empty, means UNSUPPORTED
+    if [ -n "${_boot_subvols_str}" ]; then
+      _btrfsStatus='UNSUPPORTED'; break;
+    fi
+
+    # If snapshots are found, means INCONSISTENT
+    if grep -qE '^@kfocus-rollback-snapshots$' \
+      <<< "${_main_subvols_str}"; then
+      _btrfsStatus='INCONSISTENT'; break;
+    fi
+
+    # Gauntlet passed
+    _btrfsStatus='SUPPORTED, NOT SET UP';
+  done
 }
+
+#_checkBtrfsStatusFn () {
+#  declare _main_fs _boot_fs _main_subvols_str _boot_subvols_str;
+
+#  # The presence of /var/lib/portables or /var/lib/machines subvolumes will
+#  # interfere with snapshotting. These subvolumes may be created automatically
+#  # by systemd if it is not configured otherwise.
+#  if grep -q 'var/lib/portables' < <("${_btrfsExe}" subvolume list /) || \
+#     grep -q 'var/lib/machines' < <("${_btrfsExe}" subvolume list /); then
+#    if [ -n "$(ls -A /var/lib/portables)" ] || \
+#       [ -n "$(ls -A /var/lib/machines )" ]; then
+#      _btrfsStatus='UNSUPPORTED';
+#      return;
+#    fi
+#  fi
+
+#  if [ -d "${_rb2MainDir}" ] && [ -d "${_rb2BootDir}" ]; then
+#    if [ -d "${_rb2MainDir}/@" ] \
+#      && [ -d "${_rb2MainSnapshotDir}" ] \
+#      && [ -d "${_rb2BootDir}/@boot" ] \
+#      && [ -d "${_rb2BootSnapshotDir}" ]; then
+#      _main_fs="$(LC_ALL='C' mount | grep btrfs | grep ' on / ' \
+#        | cut -d' ' -f1)";
+#      _boot_fs="$(LC_ALL='C' mount | grep btrfs | grep ' on /boot ' \
+#        | cut -d' ' -f1)";
+#      if [ -n "${_main_fs}" ] && [ -n "${_boot_fs}" ] \
+#        && [ "${_main_fs}" != "${_boot_fs}" ]; then
+#        if [ "$(_getManualSwitchStateBackendFn)" = 'MANUAL' ]; then
+#          _btrfsStatus='SUPPORTED, MANUAL';
+#        else
+#          _btrfsStatus='SUPPORTED, AUTO';
+#        fi
+#      else
+#        _btrfsStatus='UNSUPPORTED';
+#      fi
+#    else
+#      _btrfsStatus='UNSUPPORTED';
+#    fi
+#  else
+#    if ! [ -d "${_rb2MainDir}" ] && ! [ -d "${_rb2BootDir}" ]; then
+#      _main_fs="$(LC_ALL='C' mount | grep btrfs | grep ' on / ' \
+#        | cut -d' ' -f1)";
+#      _boot_fs="$(LC_ALL='C' mount | grep btrfs | grep ' on /boot ' \
+#        | cut -d' ' -f1)";
+#      if [ -n "${_main_fs}" ] && [ -n "${_boot_fs}" ] \
+#        && [ "${_main_fs}" != "${_boot_fs}" ]; then
+#        _main_subvols_str="$("${_btrfsExe}" subvolume list / | awk '{ print $9 }' | sort)";
+#        _boot_subvols_str="$("${_btrfsExe}" subvolume list /boot | awk '{ print $9 }' | sort)";
+#        if grep -qE '^@$' <<< "${_main_subvols_str}" && \
+#          LC_ALL='C' mount | grep -q ' on /home '; then
+#          if [ -z "${_boot_subvols_str}" ]; then
+#            if ! grep -qE '^@kfocus-rollback-snapshots$' \
+#              <<< "${_main_subvols_str}"; then
+#              _btrfsStatus='SUPPORTED, NOT SET UP';
+#            else
+#              _btrfsStatus='INCONSISTENT';
+#            fi
+#          else
+#            _btrfsStatus='UNSUPPORTED';
+#          fi
+#        else
+#          _btrfsStatus='UNSUPPORTED';
+#        fi
+#      else
+#        _btrfsStatus='UNSUPPORTED';
+#      fi
+#    else
+#      _btrfsStatus='INCONSISTENT';
+#    fi
+#  fi
+#}
 ## . END _checkBtrfsStatusFn }
 
 ## BEGIN _checkBtrfsStatusSetUpFn {
