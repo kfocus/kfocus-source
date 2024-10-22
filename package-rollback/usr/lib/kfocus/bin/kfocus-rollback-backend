@@ -85,13 +85,26 @@ _trapExitFn () {
   # rm "${_lockFile}" || true;
 }
 
+## BEGIN _chkSetFlockFn {
+# Summary   : _chkSetFlockFn;
+# Purpose   : Set file lock for this executable.
+#   Use this to prevent multiple instances from running.
+# Example   : while ! _chkSetFlockFn; sleep 1; done
+# Arguments : none
+# Globals   : _lockDir, lockFile, _trapExitFn
+# Outputs   : Messages to STDERR
+# Returns   : 21 - Lock file permssion denied
+#           : 20 - Cannot get lock
+#           : 0 - Success
+# Throws    : none
+#
 _chkSetFlockFn () {
   mkdir -p "${_lockDir}";
   if ! [ -e "${_lockFile}" ]; then
     install -m 666 /dev/null "${_lockFile}";
   fi
   exec 211>"${_lockFile}" || {
-    echo 'Lock file permission denied';
+    1>&2 echo 'Lock file permission denied';
     return 21;
   };
   if ! flock -n -e 211; then
@@ -101,7 +114,11 @@ _chkSetFlockFn () {
   # Trap unexpected exits to show warnings if needed
   trap _trapExitFn EXIT;
 }
+## . END _chkSetFlockFn }
 
+## BEGIN _exitCleanFn {
+# Purpose: Unset traps for exit and then do so.
+#
 _exitCleanFn () {
   declare _int;
   _int="$(_cm2EchoIntFn "${1:-0}")";
@@ -114,6 +131,19 @@ _exitCleanFn () {
   exit "${_int}";
 }
 
+## BEGIN _exitWithCodeFn {
+# Summary   : _exitWithCodeFn _int _msg
+# Purpose   : Echo message to syslog and exit with code.
+# Example   : _promptAllUsersFn 0 'All good';
+# Arguments :
+#   _int - Exit code. This maps different than standard syslog levels
+#          (TODO: Bring this closer to standard 0-7 syslog levels?)
+#   _msg - Message for sysog
+# Globals   : _cm2LogFn
+# Outputs   : Writes to syslog
+# Returns   : Exit code
+# Throws    : none
+#
 _exitWithCodeFn () {
   declare _int _msg;
 
@@ -132,8 +162,8 @@ _exitWithCodeFn () {
   fi
   _exitCleanFn "${_int}";
 }
+## . END _exitWithCodeFn }
 
-## TODO 2024-05-26 arraybolt3 WARN: Replace these.
 _exitNOTICE () { _exitWithCodeFn  "${_rb2NOTICE}" "$@"; }
 _exitERR ()    { _exitWithCodeFn  "${_rb2ERR}"    "$@"; }
 _exitCRIT ()   { _exitWithCodeFn  "${_rb2CRIT}"   "$@"; }
@@ -204,7 +234,7 @@ _checkRootFn () {
 #
 _clearRestoreFn () {
   _checkBtrfsStatusSetUpFn;
-  # TODO: Through a serious error here if cannot remove
+  # TODO: Throw a serious error here if cannot remove
   rm -f "${_rb2RestoreCompleteFile}" || true;
   _cm2LogFn 'notice' 'Restore flag cleared.';
 }
@@ -473,6 +503,129 @@ _getMainFragReportFn () {
 # Returns   : none
 # Throws    : none
 #
+# TODO: Use this gauntlet code AFTER A-B unit testing and ensure
+#   match to existing and expected logic
+#
+# _readMainFsFn () {
+#   LC_ALL='C' mount | grep btrfs | grep ' on / ' \
+#     | cut -d' ' -f1;
+# }
+# _readBootFsFn () {
+#   LC_ALL='C' mount | grep btrfs | grep ' on /boot ' \
+#     | cut -d' ' -f1;
+# }
+# _chkDirListFn () {
+#   declare _good_count _dir_list _loop_dir;
+#   _good_count=0;
+#   readarray -t -d'|' _dir_list < <(echo -n "${1:-}");
+#   for _loop_dir in "${_dir_list[@]}"; do
+#     if [ -d "${_loop_dir}" ]; then (( _good_count++ )); fi
+#   done
+#   echo "${_good_count}";
+# }
+#
+# _checkBtrfsStatusFn () {
+#   # The presence of /var/lib/portables or /var/lib/machines subvolumes will
+#   # interfere with snapshotting. These subvolumes may be created automatically
+#   # by systemd if it is not configured otherwise.
+#   if grep -q 'var/lib/portables' < <("${_btrfsExe}" subvolume list /) || \
+#      grep -q 'var/lib/machines' < <("${_btrfsExe}" subvolume list /); then
+#     if [ -n "$(ls -A /var/lib/portables)" ] || \
+#        [ -n "$(ls -A /var/lib/machines )" ]; then
+#       _btrfsStatus='UNSUPPORTED';
+#       return;
+#     fi
+#   fi
+#
+#   # Gauntlet for INCONSISTENT, UNSUPPORTED, SUPPORTED
+#   _main_fs="$(_readMainFsFn)";
+#   _boot_fs="$(_readBootFsFn)";
+#   for _idx in {1..1}; do
+#     # Check top directories
+#     _good_count=$(_chkDirListFn '/btrfs_main|/btrfs_boot');
+#
+#     # Only one directory means INCONSISTENT
+#     [ "${_good_count}" = '1' ] && {
+#       _btrfsStatus='INCONSISTENT'; break;
+#     }
+#
+#     # No directories mean we should CHECK_SETUP
+#     [ "${_good_count}" ='0' ] && {
+#       _btrfsStatus='CHECK_CAN_SETUP'; break;
+#     }
+#
+#     # Unless 4 dirs exist, means UNSUPPORTED
+#     _chk_str="/btrfs_main/@|${_rb2MainSnapshotDir}";
+#     _chk_str+="|/btrfs_boot/@boot|${_rb2BootSnapshotDir}";
+#     _good_count=$(_chkDirListFn "${_chk_str}");
+#     [ "${_good_count}" != 4 ] && {
+#       _btrfsStatus='UNSUPPORTED'; break;
+#     }
+#
+#     # Unless main, boot fs exists and distinct, means UNSUPPORTED
+#     [ -z "${_main_fs}" ] || [ -z "${_boot_fs}" ] \
+#       || [ "${_main_fs}" = "${_boot_fs}" ] && {
+#       _btrfsStatus='UNSUPPORTED'; break;
+#     }
+#
+#     # Gauntlet passed.
+#     _btrfsStatus='SUPPORTED';
+#   done
+#
+#   # Append MANUAL, AUTO, NOT SETUP to SUPPORTED condition
+#   if [ "${_btrfsStatus}" = 'SUPPORTED' ]; then
+#     if [ "$(_getManualSwitchStateBackendFn)" = 'MANUAL' ]; then
+#       _btrfsStatus+=', MANUAL';
+#     else
+#       _btrfsStatus+=', AUTO';
+#     fi
+#   fi
+#
+#   # Bail if btrfStatus is already set
+#   if [ "${_btrfsStatus}" != 'CHECK_CAN_SETUP' ]; then return; fi
+#
+#   # Gauntlet to run on CHECK_CAN_SETUP condition,
+#   #   where _main_fs, _boot_fs are not setup per above
+#   for _idx in {1..1}; do
+#
+#     # Unless main, boot fs exists and distinct, means UNSUPPORTED
+#     if [ -z "${_main_fs}" ] || [ -z "${_boot_fs}" ] \
+#       || [ "${_main_fs}" = "${_boot_fs}" ]; then
+#       _btrfsStatus='UNSUPPORTED'; break;
+#     fi
+#     _main_subvols_str="$(
+#       "${_btrfsExe}" subvolume list / | awk '{ print $9 }' | sort
+#     )";
+#     _boot_subvols_str="$(
+#       "${_btrfsExe}" subvolume list /boot | awk '{ print $9 }' | sort
+#     )";
+#
+#     # If root subvol is misnamed or absent, means UNSUPPORTED
+#     if ! grep -qE '^@$' <<< "${_main_subvols_str}";
+#       _btrfsStatus='UNSUPPORTED'; break;
+#     fi
+#
+#     # If /home mount is not found, means UNSUPPORTED
+#     if ! LC_ALL='C' mount | grep -q ' on /home '; then
+#       _btrfsStatus='UNSUPPORTED'; break;
+#     fi
+#
+#     # If main_subvol_str is not empty, means UNSUPPORTED
+#     if [ -n "${_boot_subvol_str}" ]; then
+#       _btrfsStatus='UNSUPPORTED'; break;
+#     fi
+#
+#     # If snapshots are found, means INCONSISTENT
+#     if grep -qE '^@kfocus-rollback-snapshots$' \
+#       <<< "${_main_subvols_str}"; then
+#       _btrfsStatus='INCONSISTENT'; break;
+#     fi
+#
+#     # Gauntlet passed
+#     _btrfsStatus='SUPPORTED, NOT SET UP';
+#   done
+# }
+
 _checkBtrfsStatusFn () {
   declare _main_fs _boot_fs _main_subvols_str _boot_subvols_str;
 
@@ -639,7 +792,7 @@ _checkMainUnallocSpaceFn () {
 # Globals   : _lowBootMsg
 # Outputs   : none
 # Returns   : none
-# Throws    : 
+# Throws    :
 #   _NOTICE - _checkBtrfsStatusSetUpFn check failed.
 #   _ERR - Boot unallocated space is low.
 #
@@ -884,7 +1037,7 @@ _deleteSnapshotFn () {
   _writeMetadbFn "${_target_snapshot_id}" 'desc' '';
   _writeMetadbFn "${_target_snapshot_id}" 'pinned' '';
   _writeMetadbFn "${_target_snapshot_id}" 'reason' '';
-  
+
   _cm2LogFn 'notice' "Snapshot ${_target_snapshot_id} deleted.";
 }
 ## . END _deleteSnapshotFn }
@@ -1316,7 +1469,7 @@ _restoreSnapshotFn () {
     _cm2ErrStrFn 'Please reboot, then run "Finish restoration operation".';
     _exitERR 'Restore already in progress!';
   fi
-  
+
   _snapshot_path="${_rb2MainSnapshotDir}/${_target_snapshot_id}";
   _boot_snapshot_path="${_rb2BootSnapshotDir}/${_target_snapshot_id}";
 
@@ -1377,7 +1530,7 @@ _restoreSnapshotFn () {
     echo "${_snapshot_reason}";
   } > "/btrfs_main/@${_rb2RestoreCompleteFile}" \
     || _exitALERT 'Unable to prepare system for post-snapshot cleanup!';
- 
+
   # Trim older snapshots
   _trimSnapshotsFn || _exitALERT 'Unable to trim snapshots post-restore!';
 
@@ -1434,7 +1587,7 @@ _systemSnapshotFn () {
 #
 _getSnapshotMetadataFn () {
   declare _snapshot_id _mode _item _space_report _metadata_str;
-  
+
   _checkBtrfsStatusSetUpFn;
 
   _snapshot_id="${1:-}";
@@ -1486,11 +1639,11 @@ _getSnapshotMetadataFn () {
 #   _NOTICE - _checkBtrfsStatusSetUpFn check failed.
 #   _ERR - _checkMainUnallocSpaceFn check failed, _checkBootUnallocSpaceFn
 #     check failed, one of the arguments is blank, specified snapshot does not
-#     exist, or pin argument is not one of 'y' or 'n', 
+#     exist, or pin argument is not one of 'y' or 'n',
 #
 _setSnapshotMetadataFn () {
   declare _snapshot_id _name_str _desc_str _is_pinned _was_pinned;
-  
+
   _checkBtrfsStatusSetUpFn;
 
   _snapshot_id="${1:-}";
@@ -1537,7 +1690,7 @@ _balanceMainFn () {
   declare _do_force_balance _main_report _main_unalloc_int _main_free_int \
     _last_unalloc_int _last_free_int _trigger_threshold _balance_percent \
     _do_balance;
-  
+
   _do_force_balance="${1:-n}";
   _do_balance='n';
   _checkBtrfsStatusSetUpFn;
@@ -1628,7 +1781,7 @@ _balanceBootFn () {
 #
 _deleteAllSnapshotsFn () {
   declare _snapshot_list _current_snapshot;
-  
+
   _checkBtrfsStatusSetUpFn;
 
   # Get list of snapshots
@@ -1670,7 +1823,7 @@ _defragmentFn () {
     _defrag_file_list _report_idx _btdu_report _btdu_val_list \
     _btdu_file_list _file_size _unreachable_size _clean_file_list \
     _defrag_list_idx _merge_yn _clean_list_idx _current_file;
-  
+
   _checkBtrfsStatusSetUpFn;
 
   # Get report of file fragmentation on main filesystem, sorted by excessive
