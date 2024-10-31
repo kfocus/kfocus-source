@@ -93,7 +93,7 @@ _trapExitFn () {
 # Arguments : none
 # Globals   : _lockDir, lockFile, _trapExitFn
 # Outputs   : Messages to STDERR
-# Returns   : 21 - Lock file permssion denied
+# Returns   : 21 - Lock file permission denied
 #           : 20 - Cannot get lock
 #           : 0 - Success
 # Throws    : none
@@ -252,7 +252,7 @@ _clearRestoreFn () {
 # Outputs   : A string representing the desired data. Note that for data
 #             representing user-defined strings, this will always be
 #             base64-encoded.
-# Returns   : 0 on success, 1 on faliure
+# Returns   : 0 on success, 1 on failure
 # Throws    : none
 #
 _readMetadbFn () {
@@ -305,7 +305,7 @@ _readMetadbFn () {
 #   _val_str - The data to be stored. If blank, the specified key is deleted.
 # Globals   : _snapshotMetaDb
 # Outputs   : none
-# Returns   : 0 on success, 1 on faliure
+# Returns   : 0 on success, 1 on failure
 # Throws    : none
 #
 _writeMetadbFn () {
@@ -525,6 +525,8 @@ _chkDirListFn () {
 }
 
 _checkBtrfsStatusFn () {
+  declare _main_fs _boot_fs _idx _good_count _chk_str \
+    _main_subvols_str _boot_subvols_str;
   # The presence of /var/lib/portables or /var/lib/machines subvolumes will
   # interfere with snapshotting. These subvolumes may be created automatically
   # by systemd if it is not configured otherwise.
@@ -626,6 +628,7 @@ _checkBtrfsStatusFn () {
   done
 }
 
+# TODO: Move this reference code to rtest and cross-check
 #_checkBtrfsStatusFn () {
 #  declare _main_fs _boot_fs _main_subvols_str _boot_subvols_str;
 
@@ -1438,7 +1441,7 @@ _makeSnapshotDispIdFn () {
 #     exist, or EFI system partition could not be unmounted during the restore
 #     process.
 #   _CRIT - Root subvolume could not be relocated during restore process.
-#   _ALERT - Boot subvolume coult not be relocated during restore process.
+#   _ALERT - Boot subvolume could not be relocated during restore process.
 #     This is considered more severe than a root subvolume relocation failure
 #     because at this point the root filesystem has already been restored, but
 #     the boot filesystem has not been and cannot be. _ALERT will also be
@@ -1631,7 +1634,7 @@ _getSnapshotMetadataFn () {
 #   name - the base64-encoded name to assign to the snapshot.
 #   description - the base64-encoded description to assign to the snapshot.
 #   pin - One of either 'y' or 'n'. Sets whether the snapshot is pinned ('y')
-#     or it not pinned ('n').
+#     or it is not pinned ('n').
 # Globals   : none
 # Outputs   : none
 # Returns   : none
@@ -1922,7 +1925,7 @@ _defragmentFn () {
 
 ## BEGIN _btrfsMaintainFn {
 # Summary   : _btrfsMaintainFn
-# Purpose   : Runs routine snapshot maintenance. Currently this simply
+# Purpose   : Runs routine snapshot maintenance. Currently, this simply
 #             balances main and boot filesystems.
 # Example   : _btrfsMaintainFn
 # Arguments : none
@@ -1946,7 +1949,7 @@ _btrfsMaintainFn () {
 
 ## BEGIN _btrfsDeepCleanFn {
 # Summary   : _btrfsDeepCleanFn
-# Purpose   : Runs an intensive BTRFS optimization routine. Currently this
+# Purpose   : Runs an intensive BTRFS optimization routine. Currently, this
 #             balances main and boot filesystems (forcing a balance on the
 #             main FS), and defragments the main filesystem.
 # Example   : _btrfsDeepCleanFn
