@@ -6,7 +6,7 @@ import org.kde.kirigami 2.20 as Kirigami
 RowLayout {
     // Public
     property string date        : ''
-    property string daytime     : ''
+    property string dayofweek     : ''
     property string size        : ''
     property string reason      : ''
     property string name        : ''
@@ -46,8 +46,9 @@ RowLayout {
             Layout.bottomMargin : Kirigami.Units.gridUnit * 0.3
 
             Kirigami.Icon {
-                Layout.alignment: Qt.AlignTop
-                source : reason === 'System Schedule'
+                Layout.alignment : Qt.AlignVCenter
+                Layout.topMargin : Kirigami.Units.gridUnit * 0.15
+                source           : reason === 'System Schedule'
                   ? 'clock'
                   : reason === 'Before Package Change'
                   ? 'system-upgrade'
@@ -57,7 +58,7 @@ RowLayout {
             }
 
             ColumnLayout {
-                Layout.topMargin: Kirigami.Units.gridUnit * 0.15
+                Layout.topMargin : Kirigami.Units.gridUnit * 0.15
                 Kirigami.Heading {
                     id               : snapshotTitle
                     Layout.alignment : Qt.AlignVCenter
@@ -66,12 +67,21 @@ RowLayout {
                     level            : 2
                 }
                 Controls.Label {
-                    font.pixelSize: 12
-                    text: {
-                        if (size === '') {
-                            return daytime
-                        } else {
-                            return daytime + ' | ' + size
+                    Layout.alignment : Qt.AlignVCenter
+
+                    font.pixelSize   : 12
+                    text             : {
+                        switch ( reason ) {
+                        case 'System Schedule':
+                        case 'Before Package Change':
+                        case 'Pre-Rollback':
+                            return reason;
+                        default:
+                            let input_str = reason;
+                            let out_list  = input_str.match( /^[^(]+\(([^)]+)\)/ )
+                              || [];
+                            let user_str  = out_list[1] || 'user';
+                            return '<i>User Snapshot (' + user_str + ')</i>';
                         }
                     }
                 }
@@ -81,24 +91,18 @@ RowLayout {
                 Layout.fillWidth : true
             }
 
-            Controls.Label {
-                Layout.alignment : Qt.AlignVCenter
+            ColumnLayout {
+                Layout.topMargin: Kirigami.Units.gridUnit * 0.15
+                Kirigami.Heading {
+                    Layout.alignment : Qt.AlignVCenter | Qt.AlignRight
+                    text             : size
+                    level            : 2
+                }
 
-                text             : {
-                    switch ( reason ) {
-                    case 'System Schedule':
-                        return '<i>System Schedule</i>';
-                    case 'Before Package Change':
-                        return '<i>Before Package Change</i>';
-                    case 'Pre-Rollback':
-                        return '<i>Pre-Rollback</i>';
-                    default:
-                        let input_str = reason;
-                        let out_list  = input_str.match( /^[^(]+\(([^)]+)\)/ )
-                          || [];
-                        let user_str = out_list[1] || 'user';
-                        return '<i>User Snapshot (' + user_str + ')</i>';
-                    }
+                Controls.Label {
+                    Layout.alignment : Qt.AlignVCenter | Qt.AlignRight
+                    font.pixelSize   : 12
+                    text             : dayofweek
                 }
             }
         }

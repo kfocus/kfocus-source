@@ -169,7 +169,7 @@ QString BackendEngine::fieldSeek(QStringList lines, QString searchStr, int field
 QString BackendEngine::bytesToGib(quint64 val) {
     double gibSize = (((static_cast<double>(val) / 1024) / 1024) / 1024);
     gibSize = qRound(gibSize * 100.0) / 100.0;
-    QString gibSizeStr = QString::number(gibSize, 'f', 2) + " GiB";
+    QString gibSizeStr = QString::number(gibSize, 'f', 1) + " GiB";
     return gibSizeStr;
 }
 
@@ -256,7 +256,8 @@ void BackendEngine::onSystemDataReady() {
         snapshotSize = "";
     } else {
         snapshotSize = bytesToGib(snapshotIntSize);
-        for (int i = 0;i < 11 - snapshotSize.count(); i++) {
+        int snapshotSizeLenPad = 10 - snapshotSize.count();
+        for (int i = 0; i < snapshotSizeLenPad; i++) {
             snapshotSize.insert(0, ' ');
         }
     }
@@ -264,7 +265,8 @@ void BackendEngine::onSystemDataReady() {
     // Parse snapshot date (this mangles the snapshotItem string so we have to do it last)
     QDateTime snapshotTs = QDateTime::fromSecsSinceEpoch(snapshotItem.remove(0, 1).toULong());
     QString snapshotDate = snapshotTs.toString(Qt::ISODate).split('T').at(0);
-    QString snapshotDayTime = snapshotTs.toString("dddd hh:mm");
+    snapshotDate += QString(' ') + snapshotTs.toString(Qt::ISODate).split('T').at(1).split('-').at(0).left(5);
+    QString snapshotDayOfWeek = snapshotTs.toString("dddd");
 
     // Load parsed data into the snapshot list
     m_snapshotList->append(QMap<QString, QString>({
@@ -276,7 +278,7 @@ void BackendEngine::onSystemDataReady() {
         { "id", snapshotId },
         { "size", snapshotSize },
         { "date", snapshotDate },
-        { "daytime", snapshotDayTime }
+        { "dayofweek", snapshotDayOfWeek }
     }));
 
     // Loop if necessary, otherwise get global disk info

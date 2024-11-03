@@ -84,9 +84,9 @@ Kirigami.ApplicationWindow {
 
     // == BEGIN Views =================================================
     // Define window size
-    width         : Kirigami.Units.gridUnit * 46
+    width         : Kirigami.Units.gridUnit * 47
     height        : Kirigami.Units.gridUnit * 30
-    minimumWidth  : Kirigami.Units.gridUnit * 46
+    minimumWidth  : Kirigami.Units.gridUnit * 47
     minimumHeight : Kirigami.Units.gridUnit * 30
 
     // BEGIN Define sidebar views
@@ -95,7 +95,7 @@ Kirigami.ApplicationWindow {
 
         Kirigami.BasicListItem {
             font.family : "courier"
-            label       : date + '     ' + size
+            label       : date + ' ' + size
             subtitle    : name
             icon        : getIconForReasonFn( reason )
             trailing    : Kirigami.Icon {
@@ -109,7 +109,7 @@ Kirigami.ApplicationWindow {
 
         Kirigami.BasicListItem {
             font.family : "courier"
-            label       : date + '     ' + size
+            label       : date + ' ' + size
             subtitle    : name
             icon        : getIconForReasonFn( reason )
             trailing    : Kirigami.Icon {
@@ -701,7 +701,7 @@ Kirigami.ApplicationWindow {
                         topMargin    : Kirigami.Units.gridUnit * 2.75
                         bottomMargin : Kirigami.Units.gridUnit * 0.80
                     }
-                    width      : Kirigami.Units.gridUnit * 15
+                    width      : Kirigami.Units.gridUnit * 16
                     background : Rectangle {
                         color        : Kirigami.Theme.backgroundColor
                     }
@@ -779,8 +779,8 @@ Kirigami.ApplicationWindow {
                     id          : snapshotView
                     date        : snapshotModel.get(
                       snapshotBar.currentIndex).date
-                    daytime     : snapshotModel.get(
-                      snapshotBar.currentIndex).daytime
+                    dayofweek     : snapshotModel.get(
+                      snapshotBar.currentIndex).dayofweek
                     size        : snapshotModel.get(
                       snapshotBar.currentIndex).size
                     name        : snapshotModel.get(
@@ -1643,7 +1643,7 @@ Kirigami.ApplicationWindow {
         for ( let i = 0; i < backend.getSnapshotCount(); i++ ) {
             snapshotModel.append({
                 date        : backend.getSnapshotInfo(i, 'date'),
-                daytime     : backend.getSnapshotInfo(i, 'daytime'),
+                dayofweek   : backend.getSnapshotInfo(i, 'dayofweek'),
                 name        : backend.getSnapshotInfo(i, 'name'),
                 description : backend.getSnapshotInfo(i, 'description'),
                 reason      : backend.getSnapshotInfo(i, 'reason'),
