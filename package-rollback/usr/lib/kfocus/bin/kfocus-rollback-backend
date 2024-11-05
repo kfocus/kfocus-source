@@ -12,14 +12,29 @@
 # Run By   : kfocus-rollback, system processes
 # Spec     : 4013
 #
+# Notice: 'Throws' below refers to the specific error functions
+#   that are called, e.g. _exitERR, that exit the script.
+#
 # shellcheck source=../lib/common.2.source
 # shellcheck source=../lib/rollback.2.source
 #
 set -u;
 
-_stderrFn () {
-  2>&1 echo "${_baseName} $*";
+## BEGIN _logWrapFn {
+# Purpose : Log to syslog if available, or stderr otherwise
+_logWrapFn () {
+  declare _priority_key _message;
+  _priority_key="${1:-warn}";
+  _message="${2:-Unspecified issue}";
+  if [ "$(type '_cm2LogFn')" = 'function' ]; then
+    # We assume this will echo to STDERR and syslog
+    _cm2LogFn "${_priority_key}" "${_message}";
+  else
+    2>&1 echo "${_baseName} - ${_priority_key}: ${_message}";
+  fi
 }
+## . END _logWrapFn }
+
 ## BEGIN _loadLibTableFn {
 # Summary : _loadLibTableFn <lib_str1> <lib_str2> ...
 # Example : _loadLibTableFn "lib01:/usr/lib/lib01" "lib02";
@@ -28,7 +43,7 @@ _stderrFn () {
 #     * Each arg can have alternates delimited by colons ':'
 #     * Fails if all alternates for a lib fails.
 #     * Starting lib string '#:' means the following libs are optional.
-#     * Diagnostics are sent to STDERR.
+#     * Diagnostics are sent to logWrapFn
 #     * Libs without a directory use ${_binDir} as the path
 #
 _loadLibTableFn () {
@@ -50,24 +65,23 @@ _loadLibTableFn () {
 
       # shellcheck disable=SC1090
       if ! [ -r "${_lib_file}" ]; then
-        _stderrFn "warn: source |${_lib_file}| not readable.";
+        _logWrapFn 'warn' "Source |${_lib_file}| not readable.";
       elif source "${_lib_file}"; then
         _is_loaded='y';
         break;
       else
-        _stderrFn "${_baseName} Error: source |${_lib_file}| is non-zero.";
+        _logWrapFn 'err' "Source |${_lib_file}| is non-zero.";
         return 1;
       fi
     done
     ## . End: Iterate over alternates
 
     if [ "${_is_loaded}" != 'y' ]; then
-      _stderrFn "${_baseName} error: no lib loaded";
+      _logWrapFn 'err' "No library loaded";
       return 1;
     fi
   done
   ## . End: Iterate over lib lines
-
   return;
 }
 ## . END _loadLibTableFn }
@@ -101,23 +115,32 @@ _trapExitFn () {
 _chkSetFlockFn () {
   mkdir -p "${_lockDir}";
   if ! [ -e "${_lockFile}" ]; then
-    install -m 666 /dev/null "${_lockFile}";
+    install -m 666 /dev/null "${_lockFile}" || {
+      _logWrapFn 'err' "Could not install ${_lockFile}";
+      return 2;
+    }
   fi
   exec 211>"${_lockFile}" || {
-    1>&2 echo 'Lock file permission denied';
-    return 21;
+    _logWrapFn 'err' 'Lock file permission denied';
+    return 2;
   };
-  if ! flock -n -e 211; then
-    1>&2 echo "Cannot get lock on ${_lockFile}";
-    return 20;
-  fi
+  flock -n -e 211 || {
+    _logWrapFn 'info' "Cannot get lock on ${_lockFile}";
+    return 1;
+  }
   # Trap unexpected exits to show warnings if needed
   trap _trapExitFn EXIT;
 }
 ## . END _chkSetFlockFn }
 
 ## BEGIN _exitCleanFn {
-# Purpose: Unset traps for exit and then do so.
+# Purpose   : Unset traps for exit and then do so.
+# Example   : _exitCleanFn;
+# Arguments : none
+# Globals   : _cm2*
+# Outputs   : none
+# Returns   : Exit code
+# Throws    : none
 #
 _exitCleanFn () {
   declare _int;
@@ -134,12 +157,12 @@ _exitCleanFn () {
 ## BEGIN _exitWithCodeFn {
 # Summary   : _exitWithCodeFn _int _msg
 # Purpose   : Echo message to syslog and exit with code.
-# Example   : _promptAllUsersFn 0 'All good';
+# Example   : _exitWithCodeFn 0 'All good';
 # Arguments :
 #   _int - Exit code. This maps different than standard syslog levels
 #          (TODO: Bring this closer to standard 0-7 syslog levels?)
-#   _msg - Message for sysog
-# Globals   : _cm2LogFn
+#   _msg - Message for syslog
+# Globals   : _cm2*
 # Outputs   : Writes to syslog
 # Returns   : Exit code
 # Throws    : none
@@ -178,11 +201,13 @@ _exitEMERG ()  { _exitWithCodeFn  "${_rb2EMERG}"  "$@"; }
 # Example   : _promptAllUsersFn 'error' 'An error has occurred!'
 # Arguments :
 #   _mode_str - What kind of message to display, see package-main ->
-#     kfocus-focusrx-dbus-dispatch for possible values
+#     kfocus-focusrx-dbus-dispatch for accepted values. Examples
+#     at time of writing include info, warning, error,
+#     rollbackLowMainSpace, and rollbackLowBootSpace.
 #   _msg_str - The message to display to the user.
-# Globals   : none
+# Globals   : DISPLAY, DBUS_SESSION_BUS_ADDRESS
 # Outputs   : none
-# Returns   : none
+# Returns   : 0 - success
 # Throws    : none
 #
 # See https://stackoverflow.com/a/49533938
@@ -205,7 +230,7 @@ _promptAllUsersFn () {
       DISPLAY="${_xserver_id}" \
       DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$(id -u "${_user_name}")/bus" \
       qdbus org.kfocus.FocusRxDispatch.launcher / "${_mode}" "${_msg}";
-  done < <(_cm2LsFn '/tmp/.X11-unix/' | sed 's?X??')
+  done < <(_cm2LsFn '/tmp/.X11-unix/' | sed 's?X??');
 }
 ## . END _promptAllUsersFn }
 
@@ -227,7 +252,7 @@ _checkRootFn () {
 #             after a successful snapshot restore
 # Example   : clearRestoreFn
 # Arguments : none
-# Globals   : none
+# Globals   : _cm2*
 # Outputs   : none
 # Returns   : none
 # Throws    : _NOTICE - _checkBtrfsStatusSetUp check failed.
@@ -241,13 +266,17 @@ _clearRestoreFn () {
 ## . END _clearRestoreFn }
 
 ## BEGIN _readMetadbFn {
-# Summary   : _readMetadbFn _group_str _key_str
+# Summary   : _readMetadbFn _group_key _val_key
 # Purpose   : Reads a value from the kfocus-rollback snapshot metadata
 #             database (metadb).
 # Example   : _readMetadbFn '@1234' 'name'
 # Arguments :
-#   _group_str - Which data group should the key be searched for in.
-#   _key_str - The key associated with the desired data.
+#   _group_key - The data group in which the value should be found.
+#      Often, our groups are named after snapshot IDs, e.g. '@1234'.
+#   _val_key - The key associated with the desired data.
+#   IMPORTANT: If either a group or key does not exist, an empty string
+#     is returned. It is NOT an error condition. This routine also
+#     creates an empty metadb file if it does not already exist.
 # Globals   : _snapshotMetaDb
 # Outputs   : A string representing the desired data. Note that for data
 #             representing user-defined strings, this will always be
@@ -258,33 +287,37 @@ _clearRestoreFn () {
 _readMetadbFn () {
   # We intentionally do not check the BTRFS state here as _checkBtrfsStatusFn
   # has to read the metadb.
-  declare _group_str _key_str;
+  declare _group_key _val_key _err_msg;
 
-  _group_str="${1:-}";
-  _key_str="${2:-}";
-  [ -n "${_group_str}" ] || {
-    _cm2WarnStrFn 'No group string provided!';
-    return 1;
-  }
-  [ -n "${_key_str}" ] || {
-    _cm2WarnStrFn 'No key string provided!';
-    return 1;
-  }
+  _group_key="${1:-}";
+  _val_key="${2:-}";
+  _err_msg='Cannot read metadb: ';
 
-  if ! [ -d '/btrfs_main' ]; then
-    # The system may be legitimately unsupported, so we don't print an error
-    # here.
+  if ! [ -d "${_rb2MainDir}" ]; then
+    _logWrapFn 'err' "${_err_msg} No main dir |${_rb2MainDir}|";
     return 1;
   fi
+
+  [ -n "${_group_key}" ] || {
+    _logWrapFn 'err' "${_err_msg} No group string provided.";
+    return 1;
+  }
+  [ -n "${_val_key}" ] || {
+    _logWrapFn 'err' "${_err_msg} No key string provided.";
+    return 1;
+  }
 
   if [ -f "${_snapshotMetaDb}" ]; then
     "${_kreadconfig5Exe}" \
       --file "${_snapshotMetaDb}" \
-      --group "${_group_str}" \
-      --key "${_key_str}" \
-      || _exitALERT 'Failed to read metadb!';
+      --group "${_group_key}" \
+      --key "${_val_key}" \
+      || {
+        _logWrapFn 'err' "${_err_msg} No val for |${_group_key}:${_val_key}|";
+        return 1;
+      }
   elif [ -e "${_snapshotMetaDb}" ]; then
-    _cm2WarnStrFn 'Snapshot metadb is not a regular file!';
+    _logWrapFn 'err' "${_err_msg} Metadb is not a regular file.";
     return 1;
   else
     touch "${_snapshotMetaDb}";
@@ -295,59 +328,61 @@ _readMetadbFn () {
 ## . END _readMetadbFn }
 
 ## BEGIN _writeMetadbFn {
-# Summary   : _writeMetadbFn _group_str _key_str _val_str
+# Summary   : _writeMetadbFn _group_key _val_key _val_str
 # Purpose   : Writes a value to or deletes a value from the kfocus-rollback
 #             snapshot metadata database (metadb).
 # Example   : _writeMetadbFn '@1234' 'name' 'bmV3IG5hbWU='
 # Arguments :
-#   _group_str - Which data group should the key be placed in.
-#   _key_str - The key to associate with the provided data.
-#   _val_str - The data to be stored. If blank, the specified key is deleted.
+#   _group_key - The data group in which the value should be written.
+#      Often, our groups are named after snapshot IDs, e.g. '@1234'.
+#   _val_key       - The key to associate with the provided data.
+#   _val_str   - The string to be stored. If blank, delete the key.
 # Globals   : _snapshotMetaDb
 # Outputs   : none
 # Returns   : 0 on success, 1 on failure
 # Throws    : none
 #
 _writeMetadbFn () {
-  declare _group_str _key_str _val_str;
+  declare _group_key _val_key _val_str _err_msg;
 
-  _group_str="${1:-}";
-  _key_str="${2:-}";
+  _group_key="${1:-}";
+  _val_key="${2:-}";
   _val_str="${3:-}";
-  [ -n "${_group_str}" ] || {
-    _cm2WarnStrFn 'No group string provided!';
-    return 1;
-  }
-  [ -n "${_key_str}" ] || {
-    _cm2WarnStrFn 'No key string provided!';
-    return 1;
-  }
+  _err_msg='Cannot write metadb: ';
 
-  if ! [ -d '/btrfs_main' ]; then
-    # The system may be legitimately unsupported, so we don't print an error
-    # here.
+  if ! [ -d "${_rb2MainDir}" ]; then
+    _logWrapFn 'err' "${_err_msg} No main dir |${_rb2MainDir}|";
     return 1;
   fi
+
+  [ -n "${_group_key}" ] || {
+    _logWrapFn 'err' "${_err_msg} No group string provided.";
+    return 1;
+  }
+  [ -n "${_val_key}" ] || {
+    _logWrapFn 'err' "${_err_msg} No key provided.";
+    return 1;
+  }
 
   if ! [ -e "${_snapshotMetaDb}" ]; then
     touch "${_snapshotMetaDb}";
     chmod '0644' "${_snapshotMetaDb}";
   elif ! [ -f "${_snapshotMetaDb}" ] ; then
-    _cm2WarnStrFn 'Snapshot metadb is not a regular file!';
+    _logWrapFn 'err' "${_err_msg} metadb is not a regular file.";
     return 1;
   fi
 
   if [ -z "${_val_str}" ]; then
     "${_kwriteconfig5Exe}" \
       --file "${_snapshotMetaDb}" \
-      --group "${_group_str}" \
-      --key "${_key_str}" --delete \
+      --group "${_group_key}" \
+      --key "${_val_key}" --delete \
       || _exitALERT 'Failed to delete metadb key!';
   else
     "${_kwriteconfig5Exe}" \
       --file "${_snapshotMetaDb}" \
-      --group "${_group_str}" \
-      --key "${_key_str}" \
+      --group "${_group_key}" \
+      --key "${_val_key}" \
       "${_val_str}" \
       || _exitALERT 'Failed to write metadb key!';
   fi
@@ -356,12 +391,8 @@ _writeMetadbFn () {
 
 ## BEGIN _getManualSwitchStateBackendFn {
 # Summary   : _getManualSwitchStateBackendFn
-# Purpose   : Reads the manual switch state from the snapshot metadb. This is
-#             only used internally. It is split from _getManualSwitchStateFn
-#             because _checkBtrfsStatusFn needs to get the manual switch
-#             state, but external calls to this function need to call
-#             _checkBtrfsStatusSetUpFn, which will not return accurate results
-#             at that point. See _getManualSwitchStateFn for more info.
+# Purpose   : This internal call is used by the public methods
+#             _getManualSwitchStateFn and _checkBtrfsStatusFn.
 #
 _getManualSwitchStateBackendFn () {
   declare _manual_state_str;
@@ -394,8 +425,10 @@ _getManualSwitchStateBackendFn () {
 #   If automatic snapshotting is NOT enabled, outputs 'MANUAL'.
 # Returns   : none
 # Throws    : _NOTICE - _checkBtrfsStatusSetUpFn check failed.
+#             _ERR - _getManualSwitchStateBackendFn state not MANUAL or AUTO.
 #
 _getManualSwitchStateFn () {
+  # Both exit on failure per Throws above.
   _checkBtrfsStatusSetUpFn;
   _getManualSwitchStateBackendFn;
 }
@@ -414,6 +447,7 @@ _getManualSwitchStateFn () {
 # Returns   : none
 # Throws    :
 #   _NOTICE - _checkBtrfsStatusSetUpFn or _checkRootFn check failed.
+#   _ALERT  - _writeMetaDbFn when it cannot save.
 #   _ERR - No argument provided, invalid argument provided, or the specified
 #     switch state is the same as the current switch state.
 #
@@ -429,7 +463,8 @@ _setManualSwitchStateFn () {
   if [ -z "${_state_str}" ]; then
     _exitERR 'Empty state string provided.';
   fi
-  _current_state_str="$(_getManualSwitchStateBackendFn)";
+  # Exit with code from subshell if non-zero
+  _current_state_str="$(_getManualSwitchStateBackendFn)" || exit;
 
   case "${_state_str}" in
     'auto')
@@ -437,7 +472,7 @@ _setManualSwitchStateFn () {
       if [ "${_current_state_str}" = 'AUTO' ]; then
         _exitERR 'Cannot change manual switch state to existing state!';
       else
-        # Write new state to db
+        # This exits on failure, SOMETIMES. TODO: Fix this.
         _writeMetadbFn 'global' 'manualSwitchState' 'AUTO';
       fi
       ;;
@@ -446,7 +481,7 @@ _setManualSwitchStateFn () {
       if [ "${_current_state_str}" = 'MANUAL' ]; then
         _exitERR 'Cannot change manual switch state to existing state!';
       else
-        # Write new state to db
+        # This exits on failure, SOMETIMES. TODO: Fix this.
         _writeMetadbFn 'global' 'manualSwitchState' 'MANUAL';
       fi
       ;;
@@ -460,22 +495,22 @@ _setManualSwitchStateFn () {
 ## BEGIN BTRFS maintenance helper functions {
 _getMainUsageReportFn () {
   _checkBtrfsStatusSetUpFn;
-  LC_ALL='C' "${_btrfsExe}" filesystem usage -b '/btrfs_main';
+  LC_ALL='C' "${_btrfsExe}" filesystem usage -b "${_rb2MainDir}";
 }
 
 _getBootUsageReportFn () {
   _checkBtrfsStatusSetUpFn;
-  LC_ALL='C' "${_btrfsExe}" filesystem usage -b '/btrfs_boot';
+  LC_ALL='C' "${_btrfsExe}" filesystem usage -b "${_rb2BootDir}";
 }
 
 _getMainBtduReportFn () {
   _checkBtrfsStatusSetUpFn;
-  LC_ALL='C' "${_btduExe}" --du --min-resolution=1M --headless '/btrfs_main'
+  LC_ALL='C' "${_btduExe}" --du --min-resolution=1M --headless "${_rb2MainDir}"
 }
 
 _getMainFragReportFn () {
   _checkBtrfsStatusSetUpFn;
-  "${_filefragExe}" '/btrfs_main/@';
+  "${_filefragExe}" "${_rb2MainDir}/@";
 }
 ## . END BTRFS maintenance helper functions }
 
@@ -526,7 +561,7 @@ _chkDirListFn () {
 
 _checkBtrfsStatusFn () {
   declare _main_fs _boot_fs _idx _good_count _chk_str \
-    _main_subvols_str _boot_subvols_str;
+    _main_subvols_str _boot_subvols_str _switch_str;
   # The presence of /var/lib/portables or /var/lib/machines subvolumes will
   # interfere with snapshotting. These subvolumes may be created automatically
   # by systemd if it is not configured otherwise.
@@ -557,8 +592,8 @@ _checkBtrfsStatusFn () {
     }
 
     # Unless 4 dirs exist, means UNSUPPORTED
-    _chk_str="/btrfs_main/@|${_rb2MainSnapshotDir}";
-    _chk_str+="|/btrfs_boot/@boot|${_rb2BootSnapshotDir}";
+    _chk_str="${_rb2MainDir}/@|${_rb2MainSnapshotDir}";
+    _chk_str+="|${_rb2BootDir}/@boot|${_rb2BootSnapshotDir}";
     _good_count=$(_chkDirListFn "${_chk_str}");
     [ "${_good_count}" != 4 ] && {
       _btrfsStatus='UNSUPPORTED'; break;
@@ -576,14 +611,16 @@ _checkBtrfsStatusFn () {
 
   # Append MANUAL, AUTO, NOT SETUP to SUPPORTED condition
   if [ "${_btrfsStatus}" = 'SUPPORTED' ]; then
-    if [ "$(_getManualSwitchStateBackendFn)" = 'MANUAL' ]; then
+    # Exit with code from subshell if non-zero
+    _switch_str="$(_getManualSwitchStateBackendFn)" || exit;
+    if [ "${_switch_str}" = 'MANUAL' ]; then
       _btrfsStatus+=', MANUAL';
     else
       _btrfsStatus+=', AUTO';
     fi
   fi
 
-  # Bail if btrfStatus is already set
+  # Bail if btrfsStatus is already set
   if [ "${_btrfsStatus}" != 'CHECK_CAN_SETUP' ]; then return; fi
 
   # Gauntlet to run on CHECK_CAN_SETUP condition,
@@ -628,79 +665,6 @@ _checkBtrfsStatusFn () {
   done
 }
 
-# TODO: Move this reference code to rtest and cross-check
-#_checkBtrfsStatusFn () {
-#  declare _main_fs _boot_fs _main_subvols_str _boot_subvols_str;
-
-#  # The presence of /var/lib/portables or /var/lib/machines subvolumes will
-#  # interfere with snapshotting. These subvolumes may be created automatically
-#  # by systemd if it is not configured otherwise.
-#  if grep -q 'var/lib/portables' < <("${_btrfsExe}" subvolume list /) || \
-#     grep -q 'var/lib/machines' < <("${_btrfsExe}" subvolume list /); then
-#    if [ -n "$(ls -A /var/lib/portables)" ] || \
-#       [ -n "$(ls -A /var/lib/machines )" ]; then
-#      _btrfsStatus='UNSUPPORTED';
-#      return;
-#    fi
-#  fi
-
-#  if [ -d "${_rb2MainDir}" ] && [ -d "${_rb2BootDir}" ]; then
-#    if [ -d "${_rb2MainDir}/@" ] \
-#      && [ -d "${_rb2MainSnapshotDir}" ] \
-#      && [ -d "${_rb2BootDir}/@boot" ] \
-#      && [ -d "${_rb2BootSnapshotDir}" ]; then
-#      _main_fs="$(LC_ALL='C' mount | grep btrfs | grep ' on / ' \
-#        | cut -d' ' -f1)";
-#      _boot_fs="$(LC_ALL='C' mount | grep btrfs | grep ' on /boot ' \
-#        | cut -d' ' -f1)";
-#      if [ -n "${_main_fs}" ] && [ -n "${_boot_fs}" ] \
-#        && [ "${_main_fs}" != "${_boot_fs}" ]; then
-#        if [ "$(_getManualSwitchStateBackendFn)" = 'MANUAL' ]; then
-#          _btrfsStatus='SUPPORTED, MANUAL';
-#        else
-#          _btrfsStatus='SUPPORTED, AUTO';
-#        fi
-#      else
-#        _btrfsStatus='UNSUPPORTED';
-#      fi
-#    else
-#      _btrfsStatus='UNSUPPORTED';
-#    fi
-#  else
-#    if ! [ -d "${_rb2MainDir}" ] && ! [ -d "${_rb2BootDir}" ]; then
-#      _main_fs="$(LC_ALL='C' mount | grep btrfs | grep ' on / ' \
-#        | cut -d' ' -f1)";
-#      _boot_fs="$(LC_ALL='C' mount | grep btrfs | grep ' on /boot ' \
-#        | cut -d' ' -f1)";
-#      if [ -n "${_main_fs}" ] && [ -n "${_boot_fs}" ] \
-#        && [ "${_main_fs}" != "${_boot_fs}" ]; then
-#        _main_subvols_str="$("${_btrfsExe}" subvolume list / | awk '{ print $9 }' | sort)";
-#        _boot_subvols_str="$("${_btrfsExe}" subvolume list /boot | awk '{ print $9 }' | sort)";
-#        if grep -qE '^@$' <<< "${_main_subvols_str}" && \
-#          LC_ALL='C' mount | grep -q ' on /home '; then
-#          if [ -z "${_boot_subvols_str}" ]; then
-#            if ! grep -qE '^@kfocus-rollback-snapshots$' \
-#              <<< "${_main_subvols_str}"; then
-#              _btrfsStatus='SUPPORTED, NOT SET UP';
-#            else
-#              _btrfsStatus='INCONSISTENT';
-#            fi
-#          else
-#            _btrfsStatus='UNSUPPORTED';
-#          fi
-#        else
-#          _btrfsStatus='UNSUPPORTED';
-#        fi
-#      else
-#        _btrfsStatus='UNSUPPORTED';
-#      fi
-#    else
-#      _btrfsStatus='INCONSISTENT';
-#    fi
-#  fi
-#}
-## . END _checkBtrfsStatusFn }
-
 ## BEGIN _checkBtrfsStatusSetUpFn {
 # Summary   : _checkBtrfsStatusSetUpFn
 # Purpose   : Ensures that the BTRFS status is either 'SUPPORTED, AUTO' or
@@ -729,14 +693,14 @@ _getMainUnallocSpaceFn () {
   _checkBtrfsStatusSetUpFn;
 
   # Extract unallocated space from main filesystem report
-  LC_ALL=C "${_btrfsExe}" filesystem usage -b /btrfs_main \
+  LC_ALL=C "${_btrfsExe}" filesystem usage -b "${_rb2MainDir}" \
     | awk '/Device unallocated/{ print $3 }';
 }
 _getMainMinUnallocFn () {
   _checkBtrfsStatusSetUpFn;
 
   # Calculate main filesystem size, return 15% of that
-  echo "$(( $(LC_ALL=C "${_btrfsExe}" filesystem usage -b /btrfs_main \
+  echo "$(( $(LC_ALL=C "${_btrfsExe}" filesystem usage -b "${_rb2MainDir}" \
     | grep $'Device size:\t' \
     | awk '{ print $3 }' \
     ) * 15 / 100 ))";
@@ -745,7 +709,7 @@ _getBootUnallocSpaceFn () {
   _checkBtrfsStatusSetUpFn;
 
   # Extract unallocated space from boot filesystem report
-  LC_ALL=C "${_btrfsExe}" filesystem usage -b /btrfs_boot \
+  LC_ALL=C "${_btrfsExe}" filesystem usage -b "${_rb2BootDir}" \
     | awk '/Device unallocated/{ print $3 }';
 }
 _getBootMinUnallocFn () {
@@ -895,7 +859,8 @@ _prepareSystemFn () {
   "${_btrfsExe}" subvolume delete --commit-after '/var/lib/machines'  || true;
 
   # Create directories
-  for _dir in '/btrfs_boot' '/btrfs_main' '/etc/libvirt' '/var/lib/libvirt'; do
+  for _dir in "${_rb2BootDir}" "${_rb2MainDir}" \
+    '/etc/libvirt' '/var/lib/libvirt'; do
     mkdir -p "${_dir}" || _exitCRIT "Cannot create ${_dir}";
   done;
   ## . End STAGE 1: Check and prep filesystem }
@@ -908,10 +873,10 @@ _prepareSystemFn () {
     | grep -P '/boot$' | awk '{ print $3 }')";
   _btrfs_defaults_str="defaults,noatime,autodefrag 0 0";
 
-  echo "${_root_mount_id} /btrfs_main btrfs subvolid=5,${_btrfs_defaults_str}" \
-    >> /etc/fstab || _exitCRIT 'Cannot create fstab line for /btrfs_main';
-  echo "${_boot_mount_id} /btrfs_boot btrfs subvolid=5,${_btrfs_defaults_str}" \
-    >> /etc/fstab || _exitCRIT 'Cannot create fstab line for /btrfs_boot';
+  echo "${_root_mount_id} ${_rb2MainDir} btrfs subvolid=5,${_btrfs_defaults_str}" \
+    >> /etc/fstab || _exitCRIT "Cannot create fstab line for ${_rb2MainDir}";
+  echo "${_boot_mount_id} ${_rb2BootDir} btrfs subvolid=5,${_btrfs_defaults_str}" \
+    >> /etc/fstab || _exitCRIT "Cannot create fstab line for ${_rb2BootDir}";
   echo "${_root_mount_id} /etc/libvirt btrfs subvol=@libvirt-machines/@etc-libvirt,${_btrfs_defaults_str}" \
     >> /etc/fstab || _exitCRIT 'Cannot create fstab line for /etc/libvirt';
   echo "${_root_mount_id} /var/lib/libvirt btrfs subvol=@libvirt-machines/@var-lib-libvirt,${_btrfs_defaults_str}" \
@@ -931,17 +896,16 @@ _prepareSystemFn () {
   systemctl daemon-reload;
 
   # Morph the layout of the boot partition
-  mount /btrfs_boot || _exitALERT 'Failed to mount /btrfs_boot';
-  "${_btrfsExe}" subvolume create /btrfs_boot/@boot \
+  mount "${_rb2BootDir}" || _exitALERT "Failed to mount ${_rb2BootDir}";
+  "${_btrfsExe}" subvolume create "${_rb2BootDir}/@boot" \
     || _exitEMERG 'Failed to create @boot';
 
-  # mv /btrfs_boot/* /btrfs_boot/@boot/ 2>/dev/null || true;
   while read -r _path; do
-    if [ "${_path}" != '/btrfs_boot/@boot' ]; then
-      mv "${_path}" '/btrfs_boot/@boot/' \
-        || _exitALERT "Failed to move ${_path} to /btrfs_boot/@boot!";
+    if [ "${_path}" != "${_rb2BootDir}/@boot" ]; then
+      mv "${_path}" "${_rb2BootDir}/@boot/" \
+        || _exitALERT "Failed to move ${_path} to ${_rb2BootDir}/@boot!";
     fi
-  done < <(find '/btrfs_boot' -maxdepth 1 -mindepth 1)
+  done < <(find "${_rb2BootDir}" -maxdepth 1 -mindepth 1)
 
   # Mount /boot again after successful rearrange
   mount /boot     || _exitALERT 'Failed to mount /boot';
@@ -956,14 +920,14 @@ _prepareSystemFn () {
   ## . End STAGE 3: Prepare /boot }
 
   ## Begin STAGE 4: Create subvolumes {
-  # /btrfs_boot is already mounted at this point
-  mount /btrfs_main || _exitALERT 'Failed to mount /btrfs_main';
+  # ${_rb2BootDir} (/btrfs_boot) is already mounted at this point
+  mount "${_rb2MainDir}" || _exitALERT "Failed to mount ${_rb2MainDir}";
   _subvolume_list=(
     "${_rb2BootSnapshotDir}"
     "${_rb2MainSnapshotDir}"
-    '/btrfs_main/@libvirt-machines'
-    '/btrfs_main/@libvirt-machines/@etc-libvirt'
-    '/btrfs_main/@libvirt-machines/@var-lib-libvirt'
+    "${_rb2MainDir}/@libvirt-machines"
+    "${_rb2MainDir}/@libvirt-machines/@etc-libvirt"
+    "${_rb2MainDir}/@libvirt-machines/@var-lib-libvirt"
   );
 
   for _subvolume_id in "${_subvolume_list[@]}"; do
@@ -973,7 +937,8 @@ _prepareSystemFn () {
   ## . END Stage 4: Create subvolumes }
 
   ## Begin STAGE 5: Finish additional mounts {
-  # At this point, /boot, /boot/efi, /btrfs_main, and /btrfs_boot are mounted.
+  # At this point, /boot, /boot/efi, ${_rb2MainDir} (/btrfs_main), and
+  # ${_rb2BootDir} (/btrfs_boot) are mounted.
   # /etc/libvirt and /var/lib/libvirt are not mounted.
   mount /etc/libvirt     || _exitALERT 'Failed to mount /etc/libvirt';
   mount /var/lib/libvirt || _exitALERT 'Failed to mount /var/lib/libvirt';
@@ -1268,17 +1233,18 @@ _createSnapshotFn () {
       ;;
   esac
 
-  # Save snapshot creation reason in the metadata database
+  # Save snapshot creation reason in the metadata database.
+  # This exits on failure, SOMETIMES. TODO: Fix this.
   _writeMetadbFn "@${_timestamp_str}" 'reason' "${_snapshot_event_type}";
 
   # Snapshot and sync main and boot filesystems
-  "${_btrfsExe}" subvolume snapshot -r '/btrfs_main/@' "${_snapshot_path}" \
+  "${_btrfsExe}" subvolume snapshot -r "${_rb2MainDir}/@" "${_snapshot_path}" \
     || _exitEMERG "Could not create snapshot |${_snapshot_path}|";
-  "${_btrfsExe}" filesystem sync '/btrfs_main' \
+  "${_btrfsExe}" filesystem sync "${_rb2MainDir}" \
     || _exitEMERG 'Failed to sync main filesystem!';
-  "${_btrfsExe}" subvolume snapshot -r '/btrfs_boot/@boot' "${_boot_snapshot_path}" \
+  "${_btrfsExe}" subvolume snapshot -r "${_rb2BootDir}/@boot" "${_boot_snapshot_path}" \
     || _exitEMERG "Could not create boot snapshot |${_boot_snapshot_path}|";
-  "${_btrfsExe}" filesystem sync '/btrfs_boot' \
+  "${_btrfsExe}" filesystem sync "${_rb2BootDir}" \
     || _exitEMERG 'Failed to sync boot filesystem!';
   sync;
 
@@ -1291,8 +1257,9 @@ _createSnapshotFn () {
 # Purpose   : Compares two directories to each other using `diff -r --brief`.
 #             Intended to be used for comparing two snapshots, or a snapshot
 #             and the actively running system.
-# Example   : _compareSnapshotsFn /btrfs_main/@kfocus-rollback-snapshots/@1234
-#               /btrfs_main/@
+# Example   : _compareSnapshotsFn \
+#             "${_rb2MainDir}/@kfocus-rollback-snapshots/@1234" \
+#             "${_rb2MainDir}/@";
 # Arguments :
 #   dir1 - The directory containing the 'source' system state. This will
 #     usually (but not always) be the path to a snapshot.
@@ -1357,7 +1324,7 @@ _getSnapshotReasonFn () {
   _snapshot_reason_file+='/var/lib/kfocus/rollback_snapshot_reason';
 
   if [ -z "${_snapshot_id}" ]; then
-    _cm2WarnStrFn 'Invalid argument, cannot get snapshot reason';
+    _logWrapFn 'warn' 'Invalid argument, cannot get snapshot reason';
     return 1;
   fi
 
@@ -1366,6 +1333,7 @@ _getSnapshotReasonFn () {
   # Migrate reason to metadb if stored old-style inside the snapshot
   if [ -z "${_snapshot_reason_raw}" ]; then
     _snapshot_reason_raw="$(cat "${_snapshot_reason_file}")";
+    # This exits on failure, SOMETIMES. TODO: Fix this.
     _writeMetadbFn "${_snapshot_id}" 'reason' "${_snapshot_reason_raw}";
   fi
 
@@ -1407,7 +1375,7 @@ _makeSnapshotDispIdFn () {
   _snapshot_id="${1:-}";
 
   if [ -z "${_snapshot_id}" ]; then
-    _cm2WarnStrFn 'Invalid arguments, cannot generate snapshot display ID';
+    _logWrapFn 'warn' 'Invalid arguments, cannot generate snapshot display ID';
     return 1;
   fi
 
@@ -1468,8 +1436,8 @@ _restoreSnapshotFn () {
   # Do not restore again if in post-restore, pre-reboot state
   if [ -e "${_rb2MainWorkingDir}" ] \
     || [ -e "${_rb2BootWorkingDir}" ]; then
-    _cm2ErrStrFn 'Temporary restore subvols found, cannot continue.';
-    _cm2ErrStrFn 'Please reboot, then run "Finish restoration operation".';
+    _logWrapFn 'err' 'Temporary restore subvols found, cannot continue.';
+    _logWrapFn 'err' 'Reboot and then run "Finish restoration operation".';
     _exitERR 'Restore already in progress!';
   fi
 
@@ -1509,17 +1477,17 @@ _restoreSnapshotFn () {
   _snapshot_reason="$(_getSnapshotReasonFn "${_target_snapshot_id}")";
 
   # Move existing main and boot subvols, restore new ones
-  mv '/btrfs_main/@' "${_rb2MainWorkingDir}" \
+  mv "${_rb2MainDir}/@" "${_rb2MainWorkingDir}" \
     || _exitCRIT 'Unable to move root filesystem subvolume for restore!';
-  "${_btrfsExe}" subvolume snapshot "${_snapshot_path}" '/btrfs_main/@' \
+  "${_btrfsExe}" subvolume snapshot "${_snapshot_path}" "${_rb2MainDir}/@" \
     || _exitEMERG 'Unable to restore root filesystem snapshot!';
-  "${_btrfsExe}" filesystem sync '/btrfs_main' \
+  "${_btrfsExe}" filesystem sync "${_rb2MainDir}" \
     || _exitEMERG 'Unable to sync main filesystem!';
-  mv '/btrfs_boot/@boot' '/btrfs_boot/@kfocus-rollback-working-boot' \
+  mv "${_rb2BootDir}/@boot" "${_rb2BootDir}/@kfocus-rollback-working-boot" \
     || _exitALERT 'Unable to move boot filesystem subvolume for restore!';
-  "${_btrfsExe}" subvolume snapshot "${_boot_snapshot_path}" '/btrfs_boot/@boot' \
+  "${_btrfsExe}" subvolume snapshot "${_boot_snapshot_path}" "${_rb2BootDir}/@boot" \
     || _exitEMERG 'Unable to restore boot filesystem snapshot!';
-  "${_btrfsExe}" filesystem sync '/btrfs_boot' \
+  "${_btrfsExe}" filesystem sync "${_rb2BootDir}" \
     || _exitEMERG 'Unable to sync boot filesystem!';
   sync;
 
@@ -1531,7 +1499,7 @@ _restoreSnapshotFn () {
     echo "${_snapshot_name}";
     echo "${_snapshot_date}";
     echo "${_snapshot_reason}";
-  } > "/btrfs_main/@${_rb2RestoreCompleteFile}" \
+  } > "${_rb2MainDir}/@${_rb2RestoreCompleteFile}" \
     || _exitALERT 'Unable to prepare system for post-snapshot cleanup!';
 
   # Trim older snapshots
@@ -1605,7 +1573,7 @@ _getSnapshotMetadataFn () {
   for _item in 'name' 'desc' 'pinned'; do
     _metadata_str="$(_readMetadbFn "${_snapshot_id}" "${_item}")";
     if [ "${_item}" = 'pinned' ] && [ -z "${_metadata_str}" ]; then
-      _cm2WarnStrFn "Missing metadata entry for snapshot ${_snapshot_id} in ${_snapshotMetaDb}";
+      _logWrapFn 'warn' "Missing metadata entry for snapshot ${_snapshot_id} in ${_snapshotMetaDb}";
     fi
     echo "${_metadata_str}";
   done
@@ -1670,6 +1638,7 @@ _setSnapshotMetadataFn () {
   fi
 
   # Write snapshot name, description, pin status to snapshot metadb
+  # This exits on failure, SOMETIMES. TODO: Fix this.
   _writeMetadbFn "${_snapshot_id}" 'name' "${_name_str}";
   _writeMetadbFn "${_snapshot_id}" 'desc' "${_desc_str}";
   _writeMetadbFn "${_snapshot_id}" 'pinned' "${_is_pinned}";
@@ -1730,7 +1699,7 @@ _balanceMainFn () {
   # Balance if conditions met
   if [ "${_do_balance}" = 'y' ]; then
     # Balance main fs
-    "${_btrfsBalanceExe}" -u "${_balance_percent}" '/btrfs_main' || return;
+    "${_btrfsBalanceExe}" -u "${_balance_percent}" "${_rb2MainDir}" || return;
 
     # Save new unallocated and free space data to state file
     _main_report="$(_getMainUsageReportFn)";
@@ -1738,6 +1707,7 @@ _balanceMainFn () {
       | awk '{ print $3 }')";
     _main_free_int="$(grep $'Free (estimated):\t' <<< "${_main_report}" \
       | awk '{ print $3 }')";
+  # This exits on failure, SOMETIMES. TODO: Fix this.
     _writeMetadbFn 'global' 'lastUnallocInt' "${_main_unalloc_int}";
     _writeMetadbFn 'global' 'lastFreeInt' "${_main_free_int}";
 
@@ -1763,9 +1733,9 @@ _balanceBootFn () {
   _checkBtrfsStatusSetUpFn;
 
   # Unconditionally balance boot space
-  "${_btrfsBalanceExe}" -u 85 '/btrfs_boot' || return;
+  "${_btrfsBalanceExe}" -u 85 "${_rb2BootDir}" || return;
 
-  _cm2LogFn 'notice' "Boot filesystem balanced.";
+  _cm2LogFn 'notice' 'Boot filesystem balanced.';
 }
 ## . END _balanceBootFn }
 
@@ -1794,13 +1764,14 @@ _deleteAllSnapshotsFn () {
 
   # Exit if no snapshots exist
   if [ "${#_snapshot_list[@]}" = '0' ] || [ -z "${_snapshot_list[0]}" ]; then
-    _cm2WarnStrFn 'No snapshots found.';
+    _logWrapFn 'warn' 'No snapshots found.';
     return;
   fi
 
   # Delete each snapshot, unpinning if needed
   for _current_snapshot in "${_snapshot_list[@]}"; do
     if [ "$(_readMetadbFn "${_current_snapshot}" 'pinned')" = 'y' ]; then
+      # This exits on failure, SOMETIMES. TODO: Fix this.
       _writeMetadbFn "${_current_snapshot}" 'pinned' 'n';
     fi
     _deleteSnapshotFn "${_current_snapshot}";
@@ -1978,13 +1949,24 @@ _btrfsDeepCleanFn () {
 
 ## BEGIN _mainFn {
 _mainFn () {
-  declare _mode_str;
+  declare _mode_str _sleep_int;
   _mode_str="${1:-}";
   shift;
 
-  while ! _chkSetFlockFn; do
-    sleep 1;
+  ## Begin retry to acquire lock file
+  _sleep_int=1;
+  while true; do
+    _chkSetFlockFn;
+    case "$?" in
+      0) break ;;
+      1) sleep "${_sleep_int}" ;;
+      *) _exitERR 'Irrecoverable error getting lock file' ;;
+    esac
+    if (( _sleep_int < 10 )); then
+      (( _sleep_int++ ));
+    fi
   done
+  ## . End retry to acquire lock file
 
   # TODO: Fix this, we should refuse to do almost anything if in INCONSISTENT
   # state but some of the functions of the script may need to work anyway.
@@ -2045,9 +2027,9 @@ _isPreparingSystem='n'; # Flag for error reporting
 # when Rollback v2 is installed, and then kfocus-rollback-backend from
 # Rollback v2 is launched before the v1 process terminates, they will run
 # simultaneously and potentially cause data loss.
-_lockFile='/tmp/kfocus-rollback/kfocus-rollback-set.lock';
 _lockDir='/tmp/kfocus-rollback';
-_snapshotMetaDb='/btrfs_main/kfocus-rollback-snapshot-metadb';
+_lockFile="${_lockDir}/kfocus-rollback-set.lock"; # See WARNING
+_snapshotMetaDb="${_rb2MainDir}/kfocus-rollback-snapshot-metadb";
 ## . END Declare and assign global vars }
 
 ## BEGIN Run mainFn when script is NOT sourced {
@@ -2075,10 +2057,11 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   );
 
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
-    _cm2ErrStrFn 'Could not assign variables';
+    _logWrapFn 'err' 'Could not assign variables';
     exit 1;
   fi
 
+  _cm2SetLogLevelFn 'warn'; # Syslog all issues warn or greater
   _cm2SetLogTagFn 'kfocus-rollback-backend';
 
   # Set error messages
@@ -2144,8 +2127,8 @@ ${_browStr}<h3 style="color:#f7941d">Inconsistent FS Layout</h3>${_erowStr}
 ${_browStr}This computer's file system layout was changed from the<br>
 default. This breaks system snapshots and rollback.${_erowStr}
 
-${_browStr}If you moved <code>/btrfs_main</code> or <code>/btrfs_boot</code>,
-please move<br>
+${_browStr}If you moved <code>${_rb2MainDir}</code> or
+<code>${_rb2BootDir}</code>, please move<br>
 them back to their original locations. If you did not move<br>
 either of these directories, please contact technical support.
 ${_erowStr}</table>

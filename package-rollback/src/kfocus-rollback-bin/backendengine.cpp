@@ -349,14 +349,14 @@ void BackendEngine::loadGlobalInfo() {
         { "status", btrfsMainStatus },
         { "size", QString(btrfsMainSize) },
         { "remain", QString(btrfsMainRemain) },
-        { "unalloc", QString::number(btrfsMainUnalloc) + "%" }
+        { "unalloc", QString::number(btrfsMainUnalloc, 'f', 1) + "%" }
     }));
     m_bootFsInfo->clear();
     m_bootFsInfo->insert(QMap<QString, QString>({
         { "status", btrfsBootStatus },
         { "size", QString(btrfsBootSize) },
         { "remain", QString(btrfsBootRemain) },
-        { "unalloc", QString::number(btrfsBootUnalloc) + "%" }
+        { "unalloc", QString::number(btrfsBootUnalloc, 'f', 1) + "%" }
     }));
 
     // NOTE: Callback is connected before execution, this is confusing but it's the only safe way to do this

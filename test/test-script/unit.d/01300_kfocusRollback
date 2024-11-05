@@ -20,6 +20,7 @@ _overwriteWithMocksFn () {
   source "${_libFile}" || exit 1;
 
   # Reset globals
+  # shellcheck disable=SC2317
   ls () {
     declare _arg_list;
     _arg_list=( "$@" );
@@ -27,14 +28,17 @@ _overwriteWithMocksFn () {
     2>/dev/null _cm2LsFn "${_t00RunDir}/${_last_arg}" || true;
   }
 
+  # shellcheck disable=SC2317
   mount () {
     echo "${_mountResultStr}";
   }
 
+  # shellcheck disable=SC2317
   _getManualSwitchStateBackendFn () {
     echo "${_manualSwitchStateStr}";
   }
 
+  # shellcheck disable=SC2317
   _btrfsExe () {
     if [ "${1}" = 'subvolume' ]; then
       if [ "${2}" = 'list' ]; then
@@ -676,3 +680,76 @@ _runTestFn () {
   return "${_fail_count}";
 }
 ## . END _runTestFn }
+
+# TODO: Move this reference code to rtest and cross-check
+#_checkBtrfsStatusFn () {
+#  declare _main_fs _boot_fs _main_subvols_str _boot_subvols_str;
+
+#  # The presence of /var/lib/portables or /var/lib/machines subvolumes will
+#  # interfere with snapshotting. These subvolumes may be created automatically
+#  # by systemd if it is not configured otherwise.
+#  if grep -q 'var/lib/portables' < <("${_btrfsExe}" subvolume list /) || \
+#     grep -q 'var/lib/machines' < <("${_btrfsExe}" subvolume list /); then
+#    if [ -n "$(ls -A /var/lib/portables)" ] || \
+#       [ -n "$(ls -A /var/lib/machines )" ]; then
+#      _btrfsStatus='UNSUPPORTED';
+#      return;
+#    fi
+#  fi
+
+#  if [ -d "${_rb2MainDir}" ] && [ -d "${_rb2BootDir}" ]; then
+#    if [ -d "${_rb2MainDir}/@" ] \
+#      && [ -d "${_rb2MainSnapshotDir}" ] \
+#      && [ -d "${_rb2BootDir}/@boot" ] \
+#      && [ -d "${_rb2BootSnapshotDir}" ]; then
+#      _main_fs="$(LC_ALL='C' mount | grep btrfs | grep ' on / ' \
+#        | cut -d' ' -f1)";
+#      _boot_fs="$(LC_ALL='C' mount | grep btrfs | grep ' on /boot ' \
+#        | cut -d' ' -f1)";
+#      if [ -n "${_main_fs}" ] && [ -n "${_boot_fs}" ] \
+#        && [ "${_main_fs}" != "${_boot_fs}" ]; then
+#        if [ "$(_getManualSwitchStateBackendFn)" = 'MANUAL' ]; then
+#          _btrfsStatus='SUPPORTED, MANUAL';
+#        else
+#          _btrfsStatus='SUPPORTED, AUTO';
+#        fi
+#      else
+#        _btrfsStatus='UNSUPPORTED';
+#      fi
+#    else
+#      _btrfsStatus='UNSUPPORTED';
+#    fi
+#  else
+#    if ! [ -d "${_rb2MainDir}" ] && ! [ -d "${_rb2BootDir}" ]; then
+#      _main_fs="$(LC_ALL='C' mount | grep btrfs | grep ' on / ' \
+#        | cut -d' ' -f1)";
+#      _boot_fs="$(LC_ALL='C' mount | grep btrfs | grep ' on /boot ' \
+#        | cut -d' ' -f1)";
+#      if [ -n "${_main_fs}" ] && [ -n "${_boot_fs}" ] \
+#        && [ "${_main_fs}" != "${_boot_fs}" ]; then
+#        _main_subvols_str="$("${_btrfsExe}" subvolume list / | awk '{ print $9 }' | sort)";
+#        _boot_subvols_str="$("${_btrfsExe}" subvolume list /boot | awk '{ print $9 }' | sort)";
+#        if grep -qE '^@$' <<< "${_main_subvols_str}" && \
+#          LC_ALL='C' mount | grep -q ' on /home '; then
+#          if [ -z "${_boot_subvols_str}" ]; then
+#            if ! grep -qE '^@kfocus-rollback-snapshots$' \
+#              <<< "${_main_subvols_str}"; then
+#              _btrfsStatus='SUPPORTED, NOT SET UP';
+#            else
+#              _btrfsStatus='INCONSISTENT';
+#            fi
+#          else
+#            _btrfsStatus='UNSUPPORTED';
+#          fi
+#        else
+#          _btrfsStatus='UNSUPPORTED';
+#        fi
+#      else
+#        _btrfsStatus='UNSUPPORTED';
+#      fi
+#    else
+#      _btrfsStatus='INCONSISTENT';
+#    fi
+#  fi
+#}
+## . END _checkBtrfsStatusFn }

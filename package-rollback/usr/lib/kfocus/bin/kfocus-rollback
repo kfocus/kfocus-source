@@ -1454,8 +1454,8 @@ declare _binName _binDir _baseName _baseDir _libTable _assignList \
 _userName="$(id -un)";
 _warnStr='<b style="color:#da4453">';
 _winTitle='System Rollback';
-_lockDir='/tmp/kfocus-rollback-frontend';
-_lockFile='/tmp/kfocus-rollback-frontend/kfocus-rollback-frontend.lock';
+_lockDir='/tmp/kfocus-rollback';
+_lockFile="${_lockDir}/kfocus-rollback-frontend.lock";
 ## . END Declare and assign global vars }
 
 ## BEGIN Run mainFn when script is NOT sourced {
