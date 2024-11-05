@@ -909,6 +909,7 @@ _audit_cm2TestVersFn () {
 # Outputs   : none
 # Returns   : 0 success, 1 failure
 
+declare _cm2LogLevelIdx _cm2LogTag; # Hack to get around shellcheck
 ## BEGIN _audit_cm2SyslogFn {
 _audit_cm2SyslogFn () {
   declare _assert_table _loop_line _assert_count _assert_idx _fail_count \
@@ -921,31 +922,30 @@ _audit_cm2SyslogFn () {
    ' log   |    warn | cautious   |DNR'
    ' log   |     err | unexpected |DNR'
    ' log   |    crit | The worst  |DNR'
-   ' sett  | AA'
+   ' sett  | AA      | AA[X]'
    ' level | debug   | 7'
-   ' log   |   debug | verbose    |AA[XXXXXX] - DEBUG: verbose '
-   ' log   |  notice | masses     |AA[XXXXXX] - NOTICE: masses '
-   ' log   |    warn | cautious   |AA[XXXXXX] - WARN: cautious '
-   ' log   |     err | unexpected |AA[XXXXXX] - ERR: unexpected'
-   ' log   |    crit | The worst  |AA[XXXXXX] - CRIT: The worst'
+   ' log   |   debug | verbose    |AA[X] - DEBUG: verbose '
+   ' log   |  notice | masses     |AA[X] - NOTICE: masses '
+   ' log   |    warn | cautious   |AA[X] - WARN: cautious '
+   ' log   |     err | unexpected |AA[X] - ERR: unexpected'
+   ' log   |    crit | The worst  |AA[X] - CRIT: The worst'
    ' level | warn    | 4'
-   ' log   |   debug | verbose    |Log msg priority > threshold, skipped.'
-   ' log   |  notice | masses     |Log msg priority > threshold, skipped.'
-   ' log   |    warn | cautious   |AA[XXXXXX] - WARN: cautious '
-   ' log   |     err | unexpected |AA[XXXXXX] - ERR: unexpected'
-   ' log   |    crit | The worst  |AA[XXXXXX] - CRIT: The worst'
+   ' log   |   debug | verbose    |'
+   ' log   |  notice | masses     |'
+   ' log   |    warn | cautious   |AA[X] - WARN: cautious '
+   ' log   |     err | unexpected |AA[X] - ERR: unexpected'
+   ' log   |    crit | The worst  |AA[X] - CRIT: The worst'
    ' level | err     | 3'
-   ' sett  | BB'
-   ' log   |   debug | verbose    |Log msg priority > threshold, skipped.'
-   ' log   |  notice | masses     |Log msg priority > threshold, skipped.'
-   ' log   |    warn | cautious   |Log msg priority > threshold, skipped.'
-   ' log   |     err | unexpected |BB[XXXXXX] - ERR: unexpected'
-   ' log   |    crit | The worst  |BB[XXXXXX] - CRIT: The worst'
+   ' sett  | BB      | BB[X]'
+   ' log   |   debug | verbose    |'
+   ' log   |  notice | masses     |'
+   ' log   |    warn | cautious   |'
+   ' log   |     err | unexpected |BB[X] - ERR: unexpected'
+   ' log   |    crit | The worst  |BB[X] - CRIT: The worst'
   );
   _assert_count="${#_assert_table[@]}";
   _assert_idx=1;
   _fail_count=0;
-
 
   # Mock logger
   # shellcheck disable=SC2317
@@ -962,7 +962,7 @@ _audit_cm2SyslogFn () {
         _expect_str="${_a3_str}";
         if _calc_str="$(_cm2LogFn "${_a1_str}" "${_a2_str}" 2>&1)"; then
           # shellcheck disable=SC2001
-          _calc_str="$(sed 's/[0-9]/X/g' <<< "${_calc_str}")";
+          _calc_str="$(sed 's/[0-9]\+/X/g' <<< "${_calc_str}")";
         else
           _calc_str="DNR";
         fi
@@ -976,15 +976,11 @@ _audit_cm2SyslogFn () {
       sett)
         if _cm2SetLogTagFn "${_a1_str}"; then
           # shellcheck disable=SC2001
-          _calc_str="$(sed 's/[0-9]//g' <<< "${_cm2LogTag}")";
-          # shellcheck disable=SC2001
-          _calc_str="$(sed 's/[[]]//g' <<< "${_calc_str}")";
-          # shellcheck disable=SC2001
-          _expect_str="${_a1_str}";
+          _calc_str="$(sed 's/[0-9]\+/X/g' <<< "${_cm2LogTag}")";
+          _expect_str="${_a2_str}";
         else
           # shellcheck disable=SC2001
-          # bashsupport disable=BP2001
-          _calc_str="$(sed 's/[0-9]/X/g' <<< "${_cm2LogTag}")";
+          _calc_str="$(sed 's/[0-9]\+/X/g' <<< "${_cm2LogTag}")";
           _expect_str="${_calc_str}";
         fi
         ;;
@@ -1024,7 +1020,7 @@ _runTestFn () {
     '_audit_cm2EchoStackFn'
     '_audit_cm2EchoModelStrFn'
     '_audit_cm2ChkInstalledPkgFn'
-    '_audit_cm2ChkPkgFn'            # Also checks cm2ChkInstalledVersFn
+    '_audit_cm2ChkPkgFn' # Includes cm2ChkInstalledVersFn
     '_audit_cm2PromptUserFn'
     '_audit_cm2TestVersFn'
     '_audit_cm2SyslogFn'

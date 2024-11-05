@@ -349,6 +349,7 @@ void BackendEngine::loadGlobalInfo() {
         { "status", btrfsMainStatus },
         { "size", QString(btrfsMainSize) },
         { "remain", QString(btrfsMainRemain) },
+        // This value includes rounding because percentage calculated above
         { "unalloc", QString::number(btrfsMainUnalloc, 'f', 1) + "%" }
     }));
     m_bootFsInfo->clear();
@@ -356,6 +357,7 @@ void BackendEngine::loadGlobalInfo() {
         { "status", btrfsBootStatus },
         { "size", QString(btrfsBootSize) },
         { "remain", QString(btrfsBootRemain) },
+        // This value includes rounding because percentage calculated above
         { "unalloc", QString::number(btrfsBootUnalloc, 'f', 1) + "%" }
     }));
 

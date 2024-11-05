@@ -7,22 +7,24 @@
 
 ## BEGIN _overwriteWithMocksFn {
 _overwriteWithMocksFn () {
+  declare _exe_file _lib_file;
   # Source executable
   # bashsupport disable=BP2001
   _rootDir="${_t00RunDir}";
   # shellcheck disable=SC2154
-  _exeFile="${_t00TopDir}";
-  _exeFile+='/package-rollback/usr/lib/kfocus/bin/kfocus-rollback-backend';
+  _exe_file="${_t00TopDir}";
+  _exe_file+='/package-rollback/usr/lib/kfocus/bin/kfocus-rollback-backend';
   # shellcheck disable=SC1090,SC2154
-  source "${_exeFile}" || exit 1;
-  _libFile="${_t00TopDir}";
-  _libFile+='/package-rollback/usr/lib/kfocus/lib/rollback.2.source';
-  source "${_libFile}" || exit 1;
+  source "${_exe_file}" || exit 1;
+  _lib_file="${_t00TopDir}";
+  _lib_file+='/package-rollback/usr/lib/kfocus/lib/rollback.2.source';
+  # shellcheck source=../../../package-rollback/usr/lib/kfocus/lib/rollback.2.source
+  source "${_lib_file}" || exit 1;
 
   # Reset globals
   # shellcheck disable=SC2317
   ls () {
-    declare _arg_list;
+    declare _arg_list _last_arg;
     _arg_list=( "$@" );
     _last_arg="${_arg_list[(( ${#_arg_list[@]} - 1 ))]}"
     2>/dev/null _cm2LsFn "${_t00RunDir}/${_last_arg}" || true;
@@ -60,6 +62,7 @@ _overwriteWithMocksFn () {
     fi
   }
 
+  # bashsupport disable=BP2001
   declare -g _btrfsExe="_btrfsExe";
 
   _rb2MainDir="${_t00RunDir}/${_rb2MainDir}";
@@ -600,8 +603,8 @@ _unsetMocksFn () {
 ## BEGIN _runTestFn {
 # This MUST be called '_runTestFn' for use by the _runUnitTests
 _runTestFn () {
-  declare _rootDir _assert_table _fail_count _assert_count _assert_idx \
-    _assert_line _assert_prep_fn _assert_result _count_str;
+  declare _assert_table _fail_count _assert_count _assert_idx \
+    _assert_line _bit_list _assert_prep_fn _assert_result _count_str;
 
   # Clear out run dir
   if ! _t00ClearRunDirFn;    then return 1; fi

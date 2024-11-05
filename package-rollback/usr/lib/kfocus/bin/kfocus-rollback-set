@@ -13,8 +13,6 @@
 # Run By   : kfocus-rollback, system processes
 # Spec     : 4411
 #
-# shellcheck source=../lib/common.2.source
-#
 set -u;
 
 ## BEGIN _loadLibTableFn {
@@ -48,9 +46,13 @@ _loadLibTableFn () {
       # shellcheck disable=SC1090
       if ! [ -r "${_lib_file}" ]; then
         _stderrFn "warn: source |${_lib_file}| not readable.";
-      elif source "${_lib_file}"; then
-        _is_loaded='y';
-        break;
+        continue;
+      fi
+
+      # shellcheck source=../lib/common.2.source
+      # shellcheck source=../lib/rollback.2.source
+      if source "${_lib_file}"; then
+        _is_loaded='y'; break;
       else
         _stderrFn "${_baseName} Error: source |${_lib_file}| is non-zero.";
         return 1;
@@ -145,7 +147,7 @@ _mainFn () {
 ## . END _mainFn }
 
 ## BEGIN Declare and assign global vars {
-declare _binName _binDir _baseName _baseDir;
+declare _binName _binDir _baseName _baseDir _rollbackBackendExe;
 ## . END Declare and assign global vars }
 
 ## BEGIN Run mainFn when script is NOT sourced {
