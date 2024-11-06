@@ -37,11 +37,11 @@ _logWrapFn () {
   declare _priority_key _message;
   _priority_key="${1:-warn}";
   _message="${2:-Unspecified issue}";
-  if [ "$(type '_cm2LogFn')" = 'function' ]; then
+  if [ "$(type -t '_cm2LogFn')" = 'function' ]; then
     # We assume this will echo to STDERR and syslog
     _cm2LogFn "${_priority_key}" "${_message}";
   else
-    2>&1 echo "${_baseName} - ${_priority_key}: ${_message}";
+    1>&2 echo "${_baseName} - ${_priority_key}: ${_message}";
   fi
 }
 ## . END _logWrapFn }
@@ -124,7 +124,12 @@ _trapExitFn () {
 # Throws    : none
 #
 _chkSetFlockFn () {
-  mkdir -p "${_lockDir}";
+  # Create the lock dir if possible. If this fails, it's almost certainly
+  # because something already created the lock dir, so we can ignore the
+  # failure. No checking is done in advance because it wouldn't make any
+  # functional difference and wouldn't be reliable because of an unavoidable
+  # time-of-check-to-time-of-use condition.
+  install -m 777 -d "${_lockDir}" 2>/dev/null || true
   if ! [ -e "${_lockFile}" ]; then
     install -m 666 /dev/null "${_lockFile}" || {
       _logWrapFn 'err' "Could not install ${_lockFile}";
@@ -2057,7 +2062,6 @@ _isPreparingSystem='n'; # Flag for error reporting
 # simultaneously and potentially cause data loss.
 _lockDir='/tmp/kfocus-rollback';
 _lockFile="${_lockDir}/kfocus-rollback-set.lock"; # See WARNING
-_snapshotMetaDb="${_rb2MainDir}/kfocus-rollback-snapshot-metadb";
 ## . END Declare and assign global vars }
 
 ## BEGIN Run mainFn when script is NOT sourced {
@@ -2073,6 +2077,9 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     "${_baseDir}/lib/rollback.2.source"
   );
   _loadLibTableFn "${_libTable[@]}" || exit 1;
+
+  # Assign global vars that rely on lib variables
+  _snapshotMetaDb="${_rb2MainDir}/kfocus-rollback-snapshot-metadb";
 
   _assignList=(
     '_btrfsExe|/usr/bin/btrfs'

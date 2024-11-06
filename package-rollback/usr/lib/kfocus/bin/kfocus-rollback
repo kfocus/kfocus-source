@@ -953,10 +953,12 @@ _getBtrfsStatusFn () {
 
 ## BEGIN Define error and exit handling {
 _chkSetFlockFn () {
-  mkdir -p "${_lockDir}";
-  if [ "$(id -u)" = '0' ]; then
-    chmod 0777 "${_lockDir}";
-  fi
+  # Create the lock dir if possible. If this fails, it's almost certainly
+  # because something already created the lock dir, so we can ignore the
+  # failure. No checking is done in advance because it wouldn't make any
+  # functional difference and wouldn't be reliable because of an unavoidable
+  # time-of-check-to-time-of-use condition.
+  install -m 777 -d "${_lockDir}" 2>/dev/null || true
   if ! [ -e "${_lockFile}" ]; then
     install -m 666 /dev/null "${_lockFile}";
   fi

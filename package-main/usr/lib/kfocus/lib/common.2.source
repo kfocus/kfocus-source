@@ -78,12 +78,12 @@ _cm2TrapInterruptFn () {
 ## . END Error Control Section }
 
 ## BEGIN Syslog Facilities {
-declare -A _cm2LogIdxMap=(
+declare -A -g _cm2LogIdxMap=(
   ['debug']=7 ['info']=6 ['notice']=5 ['warn']=4
   ['err']=3   ['crit']=2 ['alert']=1  ['emerg']=0
 );
 
-declare -A _cm2LogCodeMap=(
+declare -A -g _cm2LogCodeMap=(
   ['debug']='user.debug'  ['info']='user.info' ['notice']='user.notice'
   ['warn']='user.warning' ['err']='user.err'   ['crit']='user.crit'
   ['alert']='user.alert'  ['emerg']='user.emerg'
@@ -103,6 +103,7 @@ _cm2SetLogTagFn () {
 _cm2SetLogLevelFn () {
   declare _priority_key _log_idx;
   _priority_key="${1:-}";
+
   _log_idx="${_cm2LogIdxMap[${_priority_key}]:-}";
 
   [ -z "${_log_idx}" ] && {
