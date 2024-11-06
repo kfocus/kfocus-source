@@ -353,7 +353,7 @@ _readMetadbFn () {
 # Arguments :
 #   _group_str - The data group in which the value should be written.
 #      Often, our groups are named after snapshot IDs, e.g. '@1234'.
-#   _key_str       - The key to associate with the provided data.
+#   _key_str   - The key to associate with the provided data.
 #   _val_str   - The string to be stored. If blank, delete the key.
 # Globals   : _snapshotMetaDb
 # Outputs   : none
@@ -419,7 +419,7 @@ _writeMetadbFn () {
 _getManualSwitchStateBackendFn () {
   declare _manual_state_str;
 
-  _manual_state_str="$(_readMetadbFn 'global' 'manualSwitchState')";
+  _manual_state_str="$(_readMetadbFn 'global' 'manualSwitchState')" || exit;
 
   if [ -z "${_manual_state_str}" ]; then
     _manual_state_str='MANUAL';
@@ -469,7 +469,7 @@ _getManualSwitchStateFn () {
 # Returns   : none
 # Throws    :
 #   _NOTICE - _checkBtrfsStatusSetUpFn or _checkRootFn check failed.
-#   _ALERT  - _writeMetaDbFn when it cannot save.
+#   _ALERT  - _writeMetadbFn cannot save metadb changes.
 #   _ERR    - No argument provided, invalid argument provided, or the specified
 #     switch state is the same as the current switch state.
 #
@@ -758,8 +758,8 @@ _checkMainUnallocSpaceFn () {
 
   _checkBtrfsStatusSetUpFn;
 
-  _main_min_unalloc="$(_getMainMinUnallocFn)";
-  _main_unalloc="$(_getMainUnallocSpaceFn)";
+  _main_min_unalloc="$(_getMainMinUnallocFn)" || exit;
+  _main_unalloc="$(_getMainUnallocSpaceFn)" || exit;
 
   # Warn all users if main unallocated space is below minimum
   if (( _main_unalloc < _main_min_unalloc )); then
@@ -787,8 +787,8 @@ _checkBootUnallocSpaceFn () {
 
   _checkBtrfsStatusSetUpFn;
 
-  _boot_min_unalloc="$(_getBootMinUnallocFn)";
-  _boot_unalloc="$(_getBootUnallocSpaceFn)";
+  _boot_min_unalloc="$(_getBootMinUnallocFn)" || exit;
+  _boot_unalloc="$(_getBootUnallocSpaceFn)" || exit;
 
   # Warn all users if boot unallocated space is below minimum
   if (( _boot_unalloc < _boot_min_unalloc )); then
@@ -984,7 +984,7 @@ _prepareSystemFn () {
 #     filesystem corruption or disk failure.
 #
 _deleteSnapshotFn () {
-  declare _target_snapshot_id _snapshot_dir _boot_snapshot_dir;
+  declare _target_snapshot_id _snapshot_dir _boot_snapshot_dir _is_pinned;
 
   # Ensure target snapshot exists
   _target_snapshot_id="${1:-}";
@@ -1005,7 +1005,8 @@ _deleteSnapshotFn () {
   fi
 
   # Refuse deleting a pinned snapshot
-  if [ "$(_readMetadbFn "${_target_snapshot_id}" 'pinned')" = 'y' ]; then
+  _is_pinned="$(_readMetadbFn "${_target_snapshot_id}" 'pinned')" || exit;
+  if [ "${_is_pinned}" = 'y' ]; then
     _exitERR 'Cannot delete a pinned snapshot!';
   fi
 
@@ -1094,7 +1095,8 @@ _finalizeRestoreFn () {
 #
 _trimSnapshotsFn () {
   declare _main_snapshot_list _boot_snapshot_list _snapshot_id \
-    _snapshot_remove_count _snapshot_idx _delete_count _main_list_count;
+    _snapshot_remove_count _snapshot_idx _delete_count _main_list_count \
+    _is_pinned;
 
   _checkBtrfsStatusSetUpFn;
 
@@ -1137,8 +1139,9 @@ _trimSnapshotsFn () {
   _main_list_count="${#_main_snapshot_list[@]}";
   for (( _snapshot_idx = 0; _snapshot_idx < _main_list_count; \
     _snapshot_idx++ )); do
-    if [ "$(_readMetadbFn "${_main_snapshot_list[_snapshot_idx]}" \
-      'pinned')" = 'y' ]; then
+    _is_pinned="$(_readMetadbFn "${_main_snapshot_list[_snapshot_idx]}" \
+      'pinned')" || exit;
+    if [ "${_is_pinned}" = 'y' ]; then
       unset "_main_snapshot_list[_snapshot_idx]";
     fi
   done
@@ -1348,11 +1351,15 @@ _getSnapshotReasonFn () {
     return 1;
   fi
 
-  _snapshot_reason_raw="$(_readMetadbFn "${_snapshot_id}" 'reason')";
+  _snapshot_reason_raw="$(_readMetadbFn "${_snapshot_id}" 'reason')" || exit;
 
   # Migrate reason to metadb if stored old-style inside the snapshot
   if [ -z "${_snapshot_reason_raw}" ]; then
-    _snapshot_reason_raw="$(cat "${_snapshot_reason_file}")";
+    if [ -f "${_snapshot_reason_file}" ]; then
+      _snapshot_reason_raw="$(cat "${_snapshot_reason_file}")";
+    else
+      _snapshot_reason_raw='';
+    fi
     # See _writeMetadbFn note on return and exit behavior
     _writeMetadbFn "${_snapshot_id}" 'reason' "${_snapshot_reason_raw}";
   fi
@@ -1399,9 +1406,9 @@ _makeSnapshotDispIdFn () {
     return 1;
   fi
 
-  _snapshot_name="$(_readMetadbFn "${_snapshot_id}" 'name')";
+  _snapshot_name="$(_readMetadbFn "${_snapshot_id}" 'name')" || exit;
   if [ -z "${_snapshot_name}" ]; then
-    _snapshot_name="$(_getSnapshotReasonFn "${_snapshot_id}")";
+    _snapshot_name="$(_getSnapshotReasonFn "${_snapshot_id}")" || exit;
   else
     _snapshot_name="$(base64 -d <<< "${_snapshot_name}")";
   fi
@@ -1492,9 +1499,9 @@ _restoreSnapshotFn () {
   _createSnapshotFn 'Pre-Rollback' || exit;
 
   # Retrieve relevant metadata from snapshot being restored
-  _snapshot_name="$(_readMetadbFn "${_target_snapshot_id}" 'name')";
+  _snapshot_name="$(_readMetadbFn "${_target_snapshot_id}" 'name')" || exit;
   _snapshot_date="${_target_snapshot_id//@/}";
-  _snapshot_reason="$(_getSnapshotReasonFn "${_target_snapshot_id}")";
+  _snapshot_reason="$(_getSnapshotReasonFn "${_target_snapshot_id}")" || exit;
 
   # Move existing main and boot subvols, restore new ones
   mv "${_rb2MainDir}/@" "${_rb2MainWorkingDir}" \
@@ -1591,7 +1598,7 @@ _getSnapshotMetadataFn () {
 
   # Return snapshot name, description, pin status from snapshot metadb
   for _item in 'name' 'desc' 'pinned'; do
-    _metadata_str="$(_readMetadbFn "${_snapshot_id}" "${_item}")";
+    _metadata_str="$(_readMetadbFn "${_snapshot_id}" "${_item}")" || exit;
     if [ "${_item}" = 'pinned' ] && [ -z "${_metadata_str}" ]; then
       _logWrapFn 'warn' "Missing metadata entry for snapshot ${_snapshot_id} in ${_snapshotMetaDb}";
     fi
@@ -1650,7 +1657,7 @@ _setSnapshotMetadataFn () {
 
   # If pinning an unpinned snapshot, check disk space
   if [ "${_is_pinned}" = 'y' ]; then
-    _was_pinned="$(_readMetadbFn "${_snapshot_id}" 'pinned')";
+    _was_pinned="$(_readMetadbFn "${_snapshot_id}" 'pinned')" || exit;
     if [ "${_was_pinned}" = 'n' ]; then
       _checkMainUnallocSpaceFn;
       _checkBootUnallocSpaceFn;
@@ -1689,15 +1696,15 @@ _balanceMainFn () {
   _trigger_threshold=5368709120; # 5 GiB
 
   # Extract unallocated and free space from main fs report
-  _main_report="$(_getMainUsageReportFn)";
+  _main_report="$(_getMainUsageReportFn)" || exit;
   _main_unalloc_int="$(grep $'Device unallocated:\t' <<< "${_main_report}" \
     | awk '{ print $3 }')";
   _main_free_int="$(grep $'Free (estimated):\t' <<< "${_main_report}" \
     | awk '{ print $3 }')";
 
   # Read previous space values from snapshot metadb
-  _last_unalloc_int="$(_readMetadbFn 'global' 'lastUnallocInt')";
-  _last_free_int="$(_readMetadbFn 'global' 'lastFreeInt')";
+  _last_unalloc_int="$(_readMetadbFn 'global' 'lastUnallocInt')" || exit;
+  _last_free_int="$(_readMetadbFn 'global' 'lastFreeInt')" || exit;
   if [ -z "${_last_unalloc_int}" ] \
     || [ -z "${_last_free_int}" ]; then
     _last_unalloc_int=-1;
@@ -1723,7 +1730,7 @@ _balanceMainFn () {
       || _exitALERT 'Could not balance main BTRFS filesystem!';
 
     # Save new unallocated and free space data to state file
-    _main_report="$(_getMainUsageReportFn)";
+    _main_report="$(_getMainUsageReportFn)" || exit;
     _main_unalloc_int="$(grep $'Device unallocated:\t' <<< "${_main_report}" \
       | awk '{ print $3 }')";
     _main_free_int="$(grep $'Free (estimated):\t' <<< "${_main_report}" \
@@ -1775,7 +1782,7 @@ _balanceBootFn () {
 #   See _deleteSnapshotFn for other possible throw reasons.
 #
 _deleteAllSnapshotsFn () {
-  declare _snapshot_list _current_snapshot;
+  declare _snapshot_list _current_snapshot _is_pinned;
 
   _checkBtrfsStatusSetUpFn;
 
@@ -1792,7 +1799,8 @@ _deleteAllSnapshotsFn () {
 
   # Delete each snapshot, unpinning if needed
   for _current_snapshot in "${_snapshot_list[@]}"; do
-    if [ "$(_readMetadbFn "${_current_snapshot}" 'pinned')" = 'y' ]; then
+    _is_pinned="$(_readMetadbFn "${_current_snapshot}" 'pinned')" || exit;
+    if [ "${_is_pinned}" = 'y' ]; then
       # See _writeMetadbFn note on return and exit behavior
       _writeMetadbFn "${_current_snapshot}" 'pinned' 'n';
     fi
@@ -1824,10 +1832,8 @@ _defragmentFn () {
 
   # Get report of file fragmentation on main filesystem, sorted by excessive
   # fragments
-  _frag_report="$(
-    _getMainFragReportFn \
-    | sort -nr;
-  )";
+  _frag_report="$(_getMainFragReportFn)" || exit;
+  _frag_report="$(sort -nr <<< "${_frag_report}")";
 
   # Split fragmentation report into frag count, ideal frag count, and files
   readarray -t _frag_count_list  < <(cut -d'|' -f2 <<< "${_frag_report}");
@@ -1854,9 +1860,9 @@ _defragmentFn () {
   fi
 
   # Get report of unreachable space, sorted by quantity
+  _btdu_report="$(_getMainBtduReportFn)" || exit;
   _btdu_report="$(
-    _getMainBtduReportFn \
-      | grep '<UNREACHABLE>' \
+      grep '<UNREACHABLE>' <<< "${_btdu_report}" \
       | sort -nr \
       | sed 's|/<SINGLE>/<DATA>/<UNREACHABLE>||; /<ERROR>/d'
   )";
