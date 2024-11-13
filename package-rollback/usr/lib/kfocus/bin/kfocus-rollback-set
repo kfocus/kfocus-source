@@ -74,7 +74,7 @@ _loadLibTableFn () {
 ## BEGIN _dispatchFn {
 _dispatchFn () {
   declare _mode_str _arg_str;
-  
+
   _mode_str="${1:-}";
   _arg_str="${2:-}";
 
@@ -87,15 +87,15 @@ _dispatchFn () {
 
   case "${_mode_str}" in
     'getBaseSnapshotMetadata')
-      "${_rollbackBackendExe}" "${_mode_str}" "${_arg_str}";;
+      "${_rollbackBackendExe}" "${_mode_str}" "${_arg_str}"; exit;;
     'getFullSnapshotMetadata')
-      "${_rollbackBackendExe}" "${_mode_str}" "${_arg_str}";;
+      "${_rollbackBackendExe}" "${_mode_str}" "${_arg_str}"; exit;;
     'getSnapshotReason')
-      "${_rollbackBackendExe}" "${_mode_str}" "${_arg_str}";;
+      "${_rollbackBackendExe}" "${_mode_str}" "${_arg_str}"; exit;;
     'makeSnapshotDispId')
-      "${_rollbackBackendExe}" "${_mode_str}" "${_arg_str}";;
+      "${_rollbackBackendExe}" "${_mode_str}" "${_arg_str}"; exit;;
     *)
-      "${_rollbackBackendExe}" "${_mode_str}";;
+      "${_rollbackBackendExe}" "${_mode_str}"; exit;;
   esac
 }
 ## . END _dispatchFn }
