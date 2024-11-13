@@ -149,6 +149,28 @@ _chkSetFlockFn () {
 }
 ## . END _chkSetFlockFn }
 
+## BEGIN Private method: _createCheckMetadbFn {
+_checkCreateMetadbFn () {
+  # Confirm this is regular, existing file with correct perms
+  if [ -f "${_snapshotMetaDb}" ]; then
+    if [ "$(stat -c '%a' "${_snapshotMetaDb}")" != '644' ]; then
+      chmod '0644' "${_snapshotMetaDb}" || return 1;
+    fi
+    return;
+  fi
+
+  # Error if not a file
+  if [ -e "${_snapshotMetaDb}" ]; then
+    _logWrapFn 'warn' "Metadb is not a regular file.";
+    return 1;
+  fi
+
+  # Create file if needed
+  touch "${_snapshotMetaDb}"        || return 1;
+  chmod '0644' "${_snapshotMetaDb}" || return 1;
+}
+## . END Private method: _createCheckMetadbFn }
+
 ## BEGIN _exitCleanFn {
 # Summary   : _exitCleanFn <_int>;
 # Purpose   : Unset traps for exit and then do so.
@@ -191,7 +213,7 @@ _exitWithCodeFn () {
   _int="$(_cm2EchoIntFn "${1:-0}")";
   _msg="${2:-}";
   _do_call_stack='n';
-  
+
   case ${_int} in
     '0') _key='notice';;
     '1') _key='err'   ;;
@@ -202,12 +224,12 @@ _exitWithCodeFn () {
 
   if [ "$$" != "$BASHPID" ]; then
     _key='alert';
-    _logWrapFn "${_key}" 'exitWithCodeFn is run in a subshell!';
+    _logWrapFn "${_key}" '_exitWithCodeFn was called from a subshell!';
     _do_call_stack='y';
   elif [ "${_int}" != '0' ]; then
     _do_call_stack='y';
   fi
-  
+
   if [ -n "${_msg}" ]; then
     _logWrapFn "${_key}" "${_msg}";
   fi
@@ -309,7 +331,7 @@ _clearRestoreFn () {
 # Outputs   : A string representing the desired data. Note that for data
 #             representing user-defined strings, this will always be
 #             base64-encoded.
-# Returns   : 0 on success, 1 on failure
+# Returns   : 0 on success, 2 on failure (meaning metadb error)
 # Throws    : none
 #
 _readMetadbFn () {
@@ -321,32 +343,35 @@ _readMetadbFn () {
 
   if ! [ -d "${_rb2MainDir}" ]; then
     _logWrapFn 'err' "${_err_msg} No main dir |${_rb2MainDir}|";
-    return 1;
+    return 2;
   fi
 
   [ -n "${_group_str}" ] || {
     _logWrapFn 'err' "${_err_msg} No group string provided.";
-    return 1;
-  }
-  [ -n "${_key_str}" ] || {
-    _logWrapFn 'err' "${_err_msg} No key string provided.";
-    return 1;
+    return 2;
   }
 
-  if [ -f "${_snapshotMetaDb}" ]; then
-    "${_kreadconfig5Exe}" \
-      --file "${_snapshotMetaDb}" \
-      --group "${_group_str}" \
-      --key "${_key_str}" \
-      || _exitALERT "${_err_msg} |${_group_str}:${_key_str}|";
-  elif [ -e "${_snapshotMetaDb}" ]; then
-    _logWrapFn 'err' "${_err_msg} Metadb is not a regular file.";
-    return 1;
-  else
-    touch "${_snapshotMetaDb}";
-    chmod '0644' "${_snapshotMetaDb}";
-    echo '';
+  [ -n "${_key_str}" ] || {
+    _logWrapFn 'err' "${_err_msg} No key string provided.";
+    return 2;
+  }
+
+  if ! _checkCreateMetadbFn; then
+    _logWrapFn 'err' "${_err_msg} Metadb is not a valid file.";
+    return 2;
   fi
+
+  # Read failure here is almost impossible: It will succeed even if
+  # the file cannot be created, or group or key is bad.
+  # Only weird edge cases like perhaps a bad value can trigger exit.
+  "${_kreadconfig5Exe}" \
+    --file "${_snapshotMetaDb}" \
+    --group "${_group_str}" \
+    --key "${_key_str}" \
+    || {
+      _logWrapFn 'err' "${_err_msg} |${_group_str}:${_key_str}|";
+      return 2;
+    }
 }
 ## . END _readMetadbFn }
 
@@ -362,11 +387,8 @@ _readMetadbFn () {
 #   _val_str   - The string to be stored. If blank, delete the key.
 # Globals   : _snapshotMetaDb
 # Outputs   : none
-# Returns   : 0 on success, 1 on failure
-# Throws    : _exitALERT if kwriteconfig5 fails.
-# Notice    :
-#   _writeMetadbFn exits ONLY on kwriteconfig5 error, others are ignored.
-#   This should probably be fixed.
+# Returns   : 0 on success, 2 on failure (meaning metadb error)
+# Throws    : none
 #
 _writeMetadbFn () {
   declare _group_str _key_str _val_str _err_msg _fail_msg _cmd_list;
@@ -378,24 +400,22 @@ _writeMetadbFn () {
 
   if ! [ -d "${_rb2MainDir}" ]; then
     _wrapLogFn 'err' "${_err_msg} No main dir |${_rb2MainDir}|";
-    return 1;
+    return 2;
   fi
 
   if [ -z "${_group_str}" ]; then
     _wrapLogFn 'err' "${_err_msg} No group string provided.";
-    return 1;
+    return 2;
   fi
 
   if [ -z "${_key_str}" ]; then
     _wrapLogFn 'err' "${_err_msg} No key string provided.";
+    return 2;
   fi
 
-  if ! [ -e "${_snapshotMetaDb}" ]; then
-    touch "${_snapshotMetaDb}";
-    chmod '0644' "${_snapshotMetaDb}";
-  elif ! [ -f "${_snapshotMetaDb}" ] ; then
-    _wrapLogFn 'err' "${_err_msg} Not a regular file.";
-    return 1;
+  if ! _checkCreateMetadbFn; then
+    _logWrapFn 'err' "${_err_msg} Metadb is not a valid file.";
+    return 2;
   fi
 
   _cmd_list=( "${_kwriteconfig5Exe}"
@@ -412,7 +432,13 @@ _writeMetadbFn () {
     _fail_msg="Failed to write |${_key_str}:${_val_str}|";
   fi
 
-  "${_cmd_list[@]}" || _exitALERT "${_err_msg} ${_fail_msg}";
+  # Write to metadb. Since we already checked for file and permissions,
+  #   and non-existent key or groups are supported, failure here should
+  #   be nearly impossible.
+  "${_cmd_list[@]}" || {
+    _logWrapFn 'err' "${_err_msg} ${_fail_msg}";
+    return 2;
+  }
 }
 ## . END _writeMetadbFn }
 
@@ -1805,9 +1831,12 @@ _deleteAllSnapshotsFn () {
 
   # Delete each snapshot, unpinning if needed
   for _current_snapshot in "${_snapshot_list[@]}"; do
+    # Read failure here is almost impossible: It will succeed even if missing
+    # file, group, or key. Only weird edge cases should trigger an exit.
     _is_pinned="$(_readMetadbFn "${_current_snapshot}" 'pinned')" || exit;
     if [ "${_is_pinned}" = 'y' ]; then
-      # See _writeMetadbFn note on return and exit behavior
+      # Write failure here is almost impossible similar to _writeMetadbFn.
+      # See note there.
       _writeMetadbFn "${_current_snapshot}" 'pinned' 'n';
     fi
     _deleteSnapshotFn "${_current_snapshot}";
@@ -1943,6 +1972,7 @@ _defragmentFn () {
 #   _ALERT - Main or boot filesystem balance failed.
 #
 _btrfsMaintainFn () {
+  _logWrapFn 'notice' "Routine BTRFS maintenance .";
   _checkRootFn       || _exitNOTICE \
     'BTRFS maintenance requires root privileges.';
   _checkBtrfsStatusSetUpFn;
@@ -1970,6 +2000,7 @@ _btrfsMaintainFn () {
 #
 #
 _btrfsDeepCleanFn () {
+  _logWrapFn 'notice' "BTRFS deep clean operation started.";
   _checkRootFn       || _exitNOTICE \
     'BTRFS deep cleaning requires root privileges.';
   _checkBtrfsStatusSetUpFn;
@@ -2002,12 +2033,12 @@ _mainFn () {
   done
   ## . End retry to acquire lock file
 
-  # TODO: Fix this, we should refuse to do almost anything if in INCONSISTENT
-  # state but some of the functions of the script may need to work anyway.
   _checkBtrfsStatusFn;
   if [ "${_btrfsStatus}" = 'INCONSISTENT' ]; then
     _promptAllUsersFn 'warning' "${_inconsistentMsg}";
-    _exitERR 'BTRFS state is inconsistent!';
+    if [ "${_mode_str}" != 'getBtrfsStatus' ]; then
+      _exitERR 'BTRFS state is inconsistent!';
+    fi
   fi
 
   case "${_mode_str}" in
