@@ -31,24 +31,8 @@
 #
 set -u;
 
-## BEGIN Initialization and exit functions {
-
-## BEGIN _logWrapFn {
-# Purpose : Log to syslog if available, or stderr otherwise
-_logWrapFn () {
-  declare _priority_key _message;
-  _priority_key="${1:-warn}";
-  _message="${2:-Unspecified issue}";
-  if [ "$(type -t '_cm2LogFn')" = 'function' ]; then
-    # We assume this will echo to STDERR and syslog
-    _cm2LogFn "${_priority_key}" "${_message}";
-  else
-    1>&2 echo "${_baseName} - ${_priority_key}: ${_message}";
-  fi
-}
-## . END _logWrapFn }
-
-## BEGIN _loadLibTableFn {
+## BEGIN INITIALIZATION AND EXIT FUNCTIONS ==================================
+## BEGIN Private _loadLibTableFn {
 # Summary : _loadLibTableFn <lib_str1> <lib_str2> ...
 # Example : _loadLibTableFn "lib01:/usr/lib/lib01" "lib02";
 # Purpose :
@@ -97,349 +81,87 @@ _loadLibTableFn () {
   ## . End: Iterate over lib lines
   return;
 }
-## . END _loadLibTableFn }
+## . END Private init _loadLibTableFn }
 
-## BEGIN Private functions {
+## BEGIN Private init _assignGlobalUiVarsFn {
+_assignGlobalUiVarsFn () {
+  # Set error messages
+  _browStr='<tr><td style="padding:8px 32px 8px 0">';
+  _erowStr='</td></tr>';
+  _tableStr='<table style="width:100%;margin-right:32px">';
 
-## . END Private functions }
+  _prepareFailMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}<h3 style="color:#f7941d">Critical Error</h3>${_erowStr}
 
-## BEGIN Public functions {
+${_browStr}FocusRx was interrupted while attempting to set up system<br>
+file snapshotting. This incident may be the result of failing<br>
+hardware or a software conflict.${_erowStr}
 
-## BEGIN _btrfsDeepCleanPublicFn {
-# Summary   : _btrfsDeepCleanPublicFn
-# Purpose   : Runs an intensive BTRFS optimization routine. Currently, this
-#             balances main and boot filesystems (forcing a balance on the
-#             main FS), and defragments the main filesystem.
-# Example   : _btrfsDeepCleanPublicFn
-# Arguments : none
-# Globals   : none
-# Outputs   : none
-# Returns   : none
-# Throws    :
-#   0 - _checkRootFn check failed, or _checkBtrfsStatusSetUpFn check failed.
-#   2 - Main or boot filesystem balance failed, or main filesystem defrag
-#     failed.
-#
-#
-_btrfsDeepCleanPublicFn () {
-  _checkRootFn             || _logExitFn 'notice' '0' \
-    'BTRFS deep cleaning requires root permissions.';
-  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
-    'BTRFS status prevents BTRFS deep cleaning.';
-  _logWrapFn 'notice' "BTRFS deep clean operation started.";
-  _deleteAllSnapshotsFn    || _logExitFn 'alert' '2' \
-    'Failed to delete all snapshots during BTRFS deep cleaning!';
-  _balanceMainFn 'y'       || _logExitFn 'alert' '2' \
-    'Failed to balance main filesystem during BTRFS deep cleaning!!';
-  _balanceBootFn           || _logExitFn 'alert' '2' \
-    'Failed to balance boot filesystem during BTRFS deep cleaning!';
-  _defragmentFn            || _logExitFn 'alert' '2' \
-    'Failed to defragment files during BTRFS deep cleaning!';
-  _logWrapFn 'notice' "BTRFS deep clean operation complete.";
+${_browStr}<b>Please report this issue to technical support. This is not<br>
+normal and should never happen.</b>${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _lowDiskMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}<h3 style="color:#f7941d">System Rollback: Low Disk Space</h3>
+${_erowStr}
+
+${_browStr}System Rollback has detected that the system's disk space is<br>
+low. This could result in filesystem corruption if not corrected.<br>
+Snapshot maintenance has been paused until this is corrected.<br>
+<br>
+It is highly recommended that you delete large snapshots<br>
+using System Rollback. You may also need to delete excess files<br>
+or move them to other drives.<br>
+<br>
+You can access System Rollback by clicking <code>Start Menu &gt;<br>
+Kubuntu Focus Tools &gt; System Rollback</code>. Click "Show<br>
+Snapshot Sizes" when prompted to quickly find large snapshots.<br>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _lowBootMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}<h3 style="color:#f7941d">System Rollback: Low Boot Space</h3>
+${_erowStr}
+
+${_browStr}System Rollback has detected that the system's boot<br>
+filesystem is low on space. This could result in failure to<br>
+boot. Snapshot maintenance has been paused until this<br>
+is corrected.<br>
+<br>
+It is highly recommended that you run the Kernel Cleaner<br>
+utility. You can access the Kernel Cleaner by clicking <code>Start<br>
+Menu &gt; Kubuntu Focus Tools &gt; Kernel Cleaner</code>.
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _inconsistentMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}<h3 style="color:#f7941d">Inconsistent FS Layout</h3>${_erowStr}
+
+${_browStr}This computer's file system layout was changed from the<br>
+default. This breaks system snapshots and rollback.${_erowStr}
+
+${_browStr}If you moved <code>${_rb2MainDir}</code> or
+<code>${_rb2BootDir}</code>, please move<br>
+them back to their original locations. If you did not move<br>
+either of these directories, please contact technical support.
+${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
 }
-## . END _btrfsDeepCleanPublicFn }
+## . END Private init _assignGlobalUiVarsFn }
+## . END INITIALIZATION AND EXIT FUNCTIONS ==============================
 
-## BEGIN _btrfsMaintainPublicFn {
-# Summary   : _btrfsMaintainPublicFn
-# Purpose   : Runs routine snapshot maintenance. Currently, this simply
-#             balances main and boot filesystems.
-# Example   : _btrfsMaintainPublicFn
-# Arguments : none
-# Globals   : none
-# Outputs   : none
-# Returns   : none
-# Throws    :
-#   0 - _checkRootFn check failed, or _checkBtrfsStatusSetUpFn check failed.
-#   2 - Main or boot filesystem balance failed.
-#
-_btrfsMaintainPublicFn () {
-  _checkRootFn             || _logExitFn 'notice' '0' \
-    'BTRFS maintenance requires root permissions.';
-  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
-    'BTRFS status prevents BTRFS maintenance.';
-  _logWrapFn 'notice' "Routine BTRFS maintenance .";
-  _balanceMainFn 'n'       || _logExitFn 'alert' '2' \
-    'Failed to balance main filesystem!';
-  _balanceBootFn           || _logExitFn 'alert' '2' \
-    'Failed to balance boot filesystem!';
-  _logWrapFn 'notice' "Routine BTRFS maintenance complete.";
-}
-## . END _btrfsMaintainPublicFn }
-
-## BEGIN _checkBootUnallocSpacePublicFn {
-# Summary   : _checkBootUnallocSpacePublicFn
-# Purpose   : Same as _checkMainUnallocSpacePublicFn, but for the boot filesystem
-#             rather than the main filesystem.
-# Example   : _checkBootUnallocSpacePublicFn
-# Arguments : none
-# Globals   : _lowBootMsg
-# Outputs   : none
-# Returns   : none
-# Throws    :
-#   0 - _checkBtrfsStatusSetUpFn check failed.
-#   1 - Boot unallocated space is low.
-#
-_checkBootUnallocSpacePublicFn () {
-  declare _boot_min_unalloc _boot_unalloc;
-
-  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
-    'BTRFS status is not compatible with checking boot unallocated space.';
-
-  _boot_min_unalloc="$(_getBootMinUnallocPrivateFn)";
-  _boot_unalloc="$(_getBootUnallocSpacePrivateFn)";
-
-  # Warn all users if boot unallocated space is below minimum
-  if (( _boot_unalloc < _boot_min_unalloc )); then
-    _promptAllUsersFn 'rollbackLowBootSpace' "${_lowBootMsg}";
-    _logExitFn 'err' '1' 'Low boot space detected.';
-  fi
-}
-## . END _checkBootUnallocSpacePublicFn }
-
-## BEGIN _checkMainUnallocSpacePublicFn {
-# Summary   : _checkMainUnallocSpacePublicFn
-# Purpose   : Ensures that the amount of unallocated space on the main
-#             filesystem is greater than a minimum threshold. Exits the script
-#             and displays a warning to all graphically logged-in users if the
-#             check fails.
-# Example   : _checkMainUnallocSpacePublicFn
-# Arguments : none
-# Globals   : _lowDiskMsg
-# Outputs   : none
-# Returns   : none
-# Throws    :
-#   0 - _checkBtrfsStatusSetUpFn check failed.
-#   1 - Main unallocated space is low.
-#
-_checkMainUnallocSpacePublicFn () {
-  declare _main_min_unalloc _main_unalloc;
-
-  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
-    'BTRFS status is not compatible with checking main unallocated space.';
-
-  _main_min_unalloc="$(_getMainMinUnallocFn)";
-  _main_unalloc="$(_getMainUnallocSpaceFn)";
-
-  # Warn all users if main unallocated space is below minimum
-  if (( _main_unalloc < _main_min_unalloc )); then
-    _promptAllUsersFn 'rollbackLowMainSpace' "${_lowDiskMsg}";
-    _logExitFn 'err' '1' 'Low disk space detected.';
-  fi
-}
-## . END _checkMainUnallocSpacePublicFn }
-
-## BEGIN _clearRestorePublicFn {
-# Summary   : _clearRestorePublicFn
-# Purpose   : Deletes a flag file indicating that the system has rebooted
-#             after a successful snapshot restore
-# Example   : clearRestoreFn
-# Arguments : none
-# Globals   : _cm2*
-# Outputs   : none
-# Returns   : none
-# Throws    : none
-#
-_clearRestorePublicFn () {
-  rm -f "${_rb2RestoreCompleteFile}" \
-    || _logExitFn 'err' '1' "Could not remove |${_rb2RestoreCompleteFile}|";
-  _logWrapFn 'notice' 'Restore flag cleared.';
-}
-## . END _clearRestorePublicFn }
-
-## BEGIN _compareStatePublicFn {
-# Summary   : _compareSnapshotsFn dir1 dir2
-# Purpose   : Compares two directories to each other using `diff -r --brief`.
-#             Intended to be used for comparing two snapshots, or a snapshot
-#             and the actively running system.
-# Example   : _compareSnapshotsFn \
-#             "${_rb2MainDir}/@kfocus-rollback-snapshots/@1234" \
-#             "${_rb2MainDir}/@";
-# Arguments :
-#   dir1 - The directory containing the 'source' system state. This will
-#     usually (but not always) be the path to a snapshot.
-#   dir2 - The directory containing the 'target' system state. This will
-#     usually (but not always) be the path to a newer snapshot or the current
-#     system state.
-#   Note that dir1 and dir2 could point to any two directories - dir1 may
-#   point to a newer system state than dir2, or theoretically they could even
-#   point to typical directories rather than system state directories.
-# Globals   : none
-# Outputs   : The `diff -r --brief` output resulting from diffing dir1 and
-#             dir2.
-# Returns   : none
-# Throws    :
-#   0 - _checkBtrfsStatusSetUpFn check failed, or _checkRootFn check
-#     failed.
-#   1 - One or both arguments are blank, or one of the specified
-#     directories does not exist or is not a directory.
-#
-_compareStatePublicFn () {
-  declare _source_state_dir _target_state_dir;
-
-  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
-    'BTRFS status prevents state comparison.';
-  _checkRootFn || _logExitFn 'notice' '0' \
-    'State comparison requires root permissions.';
-
-  # Ensure source and target dirs actually exist
-  _source_state_dir="${1:-}";
-  [ -z "${_source_state_dir}" ] \
-    && _logExitFn 'err' '1' 'No source state dir provided to comparer!';
-  ! [ -d "${_source_state_dir}" ] \
-    && _logExitFn 'err' '1' 'Specified source state dir does not exist or is not a dir!';
-  _target_state_dir="${2:-}";
-  [ -z "${_target_state_dir}" ] \
-    && _logExitFn 'err' '1' 'No target state dir provided to comparer!';
-  ! [ -d "${_target_state_dir}" ] \
-    && _logExitFn 'err' '1' 'Specified target state dir does not exist or is not a dir!';
-
-  # Diff directories, return filenames only
-  "${_diffExe}" -r --brief "${_source_state_dir}" "${_target_state_dir}";
-}
-## . END _compareStatePublicFn }
-
-## . END Public functions }
-
-## BEGIN _logExitFn {
-# Summary   : _logExitFn _log_level _exit_int _msg
-# Purpose   : Logs information to the syslog and then immediately exits.
-# Example   : _logExitFn 'ERR' 'Something went wrong!'
-# Arguments :
-#   _log_level - A string representing the log level to use. One of 'debug',
-#                'info', 'notice', 'warning', 'err', 'crit', 'alert', or
-#                'emerg'. See `man 3 syslog` for information on the meanings
-#                of these codes.
-#   _exit_int  - The code to exit with.
-#   _msg       - The message to log.
-# Globals   : _cm2*
-# Outputs   : Writes to syslog
-# Returns   : none, exits the script with the code given in _exit_int
-# Throws    : none
-#
-_logExitFn () {
-  declare _log_level _exit_int _msg _do_call_stack _stack_str
-
-  _log_level="${1:-}";
-  _exit_int="$(_cm2EchoIntFn "${2:-0}")";
-  _msg="${3:-}";
-  _do_call_stack='n';
-
-  if [ "$$" != "$BASHPID" ]; then
-    _logWrapFn 'alert' '_logExitFn was called from a subshell!';
-    _do_call_stack='y';
-  elif [ "${_exit_int}" != '0' ]; then
-    _do_call_stack='y';
-  fi
-
-  if [ -n "${_msg}" ]; then
-  _logWrapFn "${_log_level}" "${_msg}";
-  fi
-
-  if [ "${_do_call_stack}" = 'y' ]; then
-    _stack_str="$(_cm2EchoStackFn 2>&1)";
-    _logWrapFn "${_log_level}" "Call Stack: ${_stack_str}";
-  fi
-
-  _exitCleanFn "${_exit_int}";
-}
-## . END _logExitFn }
-
-## . END Initialization and exit functions }
-
-## BEGIN _balanceBootFn {
-# Summary   : _balanceBootFn
-# Purpose   : Unconditionally balances the boot filesystem.
-# Example   : _balanceBootFn
-# Arguments : none
-# Globals   : none
-# Outputs   : none
-# Returns   : none
-# Throws    : none
-#
-_balanceBootFn () {
-  # Unconditionally balance boot space
-  "${_btrfsBalanceExe}" -u 85 "${_rb2BootDir}" || return;
-
-  _logWrapFn 'notice' 'Boot filesystem balanced.';
-}
-## . END _balanceBootFn }
-
-## BEGIN _balanceMainFn {
-# Summary   : _balanceMainFn doForce
-# Purpose   : Checks to see if the main filesystem needs balanced, and does so
-#             if necessary.
-# Example   : _balanceMainFn 'n'
-# Arguments :
-#   doForce - Whether to force a balance or not. Argument must be one of
-#     either 'y' or 'n'. Defaults to 'n'.
-# Globals   : none
-# Outputs   : none
-# Returns   : none
-# Throws    : none
-#
-_balanceMainFn () {
-  declare _do_force_balance _main_report _main_unalloc_int _main_free_int \
-    _last_unalloc_int _last_free_int _trigger_threshold _balance_percent \
-    _do_balance;
-
-  _do_force_balance="${1:-n}";
-  _do_balance='n';
-  _trigger_threshold=5368709120; # 5 GiB
-
-  # Extract unallocated and free space from main fs report
-  _main_report="$(_getMainUsageReportFn)" || exit;
-  _main_unalloc_int="$(grep $'Device unallocated:\t' <<< "${_main_report}" \
-    | awk '{ print $3 }')";
-  _main_free_int="$(grep $'Free (estimated):\t' <<< "${_main_report}" \
-    | awk '{ print $3 }')";
-
-  # Read previous space values from snapshot metadb
-  _last_unalloc_int="$(_readMetadbFn 'global' 'lastUnallocInt')" || exit;
-  _last_free_int="$(_readMetadbFn 'global' 'lastFreeInt')" || exit;
-  if [ -z "${_last_unalloc_int}" ] \
-    || [ -z "${_last_free_int}" ]; then
-    _last_unalloc_int=-1;
-    _last_free_int=0;
-  fi
-
-  # Always balance if forced, and balance more intensively
-  if [ "${_do_force_balance}" = 'y' ]; then
-    _balance_percent='85';
-    _do_balance='y'
-  # Else, balance if free space growth or unallocated space shrinkage exceeds
-  # threshold
-  elif (( (_last_unalloc_int - _main_unalloc_int) >= "${_trigger_threshold}" )) \
-    || (( (_main_free_int - _last_free_int) >= "${_trigger_threshold}" )); then
-    _balance_percent='70';
-    _do_balance='y';
-  fi
-
-  # Balance if conditions met
-  if [ "${_do_balance}" = 'y' ]; then
-    # Balance main fs
-    "${_btrfsBalanceExe}" -u "${_balance_percent}" "${_rb2MainDir}" \
-      || _logExitFn 'alert' '2' 'Could not balance main BTRFS filesystem!';
-
-    # Save new unallocated and free space data to state file
-    _main_report="$(_getMainUsageReportFn)" || exit;
-    _main_unalloc_int="$(grep $'Device unallocated:\t' <<< "${_main_report}" \
-      | awk '{ print $3 }')";
-    _main_free_int="$(grep $'Free (estimated):\t' <<< "${_main_report}" \
-      | awk '{ print $3 }')";
-
-    # See _writeMetadbFn note on return and exit behavior
-    _writeMetadbFn 'global' 'lastUnallocInt' "${_main_unalloc_int}";
-    _writeMetadbFn 'global' 'lastFreeInt' "${_main_free_int}";
-
-    _logWrapFn 'notice' "Main filesystem balanced.";
-  else
-    _logWrapFn 'notice' \
-      "Main filesystem not balanced: not forced and threshold not met.";
-  fi
-}
-## . END _balanceMainFn }
-
-## BEGIN _checkBtrfsStatusFn {
+## BEGIN PRIVATE FUNCTIONS ==================================================
+## BEGIN private _checkBtrfsStatusFn {
 # Summary   : _checkBtrfsStatusFn
 # Purpose   : Determines the state of the system's BTRFS setup and outputs an
 #             easily manageable code corresponding to the BTRFS status. This
@@ -568,7 +290,419 @@ _checkBtrfsStatusFn () {
     _btrfsStatus='SUPPORTED, NOT SET UP';
   done
 }
-## . END _checkBtrfsStatusFn }
+## . END private _checkBtrfsStatusFn }
+
+## BEGIN private _logExitFn {
+# Summary   : _logExitFn _log_level _exit_int _msg
+# Purpose   : Logs information to the syslog and then immediately exits.
+# Example   : _logExitFn 'ERR' 'Something went wrong!'
+# Arguments :
+#   _log_level - A string representing the log level to use. One of 'debug',
+#                'info', 'notice', 'warning', 'err', 'crit', 'alert', or
+#                'emerg'. See `man 3 syslog` for information on the meanings
+#                of these codes.
+#   _exit_int  - The code to exit with.
+#   _msg       - The message to log.
+# Globals   : _cm2*
+# Outputs   : Writes to syslog
+# Returns   : none, exits the script with the code given in _exit_int
+# Throws    : none
+#
+_logExitFn () {
+  declare _log_level _exit_int _msg _do_call_stack _stack_str
+
+  _log_level="${1:-}";
+  _exit_int="$(_cm2EchoIntFn "${2:-0}")";
+  _msg="${3:-}";
+  _do_call_stack='n';
+
+  if [ "$$" != "$BASHPID" ]; then
+    _logWrapFn 'alert' '_logExitFn was called from a subshell!';
+    _do_call_stack='y';
+  elif [ "${_exit_int}" != '0' ]; then
+    _do_call_stack='y';
+  fi
+
+  if [ -n "${_msg}" ]; then
+  _logWrapFn "${_log_level}" "${_msg}";
+  fi
+
+  if [ "${_do_call_stack}" = 'y' ]; then
+    _stack_str="$(_cm2EchoStackFn 2>&1)";
+    _logWrapFn "${_log_level}" "Call Stack: ${_stack_str}";
+  fi
+
+  _exitCleanFn "${_exit_int}";
+}
+## . END private _logExitFn }
+
+## BEGIN private _logWrapFn {
+# Purpose : Log to syslog if available, or stderr otherwise
+_logWrapFn () {
+  declare _priority_key _message;
+  _priority_key="${1:-warn}";
+  _message="${2:-Unspecified issue}";
+  if [ "$(type -t '_cm2LogFn')" = 'function' ]; then
+    # We assume this will echo to STDERR and syslog
+    _cm2LogFn "${_priority_key}" "${_message}";
+  else
+    1>&2 echo "${_baseName} - ${_priority_key}: ${_message}";
+  fi
+}
+## . END private _logWrapFn }
+## . END PRIVATE FUNCTIONS ==================================================
+
+## BEGIN PUBLIC FUNCTIONS ===================================================
+# x _btrfsDeepCleanPublicFn
+# x _btrfsMaintainPublicFn
+# x _checkBootUnallocSpacePublicFn
+# x _checkMainUnallocSpacePublicFn
+# x _clearRestorePublicFn
+# _compareStatePublicFn
+# _createSnapshotFn
+# _deleteSnapshotFn
+# _finalizeRestoreFn
+# _getSnapshotMetadataFn
+# _getBootMinUnallocPublicFn
+# _getBootUnallocSpacePublicFn
+# echo "${_btrfsStatus}";;
+# _getSnapshotMetadataFn
+# _getMainMinUnallocPublicFn
+# _getMainUnallocSpacePublicFn
+# _getManualSwitchStateFn
+# _getSnapshotListStrFn
+# _getSnapshotReasonFn
+# _makeSnapshotDispIdFn
+# _prepareSystemFn
+# _restoreSnapshotFn
+# _setManualSwitchStateFn
+# _setSnapshotMetadataFn
+# _systemSnapshotFn
+# _trimSnapshotsFn
+
+## BEGIN _btrfsDeepCleanPublicFn {
+# Summary   : _btrfsDeepCleanPublicFn
+# Purpose   : Runs an intensive BTRFS optimization routine. Currently, this
+#             balances main and boot filesystems (forcing a balance on the
+#             main FS), and defragments the main filesystem.
+# Example   : _btrfsDeepCleanPublicFn
+# Arguments : none
+# Globals   : none
+# Outputs   : none
+# Returns   : none
+# Throws    :
+#   0 - _checkRootFn check failed, or _checkBtrfsStatusSetUpFn check failed.
+#   2 - Main or boot filesystem balance failed, or main filesystem defrag
+#     failed.
+#
+#
+_btrfsDeepCleanPublicFn () {
+  _checkRootFn             || _logExitFn 'notice' '0' \
+    'BTRFS deep cleaning requires root permissions.';
+  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
+    'BTRFS status prevents BTRFS deep cleaning.';
+
+  _logWrapFn 'notice' "BTRFS deep clean operation started.";
+  _deleteAllSnapshotsFn    || _logExitFn 'alert' '2' \
+    'Failed to delete all snapshots during BTRFS deep cleaning!';
+  _balanceMainFn 'y'       || _logExitFn 'alert' '2' \
+    'Failed to balance main filesystem during BTRFS deep cleaning!!';
+  _balanceBootFn           || _logExitFn 'alert' '2' \
+    'Failed to balance boot filesystem during BTRFS deep cleaning!';
+  _defragmentFn            || _logExitFn 'alert' '2' \
+    'Failed to defragment files during BTRFS deep cleaning!';
+  _logWrapFn 'notice' "BTRFS deep clean operation complete.";
+}
+## . END _btrfsDeepCleanPublicFn }
+
+## BEGIN _btrfsMaintainPublicFn {
+# Summary   : _btrfsMaintainPublicFn
+# Purpose   : Runs routine snapshot maintenance. Currently, this simply
+#             balances main and boot filesystems.
+# Example   : _btrfsMaintainPublicFn
+# Arguments : none
+# Globals   : none
+# Outputs   : none
+# Returns   : none
+# Throws    :
+#   0 - _checkRootFn check failed, or _checkBtrfsStatusSetUpFn check failed.
+#   2 - Main or boot filesystem balance failed.
+#
+_btrfsMaintainPublicFn () {
+  _checkRootFn             || _logExitFn 'notice' '0' \
+    'BTRFS maintenance requires root permissions.';
+  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
+    'BTRFS status prevents BTRFS maintenance.';
+
+  _logWrapFn 'notice' "Routine BTRFS maintenance started.";
+  _balanceMainFn 'n'       || _logExitFn 'alert' '2' \
+    'Failed to balance main filesystem!';
+  _balanceBootFn           || _logExitFn 'alert' '2' \
+    'Failed to balance boot filesystem!';
+  _logWrapFn 'notice' "Routine BTRFS maintenance complete.";
+}
+## . END _btrfsMaintainPublicFn }
+
+## BEGIN _checkBootUnallocSpacePublicFn {
+# Summary   : _checkBootUnallocSpacePublicFn
+# Purpose   : Same as _checkMainUnallocSpacePublicFn, but for the boot
+#             filesystem rather than the main filesystem.
+# Example   : _checkBootUnallocSpacePublicFn;
+# Arguments : none
+# Globals   : _lowBootMsg
+# Outputs   : none
+# Returns   : none
+# Throws    :
+#   0 - _checkBtrfsStatusSetUpFn check failed.
+#   1 - Boot unallocated space is low.
+#
+_checkBootUnallocSpacePublicFn () {
+  declare _boot_min_unalloc _boot_unalloc;
+
+  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
+    'BTRFS status is not compatible with checking boot unallocated space.';
+
+  _boot_min_unalloc="$(_getBootMinUnallocFn)";
+  _boot_unalloc="$(_getBootUnallocSpaceFn)";
+
+  # Warn all users if boot unallocated space is below minimum
+  if (( _boot_unalloc < _boot_min_unalloc )); then
+    _promptAllUsersFn 'rollbackLowBootSpace' "${_lowBootMsg}";
+    _logExitFn 'err' '1' 'Low boot space detected.';
+  fi
+}
+## . END _checkBootUnallocSpacePublicFn }
+
+## BEGIN _checkMainUnallocSpacePublicFn {
+# Summary   : _checkMainUnallocSpacePublicFn
+# Purpose   : Ensures that the amount of unallocated space on the main
+#             filesystem is greater than a minimum threshold. Exits the script
+#             and displays a warning to all graphically logged-in users if the
+#             check fails.
+# Example   : _checkMainUnallocSpacePublicFn
+# Arguments : none
+# Globals   : _lowDiskMsg
+# Outputs   : none
+# Returns   : none
+# Throws    :
+#   0 - _checkBtrfsStatusSetUpFn check failed.
+#   1 - Main unallocated space is low.
+#
+_checkMainUnallocSpacePublicFn () {
+  declare _main_min_unalloc _main_unalloc;
+
+  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
+    'BTRFS status is not compatible with checking main unallocated space.';
+
+  _main_min_unalloc="$(_getMainMinUnallocFn)";
+  _main_unalloc="$(_getMainUnallocSpaceFn)";
+
+  # Warn all users if main unallocated space is below minimum
+  if (( _main_unalloc < _main_min_unalloc )); then
+    _promptAllUsersFn 'rollbackLowMainSpace' "${_lowDiskMsg}";
+    _logExitFn 'err' '1' 'Low disk space detected.';
+  fi
+}
+## . END _checkMainUnallocSpacePublicFn }
+
+## BEGIN _clearRestorePublicFn {
+# Summary   : _clearRestorePublicFn
+# Purpose   : Deletes a flag file indicating that the system has rebooted
+#             after a successful snapshot restore
+# Example   : clearRestoreFn
+# Arguments : none
+# Globals   : _cm2*
+# Outputs   : none
+# Returns   : none
+# Throws    :
+#   0 - Success
+#   1 - Cannot remove restore-complete drop file
+#
+_clearRestorePublicFn () {
+  rm -f "${_rb2RestoreCompleteFile}" \
+    || _logExitFn 'err' '1' "Could not remove |${_rb2RestoreCompleteFile}|";
+  _logWrapFn 'notice' 'Restore flag cleared.';
+}
+## . END _clearRestorePublicFn }
+
+## BEGIN _compareStatePublicFn {
+# Summary   : _compareSnapshotsFn dir1 dir2
+# Purpose   : Compares two directories to each other using `diff -r --brief`.
+#             Intended to be used for comparing two snapshots, or a snapshot
+#             and the actively running system.
+# Example   : _compareSnapshotsFn \
+#             "${_rb2MainDir}/@kfocus-rollback-snapshots/@1234" \
+#             "${_rb2MainDir}/@";
+# Arguments :
+#   dir1 - The directory containing the 'source' system state. This will
+#     usually (but not always) be the path to a snapshot.
+#   dir2 - The directory containing the 'target' system state. This will
+#     usually (but not always) be the path to a newer snapshot or the current
+#     system state.
+#   Note that dir1 and dir2 could point to any two directories - dir1 may
+#   point to a newer system state than dir2, or theoretically they could even
+#   point to typical directories rather than system state directories.
+# Globals   : none
+# Outputs   : The `diff -r --brief` output resulting from diffing dir1 and
+#             dir2.
+# Returns   : none
+# Throws    :
+#   0 - Success
+#   0? - _checkBtrfsStatusSetUpFn check failed, or _checkRootFn check
+#     failed.
+#   1 - One or both arguments are blank, or one of the specified
+#     directories does not exist or is not a directory.
+#
+_compareStatePublicFn () {
+  declare _source_state_dir _target_state_dir;
+
+  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
+    'BTRFS status prevents state comparison.';
+  _checkRootFn || _logExitFn 'notice' '0' \
+    'State comparison requires root permissions.';
+
+  # Ensure source and target dirs actually exist
+  _source_state_dir="${1:-}";
+  [ -z "${_source_state_dir}" ] && _logExitFn 'err' '1' \
+    'No source state dir provided to compare.';
+  ! [ -d "${_source_state_dir}" ] && _logExitFn 'err' '1' \
+    'Specified source state dir does not exist or is not a dir.';
+  _target_state_dir="${2:-}";
+  [ -z "${_target_state_dir}" ] && _logExitFn 'err' '1' \
+    'No target state dir provided to compare.';
+  ! [ -d "${_target_state_dir}" ] && _logExitFn 'err' '1' \
+    'Specified target state dir does not exist or is not a dir.';
+
+  # Diff directories, return filenames only
+  "${_diffExe}" -r --brief "${_source_state_dir}" "${_target_state_dir}";
+}
+## . END _compareStatePublicFn }
+
+## BEGIN _getBootMinUnallocPublicFn {
+_getBootMinUnallocPublicFn () {
+  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
+    'BTRFS status is incompatible with detecting boot min unallocated space.';
+  _getBootMinUnallocFn;
+}
+## . END _getBootMinUnallocPublicFn }
+
+## BEGIN _getBootUnallocSpacePublicFn {
+_getBootUnallocSpacePublicFn () {
+  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
+    'BTRFS status is incompatible with detecting boot unallocated space.';
+  _getBootUnallocSpaceFn;
+}
+## . END _getBootUnallocSpacePublicFn }
+
+## BEGIN _getMainMinUnallocPublicFn {
+_getMainMinUnallocPublicFn () {
+  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
+    'BTRFS status is incompatible with detecting main min unallocated space.';
+  _getMainMinUnallocFn;
+}
+## . END _getMainMinUnallocPublicFn }
+
+## BEGIN _getMainUnallocSpacePublicFn {
+_getMainUnallocSpacePublicFn () {
+  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
+    'BTRFS status is incompatible with detecting main unallocated space.';
+  _getMainUnallocSpaceFn;
+}
+## . END _getMainUnallocSpacePublicFn }
+## . END PUBLIC FUNCTIONS ===================================================
+
+## BEGIN _balanceBootFn {
+# Summary   : _balanceBootFn
+# Purpose   : Unconditionally balances the boot filesystem.
+# Example   : _balanceBootFn
+# Arguments : none
+# Globals   : none
+# Outputs   : none
+# Returns   : none
+# Throws    : none
+#
+_balanceBootFn () {
+  # Unconditionally balance boot space
+  "${_btrfsBalanceExe}" -u 85 "${_rb2BootDir}" || return;
+
+  _logWrapFn 'notice' 'Boot filesystem balanced.';
+}
+## . END _balanceBootFn }
+
+## BEGIN _balanceMainFn {
+# Summary   : _balanceMainFn doForce
+# Purpose   : Checks to see if the main filesystem needs balanced, and does so
+#             if necessary.
+# Example   : _balanceMainFn 'n'
+# Arguments :
+#   doForce - Whether to force a balance or not. Argument must be one of
+#     either 'y' or 'n'. Defaults to 'n'.
+# Globals   : none
+# Outputs   : none
+# Returns   : none
+# Throws    : none
+#
+_balanceMainFn () {
+  declare _do_force_balance _main_report _main_unalloc_int _main_free_int \
+    _last_unalloc_int _last_free_int _trigger_threshold _balance_percent \
+    _do_balance;
+
+  _do_force_balance="${1:-n}";
+  _do_balance='n';
+  _trigger_threshold=5368709120; # 5 GiB
+
+  # Extract unallocated and free space from main fs report
+  _main_report="$(_getMainUsageReportFn)" || exit;
+  _main_unalloc_int="$(grep $'Device unallocated:\t' <<< "${_main_report}" \
+    | awk '{ print $3 }')";
+  _main_free_int="$(grep $'Free (estimated):\t' <<< "${_main_report}" \
+    | awk '{ print $3 }')";
+
+  # Read previous space values from snapshot metadb
+  _last_unalloc_int="$(_readMetadbFn 'global' 'lastUnallocInt')" || exit;
+  _last_free_int="$(_readMetadbFn 'global' 'lastFreeInt')" || exit;
+  if [ -z "${_last_unalloc_int}" ] \
+    || [ -z "${_last_free_int}" ]; then
+    _last_unalloc_int=-1;
+    _last_free_int=0;
+  fi
+
+  # Always balance if forced, and balance more intensively
+  if [ "${_do_force_balance}" = 'y' ]; then
+    _balance_percent='85';
+    _do_balance='y'
+  # Else, balance if free space growth or unallocated space shrinkage exceeds
+  # threshold
+  elif (( (_last_unalloc_int - _main_unalloc_int) >= "${_trigger_threshold}" )) \
+    || (( (_main_free_int - _last_free_int) >= "${_trigger_threshold}" )); then
+    _balance_percent='70';
+    _do_balance='y';
+  fi
+
+  # Balance if conditions met
+  if [ "${_do_balance}" = 'y' ]; then
+    # Balance main fs
+    "${_btrfsBalanceExe}" -u "${_balance_percent}" "${_rb2MainDir}" \
+      || _logExitFn 'alert' '2' 'Could not balance main BTRFS filesystem!';
+
+    # Save new unallocated and free space data to state file
+    _main_report="$(_getMainUsageReportFn)" || exit;
+    _main_unalloc_int="$(grep $'Device unallocated:\t' <<< "${_main_report}" \
+      | awk '{ print $3 }')";
+    _main_free_int="$(grep $'Free (estimated):\t' <<< "${_main_report}" \
+      | awk '{ print $3 }')";
+
+    # See _writeMetadbFn note on return and exit behavior
+    _writeMetadbFn 'global' 'lastUnallocInt' "${_main_unalloc_int}";
+    _writeMetadbFn 'global' 'lastFreeInt' "${_main_free_int}";
+
+    _logWrapFn 'notice' "Main filesystem balanced.";
+  else
+    _logWrapFn 'notice' \
+      "Main filesystem not balanced: not forced and threshold not met.";
+  fi
+}
+## . END _balanceMainFn }
 
 ## BEGIN _checkBtrfsStatusSetUpFn {
 # Summary   : _checkBtrfsStatusSetUpFn
@@ -1076,15 +1210,6 @@ _getBootMinUnallocFn () {
 }
 ## . END _getBootMinUnallocFn }
 
-## BEGIN _getBootMinUnallocPublicFn {
-_getBootMinUnallocPublicFn () {
-  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
-    'BTRFS status is incompatible with detecting boot minimum unallocated space.';
-
-  _getBootMinUnallocFn;
-}
-## . END _getBootMinUnallocPublicFn }
-
 ## BEGIN _getBootUnallocSpaceFn {
 _getBootUnallocSpaceFn () {
   # Extract unallocated space from boot filesystem report
@@ -1092,15 +1217,6 @@ _getBootUnallocSpaceFn () {
     | awk '/Device unallocated/{ print $3 }';
 }
 ## . END _getBootUnallocSpaceFn }
-
-## BEGIN _getBootUnallocSpacePublicFn {
-_getBootUnallocSpacePublicFn () {
-  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
-    'BTRFS status is incompatible with detecting boot unallocated space.';
-
-  _getBootUnallocSpaceFn;
-}
-## . END _getBootUnallocSpacePublicFn }
 
 ## BEGIN _getBootUsageReportFn {
 _getBootUsageReportFn () {
@@ -1136,15 +1252,6 @@ _getMainMinUnallocFn () {
 }
 ## . END _getMainMinUnallocFn }
 
-## BEGIN _getMainMinUnallocPublicFn {
-_getMainMinUnallocPublicFn () {
-  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
-    'BTRFS status is incompatible with detecting main minimum unallocated space.';
-
-  _getMainMinUnallocFn;
-}
-## . END _getMainMinUnallocPublicFn }
-
 ## BEGIN _getMainUnallocSpaceFn {
 _getMainUnallocSpaceFn () {
   # Extract unallocated space from main filesystem report
@@ -1153,19 +1260,10 @@ _getMainUnallocSpaceFn () {
 }
 ## . END _getMainUnallocSpaceFn }
 
-## BEGIN _getMainUnallocSpacePublicFn {
-_getMainUnallocSpacePublicFn () {
-  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
-    'BTRFS status is incompatbible with detecting main unallocated space.';
-
-  _getMainUnallocSpaceFn;
-}
-## . END _getMainUnallocSpacePublicFn }
-
 ## BEGIN _getMainUsageReportFn {
 _getMainUsageReportFn () {
   _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
-    'BTRFS status is incompatbiel with getting a main usage report.';
+    'BTRFS status is incompatible with getting a main usage report.';
   LC_ALL='C' "${_btrfsExe}" filesystem usage -b "${_rb2MainDir}";
 }
 ## . END _getMainUsageReportFn }
@@ -2190,78 +2288,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   _cm2SetLogLevelFn 'notice'; # Syslog all issues notice or greater
   _cm2SetLogTagFn "${_baseName}";
-
-  # Set error messages
-  _browStr='<tr><td style="padding:8px 32px 8px 0">';
-  _erowStr='</td></tr>';
-  _tableStr='<table style="width:100%;margin-right:32px">';
-
-  _prepareFailMsg="$(cat <<EOF
-${_cm2HtmBeginStr}${_tableStr}
-${_browStr}<h3 style="color:#f7941d">Critical Error</h3>${_erowStr}
-
-${_browStr}FocusRx was interrupted while attempting to set up system<br>
-file snapshotting. This incident may be the result of failing<br>
-hardware or a software conflict.${_erowStr}
-
-${_browStr}<b>Please report this issue to technical support. This is not<br>
-normal and should never happen.</b>${_erowStr}</table>
-${_cm2HtmEndStr}
-EOF
-  )";
-
-  _lowDiskMsg="$(cat <<EOF
-${_cm2HtmBeginStr}${_tableStr}
-${_browStr}<h3 style="color:#f7941d">System Rollback: Low Disk Space</h3>
-${_erowStr}
-
-${_browStr}System Rollback has detected that the system's disk space is<br>
-low. This could result in filesystem corruption if not corrected.<br>
-Snapshot maintenance has been paused until this is corrected.<br>
-<br>
-It is highly recommended that you delete large snapshots<br>
-using System Rollback. You may also need to delete excess files<br>
-or move them to other drives.<br>
-<br>
-You can access System Rollback by clicking <code>Start Menu &gt;<br>
-Kubuntu Focus Tools &gt; System Rollback</code>. Click "Show<br>
-Snapshot Sizes" when prompted to quickly find large snapshots.<br>
-${_cm2HtmEndStr}
-EOF
-  )";
-
-  _lowBootMsg="$(cat <<EOF
-${_cm2HtmBeginStr}${_tableStr}
-${_browStr}<h3 style="color:#f7941d">System Rollback: Low Boot Space</h3>
-${_erowStr}
-
-${_browStr}System Rollback has detected that the system's boot<br>
-filesystem is low on space. This could result in failure to<br>
-boot. Snapshot maintenance has been paused until this<br>
-is corrected.<br>
-<br>
-It is highly recommended that you run the Kernel Cleaner<br>
-utility. You can access the Kernel Cleaner by clicking <code>Start<br>
-Menu &gt; Kubuntu Focus Tools &gt; Kernel Cleaner</code>.
-${_cm2HtmEndStr}
-EOF
-  )";
-
-  _inconsistentMsg="$(cat <<EOF
-${_cm2HtmBeginStr}${_tableStr}
-${_browStr}<h3 style="color:#f7941d">Inconsistent FS Layout</h3>${_erowStr}
-
-${_browStr}This computer's file system layout was changed from the<br>
-default. This breaks system snapshots and rollback.${_erowStr}
-
-${_browStr}If you moved <code>${_rb2MainDir}</code> or
-<code>${_rb2BootDir}</code>, please move<br>
-them back to their original locations. If you did not move<br>
-either of these directories, please contact technical support.
-${_erowStr}</table>
-${_cm2HtmEndStr}
-EOF
-  )";
+  _assignGlobalUiVarsFn;
 
   _mainFn "$@";
 fi
