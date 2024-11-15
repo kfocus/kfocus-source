@@ -236,7 +236,7 @@ _scanFn () {
 
 _chkInitCpuFn () {
   declare _status_key _success_flag _status_set_list _set_key _proc_count;
-  _cm2SetMsgFn 'DEBUG: Set CPU properties for M2 GEN 5';
+  _cm2SetMsgFn 'Set CPU properties for M2 GEN 5';
 
   # This drop file should clear on every boot
   if [ -f "${_cpuDropFile}" ]; then
@@ -269,7 +269,7 @@ _chkInitCpuFn () {
       _cm2WarnStrFn "Could not set pstate to |${_set_key}|";
       _success_flag='n';
     fi
-    sleep 1;
+    sleep 2;
   done
 
   # Set default governor on all cores
