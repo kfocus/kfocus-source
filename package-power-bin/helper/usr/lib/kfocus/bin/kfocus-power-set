@@ -269,7 +269,7 @@ _chkInitCpuFn () {
       _cm2WarnStrFn "Could not set pstate to |${_set_key}|";
       _success_flag='n';
     fi
-    sleep 2;
+    sleep 3;
   done
 
   # Set default governor on all cores
