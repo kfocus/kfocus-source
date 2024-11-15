@@ -15,16 +15,10 @@
 # Notice: 'Throws' below refers to when the script exits due to an error
 # condition, typically by using _logExitFn. The associated exit code is shown
 # alongside the error condition.
-#
-# TODO: Many routines that used _exitLogFn are wrapped in subshells to
-# capture STDOUT. Therefore, the exits are rarely used and are often
-# ignored. To audit this:
-#   1. Identify all routines that use _exitLogFn
-#   2. Identify all uses of those routines
-#   3. To ensure proper exit from subshells, use the form:
-#    _str="$(_routineWithExitXXX)" || exit;
-# TODO: Make metadb writes and disk operations atomic with rollback.
-# TODO: Move all exit calls to top-level logic, not low-level calls.
+
+# Exit codes are used in these spots. Please audit!
+# - main.qml: 4 usages
+# - kfocus-rollback-set: 2 sections, 3 uses each (total of 6)
 #
 # shellcheck source=../lib/common.2.source
 # shellcheck source=../lib/rollback.2.source
@@ -629,7 +623,7 @@ _createSnapshotFn () {
   }
   sync;
 
-  _logWrapFn 'notice' "Snapshot @${_timestamp_str} created.";
+  _logWrapFn 'notice' "Snapshot |@${_timestamp_str}| created.";
 }
 ## . END private _createSnapshotFn }
 
@@ -746,7 +740,7 @@ _defragmentFn () {
   fi
 
   _logWrapFn 'notice' \
-    "Defragmented ${#_defrag_file_list[@]} files on main filesystem.";
+    "Defragmented |${#_defrag_file_list[@]}| files on main filesystem.";
 }
 ## . END private _defragmentFn }
 
@@ -833,13 +827,15 @@ _deleteSnapshotFn () {
   # Delete both BTRFS snapshots, taking into account there may only be one
   if [ -e "${_snapshot_dir}" ]; then
     "${_btrfsExe}" subvolume delete --commit-after "${_snapshot_dir}" || {
-      _logWrapFn 'emerg' '2' "Failed to delete main BTRFS snapshot ${_snapshot_dir}!";
+      _logWrapFn 'emerg' \
+        "Failed to delete main BTRFS snapshot |${_snapshot_dir}|!";
       return 2;
     }
   fi
   if [ -e "${_boot_snapshot_dir}" ]; then
     "${_btrfsExe}" subvolume delete --commit-after "${_boot_snapshot_dir}" || {
-      _logWrapFn 'emerg' '2' "Failed to delete boot BTRFS snapshot ${_boot_snapshot_dir}!";
+      _logWrapFn 'emerg' \
+        "Failed to delete boot BTRFS snapshot |${_boot_snapshot_dir}|!";
       return 2;
     }
   fi
@@ -850,7 +846,7 @@ _deleteSnapshotFn () {
   _writeMetadbFn "${_target_snapshot_id}" 'pinned' '';
   _writeMetadbFn "${_target_snapshot_id}" 'reason' '';
 
-  _logWrapFn 'notice' "Snapshot ${_target_snapshot_id} deleted.";
+  _logWrapFn 'notice' "Deleted snapshot |${_target_snapshot_id}|.";
 }
 ## . END private _deleteSnapshotFn }
 
@@ -1057,7 +1053,7 @@ _logExitFn () {
 
   if [ "${_do_call_stack}" = 'y' ]; then
     _stack_str="$(_cm2EchoStackFn 2>&1)";
-    _logWrapFn "${_log_level}" "Call Stack: ${_stack_str}";
+    _logWrapFn "${_log_level}" "Call Stack: |${_stack_str}|";
   fi
 
   _exitCleanFn "${_exit_int}";
@@ -1741,7 +1737,7 @@ _getSnapshotMetadataPublicFn () {
     _metadata_str="$(_readMetadbFn "${_snapshot_id}" "${_item}")" \
       || _logExitFn 'err' '1' 'Metadb read failure, could not get snapshot metadata!';
     if [ "${_item}" = 'pinned' ] && [ -z "${_metadata_str}" ]; then
-      _logWrapFn 'warn' "Missing metadata entry for snapshot ${_snapshot_id} in ${_snapshotMetaDb}";
+      _logWrapFn 'warn' "Missing metadata entry for snapshot |${_snapshot_id}| in |${_snapshotMetaDb}|";
     fi
     echo "${_metadata_str}";
   done
@@ -2082,7 +2078,7 @@ _restoreSnapshotPublicFn () {
   # Trim older snapshots
   _trimSnapshotsPublicFn || _logExitFn 'alert' '2' 'Unable to trim snapshots post-restore!';
 
-  _logWrapFn 'notice' "Snapshot ${_target_snapshot_id} restored.";
+  _logWrapFn 'notice' "Restored snapshot |${_target_snapshot_id}|.";
 }
 ## . END _restoreSnapshotPublicFn }
 
@@ -2272,8 +2268,8 @@ _trimSnapshotsPublicFn () {
       =~ [[:space:]]${_snapshot_id}[[:space:]] ]]; then
       _deleteSnapshotFn "${_snapshot_id}" \
         || _logExitFn 'alert' '2' "Failed to delete unpaired main snapshot |${_snapshot_id}|!";
-      _logWrapFn 'warning' \
-        "Mismatched BTRFS snapshot ${_snapshot_id} trimmed from main.";
+      _logWrapFn 'warn' \
+        "Mismatched BTRFS snapshot |${_snapshot_id}| trimmed from main.";
     fi
   done
 
@@ -2283,8 +2279,8 @@ _trimSnapshotsPublicFn () {
       =~ [[:space:]]${_snapshot_id}[[:space:]] ]]; then
       _deleteSnapshotFn "${_snapshot_id}" \
         || _logExitFn 'alert' '2' "Failed to delete unpaired boot snapshoti |${_snapshot_id}|!";
-      _logWrapFn 'warning' \
-        "Mismatched BTRFS snapshot ${_snapshot_id} trimmed from boot.";
+      _logWrapFn 'warn' \
+        "Mismatched BTRFS snapshot |${_snapshot_id}| trimmed from boot.";
     fi
   done
 
@@ -2299,7 +2295,8 @@ _trimSnapshotsPublicFn () {
     _snapshot_idx++ )); do
     _is_pinned="$(_readMetadbFn "${_main_snapshot_list[_snapshot_idx]}" \
       'pinned')" \
-      || _logExitFn 'Snapshot trim halted, could not determine if snapshot is pinned, metadb read failure!';
+      || _logExitFn 'alert' '2' \
+        'Snapshot trim halted, metadb read failure!';
     if [ "${_is_pinned}" = 'y' ]; then
       unset "_main_snapshot_list[_snapshot_idx]";
     fi
@@ -2313,14 +2310,16 @@ _trimSnapshotsPublicFn () {
     _snapshot_remove_count=$((${#_main_snapshot_list[@]} - 5));
     for (( _snapshot_idx = 0; _snapshot_idx < _snapshot_remove_count; \
       _snapshot_idx++ )); do
-      _deleteSnapshotFn "${_main_snapshot_list[_snapshot_idx]}" \
-        || _logWrapFn 'alert' '2' "Failed to delete snapshot |${_main_snapshot_list[_snapshot_idx]}|!";
+      _deleteSnapshotFn "${_main_snapshot_list[_snapshot_idx]}" || {
+        _logExitFn 'alert' '2' \
+          "Failed to delete snapshot |${_main_snapshot_list[_snapshot_idx]}|!";
+      }
       (( _delete_count++ )) || true;
     done
   fi
 
   _logWrapFn 'notice' \
-    "Snapshots trimmed, deleting ${_delete_count} non-mismatched snapshots.";
+    "Snapshots trimmed, deleted |${_delete_count}| snapshots.";
 }
 ## . END _trimSnapshotsPublicFn }
 ## . END PUBLIC FUNCTIONS ===================================================
