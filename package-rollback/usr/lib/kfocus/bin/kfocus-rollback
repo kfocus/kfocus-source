@@ -497,7 +497,7 @@ ${_bold_str}XXX_SNAPSHOT_MODE_XXX</b> mode.${_erow_str}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
-  
+
   _switchUnchangedMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_table_str}
 ${_brow_rp_str}${_left_header_str}Switch (2 of 2)</h3>${_erow_str}
@@ -628,7 +628,7 @@ Please contact support if this issue persists.${_erow_str}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
-  
+
   _editFailedMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_table_str}
 ${_brow_rp_str}${_left_header_str}Edit (3 of 3)</h3>${_erow_str}
@@ -814,24 +814,24 @@ _handleOperationExitIntFn () {
         return 1;
       fi
 
-      if [ "${_exit_int}" = "${_rb2NOTICE}" ]; then
+      if [ "${_exit_int}" = '0' ]; then
         systemctl reboot -i;
-      elif [ "${_exit_int}" = "${_rb2ERR}" ]; then
+      elif [ "${_exit_int}" = '1' ]; then
         _restoreFailedMsg="${_restoreFailedMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
         _cm2PromptUserFn "${_restoreFailedMsg}" "${_winTitle}" 's';
-        exit "${_rb2ERR}"
+        exit 1
       # 127 = auth failure, this is what pkexec spits out if you click 'Cancel' on
       # the auth window or provide a wrong password too many times.
       elif [ "${_exit_int}" = '127' ]; then
         _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
-        exit "${_rb2NOTICE}";
+        exit 0;
       else
         _cm2PromptUserFn "${_criticalErrorMsg}" "${_winTitle}" 'e';
         exit "${_exit_int}";
       fi
       ;;
     'create')
-      if [ "${_exit_int}" = "${_rb2NOTICE}" ]; then
+      if [ "${_exit_int}" = '0' ]; then
         _snapshot_id="$(_rollbackSetFn 'getSnapshotList' \
           | head -n1)";
         _snapshot_disp_id="$(
@@ -839,12 +839,12 @@ _handleOperationExitIntFn () {
         )";
         _snapshotCreatedMsg="${_snapshotCreatedMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
         _cm2PromptUserFn "${_snapshotCreatedMsg}" "${_winTitle}";
-      elif [ "${_exit_int}" = "${_rb2ERR}" ]; then
+      elif [ "${_exit_int}" = '1' ]; then
         _cm2PromptUserFn "${_creationFailedMsg}" "${_winTitle}" 's';
-        exit "${_rb2ERR}";
+        exit 1;
       elif [ "${_exit_int}" = '127' ]; then
         _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
-        exit "${_rb2NOTICE}";
+        exit 0;
       else
         _cm2PromptUserFn "${_criticalErrorMsg}" "${_winTitle}" 'e';
         exit "${_exit_int}";
@@ -856,17 +856,17 @@ _handleOperationExitIntFn () {
         return 1;
       fi
 
-      if [ "${_exit_int}" = "${_rb2NOTICE}" ]; then
+      if [ "${_exit_int}" = '0' ]; then
         _snapshotDeletedMsg="${_snapshotDeletedMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
         _cm2PromptUserFn "${_snapshotDeletedMsg}" "${_winTitle}";
-        exit "${_rb2NOTICE}";
-      elif [ "${_exit_int}" = "${_rb2ERR}" ]; then
+        exit 0;
+      elif [ "${_exit_int}" = '1' ]; then
         _deletionFailedMsg="${_deletionFailedMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
         _cm2PromptUserFn "${_deletionFailedMsg}" "${_winTitle}";
-        exit "${_rb2ERR}";
+        exit 1;
       elif [ "${_exit_int}" = '127' ]; then
         _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
-        exit "${_rb2NOTICE}";
+        exit 0;
       else
         _cm2PromptUserFn "${_criticalErrorMsg}" "${_winTitle}" 'e';
         exit "${_exit_int}";
@@ -882,15 +882,15 @@ _handleOperationExitIntFn () {
         return 1;
       fi
 
-      if [ "${_exit_int}" = "${_rb2NOTICE}" ]; then
+      if [ "${_exit_int}" = '0' ]; then
         _pinSwitchSuccessfulMsg="${_pinSwitchSuccessfulMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
         _pinSwitchSuccessfulMsg="${_pinSwitchSuccessfulMsg//XXX_PIN_STATUS_XXX/${_state_str}}";
         _cm2PromptUserFn "${_pinSwitchSuccessfulMsg}" "${_winTitle}";
-        exit "${_rb2NOTICE}";
-      elif [ "${_exit_int}" = "${_rb2ERR}" ]; then
+        exit 0;
+      elif [ "${_exit_int}" = '1' ]; then
         _pinSwitchFailedMsg="${_pinSwitchFailedMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
         _cm2PromptUserFn "${_pinSwitchFailedMsg}" "${_winTitle}";
-        exit "${_rb2ERR}";
+        exit 1;
       else
         _cm2PromptUserFn "${_criticalErrorMsg}" "${_winTitle}" 'e';
         exit "${_exit_int}";
@@ -902,26 +902,26 @@ _handleOperationExitIntFn () {
         return 1;
       fi
 
-      if [ "${_exit_int}" = "${_rb2NOTICE}" ]; then
+      if [ "${_exit_int}" = '0' ]; then
         _editSuccessfulMsg="${_editSuccessfulMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
         _cm2PromptUserFn "${_editSuccessfulMsg}" "${_winTitle}";
-        exit "${_rb2NOTICE}";
-      elif [ "${_exit_int}" = "${_rb2ERR}" ]; then
+        exit 0;
+      elif [ "${_exit_int}" = '1' ]; then
         _editFailedMsg="${_editFailedMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
         _cm2PromptUserFn "${_editFailedMsg}" "${_winTitle}";
-        exit "${_rb2ERR}";
+        exit 1;
       else
         _cm2PromptUserFn "${_criticalErrorMsg}" "${_winTitle}" 'e';
         exit "${_exit_int}";
       fi
       ;;
     'optimize')
-      if [ "${_exit_int}" = "${_rb2NOTICE}" ]; then
+      if [ "${_exit_int}" = '0' ]; then
         _cm2PromptUserFn "${_optimizeSuccessfulMsg}" "${_winTitle}";
-        exit "${_rb2NOTICE}";
+        exit 0;
       elif [ "${_exit_int}" = '127' ]; then
         _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
-        exit "${_rb2NOTICE}";
+        exit 0;
       else
         _cm2PromptUserFn "${_optimizeFailedMsg}" "${_winTitle}" 'e';
         exit "${_exit_int}";
@@ -943,7 +943,7 @@ _getBtrfsStatusFn () {
 
   # Override false positive due to complex exit code handling
   # shellcheck disable=SC2181
-  if [ "${_exit_int}" != "${_rb2NOTICE}" ]; then
+  if [ "${_exit_int}" != '0' ]; then
     exit "${_exit_int}";
   fi
 
@@ -1000,25 +1000,25 @@ _mainFn () {
     _state_msg='MANUAL mode is ON.';
   else
     _cm2PromptUserFn "${_systemUnsupportedMsg}" "${_winTitle}";
-    exit "${_rb2NOTICE}";
+    exit 0;
   fi
 
   # Ensure post-restore subvols are not mounted
   if mount   | grep 'btrfs' | grep -q '@kfocus-rollback-working' \
     || mount | grep 'btrfs' | grep -q '@kfocus-rollback-working-boot'; then
     _cm2PromptUserFn "${_restoreIncompleteMsg}" "${_winTitle}" 's';
-    exit "${_rb2NOTICE}";
+    exit 0;
   fi
 
   # Ensure post-restore subvol locations are not in use
   if [ -e "${_rb2MainWorkingDir}" ]; then
     _strangeSubvolsMsg="${_strangeSubvolsMsg//XXX_SUBVOL_NAME_XXX/${_rb2MainWorkingDir}}";
     _cm2PromptUserFn "${_strangeSubvolsMsg}" "${_winTitle}" 's';
-    exit "${_rb2ERR}"
+    exit 1
   elif [ -e "${_rb2BootWorkingDir}" ]; then
     _strangeSubvolsMsg="${_strangeSubvolsMsg//XXX_SUBVOL_NAME_XXX/${_rb2BootWorkingDir}}";
     _cm2PromptUserFn "${_strangeSubvolsMsg}" "${_winTitle}" 's';
-    exit "${_rb2ERR}"
+    exit 1
   fi
 
   ## BEGIN Chain to dashboard if GUI available {
@@ -1047,10 +1047,10 @@ _mainFn () {
   #     _rollbackMoreInfoMsg="${_rollbackMoreInfoMsg//XXX_SNAPSHOT_DIR_XXX/${_snapshot_dir}}";
   #     _cm2PromptUserFn "${_rollbackMoreInfoMsg}" "${_winTitle}";
   #   fi
-  #   exit "${_rb2NOTICE}";
+  #   exit 0;
   # fi
   ## . END handle after-restore action }
-  
+
   # Create main menu selector
   _mode_str="$(
     _cm2PromptUserFn "${_chooseModeMsg/XXX_STATE_MSG_XXX/${_state_msg}}" \
@@ -1090,7 +1090,7 @@ _mainFn () {
         _handleOperationExitIntFn 'create' "$?";
       else
         _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
-        exit "${_rb2NOTICE}";
+        exit 0;
       fi
       ;;
     'restore')
@@ -1108,7 +1108,7 @@ _mainFn () {
 
       if [ -z "$(_rollbackSetFn 'getSnapshotList')" ]; then
         _cm2PromptUserFn "${_noSnapshotsFoundMsg}" "${_winTitle}";
-        exit "${_rb2NOTICE}";
+        exit 0;
       fi
 
       # Read first two lines
@@ -1117,7 +1117,7 @@ _mainFn () {
 
       if [ -z "${_snapshot_id}" ]; then
         _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
-        exit "${_rb2NOTICE}";
+        exit 0;
       fi
 
       _restoreConfirmMsg="${_restoreConfirmMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
@@ -1129,13 +1129,13 @@ _mainFn () {
         _handleOperationExitIntFn 'restore' "$?" "${_snapshot_disp_id}";
       else
         _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
-        exit "${_rb2NOTICE}";
+        exit 0;
       fi
       ;;
     'delete')
       if [ -z "$(_rollbackSetFn 'getSnapshotList')" ]; then
         _cm2PromptUserFn "${_noSnapshotsFoundMsg}" "${_winTitle}";
-        exit "${_rb2NOTICE}";
+        exit 0;
       fi
 
       # Read first two lines
@@ -1144,7 +1144,7 @@ _mainFn () {
 
       if [ -z "${_snapshot_id}" ]; then
         _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
-        exit "${_rb2NOTICE}";
+        exit 0;
       fi
 
       _deleteConfirmMsg="${_deleteConfirmMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
@@ -1155,7 +1155,7 @@ _mainFn () {
         _handleOperationExitIntFn 'delete' "$?" "${_snapshot_disp_id}";
       else
         _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
-        exit "${_rb2NOTICE}";
+        exit 0;
       fi
       ;;
     'optimize')
@@ -1172,7 +1172,7 @@ _mainFn () {
     'protect')
       if [ -z "$(_rollbackSetFn 'getSnapshotList')" ]; then
         _cm2PromptUserFn "${_noSnapshotsFoundMsg}" "${_winTitle}";
-        exit "${_rb2NOTICE}";
+        exit 0;
       fi
 
       # Read first two lines
@@ -1207,15 +1207,15 @@ _mainFn () {
           "${_pin_other_status_str}";
       else
         _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
-        exit "${_rb2NOTICE}";
+        exit 0;
       fi
       ;;
     'edit')
       if [ -z "$(_rollbackSetFn 'getSnapshotList')" ]; then
         _cm2PromptUserFn "${_noSnapshotsFoundMsg}" "${_winTitle}";
-        exit "${_rb2NOTICE}";
+        exit 0;
       fi
-      
+
       # Read first two lines
       IFS=$'\n'; read -r -d '' _snapshot_id _snapshot_disp_id \
         < <(_chooseSnapshotFn "${_chooseEditSnapshotMsg}");
@@ -1263,12 +1263,12 @@ _mainFn () {
       ;;
     'bound')
       _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
-      exit "${_rb2NOTICE}";
+      exit 0;
       ;;
     'explain')
       if [ -z "$(_rollbackSetFn 'getSnapshotList')" ]; then
         _cm2PromptUserFn "${_noSnapshotsFoundMsg}" "${_winTitle}";
-        exit "${_rb2NOTICE}";
+        exit 0;
       fi
 
       # Read first two lines
@@ -1277,7 +1277,7 @@ _mainFn () {
 
       if [ -z "${_snapshot_id}" ]; then
         _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
-        exit "${_rb2NOTICE}";
+        exit 0;
       fi
 
       # /btrfs_main/@kfocus-rollback-snapshots/...
@@ -1409,31 +1409,31 @@ _mainFn () {
 
       if [ -z "${_new_switch_state}" ]; then
         _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
-        exit "${_rb2NOTICE}";
+        exit 0;
       fi
 
       if [ "${_switch_state,,}" = "${_new_switch_state}" ]; then
         _switchUnchangedMsg="${_switchUnchangedMsg//XXX_SNAPSHOT_MODE_XXX/${_new_switch_state^^}}";
         _cm2PromptUserFn "${_switchUnchangedMsg}" "${_winTitle}";
-        exit "${_rb2NOTICE}";
+        exit 0;
       elif _rollbackBackendFn 'setManualSwitchState' \
         "${_new_switch_state}"; then
         _switchSuccessfulMsg="${_switchSuccessfulMsg//XXX_SNAPSHOT_MODE_XXX/${_new_switch_state^^}}";
         _cm2PromptUserFn "${_switchSuccessfulMsg}" "${_winTitle}";
-        exit "${_rb2NOTICE}";
+        exit 0;
       else
         _cm2PromptUserFn "${_switchFailedMsg}" "${_winTitle}" 's';
-        exit "${_rb2ERR}";
+        exit 1;
       fi
       ;;
     *)
       _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
-      exit "${_rb2NOTICE}";
+      exit 0;
       ;;
   esac
   ## . End Dispatch on selection }
 
-  exit "${_rb2NOTICE}";
+  exit 0;
 }
 ## . END _mainFn }
 

@@ -75,6 +75,7 @@ RowLayout {
                         case 'System Schedule':
                         case 'Before Package Change':
                         case 'Pre-Rollback':
+                        case 'Unknown (no reason found)':
                             return reason;
                         default:
                             let input_str = reason;

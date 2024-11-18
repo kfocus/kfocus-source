@@ -604,6 +604,11 @@ _createSnapshotFn () {
   # Save snapshot creation reason in the metadata database.
   _writeMetadbFn "@${_timestamp_str}" 'reason' "${_snapshot_event_type}";
 
+  # Delete the obsolete rollback_snapshot_reason file if it exists
+  if [ -f "${_legacySnapshotReasonFile}" ]; then
+    rm -f "${_legacySnapshotReasonFile}";
+  fi
+
   # Snapshot and sync main and boot filesystems
   "${_btrfsExe}" subvolume snapshot -r "${_rb2MainDir}/@" "${_snapshot_path}" || {
     _logWrapFn 'emerg' "Could not create snapshot |${_snapshot_path}|";
@@ -890,24 +895,24 @@ _getBootUnallocSpaceFn () {
 
 ## BEGIN private _getBootUsageReportFn {
 _getBootUsageReportFn () {
-  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
-    'BTRFS status is incompatible with getting a boot usage report.';
+  _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
+    'BTRFS status is incompatible with getting a boot usage report!';
   LC_ALL='C' "${_btrfsExe}" filesystem usage -b "${_rb2BootDir}";
 }
 ## . END private _getBootUsageReportFn }
 
 ## BEGIN private _getMainBtduReportFn {
 _getMainBtduReportFn () {
-  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
-    'BTRFS status is incompatible with getting a main btdu report.';
+  _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
+    'BTRFS status is incompatible with getting a main btdu report!';
   LC_ALL='C' "${_btduExe}" --du --min-resolution=1M --headless "${_rb2MainDir}"
 }
 ## . END private _getMainBtduReportFn }
 
 ## BEGIN private _getMainFragReportFn {
 _getMainFragReportFn () {
-  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
-    'BTRFS status is incompatible with getting a main file fragmentation report.';
+  _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
+    'BTRFS status is incompatible with getting a main file fragmentation report!';
   "${_filefragExe}" "${_rb2MainDir}/@";
 }
 ## . END private _getMainFragReportFn }
@@ -932,8 +937,8 @@ _getMainUnallocSpaceFn () {
 
 ## BEGIN private _getMainUsageReportFn {
 _getMainUsageReportFn () {
-  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
-    'BTRFS status is incompatible with getting a main usage report.';
+  _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
+    'BTRFS status is incompatible with getting a main usage report!';
   LC_ALL='C' "${_btrfsExe}" filesystem usage -b "${_rb2MainDir}";
 }
 ## . END private _getMainUsageReportFn }
@@ -972,7 +977,7 @@ _getSnapshotReasonFn () {
 
   _snapshot_id="${1:-}";
   _snapshot_reason_file="${_rb2MainSnapshotDir}/${_snapshot_id}";
-  _snapshot_reason_file+='/var/lib/kfocus/rollback_snapshot_reason';
+  _snapshot_reason_file+="${_legacySnapshotReasonFile}";
 
   if [ -z "${_snapshot_id}" ]; then
     _logWrapFn 'warn' 'Invalid argument, cannot get snapshot reason';
@@ -991,10 +996,12 @@ _getSnapshotReasonFn () {
     else
       _snapshot_reason_raw='';
     fi
-    _writeMetadbFn "${_snapshot_id}" 'reason' "${_snapshot_reason_raw}" || {
-      _logWrapFn 'err' 'Could not migrate snapshot reason to metadb!';
-      return 1;
-    }
+    if [ -n "${_snapshot_reason_raw}" ]; then
+      _writeMetadbFn "${_snapshot_id}" 'reason' "${_snapshot_reason_raw}" || {
+        _logWrapFn 'err' 'Could not migrate snapshot reason to metadb!';
+        return 1;
+      }
+    fi
   fi
 
   case "${_snapshot_reason_raw}" in
@@ -1006,6 +1013,9 @@ _getSnapshotReasonFn () {
       ;;
     'Pre-Rollback')
       _snapshot_reason='Pre-Rollback';
+      ;;
+    '')
+      _snapshot_reason="Unknown (no reason found)"
       ;;
     *) # must be user-generated
       _snapshot_reason="User Snapshot (${_snapshot_reason_raw})";
@@ -1202,6 +1212,95 @@ _trapExitFn () {
 }
 ## . END private _trapExitFn }
 
+## BEGIN private _trimSnapshotsFn {
+_trimSnapshotsFn () {
+  declare _main_snapshot_list _boot_snapshot_list _snapshot_id \
+    _snapshot_remove_count _snapshot_idx _delete_count _main_list_count \
+    _is_pinned;
+
+  _delete_count=0;
+
+  # Get main and boot snapshot lists
+  readarray -t _main_snapshot_list <<< "$(
+    _cm2LsFn "${_rb2MainSnapshotDir}" | sed 's/@//' | sort -n | sed 's/^/@/'
+  )";
+  readarray -t _boot_snapshot_list <<< "$(
+    _cm2LsFn "${_rb2BootSnapshotDir}" | sed 's/@//' | sort -n | sed 's/^/@/'
+  )";
+
+  # Remove main snapshots with no corresponding boot snapshots
+  for _snapshot_id in "${_main_snapshot_list[@]}"; do
+    if ! [[ " ${_boot_snapshot_list[*]} " \
+      =~ [[:space:]]${_snapshot_id}[[:space:]] ]]; then
+      _deleteSnapshotFn "${_snapshot_id}" || {
+        _logWrapFn 'alert' "Failed to delete unpaired main snapshot |${_snapshot_id}|!";
+        return 2;
+      }
+      _logWrapFn 'warn' \
+        "Mismatched BTRFS snapshot |${_snapshot_id}| trimmed from main.";
+    fi
+  done
+
+  # Remove boot snapshots with no corresponding main snapshots
+  for _snapshot_id in "${_boot_snapshot_list[@]}"; do
+    if ! [[ " ${_main_snapshot_list[*]} " \
+      =~ [[:space:]]${_snapshot_id}[[:space:]] ]]; then
+      _deleteSnapshotFn "${_snapshot_id}" || {
+        _logWrapFn 'alert' "Failed to delete unpaired boot snapshot |${_snapshot_id}|!";
+        return 2;
+      }
+      _logWrapFn 'warn' \
+        "Mismatched BTRFS snapshot |${_snapshot_id}| trimmed from boot.";
+    fi
+  done
+
+  # Re-read list of main snapshots
+  readarray -t _main_snapshot_list <<< "$(
+    _cm2LsFn "${_rb2MainSnapshotDir}" | sed 's/@//' | sort -n | sed 's/^/@/'
+  )";
+
+  # Exclude pinned snapshots, avoid unset shrinkage bug
+  _main_list_count="${#_main_snapshot_list[@]}";
+
+  if (( _main_list_count < 1 )) \
+    || [ -z "${_main_snapshot_list[0]}" ]; then
+    _logWrapFn 'notice' 'No snapshots to trim.';
+    return 0;
+  fi
+  for (( _snapshot_idx = 0; _snapshot_idx < _main_list_count; \
+    _snapshot_idx++ )); do
+    _is_pinned="$(_readMetadbFn "${_main_snapshot_list[_snapshot_idx]}" \
+      'pinned')" || {
+        _logWrapFn 'alert' 'Snapshot trim halted, metadb read failure!';
+        return 2;
+      }
+    if [ "${_is_pinned}" = 'y' ]; then
+      unset "_main_snapshot_list[_snapshot_idx]";
+    fi
+  done
+
+  # Remove holes left by unset
+  _main_snapshot_list=( "${_main_snapshot_list[@]}" );
+
+  # Trim unpinned snapshots down to no more than 5
+  if [ "${#_main_snapshot_list[@]}" -gt '5' ]; then
+    _snapshot_remove_count=$((${#_main_snapshot_list[@]} - 5));
+    for (( _snapshot_idx = 0; _snapshot_idx < _snapshot_remove_count; \
+      _snapshot_idx++ )); do
+      _deleteSnapshotFn "${_main_snapshot_list[_snapshot_idx]}" || {
+        _logWrapFn 'alert' \
+          "Failed to delete snapshot |${_main_snapshot_list[_snapshot_idx]}|!";
+        return 2;
+      }
+      (( _delete_count++ )) || true;
+    done
+  fi
+
+  _logWrapFn 'notice' \
+    "Snapshots trimmed, deleted |${_delete_count}| snapshots.";
+}
+## . END private _trimSnapshotsFn }
+
 ## BEGIN private _writeMetadbFn {
 # Summary   : _writeMetadbFn _group_str _key_str _val_str
 # Purpose   : Writes a value to or deletes a value from the kfocus-rollback
@@ -1313,16 +1412,16 @@ _writeMetadbFn () {
 #
 #
 _btrfsDeepCleanPublicFn () {
-  _checkRootFn             || _logExitFn 'notice' '0' \
-    'BTRFS deep cleaning requires root permissions.';
-  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
-    'BTRFS status prevents BTRFS deep cleaning.';
+  _checkRootFn             || _logExitFn 'warn' '1' \
+    'BTRFS deep cleaning requires root permissions!';
+  _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
+    'BTRFS status prevents BTRFS deep cleaning!';
 
   _logWrapFn 'notice' "BTRFS deep clean operation started.";
   _deleteAllSnapshotsFn    || _logExitFn 'alert' '2' \
     'Failed to delete all snapshots during BTRFS deep cleaning!';
   _balanceMainFn 'y'       || _logExitFn 'alert' '2' \
-    'Failed to balance main filesystem during BTRFS deep cleaning!!';
+    'Failed to balance main filesystem during BTRFS deep cleaning!';
   _balanceBootFn           || _logExitFn 'alert' '2' \
     'Failed to balance boot filesystem during BTRFS deep cleaning!';
   _defragmentFn            || _logExitFn 'alert' '2' \
@@ -1345,10 +1444,10 @@ _btrfsDeepCleanPublicFn () {
 #   2 - Main or boot filesystem balance failed.
 #
 _btrfsMaintainPublicFn () {
-  _checkRootFn             || _logExitFn 'notice' '0' \
-    'BTRFS maintenance requires root permissions.';
-  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
-    'BTRFS status prevents BTRFS maintenance.';
+  _checkRootFn             || _logExitFn 'warn' '1' \
+    'BTRFS maintenance requires root permissions!';
+  _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
+    'BTRFS status prevents BTRFS maintenance!';
 
   _logWrapFn 'notice' "Routine BTRFS maintenance started.";
   _balanceMainFn 'n'       || _logExitFn 'alert' '2' \
@@ -1373,11 +1472,11 @@ _btrfsMaintainPublicFn () {
 #   1 - Boot unallocated space is low.
 #
 _checkBootUnallocSpacePublicFn () {
-  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
-    'BTRFS status is not compatible with checking boot unallocated space.';
+  _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
+    'BTRFS status is not compatible with checking boot unallocated space!';
   if ! _checkBootUnallocSpaceFn; then
     _promptAllUsersFn 'rollbackLowBootSpace' "${_lowBootMsg}";
-    _logExitFn 'err' '1' 'Low boot space detected.';
+    _logExitFn 'err' '1' 'Low boot space detected!';
   fi
 }
 ## . END _checkBootUnallocSpacePublicFn }
@@ -1398,12 +1497,12 @@ _checkBootUnallocSpacePublicFn () {
 #   1 - Main unallocated space is low.
 #
 _checkMainUnallocSpacePublicFn () {
-  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
-    'BTRFS status is not compatible with checking main unallocated space.';
+  _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
+    'BTRFS status is not compatible with checking main unallocated space!';
 
   if ! _checkMainUnallocSpaceFn; then
     _promptAllUsersFn 'rollbackLowMainSpace' "${_lowDiskMsg}";
-    _logExitFn 'err' '1' 'Low disk space detected.';
+    _logExitFn 'err' '1' 'Low disk space detected!';
   fi
 }
 ## . END _checkMainUnallocSpacePublicFn }
@@ -1459,22 +1558,22 @@ _clearRestorePublicFn () {
 _compareStatePublicFn () {
   declare _source_state_dir _target_state_dir;
 
-  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
-    'BTRFS status prevents state comparison.';
-  _checkRootFn || _logExitFn 'notice' '0' \
-    'State comparison requires root permissions.';
+  _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
+    'BTRFS status prevents state comparison!';
+  _checkRootFn || _logExitFn 'warn' '1' \
+    'State comparison requires root permissions!';
 
   # Ensure source and target dirs actually exist
   _source_state_dir="${1:-}";
   [ -z "${_source_state_dir}" ] && _logExitFn 'err' '1' \
-    'No source state dir provided to compare.';
+    'No source state dir provided to compare!';
   ! [ -d "${_source_state_dir}" ] && _logExitFn 'err' '1' \
-    'Specified source state dir does not exist or is not a dir.';
+    'Specified source state dir does not exist or is not a dir!';
   _target_state_dir="${2:-}";
   [ -z "${_target_state_dir}" ] && _logExitFn 'err' '1' \
-    'No target state dir provided to compare.';
+    'No target state dir provided to compare!';
   ! [ -d "${_target_state_dir}" ] && _logExitFn 'err' '1' \
-    'Specified target state dir does not exist or is not a dir.';
+    'Specified target state dir does not exist or is not a dir!';
 
   # Diff directories, return filenames only
   "${_diffExe}" -r --brief "${_source_state_dir}" "${_target_state_dir}";
@@ -1518,19 +1617,19 @@ _compareStatePublicFn () {
 _createSnapshotPublicFn () {
   declare _return_code;
 
-  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
-    'BTRFS status prevents creating a snapshot.';
+  _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
+    'BTRFS status prevents creating a snapshot!';
   _checkMainUnallocSpaceFn || _logExitFn 'err' '1' \
-    'Main disk space is too low to take a snapshot.';
+    'Main disk space is too low to take a snapshot!';
   _checkBootUnallocSpaceFn || _logExitFn 'err' '1' \
-    'Boot disk space is too low to take a snapshot.';
+    'Boot disk space is too low to take a snapshot!';
 
   _createSnapshotFn "$@";
   _return_code="$?";
 
   if [ "${_return_code}" = '1' ]; then
-    _logWrapFn 'notice' 'Coult not take a snapshot!';
-  else
+    _logWrapFn 'notice' 'Could not take a snapshot.';
+  elif [ "${_return_code}" = '2' ]; then
     _logExitFn 'alert' '2' 'A critical error occurred while taking a snapshot!';
   fi
 }
@@ -1554,8 +1653,8 @@ _createSnapshotPublicFn () {
 _deleteSnapshotPublicFn () {
   declare _return_code;
 
-  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
-    'BTRFS status is incompatible with deleting a snapshot.';
+  _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
+    'BTRFS status is incompatible with deleting a snapshot!';
 
   _deleteSnapshotFn "$@";
   _return_code="$?";
@@ -1588,8 +1687,8 @@ _deleteSnapshotPublicFn () {
 #     failure.
 #
 _finalizeRestorePublicFn () {
-  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
-    'BTRFS status is incompatible with finalizing a restore process.';
+  _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
+    'BTRFS status is incompatible with finalizing a restore process!';
 
   # Ensure system is not in post-restore pre-reboot state
   if ! mount | grep 'btrfs' | grep -q '@kfocus-rollback-working' \
@@ -1611,38 +1710,38 @@ _finalizeRestorePublicFn () {
   else
     _logExitFn 'err' '1' 'Cannot finalize restore, restore operation half-done!';
   fi
-  _logWrapFn 'notice' 'Restore operation successfully finalized.';
+  _logWrapFn 'notice' 'Restore operation successfully finalized, if needed.';
 }
 ## . END _finalizeRestorePublicFn }
 
 ## BEGIN _getBootMinUnallocPublicFn {
 _getBootMinUnallocPublicFn () {
-  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
-    'BTRFS status is incompatible with detecting boot min unallocated space.';
+  _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
+    'BTRFS status is incompatible with detecting boot min unallocated space!';
   _getBootMinUnallocFn;
 }
 ## . END _getBootMinUnallocPublicFn }
 
 ## BEGIN _getBootUnallocSpacePublicFn {
 _getBootUnallocSpacePublicFn () {
-  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
-    'BTRFS status is incompatible with detecting boot unallocated space.';
+  _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
+    'BTRFS status is incompatible with detecting boot unallocated space!';
   _getBootUnallocSpaceFn;
 }
 ## . END _getBootUnallocSpacePublicFn }
 
 ## BEGIN _getMainMinUnallocPublicFn {
 _getMainMinUnallocPublicFn () {
-  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
-    'BTRFS status is incompatible with detecting main min unallocated space.';
+  _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
+    'BTRFS status is incompatible with detecting main min unallocated space!';
   _getMainMinUnallocFn;
 }
 ## . END _getMainMinUnallocPublicFn }
 
 ## BEGIN _getMainUnallocSpacePublicFn {
 _getMainUnallocSpacePublicFn () {
-  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
-    'BTRFS status is incompatible with detecting main unallocated space.';
+  _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
+    'BTRFS status is incompatible with detecting main unallocated space!';
   _getMainUnallocSpaceFn;
 }
 ## . END _getMainUnallocSpacePublicFn }
@@ -1664,8 +1763,8 @@ _getMainUnallocSpacePublicFn () {
 #
 _getManualSwitchStatePublicFn () {
   # Both exit on failure per "Throws", above.
-  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
-    'BTRFS status is incompatible with getting the manual switch state.';
+  _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
+    'BTRFS status is incompatible with getting the manual switch state!';
   _getManualSwitchStateFn || _logExitFn 'err' '1' \
     'Could not get manual switch state!';
 }
@@ -1684,8 +1783,8 @@ _getManualSwitchStatePublicFn () {
 # Throws    : 0 - _checkBtrfsStatusSetUpFn check failed.
 #
 _getSnapshotListStrPublicFn () {
-  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
-    'BTRFS status is incompatible with getting a list of snapshots.';
+  _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
+    'BTRFS status is incompatible with getting a list of snapshots!';
 
   # Return list of snapshots, sorted from newest to oldest
   _cm2LsFn "${_rb2MainSnapshotDir}" \
@@ -1719,10 +1818,10 @@ _getSnapshotListStrPublicFn () {
 #     the specified snapshot does not exist.
 #
 _getSnapshotMetadataPublicFn () {
-  declare _snapshot_id _mode _item _metadata_str;
+  declare _snapshot_id _mode _item _metadata_str _snapshot_reason_str;
 
-  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
-    'BTRFS status is incompatible with getting snapshot metadata.';
+  _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
+    'BTRFS status is incompatible with getting snapshot metadata!';
 
   _snapshot_id="${1:-}";
   _mode="${2:-}";
@@ -1736,15 +1835,16 @@ _getSnapshotMetadataPublicFn () {
   for _item in 'name' 'desc' 'pinned'; do
     _metadata_str="$(_readMetadbFn "${_snapshot_id}" "${_item}")" \
       || _logExitFn 'err' '1' 'Metadb read failure, could not get snapshot metadata!';
-    if [ "${_item}" = 'pinned' ] && [ -z "${_metadata_str}" ]; then
-      _logWrapFn 'warn' "Missing metadata entry for snapshot |${_snapshot_id}| in |${_snapshotMetaDb}|";
-    fi
     echo "${_metadata_str}";
   done
 
   # Return human-readable snapshot reason
-  _getSnapshotReasonFn "${_snapshot_id}" \
-    || _logExitFn 'err' '1' 'Could not get snapshot metadata, failed to get snapshot reason!';
+  _snapshot_reason_str="$(_getSnapshotReasonFn "${_snapshot_id}" \
+    || _logExitFn 'err' '1' 'Could not get snapshot metadata, failed to get snapshot reason!')";
+  if [ "${_snapshot_reason_str}" = 'Unknown (no reason found)' ]; then
+    _logWrapFn 'warn' "Missing metadata entry for snapshot |${_snapshot_id}| in |${_snapshotMetaDb}|";
+  fi
+  echo "${_snapshot_reason_str}";
 
   # Calculate and return snapshot size if requested
   if [ "${_mode}" = 'full' ]; then
@@ -1804,7 +1904,7 @@ _makeSnapshotDispIdPublicFn () {
   _snapshot_id="${1:-}";
 
   if [ -z "${_snapshot_id}" ]; then
-    _logExitFn 'err' '1' 'Invalid arguments, cannot generate snapshot display ID';
+    _logExitFn 'err' '1' 'Invalid arguments, cannot generate snapshot display ID!';
   fi
 
   _snapshot_name="$(_readMetadbFn "${_snapshot_id}" 'name')" \
@@ -1854,7 +1954,7 @@ _prepareSystemPublicFn () {
   fi
 
   if [ "${_btrfsStatus}" = 'UNSUPPORTED' ]; then
-    _logExitFn 'err' '1' 'This system does not support snapshotting.';
+    _logExitFn 'err' '1' 'This system does not support snapshotting!';
   fi
 
   # Check libvirt dirs, if they have content do not proceed
@@ -1874,7 +1974,7 @@ _prepareSystemPublicFn () {
   # Create directories
   for _dir in "${_rb2BootDir}" "${_rb2MainDir}" \
     '/etc/libvirt' '/var/lib/libvirt'; do
-    mkdir -p "${_dir}" || _logExitFn 'crit' '2' "Cannot create ${_dir}";
+    mkdir -p "${_dir}" || _logExitFn 'crit' '2' "Cannot create directory |${_dir}|!";
   done;
   ## . End STAGE 1: Check and prep filesystem }
 
@@ -1887,54 +1987,54 @@ _prepareSystemPublicFn () {
   _btrfs_defaults_str="defaults,noatime,autodefrag 0 0";
 
   echo "${_root_mount_id} ${_rb2MainDir} btrfs subvolid=5,${_btrfs_defaults_str}" \
-    >> /etc/fstab || _logExitFn 'crit' '2' "Cannot create fstab line for ${_rb2MainDir}";
+    >> /etc/fstab || _logExitFn 'crit' '2' "Cannot create fstab line for |${_rb2MainDir}|!";
   echo "${_boot_mount_id} ${_rb2BootDir} btrfs subvolid=5,${_btrfs_defaults_str}" \
-    >> /etc/fstab || _logExitFn 'crit' '2' "Cannot create fstab line for ${_rb2BootDir}";
+    >> /etc/fstab || _logExitFn 'crit' '2' "Cannot create fstab line for |${_rb2BootDir}|!";
   echo "${_root_mount_id} /etc/libvirt btrfs subvol=@libvirt-machines/@etc-libvirt,${_btrfs_defaults_str}" \
-    >> /etc/fstab || _logExitFn 'crit' '2' 'Cannot create fstab line for /etc/libvirt';
+    >> /etc/fstab || _logExitFn 'crit' '2' 'Cannot create fstab line for |/etc/libvirt|!';
   echo "${_root_mount_id} /var/lib/libvirt btrfs subvol=@libvirt-machines/@var-lib-libvirt,${_btrfs_defaults_str}" \
-    >> /etc/fstab || _logExitFn 'crit' '2' 'Cannot create fstab line for /var/lib/libvirt';
+    >> /etc/fstab || _logExitFn 'crit' '2' 'Cannot create fstab line for |/var/lib/libvirt|!';
   ## . End STAGE 2: Adjust fstab }
 
   ## Begin STAGE 3: Prepare /boot {
   # Unmount boot-related directories, so we can rearrange their contents
-  umount /boot/efi || _logExitFn 'alert' '2' 'Failed to unmount /boot/efi';
-  umount /boot     || _logExitFn 'alert' '2' 'Failed to unmount /boot';
+  umount /boot/efi || _logExitFn 'alert' '2' 'Failed to unmount |/boot/efi|!';
+  umount /boot     || _logExitFn 'alert' '2' 'Failed to unmount |/boot|!';
 
   # Point fstab at a soon-to-be-created @boot subvolume
   sed -i '/\/boot /s/defaults/subvol=\/@boot,defaults/' /etc/fstab \
-    || _logExitFn 'alert' '2' 'Failed to update fstab for @boot';
+    || _logExitFn 'alert' '2' 'Failed to update fstab for |@boot|!';
 
   # Reload fstab changes
   systemctl daemon-reload;
 
   # Morph the layout of the boot partition
-  mount "${_rb2BootDir}" || _logExitFn 'alert' '2' "Failed to mount ${_rb2BootDir}";
+  mount "${_rb2BootDir}" || _logExitFn 'alert' '2' "Failed to mount |${_rb2BootDir}|!";
   "${_btrfsExe}" subvolume create "${_rb2BootDir}/@boot" \
-    || _logExitFn 'emerg' '2' 'Failed to create @boot';
+    || _logExitFn 'emerg' '2' 'Failed to create |@boot|!';
 
   while read -r _path; do
     if [ "${_path}" != "${_rb2BootDir}/@boot" ]; then
       mv "${_path}" "${_rb2BootDir}/@boot/" \
-        || _logExitFn 'alert' '2' "Failed to move ${_path} to ${_rb2BootDir}/@boot!";
+        || _logExitFn 'alert' '2' "Failed to move |${_path}| to |${_rb2BootDir}/@boot|!";
     fi
   done < <(find "${_rb2BootDir}" -maxdepth 1 -mindepth 1)
 
   # Mount /boot again after successful rearrange
-  mount /boot     || _logExitFn 'alert' '2' 'Failed to mount /boot';
-  mount /boot/efi || _logExitFn 'alert' '2' 'Failed to mount /boot/efi';
+  mount /boot     || _logExitFn 'alert' '2' 'Failed to mount |/boot|!';
+  mount /boot/efi || _logExitFn 'alert' '2' 'Failed to mount |/boot/efi|!';
 
   # Point the primary grub.cfg at the new boot files
-  update-grub || _logExitFn 'alert' '2' 'Failed to update GRUB configuration';
+  update-grub || _logExitFn 'alert' '2' 'Failed to update GRUB configuration!';
 
   # Make sure GRUB can find the primary grub.cfg at its new location
   sed -i "s/'\/grub'/'\/@boot\/grub'/" /boot/efi/EFI/ubuntu/grub.cfg \
-    || _logExitFn 'alert' '2' 'Failed to point GRUB to the proper config location';
+    || _logExitFn 'alert' '2' 'Failed to point GRUB to the proper config location!';
   ## . End STAGE 3: Prepare /boot }
 
   ## Begin STAGE 4: Create subvolumes {
   # ${_rb2BootDir} (/btrfs_boot) is already mounted at this point
-  mount "${_rb2MainDir}" || _logExitFn 'alert' '2' "Failed to mount ${_rb2MainDir}";
+  mount "${_rb2MainDir}" || _logExitFn 'alert' '2' "Failed to mount |${_rb2MainDir}|!";
   _subvolume_list=(
     "${_rb2BootSnapshotDir}"
     "${_rb2MainSnapshotDir}"
@@ -1945,7 +2045,7 @@ _prepareSystemPublicFn () {
 
   for _subvolume_id in "${_subvolume_list[@]}"; do
     "${_btrfsExe}" subvolume create "${_subvolume_id}" \
-      || _logExitFn 'emerg' '2' "Failed to create ${_subvolume_id}";
+      || _logExitFn 'emerg' '2' "Failed to create |${_subvolume_id}|!";
   done
   ## . END Stage 4: Create subvolumes }
 
@@ -1953,8 +2053,8 @@ _prepareSystemPublicFn () {
   # At this point, /boot, /boot/efi, ${_rb2MainDir} (/btrfs_main), and
   # ${_rb2BootDir} (/btrfs_boot) are mounted.
   # /etc/libvirt and /var/lib/libvirt are not mounted.
-  mount /etc/libvirt     || _logExitFn 'alert' '2' 'Failed to mount /etc/libvirt';
-  mount /var/lib/libvirt || _logExitFn 'alert' '2' 'Failed to mount /var/lib/libvirt';
+  mount /etc/libvirt     || _logExitFn 'alert' '2' 'Failed to mount |/etc/libvirt|!';
+  mount /var/lib/libvirt || _logExitFn 'alert' '2' 'Failed to mount |/var/lib/libvirt|!';
   ## . END STAGE 5: Finish additional mounts }
 
   _isPreparingSystem='n';
@@ -1989,12 +2089,12 @@ _restoreSnapshotPublicFn () {
     _boot_snapshot_path _snapshot_name _snapshot_date _snapshot_reason \
     _umount_cnt _efi_umount_yn;
 
-  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
-    'BTRFS status is incompatible with restoring a snapshot.';
+  _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
+    'BTRFS status is incompatible with restoring a snapshot!';
   _checkMainUnallocSpaceFn || _logExitFn 'err' '1' \
-    'Main disk space is too low to restore a snapshot.';
+    'Main disk space is too low to restore a snapshot!';
   _checkBootUnallocSpaceFn || _logExitFn 'err' '1' \
-    'Boot disk space is too low to restore a snapshot.';
+    'Boot disk space is too low to restore a snapshot!';
 
   _target_snapshot_id="${1:-}";
 
@@ -2076,7 +2176,7 @@ _restoreSnapshotPublicFn () {
     || _logExitFn 'alert' '2' 'Unable to prepare system for post-snapshot cleanup!';
 
   # Trim older snapshots
-  _trimSnapshotsPublicFn || _logExitFn 'alert' '2' 'Unable to trim snapshots post-restore!';
+  _trimSnapshotsFn || _logExitFn 'alert' '2' 'Unable to trim snapshots post-restore!';
 
   _logWrapFn 'notice' "Restored snapshot |${_target_snapshot_id}|.";
 }
@@ -2102,15 +2202,15 @@ _restoreSnapshotPublicFn () {
 _setManualSwitchStatePublicFn () {
   declare _state_str _current_state_str;
 
-  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
-    'BTRFS status prevents changing the manual switch state.';
-  _checkRootFn || _logExitFn 'notice' '0' \
-    'Changing the manual switch state requires root permissions.';
+  _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
+    'BTRFS status prevents changing the manual switch state!';
+  _checkRootFn || _logExitFn 'warn' '1' \
+    'Changing the manual switch state requires root permissions!';
 
   # Get new and current switch states
   _state_str="${1:-}";
   if [ -z "${_state_str}" ]; then
-    _logExitFn 'err' '1' 'Empty state string provided.';
+    _logExitFn 'err' '1' 'Empty state string provided!';
   fi
   # Exit with code from subshell if non-zero
   _current_state_str="$(_getManualSwitchStateFn)" \
@@ -2134,7 +2234,7 @@ _setManualSwitchStatePublicFn () {
       fi
       ;;
     *)
-      _logExitFn 'err' '1' 'Invalid state string provided.';
+      _logExitFn 'err' '1' 'Invalid state string provided!';
       ;;
   esac
 }
@@ -2162,8 +2262,8 @@ _setManualSwitchStatePublicFn () {
 _setSnapshotMetadataPublicFn () {
   declare _snapshot_id _name_str _desc_str _is_pinned _was_pinned;
 
-  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
-    'BTRFS status prevents setting snapshot metadata.';
+  _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
+    'BTRFS status prevents setting snapshot metadata!';
 
   _snapshot_id="${1:-}";
   _name_str="${2:-}";
@@ -2182,9 +2282,9 @@ _setSnapshotMetadataPublicFn () {
       || _logExitFn 'err' '1' 'Could not determine if snapshot is pinned, metadb read failure!';
     if [ "${_was_pinned}" = 'n' ]; then
       _checkMainUnallocSpaceFn || _logExitFn 'err' '1' \
-        'Main disk space is too low to pin a snapshot.';
+        'Main disk space is too low to pin a snapshot!';
       _checkBootUnallocSpaceFn || _logExitFn 'err' '1' \
-        'Boot disk space is too low to pin a snapshot.';
+        'Boot disk space is too low to pin a snapshot!';
     fi
   fi
 
@@ -2215,12 +2315,12 @@ _setSnapshotMetadataPublicFn () {
 #   reasons.
 #
 _systemSnapshotPublicFn () {
-  _checkBtrfsStatusSetUpFn   || _logExitFn 'notice' '0' \
-    'BTRFS status prevents creating a snapshot.';
+  _checkBtrfsStatusSetUpFn   || _logExitFn 'warn' '1' \
+    'BTRFS status prevents creating a snapshot!';
   _checkMainUnallocSpaceFn   || _logExitFn 'err' '1' \
-    'Main disk space is too low to take a snapshot.';
+    'Main disk space is too low to take a snapshot!';
   _checkBootUnallocSpaceFn   || _logExitFn 'err' '1' \
-    'Boot disk space is too low to take a snapshot.';
+    'Boot disk space is too low to take a snapshot!';
   _createSnapshotFn "${1:-}" || _logExitFn 'err' '1' \
     'Could not create snapshot!';
   _trimSnapshotsPublicFn     || _logExitFn 'err' '1' \
@@ -2245,81 +2345,19 @@ _systemSnapshotPublicFn () {
 #     filesystem corruption or disk failure.
 #
 _trimSnapshotsPublicFn () {
-  declare _main_snapshot_list _boot_snapshot_list _snapshot_id \
-    _snapshot_remove_count _snapshot_idx _delete_count _main_list_count \
-    _is_pinned;
+  declare _return_code;
 
-  _checkBtrfsStatusSetUpFn || _logExitFn 'notice' '0' \
-    'BTRFS status is incompatible with trimming snapshots.';
+  _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
+    'BTRFS status is incompatible with trimming snapshots!';
 
-  _delete_count=0;
+  _trimSnapshotsFn;
+  _return_code="$?";
 
-  # Get main and boot snapshot lists
-  readarray -t _main_snapshot_list <<< "$(
-    _cm2LsFn "${_rb2MainSnapshotDir}" | sed 's/@//' | sort -n | sed 's/^/@/'
-  )";
-  readarray -t _boot_snapshot_list <<< "$(
-    _cm2LsFn "${_rb2BootSnapshotDir}" | sed 's/@//' | sort -n | sed 's/^/@/'
-  )";
-
-  # Remove main snapshots with no corresponding boot snapshots
-  for _snapshot_id in "${_main_snapshot_list[@]}"; do
-    if ! [[ " ${_boot_snapshot_list[*]} " \
-      =~ [[:space:]]${_snapshot_id}[[:space:]] ]]; then
-      _deleteSnapshotFn "${_snapshot_id}" \
-        || _logExitFn 'alert' '2' "Failed to delete unpaired main snapshot |${_snapshot_id}|!";
-      _logWrapFn 'warn' \
-        "Mismatched BTRFS snapshot |${_snapshot_id}| trimmed from main.";
-    fi
-  done
-
-  # Remove boot snapshots with no corresponding main snapshots
-  for _snapshot_id in "${_boot_snapshot_list[@]}"; do
-    if ! [[ " ${_main_snapshot_list[*]} " \
-      =~ [[:space:]]${_snapshot_id}[[:space:]] ]]; then
-      _deleteSnapshotFn "${_snapshot_id}" \
-        || _logExitFn 'alert' '2' "Failed to delete unpaired boot snapshoti |${_snapshot_id}|!";
-      _logWrapFn 'warn' \
-        "Mismatched BTRFS snapshot |${_snapshot_id}| trimmed from boot.";
-    fi
-  done
-
-  # Re-read list of main snapshots
-  readarray -t _main_snapshot_list <<< "$(
-    _cm2LsFn "${_rb2MainSnapshotDir}" | sed 's/@//' | sort -n | sed 's/^/@/'
-  )";
-
-  # Exclude pinned snapshots, avoid unset shrinkage bug
-  _main_list_count="${#_main_snapshot_list[@]}";
-  for (( _snapshot_idx = 0; _snapshot_idx < _main_list_count; \
-    _snapshot_idx++ )); do
-    _is_pinned="$(_readMetadbFn "${_main_snapshot_list[_snapshot_idx]}" \
-      'pinned')" \
-      || _logExitFn 'alert' '2' \
-        'Snapshot trim halted, metadb read failure!';
-    if [ "${_is_pinned}" = 'y' ]; then
-      unset "_main_snapshot_list[_snapshot_idx]";
-    fi
-  done
-
-  # Remove holes left by unset
-  _main_snapshot_list=( "${_main_snapshot_list[@]}" );
-
-  # Trim unpinned snapshots down to no more than 5
-  if [ "${#_main_snapshot_list[@]}" -gt '5' ]; then
-    _snapshot_remove_count=$((${#_main_snapshot_list[@]} - 5));
-    for (( _snapshot_idx = 0; _snapshot_idx < _snapshot_remove_count; \
-      _snapshot_idx++ )); do
-      _deleteSnapshotFn "${_main_snapshot_list[_snapshot_idx]}" || {
-        _logExitFn 'alert' '2' \
-          "Failed to delete snapshot |${_main_snapshot_list[_snapshot_idx]}|!";
-      }
-      (( _delete_count++ )) || true;
-    done
+  if [ "${_return_code}" = '1' ]; then
+    _logWrapFn 'notice' 'Could not trim snapshots.';
+  elif [ "${_return_code}" = '2' ]; then
+    _logExitFn 'alert' '2' 'A critical error occurred while trimming snapshots!';
   fi
-
-  _logWrapFn 'notice' \
-    "Snapshots trimmed, deleted |${_delete_count}| snapshots.";
 }
 ## . END _trimSnapshotsPublicFn }
 ## . END PUBLIC FUNCTIONS ===================================================
@@ -2337,7 +2375,7 @@ _mainFn () {
     case "$?" in
       0) break ;;
       1) sleep "${_sleep_int}" ;;
-      *) _logExitFn 'err' '1' 'Irrecoverable error getting lock file' ;;
+      *) _logExitFn 'err' '1' 'Irrecoverable error getting lock file!' ;;
     esac
     if (( _sleep_int < 10 )); then
       (( _sleep_int++ ));
@@ -2394,7 +2432,8 @@ declare _binName _binDir _baseName _baseDir \
   _isPreparingSystem _lockFile _btrfsStatus _snapshotMetaDb \
   _libTable _browStr _erowStr _tableStr _prepareFailMsg \
   _lowDiskMsg _lowBootMsg _inconsistentMsg _btrfsExe _btduExe _filefragExe \
-  _btrfsBalanceExe _kwriteconfig5Exe _kreadconfig5Exe _diffExe;
+  _btrfsBalanceExe _kwriteconfig5Exe _kreadconfig5Exe _diffExe \
+  _legacySnapshotReasonFile;
 
 _btrfsStatus='';
 _isPreparingSystem='n'; # Flag for error reporting
@@ -2406,6 +2445,8 @@ _isPreparingSystem='n'; # Flag for error reporting
 # simultaneously and potentially cause data loss.
 _lockDir='/tmp/kfocus-rollback';
 _lockFile="${_lockDir}/kfocus-rollback-set.lock"; # See WARNING
+
+_legacySnapshotReasonFile='/var/lib/kfocus/rollback_snapshot_reason';
 ## . END Declare and assign global vars }
 
 ## BEGIN Run mainFn when script is NOT sourced {

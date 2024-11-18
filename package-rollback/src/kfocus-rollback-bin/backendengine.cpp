@@ -195,23 +195,69 @@ void BackendEngine::refreshSystemData(bool calcSize) {
     m_snapshotList->clear();
 
     // NOTE: Callback is connected before execution, this is confusing but it's the only safe way to do this
-    connect(execEngine, &ShellEngine::appExited, this, [&, execEngine](){
+    connect(execEngine, &ShellEngine::appExited, this, [&, execEngine]() {
         execEngine->disconnect(this);
 
-        m_snapshotIdList = execEngine->stdout().split('\n', Qt::SkipEmptyParts);
-        if (m_snapshotIdList.count() == 0) {
-            loadGlobalInfo();
+        // Get automatic snapshot state
+        QString btrfsStatus = execEngine->stdout().trimmed();
+        if (btrfsStatus == "SUPPORTED, MANUAL") {
+            m_automaticSnapshotsEnabled = false;
+            automaticSnapshotsEnabledChanged();
+        } else if (btrfsStatus == "SUPPORTED, AUTO") {
+            m_automaticSnapshotsEnabled = true;
+            automaticSnapshotsEnabledChanged();
         } else {
-            m_snapshotIdIdx = 0;
-            connect(execEngine, &ShellEngine::appExited, this, &BackendEngine::onSystemDataReady);
-            if (m_calcSize) {
-                execEngine->exec(m_pkexecExe + ' ' + m_rollbackSetExe + " getFullSnapshotMetadata " + m_snapshotIdList.at(0));
-            } else {
-                execEngine->exec(m_pkexecExe + ' ' + m_rollbackSetExe + " getBaseSnapshotMetadata " + m_snapshotIdList.at(0));
-            }
+            m_btrfsStateUnusable = true;
+            btrfsStateUnusableChanged();
+        }
+
+        // Determine if post-restore subvols are mounted or not
+        execEngine->execSync("mount | grep 'btrfs' | grep -q '@kfocus-rollback-working'");
+        QString prMountCheckStr = execEngine->stdout().trimmed();
+        if (prMountCheckStr != QString()) {
+            m_postRestoreSubvolsMounted = true;
+        }
+        execEngine->execSync("mount | grep 'btrfs' | grep -q '@kfocus-rollback-working-boot'");
+        prMountCheckStr = execEngine->stdout().trimmed();
+        if (prMountCheckStr != QString()) {
+            m_postRestoreSubvolsMounted = true;
+        }
+
+        // Check post-restore subvol locations
+        if (QDir(m_rollbackMainWorkingDir).exists()) {
+            m_mainWorkingSubvolExists = true;
+            mainWorkingSubvolExistsChanged();
+        } else if (QDir(m_rollbackBootWorkingDir).exists()) {
+            m_bootWorkingSubvolExists = true;
+            bootWorkingSubvolExistsChanged();
+        }
+        automaticSnapshotsEnabledChanged();
+
+        if (!m_btrfsStateUnusable) {
+            // NOTE: Callback is connected before execution, this is confusing but it's the only safe way to do this
+            connect(execEngine, &ShellEngine::appExited, this, [&, execEngine](){
+                execEngine->disconnect(this);
+
+                m_snapshotIdList = execEngine->stdout().split('\n', Qt::SkipEmptyParts);
+                if (m_snapshotIdList.count() == 0) {
+                    loadGlobalInfo();
+                } else {
+                    m_snapshotIdIdx = 0;
+                    connect(execEngine, &ShellEngine::appExited, this, &BackendEngine::onSystemDataReady);
+                    if (m_calcSize) {
+                        execEngine->exec(m_pkexecExe + ' ' + m_rollbackSetExe + " getFullSnapshotMetadata " + m_snapshotIdList.at(0));
+                    } else {
+                        execEngine->exec(m_pkexecExe + ' ' + m_rollbackSetExe + " getBaseSnapshotMetadata " + m_snapshotIdList.at(0));
+                    }
+                }
+            });
+            execEngine->exec(m_pkexecExe + ' ' + m_rollbackSetExe + " getSnapshotList");
+        } else {
+            execEngine->deleteLater();
+            m_updateInProgress = false;
         }
     });
-    execEngine->exec(m_pkexecExe + ' ' + m_rollbackSetExe + " getSnapshotList");
+    execEngine->exec(m_pkexecExe + ' ' + m_rollbackSetExe + " getBtrfsStatus");
     m_updateInProgress = true;
 }
 
@@ -228,15 +274,16 @@ void BackendEngine::onSystemDataReady() {
     // Get raw data from the ShellEngine
     QString snapshotItem = m_snapshotIdList.at(m_snapshotIdIdx);
     QStringList snapshotMetadataList = execEngine->stdout().split('\n');
+    if (snapshotMetadataList.count() < 4 || snapshotMetadataList.at(0) == "Invalid mode specified.") {
+        qWarning() << "Snapshot metadata unsupported - incompatible BTRFS status hit?";
+        return;
+    }
+
     QString metaSnapshotName = snapshotMetadataList.at(0);
     QString metaSnapshotDesc = snapshotMetadataList.at(1);
     QString metaSnapshotPinned = snapshotMetadataList.at(2);
     QString metaSnapshotReason = snapshotMetadataList.at(3);
     QString metaSnapshotSize = snapshotMetadataList.at(4);
-    if (snapshotMetadataList.count() < 4 || snapshotMetadataList.at(0) == "Invalid mode specified.") {
-        qWarning() << "Snapshot metadata unsupported - kfocus-rollback-backend too old?";
-        return;
-    }
 
     // Parse trivial snapshot info
     QString snapshotReason = metaSnapshotReason.trimmed();
@@ -364,44 +411,7 @@ void BackendEngine::loadGlobalInfo() {
     // NOTE: Callback is connected before execution, this is confusing but it's the only safe way to do this
     connect(execEngine, &ShellEngine::appExited, this, [&, execEngine](){
         execEngine->disconnect(this);
-
-        // Get automatic snapshot state
-        QString btrfsStatus = execEngine->stdout().trimmed();
-        if (btrfsStatus == "SUPPORTED, MANUAL") {
-            m_automaticSnapshotsEnabled = false;
-            automaticSnapshotsEnabledChanged();
-        } else if (btrfsStatus == "SUPPORTED, AUTO") {
-            m_automaticSnapshotsEnabled = true;
-            automaticSnapshotsEnabledChanged();
-        } else {
-            m_btrfsStateUnusable = true;
-            btrfsStateUnusableChanged();
-        }
-
-        // Determine if post-restore subvols are mounted or not
-        execEngine->execSync("mount | grep 'btrfs' | grep -q '@kfocus-rollback-working'");
-        QString prMountCheckStr = execEngine->stdout().trimmed();
-        if (prMountCheckStr != QString()) {
-            m_postRestoreSubvolsMounted = true;
-        }
-        execEngine->execSync("mount | grep 'btrfs' | grep -q '@kfocus-rollback-working-boot'");
-        prMountCheckStr = execEngine->stdout().trimmed();
-        if (prMountCheckStr != QString()) {
-            m_postRestoreSubvolsMounted = true;
-        }
-
         execEngine->deleteLater();
-
-        // Check post-restore subvol locations
-        if (QDir(m_rollbackMainWorkingDir).exists()) {
-            m_mainWorkingSubvolExists = true;
-            mainWorkingSubvolExistsChanged();
-        } else if (QDir(m_rollbackBootWorkingDir).exists()) {
-            m_bootWorkingSubvolExists = true;
-            bootWorkingSubvolExistsChanged();
-        }
-
-        automaticSnapshotsEnabledChanged();
         systemDataLoaded();
         m_updateInProgress = false;
     });

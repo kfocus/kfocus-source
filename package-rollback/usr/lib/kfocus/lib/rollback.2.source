@@ -11,18 +11,10 @@
 # Package: kfocus-rollback
 #
 # Set exit code definitions
-declare -g _rb2NOTICE _rb2ERR _rb2CRIT _rb2ALERT _rb2EMERG _rb2LOCK \
-  _rb2MainDir _rb2BootDir _rb2MainSnapshotId _rb2MainWorkingId \
-  _rb2BootSnapshotId _rb2BootWorkingId _rb2MainSnapshotDir _rb2MainWorkingDir \
-  _rb2BootSnapshotDir _rb2BootWorkingDir _rb2KfocusStateDir \
-  _rb2RestoreCompleteFile;
-
-_rb2NOTICE='0';
-_rb2ERR='1';
-_rb2CRIT='2';
-_rb2ALERT='3';
-_rb2EMERG='4';
-_rb2LOCK='20';
+declare -g _rb2MainDir _rb2BootDir _rb2MainSnapshotId _rb2MainWorkingId \
+  _rb2BootSnapshotId _rb2BootWorkingId _rb2MainSnapshotDir \
+  _rb2MainWorkingDir _rb2BootSnapshotDir _rb2BootWorkingDir \
+  _rb2KfocusStateDir _rb2RestoreCompleteFile;
 
 _rb2MainDir='/btrfs_main';
 _rb2BootDir='/btrfs_boot';
