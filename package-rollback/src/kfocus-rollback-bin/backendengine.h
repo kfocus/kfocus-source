@@ -16,10 +16,6 @@ class BackendEngine : public QObject
     Q_PROPERTY(bool inhibitClose READ inhibitClose WRITE setInhibitClose NOTIFY inhibitCloseChanged)
     Q_PROPERTY(bool mainSpaceLow READ mainSpaceLow NOTIFY mainSpaceLowChanged)
     Q_PROPERTY(bool bootSpaceLow READ bootSpaceLow NOTIFY bootSpaceLowChanged)
-    Q_PROPERTY(bool isPostRestore READ isPostRestore CONSTANT)
-    Q_PROPERTY(QString postRestoreName READ postRestoreName CONSTANT)
-    Q_PROPERTY(QString postRestoreDate READ postRestoreDate CONSTANT)
-    Q_PROPERTY(QString postRestoreReason READ postRestoreReason CONSTANT)
     Q_PROPERTY(bool btrfsStateUnusable READ btrfsStateUnusable NOTIFY btrfsStateUnusableChanged)
     Q_PROPERTY(bool postRestoreSubvolsMounted READ postRestoreSubvolsMounted NOTIFY postRestoreSubvolsMountedChanged)
     Q_PROPERTY(bool mainWorkingSubvolExists READ mainWorkingSubvolExists NOTIFY mainWorkingSubvolExistsChanged)
@@ -44,14 +40,6 @@ public:
     void setInhibitClose(bool val);
     bool mainSpaceLow();
     bool bootSpaceLow();
-    bool isPostRestore();
-    void setIsPostRestore(bool val);
-    QString postRestoreName();
-    void setPostRestoreName(QString val);
-    QString postRestoreDate();
-    void setPostRestoreDate(QString val);
-    QString postRestoreReason();
-    void setPostRestoreReason(QString val);
     bool btrfsStateUnusable();
     bool postRestoreSubvolsMounted();
     bool mainWorkingSubvolExists();
@@ -95,10 +83,6 @@ private:
     static bool m_inhibitClose;
     static bool m_mainSpaceLow;
     static bool m_bootSpaceLow;
-    static bool m_isPostRestore;
-    static QString m_postRestoreName;
-    static QString m_postRestoreDate;
-    static QString m_postRestoreReason;
     static bool m_btrfsStateUnusable;
     static bool m_postRestoreSubvolsMounted;
     static bool m_mainWorkingSubvolExists;

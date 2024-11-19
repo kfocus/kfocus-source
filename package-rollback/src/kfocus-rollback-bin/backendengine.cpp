@@ -75,38 +75,6 @@ bool BackendEngine::bootSpaceLow() {
     return m_bootSpaceLow;
 }
 
-bool BackendEngine::isPostRestore() {
-    return m_isPostRestore;
-}
-
-void BackendEngine::setIsPostRestore(bool val) {
-    m_isPostRestore = val;
-}
-
-QString BackendEngine::postRestoreName() {
-    return m_postRestoreName;
-}
-
-void BackendEngine::setPostRestoreName(QString val) {
-    m_postRestoreName = val;
-}
-
-QString BackendEngine::postRestoreDate() {
-    return m_postRestoreDate;
-}
-
-void BackendEngine::setPostRestoreDate(QString val) {
-    m_postRestoreDate = val;
-}
-
-QString BackendEngine::postRestoreReason() {
-    return m_postRestoreReason;
-}
-
-void BackendEngine::setPostRestoreReason(QString val) {
-    m_postRestoreReason = val;
-}
-
 bool BackendEngine::btrfsStateUnusable() {
     return m_btrfsStateUnusable;
 }

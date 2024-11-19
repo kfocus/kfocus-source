@@ -983,10 +983,12 @@ _mainFn () {
     _btrfs_main_unalloc _btrfs_boot_status _btrfs_boot_size \
     _btrfs_boot_remain _btrfs_boot_raw_size _btrfs_boot_raw_unalloc \
     _btrfs_boot_unalloc _switch_state _new_switch_state \
-    _restored_snapshot_disp_id _snapshot_dir _disk_usage_line1_str \
+    _restored_snapshot_info_list _snapshot_dir _disk_usage_line1_str \
     _disk_usage_line2_str _main_unalloc _main_min_unalloc _boot_unalloc \
     _boot_min_unalloc _manual_onoff _auto_onoff _snapshot_metadata_list \
-    _snapshot_name _snapshot_desc _snapshot_desc_line _exit_int;
+    _snapshot_name _snapshot_desc _snapshot_desc_line _exit_int \
+    _restored_snapshot_name _restored_snapshot_date \
+    _restored_snapshot_reason _restored_snapshot_disp_id;
 
   _chkSetFlockFn || exit 1;
 
@@ -1021,6 +1023,35 @@ _mainFn () {
     exit 1
   fi
 
+  ## Begin Handle after-restore action {
+  if [ "${_arg_str}" = 'afterRestore' ]; then
+    # Refresh desktop database after restore
+    [ -n "${_kbuildSyCoca5Exe}" ] && "${_kbuildSyCoca5Exe}";
+    _snapshot_id="$(_rollbackSetFn 'getSnapshotList' \
+      | head -n1)";
+    readarray -t _restored_snapshot_info_list < "${_rb2RestoreCompleteFile}";
+    if (( ${#_restored_snapshot_info_list[@]} < 3 )); then
+      _restored_snapshot_disp_id='Unknown, could not read post-restore data';
+    else
+      _restored_snapshot_name="$(base64 -d <<< "${_restored_snapshot_info_list[0]}")";
+      _restored_snapshot_date="$(date -d "@${_restored_snapshot_info_list[1]}" '+%a %F %H:%M')";
+      _restored_snapshot_reason="${_restored_snapshot_info_list[2]}";
+      if [ -z "${_restored_snapshot_name}" ]; then
+        _restored_snapshot_name="${_restored_snapshot_reason}";
+      fi
+      _restored_snapshot_disp_id="${_restored_snapshot_name} — ${_restored_snapshot_date}"
+    fi
+    _rollbackSuccessfulMsg="${_rollbackSuccessfulMsg//XXX_SNAPSHOT_NAME_XXX/${_restored_snapshot_disp_id}}";
+    if [ "$(_cm2PromptUserFn "${_rollbackSuccessfulMsg}" \
+      "FocusRx: System Rollback" 'm')" = 'n' ]; then
+      _snapshot_dir="/btrfs_main/@kfocus-rollback-snapshots/${_snapshot_id}";
+      _rollbackMoreInfoMsg="${_rollbackMoreInfoMsg//XXX_SNAPSHOT_DIR_XXX/${_snapshot_dir}}";
+      _cm2PromptUserFn "${_rollbackMoreInfoMsg}" "${_winTitle}";
+    fi
+    exit 0;
+  fi
+  ## . END handle after-restore action }
+
   ## BEGIN Chain to dashboard if GUI available {
   if [ "${_cm2IsTty}" = 'n' ]; then
     if [ -n "${_arg_str}" ]; then
@@ -1031,25 +1062,6 @@ _mainFn () {
     exit 0;
   fi
   ## . END Chain to dashboard if GUI available }
-
-  ## Begin Handle after-restore action {
-  # # Replaced by kfocus-rollback-bin
-  # if [ "${_arg_str}" = 'afterRestore' ]; then
-  #   # Refresh desktop database after restore
-  #   [ -n "${_kbuildSyCoca5Exe}" ] && "${_kbuildSyCoca5Exe}";
-  #   _snapshot_id="$(_rollbackSetFn 'getSnapshotList' \
-  #     | head -n1)";
-  #   _restored_snapshot_disp_id="$(cat "${_rb2RestoreCompleteFile}")";
-  #   _rollbackSuccessfulMsg="${_rollbackSuccessfulMsg//XXX_SNAPSHOT_NAME_XXX/${_restored_snapshot_disp_id}}";
-  #   if [ "$(_cm2PromptUserFn "${_rollbackSuccessfulMsg}" \
-  #     "FocusRx: System Rollback" 'm')" = 'n' ]; then
-  #     _snapshot_dir="/btrfs_main/@kfocus-rollback-snapshots/${_snapshot_id}";
-  #     _rollbackMoreInfoMsg="${_rollbackMoreInfoMsg//XXX_SNAPSHOT_DIR_XXX/${_snapshot_dir}}";
-  #     _cm2PromptUserFn "${_rollbackMoreInfoMsg}" "${_winTitle}";
-  #   fi
-  #   exit 0;
-  # fi
-  ## . END handle after-restore action }
 
   # Create main menu selector
   _mode_str="$(
