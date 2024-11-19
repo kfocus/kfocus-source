@@ -238,8 +238,10 @@ _balanceMainFn () {
   # Balance if conditions met
   if [ "${_do_balance}" = 'y' ]; then
     # Balance main fs
-    "${_btrfsBalanceExe}" -u "${_balance_percent}" "${_rb2MainDir}" \
-      || _logExitFn 'alert' '2' 'Could not balance main BTRFS filesystem!';
+    "${_btrfsBalanceExe}" -u "${_balance_percent}" "${_rb2MainDir}" || {
+      _logWrapFn 'alert' 'Could not balance main BTRFS filesystem!';
+      return 2;
+    }
 
     # Save new unallocated and free space data to state file
     _main_report="$(_getMainUsageReportFn)" || {
@@ -807,9 +809,6 @@ _deleteSnapshotFn () {
   declare _target_snapshot_id _snapshot_dir _boot_snapshot_dir \
     _is_pinned _abort_msg;
 
-  _logWrapFn 'notice' "Deleted snapshot |${_target_snapshot_id}| started.";
-  _abort_msg='Delete snapshot aborted';
-
   # Ensure target snapshot exists
   _target_snapshot_id="${1:-}";
   if [ -z "${_target_snapshot_id}" ]; then
@@ -817,6 +816,9 @@ _deleteSnapshotFn () {
     _logWrapFn 'err' "${_abort_msg}";
     return 1;
   fi
+
+  _logWrapFn 'notice' "Deleted snapshot |${_target_snapshot_id}| started.";
+  _abort_msg='Delete snapshot aborted';
 
   # This intentionally does not have the @ before ${_target_snapshot_id} because
   # the function is passed a snapshot name, not just a timestamp.
@@ -910,24 +912,18 @@ _getBootUnallocSpaceFn () {
 
 ## BEGIN private _getBootUsageReportFn {
 _getBootUsageReportFn () {
-  _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
-    'BTRFS status is incompatible with getting a boot usage report!';
   LC_ALL='C' "${_btrfsExe}" filesystem usage -b "${_rb2BootDir}";
 }
 ## . END private _getBootUsageReportFn }
 
 ## BEGIN private _getMainBtduReportFn {
 _getMainBtduReportFn () {
-  _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
-    'BTRFS status is incompatible with getting a main btdu report!';
   LC_ALL='C' "${_btduExe}" --du --min-resolution=1M --headless "${_rb2MainDir}"
 }
 ## . END private _getMainBtduReportFn }
 
 ## BEGIN private _getMainFragReportFn {
 _getMainFragReportFn () {
-  _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
-    'BTRFS status is incompatible with getting a main file fragmentation report!';
   "${_filefragExe}" "${_rb2MainDir}/@";
 }
 ## . END private _getMainFragReportFn }
@@ -952,8 +948,6 @@ _getMainUnallocSpaceFn () {
 
 ## BEGIN private _getMainUsageReportFn {
 _getMainUsageReportFn () {
-  _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
-    'BTRFS status is incompatible with getting a main usage report!';
   LC_ALL='C' "${_btrfsExe}" filesystem usage -b "${_rb2MainDir}";
 }
 ## . END private _getMainUsageReportFn }

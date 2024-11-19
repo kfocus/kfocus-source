@@ -1,11 +1,13 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQuickStyle>
+#include <QDir>
 #include <QIcon>
 #include <QMap>
 #include <QList>
 #include <QFile>
 #include <QDateTime>
+#include <unistd.h>
 #include "shellengine.h"
 #include "backendengine.h"
 #include "windoweventfilter.h"
@@ -44,6 +46,19 @@ int main(int argc, char *argv[])
 
     qmlRegisterType<ShellEngine>("shellengine", 1, 1, "ShellEngine");
     qmlRegisterType<BackendEngine>("backendengine", 1, 0, "BackendEngine");
+
+    // Refuse to be launched by KDE's session restore feature, as it bypasses
+    // the frontend locking mechanism (and would mess up the post-restore
+    // handler if it didn't bypass the lock). The executable responsible for
+    // session restore is "ksmserver".
+    pid_t ppid = getppid();
+    QFile ppidNameFile(QString("/proc/") + QString::number(ppid) + QString("/comm"));
+    ppidNameFile.open(QIODevice::ReadOnly);
+    QString ppidName = QString(ppidNameFile.readLine()).trimmed();
+    ppidNameFile.close();
+    if (ppidName == "ksmserver") {
+        return 0;
+    }
 
     // Launch the UI
     if (qEnvironmentVariableIsEmpty("QT_QUICK_CONTROLS_STYLE")) {
