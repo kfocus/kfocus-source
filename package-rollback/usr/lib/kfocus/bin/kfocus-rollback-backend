@@ -761,7 +761,10 @@ _defragmentFn () {
 # Throws    : none
 #
 _deleteAllSnapshotsFn () {
-  declare _snapshot_list _current_snapshot _is_pinned;
+  declare _snapshot_list _loop_snapshot _is_pinned _abort_msg;
+
+  _logWrapFn 'notice' 'Delete all snapshots started.';
+  _abort_msg='Delete all snapshots aborted';
 
   # Get list of snapshots
   readarray -t _snapshot_list < <(
@@ -771,40 +774,47 @@ _deleteAllSnapshotsFn () {
   # Return if no snapshots exist
   if [ "${#_snapshot_list[@]}" = '0' ] || [ -z "${_snapshot_list[0]}" ]; then
     _logWrapFn 'warn' 'No snapshots found.';
+    _logWrapFn 'notice' 'Delete all snapshots completed.';
     return 0;
   fi
 
   # Delete each snapshot, unpinning if needed
-  for _current_snapshot in "${_snapshot_list[@]}"; do
+  for _loop_snapshot in "${_snapshot_list[@]}"; do
     # Read failure here is almost impossible: It will succeed even if missing
     # file, group, or key. Only weird edge cases should trigger a return.
-    _is_pinned="$(_readMetadbFn "${_current_snapshot}" 'pinned')" || {
-      _logWrapFn 'err' 'Could not delete all snapshots, failed to read pin status!';
+    _is_pinned="$(_readMetadbFn "${_loop_snapshot}" 'pinned')" || {
+      _logWrapFn 'err' "Could not read pin status of |${_loop_snapshot}|.";
+      _logWrapFn 'err' "${_abort_msg}";
       return 1;
     }
     if [ "${_is_pinned}" = 'y' ]; then
       # Write failure here is almost impossible similar to _writeMetadbFn.
       # See note there.
-      _writeMetadbFn "${_current_snapshot}" 'pinned' 'n';
+      _writeMetadbFn "${_loop_snapshot}" 'pinned' 'n';
     fi
-    _deleteSnapshotFn "${_current_snapshot}" || {
-      _logWrapFn 'alert' "Could not delete all snapshots, failed to delete snasphot |${_current_snapshot}|!";
+    _deleteSnapshotFn "${_loop_snapshot}" || {
+      _logWrapFn 'alert' "Could not delete snapshot |${_loop_snapshot}|!";
+      _logWrapFn 'err' "${_abort_msg}";
       return 2;
     }
   done
-
-  _logWrapFn 'notice' 'All snapshots deleted.';
+  _logWrapFn 'notice' 'Delete all snapshots completed.';
 }
 ## . END private _deleteAllSnapshotsFn }
 
 ## BEGIN private _deleteSnapshotFn {
 _deleteSnapshotFn () {
-  declare _target_snapshot_id _snapshot_dir _boot_snapshot_dir _is_pinned;
+  declare _target_snapshot_id _snapshot_dir _boot_snapshot_dir \
+    _is_pinned _abort_msg;
+
+  _logWrapFn 'notice' "Deleted snapshot |${_target_snapshot_id}| started.";
+  _abort_msg='Delete snapshot aborted';
 
   # Ensure target snapshot exists
   _target_snapshot_id="${1:-}";
   if [ -z "${_target_snapshot_id}" ]; then
     _logWrapFn 'err' 'No snapshot ID provided to delete!';
+    _logWrapFn 'err' "${_abort_msg}";
     return 1;
   fi
 
@@ -815,17 +825,20 @@ _deleteSnapshotFn () {
 
   # Ensure that either the main or boot or both BTRFS snapshots are present
   if ! [ -e "${_snapshot_dir}" ] && ! [ -e "${_boot_snapshot_dir}" ]; then
-    _logWrapFn 'err' 'Snapshot deletion request points to a non-existent snapshot!';
+    _logWrapFn 'err' "Snapshot |${_snapshot_dir}| does not exist!";
+    _logWrapFn 'err' "${_abort_msg}";
     return 1;
   fi
 
   # Refuse deleting a pinned snapshot
   _is_pinned="$(_readMetadbFn "${_target_snapshot_id}" 'pinned')" || {
-    _logWrapFn 'err' 'Failed to delete snapshot, could not read pin status from metadb!';
+    _logWrapFn 'err' 'Could not read pin status from metadb!';
+    _logWrapFn 'err' "${_abort_msg}";
     return 1;
   }
   if [ "${_is_pinned}" = 'y' ]; then
     _logWrapFn 'err' 'Cannot delete a pinned snapshot!';
+    _logWrapFn 'err' "${_abort_msg}";
     return 1;
   fi
 
@@ -834,6 +847,7 @@ _deleteSnapshotFn () {
     "${_btrfsExe}" subvolume delete --commit-after "${_snapshot_dir}" || {
       _logWrapFn 'emerg' \
         "Failed to delete main BTRFS snapshot |${_snapshot_dir}|!";
+      _logWrapFn 'emerg' "${_abort_msg}";
       return 2;
     }
   fi
@@ -841,6 +855,7 @@ _deleteSnapshotFn () {
     "${_btrfsExe}" subvolume delete --commit-after "${_boot_snapshot_dir}" || {
       _logWrapFn 'emerg' \
         "Failed to delete boot BTRFS snapshot |${_boot_snapshot_dir}|!";
+      _logWrapFn 'emerg' "${_abort_msg}";
       return 2;
     }
   fi
@@ -851,7 +866,7 @@ _deleteSnapshotFn () {
   _writeMetadbFn "${_target_snapshot_id}" 'pinned' '';
   _writeMetadbFn "${_target_snapshot_id}" 'reason' '';
 
-  _logWrapFn 'notice' "Deleted snapshot |${_target_snapshot_id}|.";
+  _logWrapFn 'notice' "Deleted snapshot |${_target_snapshot_id}| completed.";
 }
 ## . END private _deleteSnapshotFn }
 
@@ -1880,7 +1895,7 @@ _getSnapshotReasonPublicFn () {
   if [ "${_return_code}" = '1' ]; then
     _logExitFn 'err' '1' 'Could not get snapshot reason!';
   elif [ "${_return_code}" = '2' ]; then
-    _logExitFn 'alert' '2' 'A critical error occured while getting a snapshot reason!';
+    _logExitFn 'alert' '2' 'A critical error occurred while getting a snapshot reason!';
   fi
 }
 ## . END _getSnapshotReasonPublicFn }
@@ -2294,7 +2309,7 @@ _setSnapshotMetadataPublicFn () {
   _writeMetadbFn "${_snapshot_id}" 'desc' "${_desc_str}" \
     || _logExitFn 'err' '1' 'Could not set snapshot description, metadb write failed!';
   _writeMetadbFn "${_snapshot_id}" 'pinned' "${_is_pinned}" \
-    || _logExitFn 'err' '1' 'Coult not set snapshot pin status, metadb write failed!';
+    || _logExitFn 'err' '1' 'Could not set snapshot pin status, metadb write failed!';
 }
 ## . END _setSnapshotMetadataPublicFn }
 
