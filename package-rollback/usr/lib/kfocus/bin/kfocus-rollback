@@ -123,7 +123,7 @@ EOF
 
   _chooseRestoreSnapshotMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_table_str}
-${_brow_lp_str}${_center_header_str}Restore (1 of 3)</h3>${_erow_str}
+${_brow_lp_str}${_center_header_str}Restore (1 of 2)</h3>${_erow_str}
 
 ${_brow_lp_str}${_bold_str}Select the snapshot to restore.</b> You may restore
 the entire <br>
@@ -141,7 +141,7 @@ EOF
 
   _restoreConfirmMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_table_str}
-${_brow_rp_str}${_left_header_str}Restore (2 of 3)</h3>${_erow_str}
+${_brow_rp_str}${_left_header_str}Restore (2 of 2)</h3>${_erow_str}
 
 ${_brow_rp_str}The following snapshot is now ready to be restored:${_erow_str}
 
@@ -158,7 +158,7 @@ EOF
 
   _rollbackSuccessfulMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_table_str}
-${_brow_rp_str}${_left_header_str}Restore (3 of 3)</h3>${_erow_str}
+${_brow_rp_str}${_left_header_str}Restore Complete</h3>${_erow_str}
 
 ${_brow_rp_str}Files from the snapshot below have been restored to <br>
 the system.${_erow_str}

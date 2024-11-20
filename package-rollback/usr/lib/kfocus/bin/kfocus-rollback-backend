@@ -56,19 +56,23 @@ _loadLibTableFn () {
 
       # shellcheck disable=SC1090,SC1094
       if ! [ -r "${_lib_file}" ]; then
-        _logWrapFn 'warn' "Source |${_lib_file}| not readable.";
+        # We can't use _logWrapFn here since it will result in errors if
+        # a library after common.2.source fails to load. This is because at
+        # that point, _cm2LogFn will be available, but _cm2SetLogTagFn won't
+        # have been called.
+        1>&2 echo 'warn' "Source |${_lib_file}| not readable.";
       elif source "${_lib_file}"; then
         _is_loaded='y';
         break;
       else
-        _logWrapFn 'err' "Source |${_lib_file}| is non-zero.";
+        1>&2 echo 'err' "Source |${_lib_file}| is non-zero.";
         return 1;
       fi
     done
     ## . End: Iterate over alternates
 
     if [ "${_is_loaded}" != 'y' ]; then
-      _logWrapFn 'err' "No library loaded";
+      1>&2 echo 'err' "No library loaded";
       return 1;
     fi
   done
@@ -168,7 +172,7 @@ EOF
 _balanceBootFn () {
   # Unconditionally balance boot space
   "${_btrfsBalanceExe}" -u 85 "${_rb2BootDir}" || {
-    _logWrapFn 'err' 'Failed to balance boot filesystem!';
+    _logWrapFn 'err' 'Could not balance boot filesystem!';
     return 1;
   }
 
@@ -239,7 +243,7 @@ _balanceMainFn () {
   if [ "${_do_balance}" = 'y' ]; then
     # Balance main fs
     "${_btrfsBalanceExe}" -u "${_balance_percent}" "${_rb2MainDir}" || {
-      _logWrapFn 'alert' 'Could not balance main BTRFS filesystem!';
+      _logWrapFn 'alert' 'Could not balance main filesystem!';
       return 2;
     }
 
@@ -253,8 +257,14 @@ _balanceMainFn () {
     _main_free_int="$(grep $'Free (estimated):\t' <<< "${_main_report}" \
       | awk '{ print $3 }')";
 
-    _writeMetadbFn 'global' 'lastUnallocInt' "${_main_unalloc_int}";
-    _writeMetadbFn 'global' 'lastFreeInt' "${_main_free_int}";
+    _writeMetadbFn 'global' 'lastUnallocInt' "${_main_unalloc_int}" || {
+      _logWrapFn 'err' 'Failed to save lastUnallocInt to metadb!';
+      return 1;
+    }
+    _writeMetadbFn 'global' 'lastFreeInt' "${_main_free_int}" || {
+      _logWrapFn 'err' 'Failed to save lastFreeInt to metadb!';
+      return 1;
+    }
 
     _logWrapFn 'notice' "Main filesystem balanced.";
   else
@@ -604,7 +614,10 @@ _createSnapshotFn () {
   esac
 
   # Save snapshot creation reason in the metadata database.
-  _writeMetadbFn "@${_timestamp_str}" 'reason' "${_snapshot_event_type}";
+  _writeMetadbFn "@${_timestamp_str}" 'reason' "${_snapshot_event_type}" || {
+    _logWrapFn 'err' "Could not save snapshot reason for to-be-created snapshot |@${_timestamp_str}| to metadb!"
+    return 1;
+  }
 
   # Delete the obsolete rollback_snapshot_reason file if it exists
   if [ -f "${_legacySnapshotReasonFile}" ]; then
@@ -655,7 +668,7 @@ _defragmentFn () {
   # fragments
   _frag_report="$(_getMainFragReportFn)" || {
     _logWrapFn 'err' 'Defragment operation halted, could not get main frag report!';
-    return;
+    return 1;
   }
   _frag_report="$(sort -nr <<< "${_frag_report}")";
 
@@ -686,7 +699,7 @@ _defragmentFn () {
   # Get report of unreachable space, sorted by quantity
   _btdu_report="$(_getMainBtduReportFn)" || {
     _logWrapFn 'err' 'Defragment operation halted, could not get main btdu report!';
-    return;
+    return 1;
   }
   _btdu_report="$(
       grep '<UNREACHABLE>' <<< "${_btdu_report}" \
@@ -766,7 +779,7 @@ _deleteAllSnapshotsFn () {
   declare _snapshot_list _loop_snapshot _is_pinned _abort_msg;
 
   _logWrapFn 'notice' 'Delete all snapshots started.';
-  _abort_msg='Delete all snapshots aborted';
+  _abort_msg='Delete all snapshots aborted!';
 
   # Get list of snapshots
   readarray -t _snapshot_list < <(
@@ -785,14 +798,18 @@ _deleteAllSnapshotsFn () {
     # Read failure here is almost impossible: It will succeed even if missing
     # file, group, or key. Only weird edge cases should trigger a return.
     _is_pinned="$(_readMetadbFn "${_loop_snapshot}" 'pinned')" || {
-      _logWrapFn 'err' "Could not read pin status of |${_loop_snapshot}|.";
+      _logWrapFn 'err' "Could not read pin status of |${_loop_snapshot}|!";
       _logWrapFn 'err' "${_abort_msg}";
       return 1;
     }
     if [ "${_is_pinned}" = 'y' ]; then
       # Write failure here is almost impossible similar to _writeMetadbFn.
       # See note there.
-      _writeMetadbFn "${_loop_snapshot}" 'pinned' 'n';
+      _writeMetadbFn "${_loop_snapshot}" 'pinned' 'n' || {
+        _logWrapFn 'err' "Could not write pin status of |${_loop_snapshot}|!";
+        _logWrapFn 'err' "${_abort_msg}";
+        return 1;
+      }
     fi
     _deleteSnapshotFn "${_loop_snapshot}" || {
       _logWrapFn 'alert' "Could not delete snapshot |${_loop_snapshot}|!";
@@ -809,6 +826,8 @@ _deleteSnapshotFn () {
   declare _target_snapshot_id _snapshot_dir _boot_snapshot_dir \
     _is_pinned _abort_msg;
 
+  _abort_msg='Delete snapshot aborted';
+
   # Ensure target snapshot exists
   _target_snapshot_id="${1:-}";
   if [ -z "${_target_snapshot_id}" ]; then
@@ -817,8 +836,7 @@ _deleteSnapshotFn () {
     return 1;
   fi
 
-  _logWrapFn 'notice' "Deleted snapshot |${_target_snapshot_id}| started.";
-  _abort_msg='Delete snapshot aborted';
+  _logWrapFn 'notice' "Delete snapshot |${_target_snapshot_id}| started.";
 
   # This intentionally does not have the @ before ${_target_snapshot_id} because
   # the function is passed a snapshot name, not just a timestamp.
@@ -827,19 +845,19 @@ _deleteSnapshotFn () {
 
   # Ensure that either the main or boot or both BTRFS snapshots are present
   if ! [ -e "${_snapshot_dir}" ] && ! [ -e "${_boot_snapshot_dir}" ]; then
-    _logWrapFn 'err' "Snapshot |${_snapshot_dir}| does not exist!";
+    _logWrapFn 'err' "Snapshot |${_target_snapshot_id}| does not exist!";
     _logWrapFn 'err' "${_abort_msg}";
     return 1;
   fi
 
   # Refuse deleting a pinned snapshot
   _is_pinned="$(_readMetadbFn "${_target_snapshot_id}" 'pinned')" || {
-    _logWrapFn 'err' 'Could not read pin status from metadb!';
+    _logWrapFn 'err' "Could not read pin status for snapshot |${_target_snapshot_id}| from metadb!";
     _logWrapFn 'err' "${_abort_msg}";
     return 1;
   }
   if [ "${_is_pinned}" = 'y' ]; then
-    _logWrapFn 'err' 'Cannot delete a pinned snapshot!';
+    _logWrapFn 'err' "Cannot delete pinned snapshot |${_target_snapshot_id}|!";
     _logWrapFn 'err' "${_abort_msg}";
     return 1;
   fi
@@ -863,10 +881,22 @@ _deleteSnapshotFn () {
   fi
 
   # Ensure any and all snapshot metadata is deleted
-  _writeMetadbFn "${_target_snapshot_id}" 'name' '';
-  _writeMetadbFn "${_target_snapshot_id}" 'desc' '';
-  _writeMetadbFn "${_target_snapshot_id}" 'pinned' '';
-  _writeMetadbFn "${_target_snapshot_id}" 'reason' '';
+  _writeMetadbFn "${_target_snapshot_id}" 'name' '' || {
+    _logWrapFn 'err' "Failed to delete name of snapshot |${_target_snapshot_id}|!";
+    return 1;
+  }
+  _writeMetadbFn "${_target_snapshot_id}" 'desc' '' || {
+    _logWrapFn 'err' "Failed to delete description of snapshot |${_target_snapshot_id}|!";
+    return 1;
+  }
+  _writeMetadbFn "${_target_snapshot_id}" 'pinned' '' || {
+    _logWrapFn 'err' "Failed to delete pin status of snapshot |${_target_snapshot_id}|!";
+    return 1;
+  }
+  _writeMetadbFn "${_target_snapshot_id}" 'reason' '' || {
+    _logWrapFn 'err' "Failed to delete reason of snapshot |${_target_snapshot_id}|!";
+    return 1;
+  }
 
   _logWrapFn 'notice' "Deleted snapshot |${_target_snapshot_id}| completed.";
 }
@@ -1067,7 +1097,7 @@ _logExitFn () {
   fi
 
   if [ -n "${_msg}" ]; then
-  _logWrapFn "${_log_level}" "${_msg}";
+    _logWrapFn "${_log_level}" "${_msg}";
   fi
 
   if [ "${_do_call_stack}" = 'y' ]; then
@@ -1379,31 +1409,6 @@ _writeMetadbFn () {
 ## . END PRIVATE FUNCTIONS ==================================================
 
 ## BEGIN PUBLIC FUNCTIONS ===================================================
-# x _btrfsDeepCleanPublicFn
-# x _btrfsMaintainPublicFn
-# x _checkBootUnallocSpacePublicFn
-# x _checkMainUnallocSpacePublicFn
-# x _clearRestorePublicFn
-# x _compareStatePublicFn
-# x _createSnapshotPublicFn
-# x _deleteSnapshotPublicFn
-# x _finalizeRestorePublicFn
-# x _getSnapshotMetadataPublicFn
-# x _getBootMinUnallocPublicFn
-# x _getBootUnallocSpacePublicFn
-# x _getMainMinUnallocPublicFn
-# x _getMainUnallocSpacePublicFn
-# x _getManualSwitchStatePublicFn
-# x _getSnapshotListStrPublicFn
-# x _getSnapshotReasonPublicFn
-# x _makeSnapshotDispIdPublicFn
-# x _prepareSystemPublicFn
-# x _restoreSnapshotPublicFn
-# x _setManualSwitchStatePublicFn
-# x _setSnapshotMetadataPublicFn
-# x _systemSnapshotPublicFn
-# _trimSnapshotsPublicFn
-
 ## BEGIN _btrfsDeepCleanPublicFn {
 # Summary   : _btrfsDeepCleanPublicFn
 # Purpose   : Runs an intensive BTRFS optimization routine. Currently, this
@@ -1430,9 +1435,9 @@ _btrfsDeepCleanPublicFn () {
   _deleteAllSnapshotsFn    || _logExitFn 'alert' '2' \
     'Failed to delete all snapshots during BTRFS deep cleaning!';
   _balanceMainFn 'y'       || _logExitFn 'alert' '2' \
-    'Failed to balance main filesystem during BTRFS deep cleaning!';
+    'Issues encountered balancing main filesystem during BTRFS deep cleaning!';
   _balanceBootFn           || _logExitFn 'alert' '2' \
-    'Failed to balance boot filesystem during BTRFS deep cleaning!';
+    'Issues encountered balancing boot filesystem during BTRFS deep cleaning!';
   _defragmentFn            || _logExitFn 'alert' '2' \
     'Failed to defragment files during BTRFS deep cleaning!';
   _logWrapFn 'notice' "BTRFS deep clean operation complete.";
@@ -1460,9 +1465,9 @@ _btrfsMaintainPublicFn () {
 
   _logWrapFn 'notice' "Routine BTRFS maintenance started.";
   _balanceMainFn 'n'       || _logExitFn 'alert' '2' \
-    'Failed to balance main filesystem!';
+    'Issues encountered balancing main filesystem!';
   _balanceBootFn           || _logExitFn 'alert' '2' \
-    'Failed to balance boot filesystem!';
+    'Issues encountered balancing boot filesystem!';
   _logWrapFn 'notice' "Routine BTRFS maintenance complete.";
 }
 ## . END _btrfsMaintainPublicFn }
@@ -1530,8 +1535,10 @@ _checkMainUnallocSpacePublicFn () {
 #   1 - Cannot remove restore-complete drop file
 #
 _clearRestorePublicFn () {
+  _checkRootFn || _logExitFn 'warn' '1' \
+    'Clearing the restore flag requires root permissions!';
   rm -f "${_rb2RestoreCompleteFile}" \
-    || _logExitFn 'err' '1' "Could not remove |${_rb2RestoreCompleteFile}|";
+    || _logExitFn 'err' '1' "Could not remove |${_rb2RestoreCompleteFile}|!";
   _logWrapFn 'notice' 'Restore flag cleared.';
 }
 ## . END _clearRestorePublicFn }
@@ -1567,10 +1574,10 @@ _clearRestorePublicFn () {
 _compareStatePublicFn () {
   declare _source_state_dir _target_state_dir;
 
-  _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
-    'BTRFS status prevents state comparison!';
   _checkRootFn || _logExitFn 'warn' '1' \
     'State comparison requires root permissions!';
+  _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
+    'BTRFS status prevents state comparison!';
 
   # Ensure source and target dirs actually exist
   _source_state_dir="${1:-}";
@@ -1626,12 +1633,20 @@ _compareStatePublicFn () {
 _createSnapshotPublicFn () {
   declare _return_code;
 
+  _checkRootFn || _logExitFn 'warn' '1' \
+    'Creating a snapshot requires root permissions!';
   _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
     'BTRFS status prevents creating a snapshot!';
-  _checkMainUnallocSpaceFn || _logExitFn 'err' '1' \
-    'Main disk space is too low to take a snapshot!';
-  _checkBootUnallocSpaceFn || _logExitFn 'err' '1' \
-    'Boot disk space is too low to take a snapshot!';
+  _checkMainUnallocSpaceFn || {
+    _promptAllUsersFn 'rollbackLowMainSpace' "${_lowDiskMsg}";
+    _logExitFn 'err' '1' \
+      'Main disk space is too low to take a snapshot!';
+  }
+  _checkBootUnallocSpaceFn || {
+    _promptAllUsersFn 'rollbackLowBootSpace' "${_lowBootMsg}";
+    _logExitFn 'err' '1' \
+      'Boot disk space is too low to take a snapshot!';
+  }
 
   _createSnapshotFn "$@";
   _return_code="$?";
@@ -1662,6 +1677,8 @@ _createSnapshotPublicFn () {
 _deleteSnapshotPublicFn () {
   declare _return_code;
 
+  _checkRootFn || _logExitFn 'warn' '1' \
+    'Deleting a snapshot requires root permissions!';
   _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
     'BTRFS status is incompatible with deleting a snapshot!';
 
@@ -1696,6 +1713,8 @@ _deleteSnapshotPublicFn () {
 #     failure.
 #
 _finalizeRestorePublicFn () {
+  _checkRootFn || _logExitFn 'warn' '1' \
+    'Finalizing restoration requires root permissions!';
   _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
     'BTRFS status is incompatible with finalizing a restore process!';
 
@@ -1771,7 +1790,6 @@ _getMainUnallocSpacePublicFn () {
 #             1 - _getManualSwitchStateFn state not MANUAL or AUTO.
 #
 _getManualSwitchStatePublicFn () {
-  # Both exit on failure per "Throws", above.
   _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
     'BTRFS status is incompatible with getting the manual switch state!';
   _getManualSwitchStateFn || _logExitFn 'err' '1' \
@@ -1954,6 +1972,9 @@ _prepareSystemPublicFn () {
   declare _root_mount_id _boot_mount_id _btrfs_defaults_str \
     _dir _subvolume_list _subvolume_id _path;
 
+  _checkRootFn || _logExitFn 'warn' '1' \
+    'Preparing the system for snapshotting requires root permissions!';
+
   _isPreparingSystem='y';
 
   ## Begin STAGE 1: Check and prep filesystem {
@@ -2098,12 +2119,20 @@ _restoreSnapshotPublicFn () {
     _boot_snapshot_path _snapshot_name _snapshot_date _snapshot_reason \
     _umount_cnt _efi_umount_yn;
 
+  _checkRootFn || _logExitFn 'warn' '1' \
+    'Restoring a snapshot requires root permissions!';
   _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
     'BTRFS status is incompatible with restoring a snapshot!';
-  _checkMainUnallocSpaceFn || _logExitFn 'err' '1' \
-    'Main disk space is too low to restore a snapshot!';
-  _checkBootUnallocSpaceFn || _logExitFn 'err' '1' \
-    'Boot disk space is too low to restore a snapshot!';
+  _checkMainUnallocSpaceFn || {
+    _promptAllUsersFn 'rollbackLowMainSpace' "${_lowDiskMsg}";
+    _logExitFn 'err' '1' \
+      'Main disk space is too low to restore a snapshot!';
+  }
+  _checkBootUnallocSpaceFn || {
+    _promptAllUsersFn 'rollbackLowBootSpace' "${_lowBootMsg}";
+    _logExitFn 'err' '1' \
+      'Boot disk space is too low to restore a snapshot!';
+  }
 
   _target_snapshot_id="${1:-}";
 
@@ -2125,7 +2154,7 @@ _restoreSnapshotPublicFn () {
   # Ensure both main and boot BTRFS snapshots exist
   if ! [ -e "${_snapshot_path}" ] || ! [ -e "${_boot_snapshot_path}" ]; then
     _logExitFn 'err' '1' \
-      "Part or all of the snapshot |${_target_snapshot_id}| does not exist!";
+      "Part or all of snapshot |${_target_snapshot_id}| does not exist!";
   fi
 
   # Failing to unmount /boot/efi before attempting to move the old subvol
@@ -2211,10 +2240,10 @@ _restoreSnapshotPublicFn () {
 _setManualSwitchStatePublicFn () {
   declare _state_str _current_state_str;
 
-  _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
-    'BTRFS status prevents changing the manual switch state!';
   _checkRootFn || _logExitFn 'warn' '1' \
     'Changing the manual switch state requires root permissions!';
+  _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
+    'BTRFS status prevents changing the manual switch state!';
 
   # Get new and current switch states
   _state_str="${1:-}";
@@ -2231,7 +2260,8 @@ _setManualSwitchStatePublicFn () {
       if [ "${_current_state_str}" = 'AUTO' ]; then
         _logExitFn 'err' '1' 'Cannot change manual switch state to existing state!';
       else
-        _writeMetadbFn 'global' 'manualSwitchState' 'AUTO';
+        _writeMetadbFn 'global' 'manualSwitchState' 'AUTO' \
+          || _logExitFn 'err' '1' 'Failed to set manual switch state to |auto|!';
       fi
       ;;
     'manual')
@@ -2239,7 +2269,8 @@ _setManualSwitchStatePublicFn () {
       if [ "${_current_state_str}" = 'MANUAL' ]; then
         _logExitFn 'err' '1' 'Cannot change manual switch state to existing state!';
       else
-        _writeMetadbFn 'global' 'manualSwitchState' 'MANUAL';
+        _writeMetadbFn 'global' 'manualSwitchState' 'MANUAL' \
+          || _logExitFn 'err' '1' 'Failed to set maunal switch state to |manual|!';
       fi
       ;;
     *)
@@ -2271,6 +2302,8 @@ _setManualSwitchStatePublicFn () {
 _setSnapshotMetadataPublicFn () {
   declare _snapshot_id _name_str _desc_str _is_pinned _was_pinned;
 
+  _checkRootFn || _logExitFn 'warn' '1' \
+    'Setting snapshot metadata requires root permissions!';
   _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
     'BTRFS status prevents setting snapshot metadata!';
 
@@ -2290,10 +2323,16 @@ _setSnapshotMetadataPublicFn () {
     _was_pinned="$(_readMetadbFn "${_snapshot_id}" 'pinned')" \
       || _logExitFn 'err' '1' 'Could not determine if snapshot is pinned, metadb read failure!';
     if [ "${_was_pinned}" = 'n' ]; then
-      _checkMainUnallocSpaceFn || _logExitFn 'err' '1' \
-        'Main disk space is too low to pin a snapshot!';
-      _checkBootUnallocSpaceFn || _logExitFn 'err' '1' \
-        'Boot disk space is too low to pin a snapshot!';
+      _checkMainUnallocSpaceFn || {
+        _promptAllUsersFn 'rollbackLowMainSpace' "${_lowDiskMsg}";
+        _logExitFn 'err' '1' \
+          'Main disk space is too low to pin a snapshot!';
+      }
+      _checkBootUnallocSpaceFn || {
+        _promptAllUsersFn 'rollbackLowBootSpace' "${_lowBootMsg}";
+        _logExitFn 'err' '1' \
+          'Boot disk space is too low to pin a snapshot!';
+      }
     fi
   fi
 
@@ -2324,12 +2363,20 @@ _setSnapshotMetadataPublicFn () {
 #   reasons.
 #
 _systemSnapshotPublicFn () {
+  _checkRootFn || _logExitFn 'warn' '1' \
+    'Creating a snapshot requires root permissions!';
   _checkBtrfsStatusSetUpFn   || _logExitFn 'warn' '1' \
     'BTRFS status prevents creating a snapshot!';
-  _checkMainUnallocSpaceFn   || _logExitFn 'err' '1' \
-    'Main disk space is too low to take a snapshot!';
-  _checkBootUnallocSpaceFn   || _logExitFn 'err' '1' \
-    'Boot disk space is too low to take a snapshot!';
+  _checkMainUnallocSpaceFn   || {
+    _promptAllUsersFn 'rollbackLowMainSpace' "${_lowDiskMsg}";
+    _logExitFn 'err' '1' \
+      'Main disk space is too low to take a snapshot!';
+  }
+  _checkBootUnallocSpaceFn   || {
+    _promptAllUsersFn 'rollbackLowBootSpace' "${_lowBootMsg}";
+    _logExitFn 'err' '1' \
+      'Boot disk space is too low to take a snapshot!';
+  }
   _createSnapshotFn "${1:-}" || _logExitFn 'err' '1' \
     'Could not create snapshot!';
   _trimSnapshotsPublicFn     || _logExitFn 'err' '1' \
@@ -2356,6 +2403,8 @@ _systemSnapshotPublicFn () {
 _trimSnapshotsPublicFn () {
   declare _return_code;
 
+  _checkRootFn || _logExitFn 'warn' '1' \
+    'Trimming snapshots requires root permissions!';
   _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
     'BTRFS status is incompatible with trimming snapshots!';
 
