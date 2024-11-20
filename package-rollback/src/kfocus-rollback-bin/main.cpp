@@ -32,6 +32,8 @@ bool BackendEngine::m_mainWorkingSubvolExists = false;
 bool BackendEngine::m_bootWorkingSubvolExists = false;
 bool BackendEngine::m_btrfsStateUnusable = false;
 bool BackendEngine::m_postRestoreSubvolsMounted = false;
+quint64 BackendEngine::m_mainMinUnalloc = 0;
+quint64 BackendEngine::m_bootMinUnalloc = 0;
 
 int main(int argc, char *argv[])
 {

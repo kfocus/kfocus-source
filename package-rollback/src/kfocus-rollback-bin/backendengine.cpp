@@ -312,76 +312,86 @@ void BackendEngine::onSystemDataReady() {
 }
 
 void BackendEngine::loadGlobalInfo() {
-    // Get disk usage info
     ShellEngine *execEngine = new ShellEngine();
-    execEngine->execSync("LC_ALL=C /usr/bin/btrfs filesystem usage -b '/btrfs_main'");
-    QStringList btrfsMainRawReport = execEngine->stdout().split('\n');
-    execEngine->execSync("LC_ALL=C /usr/bin/btrfs filesystem usage -b '/btrfs_boot'");
-    QStringList btrfsBootRawReport = execEngine->stdout().split('\n');
-
-    btrfsMainRawReport = btrfsMainRawReport.replaceInStrings("\t", " ");
-    btrfsBootRawReport = btrfsBootRawReport.replaceInStrings("\t", " ");
-
-    // Get main FS space consumption info
-    quint64 btrfsMainRawSize = fieldSeek(btrfsMainRawReport, "Device size:", 2).toULongLong();
-    quint64 btrfsMainRawRemain = fieldSeek(btrfsMainRawReport, "Free (estimated):", 2).toULongLong();
-    quint64 btrfsMainRawUnalloc = fieldSeek(btrfsMainRawReport, "Device unallocated:", 2).toULongLong();
-    double btrfsMainUnalloc = qRound((static_cast<double>(btrfsMainRawUnalloc) / static_cast<double>(btrfsMainRawSize)) * 10000.0) / 100.0;
-    QString btrfsMainStatus;
-    if (btrfsMainUnalloc >= 15) {
-        btrfsMainStatus = "Good";
-        m_mainSpaceLow = false;
-        mainSpaceLowChanged();
-    } else {
-        btrfsMainStatus = "ALERT";
-        m_mainSpaceLow = true;
-        mainSpaceLowChanged();
-    }
-    QString btrfsMainSize = bytesToGib(btrfsMainRawSize);
-    QString btrfsMainRemain = bytesToGib(btrfsMainRawRemain);
-
-    // Get boot FS space consumption info
-    quint64 btrfsBootRawSize = fieldSeek(btrfsBootRawReport, "Device size:", 2).toULongLong();
-    quint64 btrfsBootRawRemain = fieldSeek(btrfsBootRawReport, "Free (estimated):", 2).toULongLong();
-    quint64 btrfsBootRawUnalloc = fieldSeek(btrfsBootRawReport, "Device unallocated:", 2).toULongLong();
-    double btrfsBootUnalloc = qRound((static_cast<double>(btrfsBootRawUnalloc) / static_cast<double>(btrfsBootRawSize)) * 10000.0) / 100.0;
-    QString btrfsBootStatus;
-    if (btrfsBootUnalloc >= 15) {
-        btrfsBootStatus = "Good";
-        m_bootSpaceLow = false;
-        bootSpaceLowChanged();
-    } else {
-        btrfsBootStatus = "ALERT";
-        m_bootSpaceLow = true;
-        bootSpaceLowChanged();
-    }
-    QString btrfsBootSize = bytesToGib(btrfsBootRawSize);
-    QString btrfsBootRemain = bytesToGib(btrfsBootRawRemain);
-
-    // Load all the info into the fs info objects
-    m_mainFsInfo->clear();
-    m_mainFsInfo->insert(QMap<QString, QString>({
-        { "status", btrfsMainStatus },
-        { "size", QString(btrfsMainSize) },
-        { "remain", QString(btrfsMainRemain) },
-        // This value includes rounding because percentage calculated above
-        { "unalloc", QString::number(btrfsMainUnalloc, 'f', 1) + "%" }
-    }));
-    m_bootFsInfo->clear();
-    m_bootFsInfo->insert(QMap<QString, QString>({
-        { "status", btrfsBootStatus },
-        { "size", QString(btrfsBootSize) },
-        { "remain", QString(btrfsBootRemain) },
-        // This value includes rounding because percentage calculated above
-        { "unalloc", QString::number(btrfsBootUnalloc, 'f', 1) + "%" }
-    }));
 
     // NOTE: Callback is connected before execution, this is confusing but it's the only safe way to do this
     connect(execEngine, &ShellEngine::appExited, this, [&, execEngine](){
         execEngine->disconnect(this);
-        execEngine->deleteLater();
-        systemDataLoaded();
-        m_updateInProgress = false;
+        m_mainMinUnalloc = execEngine->stdout().toULongLong();
+
+        // NOTE: Callback is connected before execution, this is confusing but it's the only safe way to do this
+        connect(execEngine, &ShellEngine::appExited, this, [&, execEngine](){
+            execEngine->disconnect(this);
+            m_bootMinUnalloc = execEngine->stdout().toULongLong();
+
+            // Get disk usage info
+            execEngine->execSync("LC_ALL=C /usr/bin/btrfs filesystem usage -b '/btrfs_main'");
+            QStringList btrfsMainRawReport = execEngine->stdout().split('\n');
+            execEngine->execSync("LC_ALL=C /usr/bin/btrfs filesystem usage -b '/btrfs_boot'");
+            QStringList btrfsBootRawReport = execEngine->stdout().split('\n');
+
+            btrfsMainRawReport = btrfsMainRawReport.replaceInStrings("\t", " ");
+            btrfsBootRawReport = btrfsBootRawReport.replaceInStrings("\t", " ");
+
+            // Get main FS space consumption info
+            quint64 btrfsMainRawSize = fieldSeek(btrfsMainRawReport, "Device size:", 2).toULongLong();
+            quint64 btrfsMainRawRemain = fieldSeek(btrfsMainRawReport, "Free (estimated):", 2).toULongLong();
+            quint64 btrfsMainRawUnalloc = fieldSeek(btrfsMainRawReport, "Device unallocated:", 2).toULongLong();
+            double btrfsMainUnalloc = qRound((static_cast<double>(btrfsMainRawUnalloc) / static_cast<double>(btrfsMainRawSize)) * 10000.0) / 100.0;
+            QString btrfsMainStatus;
+            if (btrfsMainRawUnalloc > m_mainMinUnalloc) {
+                btrfsMainStatus = "Good";
+                m_mainSpaceLow = false;
+                mainSpaceLowChanged();
+            } else {
+                btrfsMainStatus = "ALERT";
+                m_mainSpaceLow = true;
+                mainSpaceLowChanged();
+            }
+            QString btrfsMainSize = bytesToGib(btrfsMainRawSize);
+            QString btrfsMainRemain = bytesToGib(btrfsMainRawRemain);
+
+            // Get boot FS space consumption info
+            quint64 btrfsBootRawSize = fieldSeek(btrfsBootRawReport, "Device size:", 2).toULongLong();
+            quint64 btrfsBootRawRemain = fieldSeek(btrfsBootRawReport, "Free (estimated):", 2).toULongLong();
+            quint64 btrfsBootRawUnalloc = fieldSeek(btrfsBootRawReport, "Device unallocated:", 2).toULongLong();
+            double btrfsBootUnalloc = qRound((static_cast<double>(btrfsBootRawUnalloc) / static_cast<double>(btrfsBootRawSize)) * 10000.0) / 100.0;
+            QString btrfsBootStatus;
+            if (btrfsBootRawUnalloc > m_bootMinUnalloc) {
+                btrfsBootStatus = "Good";
+                m_bootSpaceLow = false;
+                bootSpaceLowChanged();
+            } else {
+                btrfsBootStatus = "ALERT";
+                m_bootSpaceLow = true;
+                bootSpaceLowChanged();
+            }
+            QString btrfsBootSize = bytesToGib(btrfsBootRawSize);
+            QString btrfsBootRemain = bytesToGib(btrfsBootRawRemain);
+
+            // Load all the info into the fs info objects
+            m_mainFsInfo->clear();
+            m_mainFsInfo->insert(QMap<QString, QString>({
+                { "status", btrfsMainStatus },
+                { "size", QString(btrfsMainSize) },
+                { "remain", QString(btrfsMainRemain) },
+                // This value includes rounding because percentage calculated above
+                { "unalloc", QString::number(btrfsMainUnalloc, 'f', 1) + "%" }
+            }));
+            m_bootFsInfo->clear();
+            m_bootFsInfo->insert(QMap<QString, QString>({
+                { "status", btrfsBootStatus },
+                { "size", QString(btrfsBootSize) },
+                { "remain", QString(btrfsBootRemain) },
+                // This value includes rounding because percentage calculated above
+                { "unalloc", QString::number(btrfsBootUnalloc, 'f', 1) + "%" }
+            }));
+
+            execEngine->deleteLater();
+            systemDataLoaded();
+            m_updateInProgress = false;
+        });
+        execEngine->exec(m_pkexecExe + ' ' + m_rollbackSetExe + " getBootMinUnalloc");
     });
-    execEngine->exec(m_pkexecExe + ' ' + m_rollbackSetExe + " getBtrfsStatus");
+    execEngine->exec(m_pkexecExe + ' ' + m_rollbackSetExe + " getMainMinUnalloc");
 }

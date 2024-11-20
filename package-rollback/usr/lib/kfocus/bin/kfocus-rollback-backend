@@ -82,6 +82,17 @@ _loadLibTableFn () {
 ## . END Private init _loadLibTableFn }
 
 ## BEGIN Private init _assignGlobalUiVarsFn {
+# Summary   : _assignGlobalUiVarsFn
+# Purpose   : Sets several global string variables used by graphical user
+#             interface components of kfocus-rollback-backend.
+# Example   : _assignGlobalUiVarsFn
+# Arguments : none
+# Globals   : _browStr, _erowStr, _tableStr, _prepareFailMsg, _lowDiskMsg,
+#             _lowBootMsg, _inconsistentMsg
+# Outputs   : none
+# Returns   : none
+# Throws    : none
+#
 _assignGlobalUiVarsFn () {
   # Set error messages
   _browStr='<tr><td style="padding:8px 32px 8px 0">';
@@ -165,8 +176,8 @@ EOF
 # Example   : _balanceBootFn
 # Arguments : none
 # Globals   : none
-# Outputs   : none
-# Returns   : none
+# Outputs   : Log info
+# Returns   : 0 on success, 1 on failure
 # Throws    : none
 #
 _balanceBootFn () {
@@ -181,16 +192,16 @@ _balanceBootFn () {
 ## . END private _balanceBootFn }
 
 ## BEGIN private _balanceMainFn {
-# Summary   : _balanceMainFn doForce
+# Summary   : _balanceMainFn [doForce]
 # Purpose   : Checks to see if the main filesystem needs balanced, and does so
 #             if necessary.
 # Example   : _balanceMainFn 'n'
 # Arguments :
 #   doForce - Whether to force a balance or not. Argument must be one of
 #     either 'y' or 'n'. Defaults to 'n'.
-# Globals   : none
-# Outputs   : none
-# Returns   : none
+# Globals   : _rb2MainDir
+# Outputs   : Log output
+# Returns   : 0 on success, 1 on failure, 2 on critical failure
 # Throws    : none
 #
 _balanceMainFn () {
@@ -275,6 +286,16 @@ _balanceMainFn () {
 ## . END private _balanceMainFn }
 
 ## BEGIN private _checkBootUnallocSpaceFn {
+# Summary   : _checkBootUnallocSpaceFn
+# Purpose   : Checks unallocated space on the main subvolume to ensure it is
+#             above a certain threshold.
+# Example   : _checkBootUnallocSpaceFn;
+# Arguments : none
+# Globals   : none
+# Outputs   : Log output
+# Returns   : 0 if boot space is considered sufficient, 1 otherwise
+# Throws    : none
+#
 _checkBootUnallocSpaceFn () {
   declare _boot_min_unalloc _boot_unalloc;
 
@@ -290,6 +311,9 @@ _checkBootUnallocSpaceFn () {
   fi
 }
 ## . END private _checkBootUnallocSpaceFn }
+
+# NOTE: All functions above this point have had their documentation checked
+# and redone. PICK UP HERE!
 
 ## BEGIN private _checkBtrfsStatusFn {
 # Summary   : _checkBtrfsStatusFn
@@ -1474,16 +1498,15 @@ _btrfsMaintainPublicFn () {
 
 ## BEGIN _checkBootUnallocSpacePublicFn {
 # Summary   : _checkBootUnallocSpacePublicFn
-# Purpose   : Same as _checkMainUnallocSpacePublicFn, but for the boot
-#             filesystem rather than the main filesystem.
-# Example   : _checkBootUnallocSpacePublicFn;
+# Purpose   : A public wrapper around _checkBootUnallocSpaceFn.
+# Example   : _checkBootUnallocSpacePublicFn
 # Arguments : none
 # Globals   : _lowBootMsg
-# Outputs   : none
 # Returns   : none
 # Throws    :
-#   0 - _checkBtrfsStatusSetUpFn check failed.
-#   1 - Boot unallocated space is low.
+#   1:
+#     - BTRFS status is not SUPPORTED, AUTO or SUPPORTED, MANUAL, or
+#     - Unallocated space on the boot partition is dangerously low.
 #
 _checkBootUnallocSpacePublicFn () {
   _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \

@@ -20,7 +20,7 @@ class BackendEngine : public QObject
     Q_PROPERTY(bool postRestoreSubvolsMounted READ postRestoreSubvolsMounted NOTIFY postRestoreSubvolsMountedChanged)
     Q_PROPERTY(bool mainWorkingSubvolExists READ mainWorkingSubvolExists NOTIFY mainWorkingSubvolExistsChanged)
     Q_PROPERTY(bool bootWorkingSubvolExists READ bootWorkingSubvolExists NOTIFY bootWorkingSubvolExistsChanged)
-    QML_ELEMENT 
+    QML_ELEMENT
 
 public:
     BackendEngine();
@@ -91,6 +91,8 @@ private:
     static QStringList m_snapshotIdList;
     static int m_snapshotIdIdx;
     static bool m_calcSize;
+    static quint64 m_mainMinUnalloc;
+    static quint64 m_bootMinUnalloc;
     static bool m_updateInProgress;
 };
 
