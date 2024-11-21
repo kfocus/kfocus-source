@@ -56,23 +56,19 @@ _loadLibTableFn () {
 
       # shellcheck disable=SC1090,SC1094
       if ! [ -r "${_lib_file}" ]; then
-        # We can't use _logWrapFn here since it will result in errors if
-        # a library after common.2.source fails to load. This is because at
-        # that point, _cm2LogFn will be available, but _cm2SetLogTagFn won't
-        # have been called.
-        1>&2 echo 'warn' "Source |${_lib_file}| not readable.";
+        _logWrapFn 'warn' "Source |${_lib_file}| not readable.";
       elif source "${_lib_file}"; then
         _is_loaded='y';
         break;
       else
-        1>&2 echo 'err' "Source |${_lib_file}| is non-zero.";
+        _logWrapFn 'err' "Source |${_lib_file}| is non-zero.";
         return 1;
       fi
     done
     ## . End: Iterate over alternates
 
     if [ "${_is_loaded}" != 'y' ]; then
-      1>&2 echo 'err' "No library loaded";
+      _logWrapFn 'err' "No library loaded";
       return 1;
     fi
   done
@@ -200,7 +196,7 @@ _balanceBootFn () {
 #   doForce - Whether to force a balance or not. Argument must be one of
 #     either 'y' or 'n'. Defaults to 'n'.
 # Globals   : _rb2MainDir
-# Outputs   : Log output
+# Outputs   : Log info
 # Returns   : 0 on success, 1 on failure, 2 on critical failure
 # Throws    : none
 #
@@ -277,10 +273,10 @@ _balanceMainFn () {
       return 1;
     }
 
-    _logWrapFn 'notice' "Main filesystem balanced.";
+    _logWrapFn 'notice' 'Main filesystem balanced.';
   else
     _logWrapFn 'notice' \
-      "Main filesystem not balanced: not forced and threshold not met.";
+      'Main filesystem not balanced: not forced and threshold not met.';
   fi
 }
 ## . END private _balanceMainFn }
@@ -292,7 +288,7 @@ _balanceMainFn () {
 # Example   : _checkBootUnallocSpaceFn;
 # Arguments : none
 # Globals   : none
-# Outputs   : Log output
+# Outputs   : Log info
 # Returns   : 0 if boot space is considered sufficient, 1 otherwise
 # Throws    : none
 #
@@ -637,12 +633,6 @@ _createSnapshotFn () {
       ;;
   esac
 
-  # Save snapshot creation reason in the metadata database.
-  _writeMetadbFn "@${_timestamp_str}" 'reason' "${_snapshot_event_type}" || {
-    _logWrapFn 'err' "Could not save snapshot reason for to-be-created snapshot |@${_timestamp_str}| to metadb!"
-    return 1;
-  }
-
   # Delete the obsolete rollback_snapshot_reason file if it exists
   if [ -f "${_legacySnapshotReasonFile}" ]; then
     rm -f "${_legacySnapshotReasonFile}";
@@ -668,6 +658,12 @@ _createSnapshotFn () {
   sync;
 
   _logWrapFn 'notice' "Snapshot |@${_timestamp_str}| created.";
+
+  # Save snapshot creation reason in the metadata database.
+  _writeMetadbFn "@${_timestamp_str}" 'reason' "${_snapshot_event_type}" || {
+    _logWrapFn 'err' "Could not save snapshot reason for snapshot |@${_timestamp_str}| to metadb!"
+    return 1;
+  }
 }
 ## . END private _createSnapshotFn }
 
@@ -800,10 +796,13 @@ _defragmentFn () {
 # Throws    : none
 #
 _deleteAllSnapshotsFn () {
-  declare _snapshot_list _loop_snapshot _is_pinned _abort_msg;
+  declare _sect_str _snapshot_list _snapshot_id _is_pinned;
 
-  _logWrapFn 'notice' 'Delete all snapshots started.';
-  _abort_msg='Delete all snapshots aborted!';
+  _sect_str='Delete all snapshots';
+  _logSectBeginFn "${_sect_str}";
+
+  # Remove snapshots that do not have matched main and boot components
+  _scrubSnapshotsFn || _logWrapFn 'warn' 'Trouble scrubbing snapshots';
 
   # Get list of snapshots
   readarray -t _snapshot_list < <(
@@ -811,118 +810,155 @@ _deleteAllSnapshotsFn () {
   );
 
   # Return if no snapshots exist
-  if [ "${#_snapshot_list[@]}" = '0' ] || [ -z "${_snapshot_list[0]}" ]; then
+  if [ "${#_snapshot_list[@]}" = '0' ] \
+    || [ -z "${_snapshot_list[0]:-}" ]; then
     _logWrapFn 'warn' 'No snapshots found.';
-    _logWrapFn 'notice' 'Delete all snapshots completed.';
+    _logSectEndFn "${_sect_str}";
     return 0;
   fi
 
   # Delete each snapshot, unpinning if needed
-  for _loop_snapshot in "${_snapshot_list[@]}"; do
+  for _snapshot_id in "${_snapshot_list[@]}"; do
     # Read failure here is almost impossible: It will succeed even if missing
     # file, group, or key. Only weird edge cases should trigger a return.
-    _is_pinned="$(_readMetadbFn "${_loop_snapshot}" 'pinned')" || {
-      _logWrapFn 'err' "Could not read pin status of |${_loop_snapshot}|!";
-      _logWrapFn 'err' "${_abort_msg}";
+    _is_pinned="$(_readMetadbFn "${_snapshot_id}" 'pinned')" || {
+      _logWrapFn 'err' "Could not read pin status of |${_snapshot_id}|!";
+      _logSectAbortFn "${_sect_str}";
       return 1;
     }
     if [ "${_is_pinned}" = 'y' ]; then
       # Write failure here is almost impossible similar to _writeMetadbFn.
       # See note there.
-      _writeMetadbFn "${_loop_snapshot}" 'pinned' 'n' || {
-        _logWrapFn 'err' "Could not write pin status of |${_loop_snapshot}|!";
-        _logWrapFn 'err' "${_abort_msg}";
+      _writeMetadbFn "${_snapshot_id}" 'pinned' 'n' || {
+        _logWrapFn 'err' "Could not write pin status of |${_snapshot_id}|!";
+        _logSectAbortFn "${_sect_str}";
         return 1;
       }
     fi
-    _deleteSnapshotFn "${_loop_snapshot}" || {
-      _logWrapFn 'alert' "Could not delete snapshot |${_loop_snapshot}|!";
-      _logWrapFn 'err' "${_abort_msg}";
+    _deleteSnapshotFn "${_snapshot_id}" || {
+      _logWrapFn 'alert' "Could not delete snapshot |${_snapshot_id}|!";
+      _logSectAbortFn "${_sect_str}";
       return 2;
     }
   done
-  _logWrapFn 'notice' 'Delete all snapshots completed.';
+  _logSectEndFn "${_sect_str}";
 }
 ## . END private _deleteAllSnapshotsFn }
 
+## BEGIN private _deleteMetaKeyListFn {
+_deleteMetaKeyListFn () {
+  declare _return_code _snapshot_id _key_list_str _key_list _key _msg;
+
+  _snapshot_id="${1:-}";
+  _key_list_str="${2:-}";
+
+  if [ -z "${_snapshot_id}" ] || [ -z "${_key_list_str}" ]; then
+    _logWrapFn 'err' 'Empty snapshot_id or key_list!';
+    return 1;
+  fi
+
+  # Do not use readarray because that adds an extra CR to last element
+  IFS=',' read -r -a _key_list <<< "${_key_list_str}" || return 1;
+
+  _return_code=0;
+  for _key in "${_key_list[@]}"; do
+    if [ "${_key}" = '' ]; then continue; fi
+    _writeMetadbFn "${_snapshot_id}" "${_key}" '' || {
+      _msg="Failed to deleted key |${_key}| of snapshot |${_snapshot_id}|";
+      _logWrapFn 'err' "${_msg}";
+      _return_code=1;
+    }
+  done
+  return "${_return_code}";
+}
+## . END private _deleteMetaKeyListFn }
+
+## BEGIN private _deleteSnapshotDirsFn {
+# Delete snapshot main and boot directories
+_deleteSnapshotDirsFn () {
+  declare _snapshot_id _main_snapshot_dir _boot_snapshot_dir;
+
+  _snapshot_id="${1:-}";
+
+  # This intentionally does not have the @ before ${_snapshot_id} because
+  # the function is passed a snapshot name, not just a timestamp.
+  _main_snapshot_dir="${_rb2MainSnapshotDir}/${_snapshot_id}"
+  _boot_snapshot_dir="${_rb2BootSnapshotDir}/${_snapshot_id}"
+
+  # Ensure that either the main or boot or both BTRFS snapshots are present
+  # if ! [ -e "${_main_snapshot_dir}" ] \
+  #   && ! [ -e "${_boot_snapshot_dir}" # ]; then
+  #   _logWrapFn 'err' "Snapshot |${_snapshot_id}| does not exist!"
+  #   _logSectAbortFn "${_sect_str}"
+  #   return 1
+  # fi
+
+  # Delete main snapshot dir if it exists
+  if [ -e "${_main_snapshot_dir}" ]; then
+    "${_btrfsExe}" subvolume delete --commit-after "${_main_snapshot_dir}" || {
+      _logWrapFn 'emerg' \
+        "Failed to delete main snapshot dir |${_main_snapshot_dir}|!";
+      return 2;
+    }
+  fi
+
+  # Delete boot snapshot dir if it exists
+  if [ -e "${_boot_snapshot_dir}" ]; then
+    "${_btrfsExe}" subvolume delete --commit-after "${_boot_snapshot_dir}" || {
+      _logWrapFn 'emerg' \
+        "Failed to delete boot snapshot dir |${_boot_snapshot_dir}|!";
+      return 2;
+    }
+  fi
+}
+## . END private _deleteSnapshotDirsFn }
+
 ## BEGIN private _deleteSnapshotFn {
 _deleteSnapshotFn () {
-  declare _target_snapshot_id _snapshot_dir _boot_snapshot_dir \
-    _is_pinned _abort_msg;
+  declare _sect_str _target_snapshot_id _is_pinned _msg _return_code;
 
-  _abort_msg='Delete snapshot aborted';
+  _sect_str='Delete snapshot';
+  _logSectBeginFn "${_sect_str}";
 
   # Ensure target snapshot exists
   _target_snapshot_id="${1:-}";
   if [ -z "${_target_snapshot_id}" ]; then
-    _logWrapFn 'err' 'No snapshot ID provided to delete!';
-    _logWrapFn 'err' "${_abort_msg}";
+    _logWrapFn 'err' "No snapshot ID provided to ${_sect_str}!";
+    _logSectAbortFn "${_sect_str}";
     return 1;
   fi
 
-  _logWrapFn 'notice' "Delete snapshot |${_target_snapshot_id}| started.";
-
-  # This intentionally does not have the @ before ${_target_snapshot_id} because
-  # the function is passed a snapshot name, not just a timestamp.
-  _snapshot_dir="${_rb2MainSnapshotDir}/${_target_snapshot_id}";
-  _boot_snapshot_dir="${_rb2BootSnapshotDir}/${_target_snapshot_id}";
-
-  # Ensure that either the main or boot or both BTRFS snapshots are present
-  if ! [ -e "${_snapshot_dir}" ] && ! [ -e "${_boot_snapshot_dir}" ]; then
-    _logWrapFn 'err' "Snapshot |${_target_snapshot_id}| does not exist!";
-    _logWrapFn 'err' "${_abort_msg}";
-    return 1;
-  fi
-
-  # Refuse deleting a pinned snapshot
+  # Get pinned status, abort if cannot read
   _is_pinned="$(_readMetadbFn "${_target_snapshot_id}" 'pinned')" || {
-    _logWrapFn 'err' "Could not read pin status for snapshot |${_target_snapshot_id}| from metadb!";
-    _logWrapFn 'err' "${_abort_msg}";
+    _msg='Could not read pin status for snapshot ';
+    _msg+="|${_target_snapshot_id}| from metadb!";
+    _logWrapFn 'err' "${_msg}";
+    _logSectAbortFn "${_sect_str}";
     return 1;
   }
+
+  # Refuse to delete a pinned snapshot
   if [ "${_is_pinned}" = 'y' ]; then
-    _logWrapFn 'err' "Cannot delete pinned snapshot |${_target_snapshot_id}|!";
-    _logWrapFn 'err' "${_abort_msg}";
+    _msg='Refusing to delete pinned snapshot ';
+    _msg+="|${_target_snapshot_id}|";
+    _logWrapFn 'err' "${_msg}";
+    _logSectAbortFn "${_sect_str}";
     return 1;
   fi
 
-  # Delete both BTRFS snapshots, taking into account there may only be one
-  if [ -e "${_snapshot_dir}" ]; then
-    "${_btrfsExe}" subvolume delete --commit-after "${_snapshot_dir}" || {
-      _logWrapFn 'emerg' \
-        "Failed to delete main BTRFS snapshot |${_snapshot_dir}|!";
-      _logWrapFn 'emerg' "${_abort_msg}";
-      return 2;
-    }
-  fi
-  if [ -e "${_boot_snapshot_dir}" ]; then
-    "${_btrfsExe}" subvolume delete --commit-after "${_boot_snapshot_dir}" || {
-      _logWrapFn 'emerg' \
-        "Failed to delete boot BTRFS snapshot |${_boot_snapshot_dir}|!";
-      _logWrapFn 'emerg' "${_abort_msg}";
-      return 2;
-    }
-  fi
-
-  # Ensure any and all snapshot metadata is deleted
-  _writeMetadbFn "${_target_snapshot_id}" 'name' '' || {
-    _logWrapFn 'err' "Failed to delete name of snapshot |${_target_snapshot_id}|!";
-    return 1;
-  }
-  _writeMetadbFn "${_target_snapshot_id}" 'desc' '' || {
-    _logWrapFn 'err' "Failed to delete description of snapshot |${_target_snapshot_id}|!";
-    return 1;
-  }
-  _writeMetadbFn "${_target_snapshot_id}" 'pinned' '' || {
-    _logWrapFn 'err' "Failed to delete pin status of snapshot |${_target_snapshot_id}|!";
-    return 1;
-  }
-  _writeMetadbFn "${_target_snapshot_id}" 'reason' '' || {
-    _logWrapFn 'err' "Failed to delete reason of snapshot |${_target_snapshot_id}|!";
-    return 1;
+  _deleteSnapshotDirsFn "${_target_snapshot_id}" || {
+    _return_code="$?";
+    _logWrapFn 'err' 'Trouble deleting snapshot directories';
+    return "${_return_code}";
   }
 
-  _logWrapFn 'notice' "Deleted snapshot |${_target_snapshot_id}| completed.";
+  _deleteMetaKeyListFn "${_target_snapshot_id}" 'name,desc,pinned,reason' || {
+    _return_code="$?";
+    _logSectAbortFn;
+    return "${_return_code}";
+  }
+
+  _logSectEndFn "${_sect_str}";
 }
 ## . END private _deleteSnapshotFn }
 
@@ -1133,6 +1169,18 @@ _logExitFn () {
 }
 ## . END private _logExitFn }
 
+## BEGIN private Special begin-end-abort log wrappers {
+_logSectAbortFn () {
+  _logWrapFn 'notice' "== ABORT : ${1:-Section}";
+}
+_logSectBeginFn () {
+  _logWrapFn 'notice' "== BEGIN : ${1:-Section}";
+}
+_logSectEndFn () {
+  _logWrapFn 'notice' "== . END : ${1:-Section}";
+}
+## . END private Special begin-end-abort log wrappers }
+
 ## BEGIN private _logWrapFn {
 # Purpose : Log to syslog if available, or stderr otherwise
 _logWrapFn () {
@@ -1141,10 +1189,11 @@ _logWrapFn () {
   _message="${2:-Unspecified issue}";
   if [ "$(type -t '_cm2LogFn')" = 'function' ]; then
     # We assume this will echo to STDERR and syslog
-    _cm2LogFn "${_priority_key}" "${_message}";
-  else
-    1>&2 echo "${_baseName} - ${_priority_key}: ${_message}";
+    # On non-zero exit, we fall back to logging to STDERR.
+    _cm2LogFn "${_priority_key}" "${_message}" && return;
   fi
+
+  1>&2 echo "${_baseName} - ${_priority_key}: ${_message}";
 }
 ## . END private _logWrapFn }
 
@@ -1263,7 +1312,7 @@ _readMetadbFn () {
 
 ## BEGIN private _trapExitFn {
 _trapExitFn () {
-  1>&2 echo "${_baseName} was interrupted";
+  _logWrapFn 'warn' "${_baseName} was interrupted";
   if [ "${_isPreparingSystem}" = 'y' ]; then
     _promptAllUsersFn 'error' "${_prepareFailMsg}";
   fi
@@ -1275,14 +1324,11 @@ _trapExitFn () {
 }
 ## . END private _trapExitFn }
 
-## BEGIN private _trimSnapshotsFn {
-_trimSnapshotsFn () {
-  declare _main_snapshot_list _boot_snapshot_list _snapshot_id \
-    _snapshot_remove_count _snapshot_idx _delete_count _main_list_count \
-    _is_pinned;
-
-  _delete_count=0;
-
+## BEGIN private _scrubSnapshotsFn () {
+# Remove snapshots that do not have matched main and boot directories
+#
+_scrubSnapshotsFn () {
+  declare _main_snapshot_list _boot_snapshot_list _snapshot_id;
   # Get main and boot snapshot lists
   readarray -t _main_snapshot_list <<< "$(
     _cm2LsFn "${_rb2MainSnapshotDir}" | sed 's/@//' | sort -n | sed 's/^/@/'
@@ -1292,75 +1338,92 @@ _trimSnapshotsFn () {
   )";
 
   # Remove main snapshots with no corresponding boot snapshots
-  for _snapshot_id in "${_main_snapshot_list[@]}"; do
-    if ! [[ " ${_boot_snapshot_list[*]} " \
-      =~ [[:space:]]${_snapshot_id}[[:space:]] ]]; then
-      _deleteSnapshotFn "${_snapshot_id}" || {
-        _logWrapFn 'alert' "Failed to delete unpaired main snapshot |${_snapshot_id}|!";
-        return 2;
-      }
-      _logWrapFn 'warn' \
-        "Mismatched BTRFS snapshot |${_snapshot_id}| trimmed from main.";
-    fi
-  done
-
-  # Remove boot snapshots with no corresponding main snapshots
-  for _snapshot_id in "${_boot_snapshot_list[@]}"; do
-    if ! [[ " ${_main_snapshot_list[*]} " \
-      =~ [[:space:]]${_snapshot_id}[[:space:]] ]]; then
-      _deleteSnapshotFn "${_snapshot_id}" || {
-        _logWrapFn 'alert' "Failed to delete unpaired boot snapshot |${_snapshot_id}|!";
-        return 2;
-      }
-      _logWrapFn 'warn' \
-        "Mismatched BTRFS snapshot |${_snapshot_id}| trimmed from boot.";
-    fi
-  done
-
-  # Re-read list of main snapshots
-  readarray -t _main_snapshot_list <<< "$(
-    _cm2LsFn "${_rb2MainSnapshotDir}" | sed 's/@//' | sort -n | sed 's/^/@/'
-  )";
-
-  # Exclude pinned snapshots, avoid unset shrinkage bug
-  _main_list_count="${#_main_snapshot_list[@]}";
-
-  if (( _main_list_count < 1 )) \
-    || [ -z "${_main_snapshot_list[0]}" ]; then
-    _logWrapFn 'notice' 'No snapshots to trim.';
-    return 0;
-  fi
-  for (( _snapshot_idx = 0; _snapshot_idx < _main_list_count; \
-    _snapshot_idx++ )); do
-    _is_pinned="$(_readMetadbFn "${_main_snapshot_list[_snapshot_idx]}" \
-      'pinned')" || {
-        _logWrapFn 'alert' 'Snapshot trim halted, metadb read failure!';
-        return 2;
-      }
-    if [ "${_is_pinned}" = 'y' ]; then
-      unset "_main_snapshot_list[_snapshot_idx]";
-    fi
-  done
-
-  # Remove holes left by unset
-  _main_snapshot_list=( "${_main_snapshot_list[@]}" );
-
-  # Trim unpinned snapshots down to no more than 5
-  if [ "${#_main_snapshot_list[@]}" -gt '5' ]; then
-    _snapshot_remove_count=$((${#_main_snapshot_list[@]} - 5));
-    for (( _snapshot_idx = 0; _snapshot_idx < _snapshot_remove_count; \
-      _snapshot_idx++ )); do
-      _deleteSnapshotFn "${_main_snapshot_list[_snapshot_idx]}" || {
-        _logWrapFn 'alert' \
-          "Failed to delete snapshot |${_main_snapshot_list[_snapshot_idx]}|!";
-        return 2;
-      }
-      (( _delete_count++ )) || true;
+  if (( ${#_main_snapshot_list[@]} > 0 )) \
+   && [ -n "${_main_snapshot_list[0]}" ]; then
+    for _snapshot_id in "${_main_snapshot_list[@]}"; do
+      if ! [[ " ${_boot_snapshot_list[*]} " \
+        =~ [[:space:]]${_snapshot_id}[[:space:]] ]]; then
+        _deleteSnapshotDirsFn "${_snapshot_id}" || {
+          _logWrapFn 'alert' \
+            "Failed to delete unpaired main snapshot |${_snapshot_id}|!";
+          return 2;
+        }
+        _logWrapFn 'warn' \
+          "Mismatched snapshot |${_snapshot_id}| trimmed from main.";
+      fi
     done
   fi
 
-  _logWrapFn 'notice' \
-    "Snapshots trimmed, deleted |${_delete_count}| snapshots.";
+  # Remove boot snapshots with no corresponding main snapshots
+  if (( ${#_boot_snapshot_list[@]} > 0 )) \
+    && [ -n "${_boot_snapshot_list[0]}" ]; then
+    for _snapshot_id in "${_boot_snapshot_list[@]}"; do
+      if ! [[ " ${_main_snapshot_list[*]} " \
+        =~ [[:space:]]${_snapshot_id}[[:space:]] ]]; then
+        _deleteSnapshotDirsFn "${_snapshot_id}" || {
+          _logWrapFn 'alert' \
+            "Failed to delete unpaired main snapshot |${_snapshot_id}|!";
+          return 2;
+        }
+        _logWrapFn 'warn' \
+          "Mismatched snapshot |${_snapshot_id}| trimmed from boot.";
+      fi
+    done
+  fi
+}
+## . END private _scrubSnapshotsFn }
+
+## BEGIN private _trimSnapshotsFn {
+_trimSnapshotsFn () {
+  declare _sect_str _main_list _main_count _remove_count \
+    _snapshot_id _is_pinned _unpinned_list _unpinned_count _idx;
+  
+  _sect_str='Trim snapshots';
+  _logSectBeginFn "${_sect_str}";
+
+  # Remove snapshots that do not have matched main and boot components
+  _scrubSnapshotsFn || _logWrapFn 'warn' 'Trouble scrubbing snapshots';
+
+  # Read list of main snapshots
+  readarray -t _main_list <<< "$(
+    _cm2LsFn "${_rb2MainSnapshotDir}" | sed 's/@//' | sort -n | sed 's/^/@/'
+  )";
+
+  _main_count="${#_main_list[@]}";
+  if (( _main_count < 1 )) || [ -z "${_main_list[0]}" ]; then
+    _logWrapFn 'notice' 'No snapshots to trim.';
+    _logSectEndFn "${_sect_str}";
+    return 0;
+  fi
+
+  _unpinned_list=();
+  for _snapshot_id in "${_main_list[@]}"; do
+    _is_pinned="$(_readMetadbFn "${_snapshot_id}" 'pinned')" || {
+      _logWrapFn 'alert' 'Snapshot trim halted, metadb read failure!';
+      _logSectAbortFn "${_sect_str}";
+      return 2;
+    }
+    if [ "${_is_pinned}" != 'y' ]; then
+      _unpinned_list+=("${_snapshot_id}");
+    fi
+  done
+
+  # Trim unpinned snapshots down to no more than 5
+  _unpinned_count="${#_unpinned_list}";
+  if (( _unpinned_count > 5 )); then
+    _remove_count=$(( _unpinned_count - 5));
+    for (( _idx = 0; _idx < _remove_count; _idx++ )); do
+      _snapshot_id="${_unpinned_list[_idx]}";
+      _deleteSnapshotFn "${_snapshot_id}" || {
+        _logWrapFn 'alert' "Failed to delete snapshot |${_snapshot_id}|!";
+        _logSectAbortFn "${_sect_str}";
+        return 2;
+      }
+    done
+  fi
+
+  _logWrapFn 'notice' "Snapshots trimmed, removed |${_remove_count}|.";
+  _logSectEndFn "${_sect_str}";
 }
 ## . END private _trimSnapshotsFn }
 
@@ -1705,7 +1768,7 @@ _deleteSnapshotPublicFn () {
   _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
     'BTRFS status is incompatible with deleting a snapshot!';
 
-  _deleteSnapshotFn "$@";
+  _deleteSnapshotFn "${1:-}";
   _return_code="$?";
 
   if [ "${_return_code}" = '1' ]; then
@@ -2293,7 +2356,7 @@ _setManualSwitchStatePublicFn () {
         _logExitFn 'err' '1' 'Cannot change manual switch state to existing state!';
       else
         _writeMetadbFn 'global' 'manualSwitchState' 'MANUAL' \
-          || _logExitFn 'err' '1' 'Failed to set maunal switch state to |manual|!';
+          || _logExitFn 'err' '1' 'Failed to set switch state to |manual|!';
       fi
       ;;
     *)
