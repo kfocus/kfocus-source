@@ -73,7 +73,7 @@ _loadLibTableFn () {
 }
 ## . END _loadLibTableFn }
 
-## BEGIN Rollback backend wrapeprs {
+## BEGIN Rollback backend wrappers {
 _rollbackSetFn () {
   "${_escExe}" "${_rollbackSetExe}" "$@";
 }
@@ -791,7 +791,7 @@ _chooseSnapshotFn () {
 }
 
 _handleOperationExitIntFn () {
-  declare _op_type _exit_int _snapshot_id _snapshot_disp_id;
+  declare _op_type _exit_int _snapshot_id _snapshot_disp_id _state_str;
 
   _op_type="${1:-}";
   _exit_int="${2:-}";
@@ -842,6 +842,7 @@ _handleOperationExitIntFn () {
       elif [ "${_exit_int}" = '1' ]; then
         _cm2PromptUserFn "${_creationFailedMsg}" "${_winTitle}" 's';
         exit 1;
+      # 127 = auth failure, see note above.
       elif [ "${_exit_int}" = '127' ]; then
         _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
         exit 0;
@@ -864,6 +865,7 @@ _handleOperationExitIntFn () {
         _deletionFailedMsg="${_deletionFailedMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
         _cm2PromptUserFn "${_deletionFailedMsg}" "${_winTitle}";
         exit 1;
+      # 127 = auth failure, see note above.
       elif [ "${_exit_int}" = '127' ]; then
         _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
         exit 0;
@@ -891,6 +893,10 @@ _handleOperationExitIntFn () {
         _pinSwitchFailedMsg="${_pinSwitchFailedMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
         _cm2PromptUserFn "${_pinSwitchFailedMsg}" "${_winTitle}";
         exit 1;
+      # 127 = auth failure, see note above.
+      elif [ "${_exit_int}" = '127' ]; then
+        _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
+        exit 0;
       else
         _cm2PromptUserFn "${_criticalErrorMsg}" "${_winTitle}" 'e';
         exit "${_exit_int}";
@@ -910,6 +916,10 @@ _handleOperationExitIntFn () {
         _editFailedMsg="${_editFailedMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
         _cm2PromptUserFn "${_editFailedMsg}" "${_winTitle}";
         exit 1;
+      # 127 = auth failure, see note above.
+      elif [ "${_exit_int}" = '127' ]; then
+        _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
+        exit 0;
       else
         _cm2PromptUserFn "${_criticalErrorMsg}" "${_winTitle}" 'e';
         exit "${_exit_int}";
@@ -941,7 +951,6 @@ _getBtrfsStatusFn () {
   _btrfs_status_str="$(_rollbackSetFn 'getBtrfsStatus')";
   _exit_int="$?";
 
-  # Override false positive due to complex exit code handling
   # shellcheck disable=SC2181
   if [ "${_exit_int}" != '0' ]; then
     exit "${_exit_int}";
@@ -988,7 +997,8 @@ _mainFn () {
     _boot_min_unalloc _manual_onoff _auto_onoff _snapshot_metadata_list \
     _snapshot_name _snapshot_desc _snapshot_desc_line _exit_int \
     _restored_snapshot_name _restored_snapshot_date \
-    _restored_snapshot_reason _restored_snapshot_disp_id;
+    _restored_snapshot_reason _restored_snapshot_disp_id \
+    _pin_status_str _pin_other_status_str _new_is_pinned;
 
   _chkSetFlockFn || exit 1;
 
@@ -1016,11 +1026,11 @@ _mainFn () {
   if [ -e "${_rb2MainWorkingDir}" ]; then
     _strangeSubvolsMsg="${_strangeSubvolsMsg//XXX_SUBVOL_NAME_XXX/${_rb2MainWorkingDir}}";
     _cm2PromptUserFn "${_strangeSubvolsMsg}" "${_winTitle}" 's';
-    exit 1
+    exit 1;
   elif [ -e "${_rb2BootWorkingDir}" ]; then
     _strangeSubvolsMsg="${_strangeSubvolsMsg//XXX_SUBVOL_NAME_XXX/${_rb2BootWorkingDir}}";
     _cm2PromptUserFn "${_strangeSubvolsMsg}" "${_winTitle}" 's';
-    exit 1
+    exit 1;
   fi
 
   ## Begin Handle after-restore action {
@@ -1050,9 +1060,9 @@ _mainFn () {
     fi
     exit 0;
   fi
-  ## . END handle after-restore action }
+  ## . End handle after-restore action }
 
-  ## BEGIN Chain to dashboard if GUI available {
+  ## Begin Chain to dashboard if GUI available {
   if [ "${_cm2IsTty}" = 'n' ]; then
     if [ -n "${_arg_str}" ]; then
       "${_rollbackBinExe}" "${_arg_str}";
@@ -1061,8 +1071,9 @@ _mainFn () {
     fi
     exit 0;
   fi
-  ## . END Chain to dashboard if GUI available }
+  ## . End Chain to dashboard if GUI available }
 
+  ## All code below this line is for the Whiptail UI.
   # Create main menu selector
   _mode_str="$(
     _cm2PromptUserFn "${_chooseModeMsg/XXX_STATE_MSG_XXX/${_state_msg}}" \
