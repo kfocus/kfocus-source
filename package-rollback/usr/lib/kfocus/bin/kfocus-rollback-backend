@@ -845,21 +845,17 @@ _deleteAllSnapshotsFn () {
 }
 ## . END private _deleteAllSnapshotsFn }
 
-## BEGIN private _deleteMetaKeyListFn {
-_deleteMetaKeyListFn () {
-  declare _return_code _snapshot_id _key_list_str _key_list _key _msg;
+## BEGIN private _deleteSnapshotMetaFn {
+_deleteSnapshotMetaFn () {
+  declare _return_code _snapshot_id _key_list _key _msg;
 
   _snapshot_id="${1:-}";
-  _key_list_str="${2:-}";
-
-  if [ -z "${_snapshot_id}" ] || [ -z "${_key_list_str}" ]; then
-    _logWrapFn 'err' 'Empty snapshot_id or key_list!';
-    return 1;
+  if [ -z "${_snapshot_id}" ]; then
+    _logWrapFn 'warn' 'Empty snapshot_id!';
+    return 0;
   fi
 
-  # Do not use readarray because that adds an extra CR to last element
-  IFS=',' read -r -a _key_list <<< "${_key_list_str}" || return 1;
-
+  _key_list=( 'name' 'desc' 'pinned' 'reason' );
   _return_code=0;
   for _key in "${_key_list[@]}"; do
     if [ "${_key}" = '' ]; then continue; fi
@@ -871,7 +867,7 @@ _deleteMetaKeyListFn () {
   done
   return "${_return_code}";
 }
-## . END private _deleteMetaKeyListFn }
+## . END private _deleteSnapshotMetaFn }
 
 ## BEGIN private _deleteSnapshotDirsFn {
 # Delete snapshot main and boot directories
@@ -952,12 +948,11 @@ _deleteSnapshotFn () {
     return "${_return_code}";
   }
 
-  _deleteMetaKeyListFn "${_target_snapshot_id}" 'name,desc,pinned,reason' || {
+  _deleteSnapshotMetaFn "${_target_snapshot_id}" || {
     _return_code="$?";
     _logSectAbortFn;
     return "${_return_code}";
   }
-
   _logSectEndFn "${_sect_str}";
 }
 ## . END private _deleteSnapshotFn }
@@ -1370,6 +1365,9 @@ _scrubSnapshotsFn () {
       fi
     done
   fi
+
+  # Remove any metadata
+  _deleteSnapshotMetaFn "${_snapshot_id}";
 }
 ## . END private _scrubSnapshotsFn }
 
