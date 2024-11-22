@@ -313,11 +313,11 @@ _checkBootUnallocSpaceFn () {
 
 ## BEGIN private _checkBtrfsStatusFn {
 # Summary   : _checkBtrfsStatusFn
-# Purpose   : Determines the state of the system's BTRFS setup and outputs an
-#             easily manageable code corresponding to the BTRFS status. This
-#             is mainly used for determining whether the system is able to
-#             use rollback snapshots, and whether automatic snapshotting is
-#             enabled.
+# Purpose   : Determines the state of the system's BTRFS setup, and saves a
+#             code describing the system state to the global _btrfsStatus
+#             variable. This is mainly used for determining whether the system
+#             is able to use rollback snapshots, and whether automatic
+#             snapshotting is enabled.
 # Example   : _checkBtrfsStatusFn
 # Arguments : none
 # Globals   : _btrfsStatus
@@ -332,7 +332,7 @@ _checkBootUnallocSpaceFn () {
 #   'INCONSISTENT' - the system supported rollback snapshots at one point, but
 #     is damaged and cannot support them now. This should only ever happen if
 #     the disk becomes corrupted or the user does something wrong.
-# Returns   : none
+# Returns   : 0 on success, this function can not fail
 # Throws    : none
 #
 _checkBtrfsStatusFn () {
@@ -346,13 +346,13 @@ _checkBtrfsStatusFn () {
     if [ -n "$(ls -A /var/lib/portables)" ] || \
        [ -n "$(ls -A /var/lib/machines )" ]; then
       _btrfsStatus='UNSUPPORTED';
-      return;
+      return 0;
     fi
   fi
 
   # Gauntlet for INCONSISTENT, UNSUPPORTED, SUPPORTED
-  _main_fs="$(_readMainFsFn)";
-  _boot_fs="$(_readBootFsFn)";
+  _main_fs="$(_getMainPartitionFn)";
+  _boot_fs="$(_getBootPartitionFn)";
   for _idx in {1..1}; do
     # Check top directories
     _good_count=$(_checkDirListFn "${_rb2MainDir}|${_rb2BootDir}");
@@ -400,7 +400,7 @@ _checkBtrfsStatusFn () {
   fi
 
   # Bail if btrfsStatus is already set
-  if [ "${_btrfsStatus}" != 'CHECK_CAN_SETUP' ]; then return; fi
+  if [ "${_btrfsStatus}" != 'CHECK_CAN_SETUP' ]; then return 0; fi
 
   # Gauntlet to run on CHECK_CAN_SETUP condition,
   #   where _main_fs, _boot_fs are not setup per above
@@ -448,16 +448,15 @@ _checkBtrfsStatusFn () {
 ## BEGIN private _checkBtrfsStatusSetUpFn {
 # Summary   : _checkBtrfsStatusSetUpFn
 # Purpose   : Ensures that the BTRFS status is either 'SUPPORTED, AUTO' or
-#             'SUPPORTED, MANUAL'. Exits the script immediately if not. This
-#             function will only behave as intended if _checkBtrfsStatusFn is
-#             called first.
+#             'SUPPORTED, MANUAL'. This function will only behave as intended
+#             if _checkBtrfsStatusFn is called first.
 # Example   : _checkBtrfsStatusSetUpFn
 # Arguments : none
 # Globals   : _btrfsStatus
 # Outputs   : none
-# Returns   : none
-# Throws    :
-#   0 - The BTRFS status is not 'SUPPORTED, AUTO' or 'SUPPORTED, MANUAL'.
+# Returns   : 0 if BTRFS status is 'SUPPORTED, AUTO' or 'SUPPORTED, MANUAL', 1
+#             otherwise.
+# Throws    : none
 #
 _checkBtrfsStatusSetUpFn () {
   if [ "${_btrfsStatus}" != 'SUPPORTED, AUTO' ] \
@@ -468,6 +467,17 @@ _checkBtrfsStatusSetUpFn () {
 ## . END private _checkBtrfsStatusSetUpFn }
 
 ## BEGIN private _createCheckMetadbFn {
+# Summary   : _checkCreateMetadbFn
+# Purpose   : Ensures that the snapshot metadb exists, is a regular file, and
+#             has sensible permissions set (read for everyone. write for root
+#             only).
+# Example   : _checkCreateMetadbFn
+# Arguments : none
+# Globals   : _snapshotMetaDb
+# Outputs   : none
+# Returns   : 0 on success, 1 on failure
+# Throws    : none
+#
 _checkCreateMetadbFn () {
   # Confirm this is regular, existing file with correct perms
   if [ -f "${_snapshotMetaDb}" ]; then
@@ -477,7 +487,13 @@ _checkCreateMetadbFn () {
         return 1;
       }
     fi
-    return;
+    if [ "$(stat -c '%u' "${_snapshotMetaDb}")" != '0' ]; then
+      chown root:root "${_snapshotMetaDb}" || {
+        _logWrapFn 'err' 'Failed to fix ownership on snapshot metadb!';
+        return 1;
+      }
+    fi
+    return 0;
   fi
 
   # Error if not a file
@@ -499,18 +515,44 @@ _checkCreateMetadbFn () {
 ## . END private _createCheckMetadbFn }
 
 ## BEGIN private _checkDirListFn {
+# Summary   : _checkDirListFn dirList
+# Purpose   : Checks for the existence of a list of directories.
+# Example   :
+#   if [ "$(_checkDirListFn /btrfs_main/@|/btrfs_boot/@boot)" = '2' ]; then
+#     ...;
+#   fi
+# Arguments :
+#   dirList - A pipe-separated list of directories.
+# Globals   : none
+# Outputs   : An integer specifying the number of listed directories that
+#             exist.
+# Returns   : none
+# Throws    : none
+#
 _checkDirListFn () {
   declare _good_count _dir_list _loop_dir;
+
   _good_count=0;
+
   readarray -t -d'|' _dir_list < <(echo -n "${1:-}");
   for _loop_dir in "${_dir_list[@]}"; do
     if [ -d "${_loop_dir}" ]; then (( _good_count++ )); fi
   done
+
   echo "${_good_count}";
 }
 ## . END private _checkDirListFn }
 
 ## BEGIN private _checkMainUnallocSpaceFn {
+# Summary   : _checkMainUnallocSpaceFn
+# Purpose   : Ensures that the amount of unallocated space on the main
+#             filesystem is greater than a minimum threshold.
+# Example   : _checkMainUnallocSpaceFn
+# Arguments : none
+# Globals   : none
+# Outputs   : Log info
+# Returns   : 0 if main filesystem space is sufficient, 1 otherwise
+# Throws    : none
 _checkMainUnallocSpaceFn () {
   declare _main_min_unalloc _main_unalloc;
 
@@ -535,15 +577,16 @@ _checkRootFn () {
 
 ## BEGIN private _checkSetFlockFn {
 # Summary   : _checkSetFlockFn;
-# Purpose   : Set file lock for this executable.
-#   Use this to prevent multiple instances from running.
+# Purpose   : Set file lock for this executable. Use this to prevent multiple
+#             instances from running.
 # Example   : while ! _checkSetFlockFn; sleep 1; done
 # Arguments : none
 # Globals   : _lockDir, lockFile, _trapExitFn
 # Outputs   : Messages to STDERR
-# Returns   : 1 - Cannot get lock; recoverable by waiting
-#           : 2 - Unrecoverable error
-#           : 0 - Success
+# Returns   :
+#   1 - Cannot get lock; recoverable by waiting
+#   2 - Unrecoverable error
+#   0 - Success
 # Throws    : none
 #
 _checkSetFlockFn () {
@@ -573,6 +616,27 @@ _checkSetFlockFn () {
 ## . END private _checkSetFlockFn }
 
 ## BEGIN private _createSnapshotFn {
+# Summary   : _createSnapshotFn reason
+# Purpose   : Creates a new automatic or manual snapshot. Automatic snapshots
+#             are only taken if certain conditions are met.
+# Example   : _createSnapshotFn user
+# Arguments :
+#   reason - The 'reason' to assign to the snapshot. If the reason is 'Apt' or
+#     'Timed', the snapshot is assumed to be an apt-triggered automatic
+#     snapshot or systemd-triggered scheduled snapshot, in which case the
+#     snapshot will not be taken if the BTRFS status is 'SUPPORTED, MANUAL',
+#     an insufficient amount of time has passed, or the system is in OEM
+#     configuration mode.
+# Globals   : _rb2MainSnapshotDir, _btrfsStatus, _legacySnapshotReasonFile,
+#   _rb2MainDir, _rb2BootDir
+# Outputs   : Log info
+# Returns   :
+#    1 - Snapshot could not be fully created (metadb write failure)
+#    2 - Snapshot creation failed (disk I/O failure or other unexpected issue)
+#    0 - Snapshot successfully created, or automatic snapshot doesn't need to
+#      be created
+# Throws    : none
+#
 _createSnapshotFn () {
   declare _snapshot_event_type _timestamp_str _prev_timestamp_str \
     _snapshot_path _boot_snapshot_path _hour_seconds _week_seconds;
@@ -674,8 +738,11 @@ _createSnapshotFn () {
 # Example   : _defragmentFn
 # Arguments : none
 # Globals   : none
-# Outputs   : none
-# Returns   : none
+# Outputs   : Log info
+# Returns   :
+#   1 - Defragment operation failed (couldn't retrieve needed data)
+#   2 - Defragment operation failed (btrfs defragment command failed)
+#   0 - Success
 # Throws    : none
 #
 _defragmentFn () {
@@ -790,9 +857,12 @@ _defragmentFn () {
 #             snapshots.
 # Example   : _deleteAllSnapshotsFn
 # Arguments : none
-# Globals   : none
+# Globals   : _rb2MainSnapshotDir
 # Outputs   : none
-# Returns   : 0 on success, 1 on failure
+# Returns   :
+#   1 - General failure
+#   2 - Snapshot deletion call failed
+#   0 - Success
 # Throws    : none
 #
 _deleteAllSnapshotsFn () {
@@ -802,7 +872,11 @@ _deleteAllSnapshotsFn () {
   _logSectBeginFn "${_sect_str}";
 
   # Remove snapshots that do not have matched main and boot components
-  _scrubSnapshotsFn || _logWrapFn 'warn' 'Trouble scrubbing snapshots';
+  _scrubSnapshotsFn || {
+    _logWrapFn 'alert' 'Trouble scrubbing snapshots';
+    _logSectEndFn "${_sect_str}";
+    return 2;
+  }
 
   # Get list of snapshots
   readarray -t _snapshot_list < <(
@@ -846,6 +920,16 @@ _deleteAllSnapshotsFn () {
 ## . END private _deleteAllSnapshotsFn }
 
 ## BEGIN private _deleteSnapshotMetaFn {
+# Summary   : _deleteSnapshotMetaFn snapshot_id
+# Purpose   : Deletes all metadata corresponding to a particular snapshot.
+# Example   : _deleteSnapshotMetaFn @1234
+# Arguments :
+#   snapshot_id - The ID of the snapshot who's metadata is to be wiped.
+# Globals   : none
+# Outputs   : Log info
+# Returns   : 0 on success, 1 on failure
+# Throws    : none
+#
 _deleteSnapshotMetaFn () {
   declare _return_code _snapshot_id _key_list _key _msg;
 
@@ -870,7 +954,19 @@ _deleteSnapshotMetaFn () {
 ## . END private _deleteSnapshotMetaFn }
 
 ## BEGIN private _deleteSnapshotDirsFn {
-# Delete snapshot main and boot directories
+# Summary   : _deleteSnapshotDirsFn snapshot_id
+# Purpose   : Deletes the BTRFS snapshots corresponding to a particular
+#             snapshot.
+# Example   : _deleteSnapshotDirsFn @1234
+# Arguments :
+#   snapshot_id - The ID of the snapshot who's underlying BTRFS snapshots are
+#     to be deleted.
+# Globals   : _rb2MainSnapshotDir, _rb2BootSnapshotDir
+# Returns   :
+#   2 - btrfs subvolume delete command failed.
+#   0 - Success
+# Throws    : none
+#
 _deleteSnapshotDirsFn () {
   declare _snapshot_id _main_snapshot_dir _boot_snapshot_dir;
 
@@ -910,6 +1006,18 @@ _deleteSnapshotDirsFn () {
 ## . END private _deleteSnapshotDirsFn }
 
 ## BEGIN private _deleteSnapshotFn {
+# Summary   : _deleteSnapshotFn _snapshot_id
+# Purpose   : Deletes a rollback snapshot from the system.
+# Example   : _deleteSnapshotFn @1234
+# Arguments : _snapshot_id - The ID of the snapshot to delete.
+# Globals   : none
+# Outputs   : Log info
+# Returns   :
+#   1 - Failed to delete snapshot
+#   2 - Unexpected error occurred while deleting snapshot
+#   0 - Success
+# Throws    : none
+#
 _deleteSnapshotFn () {
   declare _sect_str _target_snapshot_id _is_pinned _msg _return_code;
 
@@ -944,7 +1052,7 @@ _deleteSnapshotFn () {
 
   _deleteSnapshotDirsFn "${_target_snapshot_id}" || {
     _return_code="$?";
-    _logWrapFn 'err' 'Trouble deleting snapshot directories';
+    _logWrapFn 'alert' 'Trouble deleting snapshot directories';
     return "${_return_code}";
   }
 
@@ -958,10 +1066,10 @@ _deleteSnapshotFn () {
 ## . END private _deleteSnapshotFn }
 
 ## BEGIN private _exitCleanFn {
-# Summary   : _exitCleanFn <_int>;
+# Summary   : _exitCleanFn _int;
 # Purpose   : Unset traps for exit and then do so.
 # Example   : _exitCleanFn 1;
-# Arguments : <_int>
+# Arguments : _int
 # Globals   : _cm2*
 # Outputs   : none
 # Returns   : Exit code <_int>
@@ -981,66 +1089,192 @@ _exitCleanFn () {
 ## . END private _exitCleanFn }
 
 ## BEGIN private _getBootMinUnallocFn {
+# Summary   : _getBootMinUnallocFn
+# Purpose   : Gets the minimum unallocated space that the boot filesystem must
+#             have to be safe.
+# Example   : _getBootMinUnallocFn
+# Arguments : none
+# Globals   : none
+# Outputs   : Needed unallocated space, in bytes
+# Returns   : none
+# Throws    : none
+#
 _getBootMinUnallocFn () {
   # Return number of bytes in 1 GiB
   echo 1073741824;
 }
 ## . END private _getBootMinUnallocFn }
 
+## BEGIN private _getBootPartitionFn {
+# Summary   : _getBootPartitionFn
+# Purpose   : Gets the boot partition device file.
+# Example   : _getBootPartitionFn
+# Arguments : none
+# Globals   : none
+# Outputs   : The path to the device file corresponding to the boot partition.
+# Returns   : none
+# Throws    : none
+#
+_getBootPartitionFn () {
+  LC_ALL='C' mount | grep btrfs | grep ' on /boot ' \
+    | cut -d' ' -f1;
+}
+## . END private _getBootPartitionFn }
+
 ## BEGIN private _getBootUnallocSpaceFn {
+# Summary   : _getBootUnallocSpaceFn
+# Purpose   : Gets the amount of unallocated space on the boot filesystem.
+# Example   : _getBootUnallocSpaceFn
+# Arguments : none
+# Globals   : none
+# Outputs   : Available unallocated space, in bytes
+# Returns   : 0 on success, 1 on failure
+# Throws    : none
+#
 _getBootUnallocSpaceFn () {
+  declare _boot_usage_report;
+
   # Extract unallocated space from boot filesystem report
-  LC_ALL=C "${_btrfsExe}" filesystem usage -b "${_rb2BootDir}" \
-    | awk '/Device unallocated/{ print $3 }';
+  _boot_usage_report="$(_getBootUsageReportFn)" || return 1;
+  awk '/Device unallocated/{ print $3 }' <<< "${_boot_usage_report}" \
+    || return 1;
 }
 ## . END private _getBootUnallocSpaceFn }
 
 ## BEGIN private _getBootUsageReportFn {
+# Summary   : _getBootUsageReportFn
+# Purpose   : Gets a report about space usage on the boot filesystem.
+# Example   : _getBootUsageReportFn
+# Arguments : none
+# Globals   : _rb2BootDir
+# Outputs   : The report generated by 'btrfs filesystem usage -b'
+# Returns   : 0 on success, 1 on failure
+# Throws    : none
+#
 _getBootUsageReportFn () {
-  LC_ALL='C' "${_btrfsExe}" filesystem usage -b "${_rb2BootDir}";
+  LC_ALL='C' "${_btrfsExe}" filesystem usage -b "${_rb2BootDir}" || return 1;
 }
 ## . END private _getBootUsageReportFn }
 
 ## BEGIN private _getMainBtduReportFn {
+# Summary   : _getMainBtduReportFn
+# Purpose   : Gets a detailed report on the disk usage of individual files on
+#             the main filesystem.
+# Example   : _getMainBtduReportFn
+# Arguments : none
+# Globals   : _rb2MainDir
+# Outputs   : The report generated by btdu.
+# Returns   : 0 on success, 1 on failure
+# Throws    : none
+#
 _getMainBtduReportFn () {
-  LC_ALL='C' "${_btduExe}" --du --min-resolution=1M --headless "${_rb2MainDir}"
+  LC_ALL='C' "${_btduExe}" --du --min-resolution=1M --headless \
+    "${_rb2MainDir}" || return 1;
 }
 ## . END private _getMainBtduReportFn }
 
 ## BEGIN private _getMainFragReportFn {
+# Summary   : _getMainFragReportFn
+# Purpose   : Gets a detailed report on the file fragmentation state of
+#             individual files on the root subvolume of the main filesystem.
+# Example   : _getMainFragReportFn
+# Arguments : none
+# Globals   : _rb2MainDir
+# Outputs   : The report generated by kfocus-report-filefrag.
+# Returns   : 0 on success, 1 on failure
+# Throws    : none
+#
 _getMainFragReportFn () {
-  "${_filefragExe}" "${_rb2MainDir}/@";
+  "${_filefragExe}" "${_rb2MainDir}/@" || return 1;
 }
 ## . END private _getMainFragReportFn }
 
 ## BEGIN private _getMainMinUnallocFn {
+# Summary   : _getMainMinUnallocFn
+# Purpose   : Gets the minimum unallocated space that the main filesystem must
+#             have to be safe.
+# Example   : _getMainMinUnallocFn
+# Arguments : none
+# Globals   : _rb2MainDir
+# Outputs   : Needed unallocated space, in bytes
+# Returns   : 0 if needed space can be calculated successfully, non-zero otherwise
+# Throws    : none
+#
 _getMainMinUnallocFn () {
+  declare _main_usage_report
+
+  _main_usage_report="$(_getMainUsageReportFn)" || return 1;
   # Calculate main filesystem size, return 15% of that
-  echo "$(( $(LC_ALL=C "${_btrfsExe}" filesystem usage -b "${_rb2MainDir}" \
-    | grep $'Device size:\t' \
+  echo "$(( $(grep $'Device size:\t' <<< "${_main_usage_report}" \
     | awk '{ print $3 }' \
     ) * 15 / 100 ))";
 }
 ## . END private _getMainMinUnallocFn }
 
+## BEGIN private _getMainPartitionFn {
+# Summary   : _getMainPartitionFn
+# Purpose   : Gets the main partition device file.
+# Example   : _getMainPartitionFn
+# Arguments : none
+# Globals   : none
+# Outputs   : The path to the device file corresponding to the main partition.
+# Returns   : none
+# Throws    : none
+_getMainPartitionFn () {
+  LC_ALL='C' mount | grep btrfs | grep ' on / ' \
+    | cut -d' ' -f1;
+}
+## . END private _getMainPartitionFn }
+
 ## BEGIN private _getMainUnallocSpaceFn {
+# Summary   : _getMainUnallocSpaceFn
+# Purpose   : Gets the amount of unallocated space on the main filesystem.
+# Example   : _getMainUnallocSpaceFn
+# Arguments : none
+# Globals   : none
+# Outputs   : Available unallocated space, in bytes
+# Returns   : 0 on success, 1 on failure
+# Throws    : none
+#
 _getMainUnallocSpaceFn () {
+  declare _main_usage_report;
+
   # Extract unallocated space from main filesystem report
-  LC_ALL=C "${_btrfsExe}" filesystem usage -b "${_rb2MainDir}" \
-    | awk '/Device unallocated/{ print $3 }';
+  _main_usage_report="$(_getMainUsageReportFn)" || return 1;
+  awk '/Device unallocated/{ print $3 }' <<< "${_main_usage_report}" \
+    || return 1;
 }
 ## . END private _getMainUnallocSpaceFn }
 
 ## BEGIN private _getMainUsageReportFn {
+# Summary   : _getMainUsageReportFn
+# Purpose   : Gets a report about space usage on the main filesystem.
+# Example   : _getMainUsageReportFn
+# Arguments : none
+# Globals   : _rb2MainDir
+# Outputs   : The report generated by 'btrfs filesystem usage -b'
+# Returns   : 0 on success, 1 on failure
+# Throws    : none
+#
 _getMainUsageReportFn () {
-  LC_ALL='C' "${_btrfsExe}" filesystem usage -b "${_rb2MainDir}";
+  LC_ALL='C' "${_btrfsExe}" filesystem usage -b "${_rb2MainDir}" || return 1;
 }
 ## . END private _getMainUsageReportFn }
 
 ## BEGIN private _getManualSwitchStateFn {
 # Summary   : _getManualSwitchStateFn
-# Purpose   : This internal call is used by the public methods
-#             _getManualSwitchStatePublicFn and _checkBtrfsStatusFn.
+# Purpose   : Reads the manual switch state from the snapshot metadb. This
+#             value indicates whether kfocus-rollback is taking automatic
+#             snapshots or not.
+# Example   : _getManualSwitchStateFn
+# Arguments : none
+# Globals   : none
+# Outputs   :
+#   If automatic snapshotting is enabled, outputs 'AUTO'.
+#   If automatic snapshotting is NOT enabled, outputs 'MANUAL'.
+#   Log info goes to stderr.
+# Returns   : 0 on success, 1 on failure
+# Throws    : none
 #
 _getManualSwitchStateFn () {
   declare _manual_state_str;
@@ -1065,6 +1299,19 @@ _getManualSwitchStateFn () {
 ## . END private _getManualSwitchStateFn }
 
 ## BEGIN private _getSnapshotReasonFn {
+# Summary   : _getSnapshotReasonFn _snapshot_id
+# Purpose   : Gets a snapshot's 'reason' and outputs it.
+# Example   : _getSnapshotReasonPublicFn @1234
+# Arguments : _snapshot_id - the ID of the snapshot to query.
+# Globals   : _rb2MainSnapshotDir, _legacySnapshotReasonFile
+# Outputs   : A human-readable string specifying the snapshot reason. The
+#             string is one of 'Before Package Change', 'System Schedule',
+#             'Pre-Rollback', 'Unknown (no reason found)', or 'User Snapshot
+#             (username)' where 'username' is replaced with the name of the
+#             user who took the snapshot. Log info goes to stderr.
+# Returns   : 0 on success, 1 on failure
+# Throws    : none
+#
 _getSnapshotReasonFn () {
   declare _snapshot_id _snapshot_reason_file _snapshot_reason_raw \
     _snapshot_reason;
@@ -1123,16 +1370,15 @@ _getSnapshotReasonFn () {
 ## BEGIN private _logExitFn {
 # Summary   : _logExitFn _log_level _exit_int _msg
 # Purpose   : Logs information to the syslog and then immediately exits.
-# Example   : _logExitFn 'ERR' 'Something went wrong!'
+# Example   : _logExitFn 'err' '1' 'Something went wrong!'
 # Arguments :
 #   _log_level - A string representing the log level to use. One of 'debug',
-#                'info', 'notice', 'warning', 'err', 'crit', 'alert', or
-#                'emerg'. See `man 3 syslog` for information on the meanings
-#                of these codes.
+#     'info', 'notice', 'warning', 'err', 'crit', 'alert', or 'emerg'. See
+#     `man 3 syslog` for information on the meanings of these codes.
 #   _exit_int  - The code to exit with.
 #   _msg       - The message to log.
 # Globals   : _cm2*
-# Outputs   : Writes to syslog
+# Outputs   : Log info
 # Returns   : none, exits the script with the code given in _exit_int
 # Throws    : none
 #
@@ -1164,6 +1410,23 @@ _logExitFn () {
 }
 ## . END private _logExitFn }
 
+## BEGIN private _logPrepareExitFn {
+# Summary   : _logPrepareExitFn _log_level _exit_int _msg
+# Purpose   : Handles exits by _prepareSystemPublicFn, including displaying an
+#             error to all logged-in users.
+# Example   : _logPrepareExitFn 'err' '1' 'Something went wrong!'
+# Arguments : Same as _logExitFn
+# Globals   : _prepareFailMsg
+# Outputs   : Log info
+# Returns   : none, exits the script with the code given in _exit_int
+# Throws    : none
+#
+_logPrepareExitFn () {
+  _promptAllUsersFn 'error' "${_prepareFailMsg}";
+  _logExitFn "$@";
+}
+## . END private _logPrepareExitFn }
+
 ## BEGIN private Special begin-end-abort log wrappers {
 _logSectAbortFn () {
   _logWrapFn 'notice' "== ABORT : ${1:-Section}";
@@ -1177,7 +1440,19 @@ _logSectEndFn () {
 ## . END private Special begin-end-abort log wrappers }
 
 ## BEGIN private _logWrapFn {
-# Purpose : Log to syslog if available, or stderr otherwise
+# Summary   : _logWrapFn _log_level _msg
+# Purpose   : Log to syslog if available, or stderr otherwise
+# Example   : _logWrapFn 'err' 'Something went wrong!'
+# Arguments :
+#   _log_level - A string representing the log level to use. One of 'debug',
+#     'info', 'notice', 'warning', 'err', 'crit', 'alert', or 'emerg'. See
+#     `man 3 syslog` for information on the meanings of these codes.
+#   _msg       - The message to log.
+# Globals   : _cm2*
+# Outputs   : Log info
+# Returns   : none
+# Throws    : none
+#
 _logWrapFn () {
   declare _priority_key _message;
   _priority_key="${1:-warn}";
@@ -1195,17 +1470,17 @@ _logWrapFn () {
 ## BEGIN private _promptAllUsersFn {
 # Summary   : _promptAllUsersFn _mode_str _msg_str
 # Purpose   : Displays a graphical message to all users with an active
-#             graphical login
+#             graphical login.
 # Example   : _promptAllUsersFn 'error' 'An error has occurred!'
 # Arguments :
 #   _mode_str - What kind of message to display, see package-main ->
 #     kfocus-focusrx-dbus-dispatch for accepted values. Examples
-#     at time of writing include info, warning, error,
-#     rollbackLowMainSpace, and rollbackLowBootSpace.
+#     at time of writing include 'info', 'warning', 'error',
+#     'rollbackLowMainSpace', and 'rollbackLowBootSpace'.
 #   _msg_str - The message to display to the user.
 # Globals   : DISPLAY, DBUS_SESSION_BUS_ADDRESS
 # Outputs   : none
-# Returns   : 0 - success
+# Returns   : none
 # Throws    : none
 #
 # See https://stackoverflow.com/a/49533938
@@ -1232,25 +1507,11 @@ _promptAllUsersFn () {
 }
 ## . END private _promptAllUsersFn }
 
-## BEGIN private _readBootFsFn {
-_readBootFsFn () {
-  LC_ALL='C' mount | grep btrfs | grep ' on /boot ' \
-    | cut -d' ' -f1;
-}
-## . END private _readBootFsFn }
-
-## BEGIN private _readMainFsFn {
-_readMainFsFn () {
-  LC_ALL='C' mount | grep btrfs | grep ' on / ' \
-    | cut -d' ' -f1;
-}
-## . END private _readMainFsFn }
-
 ## BEGIN private _readMetadbFn {
 # Summary   : _readMetadbFn _group_str _key_str
 # Purpose   : Reads a value from the kfocus-rollback snapshot metadata
 #             database (metadb).
-# Example   : _readMetadbFn '@1234' 'name'
+# Example   : _readMetadbFn @1234 name
 # Arguments :
 #   _group_str - The data group in which the value should be found.
 #      Often, our groups are named after snapshot IDs, e.g. '@1234'.
@@ -1258,7 +1519,7 @@ _readMainFsFn () {
 #   IMPORTANT: If either a group or key does not exist, an empty string
 #     is returned. It is NOT an error condition. This routine also
 #     creates an empty metadb file if it does not already exist.
-# Globals   : _snapshotMetaDb
+# Globals   : _rb2MainDir, _snapshotMetaDb
 # Outputs   : A string representing the desired data. Note that for data
 #             representing user-defined strings, this will always be
 #             base64-encoded.
@@ -1306,11 +1567,27 @@ _readMetadbFn () {
 ## . END private _readMetadbFn }
 
 ## BEGIN private _trapExitFn {
+# Summary   : _trapExitFn
+# Purpose   : Catches unexpected exits and logs them.
+# Example   : trap _trapExitFn EXIT
+# Arguments : none
+# Globals   : _baseName
+# Outputs   : Log info
+# Returns   : none
+# Throws    : none
+#
 _trapExitFn () {
   _logWrapFn 'warn' "${_baseName} was interrupted";
-  if [ "${_isPreparingSystem}" = 'y' ]; then
-    _promptAllUsersFn 'error' "${_prepareFailMsg}";
-  fi
+  # FIXME: This codepath is unreachable, _prepareSystemPublicFn uses
+  #   _logExitFn to exit, which exits cleanly and dodges the trap handler.
+  #   Thus a failure in system preparation will NOT be announced to the user.
+  #   Write a _crashPrepareFn or similar and use it rather than _logExitFn
+  #   throughout _prepareSystemPublicFn.
+  #
+  # if [ "${_isPreparingSystem}" = 'y' ]; then
+  #   _promptAllUsersFn 'error' "${_prepareFailMsg}";
+  # fi
+
   # If the lock file is deleted after a parallel kfocus-rollback-backend
   # process opens it, but before it locks it, this will cause two parallel
   # kfocus-rollback-backend processes to be able to execute, which is very
@@ -1320,7 +1597,14 @@ _trapExitFn () {
 ## . END private _trapExitFn }
 
 ## BEGIN private _scrubSnapshotsFn () {
-# Remove snapshots that do not have matched main and boot directories
+# Summary   : _scrubSnapshotsFn
+# Purpose   : Remove snapshots that do not have matched main and boot
+#             directories.
+# Example   : _scrubSnapshotsFn
+# Arguments : none
+# Globals   : _rb2MainSnapshotDir, _rb2BootSnapshotDir
+# Outputs   : Log info
+# Returns   : 0 on success, 2 if a BTRFS snapshot deletion fails.
 #
 _scrubSnapshotsFn () {
   declare _main_snapshot_list _boot_snapshot_list _snapshot_id;
@@ -1343,6 +1627,9 @@ _scrubSnapshotsFn () {
             "Failed to delete unpaired main snapshot |${_snapshot_id}|!";
           return 2;
         }
+        # Remove any metadata
+         _deleteSnapshotMetaFn "${_snapshot_id}";
+
         _logWrapFn 'warn' \
           "Mismatched snapshot |${_snapshot_id}| trimmed from main.";
       fi
@@ -1360,22 +1647,34 @@ _scrubSnapshotsFn () {
             "Failed to delete unpaired main snapshot |${_snapshot_id}|!";
           return 2;
         }
+        # Remove any metadata
+         _deleteSnapshotMetaFn "${_snapshot_id}";
+
         _logWrapFn 'warn' \
           "Mismatched snapshot |${_snapshot_id}| trimmed from boot.";
       fi
     done
   fi
-
-  # Remove any metadata
-  _deleteSnapshotMetaFn "${_snapshot_id}";
 }
 ## . END private _scrubSnapshotsFn }
 
 ## BEGIN private _trimSnapshotsFn {
+# Summary   : _trimSnapshotsPublicFn
+# Purpose   : Finds old unpinned snapshots, and deletes them. All pinned
+#             snapshots will be preserved regardless of age, and the five
+#             newest unpinned snapshots will also be preserved. All other
+#             snapshots are deleted.
+# Example   : _trimSnapshotsPublicFn
+# Arguments : none
+# Globals   : _rb2SnapshotMainDir
+# Outputs   : Log output
+# Returns   : 0 on success, 2 on snapshot deletion failure
+# Throws    : none
+#
 _trimSnapshotsFn () {
   declare _sect_str _main_list _main_count _remove_count \
     _snapshot_id _is_pinned _unpinned_list _unpinned_count _idx;
-  
+
   _sect_str='Trim snapshots';
   _logSectBeginFn "${_sect_str}";
 
@@ -1435,7 +1734,7 @@ _trimSnapshotsFn () {
 #      Often, our groups are named after snapshot IDs, e.g. '@1234'.
 #   _key_str   - The key to associate with the provided data.
 #   _val_str   - The string to be stored. If blank, delete the key.
-# Globals   : _snapshotMetaDb
+# Globals   : _rb2MainDir, _snapshotMetaDb
 # Outputs   : none
 # Returns   : 0 on success, 2 on failure (meaning metadb error)
 # Throws    : none
@@ -1559,10 +1858,13 @@ _btrfsMaintainPublicFn () {
 
 ## BEGIN _checkBootUnallocSpacePublicFn {
 # Summary   : _checkBootUnallocSpacePublicFn
-# Purpose   : A public wrapper around _checkBootUnallocSpaceFn.
+# Purpose   : A public wrapper around _checkBootUnallocSpaceFn. Shows an error
+#             message to all graphically logged-in users if boot filesystem
+#             space is found to be low.
 # Example   : _checkBootUnallocSpacePublicFn
 # Arguments : none
 # Globals   : _lowBootMsg
+# Outputs   : none
 # Returns   : none
 # Throws    :
 #   1:
@@ -1581,18 +1883,18 @@ _checkBootUnallocSpacePublicFn () {
 
 ## BEGIN _checkMainUnallocSpacePublicFn {
 # Summary   : _checkMainUnallocSpacePublicFn
-# Purpose   : Ensures that the amount of unallocated space on the main
-#             filesystem is greater than a minimum threshold. Exits the script
-#             and displays a warning to all graphically logged-in users if the
-#             check fails.
+# Purpose   : A public wrapper around _checkMainUnallocSpaceFn. Shows an error
+#             message to all graphically logged-in users if main filesystem
+#             space is found to be low.
 # Example   : _checkMainUnallocSpacePublicFn
 # Arguments : none
 # Globals   : _lowDiskMsg
 # Outputs   : none
 # Returns   : none
 # Throws    :
-#   0 - _checkBtrfsStatusSetUpFn check failed.
-#   1 - Main unallocated space is low.
+#   1:
+#     - BTRFS status is not SUPPORTED, AUTO or SUPPORTED, MANUAL, or
+#     - Unallocated space on the main partition is dangerously low.
 #
 _checkMainUnallocSpacePublicFn () {
   _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
@@ -1744,19 +2046,20 @@ _createSnapshotPublicFn () {
 ## . END _createSnapshotPublicFn }
 
 ## BEGIN _deleteSnapshotPublicFn {
-# Summary   : _deleteSnapshotPublicFn snapshotId
-# Purpose   : Deletes a rollback snapshot from the system.
-# Example   : _deleteSnapshotPublicFn '@1234'
-# Arguments : snapshotId - The ID of the snapshot to delete.
+# Summary   : _deleteSnapshotPublicFn _snapshot_id
+# Purpose   : A public wrapper around _deleteSnapshotFn.
+# Example   : _deleteSnapshotPublicFn @1234
+# Arguments : _snapshot_id - The ID of the snapshot to delete.
 # Globals   : none
-# Outputs   : none
+# Outputs   : Log info
 # Returns   : none
 # Throws    :
-#   0 - _checkBtrfsStatusSetUpFn check failed.
-#   1 - No snapshot ID provided, specified snapshot does not exist, or
-#     specified snapshot is pinned.
-#   2 - One of the BTRFS snapshot deletion commands failed, suggesting
-#     filesystem corruption or disk failure.
+#   1:
+#     - Calling user is not root,
+#     - BTRFS status is not SUPPORTED, AUTO or SUPPORTED, MANUAL, or
+#     - Could not delete snapshot.
+#   2:
+#     - Critical error occurred while deleting the snapshot.
 #
 _deleteSnapshotPublicFn () {
   declare _return_code;
@@ -1860,18 +2163,16 @@ _getMainUnallocSpacePublicFn () {
 
 ## BEGIN _getManualSwitchStatePublicFn {
 # Summary   : _getManualSwitchStatePublicFn
-# Purpose   : Reads the manual switch state from the snapshot metadb. This
-#             value indicates whether kfocus-rollback is taking automatic
-#             snapshots or not.
+# Purpose   : A public wrapper around _getManualSwitchStateFn.
 # Example   : _getManualSwitchStatePublicFn
 # Arguments : none
-# Globals   : _snapshotMetaDb
-# Outputs   :
-#   If automatic snapshotting is enabled, outputs 'AUTO'.
-#   If automatic snapshotting is NOT enabled, outputs 'MANUAL'.
+# Globals   : none
+# Outputs   : Same as _getManualSwitchStateFn
 # Returns   : none
-# Throws    : 0 - _checkBtrfsStatusSetUpFn check failed.
-#             1 - _getManualSwitchStateFn state not MANUAL or AUTO.
+# Throws    :
+#   1:
+#     - BTRFS status is not SUPPORTED, AUTO or SUPPORTED, MANUAL, or
+#     - _getManualSwitchStateFn failed.
 #
 _getManualSwitchStatePublicFn () {
   _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
@@ -1970,17 +2271,16 @@ _getSnapshotMetadataPublicFn () {
 ## . END _getSnapshotMetadataPublicFn }
 
 ## BEGIN _getSnapshotReasonPublicFn {
-# Summary   : _getSnapshotReasonPublicFn snapshotId
-# Purpose   : Gets a snapshot's 'reason' and outputs it.
-# Example   : _getSnapshotReasonPublicFn '@1234'
-# Arguments : snapshotId - the ID of the snapshot to query.
+# Summary   : _getSnapshotReasonPublicFn _snapshot_id
+# Purpose   : A public wrapper around _getSNapshotReasonFn.
+# Example   : _getSnapshotReasonPublicFn @1234
+# Arguments : _snapshot_id - the ID of the snapshot to query.
 # Globals   : none
-# Outputs   : A human-readable string specifying the snapshot reason. The
-#             string is one of 'Before Package Change', 'System Schedule',
-#             'Pre-Rollback', or 'User Snapshot (username)' where 'username'
-#             is replaced with the name of the user who took the snapshot.
-# Returns   : 0 on success, 1 on failure
-# Throws    : none
+# Outputs   : Same as _getSnapshotReasonFn
+# Returns   : none
+# Throws    :
+#   1:
+#     - _getSnapshotReasonFn failed.
 #
 _getSnapshotReasonPublicFn () {
   declare _return_code;
@@ -1990,18 +2290,16 @@ _getSnapshotReasonPublicFn () {
 
   if [ "${_return_code}" = '1' ]; then
     _logExitFn 'err' '1' 'Could not get snapshot reason!';
-  elif [ "${_return_code}" = '2' ]; then
-    _logExitFn 'alert' '2' 'A critical error occurred while getting a snapshot reason!';
   fi
 }
 ## . END _getSnapshotReasonPublicFn }
 
 ## BEGIN _makeSnapshotDispIdPublicFn {
-# Summary   : _makeSnapshotDispIdPublicFn snapshotId
+# Summary   : _makeSnapshotDispIdPublicFn _snapshot_id
 # Purpose   : Generates a human-readable string that can be used to identify a
 #             particular snapshot.
 # Example   : _makeSnapshotDispIdPublicFn '@1234'
-# Arguments : snapshotId - the ID of the snapshot to query.
+# Arguments : _snapshot_id - the ID of the snapshot to query.
 # Globals   : none
 # Outputs   :
 #   A human-readable snapshot ID string, in the format
@@ -2056,7 +2354,7 @@ _prepareSystemPublicFn () {
   declare _root_mount_id _boot_mount_id _btrfs_defaults_str \
     _dir _subvolume_list _subvolume_id _path;
 
-  _checkRootFn || _logExitFn 'warn' '1' \
+  _checkRootFn || _logPrepareExitFn 'warn' '1' \
     'Preparing the system for snapshotting requires root permissions!';
 
   _isPreparingSystem='y';
@@ -2064,18 +2362,18 @@ _prepareSystemPublicFn () {
   ## Begin STAGE 1: Check and prep filesystem {
   if [ "${_btrfsStatus}" = 'SUPPORTED, AUTO' ] \
     || [ "${_btrfsStatus}" = 'SUPPORTED, MANUAL' ]; then
-    _logExitFn 'notice' '0' 'This system already appears snapshot-enabled.';
+    _logPrepareExitFn 'notice' '0' 'This system already appears snapshot-enabled.';
   fi
 
   if [ "${_btrfsStatus}" = 'UNSUPPORTED' ]; then
-    _logExitFn 'err' '1' 'This system does not support snapshotting!';
+    _logPrepareExitFn 'err' '1' 'This system does not support snapshotting!';
   fi
 
   # Check libvirt dirs, if they have content do not proceed
   if [ -d '/etc/libvirt' ] || [ -d '/var/lib/libvirt' ]; then
     if [ -n "$(ls -A /etc/libvirt     2>/dev/null)" ] || \
        [ -n "$(ls -A /var/lib/libvirt 2>/dev/null)" ]; then
-      _logExitFn 'err' '1' 'Cannot create libvirt subvols, libvirt is installed!';
+      _logPrepareExitFn 'err' '1' 'Cannot create libvirt subvols, libvirt is installed!';
     fi
   fi
 
@@ -2088,7 +2386,7 @@ _prepareSystemPublicFn () {
   # Create directories
   for _dir in "${_rb2BootDir}" "${_rb2MainDir}" \
     '/etc/libvirt' '/var/lib/libvirt'; do
-    mkdir -p "${_dir}" || _logExitFn 'crit' '2' "Cannot create directory |${_dir}|!";
+    mkdir -p "${_dir}" || _logPrepareExitFn 'crit' '2' "Cannot create directory |${_dir}|!";
   done;
   ## . End STAGE 1: Check and prep filesystem }
 
@@ -2101,54 +2399,54 @@ _prepareSystemPublicFn () {
   _btrfs_defaults_str="defaults,noatime,autodefrag 0 0";
 
   echo "${_root_mount_id} ${_rb2MainDir} btrfs subvolid=5,${_btrfs_defaults_str}" \
-    >> /etc/fstab || _logExitFn 'crit' '2' "Cannot create fstab line for |${_rb2MainDir}|!";
+    >> /etc/fstab || _logPrepareExitFn 'crit' '2' "Cannot create fstab line for |${_rb2MainDir}|!";
   echo "${_boot_mount_id} ${_rb2BootDir} btrfs subvolid=5,${_btrfs_defaults_str}" \
-    >> /etc/fstab || _logExitFn 'crit' '2' "Cannot create fstab line for |${_rb2BootDir}|!";
+    >> /etc/fstab || _logPrepareExitFn 'crit' '2' "Cannot create fstab line for |${_rb2BootDir}|!";
   echo "${_root_mount_id} /etc/libvirt btrfs subvol=@libvirt-machines/@etc-libvirt,${_btrfs_defaults_str}" \
-    >> /etc/fstab || _logExitFn 'crit' '2' 'Cannot create fstab line for |/etc/libvirt|!';
+    >> /etc/fstab || _logPrepareExitFn 'crit' '2' 'Cannot create fstab line for |/etc/libvirt|!';
   echo "${_root_mount_id} /var/lib/libvirt btrfs subvol=@libvirt-machines/@var-lib-libvirt,${_btrfs_defaults_str}" \
-    >> /etc/fstab || _logExitFn 'crit' '2' 'Cannot create fstab line for |/var/lib/libvirt|!';
+    >> /etc/fstab || _logPrepareExitFn 'crit' '2' 'Cannot create fstab line for |/var/lib/libvirt|!';
   ## . End STAGE 2: Adjust fstab }
 
   ## Begin STAGE 3: Prepare /boot {
   # Unmount boot-related directories, so we can rearrange their contents
-  umount /boot/efi || _logExitFn 'alert' '2' 'Failed to unmount |/boot/efi|!';
-  umount /boot     || _logExitFn 'alert' '2' 'Failed to unmount |/boot|!';
+  umount /boot/efi || _logPrepareExitFn 'alert' '2' 'Failed to unmount |/boot/efi|!';
+  umount /boot     || _logPrepareExitFn 'alert' '2' 'Failed to unmount |/boot|!';
 
   # Point fstab at a soon-to-be-created @boot subvolume
   sed -i '/\/boot /s/defaults/subvol=\/@boot,defaults/' /etc/fstab \
-    || _logExitFn 'alert' '2' 'Failed to update fstab for |@boot|!';
+    || _logPrepareExitFn 'alert' '2' 'Failed to update fstab for |@boot|!';
 
   # Reload fstab changes
   systemctl daemon-reload;
 
   # Morph the layout of the boot partition
-  mount "${_rb2BootDir}" || _logExitFn 'alert' '2' "Failed to mount |${_rb2BootDir}|!";
+  mount "${_rb2BootDir}" || _logPrepareExitFn 'alert' '2' "Failed to mount |${_rb2BootDir}|!";
   "${_btrfsExe}" subvolume create "${_rb2BootDir}/@boot" \
-    || _logExitFn 'emerg' '2' 'Failed to create |@boot|!';
+    || _logPrepareExitFn 'emerg' '2' 'Failed to create |@boot|!';
 
   while read -r _path; do
     if [ "${_path}" != "${_rb2BootDir}/@boot" ]; then
       mv "${_path}" "${_rb2BootDir}/@boot/" \
-        || _logExitFn 'alert' '2' "Failed to move |${_path}| to |${_rb2BootDir}/@boot|!";
+        || _logPrepareExitFn 'alert' '2' "Failed to move |${_path}| to |${_rb2BootDir}/@boot|!";
     fi
   done < <(find "${_rb2BootDir}" -maxdepth 1 -mindepth 1)
 
   # Mount /boot again after successful rearrange
-  mount /boot     || _logExitFn 'alert' '2' 'Failed to mount |/boot|!';
-  mount /boot/efi || _logExitFn 'alert' '2' 'Failed to mount |/boot/efi|!';
+  mount /boot     || _logPrepareExitFn 'alert' '2' 'Failed to mount |/boot|!';
+  mount /boot/efi || _logPrepareExitFn 'alert' '2' 'Failed to mount |/boot/efi|!';
 
   # Point the primary grub.cfg at the new boot files
-  update-grub || _logExitFn 'alert' '2' 'Failed to update GRUB configuration!';
+  update-grub || _logPrepareExitFn 'alert' '2' 'Failed to update GRUB configuration!';
 
   # Make sure GRUB can find the primary grub.cfg at its new location
   sed -i "s/'\/grub'/'\/@boot\/grub'/" /boot/efi/EFI/ubuntu/grub.cfg \
-    || _logExitFn 'alert' '2' 'Failed to point GRUB to the proper config location!';
+    || _logPrepareExitFn 'alert' '2' 'Failed to point GRUB to the proper config location!';
   ## . End STAGE 3: Prepare /boot }
 
   ## Begin STAGE 4: Create subvolumes {
   # ${_rb2BootDir} (/btrfs_boot) is already mounted at this point
-  mount "${_rb2MainDir}" || _logExitFn 'alert' '2' "Failed to mount |${_rb2MainDir}|!";
+  mount "${_rb2MainDir}" || _logPrepareExitFn 'alert' '2' "Failed to mount |${_rb2MainDir}|!";
   _subvolume_list=(
     "${_rb2BootSnapshotDir}"
     "${_rb2MainSnapshotDir}"
@@ -2159,7 +2457,7 @@ _prepareSystemPublicFn () {
 
   for _subvolume_id in "${_subvolume_list[@]}"; do
     "${_btrfsExe}" subvolume create "${_subvolume_id}" \
-      || _logExitFn 'emerg' '2' "Failed to create |${_subvolume_id}|!";
+      || _logPrepareExitFn 'emerg' '2' "Failed to create |${_subvolume_id}|!";
   done
   ## . END Stage 4: Create subvolumes }
 
@@ -2167,8 +2465,8 @@ _prepareSystemPublicFn () {
   # At this point, /boot, /boot/efi, ${_rb2MainDir} (/btrfs_main), and
   # ${_rb2BootDir} (/btrfs_boot) are mounted.
   # /etc/libvirt and /var/lib/libvirt are not mounted.
-  mount /etc/libvirt     || _logExitFn 'alert' '2' 'Failed to mount |/etc/libvirt|!';
-  mount /var/lib/libvirt || _logExitFn 'alert' '2' 'Failed to mount |/var/lib/libvirt|!';
+  mount /etc/libvirt     || _logPrepareExitFn 'alert' '2' 'Failed to mount |/etc/libvirt|!';
+  mount /var/lib/libvirt || _logPrepareExitFn 'alert' '2' 'Failed to mount |/var/lib/libvirt|!';
   ## . END STAGE 5: Finish additional mounts }
 
   _isPreparingSystem='n';
@@ -2177,12 +2475,12 @@ _prepareSystemPublicFn () {
 ## . END _prepareSystemPublicFn }
 
 ## BEGIN _restoreSnapshotPublicFn {
-# Summary   : _restoreSnapshotPublicFn snapshotId
+# Summary   : _restoreSnapshotPublicFn _snapshot_id
 # Purpose   : Restores a rollback snapshot, writing metadata for a
 #             post-restore handler to use and trimming excess snapshots once
 #             the restore is complete.
 # Example   : _restoreSnapshotPublicFn '@1234'
-# Arguments : snapshotId - the ID of the snapshot to restore.
+# Arguments : _snapshot_id - the ID of the snapshot to restore.
 # Globals   : none
 # Returns   : none
 # Throws    :
@@ -2431,11 +2729,11 @@ _setSnapshotMetadataPublicFn () {
 ## . END _setSnapshotMetadataPublicFn }
 
 ## BEGIN _systemSnapshotPublicFn {
-# Summary   : _systemSnapshotPublicFn reason
+# Summary   : _systemSnapshotPublicFn _reason
 # Purpose   : Wraps _createSnapshotFn with safety checks and post-creation
 #             trimming. Used when the end-user creates a snapshot.
 # Example   : _systemSnapshotPublicFn 'user'
-# Arguments : reason - the snapshot reason to use when creating the snapshot.
+# Arguments : _reason - the snapshot reason to use when creating the snapshot.
 # Globals   : none
 # Outputs   : none
 # Returns   : none
