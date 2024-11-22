@@ -184,6 +184,7 @@ _runTestFn () {
         # shellcheck disable=SC2154
         _count_str="$(_t00MakeCountStrFn "${_assert_idx}" "${_assert_count}")";
         if [ ! -f "${_expect_file}" ]; then touch "${_expect_file}"; fi
+        sed -i 's?warn: Called without aguments from /bin/bash.*$?warn: Called without aguments from /bin/bash?g' "${_runFile}";
         _check_str="$(diff -r --brief "${_expect_file}" "${_runFile}" )";
         if [ -z "${_check_str}" ]; then
           _cm2EchoFn "  ok  : ${_count_str} ${_msg}";
