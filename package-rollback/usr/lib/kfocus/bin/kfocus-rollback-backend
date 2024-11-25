@@ -1035,7 +1035,6 @@ _deleteSnapshotFn () {
   _sect_str='Delete snapshot';
   _logSectBeginFn "${_sect_str}";
 
-  # Ensure target snapshot exists
   _target_snapshot_id="${1:-}";
   if [ -z "${_target_snapshot_id}" ]; then
     _logWrapFn 'err' "No snapshot ID provided to ${_sect_str}!";
@@ -1538,7 +1537,7 @@ _promptAllUsersFn () {
 # Throws    : none
 #
 _readMetadbFn () {
-  declare _group_str _key_str _err_msg;
+  declare _group_str _key_str _err_msg _result_str;
 
   _group_str="${1:-}";
   _key_str="${2:-}";
@@ -1567,13 +1566,22 @@ _readMetadbFn () {
   # Read failure here is almost impossible: It will succeed even if
   # the file cannot be created, or group or key is bad.
   # Only weird edge cases like perhaps a bad value can trigger exit.
-  "${_kreadconfig5Exe}" \
+  _result_str="$("${_kreadconfig5Exe}" \
     --file "${_snapshotMetaDb}" \
     --group "${_group_str}" \
-    --key "${_key_str}" || {
+    --key "${_key_str}")" || {
       _logWrapFn 'err' "${_err_msg} |${_group_str}:${_key_str}|";
       return 2;
     }
+
+  # TODO: Use more sophisticated defaults handling than this, ideally we'd
+  # have a master list of allowable keys and default values we could use here.
+  if [ "${_key_str}" = 'pinned' ] \
+    && [ -z "${_result_str}" ]; then
+    echo 'n';
+  else
+    echo "${_result_str}";
+  fi
 }
 ## . END private _readMetadbFn }
 
@@ -1708,9 +1716,10 @@ _trimSnapshotsFn () {
   done
 
   # Trim unpinned snapshots down to no more than 5
-  _unpinned_count="${#_unpinned_list}";
+  _unpinned_count="${#_unpinned_list[@]}";
+  _remove_count='0';
   if (( _unpinned_count > 5 )); then
-    _remove_count=$(( _unpinned_count - 5));
+    _remove_count=$(( _unpinned_count - 5 ));
     for (( _idx = 0; _idx < _remove_count; _idx++ )); do
       _snapshot_id="${_unpinned_list[_idx]}";
       _deleteSnapshotFn "${_snapshot_id}" || {
@@ -2740,7 +2749,7 @@ _setSnapshotMetadataPublicFn () {
   if [ "${_is_pinned}" = 'y' ]; then
     _was_pinned="$(_readMetadbFn "${_snapshot_id}" 'pinned')" \
       || _logExitFn 'err' '1' 'Could not determine if snapshot is pinned, metadb read failure!';
-    if [ "${_was_pinned}" = 'n' ]; then
+    if [ "${_was_pinned}" != 'y' ]; then
       _checkMainUnallocSpaceFn || {
         _promptAllUsersFn 'rollbackLowMainSpace' "${_lowDiskMsg}";
         _logExitFn 'err' '1' \
