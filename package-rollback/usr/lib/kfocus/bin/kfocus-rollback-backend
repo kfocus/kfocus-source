@@ -1829,6 +1829,33 @@ _writeMetadbFn () {
 ## . END PRIVATE FUNCTIONS ==================================================
 
 ## BEGIN PUBLIC FUNCTIONS ===================================================
+
+## BEGIN _aptSnapshotPublicFn
+# Summary   : _aptSnapshotPublicFn
+# Purpose   : Create and trim snapshot for apt hook. This function will never
+#             exit non-zero, so that apt package installation is not blocked.
+# Example   : _aptSnapshotPublicFn
+# Arguments : none
+# Globals   : ?
+# Outputs   : Log info
+# Returns   : none
+# Throws    : none
+#
+_aptSnapshotPublicFn () {
+  # If the system does not support automatic snapshotting, quietly exit 0
+  [ "${_btrfsStatus}" != 'SUPPORTED, AUTO' ] && _exitCleanFn;
+
+  # Request apt-style snapshot, quietly exit 0 on failure
+  # Note that this exits 0 if an apt snapshot cannot be created due to
+  # insufficient passage of time
+  _createSnapshotFn Apt                      || _exitCleanFn;
+
+  # Trim snapshots, quietly exit 0 on failure
+  _trimSnapshotsFn                           || _exitCleanFn;
+}
+## . END _aptSnapshotPublicFn
+
+
 ## BEGIN _btrfsDeepCleanPublicFn {
 # Summary   : _btrfsDeepCleanPublicFn
 # Purpose   : Runs an intensive BTRFS optimization routine. Currently, this
@@ -2919,6 +2946,7 @@ _mainFn () {
   fi
 
   case "${_mode_str}" in
+    'aptSnapshot')             _aptSnapshotPublicFn;;
     'btrfsDeepClean')          _btrfsDeepCleanPublicFn;;
     'btrfsMaintain')           _btrfsMaintainPublicFn;;
     'checkBootUnallocSpace')   _checkBootUnallocSpacePublicFn;;
