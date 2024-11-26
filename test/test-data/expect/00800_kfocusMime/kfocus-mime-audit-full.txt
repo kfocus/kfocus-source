@@ -1,31 +1,31 @@
 |app_id|cmd_str;with;args|sniff_str|pkg_str|descr|diagnostics
 |apt-rollback|konsole;-e;man;apt-rollback|apt-rollback|apt-rollback|AptRollback: Rollback System Packages|
 |audacity|audacity|audacity|audacity|Audacity: Edit Sound|
-|aws-cli|konsole;--hold;-e;aws;help|aws|awscli|AWS: Command Line DevOps Tool|Cannot find sniff_str 'aws'. Please install to audit.
-|azure-cli|konsole;--hold;-e;az;--help|az|azure-cli|Azure: Command Line DevOps Tool|Cannot find sniff_str 'az'. Please install to audit.
+|aws-cli|konsole;--hold;-e;aws;help|aws|awscli|AWS: Command Line DevOps Tool|
+  WARN: Found package appears incorrect: |snapd| NOT |awscli|
+|azure-cli|konsole;--hold;-e;az;--help|az|azure-cli|Azure: Command Line DevOps Tool|
 |backintime|backintime-qt|backintime-qt|backintime-qt|BackInTime: Backup Files|
-|blender|blender|blender|blender|Blender: 3D Modeller and Renderer|Cannot find sniff_str 'blender'. Please install to audit.
-|code|code|code|code|Microsoft Visual Studio Code: Development IDE|Cannot find sniff_str 'code'. Please install to audit.
-|cpupower-gui|cpupower-gui|cpupower-gui|cpupower-gui|CPU Power GUI: Manage CPU power|Cannot find sniff_str 'cpupower-gui'. Please install to audit.
+|blender|blender|blender|blender|Blender: 3D Modeller and Renderer|
+|code|code|code|code|Microsoft Visual Studio Code: Development IDE|
+|cpupower-gui|cpupower-gui|cpupower-gui|cpupower-gui|CPU Power GUI: Manage CPU power|
 |darktable|darktable|darktable|darktable||
-|discord|discord|discord|discord|Discord: Group Chat Messenger|Cannot find sniff_str 'discord'. Please install to audit.
 |dolphin|dolphin|dolphin|dolphin|Dolphin: Manage Files|
-|element-desktop|element-desktop|element-desktop|element-desktop|Element: Open-Source Instant Messaging|Cannot find sniff_str 'element-desktop'. Please install to audit.
 |elisa|elisa|elisa|elisa|Elisa Music Player|
 |ffmpeg|konsole;-e;man ffmpeg|ffmpeg|ffmpeg|Tools for Transcoding|
-|filezilla|filezilla|filezilla|filezilla|Filezilla: Transfer Files|Cannot find sniff_str 'filezilla'. Please install to audit.
+|filezilla|filezilla|filezilla|filezilla|Filezilla: Transfer Files|
 |firefox|firefox|firefox|firefox|Firefox: Browse the Web with Mozilla Firefox|
-|gcloud|konsole;-e;main;gcloud;help|gcloud|google-cloud-cli|GCS: Google Cloud Services CLI|Cannot find sniff_str 'gcloud'. Please install to audit.
-|ghb|ghb|ghb|handbrake|Handbrake: Rip and Transcode DVDs and Video|Cannot find sniff_str 'ghb'. Please install to audit.
-|git-cola|git-cola|git-cola|git-cola|Git-Cola: Explore Git Branches GUI|Cannot find sniff_str 'git-cola'. Please install to audit.
+|gcloud|konsole;-e;main;gcloud;help|gcloud|google-cloud-cli|GCS: Google Cloud Services CLI|
+|ghb|ghb|ghb|handbrake|Handbrake: Rip and Transcode DVDs and Video|
+|git-cola|git-cola|git-cola|git-cola|Git-Cola: Explore Git Branches GUI|
 |gimp|gimp|gimp|gimp|Gimp: Edit and Create Raster Images|
 |google-chrome|google-chrome|google-chrome|google-chrome-stable|Chrome: Browse the Web with Google Chrome|
 |google-hangouts|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://meet.google.com|/usr/lib/kfocus/bin/kfocus-web-launcher|kfocus-main|Google Meet|
-|gvim|gvim|gvim|vim-gtk3|Vim GUI: Edit Text With Extreme Power|Cannot find sniff_str 'gvim'. Please install to audit.
+|gvim|gvim|gvim|vim-gtk3|Vim GUI: Edit Text With Extreme Power|
 |gwenview|gwenview|gwenview|gwenview|Gwenview: Image and Document Viewer|
 |inkscape|inkscape|inkscape|inkscape|Inkscape: Edit Scalable Vector Graphics|
-|insync|insync;start|insync|insync-dolphin|Insync: Sync Google Drive and Others|Cannot find sniff_str 'insync'. Please install to audit.
-|jekyll|konsole;-e;man jekyll|jekyll|jekyll|Jekyll: Create Static Web Sites|Cannot find sniff_str 'jekyll'. Please install to audit.
+|insync|insync;start|insync|insync-dolphin|Insync: Sync Google Drive and Others|
+  WARN: Found package appears incorrect: |insync| NOT |insync-dolphin|
+|jekyll|konsole;-e;man jekyll|jekyll|jekyll|Jekyll: Create Static Web Sites|
 |jetbrains-toolbox-plain|jetbrains-toolbox|jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs|ERROR: Trouble finding installed package for /usr/bin/jetbrains-toolbox
 |kate|kate|kate|kate|Kate: Edit Text with Power|
 |kde-connect|kdeconnect-settings|kdeconnect-settings|kdeconnect|KDE Connect: Connect Smartphones to Desktop|
@@ -42,8 +42,6 @@
 |kfocus_help|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://kfocus.org/wf/help.html|/usr/lib/kfocus/bin/kfocus-web-launcher|kfocus-main|KFocus Help: Help and FAQs|
 |kfocus_kb_color|kfocus-kb-color|kfocus-kb-color|kfocus-kb-color|Keyboard Color: Set color and intensity|
 |kfocus_kclean|/usr/lib/kfocus/bin/kfocus-kclean;-f|/usr/lib/kfocus/bin/kfocus-kclean|kfocus-main|Kernel Cleaner: Clean up old kernels|
-|kfocus_passphrase_changer|/usr/lib/kfocus/bin/kfocus-firstrun-bin;-f;diskPassphraseItem|/usr/lib/kfocus/bin/kfocus-firstrun-bin|kfocus-main|Passphrase Changer: Change disk encryption passphrases|
-  WARN: Found package appears incorrect: |kfocus-firstrun-bin| NOT |kfocus-main|
 |kfocus_pick_gcc|kfocus-pick-gcc|kfocus-pick-gcc|kfocus-pick-gcc|KFocus Pick GCC: Select default compiler toolchain|
 |kfocus_power|kfocus-power|kfocus-power|kfocus-power|KFocus Power: Control CPU Power|
   WARN: Found package appears incorrect: |kfocus-power-bin| NOT |kfocus-power|
@@ -53,9 +51,9 @@
 |kfocus_wizard|/usr/lib/kfocus/bin/kfocus-firstrun-bin;-f|/usr/lib/kfocus/bin/kfocus-firstrun-bin|kfocus-firstrun-bin|Welcome Wizard: Configure your apps|
 |kleopatra|kleopatra|kleopatra|kleopatra|Kleopatra: Unified Crypto GUI|
 |konsole|konsole|konsole|konsole|Konsole: Use an X Terminal Emulator|
-|krita|krita|krita|krita|Krita: Raster Image Editor|Cannot find sniff_str 'krita'. Please install to audit.
+|krita|krita|krita|krita|Krita: Raster Image Editor|
 |kruler|kruler|kruler|kruler|Kruler: Measure Screen Objects|
-|kubectl|konsole;--hold;-e;kubectl;help|kubectl|kubectl|Kubernetes: Command Line Container Management|Cannot find sniff_str 'kubectl'. Please install to audit.
+|kubectl|konsole;--hold;-e;kubectl;help|kubectl|kubectl|Kubernetes: Command Line Container Management|
 |libreoffice-base|libreoffice;--base|libreoffice|libreoffice-base|LibreOffice Database: Connect Databases|
   WARN: Found package appears incorrect: |libreoffice-common| NOT |libreoffice-base|
 |libreoffice-calc|libreoffice;--calc|libreoffice|libreoffice-calc|LibreOffice Calc: Create and Edit Spreadsheets|
@@ -66,9 +64,9 @@
   WARN: Found package appears incorrect: |libreoffice-common| NOT |libreoffice-impress|
 |libreoffice-writer|libreoffice;--writer|libreoffice|libreoffice-writer|LibreOffice Writer: Word Processor|
   WARN: Found package appears incorrect: |libreoffice-common| NOT |libreoffice-writer|
-|lutris|lutris|lutris|lutris|Lutris: Play Games With Wine|Cannot find sniff_str 'lutris'. Please install to audit.
+|lutris|lutris|lutris|lutris|Lutris: Play Games With Wine|
 |meld|meld|meld|meld|Meld: Visual Difference and Merge Tool|
-|minecraft-launcher|minecraft-launcher|minecraft-launcher|minecraft-launcher|Minecraft: Launch Minecraft|Cannot find sniff_str 'minecraft-launcher'. Please install to audit.
+|minecraft-launcher|minecraft-launcher|minecraft-launcher|minecraft-launcher|Minecraft: Launch Minecraft|
 |nvidia-settings|nvidia-settings|nvidia-settings|nvidia-settings|Nvidia Settings: Configure Nvidia GPUs|
 |obs|obs|obs|obs-studio|OBS Studio: Record and Stream Live Video|
 |okular|okular|okular|okular|Okular: View PDFs and Other Documents|
@@ -78,14 +76,16 @@
 |ppa-purge|konsole;-e;man ppa-purge|ppa-purge|ppa-purge|PPA Purge: Purge PPAs|
 |rar|konsole;-e;man rar|rar|rar|Rar: Create .rar Archive Files|
 |simplescreenrecorder|simplescreenrecorder|simplescreenrecorder|simplescreenrecorder|SimpleScreenRecorder: Record Your Screen with Powerful Options|
-|skype|skype|skype|skype|Skype: Video Call Platform|Cannot find sniff_str 'skype'. Please install to audit.
-|slack|slack|slack|slack-desktop|Slack: Team Messaging|Cannot find sniff_str 'slack'. Please install to audit.
+|skype|skype|skype|skype|Skype: Video Call Platform|
+  WARN: Found package appears incorrect: |snapd| NOT |skype|
+|slack|slack|slack|slack-desktop|Slack: Team Messaging|
 |spectacle|spectacle|spectacle|kde-spectacle|Spectacle: Take Screenshots|
 |steam|steam|steam|steam|Steam: Manage and Play Games|
   WARN: Found package appears incorrect: |steam-installer| NOT |steam|
-|sublime-text|subl|subl|sublime-text|Sublime Text editor|Cannot find sniff_str 'subl'. Please install to audit.
+|sublime-text|subl|subl|sublime-text|Sublime Text editor|
 |systemsettings5|systemsettings5|systemsettings5|systemsettings|System Settings: Adjust Your System|
-|telegram-desktop|telegram-desktop|telegram-desktop|telegram-desktop|Telegram: Encrypted Instant Messenger|Cannot find sniff_str 'telegram-desktop'. Please install to audit.
+|telegram-desktop|telegram-desktop|telegram-desktop|telegram-desktop|Telegram: Encrypted Instant Messenger|
+  WARN: Found package appears incorrect: |snapd| NOT |telegram-desktop|
 |thunderbird|thunderbird|thunderbird|thunderbird|Thunderbird: Email and Calendar|
 |vlc|vlc|vlc|vlc|VLC: Play and Stream Video and Multimedia|
   WARN: Found package appears incorrect: |vlc-bin| NOT |vlc|
