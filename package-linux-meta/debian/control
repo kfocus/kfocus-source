@@ -5,12 +5,12 @@ Maintainer: Ubuntu Kernel Team <kernel-team@lists.ubuntu.com>
 Standards-Version: 3.9.8
 Build-Depends: dpkg (>= 1.13.19), debhelper (>= 11), gawk
 Build-Depends-Arch:
- linux-kfocus-headers-6.8.0-36,
- linux-headers-6.8.0-36-kfocus,
+ linux-kfocus-headers-6.8.0-45,
+ linux-headers-6.8.0-45-kfocus,
 Vcs-Git: git://git.launchpad.net/~ubuntu-kernel/ubuntu/+source/linux-meta/+git/noble
 
 Package: linux-headers-kfocus-24.04-kfocus
-Architecture: amd64 armhf arm64 ppc64el s390x
+Architecture: amd64
 Section: kernel
 Replaces: linux-headers-kfocus-24.04, linux-headers-generic-hwe-24.04-kfocus
 Conflicts: linux-headers-kfocus-24.04, linux-headers-generic-hwe-24.04-kfocus
@@ -20,23 +20,23 @@ Description: KFocus Linux kernel headers
  available.
 
 Package: linux-image-kfocus-24.04-kfocus
-Architecture: amd64 armhf arm64 ppc64el s390x
+Architecture: amd64
 Section: kernel
-Provides: ${dkms:v4l2loopback-modules} ${dkms:zfs-modules} ${dkms:virtualbox-guest-modules} ${dkms:wireguard-linux-compat-modules}
+Provides: ${dkms:v4l2loopback-modules} ${dkms:zfs-modules} ${dkms:ivsc-modules} ${dkms:virtualbox-guest-modules} ${dkms:wireguard-linux-compat-modules}
 Replaces: linux-image-kfocus-24.04, linux-image-generic-hwe-24.04-kfocus
 Conflicts: linux-image-kfocus-24.04, linux-image-generic-hwe-24.04-kfocus
-Depends: ${misc:Depends}, linux-image-unsigned-${kernel-abi-version}-kfocus, linux-modules-extra-${kernel-abi-version}-kfocus [amd64 arm64 ppc64el s390x], linux-firmware [amd64 armhf arm64 ppc64el], intel-microcode [amd64], amd64-microcode [amd64]
+Depends: ${misc:Depends}, linux-image-unsigned-${kernel-abi-version}-kfocus, linux-firmware [amd64 armhf arm64 ppc64el], intel-microcode [amd64], amd64-microcode [amd64]
 Recommends: thermald [amd64]
 Description: KFocus Linux kernel image
  This package will always depend on the latest KFocus kernel image
  available.
 
 Package: linux-image-uc-kfocus-24.04-kfocus
-Architecture: amd64 arm64
+Architecture: amd64
 Section: kernel
 Replaces: linux-image-uc-kfocus-24.04, linux-image-uc-generic-hwe-24.04-kfocus
 Conflicts: linux-image-uc-kfocus-24.04, linux-image-uc-generic-hwe-24.04-kfocus
-Depends: ${misc:Depends}, linux-image-uc-${kernel-abi-version}-kfocus, linux-modules-extra-${kernel-abi-version}-kfocus, linux-firmware, firmware-sof-signed [amd64], wireless-regdb
+Depends: ${misc:Depends}, linux-image-uc-${kernel-abi-version}-kfocus, linux-firmware, firmware-sof-signed [amd64], wireless-regdb
 Description: KFocus Linux kernel image for Ubuntu Core
  This package will always depend on the latest KFocus kernel image
  available.
@@ -45,7 +45,7 @@ Description: KFocus Linux kernel image for Ubuntu Core
  suitable to be used directly on classic systems.
 
 Package: linux-tools-kfocus-24.04-kfocus
-Architecture: amd64 armhf arm64 ppc64el s390x
+Architecture: amd64
 Section: kernel
 Provides: linux-tools
 Replaces: linux-tools-kfocus-24.04, linux-tools-generic-hwe-24.04-kfocus
@@ -55,19 +55,8 @@ Description: KFocus Linux kernel tools
  This package will always depend on the latest KFocus kernel tools
  available.
 
-Package: linux-cloud-tools-kfocus-24.04-kfocus
-Architecture: amd64
-Section: kernel
-Provides: linux-cloud-tools
-Replaces: linux-cloud-tools-kfocus-24.04, linux-cloud-tools-generic-hwe-24.04-kfocus
-Conflicts: linux-cloud-tools-kfocus-24.04, linux-cloud-tools-generic-hwe-24.04-kfocus
-Depends: ${misc:Depends}, linux-cloud-tools-${kernel-abi-version}-kfocus
-Description: KFocus Linux kernel cloud tools
- This package will always depend on the latest KFocus kernel cloud tools
- available.
-
 Package: linux-kfocus-24.04-kfocus
-Architecture: amd64 armhf arm64 ppc64el s390x
+Architecture: amd64
 Section: kernel
 Provides: kernel-testing--linux-kfocus--full--kfocus, kernel-testing--linux-kfocus--full--preferred,
 Replaces: linux-kfocus-24.04, linux-generic-hwe-24.04-kfocus
