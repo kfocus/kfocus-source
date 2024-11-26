@@ -961,23 +961,25 @@ _getBtrfsStatusFn () {
 ## . END _getBtrfsStatusFn }
 
 ## BEGIN Define error and exit handling {
-_chkSetFlockFn () {
-  # Create the lock dir if possible. If this fails, it's almost certainly
-  # because something already created the lock dir, so we can ignore the
-  # failure. No checking is done in advance because it wouldn't make any
-  # functional difference and wouldn't be reliable because of an unavoidable
-  # time-of-check-to-time-of-use condition.
-  install -m 777 -d "${_lockDir}" 2>/dev/null || true
+_checkSetFlockFn () {
+  _lockDir="$(_rollbackSetFn 'checkEchoLockDir')" || {
+    _cm2ErrStrFn 'Could not get lock directory';
+    return 2;
+  }
+  _lockFile="${_lockDir}/kfocus-rollback-frontend.lock";
   if ! [ -e "${_lockFile}" ]; then
-    install -m 666 /dev/null "${_lockFile}";
+    install -m 666 /dev/null "${_lockFile}" || {
+      _cm2ErrStrFn "Could not install |${_lockFile}|";
+      return 2;
+    }
   fi
   exec 211>"${_lockFile}" || {
-    echo 'Lock file permission denied';
-    return 21;
+    _cm2ErrStrFn 'Lock file permission denied';
+    return 2;
   };
   if ! flock -n -e 211; then
-    1>&2 echo "Cannot get lock on ${_lockFile}";
-    return 20;
+    _cm2ErrStrFn "Cannot get lock on ${_lockFile}";
+    return 1;
   fi
 }
 ## . END Define error and exit handling }
@@ -1000,7 +1002,7 @@ _mainFn () {
     _restored_snapshot_reason _restored_snapshot_disp_id \
     _pin_status_str _pin_other_status_str _new_is_pinned;
 
-  _chkSetFlockFn || exit 1;
+  _checkSetFlockFn || exit;
 
   _arg_str="${1:-}";
   _btrfs_status_str="$(_getBtrfsStatusFn)";
@@ -1462,7 +1464,7 @@ _mainFn () {
 
 ## BEGIN Declare and assign global vars {
 declare _binName _binDir _baseName _baseDir _libTable _assignList \
-  _btrfsExe _lockDir _lockFile _userName \
+  _btrfsExe _userName _lockDir _lockFile \
   _rollbackBackendExe _btrfsOptimizeExe _escExe _winTitle _warnStr \
   _chooseModeMsg _chooseRestoreSnapshotMsg _chooseRestoreModeMsg \
   _totalRestoreConfirmMsg _rollbackSuccessfulMsg \
@@ -1476,11 +1478,11 @@ declare _binName _binDir _baseName _baseDir _libTable _assignList \
   _editFailedMsg _criticalErrorMsg _operationCancelledMsg _lowDiskMsg \
   _lowBootMsg _rollbackBinExe _rollbackSetExe;
 
+_lockDir='';
+_lockFile='';
 _userName="$(id -un)";
 _warnStr='<b style="color:#da4453">';
 _winTitle='System Rollback';
-_lockDir='/tmp/kfocus-rollback';
-_lockFile="${_lockDir}/kfocus-rollback-frontend.lock";
 ## . END Declare and assign global vars }
 
 ## BEGIN Run mainFn when script is NOT sourced {

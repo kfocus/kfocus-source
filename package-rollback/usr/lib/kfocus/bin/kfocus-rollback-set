@@ -125,6 +125,7 @@ _mainFn () {
   # trimSnapshots
 
   case "${_mode_str}" in
+    'checkEchoLockDir')        _dispatchFn 'checkEchoLockDir';;
     'checkBootUnallocSpace')   _dispatchFn 'checkBootUnallocSpace';;
     'checkMainUnallocSpace')   _dispatchFn 'checkMainUnallocSpace';;
     'getBaseSnapshotMetadata') _dispatchFn 'getBaseSnapshotMetadata' "${1}";;

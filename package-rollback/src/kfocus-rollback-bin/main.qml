@@ -934,9 +934,10 @@ Kirigami.ApplicationWindow {
                     id          : calculateSnapshotWaitView
                     visible     : false
                     headerText  : 'Calculating snapshot sizes...'
-                    description : 'This generally takes about 30 seconds, '
-                      + 'but can take longer depending on how much data you '
-                      + 'have saved.'
+                    description : 'This calculation usually requires '
+                      + '10-20 seconds per snapshot. Therefore, if you have '
+                      + '6 snapshots, the calculation may require 60-120 '
+                      + 'seconds to finish.'
                 }
 
                 WaitScreenItem {

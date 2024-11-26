@@ -575,8 +575,24 @@ _checkRootFn () {
 }
 ## . END private _checkRootFn }
 
+## BEGIN private AND public _checkEchoLockDirFn {
+_checkEchoLockDirFn () {
+  if ! mkdir -p "${_lockDir}"; then
+    _logWrapFn 'err' "Could not create |${_lockDir}|";
+    echo '';
+    return 2;
+  fi
+  if ! chmod 0777 "${_lockDir}"; then
+    _logWrapFn 'err' "Could not chmod 0777 on |${_lockDir}|";
+    echo '';
+    return 2;
+  fi
+  echo "${_lockDir}";
+}
+## . END private AND public _checkEchoLockDirFn }
+
 ## BEGIN private _checkSetFlockFn {
-# Summary   : _checkSetFlockFn;
+# Summary   : _chkSetFlockFn;
 # Purpose   : Set file lock for this executable. Use this to prevent multiple
 #             instances from running.
 # Example   : while ! _checkSetFlockFn; sleep 1; done
@@ -590,12 +606,11 @@ _checkRootFn () {
 # Throws    : none
 #
 _checkSetFlockFn () {
-  # Create the lock dir if possible. If this fails, it's almost certainly
-  # because something already created the lock dir, so we can ignore the
-  # failure. No checking is done in advance because it wouldn't make any
-  # functional difference and wouldn't be reliable because of an unavoidable
-  # time-of-check-to-time-of-use condition.
-  install -m 777 -d "${_lockDir}" 2>/dev/null || true
+  # If needed, create and set permissions on _lockDir
+  _checkEchoLockDirFn > /dev/null || {
+    _logWrapFn 'err' 'Trouble creating lock dir';
+    return 2;
+  }
   if ! [ -e "${_lockFile}" ]; then
     install -m 666 /dev/null "${_lockFile}" || {
       _logWrapFn 'err' "Could not install |${_lockFile}|!";
@@ -2367,7 +2382,7 @@ _makeSnapshotDispIdPublicFn () {
 #             to the 'SUPPORTED, MANUAL' state.
 # Example   : _prepareSystemPublicFn
 # Arguments : none
-# Globals   : _btrfsStatus, _rb2BootDir, _rb2MainDir, _rb2BootSNapshotDir,
+# Globals   : _btrfsStatus, _rb2BootDir, _rb2MainDir, _rb2BootSnapshotDir,
 #             _rb2MainSnapshotDir
 # Outputs   : Log info
 # Returns   : none
@@ -2527,7 +2542,7 @@ _prepareSystemPublicFn () {
 #   2:
 #     - Failed to create a pre-rollback snapshot,
 #     - Failed to relocate, restore, or sync a BTRFS subvolume,
-#     - Failted to write the post-restore flag file, or
+#     - Failed to write the post-restore flag file, or
 #     - Failed to trim snapshots after the restore process.
 #
 _restoreSnapshotPublicFn () {
@@ -2895,6 +2910,7 @@ _mainFn () {
     'btrfsDeepClean')          _btrfsDeepCleanPublicFn;;
     'btrfsMaintain')           _btrfsMaintainPublicFn;;
     'checkBootUnallocSpace')   _checkBootUnallocSpacePublicFn;;
+    'checkEchoLockDir')        _checkEchoLockDirFn;;
     'checkMainUnallocSpace')   _checkMainUnallocSpacePublicFn;;
     'clearRestore')            _clearRestorePublicFn;;
     'compareState')            _compareStatePublicFn         "$@";;
@@ -2929,23 +2945,22 @@ _mainFn () {
 
 ## BEGIN Declare and assign global vars {
 declare _binName _binDir _baseName _baseDir \
-  _lockFile _btrfsStatus _snapshotMetaDb \
+  _lockDir _lockFile _btrfsStatus _snapshotMetaDb \
   _libTable _browStr _erowStr _tableStr _prepareFailMsg \
   _lowDiskMsg _lowBootMsg _inconsistentMsg _btrfsExe _btduExe _filefragExe \
   _btrfsBalanceExe _kwriteconfig5Exe _kreadconfig5Exe _diffExe \
   _legacySnapshotReasonFile;
 
 _btrfsStatus='';
-
+_legacySnapshotReasonFile='/var/lib/kfocus/rollback_snapshot_reason';
 # WARNING: Do NOT change the name of the lock file no matter what the name of
 # this script changes to. If kfocus-rollback-set from Rollback v1 is running
 # when Rollback v2 is installed, and then kfocus-rollback-backend from
 # Rollback v2 is launched before the v1 process terminates, they will run
 # simultaneously and potentially cause data loss.
+#
 _lockDir='/tmp/kfocus-rollback';
-_lockFile="${_lockDir}/kfocus-rollback-set.lock"; # See WARNING
-
-_legacySnapshotReasonFile='/var/lib/kfocus/rollback_snapshot_reason';
+_lockFile="${_lockDir}/kfocus-rollback-set.lock";
 ## . END Declare and assign global vars }
 
 ## BEGIN Run mainFn when script is NOT sourced {
