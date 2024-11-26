@@ -272,7 +272,6 @@ _balanceMainFn () {
       _logWrapFn 'err' 'Failed to save lastFreeInt to metadb!';
       return 1;
     }
-
     _logWrapFn 'notice' 'Main filesystem balanced.';
   else
     _logWrapFn 'notice' \
@@ -957,7 +956,7 @@ _deleteAllSnapshotsFn () {
 # Throws    : none
 #
 _deleteSnapshotMetaFn () {
-  declare _return_code _snapshot_id _key_list _key _msg;
+  declare _return_code _snapshot_id _key _msg;
 
   _snapshot_id="${1:-}";
   if [ -z "${_snapshot_id}" ]; then
@@ -965,12 +964,10 @@ _deleteSnapshotMetaFn () {
     return 0;
   fi
 
-  _key_list=( 'name' 'desc' 'pinned' 'reason' );
   _return_code=0;
-  for _key in "${_key_list[@]}"; do
-    if [ "${_key}" = '' ]; then continue; fi
+  for _key in "${_metaSnapshotKeyList[@]}"; do
     _writeMetadbFn "${_snapshot_id}" "${_key}" '' || {
-      _msg="Failed to deleted key |${_key}| of snapshot |${_snapshot_id}|";
+      _msg="Failed to deleted snapshot:key |${_snapshot_id}:${_key}|";
       _logWrapFn 'err' "${_msg}";
       _return_code=1;
     }
@@ -1343,6 +1340,7 @@ _getSnapshotReasonFn () {
 
   _snapshot_id="${1:-}";
   _snapshot_reason_file="${_rb2MainSnapshotDir}/${_snapshot_id}";
+  # _legacySnapshotReasonFile has a leading slash
   _snapshot_reason_file+="${_legacySnapshotReasonFile}";
 
   if [ -z "${_snapshot_id}" ]; then
@@ -1578,6 +1576,12 @@ _readMetadbFn () {
     return 2;
   fi
 
+  # shellcheck disable=SC2076
+  if ! [[ " ${_metaFullKeyList[*]} " =~ " ${_key_str} " ]]; then
+    _logWrapFn 'err' "${_err_msg} Key |${_key_str}| is not supported";
+    return 2;
+  fi
+
   # Read failure here is almost impossible: It will succeed even if
   # the file cannot be created, or group or key is bad.
   # Only weird edge cases like perhaps a bad value can trigger exit.
@@ -1645,8 +1649,8 @@ _scrubSnapshotsFn () {
   if (( ${#_main_snapshot_list[@]} > 0 )) \
    && [ -n "${_main_snapshot_list[0]}" ]; then
     for _snapshot_id in "${_main_snapshot_list[@]}"; do
-      if ! [[ " ${_boot_snapshot_list[*]} " \
-        =~ [[:space:]]${_snapshot_id}[[:space:]] ]]; then
+      # shellcheck disable=SC2076
+      if ! [[ " ${_boot_snapshot_list[*]} " =~ " ${_snapshot_id} " ]]; then
         _deleteSnapshotDirsFn "${_snapshot_id}" || {
           _logWrapFn 'alert' \
             "Failed to delete unpaired main snapshot |${_snapshot_id}|!";
@@ -1665,8 +1669,8 @@ _scrubSnapshotsFn () {
   if (( ${#_boot_snapshot_list[@]} > 0 )) \
     && [ -n "${_boot_snapshot_list[0]}" ]; then
     for _snapshot_id in "${_boot_snapshot_list[@]}"; do
-      if ! [[ " ${_main_snapshot_list[*]} " \
-        =~ [[:space:]]${_snapshot_id}[[:space:]] ]]; then
+      # shellcheck disable=SC2076
+      if ! [[ " ${_main_snapshot_list[*]} " =~ " ${_snapshot_id} " ]]; then
         _deleteSnapshotDirsFn "${_snapshot_id}" || {
           _logWrapFn 'alert' \
             "Failed to delete unpaired main snapshot |${_snapshot_id}|!";
@@ -1790,6 +1794,12 @@ _writeMetadbFn () {
 
   if ! _checkCreateMetadbFn; then
     _logWrapFn 'err' "${_err_msg} Metadb is not a valid file.";
+    return 2;
+  fi
+
+  # shellcheck disable=SC2076
+  if ! [[ " ${_metaFullKeyList[*]} " =~ " ${_key_str} " ]]; then
+    _logWrapFn 'err' "${_err_msg} Key |${_key_str}| is not supported";
     return 2;
   fi
 
@@ -2270,32 +2280,34 @@ _getSnapshotListStrPublicFn () {
 #     - Failed to calculate snapshot size.
 #
 _getSnapshotMetadataPublicFn () {
-  declare _snapshot_id _mode _item _metadata_str _snapshot_reason_str \
-    _snapshot_size_report;
+  declare _snapshot_id _mode _err_msg _key _metadata_str \
+    _snapshot_reason_str _snapshot_size_report;
 
   _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
     'BTRFS status is incompatible with getting snapshot metadata!';
 
   _snapshot_id="${1:-}";
   _mode="${2:-}";
+  _err_msg="Issue with snapshot |${_snapshot_id}|: "
+
   [ -z "${_snapshot_id}" ] && _logExitFn 'err' '1' 'No snapshot ID provided!';
   [ "${_mode}" != 'base' ] && [ "${_mode}" != 'full' ] \
     && _logExitFn 'err' '1' 'No mode or invalid mode provided!';
   [ -d "${_rb2MainSnapshotDir}/${_snapshot_id}" ] \
-    || _logExitFn 'err' '1' 'The specified snapshot does not exist!'
+    || _logExitFn 'err' '1' "${_err_msg} Snapshot does not exist!";
 
   # Return snapshot name, description, pin status from snapshot metadb
-  for _item in 'name' 'desc' 'pinned'; do
-    _metadata_str="$(_readMetadbFn "${_snapshot_id}" "${_item}")" \
-      || _logExitFn 'err' '1' 'Metadb read failure, could not get snapshot metadata!';
+  for _key in 'name' 'desc' 'pinned'; do
+    _metadata_str="$(_readMetadbFn "${_snapshot_id}" "${_key}")" \
+      || _logExitFn 'err' '1' "${_err_msg} Could not read key |${_key}|!";
     echo "${_metadata_str}";
   done
 
   # Return human-readable snapshot reason
-  _snapshot_reason_str="$(_getSnapshotReasonFn "${_snapshot_id}" \
-    || _logExitFn 'err' '1' 'Could not get snapshot metadata, failed to get snapshot reason!')";
+  _snapshot_reason_str="$(_getSnapshotReasonFn "${_snapshot_id}")" \
+    || _logExitFn 'err' '1' "${_err_msg} Could not read reason!";
   if [ "${_snapshot_reason_str}" = 'Unknown (no reason found)' ]; then
-    _logWrapFn 'warn' "Missing metadata entry for snapshot |${_snapshot_id}| in |${_snapshotMetaDb}|";
+    _logWrapFn 'warn' "${_err_msg} No reason found!";
   fi
   echo "${_snapshot_reason_str}";
 
@@ -2303,7 +2315,7 @@ _getSnapshotMetadataPublicFn () {
   if [ "${_mode}" = 'full' ]; then
     _snapshot_size_report="$("${_btrfsExe}" 'filesystem' 'du' '--raw' '-s' \
       "${_rb2MainSnapshotDir}/${_snapshot_id}")" \
-      || _logExitFn 'alert' '1' 'Could not calculate snapshot size!';
+      || _logExitFn 'alert' '1' "${_err_msg} Could not calc size!";
     tail -n1 <<< "${_snapshot_size_report}" | awk '{ print $2 }';
   else
     echo '';
@@ -2945,8 +2957,8 @@ _mainFn () {
 
 ## BEGIN Declare and assign global vars {
 declare _binName _binDir _baseName _baseDir \
-  _lockDir _lockFile _btrfsStatus _snapshotMetaDb \
-  _libTable _browStr _erowStr _tableStr _prepareFailMsg \
+  _btrfsStatus _lockDir _lockFile _metaGlobalKeyList _metaSnapshotKeyList \
+  _snapshotMetaDb _libTable _browStr _erowStr _tableStr _prepareFailMsg \
   _lowDiskMsg _lowBootMsg _inconsistentMsg _btrfsExe _btduExe _filefragExe \
   _btrfsBalanceExe _kwriteconfig5Exe _kreadconfig5Exe _diffExe \
   _legacySnapshotReasonFile;
@@ -2961,6 +2973,10 @@ _legacySnapshotReasonFile='/var/lib/kfocus/rollback_snapshot_reason';
 #
 _lockDir='/tmp/kfocus-rollback';
 _lockFile="${_lockDir}/kfocus-rollback-set.lock";
+_metaGlobalKeyList=( 'lastFreeInt' 'lastUnallocInt' 'manualSwitchState' );
+_metaSnapshotKeyList=( 'desc' 'name' 'pinned' 'reason' );
+
+_metaFullKeyList=( "${_metaGlobalKeyList[@]}" "${_metaSnapshotKeyList[@]}" );
 ## . END Declare and assign global vars }
 
 ## BEGIN Run mainFn when script is NOT sourced {
