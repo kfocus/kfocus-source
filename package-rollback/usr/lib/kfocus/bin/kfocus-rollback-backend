@@ -1406,7 +1406,8 @@ _getSnapshotReasonFn () {
 # Throws    : none
 #
 _logExitFn () {
-  declare _log_level _exit_int _msg _do_call_stack _stack_str
+  declare _log_level _exit_int _msg _do_call_stack _stack_str \
+    _parent_proc_str;
 
   _log_level="${1:-}";
   _exit_int="$(_cm2EchoIntFn "${2:-0}")";
@@ -1426,7 +1427,9 @@ _logExitFn () {
 
   if [ "${_do_call_stack}" = 'y' ]; then
     _stack_str="$(_cm2EchoStackFn 2>&1)";
+    _parent_proc_str="$(ps -p "${PPID}" -o 'args=')";
     _logWrapFn "${_log_level}" "Call Stack: |${_stack_str}|";
+    _logWrapFn "${_log_level}" "Parent Process: |${_parent_proc_str}|";
   fi
 
   _exitCleanFn "${_exit_int}";

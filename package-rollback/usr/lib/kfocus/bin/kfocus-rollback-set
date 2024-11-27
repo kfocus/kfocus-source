@@ -73,7 +73,7 @@ _loadLibTableFn () {
 
 ## BEGIN _dispatchFn {
 _dispatchFn () {
-  declare _mode_str _arg_str;
+  declare _mode_str _arg_str _exit_code _parent_proc_str;
 
   _mode_str="${1:-}";
   _arg_str="${2:-}";
@@ -87,16 +87,24 @@ _dispatchFn () {
 
   case "${_mode_str}" in
     'getBaseSnapshotMetadata')
-      "${_rollbackBackendExe}" "${_mode_str}" "${_arg_str}"; exit;;
+      "${_rollbackBackendExe}" "${_mode_str}" "${_arg_str}";;
     'getFullSnapshotMetadata')
-      "${_rollbackBackendExe}" "${_mode_str}" "${_arg_str}"; exit;;
+      "${_rollbackBackendExe}" "${_mode_str}" "${_arg_str}";;
     'getSnapshotReason')
-      "${_rollbackBackendExe}" "${_mode_str}" "${_arg_str}"; exit;;
+      "${_rollbackBackendExe}" "${_mode_str}" "${_arg_str}";;
     'makeSnapshotDispId')
-      "${_rollbackBackendExe}" "${_mode_str}" "${_arg_str}"; exit;;
+      "${_rollbackBackendExe}" "${_mode_str}" "${_arg_str}";;
     *)
-      "${_rollbackBackendExe}" "${_mode_str}"; exit;;
+      "${_rollbackBackendExe}" "${_mode_str}";;
   esac
+
+  _exit_code="$?";
+  if [ "${_exit_code}" != '0' ]; then
+    _parent_proc_str="$(ps -p "${PPID}" -o 'args=')";
+    _cm2LogFn 'err' "Backend exited non-zero, parent process of set exe: |${_parent_proc_str}|";
+  fi
+
+  exit "${_exit_code}";
 }
 ## . END _dispatchFn }
 
@@ -173,6 +181,9 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     _cm2ErrStrFn 'Could not assign variables';
     exit 1;
   fi
+
+  _cm2SetLogLevelFn 'notice';
+  _cm2SetLogTagFn "${_baseName}";
 
   _mainFn "$@";
 fi

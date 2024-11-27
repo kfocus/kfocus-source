@@ -291,7 +291,7 @@ _echoBootMegsFn() {
 
   if [ "${_isBtrfsYn}" = 'y' ]; then
     if [ "${_arg_str}" = 'avail' ]; then
-      _int="$("${_rollbackBackendExe}" 'getBootUnallocSpace')";
+      _int="$("${_escExe}" "${_rollbackSetExe}" 'getBootUnallocSpace')";
       (( _int = _int / 1048576 ));
       printf '%d' "${_int}";
     elif [ "${_arg_str}" = 'size' ]; then
@@ -472,8 +472,8 @@ _mainFn() {
   ## . End Process Options }
 
   ## Begin Detect BTRFS {
-  if [ -n "${_rollbackBackendExe}" ]; then
-    _btrfs_status="$("${_rollbackBackendExe}" 'getBtrfsStatus')"
+  if [ -n "${_rollbackSetExe}" ]; then
+    _btrfs_status="$("${_escExe}" "${_rollbackSetExe}" 'getBtrfsStatus')"
     if [ "${_btrfs_status}" = 'SUPPORTED, AUTO' ] \
       || [ "${_btrfs_status}" = 'SUPPORTED, MANUAL' ];
       then _isBtrfsYn='y';
@@ -841,7 +841,7 @@ declare _binName _binDir _baseDir _baseName _cStr \
   _doDebug _escExe _aptListStr _kversExtraKeepStr _preferredMetaPkg \
   _kversFullPrefStr _kversFullRunStr _kc2RtestDebugStr \
   _isBtrfsYn _divisorInt _kernelUnitSizeInt _kernelUnitSizeBtrfsInt \
-  _lowDiskSizeInt _multiInt _assignList _btrfsExe _rollbackBackendExe \
+  _lowDiskSizeInt _multiInt _assignList _btrfsExe _rollbackSetExe \
   _kcleanSetExe;
 
 _aptListStr='';
@@ -883,7 +883,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _assignList=(
     '_btrfsExe|/usr/bin/btrfs'
     "_kcleanSetExe|${_binDir}/kfocus-kclean-set"
-    "_rollbackBackendExe|${_binDir}/kfocus-rollback-backend||optional"
+    "_rollbackSetExe|${_binDir}/kfocus-rollback-set||optional"
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2WarnStrFn 'ABORT: Required commands not found';
