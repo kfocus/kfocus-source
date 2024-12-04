@@ -180,7 +180,7 @@ _balanceBootFn () {
   # Unconditionally balance boot space
   "${_btrfsBalanceExe}" -u 85 "${_rb2BootDir}" || {
     _logWrapFn 'err' 'Could not balance boot filesystem!';
-    return 1;
+    return 2;
   }
 
   _logWrapFn 'notice' 'Boot filesystem balanced.';
@@ -427,7 +427,7 @@ _checkBtrfsStatusFn () {
       _btrfsStatus='UNSUPPORTED'; break;
     fi
 
-    # If main_subvols_str is not empty, means UNSUPPORTED
+    # If boot_subvols_str is not empty, means UNSUPPORTED
     if [ -n "${_boot_subvols_str}" ]; then
       _btrfsStatus='UNSUPPORTED'; break;
     fi
@@ -2447,7 +2447,7 @@ _prepareSystemPublicFn () {
   ## Begin STAGE 1: Check and prep filesystem {
   if [ "${_btrfsStatus}" = 'SUPPORTED, AUTO' ] \
     || [ "${_btrfsStatus}" = 'SUPPORTED, MANUAL' ]; then
-    _logPrepareExitFn 'notice' '0' 'This system already appears snapshot-enabled.';
+    _logExitFn 'notice' '0' 'This system already appears snapshot-enabled.';
   fi
 
   if [ "${_btrfsStatus}" = 'UNSUPPORTED' ]; then
@@ -2740,6 +2740,7 @@ _setManualSwitchStatePublicFn () {
       else
         _writeMetadbFn 'global' 'manualSwitchState' 'AUTO' \
           || _logExitFn 'err' '1' 'Failed to set manual switch state to |auto|!';
+        _logWrapFn 'notice' 'Set manual switch state to |auto|.';
       fi
       ;;
     'manual')
@@ -2750,6 +2751,7 @@ _setManualSwitchStatePublicFn () {
       else
         _writeMetadbFn 'global' 'manualSwitchState' 'MANUAL' \
           || _logExitFn 'err' '1' 'Failed to set switch state to |manual|!';
+        _logWrapFn 'notice' 'Set manual switch state to |manual|.';
       fi
       ;;
     *)

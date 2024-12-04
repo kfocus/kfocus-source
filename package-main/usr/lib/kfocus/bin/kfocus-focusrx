@@ -333,7 +333,7 @@ _chkBtrfsSetUpFn () {
   _cm2SucFn;
 }
 ## . END _chkBtrfsSetUpFn }
-  
+
 ## BEGIN _chkOemMultiDiskFn {
 _chkOemMultiDiskFn () {
 
@@ -872,7 +872,7 @@ _chkResetEffectsFn () {
   _title='Reset Desktop Effects';
   _cm2SetMsgFn "${_title}";
   _win_title="${_rootTitle}: ${_title} ";
-      
+
   _prompt_msg="$(cat <<_EOH17b
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}SKIP ${_title}?</h3>
@@ -936,7 +936,7 @@ _EOH18
   if [ "${_ans_str}" = 'y' ]; then
     "${_rollbackExe}" || true;
   fi
-  
+
   _cm2SucFn;
 }
 ## . END _offerKfocusRollback }
@@ -956,13 +956,11 @@ _postRollbackHandlerFn () {
     || [ "${_btrfs_status}" == 'SUPPORTED, MANUAL' ]; then
     # If drop file is found, run _rollbackExe, so it can use the contents
     #   of that file to display the name of the restored snapshot to the user.
-    if "${_escExe}" "${_rollbackSetExe}" 'checkMainUnallocSpace'; then
-      if [ -e "${_restoreCompleteFile}" ]; then
-        "${_rollbackExe}" 'afterRestore';
+    if [ -e "${_restoreCompleteFile}" ]; then
+      "${_rollbackExe}" 'afterRestore';
 
-        # Remove drop file after completion
-        "${_escExe}" "${_focusRxSetExe}" 'clear-restore';
-      fi
+      # Remove drop file after completion
+      "${_escExe}" "${_focusRxSetExe}" 'clear-restore';
     fi
   fi
 }
@@ -980,7 +978,7 @@ _announceEndFn () {
   _title='Diagnostics Complete';
   _cm2SetMsgFn "${_title}";
   _win_title="${_rootTitle}: ${_title} ";
-  
+
   _prompt_msg="$( cat <<_EOH18
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}FocusRx Diagnostics Complete</h3>

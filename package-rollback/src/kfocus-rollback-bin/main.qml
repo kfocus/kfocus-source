@@ -130,23 +130,22 @@ Kirigami.ApplicationWindow {
 
               <p><b><font color="#f7941d">`
               + automaticSnapshotsLabel
-              + `:</b></font> When enabled, take snapshots without
+              + `</font></b> - When enabled, take snapshots without
               intervention before apt software changes; or at least once a
               week.</p>
 
               <p><b><font color="#f7941d">` + calculateSnapshotSizesLabel
-              + `:</b></font>
-              Calculate and display the estimated space used by each
-              snapshot. Deleting a snapshot will free the amount of space
-              shown.</p>
+              + `</font></b> - Calculate and display the estimated space
+              used by each snapshot. Deleting a snapshot will free the
+              amount of space shown.</p>
 
               <p><b><font color="#f7941d">` + createSnapshotLabel
-              + `:</b></font> Immediately create a snapshot of the
+              + `</font></b> - Immediately create a snapshot of the
               current system state. This includes the /boot and root
               filesystems. This snapshot can be restored later as needed.</p>
 
               <p><b><font color="#f7941d">` + optimizeDiskLabel
-              + `:</font></b> Delete all snapshots, defragment files as
+              + `</font></b> - Delete all snapshots, defragment files as
               needed, recover unreachable space, and consolidate data on the
               boot disk. Use this to maximize available free space and improve
               performance.</p>
@@ -161,25 +160,25 @@ Kirigami.ApplicationWindow {
             helpText: `<p>This table shows disk usage for the system
               partitions that this tool may affect.</p>
 
-              <p><font color="#f7941d"><b>Mount:</b></font>
+              <p><b><font color="#f7941d">Mount</font></b> -
               The filesystem's mount point. System Rollback keeps snapshots
               for both the root (<code>/</code>) and boot (<code>/boot</code>)
               filesystems correlated so there are no data inconsistencies.</p>
 
-              <p><font color="#f7941d"><b>Status:</b></font> Disk space
+              <p><b><font color="#f7941d">Status</font></b> - Disk space
               status. "<font color="#27ae60"><code>Good</code></font>" means
               that disk space is sufficient.
               "<font color="#da4453"><code>ALERT</code></font>" means that
               disk space is low. Delete files or snapshots to free up disk
               space.</p>
 
-              <p><font color="#f7941d"><b>Size GiB:</b></font>
+              <p><b><font color="#f7941d">Size GiB</font></b> -
               Filesystem size, in gigabytes.</p>
 
-              <p><font color="#f7941d"><b>Remain GiB:</b></font>
+              <p><b><font color="#f7941d">Remain GiB</font></b> -
               Remaining free space on the filesystem.</p>
 
-              <p><font color="#f7941d"><b>Unalloc %:</b></font>
+              <p><b><font color="#f7941d">Unalloc %</font></b> -
               Percentage of unallocated space left on the filesystem.
               Unallocated space should exceed 15% at all times.</p>`
             helpTitle: 'Partition Health Help'
@@ -1308,6 +1307,7 @@ Kirigami.ApplicationWindow {
                 snapshotView.saving  = false;
                 snapshotView.editing = false;
                 backend.inhibitClose = false;
+                derivateSnapshotModelFn(); // ensures that "Compare With" is properly updated in the event pinning was changed
                 switchViewFn( saveEditsWaitView, snapshotView );
             } else {
                 restoreSnapshotViewBindingsFn();
@@ -1557,7 +1557,8 @@ Kirigami.ApplicationWindow {
           currentDate.getTime()
           - (tzOffsetMs * 60 * 1000)
         );
-        const dateStr    = currentDate.toISOString().split('T')[0];
+        let dateStr      = currentDate.toISOString().split('T')[0];
+        dateStr         += ' ' + currentDate.toISOString().split('T')[1].split('-')[0].slice(0, 5)
         derivSnapshotModel.insert(0, {
             date     : dateStr,
             name     : 'Current State',

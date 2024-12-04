@@ -1007,6 +1007,18 @@ _mainFn () {
   _arg_str="${1:-}";
   _btrfs_status_str="$(_getBtrfsStatusFn)";
 
+  ## Begin Chain to dashboard if GUI available  {
+  if [ "${_cm2IsTty}" = 'n' ] \
+    && [ "${_arg_str}" != 'afterRestore' ]; then
+    if [ -n "${_arg_str}" ]; then
+      "${_rollbackBinExe}" "${_arg_str}";
+    else
+      "${_rollbackBinExe}";
+    fi
+    exit 0;
+  fi
+  ## . End Chain to dashboard if GUI available }
+
   # Ensure acceptable modes
   if [ "${_btrfs_status_str}" = 'SUPPORTED, AUTO' ]; then
     _state_msg='AUTO mode is ON.';
@@ -1063,17 +1075,6 @@ _mainFn () {
     exit 0;
   fi
   ## . End handle after-restore action }
-
-  ## Begin Chain to dashboard if GUI available {
-  if [ "${_cm2IsTty}" = 'n' ]; then
-    if [ -n "${_arg_str}" ]; then
-      "${_rollbackBinExe}" "${_arg_str}";
-    else
-      "${_rollbackBinExe}";
-    fi
-    exit 0;
-  fi
-  ## . End Chain to dashboard if GUI available }
 
   ## All code below this line is for the Whiptail UI.
   # Create main menu selector

@@ -180,26 +180,29 @@ void BackendEngine::refreshSystemData(bool calcSize) {
         }
 
         // Determine if post-restore subvols are mounted or not
-        execEngine->execSync("mount | grep 'btrfs' | grep -q '@kfocus-rollback-working'");
+        execEngine->execSync("mount | grep 'btrfs' | grep -q '@kfocus-rollback-working'; echo $?");
         QString prMountCheckStr = execEngine->stdout().trimmed();
-        if (prMountCheckStr != QString()) {
+        if (prMountCheckStr == "0") {
             m_postRestoreSubvolsMounted = true;
+            postRestoreSubvolsMountedChanged();
         }
-        execEngine->execSync("mount | grep 'btrfs' | grep -q '@kfocus-rollback-working-boot'");
+        execEngine->execSync("mount | grep 'btrfs' | grep -q '@kfocus-rollback-working-boot'; echo $?");
         prMountCheckStr = execEngine->stdout().trimmed();
-        if (prMountCheckStr != QString()) {
+        if (prMountCheckStr == "0") {
             m_postRestoreSubvolsMounted = true;
+            postRestoreSubvolsMountedChanged();
         }
 
         // Check post-restore subvol locations
-        if (QDir(m_rollbackMainWorkingDir).exists()) {
-            m_mainWorkingSubvolExists = true;
-            mainWorkingSubvolExistsChanged();
-        } else if (QDir(m_rollbackBootWorkingDir).exists()) {
-            m_bootWorkingSubvolExists = true;
-            bootWorkingSubvolExistsChanged();
+        if (!m_postRestoreSubvolsMounted) {
+            if (QDir(m_rollbackMainWorkingDir).exists()) {
+                m_mainWorkingSubvolExists = true;
+                mainWorkingSubvolExistsChanged();
+            } else if (QDir(m_rollbackBootWorkingDir).exists()) {
+                m_bootWorkingSubvolExists = true;
+                bootWorkingSubvolExistsChanged();
+            }
         }
-        automaticSnapshotsEnabledChanged();
 
         if (!m_btrfsStateUnusable) {
             // NOTE: Callback is connected before execution, this is confusing but it's the only safe way to do this
@@ -222,6 +225,7 @@ void BackendEngine::refreshSystemData(bool calcSize) {
             execEngine->exec(m_pkexecExe + ' ' + m_rollbackSetExe + " getSnapshotList");
         } else {
             execEngine->deleteLater();
+            systemDataLoaded();
             m_updateInProgress = false;
         }
     });
