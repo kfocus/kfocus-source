@@ -246,7 +246,7 @@ void BackendEngine::onSystemDataReady() {
     // Get raw data from the ShellEngine
     QString snapshotItem = m_snapshotIdList.at(m_snapshotIdIdx);
     QStringList snapshotMetadataList = execEngine->stdout().split('\n');
-    if (snapshotMetadataList.count() < 4 || snapshotMetadataList.at(0) == "Invalid mode specified.") {
+    if (snapshotMetadataList.count() < 5 || snapshotMetadataList.at(0) == "Invalid mode specified.") {
         qWarning() << "Snapshot metadata unsupported - incompatible BTRFS status hit?";
         return;
     }

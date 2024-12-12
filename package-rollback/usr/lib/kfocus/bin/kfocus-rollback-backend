@@ -568,12 +568,6 @@ _checkMainUnallocSpaceFn () {
 }
 ## . END private _checkMainUnallocSpaceFn }
 
-## BEGIN private _checkRootFn {
-_checkRootFn () {
-  [ "$(id -u)" = 0 ] || return 1;
-}
-## . END private _checkRootFn }
-
 ## BEGIN private AND public _checkEchoLockDirFn {
 _checkEchoLockDirFn () {
   if ! mkdir -p "${_lockDir}"; then
@@ -897,11 +891,7 @@ _deleteAllSnapshotsFn () {
   _logSectBeginFn "${_sect_str}";
 
   # Remove snapshots that do not have matched main and boot components
-  _scrubSnapshotsFn || {
-    _logWrapFn 'alert' 'Trouble scrubbing snapshots';
-    _logSectEndFn "${_sect_str}";
-    return 2;
-  }
+  _scrubSnapshotsFn || _logWrapFn 'alert' 'Trouble scrubbing snapshots';
 
   # Get list of snapshots
   readarray -t _snapshot_list < <(
@@ -1628,6 +1618,53 @@ _trapExitFn () {
 }
 ## . END private _trapExitFn }
 
+## BEGIN private _safeMvFn {
+# Summary   : _safeMvFn _src_item _tgt_path
+# Purpose   : Moves an item from one location to another with sanity checks.
+# Example   : _safeMvFn dir1 dir2
+# Arguments :
+#   _src_item - The item being moved.
+#   _tgt_path - The new location of the item.
+# Globals   : none
+# Outputs   : none
+# Returns   : 0 on success, 1 on failure, 2 if the move seems to succeed but
+#   exits non-zero
+# Throws    : none
+#
+_safeMvFn () {
+  declare _src_item _tgt_path;
+
+  _src_item="${0:-}";
+  _tgt_path="${1:-}";
+  [ -z "${_src_item}" ] && {
+    _logWrapFn 'err' "No _src_item provided to _safeMvFn!";
+    return 1;
+  }
+  [ -z "${_tgt_path}" ] && {
+    _logWrapFn 'err' "No _tgt_path provided to _safeMvFn!";
+    return 1;
+  }
+
+  [ ! -e "${_src_item}" ] && {
+    _logWrapFn 'err' "Item |${_src_item}| does not exist!";
+    return 1;
+  }
+  [ -e "${_tgt_path}" ] && {
+    _logWrapFn 'err' "Path |${_tgt_path}| already exists!";
+    return 1;
+  }
+  mv -T -n "${_src_item}" "${_tgt_path}" || {
+    _logWrapFn 'alert' "Could not move |${_src_item}| to |${_tgt_path}|!";
+    if [ ! -e "${_src_item}" ] && [ -e "${_tgt_path}" ]; then
+      _logWrapFn 'emerg' "Move failed but appears to have succeeded, filesystem corrupted?";
+      return 2;
+    else
+      return 1;
+    fi
+  }
+}
+## . END private _safeMvFn }
+
 ## BEGIN private _scrubSnapshotsFn () {
 # Summary   : _scrubSnapshotsFn
 # Purpose   : Remove snapshots that do not have matched main and boot
@@ -1882,8 +1919,6 @@ _aptSnapshotPublicFn () {
 #     - Could not defragment files on the main filesystem.
 #
 _btrfsDeepCleanPublicFn () {
-  _checkRootFn             || _logExitFn 'warn' '1' \
-    'BTRFS deep cleaning requires root permissions!';
   _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
     'BTRFS status prevents BTRFS deep cleaning!';
 
@@ -1918,8 +1953,6 @@ _btrfsDeepCleanPublicFn () {
 #     - Could not balance boot filesystem.
 #
 _btrfsMaintainPublicFn () {
-  _checkRootFn             || _logExitFn 'warn' '1' \
-    'BTRFS maintenance requires root permissions!';
   _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
     'BTRFS status prevents BTRFS maintenance!';
 
@@ -1998,8 +2031,6 @@ _checkMainUnallocSpacePublicFn () {
 #     - Could not remove restore complete flag.
 #
 _clearRestorePublicFn () {
-  _checkRootFn || _logExitFn 'warn' '1' \
-    'Clearing the restore flag requires root permissions!';
   rm -f "${_rb2RestoreCompleteFile}" \
     || _logExitFn 'err' '1' "Could not remove |${_rb2RestoreCompleteFile}|!";
   _logWrapFn 'notice' 'Restore flag cleared.';
@@ -2038,8 +2069,6 @@ _clearRestorePublicFn () {
 _compareStatePublicFn () {
   declare _source_state_dir _target_state_dir;
 
-  _checkRootFn || _logExitFn 'warn' '1' \
-    'State comparison requires root permissions!';
   _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
     'BTRFS status prevents state comparison!';
 
@@ -2081,8 +2110,6 @@ _compareStatePublicFn () {
 _createSnapshotPublicFn () {
   declare _return_code;
 
-  _checkRootFn || _logExitFn 'warn' '1' \
-    'Creating a snapshot requires root permissions!';
   _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
     'BTRFS status prevents creating a snapshot!';
   _checkMainUnallocSpaceFn || {
@@ -2126,8 +2153,6 @@ _createSnapshotPublicFn () {
 _deleteSnapshotPublicFn () {
   declare _return_code;
 
-  _checkRootFn || _logExitFn 'warn' '1' \
-    'Deleting a snapshot requires root permissions!';
   _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
     'BTRFS status is incompatible with deleting a snapshot!';
 
@@ -2163,8 +2188,6 @@ _deleteSnapshotPublicFn () {
 #     - Deleting either the main or the boot leftover subvolume failed.
 #
 _finalizeRestorePublicFn () {
-  _checkRootFn || _logExitFn 'warn' '1' \
-    'Finalizing restoration requires root permissions!';
   _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
     'BTRFS status is incompatible with finalizing a restore process!';
 
@@ -2329,14 +2352,18 @@ _getSnapshotMetadataPublicFn () {
 
   # Return snapshot name, description, pin status from snapshot metadb
   for _key in 'name' 'desc' 'pinned'; do
-    _metadata_str="$(_readMetadbFn "${_snapshot_id}" "${_key}")" \
-      || _logExitFn 'err' '1' "${_err_msg} Could not read key |${_key}|!";
+    _metadata_str="$(_readMetadbFn "${_snapshot_id}" "${_key}")" || {
+      _logWrapFn 'err' "${_err_msg} Could not read key |${_key}|!";
+      _metadata_str='';
+    }
     echo "${_metadata_str}";
   done
 
   # Return human-readable snapshot reason
-  _snapshot_reason_str="$(_getSnapshotReasonFn "${_snapshot_id}")" \
-    || _logExitFn 'err' '1' "${_err_msg} Could not read reason!";
+  _snapshot_reason_str="$(_getSnapshotReasonFn "${_snapshot_id}")" || {
+    _logWrapFn 'err' "${_err_msg} Could not read reason!";
+    _snapshot_reason_str='Unknown (no reason found)';
+  }
   if [ "${_snapshot_reason_str}" = 'Unknown (no reason found)' ]; then
     _logWrapFn 'warn' "${_err_msg} No reason found!";
   fi
@@ -2345,8 +2372,10 @@ _getSnapshotMetadataPublicFn () {
   # Calculate and return snapshot size if requested
   if [ "${_mode}" = 'full' ]; then
     _snapshot_size_report="$("${_btrfsExe}" 'filesystem' 'du' '--raw' '-s' \
-      "${_rb2MainSnapshotDir}/${_snapshot_id}")" \
-      || _logExitFn 'alert' '1' "${_err_msg} Could not calc size!";
+      "${_rb2MainSnapshotDir}/${_snapshot_id}")" || {
+        _logWrapFn 'alert' "${_err_msg} Could not calc size!";
+        _snapshot_size_report='';
+      }
     tail -n1 <<< "${_snapshot_size_report}" | awk '{ print $2 }';
   else
     echo '';
@@ -2441,9 +2470,6 @@ _makeSnapshotDispIdPublicFn () {
 _prepareSystemPublicFn () {
   declare _root_mount_id _boot_mount_id _btrfs_defaults_str \
     _dir _subvolume_list _subvolume_id _path;
-
-  _checkRootFn || _logPrepareExitFn 'warn' '1' \
-    'Preparing the system for snapshotting requires root permissions!';
 
   ## Begin STAGE 1: Check and prep filesystem {
   if [ "${_btrfsStatus}" = 'SUPPORTED, AUTO' ] \
@@ -2591,10 +2617,9 @@ _prepareSystemPublicFn () {
 _restoreSnapshotPublicFn () {
   declare _target_snapshot_id _snapshot_path \
     _boot_snapshot_path _snapshot_name _snapshot_date _snapshot_reason \
-    _umount_cnt _efi_umount_yn;
+    _umount_cnt _efi_umount_yn _mv_table _mv_idx _bit_list _failed_idx \
+    _undo_idx _exit_code;
 
-  _checkRootFn || _logExitFn 'warn' '1' \
-    'Restoring a snapshot requires root permissions!';
   _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
     'BTRFS status is incompatible with restoring a snapshot!';
   _checkMainUnallocSpaceFn || {
@@ -2638,6 +2663,24 @@ _restoreSnapshotPublicFn () {
   _snapshot_reason="$(_getSnapshotReasonFn "${_target_snapshot_id}")" \
     || _logExitFn 'err' '1' 'Snapshot restore halted, could not get snapshot reason!';
 
+  # Create pre-rollback snapshot for safety
+  _createSnapshotFn 'Pre-Rollback' \
+    || _logExitFn 'alert' '1' 'Snapshot restore halted, pre-rollback snapshot creation failed!';
+
+  # Create staging restore subvols
+  "${_btrfsExe}" subvolume snapshot "${_snapshot_path}" "${_rb2MainStagingDir}" \
+    || _logExitFn 'alert' '1' 'Unable to restore root filesystem snapshot!';
+  "${_btrfsExe}" subvolume snapshot "${_boot_snapshot_path}" "${_rb2BootStagingDir}" \
+    || _logExitFn 'alert' '1' 'Unable to restore boot filesystem snapshot!';
+
+  # Create the move table for reorganizing the snapshots into a restored state
+  _mv_table=(
+    "${_rb2MainDir}/@|${_rb2MainWorkingDir}"
+    "${_rb2MainStagingDir}|${_rb2MainDir}/@"
+    "${_rb2BootDir}/@boot|${_rb2BootWorkingDir}"
+    "${_rb2BootStagingDir}|${_rb2BootDir}/@boot"
+  );
+
   # Failing to unmount /boot/efi before attempting to move the old subvol
   # will result in the subvol not being moved, which will result in the
   # whole @boot subvol being nuked except for the contents of /boot/efi.
@@ -2657,23 +2700,49 @@ _restoreSnapshotPublicFn () {
     _logExitFn 'err' '1' 'Unable to unmount EFI system partition!';
   fi
 
-  # Create pre-rollback snapshot for safety
-  _createSnapshotFn 'Pre-Rollback' \
-    || _logExitFn 'alert' '2' 'Snapshot restore halted, pre-rollback snapshot creation failed!';
+  ## BEGIN Danger Zone {
+  # Failure here may result in the system becoming unbootable.
 
-  # Move existing main and boot subvols, restore new ones
-  mv "${_rb2MainDir}/@" "${_rb2MainWorkingDir}" \
-    || _logExitFn 'crit' '2' 'Unable to move root filesystem subvolume for restore!';
-  "${_btrfsExe}" subvolume snapshot "${_snapshot_path}" "${_rb2MainDir}/@" \
-    || _logExitFn 'emerg' '2' 'Unable to restore root filesystem snapshot!';
+  # Loop through _mv_table and execute each move operation defined in it
+  _failed_idx='';
+  for (( _mv_idx=0; _mv_idx < ${#_mv_table[@]}; _mv_idx++ )); do
+    IFS='|' read -r -a _bit_list <<< "${_mv_table[_mv_idx]}";
+
+    # If a move fails, iterate backwards through the table and undo all moves
+    _safeMvFn "${_bit_list[0]}" "${_bit_list[1]}";
+    _exit_code="$?";
+    if (( _exit_code == 0 )); then
+      continue;
+    elif (( _exit_code == 1 )); then
+      _logWrapFn 'err' "Failed to move ${_bit_list[0]} to ${_bit_list[1]}, rolling back.";
+      _failed_idx="${_mv_idx}";
+      break;
+    else
+      _logExitFn 'emerg' '2' "Fatal error while restoring snapshot!";
+    fi
+  done
+
+  if [ -n "${_failed_idx}" ]; then
+    for (( _undo_idx=(_failed_idx - 1); _undo_idx >= 0; _undo_idx-- )); do
+      IFS='|' read -r -a _bit_list <<< "${_mv_table[_undo_idx]}";
+      _safeMvFn "${_bit_list[1]}" "${_bit_list[0]}" \
+        || _logExitFn 'emerg' '2' "Fatal error while rolling back failed restore!";
+    done
+
+    mount /boot/efi || _logWrapFn 'notice' 'Unable to remount EFI system partition, ignoring.';
+    _logExitFn 'alert' '1' 'Restore operation failed, restore undone!';
+  fi
+
+  ## . END Danger Zone }
+
+  # Remount EFI System Partition
+  mount /boot/efi || _logWrapFn 'notice' 'Unable to remount EFI system partition, ignoring.';
+
+  # Sync everything
   "${_btrfsExe}" filesystem sync "${_rb2MainDir}" \
-    || _logExitFn 'emerg' '2' 'Unable to sync main filesystem!';
-  mv "${_rb2BootDir}/@boot" "${_rb2BootDir}/@kfocus-rollback-working-boot" \
-    || _logExitFn 'alert' '2' 'Unable to move boot filesystem subvolume for restore!';
-  "${_btrfsExe}" subvolume snapshot "${_boot_snapshot_path}" "${_rb2BootDir}/@boot" \
-    || _logExitFn 'emerg' '2' 'Unable to restore boot filesystem snapshot!';
+    || _logWrapFn 'warn' 'Unable to sync main filesystem!';
   "${_btrfsExe}" filesystem sync "${_rb2BootDir}" \
-    || _logExitFn 'emerg' '2' 'Unable to sync boot filesystem!';
+    || _logWrapFn 'warn' 'Unable to sync boot filesystem!';
   sync;
 
   # Save relevant snapshot metadata for post-reboot handler retrieval
@@ -2686,9 +2755,6 @@ _restoreSnapshotPublicFn () {
 
   # Trim older snapshots
   _trimSnapshotsFn || _logExitFn 'alert' '2' 'Unable to trim snapshots post-restore!';
-
-  # Remount EFI System Partition
-  mount /boot/efi || _logWrapFn 'notice' 'Unable to remount EFI system partition, ignoring.';
 
   _logWrapFn 'notice' "Restored snapshot |${_target_snapshot_id}|.";
 }
@@ -2718,8 +2784,6 @@ _restoreSnapshotPublicFn () {
 _setManualSwitchStatePublicFn () {
   declare _state_str _current_state_str;
 
-  _checkRootFn || _logExitFn 'warn' '1' \
-    'Changing the manual switch state requires root permissions!';
   _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
     'BTRFS status prevents changing the manual switch state!';
 
@@ -2787,10 +2851,9 @@ _setManualSwitchStatePublicFn () {
 #     - Metadb write failure.
 #
 _setSnapshotMetadataPublicFn () {
-  declare _snapshot_id _name_str _desc_str _is_pinned _was_pinned;
+  declare _snapshot_id _name_str _desc_str _is_pinned _was_pinned \
+    _write_failed;
 
-  _checkRootFn || _logExitFn 'warn' '1' \
-    'Setting snapshot metadata requires root permissions!';
   _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
     'BTRFS status prevents setting snapshot metadata!';
 
@@ -2798,6 +2861,7 @@ _setSnapshotMetadataPublicFn () {
   _name_str="${2:-}";
   _desc_str="${3:-}";
   _is_pinned="${4:-}";
+  _write_failed='n';
 
   [ -z "${_snapshot_id}" ] && _logExitFn 'err' '1' 'No snapshot ID provided!';
   [ -z "${_is_pinned}" ] && _logExitFn 'err' '1' 'No pinning information provided!';
@@ -2824,12 +2888,21 @@ _setSnapshotMetadataPublicFn () {
   fi
 
   # Write snapshot name, description, pin status to snapshot metadb
-  _writeMetadbFn "${_snapshot_id}" 'name' "${_name_str}" \
-    || _logExitFn 'err' '1' 'Could not set snapshot name, metadb write failed!';
-  _writeMetadbFn "${_snapshot_id}" 'desc' "${_desc_str}" \
-    || _logExitFn 'err' '1' 'Could not set snapshot description, metadb write failed!';
-  _writeMetadbFn "${_snapshot_id}" 'pinned' "${_is_pinned}" \
-    || _logExitFn 'err' '1' 'Could not set snapshot pin status, metadb write failed!';
+  _writeMetadbFn "${_snapshot_id}" 'name' "${_name_str}" || {
+    _logWrapFn 'err' 'Could not set snapshot name, metadb write failed!';
+    _write_failed='y';
+  }
+  _writeMetadbFn "${_snapshot_id}" 'desc' "${_desc_str}" || {
+    _logWrapFn 'err' 'Could not set snapshot description, metadb write failed!';
+    _write_failed='y';
+  }
+  _writeMetadbFn "${_snapshot_id}" 'pinned' "${_is_pinned}" || {
+    _logWrapFn 'err' 'Could not set snapshot pin status, metadb write failed!';
+    _write_failed='y';
+  }
+  if [ "${_write_failed}" = 'y' ]; then
+    _logExitFn 'err' '1' 'One or more metadb writes failed!';
+  fi
 }
 ## . END _setSnapshotMetadataPublicFn }
 
@@ -2855,8 +2928,6 @@ _setSnapshotMetadataPublicFn () {
 _systemSnapshotPublicFn () {
   declare _return_code;
 
-  _checkRootFn || _logExitFn 'warn' '1' \
-    'Creating a snapshot requires root permissions!';
   _checkBtrfsStatusSetUpFn   || _logExitFn 'warn' '1' \
     'BTRFS status prevents creating a snapshot!';
   _checkMainUnallocSpaceFn   || {
@@ -2905,8 +2976,6 @@ _systemSnapshotPublicFn () {
 _trimSnapshotsPublicFn () {
   declare _return_code;
 
-  _checkRootFn || _logExitFn 'warn' '1' \
-    'Trimming snapshots requires root permissions!';
   _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
     'BTRFS status is incompatible with trimming snapshots!';
 
@@ -2927,6 +2996,9 @@ _mainFn () {
   declare _mode_str _sleep_int;
   _mode_str="${1:-}";
   shift;
+
+  [ "$(id -u)" = 0 ] \
+    || _logExitFn 'emerg' '1' 'Cannot run as non-root!';
 
   ## Begin retry to acquire lock file
   _sleep_int=1;

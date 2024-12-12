@@ -115,6 +115,9 @@ _mainFn () {
   _mode_str="${1:-}";
   shift;
 
+  [ "$(id -u)" = 0 ] \
+    || _logExitFn 'emerg' '1' 'Cannot run as non-root!';
+
   # This is a limited subset of functions that kfocus-rollback-set offers that
   # are safe for any user to run as root. Features omitted include (but are
   # not limited to):
