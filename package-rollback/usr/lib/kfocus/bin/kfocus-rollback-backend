@@ -957,7 +957,7 @@ _deleteSnapshotMetaFn () {
   _return_code=0;
   for _key in "${_metaSnapshotKeyList[@]}"; do
     _writeMetadbFn "${_snapshot_id}" "${_key}" '' || {
-      _msg="Failed to deleted snapshot:key |${_snapshot_id}:${_key}|";
+      _msg="Failed to delete snapshot:key |${_snapshot_id}:${_key}|";
       _logWrapFn 'err' "${_msg}";
       _return_code=1;
     }
@@ -2207,6 +2207,20 @@ _finalizeRestorePublicFn () {
       "${_btrfsExe}" subvolume delete \
         --commit-after "${_rb2BootWorkingDir}" \
         || _logExitFn 'emerg' '2' 'Failed to finalize restore for boot filesystem!';
+    fi
+
+    # Delete obsolete main staging subvol that may be left if a restore fails
+    if [ -d "${_rb2MainStagingDir}" ]; then
+      "${_btrfsExe}" subvolume delete \
+        --commit-after "${_rb2MainStagingDir}" \
+        || _logExitFn 'emerg' '2' 'Failed to cleanup leftover main staging subvol!';
+    fi
+
+    # Delete obsolete boot staging subvol that may be left if a restore fails
+    if [ -d "${_rb2BootStagingDir}" ]; then
+      "${_btrfsExe}" subvolume delete \
+        --commit-after "${_rb2BootStagingDir}" \
+        || _logExitFn 'emerg' '2' 'Failed to cleanup leftover boot staging subvol!';
     fi
   else
     _logExitFn 'err' '1' 'Cannot finalize restore, restore operation half-done!';

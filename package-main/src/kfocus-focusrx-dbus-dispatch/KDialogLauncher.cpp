@@ -67,7 +67,7 @@ void KDialogLauncher::cleanupDialog() {
         case RollbackLowMainSpace:
             switch (proc->exitCode()) {
                 case 0:
-                    subProc->setProgram("/usr/lib/kfocus/bin/kfocus-rollback-bin");
+                    subProc->setProgram("/usr/lib/kfocus/bin/kfocus-rollback");
                     break;
                 case 1:
                     subProc->setProgram("/usr/bin/dolphin");
