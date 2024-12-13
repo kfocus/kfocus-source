@@ -1619,11 +1619,11 @@ _trapExitFn () {
 ## . END private _trapExitFn }
 
 ## BEGIN private _safeMvFn {
-# Summary   : _safeMvFn _src_item _tgt_path
+# Summary   : _safeMvFn _src_path _tgt_path
 # Purpose   : Moves an item from one location to another with sanity checks.
 # Example   : _safeMvFn dir1 dir2
 # Arguments :
-#   _src_item - The item being moved.
+#   _src_path - The item being moved.
 #   _tgt_path - The new location of the item.
 # Globals   : none
 # Outputs   : none
@@ -1632,12 +1632,12 @@ _trapExitFn () {
 # Throws    : none
 #
 _safeMvFn () {
-  declare _src_item _tgt_path;
+  declare _src_path _tgt_path;
 
-  _src_item="${0:-}";
-  _tgt_path="${1:-}";
-  [ -z "${_src_item}" ] && {
-    _logWrapFn 'err' "No _src_item provided to _safeMvFn!";
+  _src_path="${1:-}";
+  _tgt_path="${2:-}";
+  [ -z "${_src_path}" ] && {
+    _logWrapFn 'err' "No _src_path provided to _safeMvFn!";
     return 1;
   }
   [ -z "${_tgt_path}" ] && {
@@ -1645,17 +1645,17 @@ _safeMvFn () {
     return 1;
   }
 
-  [ ! -e "${_src_item}" ] && {
-    _logWrapFn 'err' "Item |${_src_item}| does not exist!";
+  [ ! -e "${_src_path}" ] && {
+    _logWrapFn 'err' "Item |${_src_path}| does not exist!";
     return 1;
   }
   [ -e "${_tgt_path}" ] && {
     _logWrapFn 'err' "Path |${_tgt_path}| already exists!";
     return 1;
   }
-  mv -T -n "${_src_item}" "${_tgt_path}" || {
-    _logWrapFn 'alert' "Could not move |${_src_item}| to |${_tgt_path}|!";
-    if [ ! -e "${_src_item}" ] && [ -e "${_tgt_path}" ]; then
+  mv -T -n "${_src_path}" "${_tgt_path}" || {
+    _logWrapFn 'alert' "Could not move |${_src_path}| to |${_tgt_path}|!";
+    if [ ! -e "${_src_path}" ] && [ -e "${_tgt_path}" ]; then
       _logWrapFn 'emerg' "Move failed but appears to have succeeded, filesystem corrupted?";
       return 2;
     else
