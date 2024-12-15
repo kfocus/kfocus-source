@@ -56,7 +56,10 @@ if !isdirectory(expand(&directory))
 endif
 
 " ====[ Files and buffers ]============================================
-autocmd BufWrite * :set ff=unix "Autoconvert to unix line endings
+" See https://unix.stackexchange.com/questions/75430
+" Use of 'e' at the end of regex to suppresses error if no trailing space
+autocmd BufWritePre * :%s?\s\+$??e "Autoremove all trailing space
+autocmd BufWrite * :set ff=unix    "Autoconvert to unix line endings
 filetype plugin on  "Identify syntax
 set autoread        "Reload buffer when external change detected
 set autowrite       "Save buffer when changing files
@@ -65,7 +68,7 @@ set autowrite       "Save buffer when changing files
 set dir=/tmp
 set fileformats=unix,mac,dos
 set noautoread
-set viminfo=h,'50,<10000,s1000,/1000,:100 " What to save in .viminfo
+set viminfo=h,'50,<10000,s1000,/1000,:100 "Set values to save to .viminfo
 
 " ====[ Colors and highlights ]========================================
 " colorscheme elflord
