@@ -54,6 +54,14 @@ Kirigami.ApplicationWindow {
       + ' '
       + backend.rollbackBackendExe
       + ' '
+    property string rollbackDeepCleanStr     : backend.systemdInhibitExe
+      + ' '
+      + '--who="System Rollback"'
+      + ' '
+      + '--why="Freeing up disk space"'
+      + ' '
+      + rollbackStr
+      + 'btrfsDeepClean'
 
     // Set Constant Names
     property string automaticSnapshotsLabel     : 'Automatic Snapshots'
@@ -61,9 +69,10 @@ Kirigami.ApplicationWindow {
     property string compareSnapshotLabel        : 'Compare Snapshots'
     property string createSnapshotErrorLabel    : 'Snapshot Creation Failed'
     property string createSnapshotLabel         : 'Create New Snapshot'
+    property string refreshSnapshotLabel        : 'Refresh Info'
     property string deleteSnapshotErrorLabel    : 'Snapshot Deletion Failed'
     property string deleteSnapshotLabel         : 'Delete Snapshot'
-    property string optimizeDiskLabel           : 'Clean Up Disk'
+    property string optimizeDiskLabel           : 'Free Up Disk Space'
     property string restoreSnapshotErrorLabel   : 'Snapshot Restore Failed'
     property string restoreSnapshotLabel        : 'Restore Snapshot'
 
@@ -83,9 +92,9 @@ Kirigami.ApplicationWindow {
     // == BEGIN Views =================================================
     // Define window size
     width         : Kirigami.Units.gridUnit * 47
-    height        : Kirigami.Units.gridUnit * 30
+    height        : Kirigami.Units.gridUnit * 33
     minimumWidth  : Kirigami.Units.gridUnit * 47
-    minimumHeight : Kirigami.Units.gridUnit * 30
+    minimumHeight : Kirigami.Units.gridUnit * 33
 
     // BEGIN Define sidebar views
     Component {
@@ -504,6 +513,20 @@ Kirigami.ApplicationWindow {
                               : Kirigami.Theme.textColor
                             level : 1
                         }
+                        Item {
+                            Layout.fillWidth: true
+                        }
+                        Controls.Button {
+                            icon.name : 'view-refresh'
+                            text      : 'Refresh'
+                            enabled   : !uiLocked
+                            onClicked : {
+                                sysRefreshSourceView = refreshSnapshotView;
+                                sysRefreshTargetView = snapshotView;
+                                switchViewFn( snapshotView, refreshSnapshotView );
+                                refreshSystemDataFn( false );
+                            }
+                        }
                     }
 
                     GridLayout {
@@ -901,32 +924,57 @@ Kirigami.ApplicationWindow {
                 }
 
                 ConfirmScreenItem {
-                    id            : optimizeDiskView
-                    visible       : false
-                    infoText      : '<p>System Rollback is now ready to '
+                    id               : optimizeDiskView
+                    visible          : false
+                    infoText         :
+                        '<p>System Rollback is now ready to '
                       + 'clean up the boot disk.</p>'
                       + '<br>'
-                      + '<p><b><font color="#da4453">WARNING: This will '
-                      + 'delete all snapshots on the system, INCLUDING '
-                      + 'PINNED SNAPSHOTS! This cannot be '
-                      + 'undone!</font></b></p>'
-                    acceptText    : 'Clean Up'
-                    acceptIcon    : 'clean-up-destructive'
-                    isDestructive : true
+                      + '<p><b>Quick Clean</b> frees up '
+                      + 'unallocated space in a few seconds. Existing '
+                      + 'snapshots are retained.</p>'
+                      + '<br>'
+                      + '<p><b>Deep Clean</b> frees up as much space as possible. This '
+                      + 'typically takes 30-60 seconds. '
+                      + '<b><font color="#da4453">WARNING: This will delete '
+                      + 'ALL snapshots, including ALL PINNED SNAPSHOTS. This '
+                      + 'cannot be undone.</font></b></p>'
 
-                    onOkAction    : optimizeDiskFn()
+                      /*+ '<p><ul><li>Click "Quick Clean" to free up '
+                      + 'unallocated space in a few seconds. Existing '
+                      + 'snapshots are retained.</li><br><li>Click "Deep '
+                      + 'Clean" to free up as much space as possible. This '
+                      + 'typically takes 30-60 seconds. '
+                      + '<b><font color="#da4453">WARNING: This will delete '
+                      + 'ALL snapshots, including ALL PINNED SNAPSHOTS. This '
+                      + 'cannot be undone.</font></b></li></ul></p>'*/
+                    acceptText       : 'Quick Clean'
+                    acceptIcon       : 'edit-clear-all'
+                    accept2Text      : 'Deep Clean'
+                    accept2Icon      : 'clean-up-destructive'
+                    isOk2Destructive : true
+                    ok2Visible       : true
+
+                    onOkAction    : balanceDiskFn()
+                    onOk2Action   : optimizeDiskFn()
                     onCancelled   : {
                         switchViewFn( optimizeDiskView, snapshotView );
                     }
                 }
 
                 WaitScreenItem {
+                    id          : balanceDiskWaitView
+                    visible     : false
+                    headerText  : 'Quick Cleaning Boot Disk...'
+                }
+
+                WaitScreenItem {
                     id          : optimizeDiskWaitView
                     visible     : false
-                    headerText  : 'Cleaning Up Boot Disk...'
+                    headerText  : 'Deep Cleaning Boot Disk...'
                     description : 'This may take several minutes. '
                       + 'You may continue to use your system in the mean '
-                      + 'time.'
+                      + 'time. Please do not reboot the computer.'
                 }
 
                 WaitScreenItem {
@@ -945,17 +993,23 @@ Kirigami.ApplicationWindow {
                     headerText  : 'Toggling automatic snapshots...'
                 }
 
+                WaitScreenItem {
+                    id         : refreshSnapshotView
+                    visible    : false
+                    headerText : 'Refreshing snapshot info...'
+                }
+
                 ConfirmSnapshotActionItem {
-                    id            : deleteSnapshotView
-                    visible       : false
-                    startInfoText : '<p>System Rollback is ready to delete '
+                    id              : deleteSnapshotView
+                    visible         : false
+                    startInfoText   : '<p>System Rollback is ready to delete '
                       + 'the following snapshot:</p>'
-                    endInfoText   : '<br><p><b><font color="#da4453">'
+                    endInfoText     : '<br><p><b><font color="#da4453">'
                       + 'WARNING: Deleting a snapshot cannot be undone!'
                       + '</font></b></p>'
-                    acceptText    : 'Delete'
-                    acceptIcon    : 'edit-delete-remove'
-                    isDestructive : true
+                    acceptText      : 'Delete'
+                    acceptIcon      : 'edit-delete-remove'
+                    isOkDestructive : true
 
                     onOkAction    : {
                         deleteSnapshotFn( snapshotBar.currentIndex );
@@ -996,7 +1050,7 @@ Kirigami.ApplicationWindow {
                       + 'will immediately reboot the system!</font></b></p>'
                     acceptText    : 'Restore'
                     acceptIcon    : 'edit-undo-symbolic'
-                    isDestructive : true
+                    isOkDestructive : true
 
                     onOkAction    : {
                         restoreSnapshotFn( snapshotBar.currentIndex );
@@ -1223,6 +1277,19 @@ Kirigami.ApplicationWindow {
     }
 
     ShellEngine {
+        id          : balanceDiskEngine
+        onAppExited : {
+            sysRefreshSourceView = balanceDiskWaitView;
+            if ( exitCode === 0 || exitCode === 127 ) {
+                sysRefreshTargetView = snapshotView;
+            } else {
+                sysRefreshTargetView = criticalErrorView;
+            }
+            refreshSystemDataFn( false );
+        }
+    }
+
+    ShellEngine {
         id          : optimizeDiskEngine
         onAppExited : {
             sysRefreshSourceView = optimizeDiskWaitView;
@@ -1373,6 +1440,8 @@ Kirigami.ApplicationWindow {
             mainAreaLabel.text = optimizeDiskLabel;
         } else if ( target_view === automaticSnapshotSwitchView ) {
             mainAreaLabel.text = automaticSnapshotsLabel;
+        } else if ( target_view === refreshSnapshotView ) {
+            mainAreaLabel.text = refreshSnapshotLabel;
         } else if ( target_view === deleteSnapshotView ) {
             mainAreaLabel.text = deleteSnapshotLabel;
         } else if ( target_view === restoreSnapshotView ) {
@@ -1400,10 +1469,16 @@ Kirigami.ApplicationWindow {
         );
     }
 
+    function balanceDiskFn() {
+        backend.inhibitClose = true;
+        switchViewFn( optimizeDiskView, balanceDiskWaitView );
+        balanceDiskEngine.exec( rollbackStr + 'btrfsMaintain' );
+    }
+
     function optimizeDiskFn() {
         backend.inhibitClose = true;
         switchViewFn( optimizeDiskView, optimizeDiskWaitView );
-        optimizeDiskEngine.exec( rollbackStr + 'btrfsDeepClean' );
+        optimizeDiskEngine.exec( rollbackDeepCleanStr );
     }
 
     function switchAutomaticSnapshotsFn() {

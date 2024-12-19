@@ -2158,11 +2158,16 @@ _deleteSnapshotPublicFn () {
 
   _deleteSnapshotFn "${1:-}";
   _return_code="$?";
-
   if [ "${_return_code}" = '1' ]; then
     _logExitFn 'err' '1' 'Could not delete snapshot!';
   elif [ "${_return_code}" = '2' ]; then
     _logExitFn 'alert' '2' 'A critical error occurred while deleting a snapshot!';
+  fi
+
+  _trimSnapshotsFn;
+  _return_code="$?";
+  if [ "${_return_code}" = '2' ]; then
+    _logExitFn 'alert' '2' 'A critical error occurred while trimming snapshots!';
   fi
 }
 ## . END _deleteSnapshotPublicFn }

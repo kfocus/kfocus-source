@@ -29,6 +29,10 @@ QString BackendEngine::pkexecExe() {
     return m_pkexecExe;
 }
 
+QString BackendEngine::systemdInhibitExe() {
+    return m_systemdInhibitExe;
+}
+
 bool BackendEngine::automaticSnapshotsEnabled()
 {
     return m_automaticSnapshotsEnabled;

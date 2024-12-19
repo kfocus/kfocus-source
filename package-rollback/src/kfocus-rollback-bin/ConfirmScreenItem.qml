@@ -4,13 +4,18 @@ import QtQuick.Controls 2.15 as Controls
 import org.kde.kirigami 2.20 as Kirigami
 
 ColumnLayout {
-    property string infoText       : ''
-    property string acceptText     : ''
-    property string acceptIcon     : ''
-    property bool   actionsEnabled : true
-    property bool   isDestructive  : false
+    property string infoText         : ''
+    property string acceptText       : ''
+    property string acceptIcon       : ''
+    property string accept2Text      : ''
+    property string accept2Icon      : ''
+    property bool   actionsEnabled   : true
+    property bool   isOkDestructive  : false
+    property bool   isOk2Destructive : false
+    property bool   ok2Visible       : false
 
     signal okAction()
+    signal ok2Action()
     signal cancelled()
 
     anchors {
@@ -37,7 +42,7 @@ ColumnLayout {
     }
 
     Controls.Button {
-        palette.buttonText: isDestructive
+        palette.buttonText: isOkDestructive
           ? Kirigami.Theme.negativeTextColor
           : Kirigami.Theme.textColor
         text                  : acceptText
@@ -50,6 +55,28 @@ ColumnLayout {
         onClicked             : {
             actionsEnabled = false;
             okAction();
+        }
+
+        HoverHandler {
+            cursorShape: Qt.PointingHandCursor
+        }
+    }
+
+    Controls.Button {
+        palette.buttonText: isOk2Destructive
+          ? Kirigami.Theme.negativeTextColor
+          : Kirigami.Theme.textColor
+        text                  : accept2Text
+        icon.name             : accept2Icon
+        Layout.preferredWidth : Kirigami.Units.gridUnit * 7
+        Layout.bottomMargin   : Kirigami.Units.gridUnit * 0.5
+        Layout.alignment      : Qt.AlignRight
+        enabled               : actionsEnabled
+        visible               : ok2Visible
+
+        onClicked             : {
+            actionsEnabled = false;
+            ok2Action();
         }
 
         HoverHandler {

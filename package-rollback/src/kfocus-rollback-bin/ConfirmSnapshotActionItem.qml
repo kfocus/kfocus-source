@@ -4,15 +4,15 @@ import QtQuick.Controls 2.15 as Controls
 import org.kde.kirigami 2.20 as Kirigami
 
 ColumnLayout {
-    property string startInfoText  : ''
-    property string endInfoText    : ''
-    property string date           : ''
-    property string name           : ''
-    property string reason         : ''
-    property string acceptText     : ''
-    property string acceptIcon     : ''
-    property bool   actionsEnabled : true
-    property bool   isDestructive  : false
+    property string startInfoText   : ''
+    property string endInfoText     : ''
+    property string date            : ''
+    property string name            : ''
+    property string reason          : ''
+    property string acceptText      : ''
+    property string acceptIcon      : ''
+    property bool   actionsEnabled  : true
+    property bool   isOkDestructive : false
 
     signal okAction()
     signal cancelled()

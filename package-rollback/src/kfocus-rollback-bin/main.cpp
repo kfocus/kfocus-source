@@ -17,6 +17,7 @@ QString BackendEngine::m_rollbackSetExe = "/usr/lib/kfocus/bin/kfocus-rollback-s
 QString BackendEngine::m_rollbackMainWorkingDir = "/btrfs_main/@kfocus-rollback-working";
 QString BackendEngine::m_rollbackBootWorkingDir = "/btrfs_boot/@kfocus-rollback-working-boot";
 QString BackendEngine::m_pkexecExe = "/usr/bin/pkexec";
+QString BackendEngine::m_systemdInhibitExe = "/usr/bin/systemd-inhibit";
 bool BackendEngine::m_automaticSnapshotsEnabled = false;
 QList<QMap<QString, QString>> *BackendEngine::m_snapshotList = new QList<QMap<QString, QString>>();
 QMap<QString, QString> *BackendEngine::m_mainFsInfo = new QMap<QString, QString>();

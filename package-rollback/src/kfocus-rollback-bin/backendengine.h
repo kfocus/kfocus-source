@@ -12,6 +12,7 @@ class BackendEngine : public QObject
     Q_PROPERTY(QString rollbackMainWorkingDir READ rollbackMainWorkingDir CONSTANT)
     Q_PROPERTY(QString rollbackBootWorkingDir READ rollbackBootWorkingDir CONSTANT)
     Q_PROPERTY(QString pkexecExe READ pkexecExe CONSTANT)
+    Q_PROPERTY(QString systemdInhibitExe READ systemdInhibitExe CONSTANT)
     Q_PROPERTY(bool automaticSnapshotsEnabled READ automaticSnapshotsEnabled NOTIFY automaticSnapshotsEnabledChanged)
     Q_PROPERTY(bool inhibitClose READ inhibitClose WRITE setInhibitClose NOTIFY inhibitCloseChanged)
     Q_PROPERTY(bool mainSpaceLow READ mainSpaceLow NOTIFY mainSpaceLowChanged)
@@ -29,6 +30,7 @@ public:
     QString rollbackMainWorkingDir();
     QString rollbackBootWorkingDir();
     QString pkexecExe();
+    QString systemdInhibitExe();
     bool automaticSnapshotsEnabled();
     QList<QMap<QString, QString>> *snapshotList();
     void setSnapshotList(QList<QMap<QString, QString>> *val);
@@ -76,6 +78,7 @@ private:
     static QString m_rollbackMainWorkingDir;
     static QString m_rollbackBootWorkingDir;
     static QString m_pkexecExe;
+    static QString m_systemdInhibitExe;
     static bool m_automaticSnapshotsEnabled;
     static QList<QMap<QString, QString>> *m_snapshotList;
     static QMap<QString, QString> *m_mainFsInfo;
