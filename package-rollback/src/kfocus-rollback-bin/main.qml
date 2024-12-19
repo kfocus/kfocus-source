@@ -971,10 +971,12 @@ Kirigami.ApplicationWindow {
                 WaitScreenItem {
                     id          : optimizeDiskWaitView
                     visible     : false
-                    headerText  : 'Deep Cleaning Boot Disk...'
+                    headerText  : 'Cleaning Up System Disk...'
                     description : 'This may take several minutes. '
-                      + 'You may continue to use your system in the mean '
-                      + 'time. Please do not reboot the computer.'
+                      + 'You may continue to use your system while '
+                      + 'this is processing. However, to avoid file corruption, '
+                      + '<b><font color="#da4453">DO NOT turn off '
+                      + 'or reboot the system until this is finished!</font></b>'
                 }
 
                 WaitScreenItem {
