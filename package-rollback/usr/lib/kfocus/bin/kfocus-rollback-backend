@@ -2164,11 +2164,11 @@ _deleteSnapshotPublicFn () {
     _logExitFn 'alert' '2' 'A critical error occurred while deleting a snapshot!';
   fi
 
-  _trimSnapshotsFn;
-  _return_code="$?";
-  if [ "${_return_code}" = '2' ]; then
-    _logExitFn 'alert' '2' 'A critical error occurred while trimming snapshots!';
-  fi
+  _balanceMainFn 'n' || _logExitFn 'alert' '2' \
+    'Issues encountered balancing main filesystem!';
+  _balanceBootFn     || _logExitFn 'alert' '2' \
+    'Issues encountered balancing boot filesystem!';
+  _logWrapFn 'notice' 'Manual delete snapshot complete.';
 }
 ## . END _deleteSnapshotPublicFn }
 
