@@ -18,9 +18,12 @@
 #
 set -u;
 
+## BEGIN _stderrFn {
 _stderrFn () {
   2>&1 echo "${_baseName} $*";
 }
+## . END _stderrFn }
+
 ## BEGIN _loadLibTableFn {
 # Summary : _loadLibTableFn <lib_str1> <lib_str2> ...
 # Example : _loadLibTableFn "lib01:/usr/lib/lib01" "lib02";
@@ -73,15 +76,19 @@ _loadLibTableFn () {
 }
 ## . END _loadLibTableFn }
 
-## BEGIN Rollback backend wrappers {
+## BEGIN _rollbackSetFn {
 _rollbackSetFn () {
   "${_escExe}" "${_rollbackSetExe}" "$@";
 }
+## . END _rollbackSetFn }
+
+## BEGIN _rollbackBackendFn {
 _rollbackBackendFn () {
   "${_escExe}" "${_rollbackBackendExe}" "$@";
 }
-## . END Rollback backend wrappers }
+## . END _rollbackBackendFn }
 
+## BEGIN _assignGlobalUiVarsFn {
 _assignGlobalUiVarsFn () {
   declare _bold_str _brow_lp_str _brow_rp_str _center_header_str \
     _code_str _erow_str _left_header_str _table_str;
@@ -351,14 +358,37 @@ ${_cm2HtmEndStr}
 EOF
   )";
 
-  _doOptimizeMsg="$(cat <<EOF
+  _chooseOptimizeModeMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_table_str}
-${_brow_rp_str}${_left_header_str}Optimize (1 of 2)</h3>${_erow_str}
+${_brow_lp_str}${_center_header_str}Optimize (1 of 3)</h3>${_erow_str}
 
-${_brow_rp_str}System Rollback is now ready to optimize the boot
+${_brow_lp_str}System Rollback is now ready to clean up the boot <br>
+disk. Select your desired cleaning mode.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _quickOptimizeMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}Optimize (2 of 3)</h3>${_erow_str}
+
+${_brow_rp_str}System Rollback is now ready to quick clean the boot
 disk.${_erow_str}
 
-${_brow_rp_str}Click "OK" to optimize the disk, or "Cancel" to back
+${_brow_rp_str}Click "OK" to clean up the disk, or "Cancel" to back
+out.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _deepOptimizeMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}Optimize (2 of 3)</h3>${_erow_str}
+
+${_brow_rp_str}System Rollback is now ready to deep clean the boot
+disk.${_erow_str}
+
+${_brow_rp_str}Click "OK" to clean up the disk, or "Cancel" to back
 out.${_erow_str}
 
 ${_brow_rp_str}${_warnStr}WARNING: This will delete all snapshots on the
@@ -370,9 +400,9 @@ EOF
 
   _optimizeSuccessfulMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_table_str}
-${_brow_rp_str}${_left_header_str}Optimize (2 of 2)</h3>${_erow_str}
+${_brow_rp_str}${_left_header_str}Optimize (3 of 3)</h3>${_erow_str}
 
-${_brow_rp_str}This system's boot disk has been optimized
+${_brow_rp_str}This system's boot disk has been cleaned
 successfully.${_erow_str}</table>
 ${_cm2HtmEndStr}
 EOF
@@ -643,6 +673,21 @@ ${_cm2HtmEndStr}
 EOF
   )";
 
+  _deletePinnedSnapshotRefusedMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}Snapshot Protected</h3>${_erow_str}
+
+${_brow_rp_str}The following snapshot is protected and cannot be
+deleted:${_erow_str}
+
+${_brow_rp_str}XXX_SNAPSHOT_NAME_XXX${_erow_str}
+
+${_brow_rp_str}If you are sure you want to delete this snapshot, toggle <br>
+protection off first.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
   _creationFailedMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_table_str}
 ${_brow_rp_str}${_left_header_str}Creation Failed</h3>${_erow_str}
@@ -752,7 +797,9 @@ ${_cm2HtmEndStr}
 EOF
   )";
 }
+## . END _assignGlobalUiVarsFn }
 
+## BEGIN _chooseSnapshotFn {
 _chooseSnapshotFn () {
   declare _choose_msg _snapshot_list_str _snapshot_list _snapshot_disp_list \
     _radio_list _snapshot_idx _answer;
@@ -789,7 +836,9 @@ _chooseSnapshotFn () {
   echo "${_snapshot_disp_list[_answer]}";
   return;
 }
+## . END _chooseSnapshotFn }
 
+## BEGIN _handleOperationExitIntFn {
 _handleOperationExitIntFn () {
   declare _op_type _exit_int _snapshot_id _snapshot_disp_id _state_str;
 
@@ -943,6 +992,7 @@ _handleOperationExitIntFn () {
       ;;
   esac
 }
+## . END _handleOperationExitIntFn }
 
 ## BEGIN _getBtrfsStatusFn {
 _getBtrfsStatusFn () {
@@ -1000,7 +1050,7 @@ _mainFn () {
     _snapshot_name _snapshot_desc _snapshot_desc_line _exit_int \
     _restored_snapshot_name _restored_snapshot_date \
     _restored_snapshot_reason _restored_snapshot_disp_id \
-    _pin_status_str _pin_other_status_str _new_is_pinned;
+    _pin_status_str _pin_other_status_str _new_is_pinned _optimize_mode_str;
 
   _checkSetFlockFn || exit;
 
@@ -1173,6 +1223,15 @@ _mainFn () {
         exit 0;
       fi
 
+      # Check snapshot pin status, refuse to delete pinned snapshots
+      readarray -t _snapshot_metadata_list < <(_rollbackSetFn \
+        'getBaseSnapshotMetadata' "${_snapshot_id}");
+      if [ "${_snapshot_metadata_list[2]}" = 'y' ]; then
+        _deletePinnedSnapshotRefusedMsg="${_deletePinnedSnapshotRefusedMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}"
+        _cm2PromptUserFn "${_deletePinnedSnapshotRefusedMsg}" "${_winTitle}";
+        exit 0;
+      fi
+
       _deleteConfirmMsg="${_deleteConfirmMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
       _reply_str="$(_cm2PromptUserFn \
         "${_deleteConfirmMsg}" "${_winTitle}" 'o')";
@@ -1185,15 +1244,49 @@ _mainFn () {
       fi
       ;;
     'optimize')
-      _reply_str="$(_cm2PromptUserFn "${_doOptimizeMsg}" "${_winTitle}" 'o')";
-      if [ "${_reply_str}" = 'y' ]; then
-        # NOTE: _cm2RunLongCmdFn prefixes commands with pkexec
-        _cm2RunLongCmdFn 'Optimizing disk...' \
-          "${_rollbackBackendExe}" 'btrfsDeepClean';
-        _handleOperationExitIntFn 'optimize' "$?";
-      else
-        _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
-      fi
+      _optimize_mode_str="$(_cm2PromptUserFn "${_chooseOptimizeModeMsg}" \
+        "${_winTitle}" 'd' \
+        'quick' 'Quick Clean - Free unallocated space quickly' 'on' \
+        'deep' 'Deep Clean - Delete all snapshots and free more space' 'off')";
+
+      case "${_optimize_mode_str}" in
+        'quick')
+          _reply_str="$(_cm2PromptUserFn "${_quickOptimizeMsg}" \
+            "${_winTitle}" 'o')";
+          if [ "${_reply_str}" = 'y' ]; then
+            # NOTE: _cm2RunLongCmdFn prefixes commands with pkexec
+            _cm2RunLongCmdFn 'Quick cleaning disk...' \
+              "${_rollbackBackendExe}" 'btrfsMaintain';
+            _handleOperationExitIntFn 'optimize' "$?";
+          else
+            _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}"
+          fi
+          ;;
+        'deep')
+          _reply_str="$(_cm2PromptUserFn "${_deepOptimizeMsg}" \
+            "${_winTitle}" 'o')";
+          if [ "${_reply_str}" = 'y' ]; then
+            # NOTE: _cm2RunLongCmdFn prefixes commands with pkexec
+            _cm2RunLongCmdFn 'Deep cleaning disk...' \
+              "${_rollbackBackendExe}" 'btrfsDeepClean';
+            _handleOperationExitIntFn 'optimize' "$?";
+          else
+            _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}"
+          fi
+          ;;
+        *)
+          _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
+          ;;
+      esac
+      # _reply_str="$(_cm2PromptUserFn "${_doOptimizeMsg}" "${_winTitle}" 'o')";
+      # if [ "${_reply_str}" = 'y' ]; then
+      #   # NOTE: _cm2RunLongCmdFn prefixes commands with pkexec
+      #   _cm2RunLongCmdFn 'Optimizing disk...' \
+      #     "${_rollbackBackendExe}" 'btrfsDeepClean';
+      #   _handleOperationExitIntFn 'optimize' "$?";
+      # else
+      #   _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
+      # fi
       ;;
     'protect')
       if [ -z "$(_rollbackSetFn 'getSnapshotList')" ]; then
@@ -1204,6 +1297,11 @@ _mainFn () {
       # Read first two lines
       IFS=$'\n'; read -r -d '' _snapshot_id _snapshot_disp_id \
         < <(_chooseSnapshotFn "${_choosePinSwitchSnapshotMsg}");
+
+      if [ -z "${_snapshot_id}" ]; then
+        _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}"
+        exit 0;
+      fi
 
       readarray -t _snapshot_metadata_list < <(_rollbackSetFn \
         'getBaseSnapshotMetadata' "${_snapshot_id}");
@@ -1246,6 +1344,11 @@ _mainFn () {
       IFS=$'\n'; read -r -d '' _snapshot_id _snapshot_disp_id \
         < <(_chooseSnapshotFn "${_chooseEditSnapshotMsg}");
 
+      if [ -z "${_snapshot_id}" ]; then
+        _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}"
+        exit 0;
+      fi
+
       readarray -t _snapshot_metadata_list < <(_rollbackSetFn \
         'getBaseSnapshotMetadata' "${_snapshot_id}");
 
@@ -1272,8 +1375,10 @@ _mainFn () {
         fi
       done
 
-      _snapshot_name="$(base64 -w0 <<< "${_snapshot_name}")";
-      _snapshot_desc="$(base64 -w0 <<< "${_snapshot_desc}")";
+      # `<<<` cannot be used here as it inserts an extra newline. `echo -n` must
+      # be used to avoid this.
+      _snapshot_name="$(echo -n "${_snapshot_name}" | base64 -w0)";
+      _snapshot_desc="$(echo -n "${_snapshot_desc}" | base64 -w0)";
 
       _rollbackBackendFn 'setSnapshotMetadata' \
         "${_snapshot_id}" \
@@ -1471,12 +1576,13 @@ declare _binName _binDir _baseName _baseDir _libTable _assignList \
   _totalRestoreConfirmMsg _rollbackSuccessfulMsg \
   _selectiveRestoreConfirmMsg _createSnapshotMsg _snapshotCreatedMsg \
   _chooseDeleteSnapshotMsg _deleteConfirmMsg _snapshotDeletedMsg \
-  _doOptimizeMsg _choosePinSwitchSnapshotMsg _chooseEditSnapshotMsg \
-  _editSuccessfulMsg _optimizeSuccessfulMsg \
-  _optimizeFailedMsg _systemUnsupportedMsg _restoreIncompleteMsg \
-  _noSnapshotsFoundMsg _strangeSubvolsMsg _restoreFailedMsg \
-  _deletionFailedMsg _creationFailedMsg _pinSwitchFailedMsg \
-  _editFailedMsg _criticalErrorMsg _operationCancelledMsg _lowDiskMsg \
+  _deepOptimizeMsg _choosePinSwitchSnapshotMsg _chooseEditSnapshotMsg \
+  _editSuccessfulMsg _optimizeSuccessfulMsg _chooseOptimizeModeMsg \
+  _quickOptimizeMsg _optimizeFailedMsg _systemUnsupportedMsg \
+  _restoreIncompleteMsg _noSnapshotsFoundMsg _strangeSubvolsMsg \
+  _restoreFailedMsg _deletionFailedMsg _creationFailedMsg _pinSwitchFailedMsg \
+  _editFailedMsg _deletePinnedSnapshotRefusedMsg \
+  _criticalErrorMsg _operationCancelledMsg _lowDiskMsg \
   _lowBootMsg _rollbackBinExe _rollbackSetExe;
 
 _lockDir='';
