@@ -91,6 +91,9 @@ declare -A -g _cm2LogCodeMap=(
 
 _cm2SetLogTagFn () {
   declare _log_tag_str;
+
+  [ -z "${_cm2LoggerExe}" ] && return;
+
   _log_tag_str="${1:-}";
 
   if [ -z "${_log_tag_str}" ]; then
@@ -308,6 +311,7 @@ _cm2CalcModelCodeFn () {
     NV4xPZ*)          _code='xeg2';;
     NUC11PAHi*)       _code='nxg1';;
     NUC12WSHi*)       _code='nxg2';;
+    NUC12WSH-B*)      _code='nxg2';;
     other|*)          _code='other';;
   esac;
 
