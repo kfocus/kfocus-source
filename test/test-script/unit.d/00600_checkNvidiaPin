@@ -66,6 +66,10 @@ _runTestFn () {
   # Use function from test harness: clear out run dir and check expect dir
   if ! _t00ClearRunDirFn;    then return 1; fi
   if ! _t00CheckExpectDirFn; then return 1; fi
+  if [ "$(_cm2EchoModelStrFn 'is_nv_sys')" != 'y' ]; then
+    _cm2EchoFn 'OK  : Skipped, not an Nvidia system';
+    return 0;
+  fi
 
   _checkNvidiaPinFn;
 

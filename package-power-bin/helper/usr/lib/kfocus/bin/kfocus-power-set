@@ -236,20 +236,20 @@ _scanFn () {
 
 _chkInitCpuFn () {
   declare _status_key _success_flag _status_set_list _set_key _proc_count;
-  _cm2SetMsgFn 'Set CPU properties for M2 GEN 5';
 
   # This drop file should clear on every boot
   if [ -f "${_cpuDropFile}" ]; then
-    _cm2SucStrFn 'Drop file found.'; _cm2SucFn; return 0;
+    _cm2SucStrFn 'CPU init completed';
+    return 0;
   fi
 
   # Skip if not the m2g5 or m2g5p model (both share config_code m2g5)
   if [ "$(_cm2EchoModelStrFn 'config_code')" != 'm2g5' ]; then
     touch "${_cpuDropFile}" || _cm2WarnStrFn 'Could not add drop file';
-    _cm2SucFn;
     return 0;
   fi
 
+  _cm2SetMsgFn 'Set CPU properties for M2 GEN 5';
   _status_set_list=();
   _status_key="$(cat "${_pstateFile}" || true )";
   _success_flag='y';
