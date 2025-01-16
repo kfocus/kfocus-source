@@ -27,7 +27,7 @@ _getNvSeriesStrFn () {
 
   if ! lsmod | grep -q 'nvidia_drm'; then
     1>&2 cat << _EOL01
-${_baseName} ERROR
+${_baseName}: No NVIDIA GPU detected
 
 This script must be run with an Nvidia GPU and the nvidia_drm module loaded.
 If you have an Nvidia GPU, please switch to "Nvidia (Performance)" or "Nvidia
@@ -53,7 +53,7 @@ _EOL01
   fi
 
   1>&2 cat << _EOL02
-${_baseName} ERROR: Unsupported GPU
+${_baseName}: Unsupported GPU
 ${_nv_line}
 
 You do not appear to be running an Nvidia RTX 20-,30-, or 40-series GPU.
