@@ -14,7 +14,7 @@ Section: kernel
 Provides: ${dkms:v4l2loopback-modules} ${dkms:zfs-modules} ${dkms:ivsc-modules} ${dkms:virtualbox-guest-modules} ${dkms:wireguard-linux-compat-modules}
 Replaces: linux-image-kfocus${variant:suffix}, linux-image-generic-hwe-24.04-kfocus
 Conflicts: linux-image-kfocus${variant:suffix}, linux-image-generic-hwe-24.04-kfocus
-Depends: ${misc:Depends}, linux-image-unsigned-${kernel-abi-version}-kfocus, linux-firmware [amd64 armhf arm64 ppc64el], intel-microcode [amd64], amd64-microcode [amd64]
+Depends: ${misc:Depends}, linux-image-unsigned-${kernel-abi-version}-kfocus, linux-firmware [amd64], intel-microcode [amd64], amd64-microcode [amd64]
 Recommends: thermald [amd64]
 Description: KFocus Linux kernel image
  This package will always depend on the latest KFocus kernel image
@@ -51,7 +51,7 @@ Provides: ${test:provides-full-kfocus} ${test:provides-full-preferred}
 Replaces: linux-kfocus${variant:suffix}, linux-generic-hwe-24.04-kfocus
 Conflicts: linux-kfocus${variant:suffix}, linux-generic-hwe-24.04-kfocus
 Depends: ${misc:Depends}, linux-image-kfocus${variant:suffix}-kfocus (= ${binary:Version}), linux-headers-kfocus${variant:suffix}-kfocus (= ${binary:Version})
-Recommends: linux-tools-${kernel-abi-version}-kfocus, ubuntu-kernel-accessories
+Recommends: linux-tools-${kernel-abi-version}-kfocus
 Description: Complete KFocus Linux kernel and headers
  This package will always depend on the latest complete KFocus Linux kernel
  and headers.

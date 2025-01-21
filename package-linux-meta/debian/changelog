@@ -1,11 +1,54 @@
-linux-meta-kfocus (6.8.0-45.45+kfocus2) noble; urgency=medium
+linux-meta-kfocus (6.8.0-51.52+kfocus1) noble; urgency=medium
 
-  * Release for Kubuntu Focus (#4632)
-  * Upstream Ubuntu linux-meta 6.8.0-45.45
-  * Applied patch: Cherry-pick ITMT adjustment from 6.10
-    (https://lore.kernel.org/linux-acpi/12460110.O9o76ZdvQC@rjwysocki.net)
+  * Release for Kubuntu Focus (#4990)
+  * Upstream Ubuntu linux-meta-oem-6.8 6.8.0-1019.19
+  * Applied patch: thunderbolt: Improve redrive mode handling
+    (https://lore.kernel.org/linux-usb/20241211103529.2302706-1-mika.westerberg@linux.intel.com/)
+  * Applied patch: btrfs: improve the warning and error message for
+    btrfs_remove_qgroup()
+    (https://github.com/btrfs/linux/commit/c61ffaa0a3d9a2094e24d1fe2b17f20e109d2cc8)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Fri, 04 Oct 2024 15:35:31 -0500
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Fri, 27 Dec 2024 12:12:19 -0600
+
+linux-meta-oem-6.8 (6.8.0-1019.19) noble; urgency=medium
+
+  * Main version: 6.8.0-1019.19
+
+ -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Mon, 09 Dec 2024 12:49:18 +0800
+
+linux-meta-oem-6.8 (6.8.0-1018.18) noble; urgency=medium
+
+  * Main version: 6.8.0-1018.18
+
+  * Packaging resync (LP: #1786013)
+    - [Packaging] resync git-ubuntu-log
+    - [Packaging] debian/dkms-versions -- resync from main package
+
+ -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Thu, 21 Nov 2024 17:17:47 +0800
+
+linux-meta-oem-6.8 (6.8.0-1017.17) noble; urgency=medium
+
+  * Main version: 6.8.0-1017.17
+
+ -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Tue, 12 Nov 2024 12:02:16 +0800
+
+linux-meta-oem-6.8 (6.8.0-1016.16) noble; urgency=medium
+
+  * Main version: 6.8.0-1016.16
+
+ -- Timo Aaltonen <timo.aaltonen@canonical.com>  Wed, 16 Oct 2024 09:27:29 +0300
+
+linux-meta-oem-6.8 (6.8.0-1015.15) noble; urgency=medium
+
+  * Main version: 6.8.0-1015.15
+
+ -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Mon, 14 Oct 2024 15:00:48 +0800
+
+linux-meta-oem-6.8 (6.8.0-1014.14) noble; urgency=medium
+
+  * Main version: 6.8.0-1014.14
+
+ -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Fri, 04 Oct 2024 14:07:38 +0800
 
 linux-meta-oem-6.8 (6.8.0-1013.13) noble; urgency=medium
 
