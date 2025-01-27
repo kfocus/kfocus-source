@@ -436,7 +436,7 @@ _echoPrioritizedKversExtraKeepStr () {
 _mainFn() {
   declare \
     _body_title _boot_free_int _boot_size_int \
-    _brow_str _cmd_list _do_check _do_force _eff_free_int \
+    _brow_str _cmd_list _do_check _do_force _do_offer_deep_clean _eff_free_int \
     _check_msg _eff_size_int _end_msg _erow_str _exit_str \
     _filtered_purge_list _filtered_purge_list_str _inst_kvers_count \
     _inst_kvers_list_str _is_boot_low _is_boot_partition \
@@ -445,7 +445,8 @@ _mainFn() {
     _kversExtraKeepStr _kversFullPrefStr _kversFullRunStr \
     _opt_str _overfull_threshold_count _prompt_str \
     _purge_msg _purge_pkg_list_str _purge_pkg_list _purge_pkg \
-    _reply  _reserve_kvers_count _run_msg _table_str _win_title _btrfs_status;
+    _reply  _reserve_kvers_count _run_msg _table_str _win_title _btrfs_status \
+    _deep_clean_msg;
 
   ## Begin Initialize {
   _aptListStr="$(_echoAptListStrFn)";
@@ -460,10 +461,12 @@ _mainFn() {
 
   ## Begin Process Options {
   _do_force='n';
-  while getopts ':fh' _opt_str; do
+  _do_offer_deep_clean='n';
+  while getopts ':fhd' _opt_str; do
     case "${_opt_str}" in
     h) _echoHelpFn; return 0;;
     f) _do_force='y';;
+    d) _do_offer_deep_clean='y';;
     *) _cm2EchoFn "\nInvalid option: ${_opt_str} \n";
       _echoHelpFn;
       return 1;;
@@ -626,6 +629,52 @@ EOD
   fi
   ## . End Heuristics }
 
+  ## Begin Offer Deep Clean {
+  if [ "${_do_offer_deep_clean}" = 'y' ]; then
+    [ -z "${_rollbackBackendExe}" ] && return;
+
+    _deep_clean_msg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_str}<h3 style="color:#f7941d">FocusRx: Disk Space Still Low</h3>${_erow_str}
+
+${_brow_str}Boot space on this system is still low. This is most likely <br>
+because System Rollback has snapshots of older kernels still <br>
+on the disk. You should delete older snapshots to resolve <br>
+this condition.${_erow_str}
+
+${_brow_str}If you would like, you can purge all snapshots and clean the <br>
+disk to free up as much boot space as possible. Please note <br>
+that this operation is destructive and cannot be undone!${_erow_str}
+
+${_brow_str}Purge all snapshots now?${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+    )";
+
+    _reply="$(_cm2PromptUserFn "${_deep_clean_msg}" "${_win_title}" 'w')";
+    [ "${_reply}" = 'n' ] && return;
+
+    _deep_clean_msg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_str}<h3 style="color:#f7941d">FocusRx: Snapshot Purge</h3>${_erow_str}
+
+${_brow_str}Final confirmation: Are you really sure you want to <br>
+delete all snapshots? <b style="color:#da4453">WARNING: This will delete all <br>
+system rollback snapshots, INCLUDING PINNED <br>
+SNAPSHOTS! This cannot be undone!</b>${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+    )";
+
+    _reply="$(_cm2PromptUserFn "${_deep_clean_msg}" "${_win_title}" 'w')";
+    [ "${_reply}" = 'n' ] && return;
+
+    _cm2RunLongCmdFn 'Purging all snapshots' "${_rollbackBackendExe}" \
+      'btrfsDeepClean'
+    return
+  fi
+  ## . End Offer Deep Clean }
+
   ## Begin Create Keeper Versions {
   # TODO: Revise logic to pull from list from config file populated by
   # a 'this is what I want to keep' GUI.
@@ -757,13 +806,13 @@ _EOW02
   _kernel_purge_count="$(( _inst_kvers_count - _kernel_keep_count ))";
   _purge_msg="$(cat <<_EOW04
 ${_cm2HtmBeginStr}${_table_str}
-${_brow_str}<h3 style="color:#f7941d">FocusRX: Purge Older Kernels?</h3>${_erow_str}
+${_brow_str}<h3 style="color:#f7941d">FocusRx: Purge Older Kernels?</h3>${_erow_str}
 ${_brow_str}Doc: <a style="color:#1d99f3" href="https://kfocus.org/wf/tools#kclean">https://kfocus.org/wf/tools#kclean</a>${_erow_str}
 
 ${_brow_str}${_run_msg}${_erow_str}
 
 ${_brow_str}Removing unused kernels prevents the system<br>
-from running out of disk space in <code>/boot</code>.${_erow_str}XXX_SNAPSHOT_PURGE_XXX
+from running out of disk space in <code>/boot</code>.${_erow_str}
 
 ${_brow_str}<h4 style="color:#f7941d">Packages to Keep</h4>${_erow_str}
 ${_brow_str}<code>${_keep_pkg_list_str}</code>${_erow_str}
@@ -778,21 +827,6 @@ ${_brow_str}Do you wish to purge ${_kernel_purge_count} of ${_inst_kvers_count} 
 ${_cm2HtmEndStr}
 _EOW04
   )";
-
-  if [ "${_isBtrfsYn}" = 'y' ]; then
-    _snapshot_purge_msg="$(cat <<EOF
-
-
-${_brow_str}<b style="color:#da4453">WARNING: All System Rollback Snapshots
-will <br>
-be deleted, INCLUDING PINNED SNAPSHOTS! <br>
-This cannot be undone!</b>${_erow_str}
-EOF
-    )";
-    _purge_msg="${_purge_msg//XXX_SNAPSHOT_PURGE_XXX/${_snapshot_purge_msg}}";
-  else
-    _purge_msg="${_purge_msg//XXX_SNAPSHOT_PURGE_XXX/''}";
-  fi
 
   _reply="$(_cm2PromptUserFn "${_purge_msg}" "${_win_title}" 'w')";
   if [ "${_reply}" = 'n' ]; then
@@ -822,6 +856,12 @@ EOF
   fi
   ## . End Purge packages }
 
+  ## Begin Check if deep clean is needed {
+  if [ "${_isBtrfsYn}" = 'y' ]; then
+    "${_kcleanExe}" '-d'
+  fi
+  ## . END Check if deep clean is needed }
+
   ## Begin Report purge results {
   _purge_msg="$(cat <<_EOW05
 ${_cm2HtmBeginStr}${_table_str}
@@ -842,7 +882,7 @@ declare _binName _binDir _baseDir _baseName _cStr \
   _kversFullPrefStr _kversFullRunStr _kc2RtestDebugStr \
   _isBtrfsYn _divisorInt _kernelUnitSizeInt _kernelUnitSizeBtrfsInt \
   _lowDiskSizeInt _multiInt _assignList _btrfsExe _rollbackSetExe \
-  _kcleanSetExe;
+  _kcleanSetExe _kcleanExe _rollbackBackendExe;
 
 _aptListStr='';
 _cStr=$'\n';
@@ -882,8 +922,10 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   _assignList=(
     '_btrfsExe|/usr/bin/btrfs'
+    "_kcleanExe|${_binDir}/kfocus-kclean"
     "_kcleanSetExe|${_binDir}/kfocus-kclean-set"
     "_rollbackSetExe|${_binDir}/kfocus-rollback-set||optional"
+    "_rollbackBackendExe|${_binDir}/kfocus-rollback-backend||optional"
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2WarnStrFn 'ABORT: Required commands not found';

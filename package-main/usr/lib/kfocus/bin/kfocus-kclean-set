@@ -47,7 +47,8 @@ _purgePkgsFn () {
 
   if [ "${_mode}" = 'optimize' ] \
     && [ -n "${_rollbackBackendExe}" ]; then
-    "${_rollbackBackendExe}" 'btrfsDeepClean';
+    "${_rollbackBackendExe}" 'trimSnapshots';
+    "${_rollbackBackendExe}" 'btrfsMaintain';
   fi
 }
 ## . END _purgePkgsFn }
