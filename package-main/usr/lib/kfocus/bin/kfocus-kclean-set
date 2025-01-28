@@ -27,8 +27,15 @@ _importCommonFn() {
 }
 ## . END _importCommonFn }
 
+## BEGIN _optimizeDiskFn {
+_optimizeDiskFn () {
+  [ -z "${_rollbackBackendExe}" ] && return;
+  "${_rollbackBackendExe}" 'trimSnapshots';
+  "${_rollbackBackendExe}" 'btrfsMaintain';
+}
+## . END _optimizeDiskFn }
+
 ## BEGIN _purgePkgsFn {
-#
 _purgePkgsFn () {
   declare _mode _pkg_list _cmd_list;
 
@@ -42,13 +49,11 @@ _purgePkgsFn () {
     return 1;
   fi
 
-  _cmd_list=('apt-get' 'purge' '-y' "${_pkg_list[@]}")
+  _cmd_list=('apt-get' 'purge' '-y' "${_pkg_list[@]}");
   "${_cmd_list[@]}";
 
-  if [ "${_mode}" = 'optimize' ] \
-    && [ -n "${_rollbackBackendExe}" ]; then
-    "${_rollbackBackendExe}" 'trimSnapshots';
-    "${_rollbackBackendExe}" 'btrfsMaintain';
+  if [ "${_mode}" = 'optimize' ]; then
+    _optimizeDiskFn
   fi
 }
 ## . END _purgePkgsFn }
@@ -61,13 +66,14 @@ _mainFn () {
   case "${_arg_str}" in
     'purge-pkgs'             ) _purgePkgsFn 'normal'   "$@";;
     'purge-pkgs-and-optimize') _purgePkgsFn 'optimize' "$@";;
+    'optimize-disk'          ) _optimizeDiskFn             ;;
     *) _cm2WarnStrFn "Unrecognized directive |${_arg_str}|";;
   esac
 }
 ## . END _mainFn }
 
 ## BEGIN Declare global variables {
-declare  _binName _binDir _baseDir _baseName _assignList;
+declare  _binName _binDir _baseDir _baseName _assignList _rollbackBackendExe;
 ## . END Declare global variables }
 
 ## BEGIN Run main if script is not sourced {

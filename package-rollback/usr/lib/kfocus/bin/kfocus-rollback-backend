@@ -3006,6 +3006,10 @@ _trimSnapshotsPublicFn () {
   elif [ "${_return_code}" = '2' ]; then
     _logExitFn 'alert' '2' 'A critical error occurred while trimming snapshots!';
   fi
+
+  # TODO: Consider doing a BTRFS balance via _balanceMainFn and _balanceBootFn
+  #   here. All calls to `trimSnapshots` currently do a balance immediately
+  #   thereafter.
 }
 ## . END _trimSnapshotsPublicFn }
 ## . END PUBLIC FUNCTIONS ===================================================
