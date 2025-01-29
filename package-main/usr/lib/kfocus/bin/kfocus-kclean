@@ -50,7 +50,7 @@ _importCommonFn () {
 }
 ## . END _importCommonFn }
 
-## BEGIN {
+## BEGIN _assignGlobalUiVarsFn {
 _assignGlobalUiVarsFn() {
   _winTitle='FocusRx: Kernel Cleaner';
   _bodyTitle='FocusRx: KERNEL CLEANER';
@@ -58,7 +58,7 @@ _assignGlobalUiVarsFn() {
   _erowStr='</td></tr>';
   _tableStr='<table style="width:100%;margin-right:32px">';
 }
-## . END }
+## . END _assignGlobalUiVarsFn }
 
 ## BEGIN _echoInstKversListStrFn {
 # Purpose  : Echo to STDOUT all kernel versions found in installed packages.
@@ -420,7 +420,6 @@ _echoPrioritizedKversExtraKeepStr () {
 }
 ## . END _echoPrioritizedKversExtraKeepStr }
 
-## BEGIN _mainFn {
 # Example install group for linux-kfocus meta-packages:
 #   sudo apt install \
 #     linux-kfocus-24.04-kfocus              \
@@ -446,8 +445,9 @@ _echoPrioritizedKversExtraKeepStr () {
 ## BEGIN _notifyAndExitFn {
 _notifyAndExitFn () {
   declare _prompt_str _disp_msg;
-  _prompt_str="${1:-}";
-  [ -z "${_prompt_str}" ] && return 1;
+
+  _prompt_str="${1:-No prompt provided.}";
+
   _disp_msg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
 ${_browStr}<h3 style="color:#f7941d">${_bodyTitle}</h3>${_erowStr}
@@ -461,41 +461,41 @@ EOF
 }
 ## . END _notifyAndExitFn }
 
-## BEGIN _runOperationFn {
+## BEGIN _triggerActionFn {
 _triggerActionFn () {
-  declare _progress_msg _success_msg _fail_msg _cmd_list _exit_str _rslt_msg \
-    _end_msg;
-  _progress_msg="${1:-}";
-  _success_msg="${2:-}";
-  _fail_msg="${3:-}";
+  declare _progress_msg _success_msg _fail_msg _cmd_list _exit_str \
+    _result_msg _end_msg;
+
+  _progress_msg="${1:-No progress message provided.}";
+  _success_msg="${2:-No success message provided.}";
+  _fail_msg="${3:-No failure message provided.}";
   shift 3;
   _cmd_list=( "$@" );
-  [ -z "${_progress_msg}" ] && return 1;
-  [ -z "${_success_msg}" ] && return 1;
-  [ -z "${_fail_msg}" ] && return 1;
-  (( ${#_cmd_list[@]} == 0 )) && return 1;
+
+  (( ${#_cmd_list[@]} == 0 )) && _cmd_list=( 'false' );
 
   if _exit_str="$(_cm2RunLongCmdFn "${_progress_msg}" "${_cmd_list[@]}")"; then
-    _rslt_msg="${_success_msg}";
+    _result_msg="${_success_msg}";
   else
-    _rslt_msg="${_fail_msg}";
+    _result_msg="${_fail_msg}";
     if [ -n "${_exit_str}" ]; then
-      _rslt_msg+=":<br>${_exit_str}";
+      _result_msg+=":<br>${_exit_str}";
     fi
   fi
 
   _end_msg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
 ${_browStr}<h3 style="color:#f7941d">${_bodyTitle}</h3>${_erowStr}
-${_browStr}${_rslt_msg}${_erowStr}
+${_browStr}${_result_msg}${_erowStr}
 </table>
 ${_cm2HtmEndStr}
 EOF
   )";
   _cm2PromptUserFn "${_end_msg}" "${_winTitle}" 'p';
 }
-## . END _runOperationFn }
+## . END _triggerActionFn }
 
+## BEGIN _mainFn {
 _mainFn() {
   declare \
     _boot_free_int _boot_size_int _cmd_list _do_check _do_force \
@@ -715,7 +715,7 @@ EOF
 
     _reply="$(_cm2PromptUserFn "${_deep_clean_msg}" "${_winTitle}" 'w')";
     [ "${_reply}" = 'n' ] && _notifyAndExitFn "$(cat <<EOF
-Snapshots will NOT be purged. <br>
+Snapshots were NOT purged, per user request. <br>
 ${_exit_wizard_msg}
 EOF
     )";
@@ -734,14 +734,14 @@ EOF
 
     _reply="$(_cm2PromptUserFn "${_deep_clean_msg}" "${_winTitle}" 'w')";
     [ "${_reply}" = 'n' ] && _notifyAndExitFn "$(cat <<EOF
-Snapshots will NOT be purged. <br>
+Snapshots were NOT purged, per user request. <br>
 ${_exit_wizard_msg}
 EOF
     )";
 
     _cmd_list=( "${_rollbackBackendExe}" 'btrfsDeepClean' );
     _triggerActionFn 'Purging all snapshots' 'Snapshot purge was successful.' \
-      'There was an issue purging snapshots' "${_cmd_list[@]}"
+      'There was an issue purging snapshots' "${_cmd_list[@]}";
     return
   fi
   ## . End Offer Deep Clean }
@@ -880,10 +880,10 @@ ${_cm2HtmEndStr}
 _EOW02
     )";
 
-    if [ "${_isBtrfsYn}" = 'y' ]; then
+    if [ "${_isBtrfsYn}" = 'y' ] && [ "${_is_boot_low}" = 'y' ]; then
       _reply="$(_cm2PromptUserFn "${_purge_msg}" "${_winTitle}" 'w')";
       [ "${_reply}" = 'n' ] && _notifyAndExitFn "$(cat <<EOF
-Disk will NOT be optimized. <br>
+Disk was NOT optimized, per user request. <br>
 ${_exit_wizard_msg}
 EOF
       )";
@@ -893,11 +893,11 @@ EOF
         'There was an issue optimizing the disk' "${_cmd_list[@]}"
 
       # Check if deep clean is needed
-      [ "${_isBtrfsYn}" = 'y' ] && "${_kcleanExe}" '-d';
-      return;
+      "${_kcleanExe}" '-d';
+    else
+      _cm2PromptUserFn "${_purge_msg}" "${_winTitle}" 'p';
     fi
 
-    _cm2PromptUserFn "${_purge_msg}" "${_winTitle}" 'p';
     return;
   fi
   ## . End Show dialog if there are no packages to purge }
@@ -930,7 +930,7 @@ _EOW04
 
   _reply="$(_cm2PromptUserFn "${_purge_msg}" "${_winTitle}" 'w')";
   [ "${_reply}" = 'n' ] && _notifyAndExitFn "$(cat <<EOF
-Kernels will NOT be purged. <br>
+Kernels were NOT purged, per user request. <br>
 ${_exit_wizard_msg}
 EOF
   )";
@@ -944,7 +944,7 @@ EOF
   fi
   _triggerActionFn 'Cleaning up kernels' 'Purge was successful.' \
     'There was an issue purging packages' "${_cmd_list[@]}"
-  ## . End Purge results }
+  ## . End Purge packages }
 
   # Check if deep clean is needed
   [ "${_isBtrfsYn}" = 'y' ] && "${_kcleanExe}" '-d';
@@ -957,8 +957,8 @@ declare _binName _binDir _baseDir _baseName _cStr \
   _kversFullPrefStr _kversFullRunStr _kc2RtestDebugStr \
   _isBtrfsYn _divisorInt _kernelUnitSizeInt _kernelUnitSizeBtrfsInt \
   _lowDiskSizeInt _multiInt _assignList _btrfsExe _rollbackSetExe \
-  _kcleanSetExe _kcleanExe _rollbackBackendExe _winTitle _bodyTitle _browStr \
-  _erowStr _tableStr;
+  _kcleanSetExe _kcleanExe _rollbackBackendExe _winTitle _bodyTitle \
+  _browStr _erowStr _tableStr;
 
 _aptListStr='';
 _cStr=$'\n';
