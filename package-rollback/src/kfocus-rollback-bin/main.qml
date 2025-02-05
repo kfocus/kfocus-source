@@ -965,13 +965,13 @@ Kirigami.ApplicationWindow {
                 WaitScreenItem {
                     id          : balanceDiskWaitView
                     visible     : false
-                    headerText  : 'Quick Cleaning Boot Disk...'
+                    headerText  : 'Quick Cleaning System Disk...'
                 }
 
                 WaitScreenItem {
                     id          : optimizeDiskWaitView
                     visible     : false
-                    headerText  : 'Cleaning Up System Disk...'
+                    headerText  : 'Deep Cleaning System Disk...'
                     description : 'This may take several minutes. '
                       + 'You may continue to use your system while '
                       + 'this is processing. However, to avoid file corruption, '
