@@ -1,8 +1,38 @@
-linux-meta-hwe-6.8-kfocus (6.8.0-47.47~22.04.1) jammy; urgency=medium
+linux-meta-hwe-6.8-kfocus (6.8.0-51.52~22.04.1) jammy; urgency=medium
 
   * Release for Kubuntu Focus
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 15 Oct 2024 15:41:46 -0500
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 13 Jan 2025 12:56:31 -0600
+
+linux-meta-hwe-6.8 (6.8.0-51.52~22.04.1) jammy; urgency=medium
+
+  * Main version: 6.8.0-51.52~22.04.1
+
+ -- Stefan Bader <stefan.bader@canonical.com>  Mon, 09 Dec 2024 14:36:17 +0100
+
+linux-meta-hwe-6.8 (6.8.0-50.51~22.04.1) jammy; urgency=medium
+
+  * Main version: 6.8.0-50.51~22.04.1
+
+  * Packaging resync (LP: #1786013)
+    - [Packaging] debian/dkms-versions -- resync from main package
+
+ -- Stefan Bader <stefan.bader@canonical.com>  Thu, 21 Nov 2024 11:15:45 +0100
+
+linux-meta-hwe-6.8 (6.8.0-49.49~22.04.1) jammy; urgency=medium
+
+  * Main version: 6.8.0-49.49~22.04.1
+
+  * jammy/linux-hwe-6.8: 6.8.0-49.49~22.04.1 -proposed tracker (LP: #2085941)
+    - [Packaging] resync git-ubuntu-log
+
+ -- Stefan Bader <stefan.bader@canonical.com>  Wed, 06 Nov 2024 17:14:41 +0100
+
+linux-meta-hwe-6.8 (6.8.0-48.48~22.04.1) jammy; urgency=medium
+
+  * Main version: 6.8.0-48.48~22.04.1
+
+ -- Stefan Bader <stefan.bader@canonical.com>  Mon, 07 Oct 2024 11:59:18 +0200
 
 linux-meta-hwe-6.8 (6.8.0-47.47~22.04.1) jammy; urgency=medium
 
@@ -1297,7 +1327,7 @@ linux-meta (5.15.0.10.10) jammy; urgency=medium
 
 linux-meta (5.15.0.9.9) jammy; urgency=medium
 
-  * Empty entry 
+  * Empty entry
 
  -- Paolo Pisati <paolo.pisati@canonical.com>  Mon, 08 Nov 2021 16:18:49 +0100
 
@@ -3144,7 +3174,7 @@ linux-meta (4.10.0.9.11) zesty; urgency=medium
 
 linux-meta (4.10.0.8.10) zesty; urgency=medium
 
-  * Restored powerpc. 
+  * Restored powerpc.
 
  -- Tim Gardner <tim.gardner@canonical.com>  Thu, 16 Feb 2017 05:53:59 -0700
 
@@ -3213,7 +3243,7 @@ linux-meta (4.9.0.11.15) zesty; urgency=medium
 
 linux-meta (4.9.0.10.14) zesty; urgency=medium
 
-  * Fixed the kernel FTBS, so reenable powerpc64-emb 
+  * Fixed the kernel FTBS, so reenable powerpc64-emb
 
  -- Tim Gardner <tim.gardner@canonical.com>  Fri, 09 Dec 2016 07:08:51 -0700
 
@@ -3261,7 +3291,7 @@ linux-meta (4.9.0.4.7) zesty; urgency=medium
 
 linux-meta (4.9.0.3.6) zesty; urgency=medium
 
-  * UBUNTU: Drop powerpc64-emb pending build fixes 
+  * UBUNTU: Drop powerpc64-emb pending build fixes
 
  -- Tim Gardner <tim.gardner@canonical.com>  Wed, 30 Nov 2016 08:28:45 -0700
 
@@ -3638,7 +3668,7 @@ linux-meta (4.4.0.6.5) xenial; urgency=low
    - add packages for all of the lts backport packages.
 
   [ Tim Gardner ]
-  * linux ABI 4.4.0-6 
+  * linux ABI 4.4.0-6
 
  -- Tim Gardner <tim.gardner@canonical.com>  Tue, 16 Feb 2016 13:20:37 -0700
 
