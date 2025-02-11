@@ -187,9 +187,8 @@ map <C-K> :set paste<CR>1Givar j = GA; console.log(JSON.stringify(j));1G^vG:!
 ";y Toggle syntax highlighting
 nmap <silent> ;y : call ToggleSyntax() <CR>
 
-" ;f ;ff Turn numbers on and off
-nmap <silent> ;f  :set nonu <CR>
-nmap <silent> ;ff :set nu   <CR>
+" ;f toggle line numbers
+nmap <silent> ;f  :set invnumber <CR>
 
 " =====[ Visual selections keyboard shortcuts ]====================
 " ;p Format CSS into PowerCSS rule map
@@ -254,7 +253,7 @@ set thesaurus+=/usr/local/share/thesaurus/mthesaur.txt
 " https://vimtricks.com/p/highlight-syntax-inside-markdown/
 " See :r !ls /usr/share/vim/vim82/syntax/
 "
-let g:markdown_fenced_languages = ['bash','css','erb=eruby','javascript','js=javascript','json','html','node=javascript','perl','php=perl','python','ruby','sass','xml','vim']
+let g:markdown_fenced_languages = ['bash','css','erb=eruby','javascript','js=javascript','json','html','log=messages','messages','node=javascript','perl','php=perl','python','ruby','sass','xml','vim','yaml']
 
 " =====[ Wrap for vimdiff, both panes ] =============================== 
 "   https://stackoverflow.com/questions/16840433
