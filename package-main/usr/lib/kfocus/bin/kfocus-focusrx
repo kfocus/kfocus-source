@@ -42,6 +42,43 @@ _importCommonFn () {
 }
 ## . END _importCommonFn }
 
+# shellcheck disable=SC2317
+_trapExitFn () {
+  1>&2 echo "${_baseName} was interrupted";
+  rm "${_lockFile}" || true;
+}
+_chkSetFlockFn () {
+  declare _title _win_title _prompt_msg;
+  exec 211>"${_lockFile}" || exit 1;
+  if ! flock -n -e 211; then
+    1>&2 echo "Cannot get lock on ${_lockFile}";
+    _title='Duplicate FocusRx Instance';
+    _win_title="${_rootTitle}: ${_title} ";
+
+  _prompt_msg="$( cat <<_EOH00
+${_cm2HtmBeginStr}
+${_cm2HtmH3Str}${_title}</h3>
+
+${_cm2HtmPStr}Another FocusRx instance appears to be running.<br>
+Please look for another instance, or wait a minute<br>
+to try again.<p>
+${_cm2HtmPStr}If this persists, contact your system administrator.<br></p>
+${_cm2HtmEndStr}
+_EOH00
+  )";
+    _cm2PromptUserFn "${_prompt_msg}" "${_win_title}";
+    exit 1;
+  fi
+  # Trap unexpected exits to clean up lock file
+  trap _trapExitFn EXIT;
+}
+_exitCleanFn () {
+  declare _exit_int="${1:-0}";
+  trap '' EXIT;
+  rm "${_lockFile}" || true;
+  exit "${_exit_int}";
+}
+
 ## BEGIN _testNagCountFn {
  # Purpose: Read a _drop_file count.
  #   Increment that count and place in _drop_file.
@@ -192,7 +229,7 @@ _EOH03
 }
 ## . END _confirmInternetFn }
 
-## == BEGIN Check functions run by mainFn {
+## == BEGIN Check functions run by _mainFn {
 ## BEGIN _announceStartFn {
 # Purpose:
 #   Announce the purpose of FocusRx and what it does when forced
@@ -350,7 +387,7 @@ _chkOemMultiDiskFn () {
   fi
 
   # Use sudo here always, pkexec wrecks the GUI. We can do this here
-  # because the OEM user has passwordless sudo.
+  # because the OEM user has password-less sudo.
   sudo -E "${_chainHelperExe}" 'quietExit';
 
   _cm2SucFn;
@@ -1009,11 +1046,14 @@ _chkFirstrunFn () {
   fi
 }
 ## . END _chkFirstrunFn }
-## == . END Check functions run by mainFn }
+## == . END Check functions run by _mainFn }
 
 ## BEGIN _mainFn {
 _mainFn () {
   declare _who_str _opt_str;
+
+  # Bail if instance is already running per flock
+  _chkSetFlockFn;
 
   # 1902 Bail if run as user 'kubuntu' which implies liveCD
   _who_str="$(whoami)";
@@ -1024,10 +1064,10 @@ _mainFn () {
   while getopts ':fh' _opt_str; do
     case "${_opt_str}" in
     f) _doForce='y';;
-    h) _printHelpFn; exit 0;;
+    h) _printHelpFn; _exitCleanFn 0;;
     *) _cm2EchoFn "\nInvalid option: -${OPTARG} \n";
       _printHelpFn;
-      exit 1;;
+      _exitCleanFn 0;;
     esac
   done
   ## . End Process options }
@@ -1059,6 +1099,9 @@ _mainFn () {
 
   # Daisy-chain welcome wizard if available
   _chkFirstrunFn;
+
+  # Remove lock file and exit cleanly
+  _exitCleanFn;
 }
 ## . END _mainFn }
 
@@ -1068,7 +1111,7 @@ declare _parentCmdStr _lookupList \
   _focusRxDropDir _kbdColorSetExe _rootTitle _assignList \
   _focusRxSetExe _focusRxVersExe _btoolExe _firstrunExe \
   _fixIbusExe _kcleanExe _resetEffectsExe _rollbackBackendExe \
-  _rollbackSetExe _chainHelperExe _sysVersStr;
+  _rollbackSetExe _chainHelperExe _sysVersStr _userName _lockFile;
 
 _parentCmdStr="$(ps -o comm= $PPID)";
 # These domain names exist here only for the purposes of looking them up via
@@ -1092,6 +1135,9 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _focusRxDropDir="${_binDir}/kfocus-focusrx.d";
   _kbdColorSetExe="${_binDir}/kfocus-kb-color-set";
   _rootTitle='FocusRx';
+  _userName="$(id -un)";
+
+  _lockFile="/tmp/${_baseName}-${_userName}.lock";
   _assignList=(
     "_focusRxSetExe|${_binDir}/kfocus-focusrx-set"
     "_focusRxVersExe|${_binDir}/kfocus-rx-version"
