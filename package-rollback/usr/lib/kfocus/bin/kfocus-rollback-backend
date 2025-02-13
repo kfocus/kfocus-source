@@ -2870,8 +2870,7 @@ _setManualSwitchStatePublicFn () {
 #     - Metadb write failure.
 #
 _setSnapshotMetadataPublicFn () {
-  declare _snapshot_id _name_str _desc_str _is_pinned _was_pinned \
-    _write_failed;
+  declare _snapshot_id _name_str _desc_str _is_pinned _write_failed;
 
   _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
     'BTRFS status prevents setting snapshot metadata!';
@@ -2887,24 +2886,6 @@ _setSnapshotMetadataPublicFn () {
   [ -d "${_rb2MainSnapshotDir}/${_snapshot_id}" ] \
     || _logExitFn 'err' '1' 'The specified snapshot does not exist!'
   [[ "${_is_pinned}" =~ ^[yn]$ ]] || _logExitFn 'err' '1' 'Pinning data is not boolean!';
-
-  # If pinning an unpinned snapshot, check disk space
-  if [ "${_is_pinned}" = 'y' ]; then
-    _was_pinned="$(_readMetadbFn "${_snapshot_id}" 'pinned')" \
-      || _logExitFn 'err' '1' 'Could not determine if snapshot is pinned, metadb read failure!';
-    if [ "${_was_pinned}" != 'y' ]; then
-      _checkMainUnallocSpaceFn || {
-        _promptAllUsersFn 'rollbackLowMainSpace' "${_lowDiskMsg}";
-        _logExitFn 'err' '1' \
-          'Main disk space is too low to pin a snapshot!';
-      }
-      _checkBootUnallocSpaceFn || {
-        _promptAllUsersFn 'rollbackLowBootSpace' "${_lowBootMsg}";
-        _logExitFn 'err' '1' \
-          'Boot disk space is too low to pin a snapshot!';
-      }
-    fi
-  fi
 
   # Write snapshot name, description, pin status to snapshot metadb
   _writeMetadbFn "${_snapshot_id}" 'name' "${_name_str}" || {

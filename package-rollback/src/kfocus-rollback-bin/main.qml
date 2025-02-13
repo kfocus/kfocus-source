@@ -134,11 +134,10 @@ Kirigami.ApplicationWindow {
     Component {
         id: globalHelpWindowComponent
         HelpWindow {
-            helpText: `<p>These are actions that do not pertain to a specific
-              snapshot.</p>
+            helpText: `<p>These are actions that do not pertain to a
+              specific snapshot.</p>
 
-              <p><b><font color="#f7941d">`
-              + automaticSnapshotsLabel
+              <p><b><font color="#f7941d">` + automaticSnapshotsLabel
               + `</font></b> - When enabled, take snapshots without
               intervention before apt software changes; or at least once a
               week.</p>
@@ -150,29 +149,31 @@ Kirigami.ApplicationWindow {
 
               <p><b><font color="#f7941d">` + createSnapshotLabel
               + `</font></b> - Immediately create a snapshot of the
-              current system state. This includes the /boot and root
-              filesystems. This snapshot can be restored later as needed.</p>
+              current root (<code>/</code>) and and boot
+              (<code>/boot</code>) filesystems.</p>
 
               <p><b><font color="#f7941d">` + optimizeDiskLabel
               + `</font></b> - Delete all snapshots, defragment files as
               needed, recover unreachable space, and consolidate data on the
-              boot disk. Use this to maximize available free space and improve
-              performance.</p>
-              `
+              boot disk.</p>`
+
             helpTitle: 'Global Actions Help'
         }
     }
 
+    // System Rollback correlates
+    // same-point-in-time snapshots for both the root (<code>/</code>)
+    // and boot (<code>/boot</code>) filesystems. This helps ensure
+    // that rollback data is always consistent.</p>
     Component {
         id: partitionHealthHelpWindowComponent
         HelpWindow {
-            helpText: `<p>This table shows disk usage for the system
-              partitions that this tool may affect.</p>
+            helpText: `<p>These are health metrics of the partitions
+              used in snapshots.</p>
 
               <p><b><font color="#f7941d">Mount</font></b> -
-              The filesystem's mount point. System Rollback keeps snapshots
-              for both the root (<code>/</code>) and boot (<code>/boot</code>)
-              filesystems correlated so there are no data inconsistencies.</p>
+              The filesystem mount point, either root (<code>/</code>)
+              or boot (<code>/boot</code>).</p>
 
               <p><b><font color="#f7941d">Status</font></b> - Disk space
               status. "<font color="#27ae60"><code>Good</code></font>" means
@@ -188,8 +189,10 @@ Kirigami.ApplicationWindow {
               Remaining free space on the filesystem.</p>
 
               <p><b><font color="#f7941d">Unalloc %</font></b> -
-              Percentage of unallocated space left on the filesystem.
-              Unallocated space should exceed 15% at all times.</p>`
+              Percentage of unallocated space available on the filesystem.
+              Root (<code>/</code>) unallocated space should always exceed
+              15%, and boot (<code>/boot</code>) should always exceed 25%.</p>`
+
             helpTitle: 'Partition Health Help'
         }
     }
@@ -197,27 +200,29 @@ Kirigami.ApplicationWindow {
     Component {
         id: snapshotsHelpWindowComponent
         HelpWindow {
-            helpText: `<p>These are snapshot-specific view and edit
-              controls.</p>
+            helpText: `<p>These are actions for the selected snapshot.</p>
 
-              <p><b><font color="#f7941d">Restore</font></b> - Roll back
-              the system to the selected snapshot. The system will reboot
-              automatically during the restore process.</p>
+              <p><b><font color="#f7941d">Restore</font></b> -
+              Rollback the system to the selected snapshot. The
+              system reboots automatically during the restore process. Data in
+              the <code>/home</code> directory is unaffected.</p>
 
               <p><b><font color="#f7941d">Compare With</font></b> -
-              Shows the difference between any two snapshots, or between a
-              snapshot and the current system state.</p>
+              Show the differences between the selected snapshot and
+              the current system state. Or compare to another snapshot.</p>
 
               <p><b><font color="#f7941d">Delete</font></b> -
               Remove the selected snapshot from the disk permanently.</p>
 
               <p><b><font color="#f7941d">Protect</font></b> -
-              Toggle protection on the selected snapshot. Older unprotected
-              snapshots may be automatically removed to reclaim disk space.</p>
+              Toggle protection on the selected snapshot. System Rollback may
+              automatically remove older, unprotected snapshots to reclaim
+              disk space.</p>
 
-              <p><b><font color="#f7941d">Edit</font></b> - Change
-              the name, description, or protction of the selected
+              <p><b><font color="#f7941d">Edit</font></b> -
+              Change the name, description, or protection of the selected
               snapshot.</p>`
+
             helpTitle: 'Snapshots Help'
         }
     }
