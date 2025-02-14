@@ -62,6 +62,15 @@ ColumnLayout {
         HoverHandler {
             cursorShape: Qt.PointingHandCursor
         }
+        Layout.bottomMargin : Kirigami.Units.gridUnit * 0.25
+    }
+    Controls.Label {
+        text             : ''
+          + '<p><b><font color="#f7941d">IMPORTANT: A comparison can '
+          + 'take many minutes to complete.</font></b> You might want '
+          + 'to do something else when it is running.</p>'
+        wrapMode         : Text.WordWrap
+        Layout.fillWidth : true
     }
 
     Item {

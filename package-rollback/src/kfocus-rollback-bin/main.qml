@@ -43,6 +43,7 @@ Kirigami.ApplicationWindow {
     // == BEGIN Models ================================================
     // Set Global Properties
     property bool   firstInitDone            : false
+    property var    lastSetView
     property var    sysRefreshSourceView
     property var    sysRefreshTargetView
     property int    disabledSnapshotBarIndex : 0
@@ -1353,15 +1354,16 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id          : compareSnapshotsEngine
         onAppExited : {
-            let snapInfo
-              = snapshotModel.get(snapshotBar.currentIndex);
+            if ( exitCode === 127 ) {
+                switchViewFn( compareSnapshotWaitView, snapshotView );
+                return;
+            }
+            let snapInfo = snapshotModel.get(snapshotBar.currentIndex);
             let dupSnapInfo
-              = derivSnapshotModel.get(compareSnapshotView.compareIndex)
-            compareSourceIdStr
-              = snapInfo.date + ' - ' + snapInfo.name;
-            compareTargetIdStr
-              = dupSnapInfo.date + ' - ' + dupSnapInfo.name;
-            compareResultStr = stdout;
+              = derivSnapshotModel.get(compareSnapshotView.compareIndex);
+            compareSourceIdStr = snapInfo.date + ' - ' + snapInfo.name;
+            compareTargetIdStr = dupSnapInfo.date + ' - ' + dupSnapInfo.name;
+            compareResultStr   = stdout;
             showWindowFn( snapshotCompareWindowComponent );
             switchViewFn( compareSnapshotWaitView, snapshotView );
         }
@@ -1424,6 +1426,20 @@ Kirigami.ApplicationWindow {
         // Remove the contextual help button for almost all views
         mainAreaHelpButton.visible = false;
 
+        // See if we can switch to a routine that uses the last view
+        // instead of requiring hard-coded, prior knowledge of the view
+        // that is going to be replaced, which is very fragile.
+        console.log( 'DEBUG: Switching views ...');
+        if ( ! lastSetView ) { lastSetView = target_view; }
+        if ( current_view === lastSetView ) {
+          console.log( 'OK: current_view === lastSetView' );
+        }
+        else {
+          console.warn( 'ERROR: current_view !== lastSetView' );
+          console.warn( 'Setting to lastSetView' );
+          current_view = lastSetView;
+        }
+
         // Handlers for current view
         if ( current_view === snapshotView ) {
             if ( snapshotBar.count === 0 ) {
@@ -1466,6 +1482,7 @@ Kirigami.ApplicationWindow {
         // Switch view
         current_view.visible = false;
         target_view.visible = true;
+        lastSetView = target_view;
     }
 
     function createSnapshotFn() {
