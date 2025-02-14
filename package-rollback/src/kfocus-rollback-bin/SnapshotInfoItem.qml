@@ -215,7 +215,7 @@ RowLayout {
             Layout.alignment      : Qt.AlignTop
             Layout.preferredWidth : Kirigami.Units.gridUnit * 7.5
             Layout.bottomMargin   : Kirigami.Units.gridUnit * 0.5
-            text                  : 'Compare With'
+            text                  : 'Compare'
             icon.name             : 'document-duplicate'
             onClicked             : compareClicked()
             enabled               : !editing

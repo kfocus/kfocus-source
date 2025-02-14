@@ -17,10 +17,6 @@ Kirigami.ApplicationWindow {
             derivateSnapshotModelFn();
             fillPartitionHealthTableFn();
 
-            createSnapshotView.actionsEnabled = true;
-            optimizeDiskView.actionsEnabled   = true;
-            deleteSnapshotView.actionsEnabled = true;
-
             if ( !firstInitDone ) {
                 switchViewFn( snapshotView, snapshotView );
                 if ( backend.mainSpaceLow ) {
@@ -35,8 +31,7 @@ Kirigami.ApplicationWindow {
             } else {
                 switchViewFn( sysRefreshSourceView, sysRefreshTargetView );
             }
-
-            backend.inhibitClose = false;
+            resetUiStateFn()
         }
     }
 
@@ -51,6 +46,7 @@ Kirigami.ApplicationWindow {
     property string compareSourceIdStr       : ''
     property string compareTargetIdStr       : ''
     property string compareResultStr         : ''
+    property string authAttemptAction        : ''
     property string rollbackStr              : backend.pkexecExe
       + ' '
       + backend.rollbackBackendExe
@@ -208,7 +204,7 @@ Kirigami.ApplicationWindow {
               system reboots automatically during the restore process. Data in
               the <code>/home</code> directory is unaffected.</p>
 
-              <p><b><font color="#f7941d">Compare With</font></b> -
+              <p><b><font color="#f7941d">Compare</font></b> -
               Show the differences between the selected snapshot and
               the current system state. Or compare to another snapshot.</p>
 
@@ -1001,6 +997,19 @@ Kirigami.ApplicationWindow {
                     headerText  : 'Toggling automatic snapshots...'
                 }
 
+                ErrorScreenItem {
+                    id          : automaticSnapshotSwitchFailedView
+                    visible     : false
+                    infoText    : '<p>System Rollback failed to toggle '
+                      + 'autonatic snapshotting. Please close and restart '
+                      + 'this tool and try again. If this issue persists, '
+                      + 'please contact your system administrator.</p>'
+                    onOkClicked : {
+                        switchViewFn( automaticSnapshotSwitchFailedView,
+                          snapshotView );
+                    }
+                }
+
                 WaitScreenItem {
                     id         : refreshSnapshotView
                     visible    : false
@@ -1131,6 +1140,16 @@ Kirigami.ApplicationWindow {
                       + 'prompted.</p>'
                     onOkClicked : {
                         switchViewFn( saveEditsFailedView, snapshotView );
+                    }
+                }
+
+                ErrorScreenItem {
+                    id          : authFailedView
+                    visible     : false
+                    infoText    : '<p>' + authAttemptAction + ' was cancelled because valid authorization was not provided.</p>'
+                    onOkClicked : {
+                        resetUiStateFn()
+                        switchViewFn( authFailedView, snapshotView )
                     }
                 }
             }
@@ -1272,8 +1291,12 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id          : createSnapshotEngine
         onAppExited : {
-            sysRefreshSourceView = createSnapshotWaitView
-            if ( exitCode === 0 || exitCode === 127 ) {
+            if ( exitCode === 127 ) {
+                switchViewFn( createSnapshotWaitView, authFailedView );
+                return;
+            }
+            sysRefreshSourceView = createSnapshotWaitView;
+            if ( exitCode === 0 ) {
                 sysRefreshTargetView = snapshotView;
             } else if ( exitCode === 1 ) {
                 sysRefreshTargetView = createSnapshotErrorView;
@@ -1287,8 +1310,12 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id          : balanceDiskEngine
         onAppExited : {
+            if ( exitCode === 127 ) {
+                switchViewFn( balanceDiskWaitView, authFailedView );
+                return;
+            }
             sysRefreshSourceView = balanceDiskWaitView;
-            if ( exitCode === 0 || exitCode === 127 ) {
+            if ( exitCode === 0 ) {
                 sysRefreshTargetView = snapshotView;
             } else {
                 sysRefreshTargetView = criticalErrorView;
@@ -1300,8 +1327,12 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id          : optimizeDiskEngine
         onAppExited : {
+            if ( exitCode === 127 ) {
+                switchViewFn( optimizeDiskWaitView, authFailedView );
+                return;
+            }
             sysRefreshSourceView = optimizeDiskWaitView;
-            if ( exitCode === 0 || exitCode === 127 ) {
+            if ( exitCode === 0 ) {
                 sysRefreshTargetView = snapshotView;
             } else {
                 sysRefreshTargetView = criticalErrorView;
@@ -1313,8 +1344,16 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id          : automaticSnapshotToggleEngine
         onAppExited : {
+            if ( exitCode === 127 ) {
+                switchViewFn( automaticSnapshotSwitchView, authFailedView );
+                return;
+            }
             sysRefreshSourceView = automaticSnapshotSwitchView;
-            sysRefreshTargetView = snapshotView;
+            if ( exitCode === 0 ) {
+                sysRefreshTargetView = snapshotView;
+            } else {
+                sysRefreshTargetView = automaticSnapshotSwitchFailedView;
+            }
             refreshSystemDataFn( false );
         }
     }
@@ -1322,8 +1361,12 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id          : deleteSnapshotEngine
         onAppExited : {
+            if ( exitCode === 127 ) {
+                switchViewFn( deleteSnapshotWaitView, authFailedView );
+                return;
+            }
             sysRefreshSourceView = deleteSnapshotWaitView;
-            if ( exitCode === 0 || exitCode === 127 ) {
+            if ( exitCode === 0 ) {
                 sysRefreshTargetView = snapshotView;
             } else if ( exitCode === 1 ) {
                 sysRefreshTargetView = deleteSnapshotErrorView;
@@ -1340,7 +1383,7 @@ Kirigami.ApplicationWindow {
             if ( exitCode === 0 ) {
                 execSync( 'systemctl reboot -i' );
             } else if ( exitCode === 127 ) {
-                switchViewFn( restoreSnapshotWaitView, snapshotView );
+                switchViewFn( restoreSnapshotWaitView, authFailedView );
             } else if ( exitCode === 1 ) {
                 switchViewFn( restoreSnapshotWaitView, restoreSnapshotErrorView );
             } else {
@@ -1355,7 +1398,7 @@ Kirigami.ApplicationWindow {
         id          : compareSnapshotsEngine
         onAppExited : {
             if ( exitCode === 127 ) {
-                switchViewFn( compareSnapshotWaitView, snapshotView );
+                switchViewFn( compareSnapshotWaitView, authFailedView );
                 return;
             }
             let snapInfo = snapshotModel.get(snapshotBar.currentIndex);
@@ -1372,6 +1415,11 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id: saveEditsEngine
         onAppExited: {
+            if ( exitCode === 127 ) {
+                switchViewFn( compareSnapshotWaitView, authFailedView );
+                restoreSnapshotViewBindingsFn();
+                return;
+            }
             if ( exitCode === 0 ) {
                 snapshotModel.get(snapshotBar.currentIndex).name
                   = snapshotView.name;
@@ -1379,19 +1427,17 @@ Kirigami.ApplicationWindow {
                   = snapshotView.description;
                 snapshotModel.get(snapshotBar.currentIndex).pinned
                   = snapshotView.pinned;
-                restoreSnapshotViewBindingsFn();
-                snapshotView.saving  = false;
-                snapshotView.editing = false;
                 backend.inhibitClose = false;
-                derivateSnapshotModelFn(); // ensures that "Compare With" is properly updated in the event pinning was changed
+                // Ensure that "Compare" is properly updated in the event pinning was changed
+                derivateSnapshotModelFn();
+                resetUiStateFn();
+                restoreSnapshotViewBindingsFn();
                 switchViewFn( saveEditsWaitView, snapshotView );
             } else {
-                restoreSnapshotViewBindingsFn();
                 sysRefreshSourceView = saveEditsWaitView;
                 sysRefreshTargetView = saveEditsFailedView;
-                snapshotView.saving  = false;
-                snapshotView.editing = false;
-                backend.inhibitClose = false;
+                resetUiStateFn();
+                restoreSnapshotViewBindingsFn();
                 refreshSystemDataFn( false );
             }
         }
@@ -1487,6 +1533,7 @@ Kirigami.ApplicationWindow {
 
     function createSnapshotFn() {
         backend.inhibitClose = true;
+        authAttemptAction = '"Take Snapshot"';
         switchViewFn( createSnapshotView, createSnapshotWaitView )
         createSnapshotEngine.exec(
           rollbackStr + 'systemSnapshot "$(id -nu)"'
@@ -1495,18 +1542,21 @@ Kirigami.ApplicationWindow {
 
     function balanceDiskFn() {
         backend.inhibitClose = true;
+        authAttemptAction = '"Quick Clean"';
         switchViewFn( optimizeDiskView, balanceDiskWaitView );
         balanceDiskEngine.exec( rollbackStr + 'btrfsMaintain' );
     }
 
     function optimizeDiskFn() {
         backend.inhibitClose = true;
+        authAttemptAction = '"Deep Clean"';
         switchViewFn( optimizeDiskView, optimizeDiskWaitView );
         optimizeDiskEngine.exec( rollbackDeepCleanStr );
     }
 
     function switchAutomaticSnapshotsFn() {
         backend.inhibitClose = true;
+        authAttemptAction = '"Toggle Automatic Snapshots"';
         switchViewFn( snapshotView, automaticSnapshotSwitchView );
         automaticSnapshotToggleEngine.exec(
           rollbackStr + 'setManualSwitchState '
@@ -1535,6 +1585,7 @@ Kirigami.ApplicationWindow {
 
     function deleteSnapshotFn( snapshot_idx ) {
         backend.inhibitClose = true;
+        authAttemptAction = '"Delete Snapshot"';
         switchViewFn( deleteSnapshotView, deleteSnapshotWaitView );
         deleteSnapshotEngine.exec(
           rollbackStr
@@ -1555,6 +1606,7 @@ Kirigami.ApplicationWindow {
 
     function restoreSnapshotFn( snapshot_idx ) {
         backend.inhibitClose = true;
+        authAttemptAction = '"Restore Snapshot"';
         switchViewFn( restoreSnapshotView, restoreSnapshotWaitView );
         restoreSnapshotEngine.exec(
           rollbackStr
@@ -1564,6 +1616,7 @@ Kirigami.ApplicationWindow {
     }
 
     function compareSnapshotsFn( source_idx, target_idx ) {
+        authAttemptAction = '"Compare Snapshots"';
         compareSnapshotsEngine.exec(
           rollbackStr + "compareState '"
             + snapshotModel.get(source_idx).stateDir
@@ -1580,6 +1633,7 @@ Kirigami.ApplicationWindow {
 
     function saveSnapshotEditsFn( snapshot_idx ) {
         backend.inhibitClose = true;
+        authAttemptAction = '"Save Changes"';
         switchViewFn( snapshotView, saveEditsWaitView );
         let snapInfo = snapshotModel.get(snapshot_idx);
         saveEditsEngine.exec(
@@ -1615,8 +1669,8 @@ Kirigami.ApplicationWindow {
         window.show();
     }
 
-    function refreshSystemDataFn( calc_size ) {
-        backend.refreshSystemData( calc_size );
+    function refreshSystemDataFn( do_calc_size ) {
+        backend.refreshSystemData( do_calc_size );
     }
 
     function populateSnapshotModelFn() {
@@ -1677,6 +1731,15 @@ Kirigami.ApplicationWindow {
         bootPartSizeStr.text    = backend.getFsData('boot', 'size');
         bootPartRemainStr.text  = backend.getFsData('boot', 'remain');
         bootPartUnallocStr.text = backend.getFsData('boot', 'unalloc');
+    }
+
+    function resetUiStateFn() {
+        createSnapshotView.actionsEnabled = true;
+        optimizeDiskView.actionsEnabled   = true;
+        deleteSnapshotView.actionsEnabled = true;
+        snapshotView.saving  = false;
+        snapshotView.editing = false;
+        backend.inhibitClose = false;
     }
 
     // Kick-off rendering on completion
