@@ -3001,8 +3001,7 @@ _mainFn () {
   _mode_str="${1:-}";
   shift;
 
-  [ "$(id -u)" = 0 ] \
-    || _logExitFn 'emerg' '1' 'Cannot run as non-root!';
+  [ "$(id -u)" = 0 ] || _logExitFn 'err' '1' 'Must be run as root!';
 
   ## Begin retry to acquire lock file
   _sleep_int=1;
