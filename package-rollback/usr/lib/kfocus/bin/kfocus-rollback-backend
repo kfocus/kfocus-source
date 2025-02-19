@@ -987,8 +987,8 @@ _deleteSnapshotDirsFn () {
 
   # This intentionally does not have the @ before ${_snapshot_id} because
   # the function is passed a snapshot name, not just a timestamp.
-  _main_snapshot_dir="${_rb2MainSnapshotDir}/${_snapshot_id}"
-  _boot_snapshot_dir="${_rb2BootSnapshotDir}/${_snapshot_id}"
+  _main_snapshot_dir="${_rb2MainSnapshotDir}/${_snapshot_id}";
+  _boot_snapshot_dir="${_rb2BootSnapshotDir}/${_snapshot_id}";
 
   # Ensure that either the main or boot or both BTRFS snapshots are present
   # if ! [ -e "${_main_snapshot_dir}" ] \
@@ -1005,6 +1005,9 @@ _deleteSnapshotDirsFn () {
         "Failed to delete main snapshot dir |${_main_snapshot_dir}|!";
       return 2;
     }
+  else
+    _logWrapFn 'warn' \
+      "Did not find main snapshot dir |${_main_snapshot_dir}|.";
   fi
 
   # Delete boot snapshot dir if it exists
@@ -1014,6 +1017,9 @@ _deleteSnapshotDirsFn () {
         "Failed to delete boot snapshot dir |${_boot_snapshot_dir}|!";
       return 2;
     }
+  else
+    _logWrapFn 'warn' \
+      "Did not find boot snapshot dir |${_boot_snapshot_dir}|.";
   fi
 }
 ## . END private _deleteSnapshotDirsFn }
