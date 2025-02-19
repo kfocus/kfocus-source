@@ -83,8 +83,9 @@ _loadLibTableFn () {
 #             interface components of kfocus-rollback-backend.
 # Example   : _assignGlobalUiVarsFn
 # Arguments : none
-# Globals   : _browStr, _erowStr, _tableStr, _prepareFailMsg, _lowDiskMsg,
-#             _lowBootMsg, _inconsistentMsg
+# Globals   : _browStr, _erowStr, _tableStr, _prepareFailMsg,
+#             _lowDiskWithHomeMsg, _lowDiskWithoutHomeMsg, _lowBootMsg,
+#             _inconsistentMsg
 # Outputs   : none
 # Returns   : none
 # Throws    : none
@@ -109,22 +110,56 @@ ${_cm2HtmEndStr}
 EOF
   )";
 
-  _lowDiskMsg="$(cat <<EOF
+  _lowDiskWithHomeMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
 ${_browStr}<h3 style="color:#f7941d">System Rollback: Low Disk Space</h3>
 ${_erowStr}
 
-${_browStr}System Rollback has detected that the system's disk space is<br>
-low. This could result in filesystem corruption if not corrected.<br>
-Snapshot maintenance has been paused until this is corrected.<br>
+${_browStr}The root (/) partition has only XXX_REMAINING_PERCENT_XXX%
+unallocated space remaining. To <br>
+minimize the chance of file corruption, System Rollback has paused<br>
+snapshot maintenance until at least 15% is available. Please free up<br>
+disk space as soon as possible.${_erowStr}
+
+${_browStr}&bull; Remove unused files from /home using Dolphin.<br>
 <br>
-It is highly recommended that you delete large snapshots<br>
-using System Rollback. You may also need to delete excess files<br>
-or move them to other drives.<br>
+&bull; Purge software packages with Discover or apt.<br>
 <br>
-You can access System Rollback by clicking <code>Start Menu &gt;<br>
-Kubuntu Focus Tools &gt; System Rollback</code>. Click "Show<br>
-Snapshot Sizes" when prompted to quickly find large snapshots.<br>
+&bull; Move or delete databases, VMs, or logs from the root filesystem. To<br>
+move a database to another partition, see advice at<br>
+<a href="https://kfocus.org/wf/database">https://kfocus.org/wf/database</a>.<br>
+<br>
+&bull; Delete large snapshots or free up disk space using Rollback
+Dashboard.<br>
+Click on "Show Snapshot Sizes" to see the space used by each
+snapshot.${_erowStr}</table><br>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _lowDiskWithoutHomeMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}<h3 style="color:#f7941d">System Rollback: Low Disk Space</h3>
+${_erowStr}
+
+${_browStr}The root (/) partition has only XXX_REMAINING_PERCENT_XXX%
+unallocated space remaining. To <br>
+minimize the chance of file corruption, System Rollback has paused<br>
+snapshot maintenance until at least 15% is available. Please free up<br>
+disk space as soon as possible.${_erowStr}
+
+${_browStr}&bull; Purge software packages with Discover or apt.<br>
+<br>
+&bull; Move or delete databases, VMs, or logs from the root filesystem. To<br>
+move a database to another partition, see advice at<br>
+<a href="https://kfocus.org/wf/database">https://kfocus.org/wf/database</a>.<br>
+<br>
+&bull; Delete large snapshots or free up disk space using Rollback
+Dashboard.<br>
+Click on "Show Snapshot Sizes" to see the space used by each snapshot.<br>
+<br>
+&bull; You do not need to remove files from /home, as it is on a separate
+disk.${_erowStr}</table><br>
 ${_cm2HtmEndStr}
 EOF
   )";
@@ -939,7 +974,7 @@ _deleteAllSnapshotsFn () {
 # Purpose   : Deletes all metadata corresponding to a particular snapshot.
 # Example   : _deleteSnapshotMetaFn @1234
 # Arguments :
-#   snapshot_id - The ID of the snapshot who's metadata is to be wiped.
+#   snapshot_id - The ID of the snapshot whose metadata is to be wiped.
 # Globals   : none
 # Outputs   : Log info
 # Returns   : 0 on success, 1 on failure
@@ -1050,7 +1085,7 @@ _deleteSnapshotFn () {
     return 1;
   fi
 
-  # Get pinned status, abort if cannot read
+  # Get pinned status, abort if read fails
   _is_pinned="$(_readMetadbFn "${_target_snapshot_id}" 'pinned')" || {
     _msg='Could not read pin status for snapshot ';
     _msg+="|${_target_snapshot_id}| from metadb!";
@@ -1138,6 +1173,22 @@ _getBootPartitionFn () {
     | cut -d' ' -f1;
 }
 ## . END private _getBootPartitionFn }
+
+## BEGIN private _getHomePartitionFn {
+# Summary   : _getHomePartitionFn
+# Purpose   : Gets the home partition device file.
+# Example   : _getHomePartitionFn
+# Arguments : none
+# Globals   : none
+# Outputs   : The path to the device file corresponding to the home partition.
+# Returns   : none
+# Throws    : none
+#
+_getHomePartitionFn () {
+  LC_ALL='C' mount | grep btrfs | grep ' on /home ' \
+    | cut -d' ' -f1;
+}
+## . END private _getHomePartitionFn }
 
 ## BEGIN private _getBootUnallocSpaceFn {
 # Summary   : _getBootUnallocSpaceFn
@@ -1733,6 +1784,37 @@ _scrubSnapshotsFn () {
 }
 ## . END private _scrubSnapshotsFn }
 
+## BEGIN private _sendLowDiskMsgFn {
+# Summary   : _sendLowDiskMsgFn
+# Purpose   : Send a low disk message to all logged-in users via qdbus.
+# Example   : _sendLowDiskMsgFn
+# Arguments : none
+# Globals   : _lowDiskWithHomeMsg, _lowDiskWithoutHomeMsg
+# Outputs   : none
+# Returns   : none
+# Throws    : none
+#
+_sendLowDiskMsgFn () {
+  declare _home_part _main_part _main_unalloc_int _main_usage_report \
+    _main_device_size_int _main_unalloc_pct _warning_msg;
+  _home_part="$(_getHomePartitionFn)";
+  _main_part="$(_getMainPartitionFn)";
+  _main_unalloc_int="$(_getMainUnallocSpaceFn)";
+  _main_usage_report="$(_getMainUsageReportFn)" || return 1;
+  _main_device_size_int="$(grep $'Device size:\t' <<< "${_main_usage_report}" \
+    | awk '{ print $3 }')";
+  _main_unalloc_pct="$(bc -l <<< "scale=2; ${_main_unalloc_int} / ${_main_device_size_int} * 100" \
+    | cut -d'.' -f1)";
+  if [ -z "${_home_part}" ] \
+    || [ "${_home_part}" = "${_main_part}" ]; then
+    _warning_msg="${_lowDiskWithHomeMsg}";
+  else
+    _warning_msg="${_lowDiskWithoutHomeMsg}";
+  fi
+  _warning_msg="${_warning_msg//XXX_REMAINING_PERCENT_XXX/${_main_unalloc_pct}}";
+  _promptAllUsersFn 'rollbackLowMainSpace' "${_warning_msg}";
+}
+
 ## BEGIN private _trimSnapshotsFn {
 # Summary   : _trimSnapshotsFn
 # Purpose   : Finds old unpinned snapshots, and deletes them. All pinned
@@ -2016,7 +2098,7 @@ _checkMainUnallocSpacePublicFn () {
     'BTRFS status is not compatible with checking main unallocated space!';
 
   if ! _checkMainUnallocSpaceFn; then
-    _promptAllUsersFn 'rollbackLowMainSpace' "${_lowDiskMsg}";
+    _sendLowDiskMsgFn;
     _logExitFn 'err' '1' 'Low disk space detected!';
   fi
 }
@@ -2119,7 +2201,7 @@ _createSnapshotPublicFn () {
   _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
     'BTRFS status prevents creating a snapshot!';
   _checkMainUnallocSpaceFn || {
-    _promptAllUsersFn 'rollbackLowMainSpace' "${_lowDiskMsg}";
+    _sendLowDiskMsgFn;
     _logExitFn 'err' '1' \
       'Main disk space is too low to take a snapshot!';
   }
@@ -2648,7 +2730,7 @@ _restoreSnapshotPublicFn () {
   _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
     'BTRFS status is incompatible with restoring a snapshot!';
   _checkMainUnallocSpaceFn || {
-    _promptAllUsersFn 'rollbackLowMainSpace' "${_lowDiskMsg}";
+    _sendLowDiskMsgFn;
     _logExitFn 'err' '1' \
       'Main disk space is too low to restore a snapshot!';
   }
@@ -2937,7 +3019,7 @@ _systemSnapshotPublicFn () {
   _checkBtrfsStatusSetUpFn   || _logExitFn 'warn' '1' \
     'BTRFS status prevents creating a snapshot!';
   _checkMainUnallocSpaceFn   || {
-    _promptAllUsersFn 'rollbackLowMainSpace' "${_lowDiskMsg}";
+    _sendLowDiskMsgFn;
     _logExitFn 'err' '1' \
       'Main disk space is too low to take a snapshot!';
   }
@@ -3074,9 +3156,9 @@ _mainFn () {
 declare _binName _binDir _baseName _baseDir \
   _btrfsStatus _lockDir _lockFile _metaGlobalKeyList _metaSnapshotKeyList \
   _snapshotMetaDb _libTable _browStr _erowStr _tableStr _prepareFailMsg \
-  _lowDiskMsg _lowBootMsg _inconsistentMsg _btrfsExe _btduExe _filefragExe \
-  _btrfsBalanceExe _kwriteconfig5Exe _kreadconfig5Exe _diffExe \
-  _legacySnapshotReasonFile;
+  _lowDiskWithHomeMsg _lowDiskWithoutHomeMsg _lowBootMsg _inconsistentMsg \
+  _btrfsExe _btduExe _filefragExe _btrfsBalanceExe _kwriteconfig5Exe \
+  _kreadconfig5Exe _diffExe _legacySnapshotReasonFile;
 
 _btrfsStatus='';
 _legacySnapshotReasonFile='/var/lib/kfocus/rollback_snapshot_reason';

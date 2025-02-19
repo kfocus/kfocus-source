@@ -409,23 +409,51 @@ Kirigami.ApplicationWindow {
                             }
                         }
 
-                        Controls.Button {
-                            Layout.bottomMargin   :
+                        Rectangle {
+                            Layout.bottomMargin    :
                               Kirigami.Units.gridUnit * 0.45
-                            text                  : createSnapshotLabel
-                            icon.name             : 'document-new'
-                            Layout.preferredWidth : (mainPage.width / 4)
+                            Layout.preferredWidth  : (mainPage.width / 4)
                               - Kirigami.Units.gridUnit * 0.36
-                            Layout.alignment      : Qt.AlignRight
-                            enabled               : !uiLocked
-                              && !backend.mainSpaceLow
-                              && !backend.bootSpaceLow
-                            onClicked             : {
-                                switchViewFn( createSnapshotView );
+                            Layout.alignment       : Qt.AlignRight
+                            Layout.preferredHeight :
+                              createSnapshotButton.implicitHeight
+                            color                  :
+                              Kirigami.Theme.alternateBackgroundColor
+
+                            Controls.Button {
+                                id           : createSnapshotButton
+                                anchors.fill : parent
+                                text         : createSnapshotLabel
+                                icon.name    : 'document-new'
+                                enabled      : !uiLocked
+                                  && !backend.mainSpaceLow
+                                  && !backend.bootSpaceLow
+                                onClicked    : {
+                                    switchViewFn( createSnapshotView );
+                                }
+
+                                HoverHandler {
+                                    cursorShape: Qt.PointingHandCursor
+                                }
                             }
 
-                            HoverHandler {
-                                cursorShape: Qt.PointingHandCursor
+                            Rectangle {
+                                width   : createSnapshotButton.width
+                                height  : createSnapshotButton.height
+                                visible : backend.mainSpaceLow
+                                  || backend.bootSpaceLow
+                                opacity : 0
+
+                                HoverHandler {
+                                    id: createSnapshotDisableHover
+                                }
+
+                                Controls.ToolTip {
+                                    visible :
+                                      createSnapshotDisableHover.hovered
+                                    text    :
+                                      'Disk space low, cannot create snapshot'
+                                }
                             }
                         }
 

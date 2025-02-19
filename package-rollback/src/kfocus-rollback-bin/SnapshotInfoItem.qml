@@ -195,18 +195,43 @@ RowLayout {
     ColumnLayout {
         Layout.leftMargin : Kirigami.Units.gridUnit * 0.45
 
-        Controls.Button {
-            id                    : restoreButton
-            Layout.alignment      : Qt.AlignTop
-            Layout.preferredWidth : Kirigami.Units.gridUnit * 7.5
-            Layout.bottomMargin   : Kirigami.Units.gridUnit * 0.5
-            text                  : 'Restore'
-            icon.name             : 'edit-undo-symbolic'
-            onClicked             : restoreClicked()
-            enabled               : !editing && !diskLow
+        Rectangle{
+            Layout.alignment       : Qt.AlignTop
+            Layout.preferredWidth  : Kirigami.Units.gridUnit * 7.5
+            Layout.bottomMargin    : Kirigami.Units.gridUnit * 0.5
+            Layout.preferredHeight : restoreButton.implicitHeight
+            color                  :
+              Kirigami.Theme.activeBackgroundColor
 
-            HoverHandler {
-                cursorShape : Qt.PointingHandCursor
+            Controls.Button {
+                id           : restoreButton
+                anchors.fill : parent
+                text         : 'Restore'
+                icon.name    : 'edit-undo-symbolic'
+                onClicked    : restoreClicked()
+                enabled      : !editing && !diskLow
+
+                HoverHandler {
+                    cursorShape : Qt.PointingHandCursor
+                }
+            }
+
+            Rectangle {
+                width   : restoreButton.width
+                height  : restoreButton.height
+                visible : diskLow
+                opacity : 0
+
+                HoverHandler {
+                    id: restoreDisableHover
+                }
+
+                Controls.ToolTip {
+                    visible :
+                      restoreDisableHover.hovered
+                    text    :
+                      'Disk space low, cannot restore snapshot'
+                }
             }
         }
 
@@ -225,18 +250,43 @@ RowLayout {
             }
         }
 
-        Controls.Button {
-            id                    : deleteButton
-            Layout.alignment      : Qt.AlignTop
-            Layout.preferredWidth : Kirigami.Units.gridUnit * 7.5
-            Layout.bottomMargin   : Kirigami.Units.gridUnit * 0.5
-            text                  : 'Delete'
-            icon.name             : 'edit-delete-remove'
-            onClicked             : deleteClicked()
-            enabled               : !editing && !pinned
+        Rectangle {
+            Layout.alignment       : Qt.AlignTop
+            Layout.preferredWidth  : Kirigami.Units.gridUnit * 7.5
+            Layout.bottomMargin    : Kirigami.Units.gridUnit * 0.5
+            Layout.preferredHeight : deleteButton.implicitHeight
+            color                  :
+              Kirigami.Theme.activeBackgroundColor
 
-            HoverHandler {
-                cursorShape : Qt.PointingHandCursor
+            Controls.Button {
+                id           : deleteButton
+                anchors.fill : parent
+                text         : 'Delete'
+                icon.name    : 'edit-delete-remove'
+                onClicked    : deleteClicked()
+                enabled      : !editing && !pinned
+
+                HoverHandler {
+                    cursorShape : Qt.PointingHandCursor
+                }
+            }
+
+            Rectangle {
+                width   : deleteButton.width
+                height  : deleteButton.height
+                visible : pinned
+                opacity : 0
+
+                HoverHandler {
+                    id: deleteDisableHover
+                }
+
+                Controls.ToolTip {
+                    visible :
+                      deleteDisableHover.hovered
+                    text    :
+                      'Snapshot pinned, cannot delete snapshot'
+                }
             }
         }
 

@@ -34,10 +34,10 @@ void KDialogLauncher::launchDialog(const KDialogType &type, const QString &msg) 
             proc->setArguments(QStringList() << "--title" << "FocusRx" << "--error" << msg);
             break;
         case RollbackLowMainSpace:
-            proc->setArguments(QStringList() << "--title" << "FocusRx" << "--warningyesnocancel" << msg << "--yes-label" << "Launch System Rollback" << "--no-label" << "Launch Dolphin");
+            proc->setArguments(QStringList() << "--title" << "FocusRx" << "--warningyesnocancel" << msg << "--yes-label" << "Open Rollback Dashboard" << "--no-label" << "Open File Manager");
             break;
         case RollbackLowBootSpace:
-            proc->setArguments(QStringList() << "--title" << "FocusRx" << "--warningcontinuecancel" << msg << "--continue-label" << "Launch Kernel Cleaner");
+            proc->setArguments(QStringList() << "--title" << "FocusRx" << "--warningcontinuecancel" << msg << "--continue-label" << "Open Kernel Cleaner");
             break;
     }
     connect(proc, SIGNAL(finished(int)), this, SLOT(cleanupDialog()));
