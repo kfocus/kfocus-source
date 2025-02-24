@@ -882,10 +882,9 @@ Kirigami.ApplicationWindow {
             frontImage.source = getThemedImageFn( 'frontpage', 'webp' );
             frontHeading.text = 'Welcome To The Kubuntu Focus!';
             frontText.text
-              = '<p><b>This Welcome Wizard helps you get '
-              + 'started as quickly as possible</b>. We have included '
-              + 'many tools we feel most developers should '
-              + 'consider.<br></p>'
+              = '<p><b>This Welcome Wizard helps you get started as quickly '
+              + 'as possible.</b> Each step helps you select tools and '
+              + 'settings that best fit your workflow.<br></p>'
 
               + '<p><b>This is not an endorsement of any product,</b> and '
               + 'the Focus Team is not compensated in any way for '
