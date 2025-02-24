@@ -548,7 +548,7 @@ Kirigami.ApplicationWindow {
                         }
                         Controls.Button {
                             icon.name : 'view-refresh'
-                            text      : 'Refresh'
+                            text      : 'Refresh All'
                             enabled   : !uiLocked
                             onClicked : {
                                 sysRefreshSourceView = refreshSnapshotView;
@@ -1385,6 +1385,9 @@ Kirigami.ApplicationWindow {
         onAppExited : {
             if ( exitCode === 127 ) {
                 switchViewFn( authFailedView );
+                automaticSnapshotsSwitch.checked = Qt.binding(function() {
+                    return backend.automaticSnapshotsEnabled;
+                });
                 return;
             }
             sysRefreshSourceView = automaticSnapshotSwitchView;
