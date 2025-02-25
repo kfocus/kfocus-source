@@ -145,32 +145,36 @@ RowLayout {
             }
         }
 
-        Controls.TextArea {
-            id                   : descField
-            Layout.alignment     : Qt.AlignTop
-            Layout.fillWidth     : true
-            Layout.fillHeight    : true
+        Controls.ScrollView {
+            Layout.alignment  : Qt.AlignTop
+            Layout.fillWidth  : true
+            Layout.fillHeight : true
 
-            placeholderText      : '<p><i>Press the "Edit" button to:</i></p>'
-              + '<br>'
-              + '<p><i>* Rename the Snapshot</i><br>'
-              + '<i>* Change this description</i><br>'
-              + '<i>* Protect the Snapshot</i></p>'
-            text                 : description
-            font.family          : 'courier'
-            // Text.Wrap tries to wrap on word boundaries.
-            // Unlike Text.WordWrap, it will break words if needed.
-            wrapMode             : Text.Wrap
-            readOnly             : !editing
-            color                : editing
-              ? Kirigami.Theme.textColor
-              : Kirigami.Theme.disabledTextColor
+            Controls.TextArea {
+                id                   : descField
+                placeholderText      : ''
+                  + '<p><i>Press the "Edit" button to:</i></p><br>'
+                  + '<p><i>* Change the name.</i><br></p>'
+                  + '<p><i>* Add a description here<br>'
+                  + ' &nbsp; (up to 1024 characters).</i><br></p>'
+                  + '<p><i>* Protect the snapshot.</i></p>'
+                  ;
+                text                 : description
+                font.family          : 'courier'
+                // Text.Wrap tries to wrap on word boundaries.
+                // Unlike Text.WordWrap, it will break words if needed.
+                wrapMode             : Text.Wrap
+                readOnly             : !editing
+                color                : editing
+                  ? Kirigami.Theme.textColor
+                  : Kirigami.Theme.disabledTextColor
 
-            activeFocusOnPress   : true
-            activeFocusOnTab     : true
-            onActiveFocusChanged : {
-                if (activeFocus) {
-                    focusedBox = this;
+                activeFocusOnPress   : true
+                activeFocusOnTab     : true
+                onActiveFocusChanged : {
+                    if (activeFocus) {
+                        focusedBox = this;
+                    }
                 }
             }
 
