@@ -158,7 +158,9 @@ RowLayout {
               + '<i>* Protect the Snapshot</i></p>'
             text                 : description
             font.family          : 'courier'
-            wrapMode             : Text.WordWrap
+            // Text.Wrap tries to wrap on word boundaries.
+            // Unlike Text.WordWrap, it will break words if needed.
+            wrapMode             : Text.Wrap
             readOnly             : !editing
             color                : editing
               ? Kirigami.Theme.textColor
@@ -172,7 +174,7 @@ RowLayout {
                 }
             }
 
-            background           : Rectangle {
+            background       : Rectangle {
                 id           : descFieldBackground
                 color        : editing
                   ? Kirigami.Theme.backgroundColor
@@ -285,7 +287,7 @@ RowLayout {
                     visible :
                       deleteDisableHover.hovered
                     text    :
-                      'Snapshot pinned, cannot delete snapshot'
+                      'Cannot delete protected snapshot'
                 }
             }
         }
@@ -357,7 +359,8 @@ RowLayout {
                 } else {
                     name = nameField.text;
                 }
-                description       = descField.text;
+                // Limit to a max of 1024 characters
+                description       = descField.text.substr(0,1024);
                 pinned            = pinSwitch.checked;
                 nameField.text    = Qt.binding(function() { return name; });
                 descField.text    = Qt.binding(function() {
