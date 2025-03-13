@@ -1761,11 +1761,12 @@ Kirigami.ApplicationWindow {
     }
 
     function resetUiStateFn() {
-        createSnapshotView.actionsEnabled = true;
-        optimizeDiskView.actionsEnabled   = true;
-        deleteSnapshotView.actionsEnabled = true;
-        snapshotView.saving  = false;
+        calculateSnapshotView.actionsEnabled = true;
+        createSnapshotView.actionsEnabled    = true;
+        deleteSnapshotView.actionsEnabled    = true;
+        optimizeDiskView.actionsEnabled      = true;
         snapshotView.editing = false;
+        snapshotView.saving  = false;
         backend.inhibitClose = false;
     }
 
