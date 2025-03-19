@@ -58,11 +58,12 @@ endif
 " ====[ Files and buffers ]============================================
 " See https://unix.stackexchange.com/questions/75430
 " Use of 'e' at the end of regex to suppresses error if no trailing space
-autocmd BufWritePre * :%s?\s\+$??e "Autoremove all trailing space
-autocmd BufWrite * :set ff=unix    "Autoconvert to unix line endings
+autocmd BufWritePre * :call TrimTrailingWhiteSpace() "Autoremove all trailing space
+autocmd BufWrite    * :set ff=unix                   "Autoconvert to unix line endings
 filetype plugin on  "Identify syntax
 set autoread        "Reload buffer when external change detected
 set autowrite       "Save buffer when changing files
+
 " Reduce IO latency by using SSD
 "   See http://unix.stackexchange.com/questions/37076
 set dir=/tmp
@@ -119,14 +120,15 @@ map <silent> TS :set   expandtab<CR>:%retab!<CR>
 map <silent> TT :set noexpandtab<CR>:%retab!<CR>
 
 " ====[ Visual modes ]================================================
-" Visual Block mode is far more common that Visual mode...
+" Visual Block mode is far more common that Visual mode.
+" nnoremap works non-recursively in normal mode.
 nnoremap v <C-V>
 nnoremap <C-V> v
 
 set virtualedit=block "Square up visual selections
 
 " =====[ Toggle syntax highlighting ]==================================
-function! ToggleSyntax()
+function! ToggleSyntax ()
   if g:f_syntax == 1
     syntax off
     let g:f_syntax = 0
@@ -143,7 +145,7 @@ else
    call ToggleSyntax()
 endif
 
-" =====[ Add or subtract comments ]===============================
+" =====[ Add or subtract comments ]================================
 function! ToggleComment ()
   let currline = getline(".")
   if currline =~ '^#'
@@ -153,6 +155,14 @@ function! ToggleComment ()
   endif
 endfunction
 map <silent> # :call ToggleComment()<CR>j0
+
+" =====[ Trim trailing whitespace ]================================
+" This is used in ;k shortcut and on file save
+function! TrimTrailingWhiteSpace ()
+  let wv = winsaveview()
+  %s/\s\+$//ge
+  call winrestview(wv)
+endfunction
 
 " =====[ Keyboard shortcuts ]======================================
 " Keycodes and maps timeout in 3/10 sec...
@@ -164,9 +174,8 @@ set timeout timeoutlen=300 ttimeoutlen=300
 " e Edit a file
 map e :n
 
-" nnoremap works non-recursively in normal mode.
-" ;k Remove trailing space, ;kk clears checkboxes
-map <silent> ;k  :%s?\s\+$??<CR>
+" ;k Trim trailing space, ;kk clears checkboxes
+map <silent> ;k  :call TrimTrailingWhiteSpace()<CR>
 map <silent> ;kk :%s?\(\W\)\[.\] ?\1[ ] ?<CR>
 
 " ;n Highlight or replace non-ascii characters
@@ -255,12 +264,17 @@ set thesaurus+=/usr/local/share/thesaurus/mthesaur.txt
 "
 let g:markdown_fenced_languages = ['bash','css','erb=eruby','javascript','js=javascript','json','html','log=messages','messages','node=javascript','perl','php=perl','python','ruby','sass','xml','vim','yaml']
 
-" =====[ Wrap for vimdiff, both panes ] =============================== 
+" Support fenced syntax highlighing for longer files (10k lines).
+" Reduce to minlines value or disable if editing is slow.
+" See https://github.com/vim/vim/issues/2790
+syntax sync minlines=10000
+
+" =====[ Wrap for vimdiff, both panes ] ===============================
 "   https://stackoverflow.com/questions/16840433
 au VimEnter * if &diff | execute 'windo set wrap' | endif
 set ai
 
-" =====[ Wrap for vimdiff, both panes ] =============================== 
+" =====[ Wrap for vimdiff, both panes ] ===============================
 " =====[ Fix for pattern uses more memory than 'maxmempattern' ] ======
 " See https://github.com/vim/vim/issues/2049
 " MAY be resolved in vim 9.0. Tends to happen in Markdown syntax
