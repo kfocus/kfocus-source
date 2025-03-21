@@ -1970,9 +1970,10 @@ _writeMetadbFn () {
 # Throws    : none
 #
 _aptSnapshotPublicFn () {
-  # If the system does not support automatic snapshotting, quietly exit 0
-  # Not necessary, _createSnapshotFn handles this properly
-  # [ "${_btrfsStatus}" != 'SUPPORTED, AUTO' ] && _exitCleanFn;
+  # Don't do anything if the BTRFS status isn't SUPPORTED
+  [ "${_btrfsStatus}" != 'SUPPORTED, AUTO' ] \
+    && [ "${_btrfsStatus}" != 'SUPPORTED, MANUAL' ] \
+    && _exitCleanFn;
 
   # Request apt-style snapshot, quietly exit 0 on failure
   # Note that this exits 0 if an apt snapshot cannot be created due to
