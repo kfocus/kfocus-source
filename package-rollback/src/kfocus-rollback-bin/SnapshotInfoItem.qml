@@ -116,6 +116,7 @@ RowLayout {
 
             text                : name
             font.family         : 'courier'
+            maximumLength       : 40
             readOnly            : !editing
             color               : editing
               ? Kirigami.Theme.textColor
