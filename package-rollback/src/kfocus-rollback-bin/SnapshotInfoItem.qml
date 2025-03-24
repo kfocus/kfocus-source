@@ -6,8 +6,9 @@ import org.kde.kirigami 2.20 as Kirigami
 RowLayout {
     // Public
     property string date        : ''
-    property string dayofweek     : ''
-    property string size        : ''
+    property string dayofweek   : ''
+    property string mainSize    : ''
+    property string bootSize    : ''
     property string reason      : ''
     property string name        : ''
     property string description : ''
@@ -96,7 +97,9 @@ RowLayout {
                 Layout.topMargin: Kirigami.Units.gridUnit * 0.15
                 Kirigami.Heading {
                     Layout.alignment : Qt.AlignVCenter | Qt.AlignRight
-                    text             : size
+                    text             : mainSize !== '' && bootSize != ''
+                      ? mainSize + ' [' + bootSize + ']'
+                      : ''
                     level            : 2
                 }
 

@@ -21,6 +21,7 @@ class BackendEngine : public QObject
     Q_PROPERTY(bool postRestoreSubvolsMounted READ postRestoreSubvolsMounted NOTIFY postRestoreSubvolsMountedChanged)
     Q_PROPERTY(bool mainWorkingSubvolExists READ mainWorkingSubvolExists NOTIFY mainWorkingSubvolExistsChanged)
     Q_PROPERTY(bool bootWorkingSubvolExists READ bootWorkingSubvolExists NOTIFY bootWorkingSubvolExistsChanged)
+    Q_PROPERTY(bool snapshotSizeInfoPresent READ snapshotSizeInfoPresent NOTIFY snapshotSizeInfoPresentChanged)
     QML_ELEMENT
 
 public:
@@ -46,6 +47,7 @@ public:
     bool postRestoreSubvolsMounted();
     bool mainWorkingSubvolExists();
     bool bootWorkingSubvolExists();
+    bool snapshotSizeInfoPresent();
     Q_INVOKABLE int getSnapshotCount();
     Q_INVOKABLE QString getSnapshotInfo(int index, QString key);
     Q_INVOKABLE QString getFsData(QString fs, QString key);
@@ -63,6 +65,7 @@ signals:
     void postRestoreSubvolsMountedChanged();
     void mainWorkingSubvolExistsChanged();
     void bootWorkingSubvolExistsChanged();
+    void snapshotSizeInfoPresentChanged();
 
 private slots:
     void onSystemDataReady();
@@ -90,6 +93,7 @@ private:
     static bool m_postRestoreSubvolsMounted;
     static bool m_mainWorkingSubvolExists;
     static bool m_bootWorkingSubvolExists;
+    static bool m_snapshotSizeInfoPresent;
 
     static QStringList m_snapshotIdList;
     static int m_snapshotIdIdx;

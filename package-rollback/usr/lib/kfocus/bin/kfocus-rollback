@@ -796,6 +796,13 @@ ${_erow_str}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
+
+  _alreadyOpenMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_lp_str}The System Rollback Dashboard is already open.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
 }
 ## . END _assignGlobalUiVarsFn }
 
@@ -1052,7 +1059,10 @@ _mainFn () {
     _restored_snapshot_reason _restored_snapshot_disp_id \
     _pin_status_str _pin_other_status_str _new_is_pinned _optimize_mode_str;
 
-  _checkSetFlockFn || exit;
+  _checkSetFlockFn || {
+    _cm2PromptUserFn "${_alreadyOpenMsg}" "${_winTitle}";
+    exit;
+  }
 
   _arg_str="${1:-}";
   _btrfs_status_str="$(_getBtrfsStatusFn)";
@@ -1582,7 +1592,7 @@ declare _binName _binDir _baseName _baseDir _libTable _assignList \
   _restoreIncompleteMsg _noSnapshotsFoundMsg _strangeSubvolsMsg \
   _restoreFailedMsg _deletionFailedMsg _creationFailedMsg _pinSwitchFailedMsg \
   _editFailedMsg _deletePinnedSnapshotRefusedMsg \
-  _criticalErrorMsg _operationCancelledMsg _lowDiskMsg \
+  _criticalErrorMsg _operationCancelledMsg _alreadyOpenMsg _lowDiskMsg \
   _lowBootMsg _rollbackBinExe _rollbackSetExe;
 
 _lockDir='';

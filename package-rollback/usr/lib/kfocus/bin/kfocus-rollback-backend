@@ -2443,7 +2443,8 @@ _getSnapshotListStrPublicFn () {
 #
 _getSnapshotMetadataPublicFn () {
   declare _snapshot_id _mode _err_msg _key _metadata_str \
-    _snapshot_reason_str _snapshot_size_report;
+    _snapshot_reason_str _main_snapshot_size_report \
+    _boot_snapshot_size_report;
 
   _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
     'BTRFS status is incompatible with getting snapshot metadata!';
@@ -2479,13 +2480,20 @@ _getSnapshotMetadataPublicFn () {
 
   # Calculate and return snapshot size if requested
   if [ "${_mode}" = 'full' ]; then
-    _snapshot_size_report="$("${_btrfsExe}" 'filesystem' 'du' '--raw' '-s' \
-      "${_rb2MainSnapshotDir}/${_snapshot_id}")" || {
-        _logWrapFn 'alert' "${_err_msg} Could not calc size!";
-        _snapshot_size_report='';
+    _main_snapshot_size_report="$("${_btrfsExe}" 'filesystem' 'du' '--raw' \
+      '-s' "${_rb2MainSnapshotDir}/${_snapshot_id}")" || {
+        _logWrapFn 'alert' "${_err_msg} Could not calc main size!";
+        _main_snapshot_size_report='';
       }
-    tail -n1 <<< "${_snapshot_size_report}" | awk '{ print $2 }';
+    _boot_snapshot_size_report="$("${_btrfsExe}" 'filesystem' 'du' '--raw' \
+      '-s' "${_rb2BootSnapshotDir}/${_snapshot_id}")" || {
+        _logWrapFn 'alert' "${_err_msg} Could not calc boot size!";
+        _boot_snapshot_size_report='';
+      }
+    tail -n1 <<< "${_main_snapshot_size_report}" | awk '{ print $2 }';
+    tail -n1 <<< "${_boot_snapshot_size_report}" | awk '{ print $2 }';
   else
+    echo '';
     echo '';
   fi
 }
