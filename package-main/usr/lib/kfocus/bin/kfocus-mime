@@ -809,7 +809,9 @@ to access more controls.</p>
 EOT
       )";
       _cmd_str='dropbox';
-      _arg_list=( 'start' );
+      # Args is the same as dropbox.desktop.
+      # '-i' is needed if not installed for user.
+      _arg_list=( 'start' '-i' );
       ;;
 
     docker)
