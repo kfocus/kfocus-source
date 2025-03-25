@@ -31,6 +31,7 @@ bool BackendEngine::m_bootSpaceLow = false;
 bool BackendEngine::m_updateInProgress = false;
 bool BackendEngine::m_mainWorkingSubvolExists = false;
 bool BackendEngine::m_bootWorkingSubvolExists = false;
+bool BackendEngine::m_snapshotSizeInfoPresent = false;
 bool BackendEngine::m_btrfsStateUnusable = false;
 bool BackendEngine::m_postRestoreSubvolsMounted = false;
 quint64 BackendEngine::m_mainMinUnalloc = 0;

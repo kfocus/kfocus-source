@@ -99,7 +99,7 @@ Kirigami.ApplicationWindow {
 
         Kirigami.BasicListItem {
             font.family : "courier"
-            label       : date + ' ' + size
+            label       : date + ' ' + genSnapshotSizeStrFn(mainSize, bootSize)
             subtitle    : name
             icon        : getIconForReasonFn( reason )
             trailing    : Kirigami.Icon {
@@ -113,7 +113,7 @@ Kirigami.ApplicationWindow {
 
         Kirigami.BasicListItem {
             font.family : "courier"
-            label       : date + ' ' + size
+            label       : date + ' ' + genSnapshotSizeStrFn(mainSize, bootSize)
             subtitle    : name
             icon        : getIconForReasonFn( reason )
             trailing    : Kirigami.Icon {
@@ -572,12 +572,6 @@ Kirigami.ApplicationWindow {
                               : Kirigami.Theme.textColor
                         }
                         Controls.Label {
-                            text  : 'Status'
-                            color : uiLocked
-                              ? Kirigami.Theme.disabledTextColor
-                              : Kirigami.Theme.textColor
-                        }
-                        Controls.Label {
                             text             : 'Size GiB'
                             Layout.alignment : Qt.AlignRight
                             color            : uiLocked
@@ -592,9 +586,16 @@ Kirigami.ApplicationWindow {
                               : Kirigami.Theme.textColor
                         }
                         Controls.Label {
-                            text             : 'Unalloc %'
+                            text             : 'Unalloc'
                             Layout.alignment : Qt.AlignRight
                             color            : uiLocked
+                              ? Kirigami.Theme.disabledTextColor
+                              : Kirigami.Theme.textColor
+                        }
+                        Controls.Label {
+                            text  : 'Status'
+                            Layout.alignment : Qt.AlignRight
+                            color : uiLocked
                               ? Kirigami.Theme.disabledTextColor
                               : Kirigami.Theme.textColor
                         }
@@ -607,16 +608,6 @@ Kirigami.ApplicationWindow {
                             color       : uiLocked
                               ? Kirigami.Theme.disabledTextColor
                               : Kirigami.Theme.textColor
-                        }
-                        Controls.Label {
-                            id          : mainPartStatusStr
-                            text        : ''
-                            font.family : 'courier'
-                            color : uiLocked
-                              ? Kirigami.Theme.disabledTextColor
-                              : text === 'Good'
-                                ? Kirigami.Theme.positiveTextColor
-                                : Kirigami.Theme.negativeTextColor
                         }
                         Controls.Label {
                             id               : mainPartSizeStr
@@ -645,6 +636,17 @@ Kirigami.ApplicationWindow {
                               ? Kirigami.Theme.disabledTextColor
                               : Kirigami.Theme.textColor
                         }
+                        Controls.Label {
+                            id          : mainPartStatusStr
+                            text        : ''
+                            font.family : 'courier'
+                            Layout.alignment : Qt.AlignRight
+                            color : uiLocked
+                              ? Kirigami.Theme.disabledTextColor
+                              : text === 'Good >15%'
+                                ? Kirigami.Theme.positiveTextColor
+                                : Kirigami.Theme.negativeTextColor
+                        }
 
                         // -----
 
@@ -654,16 +656,6 @@ Kirigami.ApplicationWindow {
                             color       : uiLocked
                               ? Kirigami.Theme.disabledTextColor
                               : Kirigami.Theme.textColor
-                        }
-                        Controls.Label {
-                            id          : bootPartStatusStr
-                            text        : ''
-                            font.family : 'courier'
-                            color       : uiLocked
-                              ? Kirigami.Theme.disabledTextColor
-                              : text === 'Good'
-                                ? Kirigami.Theme.positiveTextColor
-                                : Kirigami.Theme.negativeTextColor
                         }
                         Controls.Label {
                             id               : bootPartSizeStr
@@ -692,6 +684,17 @@ Kirigami.ApplicationWindow {
                               ? Kirigami.Theme.disabledTextColor
                               : Kirigami.Theme.textColor
                         }
+                        Controls.Label {
+                            id          : bootPartStatusStr
+                            text        : ''
+                            font.family : 'courier'
+                            Layout.alignment : Qt.AlignRight
+                            color       : uiLocked
+                              ? Kirigami.Theme.disabledTextColor
+                              : text === 'Good >25%'
+                                ? Kirigami.Theme.positiveTextColor
+                                : Kirigami.Theme.negativeTextColor
+                        }
                     }
                 }
             }
@@ -705,6 +708,20 @@ Kirigami.ApplicationWindow {
                         return Kirigami.Theme.alternateBackgroundColor;
                     } else {
                         return Kirigami.Theme.activeBackgroundColor;
+                    }
+                }
+
+                Controls.Label {
+                    text        : '               Size GiB:  / [/boot]'
+                    font.family : 'courier'
+                    visible     : backend.snapshotSizeInfoPresent
+                    color       : uiLocked
+                      ? Kirigami.Theme.disabledTextColor
+                      : Kirigami.Theme.textColor
+                    anchors {
+                        left         : parent.left
+                        bottom       : snapshotListView.top
+                        bottomMargin : Kirigami.Units.gridUnit * 0.20
                     }
                 }
 
@@ -829,10 +846,12 @@ Kirigami.ApplicationWindow {
                     id          : snapshotView
                     date        : snapshotModel.get(
                       snapshotBar.currentIndex).date
-                    dayofweek     : snapshotModel.get(
+                    dayofweek   : snapshotModel.get(
                       snapshotBar.currentIndex).dayofweek
-                    size        : snapshotModel.get(
-                      snapshotBar.currentIndex).size
+                    mainSize    : snapshotModel.get(
+                      snapshotBar.currentIndex).mainSize
+                    bootSize    : snapshotModel.get(
+                      snapshotBar.currentIndex).bootSize
                     name        : snapshotModel.get(
                       snapshotBar.currentIndex).name
                     reason      : snapshotModel.get(
@@ -1485,6 +1504,18 @@ Kirigami.ApplicationWindow {
         }
     }
 
+    function genSnapshotSizeStrFn( mainSize, bootSize ) {
+        if ( mainSize === '' || bootSize === '' ) {
+            return '';
+        }
+        let outStr = mainSize + ' [' + bootSize + ']';
+        let lenPad = 10 - outStr.length;
+        for (let i = 0; i < lenPad; i++) {
+           outStr = ' ' + outStr;
+        }
+        return outStr;
+    }
+
     function getIconForReasonFn( reason ) {
         return reason === 'System Schedule'
           ? 'clock'
@@ -1712,7 +1743,8 @@ Kirigami.ApplicationWindow {
                 pinned      : backend.getSnapshotInfo(i, 'pinned') === 'true'
                   ? true
                   : false,
-                size        : backend.getSnapshotInfo(i, 'size'),
+                mainSize    : backend.getSnapshotInfo(i, 'mainSize'),
+                bootSize    : backend.getSnapshotInfo(i, 'bootSize'),
                 stateDir    : backend.getSnapshotInfo(i, 'stateDir'),
                 id          : backend.getSnapshotInfo(i, 'id')
             });
