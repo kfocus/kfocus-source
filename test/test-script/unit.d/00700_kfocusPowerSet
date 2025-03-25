@@ -95,16 +95,19 @@ _normalizeCompareStrFn () {
 _echoCpuModelNameFn () {
   declare _model_line _cpu_name;
 
-  _model_line="$(lscpu | grep -Ei '^\s*model name' | cut -f2 -d:)";
-  _cpu_name="$(
-    sed -E 's/^.*\s(i[579]-[^ ]+)(|\s.*)$/\1/' <<< "${_model_line}"
-  )";
+  _model_line="$(lscpu | grep -Ei '^\s*model name' | cut -f2 -d: |sed 's/^\s*//' )";
+
+  case "${_model_line}" in
+    'Intel(R) Core(TM) Ultra 5 225H') _cpu_name='u5_255h';;
+    *) _cpu_name="$(
+        sed -E 's/^.*\s(i[579]-[^ ]+)(|\s.*)$/\1/' <<< "${_model_line}"
+      )";;
+  esac
 
   # If cpu_name is the same as model_line or blank,
   #   the cpu model was NOT successfully extracted.
   #
-  if [ "${_model_line}" = "${_cpu_name}" ] \
-    || [ -z "${_cpu_name}" ]; then
+  if [ "${_model_line}" = "${_cpu_name}" ] || [ -z "${_cpu_name}" ]; then
     _cpu_name='unknown';
   fi
 
@@ -269,7 +272,7 @@ _runTestFn () {
   _fail_count="$?";
   _total_fail_count=$((_total_fail_count+_fail_count))
   _assert_count="$(echo "${#_pick_list[@]}*2"|bc)";
-  
+
   if [ "${_fail_count}" -gt 0 ]; then
     _cm2EchoFn "FAIL SUITE 2: ${_fail_count} / ${_assert_count} failed.\n";
   else
@@ -280,7 +283,7 @@ _runTestFn () {
   _cm2EchoFn "BEGIN SUITE 3: kfocus-power-set -x API check\n"
   _pick_str="$("${_powerSetExe}" -x)";
   IFS=$'\n' read -r -d '' -a _pick_list <<<"${_pick_str}";
- 
+
   _testApiFn 'x' "${_pick_list[@]}";
   _fail_count="$?";
   _total_fail_count=$((_total_fail_count+_fail_count))
