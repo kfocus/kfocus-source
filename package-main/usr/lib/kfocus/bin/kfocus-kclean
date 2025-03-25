@@ -718,15 +718,13 @@ ${_browStr}<h3 style="color:#f7941d">FocusRx: Disk Space Still Low</h3>${_erowSt
 
 ${_browStr}The <code>/boot</code> filesystem has only ${_unalloc_int}% space
 remaining. <br>
-This is less than the desired 25%.
 EOF
     )";
 
     if [ -n "${_file_list_str}" ]; then
       _still_low_warn_msg+="$(cat <<EOF
- There are one or more <br>
-large files in the /boot filesystem that do not appear <br>
-to belong:${_erowStr}
+ There are one or more large files in the /boot filesystem <br>
+that do not appear to belong:${_erowStr}
 
 ${_browStr}<code>${_file_list_str#  }</code>${_erowStr}
 
