@@ -12,6 +12,8 @@
 #include "backendengine.h"
 #include "windoweventfilter.h"
 
+// TODO: Use development binaries instead of system binaries when possible,
+// like kfocus-firstrun-bin
 QString BackendEngine::m_rollbackBackendExe = "/usr/lib/kfocus/bin/kfocus-rollback-backend";
 QString BackendEngine::m_rollbackSetExe = "/usr/lib/kfocus/bin/kfocus-rollback-set";
 QString BackendEngine::m_rollbackMainWorkingDir = "/btrfs_main/@kfocus-rollback-working";

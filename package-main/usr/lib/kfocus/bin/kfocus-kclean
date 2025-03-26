@@ -619,15 +619,15 @@ _mainFn() {
       _check_msg="Check forced: "; else _check_msg+="<br>${_cStr}";
     fi
     if [ "${_is_boot_partition}" = 'y' ]; then
-      _check_msg+='/boot space is low ';
-      _check_msg+="(${_boot_free_int} of ${_boot_size_int} MB).";
+      _check_msg+='<span style="color:#da4453">/boot space is low ';
+      _check_msg+="(${_boot_free_int} of ${_boot_size_int} MB).</span>";
     elif (( _boot_free_int > _lowRootDiskInt )); then
-      _check_msg+="Kernel count (${_inst_kvers_count}) exceeds <br>${_cStr}";
+      _check_msg+="<span style=\"color:#da4453\">Kernel count (${_inst_kvers_count}) exceeds <br>${_cStr}";
       _check_msg+="recommended max ($(( _kernel_max_count - \
-        _overfull_threshold_count - 1 ))).";
+        _overfull_threshold_count - 1 ))).</span>";
     else
-      _check_msg+="System disk is low (${_boot_free_int} MB).<br>${_cStr}";
-      _check_msg+="<b>MAKE ROOM TO KEEP MORE KERNELS!</b>";
+      _check_msg+="<span style=\"color:#da4453\">System disk is low (${_boot_free_int} MB).<br>${_cStr}";
+      _check_msg+="MAKE ROOM TO KEEP MORE KERNELS!</span>";
     fi
 
   # This should never be encountered, but we keep it here as
@@ -694,8 +694,6 @@ EOF
 
   ## Begin Warn Still Low {
   if [ "${_do_still_low_check}" = 'y' ]; then
-    [ -z "${_rollbackExe}" ] && return;
-
     _exclude_str='System.map|config|efi|grub|initrd.img';
     _exclude_str+='|keyfile|memtest86|vmlinuz';
 
@@ -706,24 +704,23 @@ EOF
     )";
 
     # Get percentage of 4 GiB left unallocated
-    _unalloc_int=$((
-      $(
-        pkexec "${_rollbackSetExe}" 'getBootUnallocSpace'
-      ) * 100 / 4294967296
-    ));
+    _unalloc_int="$(pkexec "${_rollbackSetExe}" 'getBootUnallocSpace')";
+    (( _unalloc_int = _unalloc_int * 100 / 4294967296 )) || true;
 
+    # TODO: Indicate desired unallocated space here, adjust heuristics to
+    # avoid confusion
     _still_low_warn_msg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
 ${_browStr}<h3 style="color:#f7941d">FocusRx: Disk Space Still Low</h3>${_erowStr}
 
-${_browStr}The <code>/boot</code> filesystem has only ${_unalloc_int}% space
-remaining. <br>
+${_browStr}<span style="color:#da4453">The <code>/boot</code> filesystem has
+only ${_unalloc_int}% unallocated space.</span> <br>
 EOF
     )";
 
     if [ -n "${_file_list_str}" ]; then
       _still_low_warn_msg+="$(cat <<EOF
- There are one or more large files in the /boot filesystem <br>
+There are one or more large files in the /boot filesystem <br>
 that do not appear to belong:${_erowStr}
 
 ${_browStr}<code>${_file_list_str#  }</code>${_erowStr}
@@ -731,12 +728,11 @@ ${_browStr}<code>${_file_list_str#  }</code>${_erowStr}
 ${_browStr}You may free up space by moving files out of <code>/boot</code>, but <br>
 ONLY if you created them and you know it is safe. Otherwise, <br>
 we recommend backing up your data first because moving or <br>
-deleting a key file could render your system unbootable.${_erowStr}
+deleting a key file could render your system unbootable.
 EOF
       )";
-    else
-      _still_low_warn_msg+="${_erowStr}";
     fi
+    _still_low_warn_msg+="${_erowStr}";
 
     _snap_count="$(
       _cm2LsFn /btrfs_boot/@kfocus-rollback-boot-snapshots/ |wc -l
@@ -744,13 +740,13 @@ EOF
 
     if (( _snap_count > 1 )); then
       _still_low_warn_msg+="$(cat <<EOF
-${_browStr}This system has rollback snapshots which can retain disk
-space. <br>
+${_browStr}This system has rollback snapshots which can retain disk space. <br>
 You may use System Rollback Dashboard to view the space <br>
 used by each snapshot, and delete them to reduce disk usage.${_erowStr}
 EOF
       )";
     fi
+    _still_low_warn_msg+="</table>${_cm2HtmEndStr}";
 
     _cm2PromptUserFn "${_still_low_warn_msg}" "${_winTitle}" 's';
     return
@@ -852,26 +848,22 @@ Please see your system administrator to fix.";
     _no_purgeable_kernels_msg="There are no unused kernels to purge.";
     _no_purgeable_kernels_end_msg="Click OK to finish.";
     if [ "${_is_boot_low}" = 'y' ]; then
+      _no_purgeable_kernels_msg="$(cat <<EOF
+<p>There are no unused kernels to purge, as only <br>
+protected kernel are installed. If there is a kernel <br>
+you are NOT USING, you can purge it so the <code>/boot</code> <br>
+disk does not overfill and prevent the system <br>
+from booting.</p>
+EOF
+      )";
       if [ "${_isBtrfsYn}" = 'y' ]; then
-        _no_purgeable_kernels_msg="$(cat <<EOF
-There are no unused kernels to purge. However, <br>
-trimming snapshots and optimizing the boot disk <br>
-may free up space.
+        _no_purgeable_kernels_msg+="$(cat <<EOF
+ <p>Trimming snapshots and optimizing the boot <br>
+disk may also free up space.</p>
 EOF
         )";
         _no_purgeable_kernels_end_msg="Trim snapshots and optimize now?";
       fi
-      _run_msg+="$(cat <<_EOW01
-
-
-<p>Disk space on <code>/boot</code> is low, but only protected <br>
-kernel are installed. If there is a kernel you <br>
-are NOT USING, we encourage you to purge it so <br>
-the <code>/boot</code> disk does not overfill and prevent the<br>
-system from booting.</p>
-
-_EOW01
-      )";
     fi
     _purge_msg="$(cat <<_EOW02
 ${_cm2HtmBeginStr}${_tableStr}
@@ -881,7 +873,7 @@ ${_browStr}Doc: <a style="color:#1d99f3" href="https://kfocus.org/wf/tools#kclea
 ${_browStr}${_run_msg}${_erowStr}
 
 ${_browStr}<h4 style="color:#f7941d">Packages to Keep</h4>${_erowStr}
-${_browStr}<code>${_keep_pkg_list_str}</code>${_erowStr}
+${_browStr}<code>${_keep_pkg_list_str%'<br>'}</code>${_erowStr}
 
 ${_browStr}<h4 style="color:#f7941d">Packages to Purge</h4>${_erowStr}
 ${_browStr}${_no_purgeable_kernels_msg}${_erowStr}
@@ -968,7 +960,7 @@ declare _binName _binDir _baseDir _baseName _cStr \
   _kversFullPrefStr _kversFullRunStr _kc2RtestDebugStr \
   _isBtrfsYn _divisorInt _kernelUnitSizeInt _kernelUnitSizeBtrfsInt \
   _lowDiskSizeInt _multiInt _assignList _btrfsExe _rollbackSetExe \
-  _kcleanSetExe _kcleanExe _rollbackExe _winTitle _bodyTitle \
+  _kcleanSetExe _kcleanExe _winTitle _bodyTitle \
   _browStr _erowStr _tableStr;
 
 _aptListStr='';
@@ -1014,7 +1006,6 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     '_btrfsExe|/usr/bin/btrfs'
     "_kcleanSetExe|${_binDir}/kfocus-kclean-set"
     "_rollbackSetExe|${_binDir}/kfocus-rollback-set||optional"
-    "_rollbackExe|${_binDir}/kfocus-rollback||optional"
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2WarnStrFn 'ABORT: Required commands not found';
