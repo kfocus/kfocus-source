@@ -142,11 +142,11 @@ QString BackendEngine::fieldSeek(QStringList lines, QString searchStr, int field
     return "";
 }
 
-QString BackendEngine::bytesToGib(quint64 val) {
+QString BackendEngine::bytesToGib(quint64 val, bool keepShort) {
     double gibSize = (((static_cast<double>(val) / 1024) / 1024) / 1024);
     gibSize = qRound(gibSize * 100.0) / 100.0;
     QString gibSizeStr;
-    if (gibSize >= 100) {
+    if (gibSize >= 100 && keepShort) {
         gibSizeStr = QString::number(gibSize, 'f', 0);
     } else {
         gibSizeStr = QString::number(gibSize, 'f', 1);
@@ -290,12 +290,12 @@ void BackendEngine::onSystemDataReady() {
     if (metaMainSnapshotSize == "") {
         mainSnapshotSize = "";
     } else {
-        mainSnapshotSize = bytesToGib(mainSnapshotIntSize);
+        mainSnapshotSize = bytesToGib(mainSnapshotIntSize, true);
     }
     if (metaBootSnapshotSize == "") {
         bootSnapshotSize = "";
     } else {
-        bootSnapshotSize = bytesToGib(bootSnapshotIntSize);
+        bootSnapshotSize = bytesToGib(bootSnapshotIntSize, true);
     }
 
     // Parse snapshot date (this mangles the snapshotItem string so we have to do it last)
@@ -371,8 +371,8 @@ void BackendEngine::loadGlobalInfo() {
                 m_mainSpaceLow = true;
                 mainSpaceLowChanged();
             }
-            QString btrfsMainSize = bytesToGib(btrfsMainRawSize);
-            QString btrfsMainRemain = bytesToGib(btrfsMainRawRemain);
+            QString btrfsMainSize = bytesToGib(btrfsMainRawSize, false);
+            QString btrfsMainRemain = bytesToGib(btrfsMainRawRemain, false);
 
             // Get boot FS space consumption info
             quint64 btrfsBootRawSize = fieldSeek(btrfsBootRawReport, "Device size:", 2).toULongLong();
@@ -390,8 +390,8 @@ void BackendEngine::loadGlobalInfo() {
                 m_bootSpaceLow = true;
                 bootSpaceLowChanged();
             }
-            QString btrfsBootSize = bytesToGib(btrfsBootRawSize);
-            QString btrfsBootRemain = bytesToGib(btrfsBootRawRemain);
+            QString btrfsBootSize = bytesToGib(btrfsBootRawSize, false);
+            QString btrfsBootRemain = bytesToGib(btrfsBootRawRemain, false);
 
             // Load all the info into the fs info objects
             m_mainFsInfo->clear();

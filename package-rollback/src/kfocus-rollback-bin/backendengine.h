@@ -72,7 +72,7 @@ private slots:
 
 private:
     QString fieldSeek(QStringList lines, QString searchStr, int field);
-    QString bytesToGib(quint64 val);
+    QString bytesToGib(quint64 val, bool keepShort);
 
     void loadGlobalInfo();
 
