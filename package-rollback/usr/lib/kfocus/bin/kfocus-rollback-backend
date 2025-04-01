@@ -1975,6 +1975,19 @@ _aptSnapshotPublicFn () {
     && [ "${_btrfsStatus}" != 'SUPPORTED, MANUAL' ] \
     && _exitCleanFn;
 
+  # Add space check here, quietly exit 0 if it doesn't pass as we don't want
+  # to crash installations
+  _checkMainUnallocSpaceFn || {
+    _sendLowDiskMsgFn;
+    _logExitFn 'warn' '0' \
+      'Main disk space is too low to take a snapshot!';
+  }
+  _checkBootUnallocSpaceFn || {
+    _promptAllUsersFn 'rollbackLowBootSpace' "${_lowBootMsg}";
+    _logExitFn 'warn' '0' \
+      'Boot disk space is too low to take a snapshot!';
+  }
+
   # Request apt-style snapshot, quietly exit 0 on failure
   # Note that this exits 0 if an apt snapshot cannot be created due to
   # insufficient passage of time
