@@ -172,23 +172,23 @@ Kirigami.ApplicationWindow {
               The filesystem mount point, either root (<code>/</code>)
               or boot (<code>/boot</code>).</p>
 
-              <p><b><font color="#f7941d">Status</font></b> - Disk space
-              status. "<font color="#27ae60"><code>Good</code></font>" means
-              that disk space is sufficient.
-              "<font color="#da4453"><code>ALERT</code></font>" means that
-              disk space is low. Delete files or snapshots to free up disk
-              space.</p>
-
               <p><b><font color="#f7941d">Size GiB</font></b> -
               Filesystem size, in gigabytes.</p>
 
               <p><b><font color="#f7941d">Remain GiB</font></b> -
               Remaining free space on the filesystem.</p>
 
-              <p><b><font color="#f7941d">Unalloc %</font></b> -
+              <p><b><font color="#f7941d">Unalloc</font></b> -
               Percentage of unallocated space available on the filesystem.
               Root (<code>/</code>) unallocated space should always exceed
-              15%, and boot (<code>/boot</code>) should always exceed 25%.</p>`
+              15%, and boot (<code>/boot</code>) should always exceed 25%.</p>
+
+              <p><b><font color="#f7941d">Status</font></b> - Disk space
+              status. "<font color="#27ae60"><code>Good</code></font>" means
+              that disk space is sufficient.
+              "<font color="#da4453"><code>ALERT</code></font>" means that
+              disk space is low. Delete files or snapshots to free up disk
+              space.</p>`
 
             helpTitle: 'Partition Health Help'
         }

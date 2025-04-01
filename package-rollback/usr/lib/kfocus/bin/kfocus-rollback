@@ -1035,7 +1035,7 @@ _checkSetFlockFn () {
     return 2;
   };
   if ! flock -n -e 211; then
-    _cm2ErrStrFn "Cannot get lock on ${_lockFile}";
+    _cm2WarnStrFn "Cannot get lock on ${_lockFile}";
     return 1;
   fi
 }

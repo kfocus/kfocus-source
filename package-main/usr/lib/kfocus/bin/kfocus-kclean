@@ -742,7 +742,9 @@ EOF
       _still_low_warn_msg+="$(cat <<EOF
 ${_browStr}This system has rollback snapshots which can retain disk space. <br>
 You may use System Rollback Dashboard to view the space <br>
-used by each snapshot, and delete them to reduce disk usage.${_erowStr}
+used by each snapshot, and delete them to reduce disk usage. <br>
+A reboot may be necessary to allow all disk space to be <br>
+reclaimed.${_erowStr}
 EOF
       )";
     fi
@@ -850,7 +852,7 @@ Please see your system administrator to fix.";
     if [ "${_is_boot_low}" = 'y' ]; then
       _no_purgeable_kernels_msg="$(cat <<EOF
 <p>There are no unused kernels to purge, as only <br>
-protected kernel are installed. If there is a kernel <br>
+protected kernels are installed. If there is a kernel <br>
 you are NOT USING, you can purge it so the <code>/boot</code> <br>
 disk does not overfill and prevent the system <br>
 from booting.</p>
