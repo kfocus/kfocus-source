@@ -478,7 +478,7 @@ _triggerActionFn () {
   else
     _result_msg="${_fail_msg}";
     if [ -n "${_exit_str}" ]; then
-      _result_msg+=":<br>${_exit_str}";
+      _result_msg+="<br>${_exit_str}";
     fi
   fi
 
@@ -860,11 +860,11 @@ EOF
       )";
       if [ "${_isBtrfsYn}" = 'y' ]; then
         _no_purgeable_kernels_msg+="$(cat <<EOF
- <p>Trimming snapshots and optimizing the boot <br>
-disk may also free up space.</p>
+ <p>Running a Quick Clean, which trims snapshots and <br>
+optimizes the disk, may also free up space.</p>
 EOF
         )";
-        _no_purgeable_kernels_end_msg="Trim snapshots and optimize now?";
+        _no_purgeable_kernels_end_msg="Run a Quick Clean now?";
       fi
     fi
     _purge_msg="$(cat <<_EOW02
@@ -888,14 +888,16 @@ _EOW02
     if [ "${_isBtrfsYn}" = 'y' ] && [ "${_is_boot_low}" = 'y' ]; then
       _reply="$(_cm2PromptUserFn "${_purge_msg}" "${_winTitle}" 'w')";
       [ "${_reply}" = 'n' ] && _notifyAndExitFn "$(cat <<EOF
-Disk was NOT optimized, per user request. <br>
+Quick Clean was NOT performed, per user request. <br>
 ${_exit_wizard_msg}
 EOF
       )";
 
       _cmd_list=("${_kcleanSetExe}" 'optimize-disk' "${_filtered_purge_list[@]}");
-      _triggerActionFn 'Optimizing disk' 'Optimize was successful.' \
-        'There was an issue optimizing the disk' "${_cmd_list[@]}"
+      _triggerActionFn 'Quick Clean: Trim and optimize snapshots' \
+        'Quick Clean was successful.' \
+        'Quick Clean encountered an unknown issue and could not complete.' \
+        "${_cmd_list[@]}"
 
       # Check if space is still low and warn user if so
       "${_kcleanExe}" '-d';
@@ -948,7 +950,7 @@ EOF
     _cmd_list=("${_kcleanSetExe}" 'purge-pkgs' "${_filtered_purge_list[@]}");
   fi
   _triggerActionFn 'Cleaning up kernels' 'Purge was successful.' \
-    'There was an issue purging packages' "${_cmd_list[@]}"
+    'There was an issue purging packages.' "${_cmd_list[@]}"
   ## . End Purge packages }
 
   # Check if space is still low and warn user if so
