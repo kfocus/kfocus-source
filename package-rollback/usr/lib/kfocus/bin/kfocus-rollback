@@ -797,12 +797,7 @@ ${_cm2HtmEndStr}
 EOF
   )";
 
-  _alreadyOpenMsg="$(cat <<EOF
-${_cm2HtmBeginStr}${_table_str}
-${_brow_lp_str}The System Rollback Dashboard is already open.${_erow_str}</table>
-${_cm2HtmEndStr}
-EOF
-  )";
+  _alreadyOpenMsg="The System Rollback Dashboard is already open.";
 }
 ## . END _assignGlobalUiVarsFn }
 
