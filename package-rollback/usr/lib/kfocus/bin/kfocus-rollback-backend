@@ -1725,7 +1725,7 @@ _safeMvFn () {
 ## BEGIN private _scrubSnapshotsFn () {
 # Summary   : _scrubSnapshotsFn
 # Purpose   : Remove snapshots that do not have matched main and boot
-#             directories.
+#             directories, remove unmatched metadb entries.
 # Example   : _scrubSnapshotsFn
 # Arguments : none
 # Globals   : _rb2MainSnapshotDir, _rb2BootSnapshotDir
@@ -1733,21 +1733,19 @@ _safeMvFn () {
 # Returns   : 0 on success, 2 if a BTRFS snapshot deletion fails.
 #
 _scrubSnapshotsFn () {
-  declare _main_snapshot_list _boot_snapshot_list _snapshot_id;
-  # Get main and boot snapshot lists
+  declare _main_snapshot_list _boot_snapshot_list \
+    _meta_snapshot_list _snapshot_id;
+
+  # Get main snapshot lists
   readarray -t _main_snapshot_list <<< "$(
     _cm2LsFn "${_rb2MainSnapshotDir}" | sed 's/@//' | sort -n | sed 's/^/@/'
-  )";
-  readarray -t _boot_snapshot_list <<< "$(
-    _cm2LsFn "${_rb2BootSnapshotDir}" | sed 's/@//' | sort -n | sed 's/^/@/'
   )";
 
   # Remove main snapshots with no corresponding boot snapshots
   if (( ${#_main_snapshot_list[@]} > 0 )) \
    && [ -n "${_main_snapshot_list[0]}" ]; then
     for _snapshot_id in "${_main_snapshot_list[@]}"; do
-      # shellcheck disable=SC2076
-      if ! [[ " ${_boot_snapshot_list[*]} " =~ " ${_snapshot_id} " ]]; then
+      if [ ! -d "${_rb2BootSnapshotDir}/${_snapshot_id}" ]; then
         _deleteSnapshotDirsFn "${_snapshot_id}" || {
           _logWrapFn 'alert' \
             "Failed to delete unpaired main snapshot |${_snapshot_id}|!";
@@ -1762,22 +1760,44 @@ _scrubSnapshotsFn () {
     done
   fi
 
+  # Get boot snapshot lists
+  readarray -t _boot_snapshot_list <<< "$(
+    _cm2LsFn "${_rb2BootSnapshotDir}" | sed 's/@//' | sort -n | sed 's/^/@/'
+  )";
+
   # Remove boot snapshots with no corresponding main snapshots
   if (( ${#_boot_snapshot_list[@]} > 0 )) \
     && [ -n "${_boot_snapshot_list[0]}" ]; then
     for _snapshot_id in "${_boot_snapshot_list[@]}"; do
-      # shellcheck disable=SC2076
-      if ! [[ " ${_main_snapshot_list[*]} " =~ " ${_snapshot_id} " ]]; then
+      if [ ! -d "${_rb2MainSnapshotDir}/${_snapshot_id}" ]; then
         _deleteSnapshotDirsFn "${_snapshot_id}" || {
           _logWrapFn 'alert' \
             "Failed to delete unpaired main snapshot |${_snapshot_id}|!";
           return 2;
         }
         # Remove any metadata
-         _deleteSnapshotMetaFn "${_snapshot_id}";
+        _deleteSnapshotMetaFn "${_snapshot_id}";
 
         _logWrapFn 'warn' \
           "Mismatched snapshot |${_snapshot_id}| trimmed from boot.";
+      fi
+    done
+  fi
+
+  # Get metadb snapshot lists
+  readarray -t _meta_snapshot_list <<< "$(
+    sed -n 's/^\[\(@[0-9]\+\)\]$/\1/p' "${_snapshotMetaDb}" \
+      | sed 's/@//' | sort -n | sed 's/^/@/'
+   )";
+
+  # Remove metadata entries with no corresponding snapshots
+  if (( ${#_meta_snapshot_list[@]} > 0 )) \
+    && [ -n "${_meta_snapshot_list[0]}" ]; then
+    for _snapshot_id in "${_meta_snapshot_list[@]}"; do
+      if [ ! -d "${_rb2MainSnapshotDir}/${_snapshot_id}" ]; then
+        _logWrapFn 'warn' \
+          "Remove orphan metadata for |${_snapshot_id}|";
+        _deleteSnapshotMetaFn "${_snapshot_id}";
       fi
     done
   fi
@@ -2417,11 +2437,25 @@ _getSnapshotListStrPublicFn () {
   _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
     'BTRFS status is incompatible with getting a list of snapshots!';
 
-  # Return list of snapshots, sorted from newest to oldest
-  _cm2LsFn "${_rb2MainSnapshotDir}" \
-    | sed 's/@//' \
-    | sort -nr \
-    | sed 's/^/@/';
+  # Get main and boot snapshot lists
+  readarray -t _main_snapshot_list <<< "$(
+    _cm2LsFn "${_rb2MainSnapshotDir}" \
+      | sed 's/@//' \
+      | sort -nr \
+      | sed 's/^/@/'
+  )";
+
+  # Remove main snapshots with no corresponding boot snapshots
+  if (( ${#_main_snapshot_list[@]} > 0 )) \
+    && [ -n "${_main_snapshot_list[0]}" ]; then
+    for _snapshot_id in "${_main_snapshot_list[@]}"; do
+      if [ -d "${_rb2BootSnapshotDir}/${_snapshot_id}" ]; then
+        echo "${_snapshot_id}";
+      else
+        _logWrapFn 'warn' "Snapshot |${_snapshot_id}| missing boot snap!";
+      fi
+    done
+  fi
 }
 ## . END _getSnapshotListStrPublicFn }
 
