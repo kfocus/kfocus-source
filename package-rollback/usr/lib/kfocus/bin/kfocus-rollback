@@ -193,7 +193,7 @@ files to the live root filesystem and selectively restore <br>
 files. For example, one can compare ${_code_str}/usr/lib</code> before <br>
 and after restore by running this command in a terminal:${_erow_str}
 
-${_brow_rp_str}${_code_str}diff -r --brief /btrfs_main/@/usr/lib \\<br>
+${_brow_rp_str}${_code_str}sudo diff -r --brief /btrfs_main/@/usr/lib \\<br>
 XXX_SNAPSHOT_DIR_XXX/usr/lib;${_erow_str}</table>
 ${_cm2HtmEndStr}
 EOF
