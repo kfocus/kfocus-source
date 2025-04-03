@@ -15,7 +15,7 @@ _t00MakeCountStrFn () {
 # Test-harness: Clear and recreate run directory
 _t00ClearRunDirFn () {
   if [ -d "${_t00RunDir}" ]; then
-    if ! "${_t00rmExe}" -rf "${_t00RunDir}"; then
+    if ! "${_t00RmExe}" -rf "${_t00RunDir}"; then
       _cm2EchoFn 'FAIL: Could not clear run dir';
       return 1;
     fi
@@ -30,7 +30,7 @@ _t00ClearRunDirFn () {
 # Test-harness: Clear and copy init into run directory
 _t00CopyInitDirFn () {
   if [ -d "${_t00RunDir}" ]; then
-    if ! "${_t00rmExe}" -rf "${_t00RunDir}"; then
+    if ! "${_t00RmExe}" -rf "${_t00RunDir}"; then
       _cm2EchoFn 'FAIL: Could not clear run dir';
       return 1;
     fi
@@ -58,7 +58,7 @@ _t00CheckExpectDirFn () {
 
 ## BEGIN _t00RunTestScriptsFn {
 _t00RunTestScriptsFn () {
-  declare _arg_list _return_int _util_list _filter_list _unit_file \
+  declare _arg_list _return_int _filter_list _unit_file \
     _filter_str _fail_list _unit_count _unit_list  _unit_basename;
 
   _arg_list=("$@");
@@ -86,7 +86,7 @@ _t00RunTestScriptsFn () {
     done
   done
 
-  # Export bindir for unit tests
+  # Export bin dir for unit tests
   export _t00BinDir;
 
   ## Begin Iterate over unit files {
@@ -150,8 +150,6 @@ _t00RunTestScriptsFn () {
 
 ## BEGIN _t00MainFn {
 _t00MainFn () {
-  declare _t00BinName;
-
   ## Begin Env Setup {
   # Import common
   # USES _cm2EchoFn; sourced unit tests also rely on this import
@@ -168,12 +166,14 @@ _t00MainFn () {
 }
 ## . END _t00MainFn }
 
+declare _t00BinName _t00BinDir _t00BaseDir _t00DataDir _t00RmExe;
+
 export -f _t00ClearRunDirFn _t00CopyInitDirFn _t00CheckExpectDirFn;
 
 _t00BinName="$(readlink -f "$0")" || exit 101;
 _t00BinDir="$(dirname "${_t00BinName}")" || exit 101;
 _t00BaseDir="$(dirname "${_t00BinDir}")" || exit 101;
 _t00DataDir="${_t00BaseDir}/test-data";
-_t00rmExe='/bin/rm';
+_t00RmExe='/bin/rm';
 
 _t00MainFn "$@";
