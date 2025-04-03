@@ -1,12 +1,13 @@
 #!/bin/bash
 #
-# Copyright 2019-2022 MindShare Inc.
-# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
+# Copyright 2019-2025 MindShare Inc.
+# Written for the Kubuntu Focus by
+#   Michael Mikowski, Aaron Rainbolt, Erich Eickmeyer
 #
 # Name    : kfocus-kclean
 # Purpose : User script to remove redundant kernel packages
 # License : GPL v2
-# Spec    : 744
+# Spec    : 744, 4534
 #
 set -u;
 
@@ -292,11 +293,11 @@ _echoIsBootMountPointFn () {
 ## . END _echoIsBootMountPointFn }
 
 ## BEGIN _echoBootMegsFn {
-# Mock this for tests
+# Mock this for tests.
+# Takes argument of 'avail' or 'size'.
 #
 _echoBootMegsFn() {
   declare _arg_str _int;
-
   _arg_str="${1:-size}";
 
   if [ "${_isBtrfsYn}" = 'y' ]; then
@@ -498,7 +499,7 @@ EOF
 _mainFn() {
   declare \
     _boot_free_int _boot_size_int _cmd_list _do_check _do_force \
-    _do_still_low_check _eff_free_int _check_msg _eff_size_int \
+    _do_btrfs_low_check _eff_free_int _check_msg _eff_size_int \
     _filtered_purge_list _filtered_purge_list_str _inst_kvers_count \
     _inst_kvers_list_str _is_boot_low _is_boot_partition \
     _keep_kvers_list_count _keep_pkg_list_str _kernel_free_count \
@@ -517,12 +518,12 @@ _mainFn() {
 
   ## Begin Process Options {
   _do_force='n';
-  _do_still_low_check='n';
+  _do_btrfs_low_check='n';
   while getopts ':fhd' _opt_str; do
     case "${_opt_str}" in
     h) _echoHelpFn; return 0;;
     f) _do_force='y';;
-    d) _do_still_low_check='y';;
+    d) _do_btrfs_low_check='y';;
     *) _cm2EchoFn "\nInvalid option: ${_opt_str} \n";
       _echoHelpFn;
       return 1;;
@@ -693,7 +694,7 @@ EOF
   )";
 
   ## Begin Warn Still Low {
-  if [ "${_do_still_low_check}" = 'y' ]; then
+  if [ "${_do_btrfs_low_check}" = 'y' ] && [ "${_isBtrfsYn}" = 'y' ]; then
     _exclude_str='System.map|config|efi|grub|initrd.img';
     _exclude_str+='|keyfile|memtest86|vmlinuz';
 
@@ -704,17 +705,16 @@ EOF
     )";
 
     # Get percentage of 4 GiB left unallocated
-    _unalloc_int="$(pkexec "${_rollbackSetExe}" 'getBootUnallocSpace')";
-    (( _unalloc_int = _unalloc_int * 100 / 4294967296 )) || true;
+    _unalloc_int="$(_echoBootMegsFn 'avail')";
+    (( _unalloc_int = _unalloc_int * 100 / 4096 )) || true;
+    if (( _unalloc_int > 25 )); then return; fi
 
-    # TODO: Indicate desired unallocated space here, adjust heuristics to
-    # avoid confusion
     _still_low_warn_msg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
 ${_browStr}<h3 style="color:#f7941d">FocusRx: Disk Space Still Low</h3>${_erowStr}
 
 ${_browStr}<span style="color:#da4453">The <code>/boot</code> filesystem has
-only ${_unalloc_int}% unallocated space.</span> <br>
+only ${_unalloc_int}% unallocated space; &gt; 25% is recommended.</span> <br>
 EOF
     )";
 
@@ -751,7 +751,7 @@ EOF
     _still_low_warn_msg+="</table>${_cm2HtmEndStr}";
 
     _cm2PromptUserFn "${_still_low_warn_msg}" "${_winTitle}" 's';
-    return
+    return;
   fi
   ## . End Warn Still Low }
 
@@ -1000,12 +1000,10 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _baseName="$(basename "${_binName}")" || exit 101;
   _importCommonFn;
 
-  # Get escalation exe
-  _escExe="$(_cm2GetEscExeFn)" || exit;
-
   _assignGlobalUiVarsFn;
-
+  _escExe="$(_cm2GetEscExeFn)" || exit;
   _kcleanExe="${_binName}";
+
   _assignList=(
     '_btrfsExe|/usr/bin/btrfs'
     "_kcleanSetExe|${_binDir}/kfocus-kclean-set"
@@ -1015,7 +1013,6 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     _cm2WarnStrFn 'ABORT: Required commands not found';
     exit 1;
   fi
-
   _mainFn "$@";
 fi
 ## . END Run main if script is not sourced }
