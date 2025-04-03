@@ -1995,6 +1995,10 @@ _aptSnapshotPublicFn () {
     && [ "${_btrfsStatus}" != 'SUPPORTED, MANUAL' ] \
     && _exitCleanFn;
 
+  # TODO: Handle the problem where disk space is low and we purge kernel
+  # packages. We should not be taking a pre-rollback snapshot in that
+  # situation, and notify the user of this condition.
+
   # Add space check here, quietly exit 0 if it doesn't pass as we don't want
   # to crash installations
   _checkMainUnallocSpaceFn || {

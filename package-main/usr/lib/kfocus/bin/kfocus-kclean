@@ -707,20 +707,21 @@ EOF
     # Get percentage of 4 GiB left unallocated
     _unalloc_int="$(_echoBootMegsFn 'avail')";
     (( _unalloc_int = _unalloc_int * 100 / 4096 )) || true;
-    if (( _unalloc_int > 25 )); then return; fi
+    if (( _unalloc_int >= 25 )); then return; fi
 
     _still_low_warn_msg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
 ${_browStr}<h3 style="color:#f7941d">FocusRx: Disk Space Still Low</h3>${_erowStr}
 
 ${_browStr}<span style="color:#da4453">The <code>/boot</code> filesystem has
-only ${_unalloc_int}% unallocated space; &gt; 25% is recommended.</span> <br>
+only ${_unalloc_int}% unallocated space.</span><br>
+We recommend a minimum of 25%.${_erowStr}
 EOF
     )";
 
     if [ -n "${_file_list_str}" ]; then
       _still_low_warn_msg+="$(cat <<EOF
-There are one or more large files in the /boot filesystem <br>
+${_browStr}There are one or more large files in the /boot filesystem <br>
 that do not appear to belong:${_erowStr}
 
 ${_browStr}<code>${_file_list_str#  }</code>${_erowStr}
@@ -738,17 +739,21 @@ EOF
       _cm2LsFn /btrfs_boot/@kfocus-rollback-boot-snapshots/ |wc -l
     )";
 
-    if (( _snap_count > 1 )); then
+    if (( _snap_count > 0 )); then
       _still_low_warn_msg+="$(cat <<EOF
 ${_browStr}This system has rollback snapshots which can retain disk space. <br>
 You may use System Rollback Dashboard to view the space <br>
-used by each snapshot, and delete them to reduce disk usage. <br>
-A reboot may be necessary to allow all disk space to be <br>
-reclaimed.${_erowStr}
+used by each snapshot, and delete them to reduce disk usage.${_erowStr}
 EOF
       )";
     fi
-    _still_low_warn_msg+="</table>${_cm2HtmEndStr}";
+    _still_low_warn_msg+="$(cat <<EOF
+${_browStr}You may need to reboot to clear any open file handles to <br>
+deleted snapshots. This will allow the system to reclaim <br>
+all available disk space.${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+    )";
 
     _cm2PromptUserFn "${_still_low_warn_msg}" "${_winTitle}" 's';
     return;
