@@ -1,64 +1,26 @@
-kfocus-main (24.04.16~beta13) noble; urgency=medium
+kfocus-main (24.04.16) noble; urgency=medium
 
-  * kfocus-kclean: Adjust disk space reclaim advice (#4534)
-
- -- Michael S. Mikowski <support@kfocus.org>  Thu, 03 Apr 2025 18:51:36 -0400
-
-kfocus-main (24.04.16~beta12) noble; urgency=medium
-
-  * kfocus-kclean: Update copyright, contributors (#4534)
-  * kfocus-kclean: Use common routine for boot size (#4534)
-  * kfocus-kclean: Do not show disk space warning if unalloc >25% (#4534)
-  * kfocus-kclean: Add guidance for unalloc > 25% to warning (#4534)
-
- -- Michael S. Mikowski <support@kfocus.org>  Wed, 02 Apr 2025 21:23:38 -0400
-
-kfocus-main (24.04.16~beta11) noble; urgency=medium
-
-  * kfocus-kclean: Fix wording and authorization prompts (#4534)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 02 Apr 2025 09:42:00 -0500
-
-kfocus-main (24.04.16~beta10) noble; urgency=medium
-
-  * kfocus-kclean: Update wording and structure (#4534)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 26 Mar 2025 12:30:58 -0500
-
-kfocus-main (24.04.16~beta9) noble; urgency=medium
-
-  * kfocus-kclean: Remove kfocus-rollback deep clean calls for safety, point
-    user to rollback wizard and warn about large files under /boot instead
-    (#4534)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 25 Mar 2025 16:06:56 -0500
-
-kfocus-main (24.04.16~beta8) noble; urgency=medium
-
-  * common.2.source: Add nxg3 identification (#5211)
-
- -- Michael S. Mikowski <support@kfocus.org>  Tue, 04 Mar 2025 19:40:40 -0500
-
-kfocus-main (24.04.16~beta7) noble; urgency=medium
-
-  * Adjust desktop file names and comments (#5190)
-  * Fix KFocus tool descriptions in kfocus-mime (#5190)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 04 Mar 2025 10:40:03 -0600
-
-kfocus-main (24.04.16~beta6) noble; urgency=medium
-
-  * Enhance kernel cleaner (#4534)
-  * Update for compatibility with kfocus-rollback v2 (#4534)
-  * Add functionality for low disk space correction to
+  * src/kfocus-focusrx-dbus-dispatch/{KDialogLauncher.cpp, KDialogLauncher.h}:
+    Add rollbackLowMainSpace and rollbackLowBootSpace handlers to
     kfocus-focusrx-dbus-dispatch (#4534)
-  * common.2.source: Enhance logging used by kfocus-rollback-backend (#4534)
-  * kfocus-reset-effects: Enable easy window minimize/maximize shortcuts on
-    Ir16 (#5066)
-  * kfocus-focusrx-dbus-dispatch: Prevent screen locking in live sessions
+  * usr/lib/kfocus/bin/{kfocus-focusrx, kfocus-focusrx-set,
+    kfocus-focusrx-system}, usr/lib/kfocus/conf/etc_rsyslog.d_10-kfocus.conf:
+    Adjust for compatibility with kfocus-rollback v2 (#4534)
+  * usr/lib/kfocus/lib/common.2.source: Enhance syslog capabilities for
+    rollback v2 (#4534)
+  * usr/lib/kfocus/bin/{kfocus-kclean,kfocus-kclean-set}: Offer additional
+    disk space clearing advice on BTRFS rather than forcing unconditional deep
+    clean (#4534)
+  * usr/lib/kfocus/lib/common.2.source: Add NXg3 support (#5211)
+  * usr/lib/kfocus/bin/kfocus-reset-effects: Enable easy window
+    minimize/maximize shortcuts on Ir16 (#5066)
+  * src/kfocus-focusrx-dbus-dispatch: Prevent screen locking in live sessions
     (#5164)
+  * usr/share/applications/*: Update desktop files
+  * usr/lib/kfocus/bin/kfocus-mime: Update app descriptions (#5190)
+  * usr/lib/kfocus/bin/kfocus-mime: Install Dropbox from Firstrun (#5264)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 19 Feb 2025 09:05:40 -0600
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 07 Apr 2025 18:58:50 -0500
 
 kfocus-main (24.04.15) noble; urgency=medium
 
