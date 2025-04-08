@@ -97,13 +97,13 @@ _manageSnapshotsOnBootFn () {
   _title='Manage Snapshots On Boot';
 
   _cm2SetMsgFn "${_title}";
-  if [ -z "${_rollbackSetExe}" ] || [ -z "${_btrfsExe}" ]; then
+  if [ -z "${_rollbackBackendExe}" ] || [ -z "${_btrfsExe}" ]; then
     _cm2WarnStrFn 'Required utils not available';
     _cm2WarnFn;
     return 1;
   fi
 
-  _btrfs_status="$("${_rollbackSetExe}" 'getBtrfsStatus')";
+  _btrfs_status="$("${_rollbackBackendExe}" 'getBtrfsStatus')";
   if [ "${_btrfs_status}" != 'SUPPORTED, AUTO' ] \
     && [ "${_btrfs_status}" != 'SUPPORTED, MANUAL' ]; then
     _cm2WarnStrFn 'BTRFS not setup';
@@ -111,15 +111,24 @@ _manageSnapshotsOnBootFn () {
     return 1;
   fi
   
-  _main_unalloc="$("${_rollbackSetExe}" 'getMainUnallocSpace')";
-  _main_min_unalloc="$("${_rollbackSetExe}" 'getMainMinUnalloc')";
-  _boot_unalloc="$("${_rollbackSetExe}" 'getBootUnallocSpace')";
-  _boot_min_unalloc="$("${_rollbackSetExe}" 'getBootMinUnalloc')";
+  _main_unalloc="$("${_rollbackBackendExe}" 'getMainUnallocSpace')";
+  _main_min_unalloc="$("${_rollbackBackendExe}" 'getMainMinUnalloc')";
+  _boot_unalloc="$("${_rollbackBackendExe}" 'getBootUnallocSpace')";
+  _boot_min_unalloc="$("${_rollbackBackendExe}" 'getBootMinUnalloc')";
   if (( _main_unalloc > _main_min_unalloc )) \
     && (( _boot_unalloc > _boot_min_unalloc )); then
-    "${_rollbackSetExe}" 'finalizeRestore'        || { _cm2WarnFn; return; };
-    "${_rollbackSetExe}" 'createSnapshot' 'Timed' || { _cm2WarnFn; return; };
-    "${_rollbackSetExe}" 'trimSnapshots'          || { _cm2WarnFn; return; };
+    "${_rollbackBackendExe}" 'finalizeRestore'
+    if [ "$?" != '0' ] && [ "$?" != '1' ]; then
+      _cm2WarnFn; return;
+    fi
+    "${_rollbackBackendExe}" 'createSnapshot' 'Timed'
+    if [ "$?" != '0' ] && [ "$?" != '1' ]; then
+      _cm2WarnFn; return;
+    fi
+    "${_rollbackBackendExe}" 'trimSnapshots'
+    if [ "$?" != '0' ] && [ "$?" != '1' ]; then
+      _cm2WarnFn; return;
+    fi
     _cm2SucFn;
   else
     _cm2WarnStrFn 'Main or boot disk space low!';
@@ -137,13 +146,13 @@ _maintainBtrfsFn () {
   _title='Maintain Snapshots';
 
   _cm2SetMsgFn "${_title}";
-  if [ -z "${_rollbackSetExe}" ] || [ -z "${_btrfsExe}" ]; then
+  if [ -z "${_rollbackBackendExe}" ] || [ -z "${_btrfsExe}" ]; then
     _cm2WarnStrFn 'Required utils not available';
     _cm2WarnFn;
     return 1;
   fi
 
-  _btrfs_status="$("${_rollbackSetExe}" 'getBtrfsStatus')";
+  _btrfs_status="$("${_rollbackBackendExe}" 'getBtrfsStatus')";
   if [ "${_btrfs_status}" != 'SUPPORTED, AUTO' ] \
     && [ "${_btrfs_status}" != 'SUPPORTED, MANUAL' ]; then
     _cm2WarnStrFn 'BTRFS not setup';
@@ -151,21 +160,30 @@ _maintainBtrfsFn () {
     return 1;
   fi
 
-  _main_unalloc="$("${_rollbackSetExe}" 'getMainUnallocSpace')";
-  _main_min_unalloc="$("${_rollbackSetExe}" 'getMainMinUnalloc')";
-  _boot_unalloc="$("${_rollbackSetExe}" 'getBootUnallocSpace')";
-  _boot_min_unalloc="$("${_rollbackSetExe}" 'getBootMinUnalloc')";
+  _main_unalloc="$("${_rollbackBackendExe}" 'getMainUnallocSpace')";
+  _main_min_unalloc="$("${_rollbackBackendExe}" 'getMainMinUnalloc')";
+  _boot_unalloc="$("${_rollbackBackendExe}" 'getBootUnallocSpace')";
+  _boot_min_unalloc="$("${_rollbackBackendExe}" 'getBootMinUnalloc')";
   if (( _main_unalloc > _main_min_unalloc )) \
     && (( _boot_unalloc > _boot_min_unalloc )); then
-    "${_rollbackSetExe}" 'createSnapshot' 'Timed' || { _cm2WarnFn; return; };
-    "${_rollbackSetExe}" 'trimSnapshots'          || { _cm2WarnFn; return; };
-    "${_rollbackSetExe}" 'btrfsMaintain'          || { _cm2WarnFn; return; };
+    "${_rollbackBackendExe}" 'createSnapshot' 'Timed';
+    if [ "$?" != '0' ] && [ "$?" != '1' ]; then
+      _cm2WarnFn; return;
+    fi
+    "${_rollbackBackendExe}" 'trimSnapshots';
+    if [ "$?" != '0' ] && [ "$?" != '1' ]; then
+      _cm2WarnFn; return;
+    fi
+    "${_rollbackBackendExe}" 'btrfsMaintain';
+    if [ "$?" != '0' ] && [ "$?" != '1' ]; then
+      _cm2WarnFn; return;
+    fi
     _cm2SucFn;
   else
     if (( _main_unalloc <= _main_min_unalloc )); then
-      _promptAllUsersFn 'warning' "${_lowDiskMsg}";
+      _promptAllUsersFn 'rollbackLowMainSpace' "${_lowDiskMsg}";
     elif (( _boot_unalloc <= _boot_min_unalloc )); then
-      _promptAllUsersFn 'warning' "${_lowBootMsg}";
+      _promptAllUsersFn 'rollbackLowBootSpace' "${_lowBootMsg}";
     fi
     _cm2WarnFn;
   fi
@@ -213,7 +231,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _importCommonFn;
   _assignList=(
     "_powerSetExe|${_binDir}/kfocus-power-set||optional"
-    "_rollbackSetExe|${_binDir}/kfocus-rollback-set||optional"
+    "_rollbackBackendExe|${_binDir}/kfocus-rollback-backend||optional"
     '_btrfsExe|/usr/bin/btrfs'
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
@@ -227,29 +245,37 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   _lowDiskMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browStr}<h3 style="color:#f7941d">Low Disk Space</h3>${_erowStr}
+${_browStr}<h3 style="color:#f7941d">Low Disk Space</h3>
+${_erowStr}
 
-${_browStr}Your system is running low on disk space. This could result in<br>
-filesystem corruption if not corrected. It is highly recommended<br>
-that you delete all snapshots and optimize the drive using System<br>
-Rollback. You may also need to delete excess files or move them to<br>
-other drives. You can access System Rollback by clicking <code>Start<br>
-Menu &gt; Kubuntu Focus Tools &gt; System Rollback</code>.
-${_erowStr}</table>
+${_browStr}FocusRx has detected that the system's disk space is<br>
+low. This could result in filesystem corruption if not corrected.<br>
+Snapshot maintenance has been paused until this is corrected.<br>
+<br>
+It is highly recommended that you delete large snapshots<br>
+using System Rollback. You may also need to delete excess files<br>
+or move them to other drives.<br>
+<br>
+You can access System Rollback by clicking <code>Start Menu &gt;<br>
+Kubuntu Focus Tools &gt; System Rollback</code>. Click "Show<br>
+Snapshot Sizes" when prompted to quickly find large snapshots.<br>
 ${_cm2HtmEndStr}
 EOF
   )";
 
   _lowBootMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browStr}<h3 style="color:#f7941d">Low Boot Space</h3>${_erowStr}
+${_browStr}<h3 style="color:#f7941d">Low Boot Space</h3>
+${_erowStr}
 
-${_browStr}Your system is running low on boot space. This could result in<br>
-failed upgrades and kernel-related system issues if not corrected.<br>
-It is highly recommended that you run the Kernel Cleaner utility to<br>
-free boot space. You can access the Kernel Cleaner by clicking<br>
-<code>Start Menu &gt; Kubuntu Focus Tools &gt; Kernel Cleaner</code>.
-${_erowStr}</table>
+${_browStr}FocusRx has detected that the system's boot<br>
+filesystem is low on space. This could result in failure to<br>
+boot. Snapshot maintenance has been paused until this<br>
+is corrected.<br>
+<br>
+It is highly recommended that you run the Kernel Cleaner<br>
+utility. You can access the Kernel Cleaner by clicking <code>Start<br>
+Menu &gt; Kubuntu Focus Tools &gt; Kernel Cleaner</code>.
 ${_cm2HtmEndStr}
 EOF
   )";

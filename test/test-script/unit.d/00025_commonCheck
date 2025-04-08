@@ -51,6 +51,7 @@ _echoFormatFn   () { printf '  %-4.4s : %-14.14s %-2.2s %-14.14s ' "$@"; }
 #   0c   _cm2TrapExitFn      : Use as |trap _cm2TrapExitFn            EXIT; |
 #   0d   _cm2TrapErrorFn     : Use as |trap '_cm2TrapErrorFn $LINENO' ERR;  |
 #   0e   _cm2TrapInterruptFn : Use as |trap _cm2TrapInterruptFn     SIGINT; |
+#   1
 #   0f_  _cm2GetEscExeFn     : Get escalation command
 #                           ('sudo|pkexec' or fail if not possible)
 #   0g_  _cm2AskExitFn       : _cm2AskExitFn 0 'Press return to finish'
@@ -65,7 +66,7 @@ _echoFormatFn   () { printf '  %-4.4s : %-14.14s %-2.2s %-14.14s ' "$@"; }
 #   0v_A _cm2PromptUserFn        : Prompt user through GUI or term as available
 #   0w_  _cm2EscapeRxCharsFn     : Escape regex chars for use in grep -E '...'
 #   0x_A _cm2TestVersFn          : Compare version strings w/dots or dashes
-#
+#   0y_A _cm2SetLogTagFn, _cm2SetLogLevel, _cm2LogFn
 
 # See CONTRIBUTING.md, Header Section for function doc template
 # 04_
@@ -241,7 +242,8 @@ _audit_cm2EchoStackFn () {
 _audit_cm2EchoModelStrFn () {
   # bashsupport disable=BP2001
   declare _assert_table _assert_count _assert_idx _fail_count \
-    _loop_line _did_assert_fail _bit_list _name_str _expect_str _found_str;
+    _loop_line _col_idx _col_key _did_assert_fail _bit_list _name_str \
+    _expect_str _calc_str _restore_name_file _restore_sku_file;
 
   _restore_name_file="${_cm2DmiProductNameFile:-}";
   _restore_sku_file="${_cm2DmiProductSkuFile:-}";
@@ -271,8 +273,9 @@ _audit_cm2EchoModelStrFn () {
   );
 
   # Mock dmi files
-  # shellcheck disable=SC2154
+  # bashsupport disable=BP2001
   _cm2DmiProductNameFile="${_t00RunDir}/model_file";
+  # bashsupport disable=BP2001
   _cm2DmiProductSkuFile="${_t00RunDir}/sku_file";
   mkdir -p "${_t00RunDir}";
   _assert_count="${#_assert_table[@]}";
@@ -286,7 +289,9 @@ _audit_cm2EchoModelStrFn () {
     IFS='|' read -r -a _bit_list <<< "${_loop_line}";
 
    # Mock model change
+    # bashsupport disable=BP2001
     _cm2ModelCode='';
+    # bashsupport disable=BP2001
     _cm2ModelLine='';
     _name_str="${_bit_list[0]}";
     echo "${_name_str}" > "${_cm2DmiProductNameFile}";
@@ -300,14 +305,14 @@ _audit_cm2EchoModelStrFn () {
     _col_idx=1;
     for _col_key in code is_nv_sys config_code; do
       _expect_str="${_bit_list[${_col_idx}]}";
-      _found_str="$(_cm2EchoModelStrFn ${_col_key})";
-      if [ "${_expect_str}" = "${_found_str}"  ]; then
+      _calc_str="$(_cm2EchoModelStrFn ${_col_key})";
+      if [ "${_expect_str}" = "${_calc_str}"  ]; then
         printf '  ok   : Col key | %-12.12s | matches | %-12.12s |\n' \
           "${_col_key}" "${_expect_str}";
       else
         printf '  fail : Col key | %-12.12s | NOMATCH | %-12.12s |\n' \
           "${_col_key}" "${_expect_str}";
-        _cm2EchoFn "    Found string is |${_found_str}|";
+        _cm2EchoFn "    Found string is |${_calc_str}|";
         _did_assert_fail='y';
       fi
       (( _col_idx++ ));
@@ -515,7 +520,6 @@ _audit_cm2AssignExeVarsFn () {
   } >&2;
   for _loop_line in "${_assert_table[@]}"; do
     readarray -t -d'|' _bit_list <<< "${_loop_line}";
-    # IFS='|' read -r -a _bit_list <<< "${_loop_line}";
     _cmd_str="$(    _echoScrubStrFn "${_bit_list[0]}" )";
     _type="$(       _echoScrubStrFn "${_bit_list[1]}" )";
     _req_key="$(    _echoScrubStrFn "${_bit_list[2]}" )";
@@ -882,6 +886,135 @@ _audit_cm2TestVersFn () {
   fi
   return "${_fail_count}";
 }
+## . END _audit_cm2TestVersFn }
+
+# 0y_A _cm2SetLogTagFn, _cm2SetLogLevel, _cm2LogFn
+# Summary   : _cm2SetLogTagFn <tag_str>
+# Purpose   : Set a prefix for log messages sent to syslog. Must be set.
+# Example   : _cm2SetLogTagFn "${_baseName}";
+# Arguments : tag_str (required)
+# Globals   : _cm2LogTag is set to value provided
+# Outputs   : none
+# Returns   : 0 success, 1 failure
+
+# Summary   : _cm2SetLogLevelFn <priority_key>
+# Purpose   : Set the low-pass filter for logging, _cm2LogLevelIdx.
+# Example   : _cm2SetLogLevelFn 'notice';
+# Arguments : priority_key
+# Globals   : _cm2LogLevelIdx is set to value from _cm2LogIdxMap
+# Outputs   : none
+# Returns   : 0 success, 1 failure
+
+# Summary   : _cm2LogFn <priority_key> <message>
+# Purpose   : Log to syslog with priority and message. Also echo to STDERR.
+#             Lower priority messages with an index value < _cm2LogLevelIdx
+#             are note logged.
+# Example   : _cm2LogFn 'notice' 'This is a somewhat important message';
+# Arguments : priority_key, message
+# Globals   : _cm2LogLevelIdx, _cm2LogPriorityMap, _cm2LogIdxMap
+# Outputs   : none
+# Returns   : 0 success, 1 failure
+
+declare _cm2LogLevelIdx _cm2LogTag; # Hack to get around shellcheck
+## BEGIN _audit_cm2SyslogFn {
+_audit_cm2SyslogFn () {
+  declare _assert_table _loop_line _assert_count _assert_idx _fail_count \
+    _bit_list _cmd_str _a1_str _a2_str _a3_str _stat_str \
+    _calc_str _expect_str;
+
+  _assert_table=(
+   ' log   |   debug | verbose    |DNR'
+   ' log   |  notice | masses     |DNR'
+   ' log   |    warn | cautious   |DNR'
+   ' log   |     err | unexpected |DNR'
+   ' log   |    crit | The worst  |DNR'
+   ' sett  | AA      | AA[X]'
+   ' level | debug   | 7'
+   ' log   |   debug | verbose    |AA[X] - DEBUG: verbose '
+   ' log   |  notice | masses     |AA[X] - NOTICE: masses '
+   ' log   |    warn | cautious   |AA[X] - WARN: cautious '
+   ' log   |     err | unexpected |AA[X] - ERR: unexpected'
+   ' log   |    crit | The worst  |AA[X] - CRIT: The worst'
+   ' level | warn    | 4'
+   ' log   |   debug | verbose    |'
+   ' log   |  notice | masses     |'
+   ' log   |    warn | cautious   |AA[X] - WARN: cautious '
+   ' log   |     err | unexpected |AA[X] - ERR: unexpected'
+   ' log   |    crit | The worst  |AA[X] - CRIT: The worst'
+   ' level | err     | 3'
+   ' sett  | BB      | BB[X]'
+   ' log   |   debug | verbose    |'
+   ' log   |  notice | masses     |'
+   ' log   |    warn | cautious   |'
+   ' log   |     err | unexpected |BB[X] - ERR: unexpected'
+   ' log   |    crit | The worst  |BB[X] - CRIT: The worst'
+  );
+  _assert_count="${#_assert_table[@]}";
+  _assert_idx=1;
+  _fail_count=0;
+
+  # Mock logger
+  # shellcheck disable=SC2317
+  logger () { true; }
+  for _loop_line in "${_assert_table[@]}"; do
+    IFS='|' read -r -a _bit_list <<< "${_loop_line}";
+    _cmd_str="$( _echoScrubStrFn "${_bit_list[0]}")";
+    _a1_str="$( _echoScrubStrFn "${_bit_list[1]}")";
+    _a2_str="$(_echoScrubStrFn "${_bit_list[2]:-}")";
+    _a3_str="$(_echoScrubStrFn "${_bit_list[3]:-}")";
+
+    case "${_cmd_str}" in
+      log)
+        _expect_str="${_a3_str}";
+        if _calc_str="$(_cm2LogFn "${_a1_str}" "${_a2_str}" 2>&1)"; then
+          # shellcheck disable=SC2001
+          _calc_str="$(sed 's/[0-9]\+/X/g' <<< "${_calc_str}")";
+        else
+          _calc_str="DNR";
+        fi
+        ;;
+      level)
+        if _cm2SetLogLevelFn "${_a1_str}"; then
+          _calc_str="${_cm2LogLevelIdx}";
+          _expect_str="${_a2_str}";
+        fi
+        ;;
+      sett)
+        if _cm2SetLogTagFn "${_a1_str}"; then
+          # shellcheck disable=SC2001
+          _calc_str="$(sed 's/[0-9]\+/X/g' <<< "${_cm2LogTag}")";
+          _expect_str="${_a2_str}";
+        else
+          # shellcheck disable=SC2001
+          _calc_str="$(sed 's/[0-9]\+/X/g' <<< "${_cm2LogTag}")";
+          _expect_str="${_calc_str}";
+        fi
+        ;;
+      *)
+        _cmd_str='Bad';
+        _calc_str='Bad command:';
+        _expect_str="${_cmd_str}";
+        ;;
+    esac
+
+    _stat_str='fail';
+    [ "${_calc_str}" = "${_expect_str}" ] && _stat_str='ok';
+
+    {  printf '  %-4.4s : %-6.6s %-30.30s %-30.30s ' \
+      "${_stat_str}" "${_cmd_str}" "${_calc_str}" "${_expect_str}";
+       printf '%02i / %02i \n' "${_assert_idx}" "${_assert_count}";
+    } >&2
+
+    if [ "${_stat_str}" = 'fail' ]; then (( _fail_count++ )); fi
+    (( _assert_idx++ ));
+  done
+
+  if (( _fail_count > 0 )); then
+    _cm2EchoFn "  ${_fail_count} of ${_assert_count} asserts failed.";
+  fi
+  return "${_fail_count}";
+}
+## . END _audit_cm2SyslogFn }
 
 _runTestFn () {
   declare _ret_int _audit_fn_list _loop_idx _loop_fn_str;
@@ -893,9 +1026,10 @@ _runTestFn () {
     '_audit_cm2EchoStackFn'
     '_audit_cm2EchoModelStrFn'
     '_audit_cm2ChkInstalledPkgFn'
-    '_audit_cm2ChkPkgFn'            # Also checks cm2ChkInstalledVersFn
+    '_audit_cm2ChkPkgFn' # Includes cm2ChkInstalledVersFn
     '_audit_cm2PromptUserFn'
     '_audit_cm2TestVersFn'
+    '_audit_cm2SyslogFn'
   );
 
   _loop_idx=1;

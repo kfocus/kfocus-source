@@ -1,0 +1,22 @@
+#!/bin/bash
+# check_hints:
+# Purpose: Use this to composite and compare unique hints to a baseline hint panel.
+#
+set -eu;
+
+_file_list=(00_badge.png  01_desktop.png  02_system.png);
+
+cd ./unique;
+for _file_name in "${_file_list[@]}"; do
+  while read -r _inner_path; do
+    _dirname="$(dirname "${_inner_path}" |sed 's/^[\.\/]*//g')";
+    "composite" "${_inner_path}" "ir14g1/${_file_name}" "../${_file_name}-${_dirname}.png";
+  done < <(find ./ -type f -name "${_file_name}" |sort);
+done
+cd ..;
+gwenview ./;
+
+echo "Now that you have reviewed, please delete *.png files from this directory.";
+
+exit 0;
+

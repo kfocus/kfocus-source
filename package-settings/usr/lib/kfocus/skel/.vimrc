@@ -14,6 +14,15 @@ if has('syntax') && has('eval')
   packadd! matchit
 endif
 
+" A vim native way to match tags:
+" https://stackoverflow.com/questions/6270396
+" Use :help v_it OR :help visual-operators
+" 1. Place cursor on Tag
+" 2. Type `vat` for outer tag block, `vit` for inner tag
+" 3. Type `o` or `O` to jump to opening or closing tag
+" Optional: Type `it` or `at` to expand or shrink selection
+" Optional: Type `esc` to exit, `c` to change, `y` to cop
+
 " ====[ Git Configs ]=================================================
 " Keep All HEAD content in merge
 map ;g1 :%s?^<<<\+ HEAD\s*\n\(\_.\{-}\)\n===\+\n\(\_.\{-}\)>>>\+.*$?\1?gc<CR>
@@ -47,16 +56,20 @@ if !isdirectory(expand(&directory))
 endif
 
 " ====[ Files and buffers ]============================================
-autocmd BufWrite * :set ff=unix "Autoconvert to unix line endings
+" See https://unix.stackexchange.com/questions/75430
+" Use of 'e' at the end of regex to suppresses error if no trailing space
+autocmd BufWritePre * :call TrimTrailingWhiteSpace() "Autoremove all trailing space
+autocmd BufWrite    * :set ff=unix                   "Autoconvert to unix line endings
 filetype plugin on  "Identify syntax
 set autoread        "Reload buffer when external change detected
 set autowrite       "Save buffer when changing files
+
 " Reduce IO latency by using SSD
 "   See http://unix.stackexchange.com/questions/37076
 set dir=/tmp
 set fileformats=unix,mac,dos
 set noautoread
-set viminfo=h,'50,<10000,s1000,/1000,:100 " What to save in .viminfo
+set viminfo=h,'50,<10000,s1000,/1000,:100 "Set values to save to .viminfo
 
 " ====[ Colors and highlights ]========================================
 " colorscheme elflord
@@ -107,14 +120,15 @@ map <silent> TS :set   expandtab<CR>:%retab!<CR>
 map <silent> TT :set noexpandtab<CR>:%retab!<CR>
 
 " ====[ Visual modes ]================================================
-" Visual Block mode is far more common that Visual mode...
+" Visual Block mode is far more common that Visual mode.
+" nnoremap works non-recursively in normal mode.
 nnoremap v <C-V>
 nnoremap <C-V> v
 
 set virtualedit=block "Square up visual selections
 
 " =====[ Toggle syntax highlighting ]==================================
-function! ToggleSyntax()
+function! ToggleSyntax ()
   if g:f_syntax == 1
     syntax off
     let g:f_syntax = 0
@@ -131,7 +145,7 @@ else
    call ToggleSyntax()
 endif
 
-" =====[ Add or subtract comments ]===============================
+" =====[ Add or subtract comments ]================================
 function! ToggleComment ()
   let currline = getline(".")
   if currline =~ '^#'
@@ -141,6 +155,14 @@ function! ToggleComment ()
   endif
 endfunction
 map <silent> # :call ToggleComment()<CR>j0
+
+" =====[ Trim trailing whitespace ]================================
+" This is used in ;k shortcut and on file save
+function! TrimTrailingWhiteSpace ()
+  let wv = winsaveview()
+  %s/\s\+$//ge
+  call winrestview(wv)
+endfunction
 
 " =====[ Keyboard shortcuts ]======================================
 " Keycodes and maps timeout in 3/10 sec...
@@ -152,8 +174,9 @@ set timeout timeoutlen=300 ttimeoutlen=300
 " e Edit a file
 map e :n
 
-" ;k Remove trailing space
-map ;k :%s?\s\+$??<CR>
+" ;k Trim trailing space, ;kk clears checkboxes
+map <silent> ;k  :call TrimTrailingWhiteSpace()<CR>
+map <silent> ;kk :%s?\(\W\)\[.\] ?\1[ ] ?<CR>
 
 " ;n Highlight or replace non-ascii characters
 map ;n /[^\x00-\x7F]<CR>
@@ -173,9 +196,8 @@ map <C-K> :set paste<CR>1Givar j = GA; console.log(JSON.stringify(j));1G^vG:!
 ";y Toggle syntax highlighting
 nmap <silent> ;y : call ToggleSyntax() <CR>
 
-" ;f ;ff Turn numbers on and off
-nmap <silent> ;f  :set nonu <CR>
-nmap <silent> ;ff :set nu   <CR>
+" ;f toggle line numbers
+nmap <silent> ;f  :set invnumber <CR>
 
 " =====[ Visual selections keyboard shortcuts ]====================
 " ;p Format CSS into PowerCSS rule map
@@ -211,7 +233,8 @@ set backspace=indent,eol,start      "BS past autoindents, boundaries, insertion
 
 " Turn off stupid-huge html indents
 " per https://vi.stackexchange.com/questions/10128
-au FileType html setlocal indentexpr=''
+au FileType html setlocal shiftwidth=2 tabstop=2 indentexpr=''
+au FileType md setlocal   shiftwidth=2 tabstop=2 indentexpr=''
 
 " Execute from selected lines
 " See https://stackoverflow.com/questions/14385998
@@ -239,8 +262,25 @@ set thesaurus+=/usr/local/share/thesaurus/mthesaur.txt
 " https://vimtricks.com/p/highlight-syntax-inside-markdown/
 " See :r !ls /usr/share/vim/vim82/syntax/
 "
-let g:markdown_fenced_languages = ['bash','css','erb=eruby','javascript','js=javascript','json','html','node=javascript','perl','php=perl','python','ruby','sass','xml','vim']
+let g:markdown_fenced_languages = ['bash','css','erb=eruby','javascript','js=javascript','json','html','log=messages','messages','node=javascript','perl','php=perl','python','ruby','sass','xml','vim','yaml']
+
+" Support fenced syntax highlighing for longer files (10k lines).
+" Reduce to minlines value or disable if editing is slow.
+" See https://github.com/vim/vim/issues/2790
+syntax sync minlines=10000
+
+" =====[ Wrap for vimdiff, both panes ] ===============================
+"   https://stackoverflow.com/questions/16840433
+au VimEnter * if &diff | execute 'windo set wrap' | endif
+set ai
+
+" =====[ Wrap for vimdiff, both panes ] ===============================
+" =====[ Fix for pattern uses more memory than 'maxmempattern' ] ======
+" See https://github.com/vim/vim/issues/2049
+" MAY be resolved in vim 9.0. Tends to happen in Markdown syntax
+set mmp=20000 " was set mmp=5000
 
 " ====[ Use this to size comment lines ]===============================
 " =====================================================================
 " ====[ END ]==========================================================
+

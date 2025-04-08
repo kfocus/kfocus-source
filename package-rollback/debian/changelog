@@ -1,3 +1,71 @@
+kfocus-rollback (24.04.6~beta32) noble; urgency=medium
+
+  * Removed build-breaking 'build' directory
+
+ -- Michael S. Mikowski <support@kfocus.org>  Wed, 02 Apr 2025 22:51:31 -0400
+
+kfocus-rollback (24.04.6~beta31) noble; urgency=medium
+
+  * List only complete snapshots, DFMEA 437cdec9 (#4534)
+  * Scrub orphan metadata on trim (#4534)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Wed, 02 Apr 2025 14:04:20 -0400
+
+kfocus-rollback (24.04.6~beta30) noble; urgency=medium
+
+  * Fix wording and "already open" window padding (#4534)
+  * Refuse to create new automatic apt snapshots when disk space is low
+    (#4534)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 02 Apr 2025 09:42:54 -0500
+
+kfocus-rollback (24.04.6~beta29) noble; urgency=medium
+
+  * kfocus-rollback-bin: Enhance UI for /boot filesystem management (#4534)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 25 Mar 2025 16:15:18 -0500
+
+kfocus-rollback (24.04.6~beta28) noble; urgency=medium
+
+  * Limit titles to 40 characters in the Rollback Dashboard
+  * Fix error during post-install configuration on ext4 systems
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Fri, 21 Mar 2025 13:43:58 -0500
+
+kfocus-rollback (24.04.6~beta27) noble; urgency=medium
+
+  * Unlock the calculate snapshot size view when action completed
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 13 Mar 2025 12:09:46 -0500
+
+kfocus-rollback (24.04.6~beta26) noble; urgency=medium
+
+  * Adjust desktop file names and comments (#5190)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 04 Mar 2025 10:44:27 -0600
+
+kfocus-rollback (24.04.6~beta25) noble; urgency=medium
+
+  [ Michael S. Mikowski ]
+  * Limit textarea to 1024 characters (#4534)
+  * Change textarea placeholder to communicate limit (#4534)
+  * Fix wrap to ensure horizontal scrolling never occurs (#4534)
+  * Add textarea auto scrollbar on overflow (#4534)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Tue, 25 Feb 2025 10:31:54 -0500
+
+kfocus-rollback (24.04.6~beta24) noble; urgency=medium
+
+  [ Aaron Rainbolt ]
+  * Implement snapshot metadata and pinning (#4411)
+  * Rename kfocus-rollback-set to kfocus-rollback-backend (#4411)
+
+  [ Michael S. Mikowski ]
+  * Better describe time to wait to calc snapshot sizes (#4534)
+  * Updated logging for rollback (#4534)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 24 Feb 2025 10:59:32 -0600
+
 kfocus-rollback (24.04.5) noble; urgency=medium
 
   [ Aaron Rainbolt ]

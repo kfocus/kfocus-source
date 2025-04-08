@@ -14,7 +14,7 @@
  *            of all files in the tree.
  * Example  : kfocus-report-filefrag /usr
  * License  : GPLv2
- * Run By   : kfocus-rollback-set
+ * Run By   : kfocus-rollback-backend
  * Spec     : 4201
  */
 
@@ -233,9 +233,12 @@ static int frag_report(const char *filename)
 
   fd = open(filename, O_RDONLY);
   if (fd < 0) {
-    rc = -errno;
     perror("open");
-    return rc;
+    // Don't return non-zero when opening a file fails. The file probably
+    // just doesn't exist or we don't have permission to open it.
+    // rc = -errno;
+    // return rc;
+    return 0;
   }
 
   if (fstat(fd, &st) < 0) {
@@ -297,7 +300,9 @@ static int frag_report(const char *filename)
   }
 
   if (stat(filename, &fileinfo) < 0) {
-    rc = -errno;
+    // Don't return non-zero when opening a file fails. The file probably
+    // just doesn't exist or we don't have permission to open it.
+    // rc = -errno;
     perror("stat");
     goto out_close;
   }

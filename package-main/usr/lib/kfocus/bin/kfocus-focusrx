@@ -313,11 +313,12 @@ _chkBtrfsSetUpFn () {
   declare _title;
 
   # Skip if required tool not installed
+  [ -z "${_rollbackBackendExe}" ] && return;
   [ -z "${_rollbackSetExe}" ] && return;
 
   _title='Check BTRFS is Set Up';
   _cm2SetMsgFn "${_title}";
-  if [ "$("${_escExe}" "${_focusRxSetExe}" 'get-btrfs-status')" \
+  if [ "$("${_escExe}" "${_rollbackSetExe}" 'getBtrfsStatus')" \
     = 'SUPPORTED, NOT SET UP' ]; then
     if "${_escExe}" "${_focusRxSetExe}" 'prep-snapshot'; then
       _cm2SucFn;
@@ -332,7 +333,7 @@ _chkBtrfsSetUpFn () {
   _cm2SucFn;
 }
 ## . END _chkBtrfsSetUpFn }
-  
+
 ## BEGIN _chkOemMultiDiskFn {
 _chkOemMultiDiskFn () {
 
@@ -871,7 +872,7 @@ _chkResetEffectsFn () {
   _title='Reset Desktop Effects';
   _cm2SetMsgFn "${_title}";
   _win_title="${_rootTitle}: ${_title} ";
-      
+
   _prompt_msg="$(cat <<_EOH17b
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}SKIP ${_title}?</h3>
@@ -935,7 +936,7 @@ _EOH18
   if [ "${_ans_str}" = 'y' ]; then
     "${_rollbackExe}" || true;
   fi
-  
+
   _cm2SucFn;
 }
 ## . END _offerKfocusRollback }
@@ -947,20 +948,19 @@ _postRollbackHandlerFn () {
 
   # Skip if required tools not installed
   [ -z "${_rollbackExe}" ] && return;
+  [ -z "${_rollbackSetExe}" ] && return;
 
-  _btrfs_status="$("${_rollbackSetExe}" 'getBtrfsStatus')"
+  _btrfs_status="$("${_escExe}" "${_rollbackSetExe}" 'getBtrfsStatus')"
 
   if [ "${_btrfs_status}" == 'SUPPORTED, AUTO' ] \
     || [ "${_btrfs_status}" == 'SUPPORTED, MANUAL' ]; then
     # If drop file is found, run _rollbackExe, so it can use the contents
     #   of that file to display the name of the restored snapshot to the user.
-    if "${_escExe}" "${_focusRxSetExe}" 'chk-btrfs-space'; then
-      if [ -e "${_restoreCompleteFile}" ]; then
-        "${_rollbackExe}" 'afterRestore';
+    if [ -e "${_restoreCompleteFile}" ]; then
+      "${_rollbackExe}" 'afterRestore';
 
-        # Remove drop file after completion
-        "${_escExe}" "${_focusRxSetExe}" 'clear-restore';
-      fi
+      # Remove drop file after completion
+      "${_escExe}" "${_focusRxSetExe}" 'clear-restore';
     fi
   fi
 }
@@ -978,7 +978,7 @@ _announceEndFn () {
   _title='Diagnostics Complete';
   _cm2SetMsgFn "${_title}";
   _win_title="${_rootTitle}: ${_title} ";
-  
+
   _prompt_msg="$( cat <<_EOH18
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}FocusRx Diagnostics Complete</h3>
@@ -1067,8 +1067,8 @@ declare _parentCmdStr _lookupList \
   _maxNagCount _binName _binDir _baseDir _baseName _escExe \
   _focusRxDropDir _kbdColorSetExe _rootTitle _assignList \
   _focusRxSetExe _focusRxVersExe _btoolExe _firstrunExe \
-  _fixIbusExe _kcleanExe _resetEffectsExe _rollbackSetExe \
-  _chainHelperExe _sysVersStr;
+  _fixIbusExe _kcleanExe _resetEffectsExe _rollbackBackendExe \
+  _rollbackSetExe _chainHelperExe _sysVersStr;
 
 _parentCmdStr="$(ps -o comm= $PPID)";
 # These domain names exist here only for the purposes of looking them up via
@@ -1102,6 +1102,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     "_kcleanExe|${_binDir}/kfocus-kclean||optional"
     "_resetEffectsExe|${_binDir}/kfocus-reset-effects||optional"
     "_rollbackExe|${_binDir}/kfocus-rollback||optional"
+    "_rollbackBackendExe|${_binDir}/kfocus-rollback-backend||optional"
     "_rollbackSetExe|${_binDir}/kfocus-rollback-set||optional"
     "_chainHelperExe|${_binDir}/kfocus-chain-helper-ui||optional"
   );
