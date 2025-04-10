@@ -821,7 +821,6 @@ Kirigami.ApplicationWindow {
         switchPageFn(getCurrentPageIdFn());
     }
 
-
     function populateCheckboxesFn () {
         const check_map = stateMatrix.check_map;
         for ( var i = 0; i < sidebarModel.count; i++ ) {
@@ -1345,10 +1344,9 @@ Kirigami.ApplicationWindow {
               = '<p><b>The System Rollback tool</b> snapshots and restores '
               + 'system files upon request, allowing you to quickly recover '
               + 'from failed upgrades, kernel issues, and other OS problems. '
-              + 'If desired, it can automatically take snapshots both '
-              + 'periodically and before software updates, however '
-              + '<b>automatic snapshots are not enabled by '
-              + 'default.</b><br></p>'
+              + 'It can automatically take snapshots both '
+              + 'periodically and before software updates, although this '
+              + 'is not enabled by default.<br></p>'
 
               + '<p><b>System Rollback does not snapshot files in /home.</b> '
               + 'For more info, see the '
@@ -1373,32 +1371,34 @@ Kirigami.ApplicationWindow {
             headerHighlightRect.color = '#27ae60';
             interTopHeading.text      = 'Proceed with System Rollback...';
             instructionsText.text
-              = '<p>' + ding01Str + '<b>To enable automatic snapshots</b>, '
-              + 'switch the <b>Automatic Snapshots</b> switch on.<br></p>'
+              = '<p>' + ding01Str + '<b>Click on the System Rollback '
+              + 'Dashboard</b> icon to start the app. Use this to '
+              + 'create and manage snapshots at any time.<br></p>'
 
-              + '<p>' + ding02Str + '<b>The rollback quick launch icon</b> '
-              + 'will immediately display the System Rollback app. You can '
-              + 'create snapshots here at any time.<br></p>'
+              + '<p>' + ding02Str + '<b>Click on Create New Snapshot</b> '
+              + 'in the top-left panel. After providing your password, '
+              + 'a new snapshot should appear in the snapshot list.'
+              + '<br></p>'
 
-              + '<p>' + ding03Str + '<b>To restore a snapshot</b>, select '
-              + 'the snapshot to restore, then click <b>Restore</b>. The '
-              + 'system will reboot.<br></p>'
+              + '<p>' + ding03Str + '<b>Click on Edit</b> in the '
+              + 'bottom-right panel to change the name and description, '
+              + 'then click <b>Save</b>.<br></p>'
 
               + '<p><b>See more in the</b> '
-              + '<a href="https://kfocus.org/wf/tools#rollback">Tools Guided '
-              + 'Solution.</a></p>'
+              + '<a href="https://kfocus.org/wf/rollback">System '
+              + 'Rollback</a> Guided Solution.</a></p>'
               ;
+
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
             interImageList = [
-              'rollback-autosnapshot.webp',
-              'rollback-systray.svg',
-              'rollback-restore.webp'
+              'rollback-systray.webp',
+              'rollback-create.webp',
+              'rollback-edit.webp'
             ];
             actionName = 'nextPage';
             regenUiFn( interTemplatePage, false );
             break;
-
 
         case 'fileBackupItem':
             initPageFn([
@@ -1997,7 +1997,6 @@ Kirigami.ApplicationWindow {
             break;
         }
     }
-
 
     function storeStateMatrixFn () {
         let serial_str;

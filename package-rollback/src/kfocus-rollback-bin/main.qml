@@ -136,8 +136,12 @@ Kirigami.ApplicationWindow {
 
               <p><b><font color="#f7941d">` + automaticSnapshotsLabel
               + `</font></b> - When enabled, take snapshots without
-              intervention before apt software changes; or at least once a
-              week.</p>
+              intervention before system software changes; or at least once
+              a week.<br><br>
+
+             <i>Automatic snapshots provide additional safety, but
+             requires more oversight to avoid filling the
+             disk.</i></p>
 
               <p><b><font color="#f7941d">` + calculateSnapshotSizesLabel
               + `</font></b> - Calculate and display the estimated space
@@ -145,14 +149,14 @@ Kirigami.ApplicationWindow {
               amount of space shown.</p>
 
               <p><b><font color="#f7941d">` + createSnapshotLabel
-              + `</font></b> - Immediately create a snapshot of the
+              + `</font></b> - Create a snapshot of the
               current root (<code>/</code>) and and boot
               (<code>/boot</code>) filesystems.</p>
 
               <p><b><font color="#f7941d">` + optimizeDiskLabel
               + `</font></b> - Delete all snapshots, defragment files as
-              needed, recover unreachable space, and consolidate data on the
-              boot disk.</p>`
+              needed, recover unreachable space, and consolidate data
+              on the boot disk.</p>`
 
             helpTitle: 'Global Actions Help'
         }
