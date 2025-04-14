@@ -136,12 +136,13 @@ Kirigami.ApplicationWindow {
 
               <p><b><font color="#f7941d">` + automaticSnapshotsLabel
               + `</font></b> - When enabled, take snapshots without
-              intervention before system software changes; or at least once
-              a week.<br><br>
+              intervention before system (<code>APT</code>) software
+              changes, or at least once per week.</p>
 
-             <i>Automatic snapshots provide additional safety, but
-             requires more oversight to avoid filling the
-             disk.</i></p>
+              <p><i>This option provides more frequent snapshots, but
+              requires additional oversight to avoid filling the root
+              (<code>/</code>) and boot (<code>/boot</code>)
+              filesystems.</i></p>
 
               <p><b><font color="#f7941d">` + calculateSnapshotSizesLabel
               + `</font></b> - Calculate and display the estimated space
@@ -149,14 +150,13 @@ Kirigami.ApplicationWindow {
               amount of space shown.</p>
 
               <p><b><font color="#f7941d">` + createSnapshotLabel
-              + `</font></b> - Create a snapshot of the
-              current root (<code>/</code>) and and boot
-              (<code>/boot</code>) filesystems.</p>
+              + `</font></b> - Create a snapshot of the current root
+              (<code>/</code>) and boot (<code>/boot</code>) filesystems.</p>
 
               <p><b><font color="#f7941d">` + optimizeDiskLabel
-              + `</font></b> - Delete all snapshots, defragment files as
-              needed, recover unreachable space, and consolidate data
-              on the boot disk.</p>`
+              + `</font></b> - Use Quick Clean to free up unallocated space.
+              Use Deep Clean to delete all snapshots, defragment files,
+              recover unreachable space, and consolidate data.</p>`
 
             helpTitle: 'Global Actions Help'
         }
@@ -894,18 +894,25 @@ Kirigami.ApplicationWindow {
                         let outputStr
                           = '<p>No snapshots exist. Create one '
                           + 'by clicking "' + createSnapshotLabel + '" '
-                          + 'above.</p>'
-                          + '<br>';
+                          + 'above.</p><br>';
                         if ( automaticSnapshotsSwitch.checked ) {
-                              outputStr
-                                += '<p>The system will automatically '
-                                + 'take snapshots periodically.</p>';
-                        } else {
-                              outputStr
-                                += '<p>If you would like snapshots '
-                                + 'to be taken automatically, switch on '
-                                + '<a href="enable-automatic-snapshots">'
-                                + 'automatic snapshots</a>.</p>';
+                          outputStr
+                            += '<p>' + automaticSnapshotsLabel + ' are '
+                            + 'enabled. The system will take snapshots '
+                            + 'without intervention before system '
+                            + '(<code>APT</code>) software changes, or at '
+                            + 'least once per week.<p>'
+
+                            + '<p><i>This option provides more frequent '
+                            + 'snapshots, but requires additional oversight '
+                            + 'to avoid filling the root (/) or boot (/boot) '
+                            + 'filesystems.</i></p>';
+                        }
+                        else {
+                          outputStr
+                            += '<p>' + automaticSnapshotsLabel + ' are '
+                            + 'disabled. The system will only take '
+                            + 'snapshots on your command.</p>';
                         }
                         return outputStr;
                     }
@@ -1057,7 +1064,7 @@ Kirigami.ApplicationWindow {
                 WaitScreenItem {
                     id          : automaticSnapshotSwitchView
                     visible     : false
-                    headerText  : 'Toggling automatic snapshots...'
+                    headerText  : 'Toggling ' + automaticSnapshotsLabel + '...'
                 }
 
                 ErrorScreenItem {
@@ -1617,7 +1624,7 @@ Kirigami.ApplicationWindow {
 
     function switchAutomaticSnapshotsFn() {
         backend.inhibitClose = true;
-        authAttemptAction = '"Toggle Automatic Snapshots"';
+        authAttemptAction = '"Toggle ' + automaticSnapshotsLabel + '"';
         switchViewFn( automaticSnapshotSwitchView );
         automaticSnapshotToggleEngine.exec(
           rollbackStr + 'setManualSwitchState '
