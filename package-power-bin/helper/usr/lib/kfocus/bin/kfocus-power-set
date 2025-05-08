@@ -142,7 +142,7 @@ _scanFn () {
 
   _psave_key='powersave';
   case "${_mode_key}" in
-    print|read) true;;
+    read) true;;
     set)
       _setNoTurboFn "${_noturbo_int}";
       _setKbdEnableFn "${_kbdled_int}";
@@ -180,33 +180,11 @@ _scanFn () {
     );
     _set_max_int="$(_printMaxIntFn "${_param_list[@]}")";
 
-    if [ "${_mode_key}" = 'print' ] || [ "${_mode_key}" = 'read' ]; then
+    if [ "${_mode_key}" = 'read' ]; then
       if [ "${_set_max_int}" -gt "${_prior_max_int}" ]; then
-        if [ "${_mode_key}" = 'read' ]; then
-          _solve_line="${_label};${_set_max_int};${_gov_key};${_noturbo_int};";
-          _solve_line+="${_kbdled_int};";
-        else
-          _solve_line="${_label};";
-          _solve_line+="${_set_max_int:0:1}.${_set_max_int:1:2} GHz;";
-          if [ "${_gov_key}" = 'powersave' ]; then
-            _solve_line+="psave;";
-          else
-            _solve_line+="PERF;";
-          fi
-          if [ "${_noturbo_int}" = '1' ]; then
-            _solve_line+="No;";
-          else
-            _solve_line+="Yes;";
-          fi
-          if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
-            if [ "${_kbdled_int}" = '1' ]; then
-              _solve_line+="On;";
-            else
-              _solve_line+="Off;";
-            fi
-          fi
-        fi
-        _prior_max_int="${_set_max_int}"
+        _solve_line="${_label};${_set_max_int};${_gov_key};${_noturbo_int};";
+        _solve_line+="${_kbdled_int};";
+        _prior_max_int="${_set_max_int}";
       fi
     else
       if [ "${_gov_key}" = "powersave" ]; then
@@ -229,13 +207,14 @@ _scanFn () {
     fi
   done
 
-  if [ "${_mode_key}" = 'print' ] || [ "${_mode_key}" = 'read' ]; then
+  if [ "${_mode_key}" = 'read' ]; then
     echo "${_solve_line}";
   fi
 }
 
 _chkInitCpuFn () {
-  declare _status_key _success_flag _status_set_list _set_key _proc_count;
+  declare _status_key _success_flag _status_set_list _set_key _proc_count \
+    _max_wait_idx _pstate_file_found;
 
   # This drop file should clear on every boot
   if [ -f "${_cpuDropFile}" ]; then
@@ -250,6 +229,20 @@ _chkInitCpuFn () {
   fi
 
   _cm2SetMsgFn 'Set CPU properties for M2 GEN 5';
+
+  _pstate_file_found='n';
+  for (( _max_wait_idx = 10; _max_wait_idx > 0; _max_wait_idx-- )); do
+    sleep 1;
+    if [ -f "${_pstateFile}" ]; then
+      _pstate_file_found='y';
+      break;
+    fi
+  done
+  if [ "${_pstate_file_found}" != 'y' ]; then
+    _cm2WarnStrFn 'intel_pstate sysfs file not found';
+    return 1;
+  fi
+
   _status_set_list=();
   _status_key="$(cat "${_pstateFile}" || true )";
   _success_flag='y';
@@ -295,6 +288,24 @@ _chkInitCpuFn () {
   fi
 }
 
+_genOptionFilesFn() {
+  declare _computed_table_str _alt_computed_table_str;
+
+  if [ -f "${_computedTableFile}" ] \
+    && [ -f "${_hrComputedTableFile}" ]; then
+    return 0;
+  fi
+
+  _cm2SetMsgFn 'Generate CPU frequency tables';
+  _setModeFn 'Normal';
+  _computed_table_str="$(_buildOptionsFn)";
+  _alt_computed_table_str="$(_makeAltOptionsFn "${_computed_table_str}")";
+
+  echo "${_computed_table_str}" > "${_computedTableFile}";
+  echo "${_alt_computed_table_str}" > "${_hrComputedTableFile}";
+  _cm2SucFn;
+}
+
 _setModeFn () {
   declare _arg_str _mode_list _opt_line _match_line _key;
 
@@ -320,34 +331,11 @@ _setModeFn () {
   _scanFn "${_match_line}" 'set';
 }
 
-_printOptionsFn () {
-  declare _print_mode _opt_line _header_line _bit_list _label _frequency \
-  _governor _turbo _leds _out_list _mode_key _out_str _title _model_msg;
-
-  _print_mode="${1:-}"
-  _header_line='';
-
-  IFS=';' read -r -a _bit_list <<< "${_optionHeader}";
-  _label="${_bit_list[0]}";
-  _frequency="${_bit_list[1]}";
-  _governor="${_bit_list[2]}";
-  _turbo="${_bit_list[3]}";
-  _leds="${_bit_list[4]}";
-  _out_list=();
-
-  if [ "${_print_mode}" = 'x' ]; then
-    _header_line="${_label};${_frequency};${_governor};${_turbo};";
-    if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
-      _header_line+="${_leds};";
-    fi
-  fi
+_buildOptionsFn () {
+  declare _opt_line _out_list _out_str _title _model_msg;
 
   for _opt_line in "${_optionTable[@]}"; do
-    if [ "${_print_mode}" = 'x' ]; then
-      _mode_key='print'; else _mode_key='read';
-    fi
-
-    _out_str="$(_scanFn "${_opt_line}" "${_mode_key}" )";
+    _out_str="$(_scanFn "${_opt_line}" 'read' )";
     if [[ "${_out_str:-}" =~ ^[[:space:]]*$ ]]; then
       continue; else _out_list+=( "${_out_str}" );
     fi
@@ -366,10 +354,91 @@ EOH
     exit 1;
   fi
 
-  if [ -n "${_header_line}" ]; then
-    echo "${_header_line}";
-  fi
   ( IFS=$'\n'; echo "${_out_list[*]}" );
+}
+
+_makeAltOptionsFn() {
+  declare _orig_computed_table_str _bit_list _label _frequency _governor \
+    _turbo _leds _header_line _orig_computed_table _out_computed_table_str \
+    _table_idx _line;
+
+  _orig_computed_table_str="${1:-}";
+  [ -z "${_orig_computed_table_str}" ] && return 1;
+
+  IFS=';' read -r -a _bit_list <<< "${_optionHeader}";
+  _label="${_bit_list[0]}";
+  _frequency="${_bit_list[1]}";
+  _governor="${_bit_list[2]}";
+  _turbo="${_bit_list[3]}";
+  _leds="${_bit_list[4]}";
+  _header_line="${_label};${_frequency};${_governor};${_turbo};";
+  if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
+    _header_line+="${_leds};";
+  fi
+  _out_computed_table_str="${_header_line}";
+
+  readarray -t _orig_computed_table <<< "${_orig_computed_table_str}";
+  for (( _table_idx = 0; _table_idx < ${#_orig_computed_table[@]}; \
+    _table_idx++ )); do
+    IFS=';' read -r -a _bit_list <<< "${_orig_computed_table[_table_idx]}";
+    if (( ${#_bit_list[@]} < 5 )); then
+      continue;
+    fi
+
+    _label="${_bit_list[0]}";
+    _frequency="${_bit_list[1]}";
+    _governor="${_bit_list[2]}";
+    _turbo="${_bit_list[3]}";
+    _leds="${_bit_list[4]}";
+
+    if [ "${_governor}" = 'performance' ]; then
+      _governor='PERF'; else _governor='psave';
+    fi
+    if [ "${_turbo}" = '0' ]; then
+      _turbo='Yes'; else _turbo='No';
+    fi
+    if [ "${_leds}" = '0' ]; then
+      _leds='No'; else _leds='Yes';
+    fi
+    _frequency="$(bc <<< "scale=2; ${_frequency} / 1000000") GHz";
+
+    _line="${_label};${_frequency};${_governor};${_turbo};";
+    if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
+      _line+="${_leds};";
+    fi
+    _out_computed_table_str+=$'\n'"${_line}";
+  done
+
+  echo "${_out_computed_table_str}";
+}
+
+_printOptionsFn () {
+  declare _mode_str _max_wait_idx _computed_tables_found;
+
+  _mode_str="${1:-}";
+  _computed_tables_found='n';
+  for (( _max_wait_idx = 10; _max_wait_idx > 0; _max_wait_idx -- )); do
+    if [ -f "${_computedTableFile}" ] \
+      && [ -f "${_hrComputedTableFile}" ]; then
+      _computed_tables_found='y';
+      break;
+    else
+      sleep 1;
+    fi
+  done
+  if [ "${_computed_tables_found}" != 'y' ]; then
+    _cm2WarnStrFn 'CPU frequency tables not found';
+    return 1;
+  fi
+
+  if [ "${_mode_str}" = 'p' ]; then
+    cat "${_computedTableFile}";
+  elif [ "${_mode_str}" = 'x' ]; then
+    cat "${_hrComputedTableFile}";
+  else
+    _cm2WarnStrFn "Unrecognized mode string |${_mode_str}|";
+    return 1;
+  fi
 }
 ## . END _printOptionsFn }
 
@@ -432,6 +501,7 @@ _mainFn () {
   _arg_str="${1:-}";
 
   _chkInitCpuFn; # Set CPUFreq for 2023+ CPUs
+  _genOptionFilesFn;
   case "${_arg_str}" in
     '-p') _printOptionsFn 'p';;
     '-x') _printOptionsFn 'x';;
@@ -452,6 +522,8 @@ _cpuDropFile='/run/kfocus-cpu-init';
 _noTurboFile='/sys/devices/system/cpu/intel_pstate/no_turbo';
 _pstateFile="/sys/devices/system/cpu/intel_pstate/status";
 _altPsaveKey='ondemand'; # schedutil has lower gb5 scores
+_computedTableFile='/run/kfocus-power-computed-table';
+_hrComputedTableFile='/run/kfocus-power-hr-computed-table';
 ## . END Declare and assign global vars }
 
 ## BEGIN Run main if script is not sourced {
