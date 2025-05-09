@@ -452,6 +452,7 @@ _notifyAndExitFn () {
 ${_cm2HtmBeginStr}${_tableStr}
 ${_browStr}<h3 style="color:#f7941d">${_bodyTitle}</h3>${_erowStr}
 ${_browStr}${_prompt_str}${_erowStr}
+${_browStr}Click OK to exit.${_erowStr}
 </table>
 ${_cm2HtmEndStr}
 EOF
@@ -487,6 +488,7 @@ _triggerActionFn () {
 ${_cm2HtmBeginStr}${_tableStr}
 ${_browStr}<h3 style="color:#f7941d">${_bodyTitle}</h3>${_erowStr}
 ${_browStr}${_result_msg}${_erowStr}
+${_browStr}Click OK to finish.${_erowStr}
 </table>
 ${_cm2HtmEndStr}
 EOF
@@ -776,7 +778,8 @@ EOF
   if [ -z "${_kversFullRunStr}" ]; then
     _run_msg="${_bodyTitle}: Internal error:<br>
 Unexpected empty running-kernel string (uname -r).<br>
-Please see your system administrator to fix.";
+Please see your system administrator to fix.<br>
+Click OK to exit.";
     _cm2PromptUserFn "${_run_msg}" "${_winTitle}" 'p';
     return 1;
   fi

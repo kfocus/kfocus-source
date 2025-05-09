@@ -403,7 +403,7 @@ _calcPrettyOptionsFn() {
       _turbo='Yes'; else _turbo='No';
     fi
     if [ "${_leds}" = '0' ]; then
-      _leds='No'; else _leds='Yes';
+      _leds='Off'; else _leds='On';
     fi
     _frequency="$(bc <<< "scale=2; ${_frequency} / 1000000") GHz";
 
