@@ -335,12 +335,23 @@ _setModeFn () {
 }
 
 _calcOptionsFn () {
-  declare _opt_line _out_list _out_str _title _model_msg;
+  declare _opt_line _out_list _out_str _title _model_msg _normal_cpu_freq \
+    _low_cpu_freq _opt_parts _out_parts;
 
   for _opt_line in "${_optionTable[@]}"; do
     _out_str="$(_scanFn "${_opt_line}" 'read' )";
     if [[ "${_out_str:-}" =~ ^[[:space:]]*$ ]]; then
-      continue; else _out_list+=( "${_out_str}" );
+      continue;
+    else
+      _out_list+=( "${_out_str}" );
+      IFS=';' read -r -a _opt_parts <<< "${_opt_line}";
+      if [ "${_opt_parts[0]}" = 'Normal' ]; then
+        IFS=';' read -r -a _out_parts <<< "${_out_str}";
+        _normal_cpu_freq="${_out_parts[1]}";
+      elif [ "${_opt_parts[0]}" = 'Low' ]; then
+        IFS=';' read -r -a _out_parts <<< "${_out_str}";
+        _low_cpu_freq="${_out_parts[1]}";
+      fi
     fi
   done
 
@@ -355,6 +366,11 @@ EOH
     )";
     echo "title:${_title}|message:${_cm2HtmPStr}${_model_msg}</p>";
     exit 1;
+  fi
+
+  if [ "${_normal_cpu_freq}" == "${_low_cpu_freq}" ]; then
+    _cm2ErrStrFn \
+      'CPU init failed, max CPU freq for normal and low power profiles are the same!';
   fi
 
   ( IFS=$'\n'; echo "${_out_list[*]}" );
