@@ -1,0 +1,10 @@
+
+Package: linux-modules-vision-kfocus${variant:suffix}
+Architecture: amd64
+Section: kernel
+Provides: ${dkms:vision-modules}
+Depends:
+ ${misc:Depends},
+ linux-modules-vision-${kernel-abi-version}-kfocus,
+Description: Extra drivers for vision for the kfocus flavour
+ Install extra signed vision modules compatible with the kfocus flavour.
