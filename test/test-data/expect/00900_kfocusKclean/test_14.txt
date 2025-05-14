@@ -1,11 +1,11 @@
-FocusRX: Purge Older Kernels?
+FocusRx: Purge Older Kernels?
 Doc: https://kfocus.org/wf/tools#kclean
 
 4 kernels are installed.
 Check forced: /boot space is low (0 of 500 MB).
 
-Removing unused kernels prevents the system
-from running out of disk space in /boot.
+Removing unused kernels helps prevent the
+system from running out of disk space in /boot.
 
 Packages to Keep
 linux-headers-5.15.0-97-generic
@@ -39,13 +39,14 @@ linux-tools-6.2.0-35-generic
 
 Make sure your files are backed-up.
 
-Do you wish to purge 2 of 4 kernels now
+Purge 2 of 4 kernels now
 y
 
 Purge Package List:
 Cleaning up kernels _kcleanSetExe purge-pkgs linux-headers-5.19.0-50-generic linux-headers-6.2.0-35-generic linux-hwe-5.19-headers-5.19.0-50 linux-hwe-5.19-tools-5.19.0-50 linux-hwe-6.2-headers-6.2.0-35 linux-hwe-6.2-tools-6.2.0-35 linux-image-5.19.0-50-generic linux-image-6.2.0-35-generic linux-modules-5.19.0-50-generic linux-modules-6.2.0-35-generic linux-modules-extra-5.19.0-50-generic linux-modules-extra-6.2.0-35-generic linux-tools-5.19.0-50-generic linux-tools-6.2.0-35-generic
 
-FocusRx: KERNEL CLEANER FINISHED
+FocusRx: KERNEL CLEANER
+Purge was successful.
 
 Press <return> to continue.
 
@@ -76,5 +77,5 @@ Do Force Flag?        : n
 Is /boot low?         : y
 Do Check Triggered?   : y
 Check Message         : 4 kernels are installed.<br>
-Check forced: /boot space is low (0 of 500 MB).
+Check forced: <span style="color:#da4453">/boot space is low (0 of 500 MB).</span>
 === . END Diagnostics ============

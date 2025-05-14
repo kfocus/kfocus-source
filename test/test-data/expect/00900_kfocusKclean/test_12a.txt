@@ -7,12 +7,6 @@ Check forced: Force flag used.
 System disk is low (1712 MB).
 MAKE ROOM TO KEEP MORE KERNELS!
 
-Disk space on /boot is low, but only protected 
-kernel are installed. If there is a kernel you 
-are NOT USING, we encourage you to purge it so 
-the /boot disk does not overfill and prevent the
-system from booting.
-
 Packages to Keep
 linux-headers-6.5.0-14-generic
 linux-headers-6.5.0-21-generic
@@ -30,7 +24,11 @@ linux-tools-6.5.0-14-generic
 linux-tools-6.5.0-21-generic
 
 Packages to Purge
-There are no unused kernels to purge.
+There are no unused kernels to purge, as only 
+protected kernels are installed. If there is a kernel 
+you are NOT USING, you can purge it so the /boot 
+disk does not overfill and prevent the system 
+from booting.
 
 Press <return> to continue.
 
@@ -85,6 +83,6 @@ Do Check Triggered?   : y
 Check Message         : 2 kernels are installed.<br>
 The /boot dir shares the system disk.<br>
 Check forced: Force flag used.<br>
-System disk is low (1712 MB).<br>
-<b>MAKE ROOM TO KEEP MORE KERNELS!</b>
+<span style="color:#da4453">System disk is low (1712 MB).<br>
+MAKE ROOM TO KEEP MORE KERNELS!</span>
 === . END Diagnostics ============

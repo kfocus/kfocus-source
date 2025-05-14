@@ -1191,7 +1191,7 @@ linux-tools-6.5.0-14-generic
 linux-tools-6.5.0-17-generic
 linux-tools-6.5.0-18-generic
 linux-tools-6.5.0-21-generic'
-  
+
   '_022 Installed kernels are
 6.5.0-14-generic (generic-hwe-22.04-kfocus),
 6.5.0-17-generic,
@@ -1237,7 +1237,7 @@ linux-tools-6.5.0-17-generic
 linux-tools-6.5.0-21-generic
 linux-tools-common
 linux-tools-generic-hwe-22.04-kfocus'
-  
+
   '_023 Installed kernels are
 6.8.0-31-generic,
 6.8.0-35-generic (UNSIGNED!),
@@ -1282,7 +1282,7 @@ linux-tools-6.8.0-35-kfocus
 linux-tools-6.8.0-36-kfocus
 linux-tools-common
 linux-tools-kfocus-24.04-kfocus'
-  
+
   '_024 Installed kernels are
 6.8.0-31-generic,
 6.8.0-35-generic (UNSIGNED!),
@@ -1405,7 +1405,7 @@ _overwriteWithMocksFn () {
   }
 
   _kcleanSetExe='_kcleanSetExe';
-  _rollbackBackendExe='';
+  _rollbackSetExe='';
 }
 ## . END _overwriteWithMocksFn }
 
@@ -1463,6 +1463,9 @@ _runTestFn () {
 
   # Overwrite functions with mocks
   _overwriteWithMocksFn;
+
+  # Populate global UI variables (provided by _exe_file)
+  _assignGlobalUiVarsFn;
 
   ## Begin Iterate through tests {
   _fail_count=0;
