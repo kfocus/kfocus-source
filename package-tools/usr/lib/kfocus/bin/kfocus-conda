@@ -46,6 +46,8 @@ _EOL01
   # GN21 = RTX 4090
   elif grep -qE '(RTX 40|GN21)' <<< "${_nv_line}"; then
     echo 'rtx40'; return 0;
+  elif grep -qE 'RTX 50' <<< "${_nv_line}"; then
+    echo 'rtx50'; return 0;
   fi
 
   if [ -n "${_nv_line}" ]; then

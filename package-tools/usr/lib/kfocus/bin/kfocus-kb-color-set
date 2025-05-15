@@ -161,11 +161,18 @@ _stdCalcKbdStateFn () {
 # Purpose: Write color and brightness values to standard registers.
 #
 _stdRestoreKbdFn () {
-  declare _bright_str _hex_str _zone_line _bright_byte;
+  declare _bright_str _hex_str _zone_line _bright_byte \
+    _extra_support_int _zone_list;
+
   _bright_str="${_configStateList[0]}";
   _hex_str="${_configStateList[1]}";
+  _extra_support_int="$(cat "${_stdKeyDir}/extra")";
+  _zone_list=( 'color_left' 'color_center' 'color_right' );
+  if [ "${_extra_support_int}" = '1' ]; then
+    _zone_list+=( 'color_extra' );
+  fi
 
-  for _zone_line in 'color_left' 'color_center' 'color_right'; do
+  for _zone_line in "${_zone_list[@]}"; do
     echo "0x${_hex_str}" > "${_stdKeyDir}/${_zone_line}" || true;
   done;
 

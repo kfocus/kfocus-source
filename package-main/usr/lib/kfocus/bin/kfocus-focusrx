@@ -1038,7 +1038,8 @@ _mainFn () {
   _chkUpdateBiosFn;
   _chkBtrfsSetUpFn;
   _chkOemMultiDiskFn;
-  _chkHwConfigFn;
+  ## TODO: DEBUG ONLY! Disabled for testing on M2 GEN 6
+  # _chkHwConfigFn;
   _chkRollbackPresence;
   _chkKbdLedFn;      # Issue 3735
   _offerKfRollbackFn;

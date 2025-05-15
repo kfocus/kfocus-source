@@ -26,18 +26,34 @@ _optionTable=(
 );
 
 ## BEGIN _importCommonFn {
-# Imports: _cm2EchoModelStrFn _cm2KdiagExe _cm2WarnStrFn
-#
-# Run ls-common-symbols.sh to get this list
+# Summary   : _importCommonFn
+# Purpose   : Load common routines, prefer relative dir
+#           : Run ls-common-symbols.sh to get list of symbols used here.
+# Example   : _importCommonFn;
+# Arguments : none
+# Globals   : Package vars _baseDir _baseName
+# Outputs   : none
+# Returns   : none
 #
 _importCommonFn () {
-  declare _lib_file;
-  _lib_file="${_baseDir}/lib/common.2.source";
-  if [ -r "${_lib_file}" ]; then
-    # shellcheck source=../lib/common.2.source
-    source "${_lib_file}" || exit 202;
-  else
-    echo 1>&2 "${_baseName}: ABORT - Cannot source lib |${_lib_file}|";
+  declare _lib_list _is_loaded _lib_file;
+  _lib_list=(
+    "${_baseDir}/lib/common.2.source"
+    '/usr/lib/kfocus/lib/common.2.source'
+  );
+  _is_loaded='n';
+  for _lib_file in "${_lib_list[@]}"; do
+    if [ -r "${_lib_file}" ]; then
+      # shellcheck source=/usr/lib/kfocus/lib/common.2.source
+      if source "${_lib_file}"; then
+        _is_loaded='y';
+        break;
+      fi
+    fi
+  done
+
+  if [ "${_is_loaded}" = 'n' ]; then
+    echo 1>&2 "${_baseName}: ABORT - Cannot source common lib";
     exit 202;
   fi
 }
@@ -223,13 +239,17 @@ _chkInitCpuFn () {
   fi
 
   # Skip if not the m2g5 or m2g5p model (both share config_code m2g5)
-  if [ "$(_cm2EchoModelStrFn 'config_code')" != 'm2g5' ]; then
-    touch "${_cpuDropFile}" || _cm2WarnStrFn 'Could not add drop file';
-    return 0;
-  fi
+  #   by creating a drop file.
+  # if [ "$(_cm2EchoModelStrFn 'config_code')" != 'm2g5' ]; then
+  #   touch "${_cpuDropFile}" || _cm2WarnStrFn 'Could not add drop file';
+  # fi
+  
+  ## TODO: This is a hack to create the drop file for the m2g6
+  ## TODO: Remove this once m2g6 config code is created.
+  touch "${_cpuDropFile}" || _cm2WarnStrFn 'Could not add drop file';
+  return 0;
 
   _cm2SetMsgFn 'Set CPU properties for M2 GEN 5';
-
   _is_pstate_file_found='n';
   for _idx in {0..9}; do
     sleep 1;
@@ -549,8 +569,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   # Import libs and assign more global vars
   _importCommonFn;
-  _kbdColorSetExe="${_binDir}/kfocus-kb-color-set";
   _assignList=(
+    "_kbdColorSetExe|${_binDir}/kfocus-kb-color-set,/usr/lib/kfocus/bin/kfocus-kb-color-set||optional"
     '_cpufreqSetExe|cpufreq-set'
     '_cpufreqInfoExe|cpufreq-info'
     '_nprocExe|nproc'
