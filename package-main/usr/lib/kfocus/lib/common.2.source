@@ -298,8 +298,8 @@ _cm2CalcModelCodeFn () {
     LCS14-13i*)       _code='ir14g2';;
     LCS14-12i*)       _code='ir14g1';;
     X370SN*)          _code='m2g5p';;
-    X58xWNx*)         _code='m2g5p';; # Hack for Zr GEN 1 (use m2g5p as baseline)
-    X56xWNx*)         _code='m2g5';;  # Hack for M2 GEN 6 (use m2g5 as baseline)
+    X58xWNx*)         _code='zrg1';;
+    X56xWNx*)         _code='m2g6';;
     PD5x_7xSNC_*)     _code='m2g5';;
     PD5x_7xPNP_*)     _code='m2g4';;
     PC5x_7xHP_HR_HS*) _code='m2g3';;
@@ -799,8 +799,9 @@ _cm2ModelTable=(
   'ir16g2|ir1Xg2|Ir16 GEN 2|n|n'
   'ir14g2|ir1Xg2|Ir14 GEN 2|n|n'
   'ir14g1|ir14g1|Ir14 GEN 1|n|n'
-  'm2g5p|m2g5|M2 GEN 5|y|y' # Hack Zr GEN 1 (Use m2g5p as baseline)
-  'm2g5|m2g5|M2 GEN 5|y|y'  # Hack M2 GEN 6 (Use m2g5 as baseline)
+  'zrg1|zrg1|Zr GEN 1|y|y'
+  'm2g6|m2g6|M2 GEN 6|y|y'
+  'm2g5|m2g5|M2 GEN 5|y|y'
   'm2g4|m2g4|M2 GEN 4|y|y'
   'm2g3|default|M2 GEN 3|y|y'
   'm2g2|default|M2 GEN 2|y|y'

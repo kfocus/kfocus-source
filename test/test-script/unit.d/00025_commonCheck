@@ -468,6 +468,9 @@ _audit_cm2ChkPkgFn () {
 # Purpose   : For all in arg list, assign value to global variable <name>
 #   If <type> = 'exe' (default), value is 'command -v <command>'
 #     if found and executable; otherwise ''.
+#     Multiple command paths may be supplied, delimited by a comma.
+#     This is useful if we want to try alternate paths.
+#     The first valid path is used.
 #   If <type> = 'filerw', value is <command> filepath if writable
 #   If <type> = 'filero', value is <command> filepath if readable
 #   If <required> = 'required' (default), a return status of 1 is provided
@@ -497,6 +500,13 @@ _audit_cm2AssignExeVarsFn () {
     'snuggle_bear      | exe    |          | 1 |'
     # Since cmd is not found sets as ''. Ret is 1 because required.
     'snuggle_bear      | exe    | required | 1 |'
+
+    # Find the second path, so returns 0
+    'snuggle_bear,/usr/bin/awk   | exe | required | 0 |/usr/bin/awk'
+    'pizzaX,pizzaY,/usr/bin/tr   | exe | required | 0 |/usr/bin/tr'
+    # No path works, so return 1
+    'pizzaX,pizzaY,/usr/bin/XXNO | exe | required | 1 |'
+
     # Since cmd is not found sets as ''. But ret is 0 since optional.
     'snuggle_bear      | exe    | optional | 0 |'
     'tr                | filero |          | 1 |'

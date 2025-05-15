@@ -358,9 +358,6 @@ _chkOemMultiDiskFn () {
 ## . END _chkOemMultiDiskFn }
 
 ## BEGIN _chkHwConfigFn {
-# _cm2PromptUserFn \
-#   'Restart the system for hardware mods to take effect' "${_baseName}" 'p';
-#
 _chkHwConfigFn () {
   declare _title _win_title _reason_str _prompt_msg _ans_str _output_str;
 
@@ -1038,8 +1035,7 @@ _mainFn () {
   _chkUpdateBiosFn;
   _chkBtrfsSetUpFn;
   _chkOemMultiDiskFn;
-  ## TODO: DEBUG ONLY! Disabled for testing on M2 GEN 6
-  # _chkHwConfigFn;
+  _chkHwConfigFn;
   _chkRollbackPresence;
   _chkKbdLedFn;      # Issue 3735
   _offerKfRollbackFn;

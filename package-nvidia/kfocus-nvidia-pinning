@@ -11,13 +11,12 @@
 #   compute, and other ML tasks from working as expected.
 #
 # IMPORTANT! THIS MUST COME BEFORE the nvidia-* match below to work. Use
-#   NVIDIA supplied version 535.* of nvidia-settings or nvidia-modprobe from
+#   NVIDIA supplied version of nvidia-settings or nvidia-modprobe from
 #   NVIDIA ONLY if these are not available from the 'noble' repository (Prioriy
-#   1000 < 1001, below). The package cuda-drivers-570.86.* requires these versions.
+#   1000 < 1001, below). The package cuda-drivers-570.* requires these versions.
 #
 Package: nvidia-settings nvidia-modprobe libxnvctrl0
 Pin: origin "developer.download.nvidia.com"
-# Pin: version 570.86.15-0ubuntu1
 Pin: version 570.*
 Pin-Priority: 1000
 
@@ -25,16 +24,15 @@ Pin-Priority: 1000
 # if available.
 Package: nvidia-settings nvidia-modprobe libxnvctrl0
 Pin: release l=Ubuntu, v=24.04, n=noble
-# Pin: version 570.86.*
 Pin: version 570.*
 Pin-Priority: 1001
 
 # Using apt-cache policy, all these matching packages are found
 #   in the nvidia repo. The latest ubuntu-repo versions are shown
 #   (in parenthesis).
-# nvidia-settings: 570.86.15-0ubuntu1 (510.47.03-0ubuntu4)
-# nvidia-modprobe: 570.86.15-0ubuntu1 (535.86.10-0ubuntu1)
-# libxnvctrl0:     570.86.15-0ubuntu1 (510.47.03-0ubuntu4)
+# nvidia-settings: 570.xx... (510...)
+# nvidia-modprobe: 570.xx... (535...)
+# libxnvctrl0:     570.xx... (510...)
 
 # Pin nvidia-driver packages from the NVIDIA repository with Priority 500.
 # These are overridden by official ubuntu packages were available. The
@@ -50,9 +48,9 @@ Pin-Priority: 500
 
 # IMPORTANT! THIS MUST COME BEFORE the cuda* match below,
 #   and PRIORITY MUST BE >= 1001 for this to work.
-# Pin cuda-drivers to use version 570.86.* because we found sometimes later
+# Pin cuda-drivers to use version 570.* because we found sometimes later
 #   version to require newer packages not available in ubuntu repo. This was
-#   last updated on 2025-04-11, and 570.86.* is the latest matching cuda-drivers
+#   last updated on 2025-04-11, and 570.* is the latest matching cuda-drivers
 #   version on that date. The 1001 Priority causes a version to be installed
 #   even if does not come from the target release ('noble') and forces a
 #   downgrade if required.
@@ -60,7 +58,6 @@ Pin-Priority: 500
 #
 Package: cuda-drivers cuda-drivers-570
 Pin: origin "developer.download.nvidia.com"
-# Pin: version 570.86.*
 Pin: version 570.*
 Pin-Priority: 1001
 
@@ -72,7 +69,6 @@ Pin-Priority: 1001
 #
 Package: cuda*
 Pin: origin "developer.download.nvidia.com"
-# Pin: version 570.86.*
 Pin: version 570.*
 Pin-Priority: 1000
 
@@ -84,7 +80,5 @@ Pin-Priority: 1000
 #
 Package: nvidia-* libnvidia-* xserver-xorg-*
 Pin: release l=Ubuntu, v=24.04, n=noble
-# Pin: version  570.86.*
 Pin: version  570.*
 Pin-Priority: 1000
-

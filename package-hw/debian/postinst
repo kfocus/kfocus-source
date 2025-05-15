@@ -58,7 +58,7 @@ _supplementXdgConfigsFn () {
 }
 ## . END _supplementXdgConfigsFn }
 
-# hw_config_code 'default' handles models m2g3, m2g2, m2g1, m1g1.
+# hw_config_code 'default' handles hw_model_codes m2g3, m2g2, m2g1, m1g1.
 #   DPI scale set by _supplementXdgConfigsFn (none at time of writing).
 # shellcheck disable=SC2317
 #
@@ -184,7 +184,7 @@ _handle_ir1Xg2Fn () {
   );
 }
 
-# hw_config_code 'm2g4' handles models m2g4
+# hw_config_code 'm2g4' handles hw_model_codes m2g4
 #   DPI scale set by _supplementXdgConfigsFn (120 at time of writing).
 # shellcheck disable=SC2317
 #
@@ -216,12 +216,11 @@ _handle_m2g4Fn () {
   # Deprecated by _supplementXdgConfigsFn
   # _setScaleFactorFn '';
 }
-# hw_config_code 'm2g5' handles models m2g5, m2g5p
+# hw_config_code 'm2g5' handles hw_model_codes m2g5, m2g5p, m2g5p1 (barlow ridge TB)
 # shellcheck disable=SC2317
 #
 _handle_m2g5Fn () {
   declare _symlink _target_file;
-
   if [ -x "/usr/bin/deb-systemd-helper" ]; then
     deb-systemd-helper mask \
       systemd-backlight@backlight:nvidia_0.service >/dev/null;
@@ -263,7 +262,37 @@ _handle_m2g5Fn () {
   fi
   ## . End Add or remove symlink for m2g5p1 thunderbolt blacklist
 }
-# hw_config_code 'nxg1' handles models nxg1, nxg2, nxg3
+# hw_config_code 'm2g6' handles hw_model_code m2g6 5070Ti
+# shellcheck disable=SC2317
+#
+_handle_m2g6Fn () {
+  declare _symlink _target_file;
+  if [ -x "/usr/bin/deb-systemd-helper" ]; then
+    deb-systemd-helper mask \
+      systemd-backlight@backlight:nvidia_0.service >/dev/null;
+  fi
+  _symlinkTable+=(
+    # Bigger tty fonts
+    '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
+    # Boot parameters
+    '/etc/default/grub.d/kfocus.cfg|/usr/lib/kfocus/conf/m2g6-etc_default_grub.d_kfocus.cfg'
+    # Initramfs config
+    '/etc/initramfs-tools/conf.d/kfocus.conf|'
+    # Sound, nv power
+    '/etc/modprobe.d/kfocus.conf|/usr/lib/kfocus/conf/m2g6-etc_modprobe.d_kfocus.conf'
+    # Load keyboard
+    '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
+    # xhci enable/disable on sleep; TODO: Confirm on m2g6
+    '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
+    # Select Trackpad config and driver
+    '/usr/share/X11/xorg.conf.d/80-kfocus.conf|/usr/lib/kfocus/conf/m2g6-usr_share_X11_xorg.conf.d_80-kfocus.conf'
+    # DPI Scale Symlink removed; Deprecated by _supplementXdgConfigsFn.
+    '/usr/share/kfocus/kf5-settings/kcmfonts|'
+    # Remove old TLP config
+    '/etc/tlp.d/kfocus.conf|'
+  );
+}
+# hw_config_code 'nxg1' handles hw_model_codes nxg1, nxg2, nxg3
 # shellcheck disable=SC2317
 #
 _handle_nxg1Fn () {
@@ -285,7 +314,7 @@ _handle_nxg1Fn () {
   # Deprecated by _supplementXdgConfigsFn
   # _setScaleFactorFn '';
 }
-# hw_config_code 'other' handles unrecognized models
+# hw_config_code 'other' handles unrecognized hw_model_codes
 # shellcheck disable=SC2317
 #
 _handle_otherFn () {

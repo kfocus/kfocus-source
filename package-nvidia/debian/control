@@ -9,12 +9,12 @@ Package:      kfocus-nvidia
 Architecture: all
 Pre-Depends:  kfocus-nvidia-pinning
 Depends:      ${misc:Depends}, kfocus-main,
-              nvidia-driver-535
+              nvidia-driver-570-open
 Recommends:   nvidia-modprobe,
               plasma-optimus
-Description:  Nvidia Driver metapackage for Kubuntu Focus
- This package installs Nvida proprietary drivers
- for Kubuntu Focus laptops.
+Description:  Nvidia Driver metapackage for Kubuntu Focus.
+ This package installs curated Nvidia drivers for
+ Kubuntu Focus systems.
 
 Package:      kfocus-nvidia-pinning
 Architecture: all
