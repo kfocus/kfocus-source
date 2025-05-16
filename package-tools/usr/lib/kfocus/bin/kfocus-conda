@@ -38,7 +38,7 @@ _EOL01
     _cm2AskExitFn 20 "${_baseName} aborted. Press enter to exit.";
   fi;
 
-  _nv_line=$(lspci |grep -i 'VGA compatible controller' |grep -i 'nvidia' );
+  _nv_line=$(lspci |grep -i 'VGA compatible controller' |grep -i 'nvidia');
   if grep -q 'RTX 20' <<< "${_nv_line}"; then
     echo 'rtx20'; return 0;
   elif grep -q 'RTX 30' <<< "${_nv_line}"; then
