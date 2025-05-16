@@ -9,51 +9,36 @@
 #   however, doing so will adjust the mix of nvidia driver libs
 #   which may prevent the deep-learning suite ('kfocus-conda'),
 #   compute, and other ML tasks from working as expected.
-#
-# IMPORTANT! THIS MUST COME BEFORE the nvidia-* match below to work. Use
-#   NVIDIA supplied version of nvidia-settings or nvidia-modprobe from
-#   NVIDIA ONLY if these are not available from the 'noble' repository (Prioriy
-#   1000 < 1001, below). The package cuda-drivers-570.* requires these versions.
+
+# Use Nvidia supplied versions of nvidia-settings, nvidia-modrobe, and
+#   libnvctrl0 by default (priority 1000). These are frequently OOD in Ubuntu
+#   'noble' repos; however, they will be selected from 'noble' IFF they
+#   are the correct version (priority 1001). This is set in the final
+#   stanza of this file.
+# IMPORTANT! THIS MUST COME BEFORE the BLACKLIST match below to work.
+# Alternate selector: Pin: release l=NVIDIA CUDA
 #
 Package: nvidia-settings nvidia-modprobe libxnvctrl0
 Pin: origin "developer.download.nvidia.com"
 Pin: version 570.*
 Pin-Priority: 1000
 
-# Favor settings, modprobe, and libxnvctrl0 from ubuntu
-# if available.
-Package: nvidia-settings nvidia-modprobe libxnvctrl0
-Pin: release l=Ubuntu, v=24.04, n=noble
-Pin: version 570.*
-Pin-Priority: 1001
-
-# Using apt-cache policy, all these matching packages are found
-#   in the nvidia repo. The latest ubuntu-repo versions are shown
-#   (in parenthesis).
-# nvidia-settings: 570.xx... (510...)
-# nvidia-modprobe: 570.xx... (535...)
-# libxnvctrl0:     570.xx... (510...)
-
-# Pin nvidia-driver packages from the NVIDIA repository with Priority 500.
-# These are overridden by official ubuntu packages were available. The
-# packages nvidia-settings, nvidia-modprobe, and nvidia-settings are favored
-# from here also if not available from Ubuntu.
-#
+# BLACKLIST (alway ignore) nvidia-driver packages from the NVIDIA
+#   repository (Priority -1) execpt for specific files such as
+#   nvidia-modprobe and nvidia-settings are above.
 # Alternate selector: Pin: release l=NVIDIA CUDA
 #
 Package: nvidia-* libnvidia-* xserver-xorg-*
 Pin: origin "developer.download.nvidia.com"
-Pin: version 570.*
-Pin-Priority: 500
+Pin-Priority: -1
 
-# IMPORTANT! THIS MUST COME BEFORE the cuda* match below,
-#   and PRIORITY MUST BE >= 1001 for this to work.
 # Pin cuda-drivers to use version 570.* because we found sometimes later
 #   version to require newer packages not available in ubuntu repo. This was
 #   last updated on 2025-04-11, and 570.* is the latest matching cuda-drivers
 #   version on that date. The 1001 Priority causes a version to be installed
 #   even if does not come from the target release ('noble') and forces a
 #   downgrade if required.
+# IMPORTANT! THIS MUST COME BEFORE the cuda* match below to work.
 # Alternate selector: Pin: release l=NVIDIA CUDA
 #
 Package: cuda-drivers cuda-drivers-570
@@ -62,7 +47,7 @@ Pin: version 570.*
 Pin-Priority: 1001
 
 # Prefer all cuda* 570 packages from NVIDIA over any Ubuntu packages of the
-#   same name and version from any other respository.  The 1000 Priority
+#   same name and version from any other respository. The 1000 Priority
 #   causes a version to be installed even if does not come from the target
 #   release ('noble').
 # Alternate selector: Pin: release l=NVIDIA CUDA
@@ -82,3 +67,16 @@ Package: nvidia-* libnvidia-* xserver-xorg-*
 Pin: release l=Ubuntu, v=24.04, n=noble
 Pin: version  570.*
 Pin-Priority: 1000
+
+# Use Ubuntu supplied versions of nvidia-settings, nvidia-modrobe, and
+#   libnvctrl0 if available from the 'noble' repository (priority 1001)
+#   instead of Nvidia (1000) IFF they are the correct version.
+#   However, these packages are frequently OOD in Ubuntu repos.
+#   Use `apt-cache policy nvidia-settings nvidia-modprobe libnvctrl0`
+#   to see current Ubuntu versions.
+#
+Package: nvidia-settings nvidia-modprobe libxnvctrl0
+Pin: release l=Ubuntu, v=24.04, n=noble
+Pin: version 570.*
+Pin-Priority: 1001
+
