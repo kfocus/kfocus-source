@@ -105,8 +105,9 @@ Kirigami.ApplicationWindow {
             Kirigami.Heading {
                 id: powerHeading
                 visible: false
-                text: 'Frequency Profile'
+                text: 'Frequency Profile (Intel Core Ultra 9 275HX)'
                 level: 3
+                Layout.bottomMargin: PlasmaCore.Units.smallSpacing
             }
 
             GridLayout {
@@ -118,6 +119,7 @@ Kirigami.ApplicationWindow {
                 // Number of columns is set by the logic part
                 Layout.fillWidth: true
                 Repeater {
+                    id: freqRepeater
                     model: profilesModel
                     // Each cell of the grid is a rectangle; we have magic properties that are defined in the
                     // logic part, namely elementName, bold, elementColor, firstElementName
@@ -140,7 +142,7 @@ Kirigami.ApplicationWindow {
                             anchors.left: parent.left
                             anchors.leftMargin: 5
                         }
-                        color: selectedRow ? "gray" : elementColor
+                        color: isHeaderRow || selectedRow ? "gray" : elementColor
                         Layout.preferredWidth: (layout.width - Layout.rightMargin * grid.columns) / grid.columns
                         Layout.rightMargin: 2
                         Layout.preferredHeight: 30 * scaleRatio
@@ -165,15 +167,23 @@ Kirigami.ApplicationWindow {
             }
 
             Controls.Label {
-              id: powerLegend
-              visible: false
-              text: "psave = powersave, PERF = performance"
-              Layout.bottomMargin: PlasmaCore.Units.largeSpacing
+                id: powerLegend
+                visible: false
+                text: `psave = powersave, PERF = performance`
+            }
+
+            Kirigami.InlineMessage {
+                id: cpuInfoMessage
+                Layout.fillWidth: true
+                text: `This Arrow Lake CPU underreports max frequencies. Actual performance is unaffected.`
+                visible: true
+                Layout.topMargin: PlasmaCore.Units.smallSpacing
             }
 
             Kirigami.Heading {
                 id: fanControlHeading
                 text: "Fan Profile"
+                Layout.topMargin: PlasmaCore.Units.largeSpacing
                 level: 3
             }
 
@@ -286,7 +296,8 @@ Kirigami.ApplicationWindow {
                                    'bold'        : index === 0,
                                    'elementColor': subindex === 0
                                       ? profilesModel.gridColors.pop() : 'transparent',
-                                   'firstElementName': first_el_name
+                                   'firstElementName': first_el_name,
+                                   'isHeaderRow' : index === 0
                                 })
 
                                 // There are items in the table, display them
