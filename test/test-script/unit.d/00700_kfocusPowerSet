@@ -76,6 +76,7 @@ _makeRunStrFn () {
 _normalizeCompareStrFn () {
   declare _str _end_str _line_list _line _bit_list;
   _str="${1:-}";
+  _cm2EchoFn "${_str}";
   _end_str="$(echo "${_str}" | tail -n-4)";
   _str="$(
     echo "${_str}" | head -n-4 | tail -n+2 | sed '/^\s*$/d' | tr $'\n' '|'
@@ -124,9 +125,13 @@ _runAssertsFn () {
   _cr=$'\n';
   _pick_list=( "$@" );
 
-  _assert_count="$(echo "${#_pick_list[@]}*2"|bc)";
+  _assert_count="$(echo "(${#_pick_list[@]}-1)*2"|bc)";
   _assert_idx=0;
   _fail_count=0;
+
+  # Remove the CPU info line, we don't need it
+  _pick_list=( "${_pick_list[@]:1}" );
+
   for _pick_str in "${_pick_list[@]}"; do
     ((_assert_idx++));
     _mode_str="$(echo "${_pick_str}" |cut -f1 -d';')";

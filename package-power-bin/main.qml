@@ -104,8 +104,9 @@ Kirigami.ApplicationWindow {
 
             Kirigami.Heading {
                 id: powerHeading
+                property string cpuid: ""
                 visible: false
-                text: 'Frequency Profile (Intel Core Ultra 9 275HX)'
+                text: 'Frequency Profile (' + cpuid + ')'
                 level: 3
                 Layout.bottomMargin: PlasmaCore.Units.smallSpacing
             }
@@ -175,8 +176,8 @@ Kirigami.ApplicationWindow {
             Kirigami.InlineMessage {
                 id: cpuInfoMessage
                 Layout.fillWidth: true
-                text: `This Arrow Lake CPU underreports max frequencies. Actual performance is unaffected.`
-                visible: true
+                text: ""
+                visible: false
                 Layout.topMargin: PlasmaCore.Units.smallSpacing
             }
 
@@ -261,17 +262,28 @@ Kirigami.ApplicationWindow {
             onStdoutChanged: {
                 let
                   is_freq_missing_msg = false,
-                  solve_msg = '';
-                stdout.split('\n').forEach(function (line, index) {
+                  solve_msg = '',
+                  stdout_arr = [];
+                stdout_arr = stdout.split('\n');
+                stdout_arr[0].split( ';' ).forEach(function (value, index) {
+                  if ( index === 0 ) {
+                    powerHeading.cpuid = value;
+                  } else if ( index === 1 ) {
+                    if ( value !== '' ) {
+                      cpuInfoMessage.text = value;
+                      cpuInfoMessage.visible = true;
+                    }
+                  }
+                });
+                stdout_arr.splice(0, 1);
+                stdout_arr.forEach(function (line, index) {
                     if ( line === '' ) { return; }
                     if ( line.substring(0,5) === 'title' ) {
                         is_freq_missing_msg = true;
                         let
                           bit_list = line.split('|'),
-                          title_msg = bit_list[0].substring(6, bit_list[0].length),
                           body_msg = bit_list[1].substring(8, bit_list[1].length);
 
-                        powerHeading.text = title_msg;
                         powerHeading.visible = true;
                         solve_msg += body_msg;
                     }

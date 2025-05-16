@@ -25,6 +25,10 @@ _optionTable=(
   'Minimal;X;.5;powersave;1;0'
 );
 
+_freqUnderreportTable=(
+  'Intel Core Ultra 9 275HX;Arrow Lake'
+)
+
 ## BEGIN _importCommonFn {
 # Summary   : _importCommonFn
 # Purpose   : Load common routines, prefer relative dir
@@ -243,7 +247,7 @@ _chkInitCpuFn () {
   # if [ "$(_cm2EchoModelStrFn 'config_code')" != 'm2g5' ]; then
   #   touch "${_cpuDropFile}" || _cm2WarnStrFn 'Could not add drop file';
   # fi
-  
+
   ## TODO: This is a hack to create the drop file for the m2g6
   ## TODO: Remove this once m2g6 config code is created.
   touch "${_cpuDropFile}" || _cm2WarnStrFn 'Could not add drop file';
@@ -310,7 +314,7 @@ _chkInitCpuFn () {
   fi
 }
 
-_calcWriteOptionFilesFn() {
+_calcWriteOptionFilesFn () {
   declare _computed_table_str _pretty_computed_table_str;
 
   if [ -f "${_computedTableFile}" ] \
@@ -321,8 +325,11 @@ _calcWriteOptionFilesFn() {
   _cm2SetMsgFn 'Generate CPU frequency tables';
   #_setModeFn 'Normal';
   _setNoTurboFn '0';
-  _computed_table_str="$(_calcOptionsFn)";
-  _pretty_computed_table_str="$(_calcPrettyOptionsFn "${_computed_table_str}")";
+  if _computed_table_str="$(_calcOptionsFn)"; then
+    _pretty_computed_table_str="$(_calcPrettyOptionsFn "${_computed_table_str}")";
+  else
+    _pretty_computed_table_str="${_computed_table_str}";
+  fi
 
   echo "${_computed_table_str}"        > "${_computedTableFile}";
   echo "${_pretty_computed_table_str}" > "${_prettyComputedTableFile}";
@@ -356,7 +363,32 @@ _setModeFn () {
 
 _calcOptionsFn () {
   declare _opt_line _out_list _out_str _title _model_msg _normal_cpu_freq \
-    _low_cpu_freq _opt_parts _out_parts;
+    _low_cpu_freq _opt_parts _out_parts _cpu_str _freq_underreport_line \
+    _bit_list _freq_underreport_cpuid _freq_underreport_codename \
+    _underreport_warn_str _return_val;
+
+  _out_list=();
+  _cpu_str="$(
+    lscpu \
+      | grep 'Model name:' \
+      | grep -v 'BIOS Model name:' \
+      | awk -F':' '{ print $2 }' \
+      | sed 's/^ *//; s/(\(R\|TM\))//g'
+  )";
+  _underreport_warn_str="";
+  _normal_cpu_freq="";
+  _low_cpu_freq="";
+  _return_val='0';
+
+  for _freq_underreport_line in "${_freqUnderreportTable[@]}"; do
+    IFS=';' read -r -a _bit_list <<< "${_freq_underreport_line}";
+    _freq_underreport_cpuid="${_bit_list[0]}";
+    _freq_underreport_codename="${_bit_list[1]}";
+    if [ "${_cpu_str}" = "${_freq_underreport_cpuid}" ]; then
+      _underreport_warn_str="This ${_freq_underreport_codename} CPU underreports max frequencies. Actual performance is unaffected.";
+    fi
+  done
+  _out_list+=( "${_cpu_str};${_underreport_warn_str}" );
 
   for _opt_line in "${_optionTable[@]}"; do
     _out_str="$(_scanFn "${_opt_line}" 'read' )";
@@ -376,7 +408,7 @@ _calcOptionsFn () {
   done
 
   ## TODO 2023-03-27 Add per-cpu messages where appropriate
-  if [ "${#_out_list[@]}" = '0' ]; then
+  if [ "${#_out_list[@]}" = '1' ]; then
     _title='Frequency Profile';
     _model_msg="$(cat << EOH
 <b>We do not have a frequency profile for this CPU</b>.
@@ -384,16 +416,19 @@ _calcOptionsFn () {
  provide a pull request to kfocus-source on GitHub.com.
 EOH
     )";
-    echo "title:${_title}|message:${_cm2HtmPStr}${_model_msg}</p>";
-    exit 1;
+    _out_list+=( "title:${_title}|message:${_cm2HtmPStr}${_model_msg}</p>" );
+    _return_val='1';
   fi
 
-  if [ "${_normal_cpu_freq}" == "${_low_cpu_freq}" ]; then
+  if [ -n "${_normal_cpu_freq}" ] \
+    && [ -n "${_low_cpu_freq}" ] \
+    && [ "${_normal_cpu_freq}" == "${_low_cpu_freq}" ]; then
     _cm2ErrStrFn \
       'CPU init failed, max CPU freq for normal and low power profiles are the same!';
   fi
 
   ( IFS=$'\n'; echo "${_out_list[*]}" );
+  return "${_return_val}";
 }
 
 _calcPrettyOptionsFn() {
@@ -407,6 +442,10 @@ _calcPrettyOptionsFn() {
     return 1;
   }
 
+  readarray -t _orig_computed_table <<< "${_orig_computed_table_str}";
+  # Pass through the CPU info line unchanged
+  _out_computed_table_str="${_orig_computed_table[0]}";
+
   IFS=';' read -r -a _bit_list <<< "${_optionHeader}";
   _label="${_bit_list[0]}";
   _frequency="${_bit_list[1]}";
@@ -417,12 +456,12 @@ _calcPrettyOptionsFn() {
   if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
     _header_line+="${_leds};";
   fi
-  _out_computed_table_str="${_header_line}";
+  _out_computed_table_str+=$'\n'"${_header_line}";
 
-  readarray -t _orig_computed_table <<< "${_orig_computed_table_str}";
-  for (( _idx = 0; _idx < ${#_orig_computed_table[@]}; _idx++ )); do
+  for (( _idx = 1; _idx < ${#_orig_computed_table[@]}; _idx++ )); do
     IFS=';' read -r -a _bit_list <<< "${_orig_computed_table[_idx]}";
     if (( ${#_bit_list[@]} < 5 )); then
+      _out_computed_table_str+=$'\n'"${_orig_computed_table[_idx]}";
       continue;
     fi
 
