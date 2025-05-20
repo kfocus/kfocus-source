@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -e;
+
+deb-systemd-helper disable nvidia-suspend.service;
+deb-systemd-helper disable nvidia-hibernate.service;
+deb-systemd-helper disable nvidia-resume.service;
+
+# Tag to allow some debhelper commands to inject relevant code
+#DEBHELPER#

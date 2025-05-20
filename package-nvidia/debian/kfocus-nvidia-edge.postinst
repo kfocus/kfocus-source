@@ -1,5 +1,5 @@
 #!/bin/bash
-# kfocus-nvidia postinst
+# kfocus-nvidia-edge postinst
 # This must be run as root. Use set -u to debug.
 #
 set -e;
@@ -16,7 +16,7 @@ _cm2WarnFn    () { _cm2EchoFn "== . END : WARN Could not ${_cm2BlockMsg}..\n\n";
 
 if ! [ -f /etc/apt/preferences.d/kfocus-nvidia ]; then
   _cm2SetMsgFn "Make sure pinning is available";
-  if dpkg-reconfigure kfocus-nvidia-pinning; then
+  if dpkg-reconfigure kfocus-nvidia-pinning-edge; then
     _cm2SucFn; else _cm2WarnFn;
   fi
 fi
