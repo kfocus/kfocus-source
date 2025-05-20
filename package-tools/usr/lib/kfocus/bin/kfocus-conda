@@ -168,31 +168,42 @@ _upgradeCondaFn () {
 }
 
 _installEnvFn () {
-  declare  _reply_str _conda_installed_exe _conda_oldstyle_vers \
-   _conda_installed_vers _conda_expect_dir _conda_expect01_exe \
-   _conda_expect02_exe _conda_pkg_str _conda_repo_url \
-   _conda_md5_str _is_new_conda _chk_str __conda_setup;
+  declare  _reply_str _pkg_suffix _conda_installed_exe \
+    _conda_oldstyle_vers _conda_installed_vers _conda_expect_dir \
+    _conda_expect01_exe _conda_expect02_exe _conda_install_file \
+    _conda_repo_url _conda_md5sum _is_new_conda _chk_str \
+    __conda_setup;
 
   ## Begin Install GPU Libs
   _cm2SetMsgFn 'Check GPU and install libs if needed';
   if [ -n "${_nvSeriesStr}" ]; then
     _cm2EchoFn "\nNvidia ${_nvSeriesStr}-series GPU found";
-    # Use a new version of Anaconda
+    _pkg_suffix='';
+    [ "${_nvSeriesStr}" = 'rtx50' ] && _pkg_suffix='-edge';
 
-    if _cm2ChkInstalledPkgFn 'kfocus-nvidia' \
+    if _cm2ChkInstalledPkgFn   "kfocus-nvidia-pinning${_pkg_suffix}" \
+      && _cm2ChkInstalledPkgFn "kfocus-nvidia${_pkg_suffix}" \
       && _cm2ChkInstalledPkgFn 'cuda-toolkit-11-7' \
       && _cm2ChkInstalledPkgFn 'libcudnn8' \
       && _cm2ChkInstalledPkgFn 'libnvinfer8'; then
       _cm2EchoFn "All ${_nvSeriesStr}-series libraries appear installed";
     else
-      _cm2EchoFn "Install ${_nvSeriesStr}-series required libraries";
+      _cm2EchoFn "Install ${_nvSeriesStr}-series required libraries.";
       _reply_str=$( _cm2ReadPromptYnFn 'Install libraries now' 'y' );
 
       if [ "${_reply_str}" = 'y' ]; then
-        if "${_escExe}" apt-get install kfocus-nvidia cuda-toolkit-11-7 \
-          libcudnn8 libnvinfer8; then
-          _cm2SucStrFn 'Installation successful';
+        if "${_escExe}" apt-get install \
+          "kfocus-nvidia-pinning${_pkg_suffix}"; then
+          _cm2SucStrFn 'Installed pinning package.';
         else
+          _cm2ErrStrFn 'Abort: Could not install pinning package.';
+          _exitFn;
+        fi
+        if "${_escExe}" apt-get install "kfocus-nvidia${_pkg_suffix}" \
+          cuda-toolkit-11-7 libcudnn8 libnvinfer8; then
+          _cm2SucStrFn 'Library installation successful.';
+        else
+          _cm2ErrStrFn 'Abort: Could not install all libraries.';
           _exitFn;
         fi
       else
@@ -201,7 +212,7 @@ _installEnvFn () {
       fi
     fi
   else
-    _cm2WarnStrFn 'Cannot locate Nvidia RTX GPU';
+    _cm2ErrStrFn 'Abort: Cannot locate Nvidia RTX GPU';
     _exitFn;
   fi
   _cm2SucFn;
@@ -215,8 +226,13 @@ _installEnvFn () {
   _conda_installed_exe="$(command -v conda || true)";
   _conda_installed_vers='';
   _conda_oldstyle_vers='';
-  _conda_md5_str='b3332806aa15750d6bc4e604f9110622';
-  _conda_pkg_str='Anaconda3-2023.03-1-Linux-x86_64.sh';
+  _conda_repo_url='https://repo.anaconda.com/archive';
+  _conda_md5sum='268568a6803b678044f1b54ed26a95b4';
+  _conda_install_file='Anaconda3-2024.10-1-Linux-x86_64.sh';
+  _conda_pkg_url="${_conda_repo_url}/${_conda_install_file}";
+
+  # _conda_md5sum='b3332806aa15750d6bc4e604f9110622';
+  # _conda_install_file='Anaconda3-2023.03-1-Linux-x86_64.sh';
 
   # Report unexpected exe, get installed conda version
   if [ -e "${_conda_installed_exe}" ]; then
@@ -291,36 +307,34 @@ _installEnvFn () {
   fi
 
   _is_new_conda=0;
-  _conda_repo_url="https://repo.anaconda.com/archive/${_conda_pkg_str}";
-
   if [ ! -d "${_conda_expect_dir}" ]; then
-    if [ ! -d "${_vendDirPath}" ]; then
-      _cm2EchoFn "Create ${_vendDirPath}";
-      mkdir -p "${_vendDirPath}" || _exitFn;
+    if [ ! -d "${_vendTempDir}" ]; then
+      _cm2EchoFn "Create ${_vendTempDir}";
+      mkdir -p "${_vendTempDir}" || _exitFn;
     fi
 
-    if [ ! -f "${_vendDirPath}/${_conda_pkg_str}" ]; then
+    if [ ! -f "${_vendTempDir}/${_conda_install_file}" ]; then
       _cm2EchoFn 'Download Anaconda';
-      pushd "${_vendDirPath}"   || _exitFn;
-      wget "${_conda_repo_url}" || _exitFn;
+      pushd "${_vendTempDir}"   || _exitFn;
+      wget "${_conda_pkg_url}"  || _exitFn;
       popd || _exitFn;
     fi;
 
     _cm2EchoFn 'Check md5sum of Anaconda Package';
-    _chk_str=$( md5sum "${_vendDirPath}/${_conda_pkg_str}" \
-      | awk '{print $1}'
+    _chk_str=$(
+      md5sum "${_vendTempDir}/${_conda_install_file}" | cut -f1 -d' '
     );
 
-    if [ "${_chk_str}" != "${_conda_md5_str}" ]; then
+    if [ "${_chk_str}" != "${_conda_md5sum}" ]; then
       _cm2WarnStrFn 'Please rerun the script to download again.';
-      "${_rmFn}" -f "${_conda_pkg_str}";
+      "${_rmFn}" -f "${_vendTempDir}/${_conda_install_file}";
       _exitFn;
     fi
 
     _cm2EchoFn "Install anaconda to ${_conda_expect_dir}";
     _is_new_conda=1;
-    sh "${_vendDirPath}/${_conda_pkg_str}" -b || _exitFn;
-    "${_rmFn}" -r "${_vendDirPath}" || _exitFn;
+    sh "${_vendTempDir}/${_conda_install_file}" -b || _exitFn;
+    "${_rmFn}" -r "${_vendTempDir}" || _exitFn;
   fi
 
   _cm2EchoFn 'Initialize conda';
@@ -363,7 +377,7 @@ _installEnvFn () {
     _cm2SetMsgFn 'Install Jupyter Notebook';
     set +u;
     conda activate base                    || _exitFn;
-    conda create -y --name jnb python=3.10 || _exitFn;
+    conda create -y --name jnb python=3.12 || _exitFn;
     conda activate jnb                     || _exitFn;
     # 2023-12-22 nb_conda no longer works
     # conda install -y -q -c numpy matplotlib jupyter nb_conda || _exitFn;
@@ -384,7 +398,7 @@ _installEnvFn () {
   #   _cm2SetMsgFn 'Install Mxnet-cu102';
   #   set +u;
   #   conda activate base                         || _exitFn;
-  #   conda create -y --name mxnet python=3.10    || _exitFn;
+  #   conda create -y --name mxnet python=3.12    || _exitFn;
   #   conda activate mxnet                        || _exitFn;
   #   conda install -c anaconda mxnet-cu102       || _exitFn;
   #   set -u;
@@ -399,7 +413,7 @@ _installEnvFn () {
     _cm2SetMsgFn 'Install Pytorch';
     set +u;
     conda activate base                          || _exitFn;
-    conda create -y --name pytorch python=3.10   || _exitFn;
+    conda create -y --name pytorch python=3.12   || _exitFn;
     conda activate pytorch                       || _exitFn;
 
     _cm2EchoFn "Installing Pytorch for ${_nvSeriesStr}-series GPU";
@@ -438,7 +452,7 @@ _installEnvFn () {
     _cm2SetMsgFn 'Install Theano';
     set +u;
     conda activate base                       || _exitFn;
-    conda create -y --name theano python=3.10 || _exitFn;
+    conda create -y --name theano python=3.12 || _exitFn;
     conda activate theano                     || _exitFn;
     conda install theano pygpu                || _exitFn;
     conda activate base                       || _exitFn;
@@ -514,7 +528,7 @@ _replyStr='';
 _rmFn=/bin/rm;
 _timeStr=$(date +%s);
 _userId=$(id -u);
-_vendDirPath="${HOME}/vendor.$(date +%s)";
+_vendTempDir="${HOME}/vendor.$(date +%s)";
 ## . End Initialize }
 
 ## Begin Import Common {

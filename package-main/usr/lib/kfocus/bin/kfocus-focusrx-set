@@ -103,17 +103,26 @@ _purgeKbdIteFn () {
 #   The caller must determine if this step is appropriate.
 #
 _installNvidiaFn () {
+  declare _dmi_hw_config_code _suffix;
+
+  # Use kfocus-nvidia-pinning-edge and kfocus-nvidia-edge for latest hw
+  # TODO: This is not an accurate way to test for 50-series GPUs.
+  # Please check as in kfocus-conda
+  _dmi_hw_config_code="$(_cm2EchoModelStrFn 'config_code')";
+  _suffix='';
+  [ "${_dmi_hw_model_code}" = 'm2g6' ] && _suffix='-edge';
+
   _cm2SetMsgFn 'Install NVIDIA Packages';
-  if ! apt-get reinstall -y kfocus-nvidia-pinning; then
-    _cm2WarnStrFn 'Trouble installing nvidia-pinning.';
+  if ! apt-get reinstall -y "kfocus-nvidia-pinning${_suffix}"; then
+    _cm2WarnStrFn "Trouble installing nvidia-pinning${_suffix}.";
     _cm2WarnFn; return 1;
   fi
   if ! apt-get update; then
     _cm2WarnStrFn 'Trouble updating apt package list.';
     _cm2WarnFn; return 1;
   fi
-  if ! apt-get reinstall -y kfocus-nvidia; then
-    _cm2WarnStrFn 'Trouble installing kfocus-nvidia.';
+  if ! apt-get reinstall -y "kfocus-nvidia${_suffix}"; then
+    _cm2WarnStrFn "Trouble installing kfocus-nvidia${_suffix}.";
     _cm2WarnFn; return 1;
   fi
   _cm2SucFn;
