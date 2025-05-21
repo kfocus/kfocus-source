@@ -10,11 +10,15 @@
 #   which may prevent the deep-learning suite ('kfocus-conda'),
 #   compute, and other ML tasks from working as expected.
 
-# Pair pinning with a specific kfocus-nvidia package
+# Pair pinning with a specific kfocus-nvidia package version.
+# IMPORTANT: This must be done so that the pinning package is
+# installed first, then the supporting drivers are installed on the
+# next upgrade.
+#
 Package: kfocus-nvidia
 Pin: release v=24.04, n=noble
 Pin: origin "ppa.launchpadcontent.net"
-Pin: version 24.04.1
+Pin: version 24.04.2~beta4
 Pin-Priority: 1001
 
 # Use Nvidia supplied versions of nvidia-settings, nvidia-modrobe, and
@@ -39,19 +43,29 @@ Package: nvidia-* libnvidia-* xserver-xorg-*
 Pin: origin "developer.download.nvidia.com"
 Pin-Priority: -1
 
-# Pin cuda-drivers to use version 535.161 because we found sometimes later
+# Pin cuda-drivers to use version 535.230 because we found sometimes later
 #   version to require newer packages not available in ubuntu repo. This was
-#   last updated on 2025-05-19, and 535.247 is the latest cuda-drivers version
+#   last updated on 2025-05-19, and 535.230 is the latest cuda-drivers version
 #   on that date. The 1001 Priority causes a version to be installed even if
 #   it does not come from the target release ('noble') and forces a downgrade
 #   if required.
+#
+#   This can be updated occassionally because the metapackage
+#   description indicates >= for required package.
+#   See apt-cache show nvidia-drivers-535 to see which drivers are required,
+#   and apt-cache policy nvidia-driver-535 to see installed ubuntu version.
+#
+# The 1001 Priority causes a version to be installed even if
+#   it does not come from the target release ('noble') and forces a downgrade
+#   if required.
+#
 # IMPORTANT! THIS MUST COME BEFORE the cuda* match below,
 #   and PRIORITY MUST BE >= 1001 for this to work.
 # Alternate selector: Pin: release l=NVIDIA CUDA
 #
 Package: cuda-drivers cuda-drivers-535
 Pin: origin "developer.download.nvidia.com"
-Pin: version 535.247.*
+Pin: version 535.230.*
 Pin-Priority: 1001
 
 # Prefer all cuda* 535 packages from NVIDIA over any Ubuntu packages of the

@@ -4,17 +4,21 @@
 #   IF YOU CHANGE THIS FILE, IT MAY BE OVERWRITTEN BY A
 #   FUTURE UPDATE OF THE 'kfocus-nvidia' PACKAGE.
 #   KFOCUS_TEST_ID=1605,3600
-#
+
 # You may remove the package 'kfocus-nvidia' to remove this file;
 #   however, doing so will adjust the mix of nvidia driver libs
 #   which may prevent the deep-learning suite ('kfocus-conda'),
 #   compute, and other ML tasks from working as expected.
 
-# Pair pinning with a specific kfocus-nvidia package
+# Pair pinning with a specific kfocus-nvidia package version.
+# IMPORTANT: This must be done so that the pinning package is
+# installed first, then the supporting drivers are installed on the
+# next upgrade.
+#
 Package: kfocus-nvidia
 Pin: release v=24.04, n=noble
 Pin: origin "ppa.launchpadcontent.net"
-Pin: version 24.04.2~beta3
+Pin: version 24.04.2~beta4
 Pin-Priority: 1001
 
 # Use Nvidia supplied versions of nvidia-settings, nvidia-modrobe, and
@@ -39,12 +43,16 @@ Package: nvidia-* libnvidia-* xserver-xorg-*
 Pin: origin "developer.download.nvidia.com"
 Pin-Priority: -1
 
-# Pin cuda-drivers to use version 570.* because we found sometimes later
-#   version to require newer packages not available in ubuntu repo. This was
-#   last updated on 2025-04-11, and 570.* is the latest cuda-drivers version
-#   on that date. The 1001 Priority causes a version to be installed even if
+# Pin cuda-drivers to use version 570.*. This meta package now depends on 
+#   the installed version of nvidia-drivers-570, which is pinned to come
+#   from Ubuntu, therefore all required package versions should be resolved
+#   correctly. The prior packages explicitly listed these components like
+#   libnvidia-common-570, so the version had to match the latest found in Ubuntu.
+#
+# The 1001 Priority causes a version to be installed even if
 #   it does not come from the target release ('noble') and forces a downgrade
 #   if required.
+#
 # IMPORTANT! THIS MUST COME BEFORE the cuda* match below,
 #   and PRIORITY MUST BE >= 1001 for this to work.
 # Alternate selector: Pin: release l=NVIDIA CUDA

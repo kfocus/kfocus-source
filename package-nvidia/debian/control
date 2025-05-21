@@ -18,6 +18,10 @@ Description:  Kubuntu Focus Nvidia driver metapackage
  This package installs curated Nvidia drivers for
  Kubuntu Focus systems.
 
+# ALWAYS make sure the pinned version of kfocus-nvidia
+# is set to match the version that is being released.
+# For example, if we are releasing 24.04.2~beta5,
+# kfocus-nvidia MUST be pinned to that version.
 Package:      kfocus-nvidia-pinning
 Architecture: all
 Depends:      ${misc:Depends}
@@ -42,6 +46,10 @@ Description:  Kubuntu Focus Nvidia Edge driver metapackage
  only validated models, and is automatically selected when
  required. Please do not install manually.
 
+# ALWAYS make sure the pinned version of kfocus-nvidia-edge
+# is set to match the version that is being released.
+# For example, if we are releasing 24.04.2~beta5,
+# kfocus-nvidia-edge MUST be pinned to that version.
 Package:      kfocus-nvidia-pinning-edge
 Architecture: all
 Depends:      ${misc:Depends}
