@@ -18,10 +18,8 @@ Description:  Kubuntu Focus Nvidia driver metapackage
  This package installs curated Nvidia drivers for
  Kubuntu Focus systems.
 
-# ALWAYS make sure the pinned version of kfocus-nvidia
-# is set to match the version that is being released.
-# For example, if we are releasing 24.04.2~beta5,
-# kfocus-nvidia MUST be pinned to that version.
+# debian/rules automatically sets the pinned version of kfocus-nvidia to the
+# released version.
 Package:      kfocus-nvidia-pinning
 Architecture: all
 Depends:      ${misc:Depends}
