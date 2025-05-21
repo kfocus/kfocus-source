@@ -1,4 +1,11 @@
 #!/usr/bin/make -f
 
+include /usr/share/dpkg/pkg-info.mk
+
 %:
 	dh $@
+
+override_dh_auto_build:
+	sed 's/XXX_PKG_VER_XXX/$(DEB_VERSION)/' kfocus-nvidia-pinning.in > kfocus-nvidia-pinning
+	sed 's/XXX_PKG_VER_XXX/$(DEB_VERSION)/' kfocus-nvidia-pinning-edge.in > kfocus-nvidia-pinning-edge
+	dh_auto_build
