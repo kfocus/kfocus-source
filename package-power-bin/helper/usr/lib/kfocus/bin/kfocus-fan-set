@@ -143,6 +143,14 @@ _EOH04
 _EOH04
       )";;
 
+    m2g6*)
+      _model_msg="$(cat <<_EOH06
+The default fan profile for the M2 GEN 6 is non-linear
+ and is preferred for most tasks. To toggle maximum
+ cooling, press [ Fn ][ 1 ].
+_EOH06
+      )";;
+
    *)
      _model_msg="$(cat <<_EOH05
 <b>Fan profile not found for this device</b>. You may be able

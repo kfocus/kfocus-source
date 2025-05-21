@@ -19,10 +19,29 @@ Recommends:   kfocus-conda,
               kfocus-power-bin,
               kfocus-tbt,
               kfocus-vidsync
-Breaks:       kfocus-tools-nxg1,
+Breaks:       kfocus-tools-m2g6,
+              kfocus-tools-nxg1,
               kfocus-tools-other
 Description:  Kubuntu Focus Tools Metapackage
  This metapackage installs the Kubuntu Focus tools.
+
+Package:      kfocus-tools-m2g6
+Architecture: all
+Depends:      ${misc:Depends},
+              kfocus-keyboard
+Recommends:   kfocus-conda,
+              kfocus-kb-color,
+              kfocus-pick-gcc,
+              kfocus-power-bin,
+              kfocus-tbt,
+              kfocus-vidsync
+Breaks:       kfocus-power-fan,
+              kfocus-tools-nxg1,
+              kfocus-tools-other,
+              kfocus-tools
+Description:  Kubuntu Focus Tools - M2G6 Metapackage
+ This metapackage installs the Kubuntu Focus tools
+ for the M2 GEN 6 laptops.
 
 Package:      kfocus-tools-nxg1
 Architecture: all
@@ -35,6 +54,7 @@ Recommends:   kfocus-conda,
               kfocus-vidsync
 Breaks:       kfocus-power-fan,
               kfocus-keyboard,
+              kfocus-tools-m2g6,
               kfocus-tools-other,
               kfocus-tools
 Description:  Kubuntu Focus Tools - NX Metapackage
@@ -52,6 +72,7 @@ Recommends:   kfocus-conda,
               kfocus-vidsync
 Breaks:       kfocus-power-fan,
               kfocus-keyboard,
+              kfocus-tools-m2g6,
               kfocus-tools-nxg1,
               kfocus-tools
 Description:  Kubuntu Focus Tools - Other Metapackage
