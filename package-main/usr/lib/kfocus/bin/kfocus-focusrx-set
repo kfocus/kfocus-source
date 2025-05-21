@@ -224,11 +224,13 @@ _chkHwConfigFn () {
   # fi
 
   ## Begin Adjust tool suffix per config code {
-  # kfocus-tools-nxg1, kfocus-tools-other, kfocus-tools (#3424)
+  # kfocus-tools-m2g6, kfocus-tools-nxg1, kfocus-tools-other,
+  # kfocus-tools (#3424)
   _tool_pkg_suffix='';
   case "${_dmi_hw_config_code}" in
-    default|generic|m2g4|m2g5|m2g6|xeg2) _tool_pkg_suffix='';;
+    default|generic|m2g4|m2g5|xeg2) _tool_pkg_suffix='';;
     nxg1) _tool_pkg_suffix='-nxg1';;
+    m2g6) _tool_pkg_suffix='-m2g6';;
     ir14g1|ir1Xg2|other|*) _tool_pkg_suffix='-other';;
   esac
   _tool_pkg_name="kfocus-tools${_tool_pkg_suffix}";

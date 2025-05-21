@@ -99,7 +99,7 @@ _chkReportFanSupportFn () {
 
   _title="Fan Profile (${_model_label})";
   case "${_model_code}" in
-    m1*|m2*|xe*)
+    m1*|m2g1*|m2g2*|m2g3*|m2g4*|m2g5*|xe*)
       if [ "${_is_kpf_installed}" = 'y' ]; then return 0; fi
       _model_msg="$(cat <<_EOH01
 <b>Custom fan profiles are available</b>. Please install
