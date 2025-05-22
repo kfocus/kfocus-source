@@ -350,7 +350,7 @@ _chkOemMultiDiskFn () {
   fi
 
   # Use sudo here always, pkexec wrecks the GUI. We can do this here
-  # because the OEM user has passwordless sudo.
+  # because the OEM user does not need a password for sudo.
   sudo -E "${_chainHelperExe}" 'quietExit';
 
   _cm2SucFn;

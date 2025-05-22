@@ -98,31 +98,54 @@ _purgeKbdIteFn () {
 }
 ## . END _purgeKbdIteFn }
 
+_getNvSeriesStrFn () {
+  declare _nv_line;
+  _nv_line=$(lspci |grep -i 'VGA compatible controller' |grep -i 'nvidia');
+
+  if grep -q 'RTX 20' <<< "${_nv_line}"; then
+    echo 'rtx20';
+  elif grep -q 'RTX 30' <<< "${_nv_line}"; then
+    echo 'rtx30';
+  # GN21 = RTX 4090
+  elif grep -qE '(RTX 40|GN21)' <<< "${_nv_line}"; then
+    echo 'rtx40';
+  elif grep -qE 'RTX 50' <<< "${_nv_line}"; then
+    echo 'rtx50';
+  else echo '';
+  fi
+}
+
+
 ## BEGIN _installNvidiaFn {
 # Purpose: Install kfocus nvidia packages.
 #   The caller must determine if this step is appropriate.
 #
 _installNvidiaFn () {
-  declare _dmi_hw_config_code _suffix;
+  declare _dmi_hw_config_code _nv_pkg_suffix _nv_series_str;
 
   # Use kfocus-nvidia-pinning-edge and kfocus-nvidia-edge for latest hw
-  # TODO: This is not an accurate way to test for 50-series GPUs.
-  # Please check as in kfocus-conda
   _dmi_hw_config_code="$(_cm2EchoModelStrFn 'config_code')";
-  _suffix='';
-  [ "${_dmi_hw_model_code}" = 'm2g6' ] && _suffix='-edge';
+  _nv_pkg_suffix='';
+  if [ "${_dmi_hw_model_code}" = 'm2g6' ]; then
+    _nv_pkg_suffix='-edge';
+  else
+    _nv_series_str="$(_getNvSeriesStrFn)";
+    if [ "${_nv_series_str}" = 'rtx50' ]; then
+      _nv_pkg_suffix='-edge';
+    fi
+  fi
 
   _cm2SetMsgFn 'Install NVIDIA Packages';
-  if ! apt-get reinstall -y "kfocus-nvidia-pinning${_suffix}"; then
-    _cm2WarnStrFn "Trouble installing nvidia-pinning${_suffix}.";
+  if ! apt-get reinstall -y "kfocus-nvidia-pinning${_nv_pkg_suffix}"; then
+    _cm2WarnStrFn "Trouble installing nvidia-pinning${_nv_pkg_suffix}.";
     _cm2WarnFn; return 1;
   fi
   if ! apt-get update; then
     _cm2WarnStrFn 'Trouble updating apt package list.';
     _cm2WarnFn; return 1;
   fi
-  if ! apt-get reinstall -y "kfocus-nvidia${_suffix}"; then
-    _cm2WarnStrFn "Trouble installing kfocus-nvidia${_suffix}.";
+  if ! apt-get reinstall -y "kfocus-nvidia${_nv_pkg_suffix}"; then
+    _cm2WarnStrFn "Trouble installing kfocus-nvidia${_nv_pkg_suffix}.";
     _cm2WarnFn; return 1;
   fi
   _cm2SucFn;
@@ -192,10 +215,10 @@ _chkBiosUpdateFn () {
 #   fix-hw-config directive.
 #
 _chkHwConfigFn () {
-  declare _is_nv_system _do_force _reason_list _dmi_hw_config_code \
-    _dmi_hw_model_code _file_hw_config_code _file_hw_model_code \
-    _is_hw_reconfig _msg _tool_pkg_suffix _tool_pkg_name _lspci_exe \
-    _btrfs_status;
+  declare _btrfs_status _dmi_hw_config_code _dmi_hw_model_code \
+    _do_force _file_hw_config_code _file_hw_model_code _is_hw_reconfig \
+    _is_nv_system _msg _nv_pkg_suffix _reason_list \
+    _tool_pkg_name _tool_pkg_suffix;
 
   _do_force='n';
   if [[ "${1:-}" =~ ^[Yy] ]]; then _do_force='y'; fi
@@ -277,17 +300,24 @@ _chkHwConfigFn () {
     _is_nv_system="$(_cm2EchoModelStrFn 'is_nv_sys')";
 
     # Supplemental check for Nvidia systems
-    if [ "${_is_nv_system}" != 'y' ]; then
-      _lspci_exe="$(command -v lspci || true)";
-      if [ -n "${_lspci_exe}" ] \
-        && grep -qi 'vga.*nvidia' < <("${_lspci_exe}"); then
+    _nv_pkg_suffix='';
+    if [ "${_is_nv_system}" = 'y' ]; then
+      if [ "${_dmi_hw_config_code}" = 'm2g6' ]; then
+        _nv_pkg_suffix='-edge';
+      fi
+    else
+      _nv_series_str="$(_getNvSeriesStrFn)";
+      if [ -n "${_nv_series_str}" ]; then
         _is_nv_system='y';
+        if [ "${_nv_series_str}" = 'rtx50' ]; then
+          _nv_pkg_suffix='-edge';
+        fi
       fi
     fi
 
     # Install nvidia libs
     if [ "${_is_nv_system}" = 'y' ]; then
-      if ! _cm2ChkInstalledPkgFn 'kfocus-nvidia'; then
+      if ! _cm2ChkInstalledPkgFn "kfocus-nvidia${_nv_pkg_suffix}"; then
         _msg='install-nvidia;;Nvidia libraries needs to be installed.';
         _reason_list+=( "${_msg}" );
       elif [ "${_do_force}" = 'y' ]; then
