@@ -1,3 +1,12 @@
+kfocus-hw (24.04.11~beta2) noble; urgency=medium
+
+  * m2g6-etc_default_grub.d_kfocus.cfg: remove xe.enable_psr=0 parameter
+    (#5423)
+  * m2g6-etc_modprobe.d_kfocus.conf: add nvidia-drm modeset=1 parameter
+    (#5423)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 21 May 2025 21:45:37 -0500
+
 kfocus-hw (24.04.11~beta1) noble; urgency=medium
 
   * Add hardware config for M2G6 (#5416)
