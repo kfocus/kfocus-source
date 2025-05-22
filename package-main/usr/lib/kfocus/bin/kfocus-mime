@@ -96,7 +96,8 @@ _exeLookupList=(
   'ppa-purge|konsole;-e;man ppa-purge|ppa-purge|ppa-purge|PPA Purge: Purge PPAs'
   'rar|konsole;-e;man rar|rar|rar|Rar: Create .rar Archive Files'
   'simplescreenrecorder|simplescreenrecorder||simplescreenrecorder|SimpleScreenRecorder: Record Your Screen with Powerful Options'
-  'skype|skype||skype|Skype: Video Call Platform'
+  # Disabled 2025-05-01
+  # 'skype|skype||skype|Skype: Video Call Platform'
   'slack|slack||slack-desktop|Slack: Team Messaging'
   'spectacle|spectacle||kde-spectacle|Spectacle: Take Screenshots'
   'steam|steam||steam|Steam: Manage and Play Games'
@@ -293,11 +294,12 @@ function deb_nvidia-ml() {
   PRETTY_NAME="Nvidia ML (deprecated; use CUDA for later lib versions)"
   WEBSITE="https://developer.nvidia.com"
 }
-function deb_skype() {
-  PRETTY_NAME="Skype"
-  SNAP_PKG_NAME="skype"
-  WEBSITE="https://www.skype.com/"
-}
+# Disabled 2025-05-01
+# function deb_skype() {
+#   PRETTY_NAME="Skype"
+#   SNAP_PKG_NAME="skype"
+#   WEBSITE="https://www.skype.com/"
+# }
 function deb_slack-desktop() {
   APT_KEY_URL="https://packagecloud.io/slacktechnologies/slack/gpgkey"
   APT_LIST_NAME="slack"
