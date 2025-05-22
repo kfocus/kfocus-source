@@ -12,7 +12,8 @@
 #
 set -u;
 
-_optionHeader='Profile;Frequency;Governor;Turbo;LEDs'
+# _optionHeader='Profile;Frequency;Governor;Turbo;LEDs'
+_optionHeader='Name;Freq;Mode;Turbo;LEDs'
 
 _optionTable=(
   # _label;up_ratio;down_ratio;gov_key;noturbo_int;kbdled_int

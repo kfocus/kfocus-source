@@ -1,0 +1,38 @@
+#!/bin/bash
+# Fixup api files for kfocus-power-set
+
+_model_list=(
+  ir14g1_i5-12450H
+  ir14g2_i5-13500H
+  ir16g2_i5-13500H
+  m2g1_i7-10875H
+  m2g3_i7-11800H
+  m2g4_i7-12700H
+  m2g5_i9-13900HX
+  m2g5p_i9-13900HX
+  m2g5p_i9-14900HX
+  nxg1_i5-1135G7
+  nxg2_i5-1240P
+  nxg2_i7-1260P
+  nxg3_u5_255h
+  other_i7-4790
+  other_i9-9900K
+  xeg1_i5-1135G7
+  xeg1_i7-1165G7
+  xeg2_i7-1260P
+);
+
+for _model in "${_model_list[@]}"; do
+  for _api_str in api_str_x.txt api_str_p.txt; do
+    _cpu="$( cut -f2- -d'_' <<< "${_model}" )";
+    _file="${_model}_${_api_str}";
+    if [ -f "${_file}" ]; then
+      echo -e "Intel Core ${_cpu};\nName;Freq;Mode;Turbo;LEDs;";
+      meld "m2g5_i9-14900HX_${_api_str}" "${_file}";
+    else
+      echo "ERROR: file |${_file}| not found!";
+    fi
+  done
+done
+
+
