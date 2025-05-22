@@ -96,12 +96,14 @@ _exeLookupList=(
   'ppa-purge|konsole;-e;man ppa-purge|ppa-purge|ppa-purge|PPA Purge: Purge PPAs'
   'rar|konsole;-e;man rar|rar|rar|Rar: Create .rar Archive Files'
   'simplescreenrecorder|simplescreenrecorder||simplescreenrecorder|SimpleScreenRecorder: Record Your Screen with Powerful Options'
-  'skype|skype||skype|Skype: Video Call Platform'
+  # Disabled 2025-05-01
+  # 'skype|skype||skype|Skype: Video Call Platform'
   'slack|slack||slack-desktop|Slack: Team Messaging'
   'spectacle|spectacle||kde-spectacle|Spectacle: Take Screenshots'
   'steam|steam||steam|Steam: Manage and Play Games'
   'sublime-text|subl||sublime-text|Sublime Text editor'
   'systemsettings5|systemsettings5||systemsettings|System Settings: Adjust Your System'
+  'msteams|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://www.microsoft.com/en-us/microsoft-teams/group-chat-software||kfocus-main|Microsoft Teams'
   'telegram-desktop|telegram-desktop||telegram-desktop|Telegram: Encrypted Instant Messenger'
   'thunderbird|thunderbird||thunderbird|Thunderbird: Email and Calendar'
   'vlc|vlc||vlc|VLC: Play and Stream Video and Multimedia'
@@ -293,11 +295,12 @@ function deb_nvidia-ml() {
   PRETTY_NAME="Nvidia ML (deprecated; use CUDA for later lib versions)"
   WEBSITE="https://developer.nvidia.com"
 }
-function deb_skype() {
-  PRETTY_NAME="Skype"
-  SNAP_PKG_NAME="skype"
-  WEBSITE="https://www.skype.com/"
-}
+# Disabled 2025-05-01
+# function deb_skype() {
+#   PRETTY_NAME="Skype"
+#   SNAP_PKG_NAME="skype"
+#   WEBSITE="https://www.skype.com/"
+# }
 function deb_slack-desktop() {
   APT_KEY_URL="https://packagecloud.io/slacktechnologies/slack/gpgkey"
   APT_LIST_NAME="slack"
