@@ -10,6 +10,11 @@
 #   which may prevent the deep-learning suite ('kfocus-conda'),
 #   compute, and other ML tasks from working as expected.
 
+# Priority < 1000 will not downgrade
+# Priority = 1000 will downgrade IFF a higher priority (e.g. Ubuntu)
+#   offers new version
+# Priority > 1000 will downgrade even from lower-priority repo
+
 # Pair pinning with a specific kfocus-nvidia package version.
 # IMPORTANT: This must be done so that the pinning package is
 # installed first, then the supporting drivers are installed on the
