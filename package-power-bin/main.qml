@@ -183,7 +183,8 @@ Kirigami.ApplicationWindow {
 
             Kirigami.Heading {
                 id: fanControlHeading
-                text: "Fan Profile"
+                property string modelid: ""
+                text: "Fan Profile (" + modelid + ")"
                 Layout.topMargin: PlasmaCore.Units.largeSpacing
                 level: 3
             }
@@ -267,8 +268,11 @@ Kirigami.ApplicationWindow {
                 stdout_arr = stdout.split('\n');
                 stdout_arr[0].split( ';' ).forEach(function (value, index) {
                   if ( index === 0 ) {
+                    fanControlHeading.modelid = value;
+                  }
+                  else if ( index === 1 ) {
                     powerHeading.cpuid = value;
-                  } else if ( index === 1 ) {
+                  } else if ( index === 2 ) {
                     if ( value !== '' ) {
                       cpuInfoMessage.text = value;
                       cpuInfoMessage.visible = true;

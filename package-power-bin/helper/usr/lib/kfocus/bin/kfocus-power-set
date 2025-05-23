@@ -389,7 +389,9 @@ _calcOptionsFn () {
       _underreport_warn_str="This ${_freq_underreport_codename} CPU underreports max frequencies. Actual performance is unaffected.";
     fi
   done
-  _out_list+=( "${_cpu_str};${_underreport_warn_str}" );
+  _out_list+=(
+    "$(_cm2EchoModelStrFn 'label');${_cpu_str};${_underreport_warn_str}"
+  );
 
   for _opt_line in "${_optionTable[@]}"; do
     _out_str="$(_scanFn "${_opt_line}" 'read' )";
