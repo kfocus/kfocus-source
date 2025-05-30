@@ -12,7 +12,6 @@
 #
 set -u;
 
-# _optionHeader='Profile;Frequency;Governor;Turbo;LEDs'
 _optionHeader='Name;Freq;Mode;Turbo;LEDs'
 
 _optionTable=(
@@ -244,16 +243,12 @@ _chkInitCpuFn () {
   fi
 
   # Skip if not the m2g5 or m2g5p model (both share config_code m2g5)
-  #   by creating a drop file.
-  # if [ "$(_cm2EchoModelStrFn 'config_code')" != 'm2g5' ]; then
-  #   touch "${_cpuDropFile}" || _cm2WarnStrFn 'Could not add drop file';
-  # fi
+  if [ "$(_cm2EchoModelStrFn 'config_code')" != 'm2g5' ]; then
+    touch "${_cpuDropFile}" || _cm2WarnStrFn 'Could not add drop file';
+    return 0;
+  fi
 
-  ## TODO: This is a hack to create the drop file for the m2g6
-  ## TODO: Remove this once m2g6 config code is created.
-  touch "${_cpuDropFile}" || _cm2WarnStrFn 'Could not add drop file';
-  return 0;
-
+  # Confirmed required for kernels 5.4 thru 6.11
   _cm2SetMsgFn 'Set CPU properties for M2 GEN 5';
   _is_pstate_file_found='n';
   for _idx in {0..9}; do

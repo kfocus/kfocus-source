@@ -108,6 +108,14 @@ _chkReportFanSupportFn () {
 _EOH01
       )";;
 
+    m2g6*)
+      _model_msg="$(cat <<_EOH06
+The default fan profile for the M2 GEN 6 is non-linear
+ and is preferred for most tasks. To toggle maximum
+ cooling, press [ Fn ][ 1 ].
+_EOH06
+      )";;
+
     ir14*|ir16*)
       _model_msg="$(cat <<_EOH02
 <b>Select a fan profile in the BIOS</b>.
@@ -141,14 +149,6 @@ _EOH04
  Cooling &gt; Fan Mode</code> and then pick <code>Whisper</code>,
  <code>Balanced</code>, or <code>Performance</code>. ${_kpf_msg}
 _EOH04
-      )";;
-
-    m2g6*)
-      _model_msg="$(cat <<_EOH06
-The default fan profile for the M2 GEN 6 is non-linear
- and is preferred for most tasks. To toggle maximum
- cooling, press [ Fn ][ 1 ].
-_EOH06
       )";;
 
    *)
