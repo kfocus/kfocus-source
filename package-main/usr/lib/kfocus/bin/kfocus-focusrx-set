@@ -126,7 +126,7 @@ _installNvidiaFn () {
   # Use kfocus-nvidia-pinning-edge and kfocus-nvidia-edge for latest hw
   _dmi_hw_config_code="$(_cm2EchoModelStrFn 'config_code')";
   _nv_pkg_suffix='';
-  if [ "${_dmi_hw_model_code}" = 'm2g6' ]; then
+  if [ "${_dmi_hw_config_code}" = 'm2g6' ]; then
     _nv_pkg_suffix='-edge';
   else
     _nv_series_str="$(_getNvSeriesStrFn)";

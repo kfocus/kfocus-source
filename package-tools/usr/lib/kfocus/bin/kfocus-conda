@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2020-2024 MindShare Inc.
+# Copyright 2020-2025 MindShare Inc.
 # Written for the Kubuntu Focus by:
 #   - Michael Mikowski
 #   - Vishwas Mruthyunjaya
@@ -120,7 +120,9 @@ _fixCondaEnvFn () {
 _setCudaPathsFn () {
   # bashsupport disable=BP2001
   declare _cuda_root_dir _append_list _cuda_home_dir;
-  _cuda_root_dir='/usr/local/cuda-11.7';
+  _cuda_root_dir='/usr/local/cuda';
+  # 11.7 should be deprecated /everywhere/
+  # _cuda_root_dir='/usr/local/cuda-11.7';
 
   # bashsupport disable=BP2001
   _append_list=(
@@ -183,7 +185,7 @@ _installEnvFn () {
 
     if _cm2ChkInstalledPkgFn   "kfocus-nvidia-pinning${_pkg_suffix}" \
       && _cm2ChkInstalledPkgFn "kfocus-nvidia${_pkg_suffix}" \
-      && _cm2ChkInstalledPkgFn 'cuda-toolkit-11-7' \
+      && _cm2ChkInstalledPkgFn 'cuda-toolkit' \
       && _cm2ChkInstalledPkgFn 'libcudnn8' \
       && _cm2ChkInstalledPkgFn 'libnvinfer8'; then
       _cm2EchoFn "All ${_nvSeriesStr}-series libraries appear installed";
@@ -200,7 +202,7 @@ _installEnvFn () {
           _exitFn;
         fi
         if "${_escExe}" apt-get install "kfocus-nvidia${_pkg_suffix}" \
-          cuda-toolkit-11-7 libcudnn8 libnvinfer8; then
+          cuda-toolkit libcudnn8 libnvinfer8; then
           _cm2SucStrFn 'Library installation successful.';
         else
           _cm2ErrStrFn 'Abort: Could not install all libraries.';
@@ -390,7 +392,7 @@ _installEnvFn () {
     _cm2EchoFn;
   fi
 
-  ## TODO mxnet is not supported with cuda 11.7 (requires 10.2)
+  ## TODO mxnet is not supported with cuda > 10.2
   # This is maintained here for reference.
   #
   # _reply_str=$( _fixCondaEnvFn 'mxnet-cu102') || _exitFn;
@@ -408,6 +410,14 @@ _installEnvFn () {
   # Pytorch
   # https://pytorch.org/get-started/locally/#linux-anaconda
   #
+  # IMPORTANT: To get this to work with 5070 Ti, we needed to
+  #   install special support for this gpu.
+  # conda activate pytorch
+  # pip uninstall torch torchvision
+  # pin install --pre torch torchvision \
+  #   --index-url https://download.pytorch.org/whl/nightly/cu128;
+  #   https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/16884
+  #
   _reply_str=$( _fixCondaEnvFn 'pytorch') || _exitFn;
   if [ "${_reply_str}" = 'y' ]; then
     _cm2SetMsgFn 'Install Pytorch';
@@ -415,9 +425,12 @@ _installEnvFn () {
     conda activate base                          || _exitFn;
     conda create -y --name pytorch python=3.12   || _exitFn;
     conda activate pytorch                       || _exitFn;
-
+    pip install gpu-benchmark                    || _exitFn;
     _cm2EchoFn "Installing Pytorch for ${_nvSeriesStr}-series GPU";
-    conda install pytorch torchvision torchaudio pytorch-cuda=11.7 \
+    # If this cannot be defaulted, then we will need to find the version
+    #   from /usr/local/cuda-12.9 or similar.
+    # conda install pytorch torchvision torchaudio pytorch-cuda=11.7 \
+    conda install pytorch torchvision torchaudio \
       -c pytorch -c nvidia || _exitFn;
     set -u;
     _cm2SucFn;
@@ -425,6 +438,7 @@ _installEnvFn () {
 
   # TensorFlow
   # https://www.tensorflow.org/install/gpu
+  # AI Benchmark is almost certainly deprecated
   # https://pypi.org/project/ai-benchmark/
   # https://pypi.org/project/tensorflow
   # https://github.com/tensorflow/tensorflow/tags
@@ -436,29 +450,33 @@ _installEnvFn () {
     conda activate base || _exitFn;
 
     _cm2EchoFn "Installing TensorFlow for ${_nvSeriesStr}-series GPU";
-    conda create -n tensorflow pip python=3.10 || _exitFn;
+    conda create -n tensorflow pip python=3.12 || _exitFn;
     conda activate tensorflow                  || _exitFn;
+    # Prefer now not to specify a version, but 2.12.0 does work with GPU
+    # Latest as of 2025-05-30 is 2.19.0, which does not.
+    # pip install -Iv tensorflow               || _exitFn;
     pip install -Iv tensorflow==2.12.0         || _exitFn;
-    pip install ai-benchmark                   || _exitFn;
+    # pip install ai-benchmark                 || _exitFn;
     conda activate base                        || _exitFn;
     set -u;
     _cm2SucFn;
   fi
 
   # Theano
-  #
-  _reply_str=$( _fixCondaEnvFn 'theano') || _exitFn;
-  if [ "${_reply_str}" = 'y' ]; then
-    _cm2SetMsgFn 'Install Theano';
-    set +u;
-    conda activate base                       || _exitFn;
-    conda create -y --name theano python=3.12 || _exitFn;
-    conda activate theano                     || _exitFn;
-    conda install theano pygpu                || _exitFn;
-    conda activate base                       || _exitFn;
-    set -u;
-    _cm2SucFn;
-  fi
+  # This appears limited to Python 3.10, which implies it is old,
+  #   and therefore we now disregard it.
+  # _reply_str=$( _fixCondaEnvFn 'theano') || _exitFn;
+  # if [ "${_reply_str}" = 'y' ]; then
+  #   _cm2SetMsgFn 'Install Theano';
+  #   set +u;
+  #   conda activate base                       || _exitFn;
+  #   conda create -y --name theano python=3.10 || _exitFn;
+  #   conda activate theano                     || _exitFn;
+  #   conda install theano pygpu                || _exitFn;
+  #   conda activate base                       || _exitFn;
+  #   set -u;
+  #   _cm2SucFn;
+  # fi
 
   ## TODO mxnet is not supported with cuda 11.7 (requires 10.2)
   # This is maintained here for reference.
@@ -477,6 +495,7 @@ _installEnvFn () {
   # This is close:
   # https://stackoverflow.com/questions/34328467
 
+  _cm2EchoFn;
   if _chkCondaEnvFn 'pytorch'; then
     _cm2SetMsgFn 'Test Pytorch';
     set +u;
@@ -486,6 +505,21 @@ _installEnvFn () {
     2>/dev/null python -c "${_testPytorchStr}" || _cm2WarnFn;
     _cm2SucFn;
   fi
+
+  ## TODO: Use this to invoke GPU Benchmark with Pytorch
+  # if _chkCondaEnvFn 'tensorflow'; then
+  #   _reply_str=$( _cm2ReadPromptYnFn \
+  #     "Benchmarks TensorFlow (takes 5-10m)" 'n'
+  #   );
+  #   if [ "${_reply_str}" = 'y' ]; then
+  #     _cm2SetMsgFn 'Benchmark TensorFlow';
+  #     set +u;
+  #     conda activate tensorflow || _exitFn;
+  #     set -u;
+  #
+  #    2>/dev/null python -c "${_testTf02Str}" || _cm2WarnFn;
+  #  fi
+  # fi
 
   if _chkCondaEnvFn 'tensorflow'; then
     _cm2SetMsgFn 'Test TensorFlow';
@@ -497,19 +531,6 @@ _installEnvFn () {
     _cm2SucFn;
   fi
 
-  if _chkCondaEnvFn 'tensorflow'; then
-    _reply_str=$( _cm2ReadPromptYnFn \
-      "Benchmarks TensorFlow (takes 5-10m)" 'n'
-    );
-    if [ "${_reply_str}" = 'y' ]; then
-      _cm2SetMsgFn 'Benchmark TensorFlow';
-      set +u;
-      conda activate tensorflow || _exitFn;
-      set -u;
-
-      2>/dev/null python -c "${_testTf02Str}" || _cm2WarnFn;
-    fi
-  fi
   conda activate base;
 }
 
@@ -539,19 +560,19 @@ _vendTempDir="${HOME}/vendor.$(date +%s)";
 # Import arrayPath: _ap2AddPathFn
 #
 for _fileName in 'common.2.source' 'arrayPath.source'; do
-  _libFile="${_baseDir}/lib/${_fileName}";
-  _doExitStr='n';
+  _doExitStr='y';
+  for _dir in "${_baseDir}" '/usr/lib/kfocus/lib'; do
+    _libFile="${_dir}/lib/${_fileName}";
 
-  if [ -r "${_libFile}" ]; then
-    # shellcheck source=../lib/common.2.source
-    # shellcheck source=../lib/arrayPath.source
-    if ! source "${_libFile}"; then _doExitStr='y'; fi
-  else
-    _doExitStr='y';
-  fi
+    if [ -r "${_libFile}" ]; then
+      # shellcheck source=../lib/common.2.source
+      # shellcheck source=../lib/arrayPath.source
+      if source "${_libFile}"; then _doExitStr='n'; fi
+    fi
+  done
 
   if [ "${_doExitStr}" = 'y' ]; then
-    1>&2 echo "${_baseName}: ABORT - Cannot source lib |${_libFile}|";
+    1>&2 echo "${_baseName}: ABORT - Cannot source lib |${_fileName}|";
     1>&2 echo 'Press return to exit.';
     # shellcheck disable=2034
     read -r _reply;
