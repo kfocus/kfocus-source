@@ -21,92 +21,94 @@
 # installed first, then the supporting drivers are installed on the
 # next upgrade.
 #
-Package: kfocus-nvidia
-Pin: release l=Kubuntu Focus PPA, o=LP-PPA-kfocus-team-release, v=24.04, n=noble
+Package: kfocus-nvidia-edge
+Pin: release l=Kubuntu Focus PPA, v=24.04, n=noble
 Pin: version XXX_PKG_VER_XXX
-Pin-Priority: 1002
+Pin-Priority: 1006
 
-# == Core Nvidia Packages =============================================
-# BLACKLIST (alway ignore) nvidia-driver packages from the NVIDIA
-#   repository (Priority -1). Specific exceptions are for packages like
-#   nvidia-settings, nvidia-modprobe, libxnvctrl0 are handled below.
-#
-Package: nvidia-* libnvidia-* xserver-xorg-* libxnvctrl0
-Pin: release o=NVIDIA,l=NVIDIA CUDA
-Pin: origin developer.download.nvidia.com
+Package: kfocus-nvidia
+Pin: release l=Kubuntu Focus PPA, v=24.04, n=noble
 Pin-Priority: -1
 
-# Favor all nvidia-driver packages from the target release ('noble').
-#   Priority 1001 causes a new version from this origin to be installed
-#   unless there is the same version from a target release. Since this IS the
-#   target release specification.
-#
-# Pin: release l=Ubuntu, v=24.04, n=noble
-Package: nvidia-* libnvidia-* xserver-xorg-*
-Pin: release l=Kubuntu Focus PPA, o=LP-PPA-kfocus-team-release, v=24.04, n=noble
+# == Core Nvidia Packages =============================================
+# Prefer 570.153* core packages from kfocus repos
+Package: nvidia-* libnvidia-* xserver-xorg-video-nvidia-*
+Pin: release l=Kubuntu Focus PPA, v=24.04, n=noble
 Pin: version 570.153*
-Pin-Priority: 1001
+Pin-Priority: 1006
 
-# Prefer Ubuntu supplied versions of nvidia-settings, nvidia-modrobe, and
-#   libnvctrl0 if available from the 'noble' repository and correct version.
-#   However, these packages are frequently OOD in Ubuntu repos.
+# Fallback to 570.153* packages from ubuntu repos
+Package: nvidia-* libnvidia-* xserver-xorg-video-nvidia-*
+Pin: release l=Ubuntu, v=24.04, n=noble
+Pin: version 570.153*
+Pin-Priority: 1005
+
+# == Utility Nvidia Packages ==========================================
+# Prefer versions of nvidia-settings, nvidia-modrobe, and libnvctrl0
+#   in a hierarchy. These packages are frequently OOD in Ubuntu repos.
 #   Use `apt-cache policy nvidia-settings nvidia-modprobe libnvctrl0`
-#   to see current Ubuntu versions.
+
+# Prefer 1st 570.153* utility packages from kfocus repos
+Package: nvidia-settings nvidia-modprobe libxnvctrl0
+Pin: release l=Kubuntu Focus PPA, v=24.04, n=noble
+Pin: version 570.153*
+Pin-Priority: 1006
 #
-# Pin: release l=Ubuntu, v=24.04, n=noble
-# 570.153* is best version (1005)
+# Prefer 2nd 570.153* utility packages from ubuntu repos
 Package: nvidia-settings nvidia-modprobe libxnvctrl0
 Pin: release l=Ubuntu, v=24.04, n=noble
 Pin: version 570.153*
 Pin-Priority: 1005
 
-# 570.* is fallback version (1004)
-# Pin: release l=Ubuntu, v=24.04, n=noble
+# Prefer 3nd 570.* utility packages from ubuntu repos
 Package: nvidia-settings nvidia-modprobe libxnvctrl0
 Pin: release l=Ubuntu, v=24.04, n=noble
 Pin: version 570.*
 Pin-Priority: 1004
 
-# Use Nvidia supplied versions of nvidia-settings, nvidia-modrobe, and
-#   libnvctrl0 if a 570 version is not found in ubuntu or kfocus repos.
-#  
-# 570.153* is next in stack (1003)
+# Prefer 4nd 570.154* utility packages from nvidia repos
 Package: nvidia-settings nvidia-modprobe libxnvctrl0
 Pin: release o=NVIDIA,l=NVIDIA CUDA
 Pin: origin developer.download.nvidia.com
 Pin: version 570.153*
 Pin-Priority: 1003
 
-# 570.* is catch-all (1002)
+# Prefer 5th 570.* utility packages from nvidia repos
 Package: nvidia-settings nvidia-modprobe libxnvctrl0
 Pin: release o=NVIDIA,l=NVIDIA CUDA
 Pin: origin developer.download.nvidia.com
 Pin: version 570.*
 Pin-Priority: 1002
 
-# == Cuda Nvidia Pakcages =============================================
-# Pin cuda-drivers to use version 570.153.*. This meta package now depends on
-#   the installed version of nvidia-drivers-570, which is pinned to come
-#   from Ubuntu, therefore all required package versions should be resolved
-#   correctly. The prior packages explicitly listed these components like
-#   libnvidia-common-570, so the version had to match the latest found in Ubuntu.
-# Priority 1002 causes a version to be installed even if it does not come from
-#   the target release ('noble') and forces a downgrade if needed.
-#
-Package: cuda-drivers cuda-drivers-570
+# BLACKLIST (alway ignore) other core and util packages from nvidia repos
+Package: nvidia-* libnvidia-* xserver-xorg-video-nvidia-* libxnvctrl0
 Pin: release o=NVIDIA,l=NVIDIA CUDA
 Pin: origin developer.download.nvidia.com
-Pin: version 570.153.*
-Pin-Priority: 1002
+Pin-Priority: -1
 
-# Prefer all cuda* 570 packages from NVIDIA over any Ubuntu packages of the
-#   same name and version from any other respository. 
-# Priority 1001 causes a version to be installed even if does not come from
-#   the target release ('noble') and forces a downgrade if needed.
-#
+# == CUDA Nvidia Packages =============================================
+# Pin cuda-drivers to use version 570.153.* first but not available on
+#   2025-06-03 but will likely become available soon.
+#   Fallback to 570.148.* which is available at this time.
+#   cuda-drivers cuda-drivers-570 cuda*
+
+# Prefer 1st 570.153.* CUDA packages from nvidia repos
 Package: cuda*
 Pin: release o=NVIDIA,l=NVIDIA CUDA
 Pin: origin developer.download.nvidia.com
 Pin: version 570.153.*
-Pin-Priority: 1001
+Pin-Priority: 1006
+
+# Prefer 2nd 570.148.* CUDA packages from nvidia repos
+Package: cuda*
+Pin: release o=NVIDIA,l=NVIDIA CUDA
+Pin: origin developer.download.nvidia.com
+Pin: version 570.148.*
+Pin-Priority: 1005
+
+# BLACKLIST (alway ignore) other CUDA packages from the NVIDIA repos
+Package: cuda*
+Pin: release o=NVIDIA,l=NVIDIA CUDA
+Pin: origin developer.download.nvidia.com
+Pin-Priority: -1
 
