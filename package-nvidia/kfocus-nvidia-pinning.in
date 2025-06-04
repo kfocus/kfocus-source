@@ -15,17 +15,22 @@
 #   offers new version
 # Priority > 1000 will downgrade even from lower-priority repo
 
+# == Paired kfocus-nvidia Package =====================================
 # Pair pinning with a specific kfocus-nvidia package version.
 # IMPORTANT: This must be done so that the pinning package is
 # installed first, then the supporting drivers are installed on the
 # next upgrade.
 #
 Package: kfocus-nvidia
-Pin: release v=24.04, n=noble
-Pin: origin "ppa.launchpadcontent.net"
+Pin: release l=Kubuntu Focus PPA, v=24.04, n=noble
 Pin: version XXX_PKG_VER_XXX
-Pin-Priority: 1001
+Pin-Priority: 1006
 
+Package: kfocus-nvidia-edge
+Pin: release l=Kubuntu Focus PPA, v=24.04, n=noble
+Pin-Priority: -1
+
+# == Core Nvidia Packages =============================================
 # Use Nvidia supplied versions of nvidia-settings, nvidia-modrobe, and
 #   libnvctrl0 by default (priority 1000). These are frequently OOD in Ubuntu
 #   'noble' repos; however, they will be selected from 'noble' IFF they
