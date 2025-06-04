@@ -71,7 +71,7 @@ _normalizeCompareStrFn () {
   for _line in "${_line_list[@]}"; do
     mapfile -t -d '|' _bit_list <<< "${_line}";
     _bit_list=("${_bit_list[@]:1}");
-    (IFS='|'; echo "${_bit_list[5]}|${_bit_list[*]}");
+    (IFS='|'; echo "${_bit_list[5]:-}|${_bit_list[*]}");
   done | sort -rn |sed '/^\s*$/q' | head -n-1
   echo "${_end_str}";
 }
@@ -79,15 +79,20 @@ _normalizeCompareStrFn () {
 
 _echoCpuModelNameFn () {
   declare _model_line _cpu_name;
+  _model_line="$(
+    lscpu | grep -Ei '^\s*model name' | cut -f2 -d: |sed 's/^\s*//'
+  )";
 
-  _model_line="$(lscpu | grep -Ei '^\s*model name' | cut -f2 -d: |sed 's/^\s*//' )";
-
-  case "${_model_line}" in
-    'Intel(R) Core(TM) Ultra 5 225H') _cpu_name='u5_255h';;
-    *) _cpu_name="$(
-        sed -E 's/^.*\s(i[579]-[^ ]+)(|\s.*)$/\1/' <<< "${_model_line}"
-      )";;
-  esac
+  if grep -q 'Ultra' <<< "${_model_line}"; then
+    _cpu_name="$(
+      sed -e 's/^.*Ultra \([3579]\) \(.*\)$/u\1-\L\2/i' \
+        <<< "${_model_line}"
+    )";
+  else
+    _cpu_name="$(
+      sed -E 's/^.*\s(i[579]-[^ ]+)(|\s.*)$/\1/' <<< "${_model_line}"
+    )";
+  fi
 
   # If cpu_name is the same as model_line or blank,
   #   the cpu model was NOT successfully extracted.
@@ -227,27 +232,38 @@ _testApiFn () {
 }
 ## . END _testApiFn }
 
-## BEGIN Declare and assign globals {
+## BEGIN Declare and assign global symbols {
 declare _modelCode _cpuName _toolDir _kbColorSetExe _powerSetExe _assignList;
-_modelCode="$(_cm2EchoModelStrFn 'code')";
-_cpuName="$(_echoCpuModelNameFn)";
-_toolDir="${_t00TopDir}/package-tools/usr/lib/kfocus/bin";
-_powerDir="${_t00TopDir}/package-power-bin/helper/usr/lib/kfocus/bin";
 
-_assign_list=(
-  "_kbColorSetExe|${_toolDir}/kfocus-kb-color-set"
-  "_powerSetExe|${_powerDir}/kfocus-power-set"
-);
-if ! _cm2AssignExeVarsFn "${_assign_list[@]}"; then
-  _cm2WarnStrFn 'ABORT: Required commands not found';
-  exit 1;
-fi
-## . END Declare and assign globals }
+_assignGlobalVarsFn () {
+  _modelCode="$(_cm2EchoModelStrFn 'code')";
+  _cpuName="$(_echoCpuModelNameFn)";
+  _toolDir="${_t00TopDir}/package-tools/usr/lib/kfocus/bin";
+  _powerDir="${_t00TopDir}/package-power-bin/helper/usr/lib/kfocus/bin";
+
+  if [ "${_cpuName}" = 'unknown' ]; then
+    _cm2WarnStrFn 'CPU model is unknown; please fix _echoCpuModelNameFn';
+    return 1;
+  fi
+
+  _assign_list=(
+    "_kbColorSetExe|${_toolDir}/kfocus-kb-color-set"
+    "_powerSetExe|${_powerDir}/kfocus-power-set"
+  );
+
+  if ! _cm2AssignExeVarsFn "${_assign_list[@]}"; then
+    _cm2ErrStrFn 'Required commands not found';
+    return 1;
+  fi
+}
+## . END Declare and assign global symbols }
 
 ## BEGIN _runTestFn {
 _runTestFn () {
   declare _current_mode_str _pick_str _pick_list _fail_count \
     _assert_count _total_fail_count;
+
+  _assignGlobalVarsFn || return;
 
   # Use function from _runUnitTests: clear out run dir and check expect dir
   if ! _t00ClearRunDirFn;    then return 1; fi
