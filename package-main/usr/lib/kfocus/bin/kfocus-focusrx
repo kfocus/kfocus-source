@@ -357,6 +357,55 @@ _chkOemMultiDiskFn () {
 }
 ## . END _chkOemMultiDiskFn }
 
+## BEGIN _chkRefreshRateFn {
+_chkRefreshRateFn () {
+  declare _title _win_title _prompt_msg;
+
+  # Skip if not on m2g6.
+  [[ "$(_cm2EchoModelStrFn 'code')" =~ ^(m2g6)$ ]] || return;
+  # Skip if required tool not installed.
+  [ -z "${_kscreenDoctorExe}" ] && return;
+
+  _title='Configure Display';
+  _cm2SetMsgFn "${_title}";
+  _win_title="${_rootTitle}: ${_title}";
+
+  if ! _nag_msg="$(_testNagCountFn 'check' 'kfocus-refresh-rate' 1)"; then
+    _cm2SucStrFn 'View count limit reached.';
+    _cm2SucFn;
+    return;
+  fi
+  _testNagCountFn 'inc' 'kfocus-refresh-rate';
+
+  # Skip if screen is already set to the desired mode
+  if grep 'eDP-1-1' < <("${_kscreenDoctorExe}" -o) | grep -q '2560x1600@60\*';
+    then _cm2SucFn; return;
+  fi
+
+  _prompt_msg="$(cat <<EOF
+${_cm2HtmBeginStr}
+${_cm2HtmH3Str}${_title}</h3>
+
+<p><b>Setting screen refresh rate to 60Hz for optimal experience.</b></p>
+
+${_cm2HtmPStr}This system uses an Nvidia RTX 5070 Ti GPU. This GPU's<br>
+drivers are known flickering with refresh rates greater than<br>
+60 Hz. We expect Nvidia to eliminate the flicker as these<br>
+drivers mature.
+
+${_cm2HtmPStr}You may change the refresh rate later using <code>System<br>
+Settings &gt; Display and Monitor &gt; Display<br>
+Configuration &gt; Refresh Rate</code>.</p>${_cm2HtmEndStr}
+EOF
+  )";
+
+  _cm2PromptUserFn "${_prompt_msg}" "${_win_title}";
+
+  "${_kscreenDoctorExe}" 'output.eDP-1-1.mode.2560x1600@60';
+  _cm2SucFn;
+}
+## . END _chkRefreshRateFn }
+
 ## BEGIN _chkHwConfigFn {
 _chkHwConfigFn () {
   declare _title _win_title _reason_str _prompt_msg _ans_str _output_str;
@@ -1035,6 +1084,7 @@ _mainFn () {
   _chkUpdateBiosFn;
   _chkBtrfsSetUpFn;
   _chkOemMultiDiskFn;
+  _chkRefreshRateFn;
   _chkHwConfigFn;
   _chkRollbackPresence;
   _chkKbdLedFn;      # Issue 3735
@@ -1065,7 +1115,7 @@ declare _parentCmdStr _lookupList \
   _focusRxDropDir _kbdColorSetExe _rootTitle _assignList \
   _focusRxSetExe _focusRxVersExe _btoolExe _firstrunExe \
   _fixIbusExe _kcleanExe _resetEffectsExe _rollbackBackendExe \
-  _rollbackSetExe _chainHelperExe _sysVersStr;
+  _rollbackSetExe _chainHelperExe _sysVersStr _kscreenDoctorExe;
 
 _parentCmdStr="$(ps -o comm= $PPID)";
 # These domain names exist here only for the purposes of looking them up via
@@ -1102,6 +1152,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     "_rollbackBackendExe|${_binDir}/kfocus-rollback-backend||optional"
     "_rollbackSetExe|${_binDir}/kfocus-rollback-set||optional"
     "_chainHelperExe|${_binDir}/kfocus-chain-helper-ui||optional"
+    "_kscreenDoctorExe|/usr/bin/kscreen-doctor||optional"
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2ErrStrFn 'Could not assign variables';
