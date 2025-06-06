@@ -66,8 +66,8 @@ _testNagCountFn () {
     return 2;
   fi
 
-  if ! [[ "${_mode}" =~ ^(check|inc)$ ]]; then
-    _cm2WarnStrFn 'Mode must be "check" or "inc".';
+  if ! [[ "${_mode}" =~ ^(check|inc|fill)$ ]]; then
+    _cm2WarnStrFn 'Mode must be "check", "inc", or "fill".';
     return 2;
   fi
 
@@ -97,6 +97,9 @@ _testNagCountFn () {
     inc)
       (( _view_count++ ));
       echo "${_view_count}" > "${_drop_file}" || true;
+      ;;
+    fill)
+      echo "${_max_count}" > "${_drop_file}" || true;
       ;;
     *)
       _cm2WarnStrFn 'Unexpected mode';
@@ -359,10 +362,13 @@ _chkOemMultiDiskFn () {
 
 ## BEGIN _chkRefreshRateFn {
 _chkRefreshRateFn () {
-  declare _title _win_title _prompt_msg;
+  declare _title _win_title _prompt_msg _kscreen_doctor_report \
+    _internal_disp_name _max_nag_count;
+
+  _max_nag_count='1';
 
   # Skip if not on m2g6.
-  [[ "$(_cm2EchoModelStrFn 'code')" =~ ^(m2g6)$ ]] || return;
+  [[ "$(_cm2EchoModelStrFn 'config_code')" =~ ^(m2g6)$ ]] || return;
   # Skip if required tool not installed.
   [ -z "${_kscreenDoctorExe}" ] && return;
 
@@ -370,16 +376,33 @@ _chkRefreshRateFn () {
   _cm2SetMsgFn "${_title}";
   _win_title="${_rootTitle}: ${_title}";
 
-  if ! _nag_msg="$(_testNagCountFn 'check' 'kfocus-refresh-rate' 1)"; then
+  if ! _nag_msg="$(
+    _testNagCountFn 'check' 'kfocus-dispconfig-count' "${_max_nag_count}"
+  )"; then
     _cm2SucStrFn 'View count limit reached.';
     _cm2SucFn;
     return;
   fi
-  _testNagCountFn 'inc' 'kfocus-refresh-rate';
+
+  _kscreen_doctor_report="$("${_kscreenDoctorExe}" -o)";
+  _internal_disp_name="$(
+    ansi2txt <<< "${_kscreen_doctor_report}" \
+      | cut -d' ' -f3-5 \
+      | grep 'eDP.* enabled connected' \
+      | cut -d' ' -f1 \
+      | head -n1
+  )";
+  if [ -z "${_internal_disp_name}" ]; then
+    _cm2SucFn;
+    return;
+  fi
 
   # Skip if screen is already set to the desired mode
-  if grep 'eDP-1-1' < <("${_kscreenDoctorExe}" -o) | grep -q '2560x1600@60\*';
-    then _cm2SucFn; return;
+  if grep " ${_internal_disp_name} " <<< "${_kscreen_doctor_report}" \
+    | grep -q '2560x1600@60\*'; then
+    _testNagCountFn 'fill' 'kfocus-dispconfig-count' "${_max_nag_count}";
+    _cm2SucFn;
+    return;
   fi
 
   _prompt_msg="$(cat <<EOF
@@ -401,8 +424,14 @@ EOF
 
   _cm2PromptUserFn "${_prompt_msg}" "${_win_title}";
 
-  "${_kscreenDoctorExe}" 'output.eDP-1-1.mode.2560x1600@60';
-  _cm2SucFn;
+  if "${_kscreenDoctorExe}" "output.${_internal_disp_name}.mode.2560x1600@60";
+    then _testNagCountFn 'fill' 'kfocus-dispconfig-count' "${_max_nag_count}";
+    _cm2SucFn;
+  else
+    # We don't increment the nag count here so that we will try to set the
+    # mode again later if this fails.
+    _cm2WarnFn;
+  fi
 }
 ## . END _chkRefreshRateFn }
 
@@ -686,8 +715,6 @@ _EOH1
       _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'p';
     )";
 
-    _testNagCountFn 'inc' 'kfocus-ibus-count' 1
-
     if "${_fixIbusExe}" 'repair' 2>/dev/null; then
       _cm2PromptUserFn 'IBus configuration repaired.' "${_win_title}";
       _cm2SucStrFn 'IBus configuration repaired.';
@@ -698,6 +725,7 @@ _EOH1
     fi
   fi
 
+  _testNagCountFn 'fill' 'kfocus-ibus-count' 1;
   _cm2SucFn;
 }
 ## . END _checkIbusConfigFn }

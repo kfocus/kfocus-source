@@ -13,6 +13,7 @@ Architecture: any
 Pre-Depends:  kfocus-apt-source
 Depends:      ${misc:Depends}, ${shlibs:Depends},
               build-essential (>= 12.4),
+              colorized-logs,
               cpufrequtils,
               curl,
               dmidecode (>= 3.1-1),
