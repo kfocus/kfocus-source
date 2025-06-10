@@ -1,9 +1,29 @@
-linux-meta-kfocus (6.11.0-25.25+kfocus1) noble; urgency=medium
+linux-meta-kfocus (6.11.0-26.26+kfocus1) noble; urgency=medium
 
   * Release for Kubuntu Focus
-  * Upstream Ubuntu linux-meta-oem-6.11 6.11.0-1021.21
+  * Upstream Ubuntu linux-meta-oem-6.11 6.11.0-1023.23
+  * Applied patch: intel/pmc: Fix Arrow Lake U/H NPU PCI ID (#5487)
+    (https://lore.kernel.org/all/a61f78be45c13f39e122dcc684b636f4b21e79a0.1747737446.git.todd.e.brandt@intel.com/)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 13 May 2025 21:21:16 -0500
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 10 Jun 2025 09:16:05 -0500
+
+linux-meta-oem-6.11 (6.11.0-1023.23) noble; urgency=medium
+
+  * Main version: 6.11.0-1023.23
+
+  * Packaging resync (LP: #1786013)
+    - [Packaging] debian/dkms-versions -- resync from main package
+
+ -- Chia-Lin Kao (AceLan) <acelan.kao@canonical.com>  Mon, 19 May 2025 14:37:25 +0800
+
+linux-meta-oem-6.11 (6.11.0-1022.22) noble; urgency=medium
+
+  * Main version: 6.11.0-1022.22
+
+  * Packaging resync (LP: #1786013)
+    - [Packaging] debian/dkms-versions -- resync from main package
+
+ -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Fri, 25 Apr 2025 16:31:26 +0800
 
 linux-meta-oem-6.11 (6.11.0-1021.21) noble; urgency=medium
 
