@@ -233,8 +233,14 @@ _scanFn () {
 }
 
 _chkInitCpuFn () {
-  declare _status_key _success_flag _status_set_list _set_key _proc_count \
-    _idx _is_pstate_file_found;
+  declare _success_flag _delay_int _delay_fib_one_int _delay_fib_two_int \
+    _is_turbo_enabled;
+
+  _success_flag='y';
+  _delay_fib_one_int='1';
+  _delay_fib_two_int='1';
+  _delay_int='1';
+  _is_turbo_enabled='n';
 
   # This drop file should clear on every boot
   if [ -f "${_cpuDropFile}" ]; then
@@ -248,56 +254,22 @@ _chkInitCpuFn () {
     return 0;
   fi
 
-  # Confirmed required for kernels 5.4 thru 6.11
-  _cm2SetMsgFn 'Set CPU properties for M2 GEN 5';
-  _is_pstate_file_found='n';
-  for _idx in {0..9}; do
-    sleep 1;
-    if [ -f "${_pstateFile}" ]; then
-      _is_pstate_file_found='y';
-      _cm2EchoFn "intel_pstate sysfs file found";
+  # Enable turbo boost, this takes about 16 seconds on the m2g5 but could take
+  # longer in theory.
+  # 21 = 8th fibonacci number, max total delay time = 54 seconds
+  while (( _delay_int <= 21 )); do
+    if _setNoTurboFn 0; then
+      _is_turbo_enabled='y';
       break;
-    fi
-    _cm2WarnStrFn 'intel_pstate sysfs file not found';
-  done
-  if [ "${_is_pstate_file_found}" != 'y' ]; then
-    _cm2ErrStrFn 'intel_pstate sysfs file not found after ten attempts';
-    return 1;
-  fi
-
-  _status_set_list=();
-  _status_key="$(cat "${_pstateFile}" || true )";
-  _success_flag='y';
-
-  # Ensure status key gets changed...
-  if [ "${_status_key}" = 'passive' ]; then
-    _status_set_list=( 'active' 'passive' );
-  else
-    _status_set_list=( 'passive' );
-  fi
-
-  for _set_key in "${_status_set_list[@]}"; do
-    if echo "${_set_key}" > "${_pstateFile}"; then
-      _cm2SucStrFn "Set intel_pstate to |${_set_key}|";
-      _success_flag='y';
     else
-      _cm2WarnStrFn "Could not set pstate to |${_set_key}|";
-      _success_flag='n';
-    fi
-    sleep 3;
-  done
-
-  # Set default governor on all cores
-  _proc_count="$("${_nprocExe}")";
-
-  for (( _proc_idx=0; _proc_idx < "${_proc_count}"; _proc_idx++ )); do
-    if ! "${_cpufreqSetExe}" -c "${_proc_idx}" -g "${_altPsaveKey}"; then
-      _cm2WarnStrFn "Governor |${_altPsaveKey}| NOT set for core |${_proc_idx}";
-      _success_flag='n';
+      sleep "${_delay_int}";
+      (( _delay_int = _delay_fib_one_int + _delay_fib_two_int )) || true;
+      _delay_fib_one_int="${_delay_fib_two_int}";
+      _delay_fib_two_int="${_delay_int}";
     fi
   done
 
-  if ! _setNoTurboFn 0; then
+  if [ "${_is_turbo_enabled}" = 'n' ]; then
     _cm2WarnStrFn 'Could NOT set noturbo flag to |0|';
     _success_flag='n';
   fi
@@ -585,13 +557,12 @@ _mainFn () {
 
 ## BEGIN Declare and assign global vars {
 declare _binName _binDir _baseDir _baseName _rootDir \
-  _cpuDropFile _noTurboFile _pstateFile _altPsaveKey \
+  _cpuDropFile _noTurboFile _altPsaveKey \
   _cpufreqSetExe _cpufreqInfoExe _nprocExe _kbdColorSetExe;
 
 _rootDir='';
 _cpuDropFile='/run/kfocus-cpu-init';
 _noTurboFile='/sys/devices/system/cpu/intel_pstate/no_turbo';
-_pstateFile="/sys/devices/system/cpu/intel_pstate/status";
 _altPsaveKey='ondemand'; # schedutil has lower gb5 scores
 _computedTableFile='/run/kfocus-power-computed-table';
 _prettyComputedTableFile='/run/kfocus-power-pretty-computed-table';
