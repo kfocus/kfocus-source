@@ -1,10 +1,25 @@
 #!/bin/bash
 #
-#  Purpose: Test kfocus-power-set on current device
-#    and compare to expect values.
-#  Spec   : 1756
+#  Purpose: Test kfocus-power-set on multiple devices
+#  Used by: package-tools for Nvidia package
+#           See ticket 1756
 #
 # set -u is set in test harness
+
+#  _cpuTable=(
+#    'i7-12700H;400;2300;4700'
+#    'i7-11800H;800;2300;4600'
+#    'i5-1135G7;400;2400;4200'
+#    'i7-1165G7;400;2800;4700'
+#    'i7-10870H;800;2200;5000'
+#    'i7-10875H;800;2300;5100'
+#    'i7-9750H;800;2600;4500'
+#    'i9-9900K;800;3600;5000'
+#  );
+
+# _printIntFn () {
+#   printf '%.0f' "$*";
+# }
 
 _makeRunStrFn () {
   declare _core_root_dir _noturbo_file \
@@ -71,7 +86,7 @@ _normalizeCompareStrFn () {
   for _line in "${_line_list[@]}"; do
     mapfile -t -d '|' _bit_list <<< "${_line}";
     _bit_list=("${_bit_list[@]:1}");
-    (IFS='|'; echo "${_bit_list[5]:-}|${_bit_list[*]}");
+    (IFS='|'; echo "${_bit_list[5]}|${_bit_list[*]}");
   done | sort -rn |sed '/^\s*$/q' | head -n-1
   echo "${_end_str}";
 }
@@ -79,20 +94,15 @@ _normalizeCompareStrFn () {
 
 _echoCpuModelNameFn () {
   declare _model_line _cpu_name;
-  _model_line="$(
-    lscpu | grep -Ei '^\s*model name' | cut -f2 -d: |sed 's/^\s*//'
-  )";
 
-  if grep -q 'Ultra' <<< "${_model_line}"; then
-    _cpu_name="$(
-      sed -e 's/^.*Ultra \([3579]\) \(.*\)$/u\1-\L\2/i' \
-        <<< "${_model_line}"
-    )";
-  else
-    _cpu_name="$(
-      sed -E 's/^.*\s(i[579]-[^ ]+)(|\s.*)$/\1/' <<< "${_model_line}"
-    )";
-  fi
+  _model_line="$(lscpu | grep -Ei '^\s*model name' | cut -f2 -d: |sed 's/^\s*//' )";
+
+  case "${_model_line}" in
+    'Intel(R) Core(TM) Ultra 5 225H') _cpu_name='u5_255h';;
+    *) _cpu_name="$(
+        sed -E 's/^.*\s(i[579]-[^ ]+)(|\s.*)$/\1/' <<< "${_model_line}"
+      )";;
+  esac
 
   # If cpu_name is the same as model_line or blank,
   #   the cpu model was NOT successfully extracted.
@@ -104,41 +114,19 @@ _echoCpuModelNameFn () {
   echo "${_cpu_name}";
 }
 
-## BEGIN _flushCpuInitCacheFn {
-_flushCpuInitCacheFn () {
-  declare _init_file _del_file;
-  # Remove cache files normally run on boot
-  for _init_file in kfocus-cpu-init kfocus-power-computed-table \
-    kfocus-power-pretty-computed-table; do
-    _del_file="/run/${_init_file}";
-    if [ -f "${_del_file}" ]; then
-      if sudo rm "${_del_file}"; then
-        _cm2SucStrFn  "Deleted cpu init cache file |${_del_file}|.";
-      else
-        _cm2WarnStrFn "Could not delete cpu init file |${_del_file}|";
-      fi
-    fi
-  done
-}
-## . END _flushCpuInitCacheFn }
-
 ## BEGIN _runAssertsFn {
 _runAssertsFn () {
   declare _cr _pick_list _pick_str _assert_count _assert_idx \
-    _fail_count _mode_str _expect_file _run_file _descr_str  \
-    _expect_str _run_str _expect_normalized_str _run_normalized_str \
-    _check_str _count_str;
+    _fail_count _mode_str _expect_file _run_file \
+    _descr_str _expect_str _run_str _expect_normalized_str \
+    _run_normalized_str _check_str _count_str;
 
   _cr=$'\n';
   _pick_list=( "$@" );
 
-  _assert_count="$(echo "(${#_pick_list[@]}-1)*2"|bc)";
+  _assert_count="$(echo "${#_pick_list[@]}*2"|bc)";
   _assert_idx=0;
   _fail_count=0;
-
-  # Remove the CPU info line, we don't need it
-  _pick_list=( "${_pick_list[@]:1}" );
-
   for _pick_str in "${_pick_list[@]}"; do
     ((_assert_idx++));
     _mode_str="$(echo "${_pick_str}" |cut -f1 -d';')";
@@ -232,54 +220,41 @@ _testApiFn () {
 }
 ## . END _testApiFn }
 
-## BEGIN Declare and assign global symbols {
+## BEGIN Declare and assign globals {
 declare _modelCode _cpuName _toolDir _kbColorSetExe _powerSetExe _assignList;
+_modelCode="$(_cm2EchoModelStrFn 'code')";
+_cpuName="$(_echoCpuModelNameFn)";
+_toolDir="${_t00TopDir}/package-tools/usr/lib/kfocus/bin";
+_powerDir="${_t00TopDir}/package-power-bin/helper/usr/lib/kfocus/bin";
 
-_assignGlobalVarsFn () {
-  _modelCode="$(_cm2EchoModelStrFn 'code')";
-  _cpuName="$(_echoCpuModelNameFn)";
-  _toolDir="${_t00TopDir}/package-tools/usr/lib/kfocus/bin";
-  _powerDir="${_t00TopDir}/package-power-bin/helper/usr/lib/kfocus/bin";
-
-  if [ "${_cpuName}" = 'unknown' ]; then
-    _cm2WarnStrFn 'CPU model is unknown; please fix _echoCpuModelNameFn';
-    return 1;
-  fi
-
-  _assign_list=(
-    "_kbColorSetExe|${_toolDir}/kfocus-kb-color-set"
-    "_powerSetExe|${_powerDir}/kfocus-power-set"
-  );
-
-  if ! _cm2AssignExeVarsFn "${_assign_list[@]}"; then
-    _cm2ErrStrFn 'Required commands not found';
-    return 1;
-  fi
-}
-## . END Declare and assign global symbols }
+_assign_list=(
+  "_kbColorSetExe|${_toolDir}/kfocus-kb-color-set"
+  "_powerSetExe|${_powerDir}/kfocus-power-set"
+);
+if ! _cm2AssignExeVarsFn "${_assign_list[@]}"; then
+  _cm2WarnStrFn 'ABORT: Required commands not found';
+  exit 1;
+fi
+## . END Declare and assign globals }
 
 ## BEGIN _runTestFn {
 _runTestFn () {
   declare _current_mode_str _pick_str _pick_list _fail_count \
     _assert_count _total_fail_count;
 
-  _assignGlobalVarsFn || return;
-
   # Use function from _runUnitTests: clear out run dir and check expect dir
   if ! _t00ClearRunDirFn;    then return 1; fi
   if ! _t00CheckExpectDirFn; then return 1; fi
 
-  if pgrep kfocus-power >/dev/null; then
-    _cm2EchoFn 'It appears the "Focus Power & Fan" app is running.';
-    _cm2EchoFn 'This can result in false positives.';
-    read -rp 'Please close the app then press [ Enter ] ';
-  fi
-
-  # Flush cached init files so we get the real init experience
-  _flushCpuInitCacheFn;
-
-  # Important: First call needs sudo to set mode
+  _cm2EchoFn 'Read existing power mode';
   _current_mode_str="$(sudo "${_powerSetExe}" -r)";
+
+  # As of kernel 6.11, this is important as
+  #   lower profiles will result in non-turbo max cpu freqs.
+  _cm2EchoFn 'Reset to Normal frequency profile';
+  sudo "${_powerSetExe}" "Normal";
+  sleep 1;
+
   _total_fail_count=0;
 
   ##
@@ -308,8 +283,13 @@ _runTestFn () {
   if [ "${_fail_count}" -gt 0 ]; then
     _cm2EchoFn "FAIL SUITE 2: ${_fail_count} / ${_assert_count} failed.\n";
   else
-    _cm2EchoFn 'OK   SUITE 1\n';
+    _cm2EchoFn 'OK   SUITE 2\n';
   fi
+
+  # See note above
+  _cm2EchoFn 'Reset to Normal frequency profile';
+  sudo "${_powerSetExe}" "Normal";
+  sleep 1;
 
   ##
   _cm2EchoFn "BEGIN SUITE 3: kfocus-power-set -x API check\n"
