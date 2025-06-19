@@ -98,8 +98,8 @@ _echoCpuModelNameFn () {
   _model_line="$(lscpu | grep -Ei '^\s*model name' | cut -f2 -d: |sed 's/^\s*//' )";
 
   case "${_model_line}" in
-    'Intel(R) Core(TM) Ultra 5 225H') _cpu_name='u50-255h';;
-    'Intel(R) Core(TM) Ultra 9 275HX') _cpu_name='u9-275hx';;
+    'Intel(R) Core(TM) Ultra 5 225H') _cpu_name='u5_255h';;
+    'Intel(R) Core(TM) Ultra 9 275HX') _cpu_name='u9_275hxz';;
     *) _cpu_name="$(
         sed -E 's/^.*\s(i[579]-[^ ]+)(|\s.*)$/\1/' <<< "${_model_line}"
       )";;
@@ -123,7 +123,7 @@ _runAssertsFn () {
     _run_normalized_str _check_str _count_str;
 
   _cr=$'\n';
-  _pick_list=("$@");
+  _pick_list=( "$@" );
 
   _assert_count="$(echo "${#_pick_list[@]}*2"|bc)";
   _assert_idx=0;
@@ -247,15 +247,8 @@ _runTestFn () {
   if ! _t00ClearRunDirFn;    then return 1; fi
   if ! _t00CheckExpectDirFn; then return 1; fi
 
-  _cm2EchoFn 'Read existing power mode';
+  ## Important: First call needs sudo to set mode
   _current_mode_str="$(sudo "${_powerSetExe}" -r)";
-
-  # As of kernel 6.11, this is important as
-  #   lower profiles will result in non-turbo max cpu freqs.
-  _cm2EchoFn 'Reset to Normal frequency profile';
-  sudo "${_powerSetExe}" "Normal";
-  sleep 1;
-
   _total_fail_count=0;
 
   ##
@@ -276,22 +269,16 @@ _runTestFn () {
 
   ##
   _cm2EchoFn "BEGIN SUITE 2: kfocus-power-set -p parsing and execution\n";
-  _runAssertsFn "${_pick_list[@]:1}"; # Remove header
+  _runAssertsFn "${_pick_list[@]}";
   _fail_count="$?";
   _total_fail_count=$((_total_fail_count+_fail_count))
   _assert_count="$(echo "${#_pick_list[@]}*2"|bc)";
-  (( _assert_count -= 2 )) || true; # Adjust for header
 
   if [ "${_fail_count}" -gt 0 ]; then
     _cm2EchoFn "FAIL SUITE 2: ${_fail_count} / ${_assert_count} failed.\n";
   else
-    _cm2EchoFn 'OK   SUITE 2\n';
+    _cm2EchoFn 'OK   SUITE 1\n';
   fi
-
-  # See note above
-  _cm2EchoFn 'Reset to Normal frequency profile';
-  sudo "${_powerSetExe}" "Normal";
-  sleep 1;
 
   ##
   _cm2EchoFn "BEGIN SUITE 3: kfocus-power-set -x API check\n"
@@ -311,11 +298,12 @@ _runTestFn () {
 
   _cm2EchoFn "BEGIN SUITE 4: kfocus-power-set -x parsing and execution\n";
 
-  _runAssertsFn "${_pick_list[@]:2}"; # Remove headers
+  _pick_list=("${_pick_list[@]:1}"); # Remove header
+
+  _runAssertsFn "${_pick_list[@]}";
   _fail_count="$?";
   _total_fail_count=$((_total_fail_count+_fail_count))
   _assert_count="$(echo "${#_pick_list[@]}*2"|bc)";
-  (( _assert_count -= 4 )) || true; # Adjust for headers
 
   if [ "${_fail_count}" -gt 0 ]; then
     _cm2EchoFn "FAIL SUITE 4: ${_fail_count} / ${_assert_count} failed.\n";
