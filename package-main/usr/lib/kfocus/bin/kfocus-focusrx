@@ -360,80 +360,43 @@ _chkOemMultiDiskFn () {
 }
 ## . END _chkOemMultiDiskFn }
 
-## BEGIN _chkRefreshRateFn {
-_chkRefreshRateFn () {
-  declare _title _win_title _prompt_msg _kscreen_doctor_report \
-    _internal_disp_name _max_nag_count;
+## BEGIN _chkNvPMizerFn {
+_chkNvPMizerFn () {
+  declare _title _param_key _current_idx _tgt_idx;
 
-  _max_nag_count='1';
+  # Skip if no exe, not right package, or not running nvidia
+  if [ -z "${_nvSettingsExe}" ] || [ -z "${_primeSelectExe}" ]; then return; fi
+  if ! _cm2ChkInstalledPkgFn 'kfocus-nvidia-edge'; then return; fi
 
-  # Skip if not on m2g6.
-  [[ "$(_cm2EchoModelStrFn 'config_code')" =~ ^(m2g6)$ ]] || return;
-  # Skip if required tool not installed.
-  [ -z "${_kscreenDoctorExe}" ] && return;
-
-  _title='Configure Display';
+  _title='Set PowerMizer for kfocus-nvidia-edge';
   _cm2SetMsgFn "${_title}";
-  _win_title="${_rootTitle}: ${_title}";
-
-  if ! _nag_msg="$(
-    _testNagCountFn 'check' 'kfocus-dispconfig-count' "${_max_nag_count}"
-  )"; then
-    _cm2SucStrFn 'View count limit reached.';
+  if ! [[ "$("${_primeSelectExe}" query)" =~ ^(nvidia|on-demand) ]]; then
+    _cm2SucStrFn 'Skipped, display mode does not use framebuffer.';
     _cm2SucFn;
     return;
   fi
 
-  _kscreen_doctor_report="$("${_kscreenDoctorExe}" -o)";
-  _internal_disp_name="$(
-    ansi2txt <<< "${_kscreen_doctor_report}" \
-      | cut -d' ' -f3-5 \
-      | grep 'eDP.* enabled connected' \
-      | cut -d' ' -f1 \
-      | head -n1
-  )";
-  if [ -z "${_internal_disp_name}" ]; then
-    _cm2SucFn;
+  # Declare values
+  _param_key='GPUPowerMizerMode';
+  _tgt_idx=1;
+  _current_idx="$("${_nvSettingsExe}" -q "${_param_key}" -t)";
+
+  # Set value if needed
+  if [ "${_current_idx:-}" = "${_tgt_idx}" ]; then
+    _cm2SucStrFn 'Skipped, parameter already set.';
+    _cm2SucStrFn;
     return;
   fi
 
-  # Skip if screen is already set to the desired mode
-  if grep " ${_internal_disp_name} " <<< "${_kscreen_doctor_report}" \
-    | grep -q '2560x1600@60\*'; then
-    _testNagCountFn 'fill' 'kfocus-dispconfig-count' "${_max_nag_count}";
-    _cm2SucFn;
-    return;
-  fi
-
-  _prompt_msg="$(cat <<EOF
-${_cm2HtmBeginStr}
-${_cm2HtmH3Str}${_title}</h3>
-
-<p><b>Setting screen refresh rate to 60Hz for optimal experience.</b></p>
-
-${_cm2HtmPStr}This system uses an Nvidia RTX 5070 Ti GPU. This GPU's<br>
-drivers are known flickering with refresh rates greater than<br>
-60 Hz. We expect Nvidia to eliminate the flicker as these<br>
-drivers mature.
-
-${_cm2HtmPStr}You may change the refresh rate later using <code>System<br>
-Settings &gt; Display and Monitor &gt; Display<br>
-Configuration &gt; Refresh Rate</code>.</p>${_cm2HtmEndStr}
-EOF
-  )";
-
-  _cm2PromptUserFn "${_prompt_msg}" "${_win_title}";
-
-  if "${_kscreenDoctorExe}" "output.${_internal_disp_name}.mode.2560x1600@60";
-    then _testNagCountFn 'fill' 'kfocus-dispconfig-count' "${_max_nag_count}";
+  if "${_nvSettingsExe}" -a "${_param_key}=${_tgt_idx}"; then
+    _cm2SucStrFn 'Parameter set as directed.';
     _cm2SucFn;
   else
-    # We don't increment the nag count here so that we will try to set the
-    # mode again later if this fails.
+    _cm2WarnStrFn 'Parameter setting did not work.';
     _cm2WarnFn;
   fi
 }
-## . END _chkRefreshRateFn }
+## . END _chkNvPMizerFn }
 
 ## BEGIN _chkHwConfigFn {
 _chkHwConfigFn () {
@@ -521,10 +484,10 @@ _EOH07
 
 ## BEGIN _chkRollbackPresence {
 # Purpose: Get rid of the kfocus-rollback icon in the panel if kfocus-rollback
-# is not installed
+# is not installed.
 #
 _chkRollbackPresence () {
-  if ! dpkg-query -s 'kfocus-rollback' 2>/dev/null; then
+  if ! _cm2ChkInstalledPkgFn 'kfocus-rollback'; then
     _cm2RunPlasmaScriptFn 'rmRollbackIcon.js';
   fi
 }
@@ -1109,23 +1072,23 @@ _mainFn () {
   ## Begin Run focusrx steps {
   _cm2EchoFn "== BEGIN :      ${_rootTitle}\n";
   _announceStartFn;
+  _chkNvPMizerFn;       #5423
   _chkUpdateBiosFn;
   _chkBtrfsSetUpFn;
   _chkOemMultiDiskFn;
-  _chkRefreshRateFn;
   _chkHwConfigFn;
   _chkRollbackPresence;
-  _chkKbdLedFn;      # Issue 3735
+  _chkKbdLedFn;         #3735
   _offerKfRollbackFn;
-  # _chkKernelPkgFn; # Disabled: See    66226a00c
-  # _chkNvidiaPkgFn; # Disabled: See    66226a00c
-  # _cleanupZoomFn;  # Disabled: Before 66226a00c
+  # _chkKernelPkgFn;    #4423 66226a00c
+  # _chkNvidiaPkgFn;    #2928
+  # _cleanupZoomFn;     #2146,2305
   _chkXorgConfigFn;
   _runKernelCleanFn;
   _chkIbusConfigFn;
   _ensureCrontabFn;
   _runDropScriptsFn;
-  # _chkExperRepoFn; # Disabled: See 66226a00c
+  # _chkExperRepoFn;    # 66226a00c
   _chkResetEffectsFn;
   _postRollbackHandlerFn;
   _announceEndFn;
@@ -1143,7 +1106,7 @@ declare _parentCmdStr _lookupList \
   _focusRxDropDir _kbdColorSetExe _rootTitle _assignList \
   _focusRxSetExe _focusRxVersExe _btoolExe _firstrunExe \
   _fixIbusExe _kcleanExe _resetEffectsExe _rollbackBackendExe \
-  _rollbackSetExe _chainHelperExe _sysVersStr _kscreenDoctorExe;
+  _rollbackSetExe _chainHelperExe _sysVersStr;
 
 _parentCmdStr="$(ps -o comm= $PPID)";
 # These domain names exist here only for the purposes of looking them up via
@@ -1172,15 +1135,17 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     "_focusRxVersExe|${_binDir}/kfocus-rx-version"
 
     "_btoolExe|${_binDir}/kfocus-btool||optional"
+    "_chainHelperExe|${_binDir}/kfocus-chain-helper-ui||optional"
     "_firstrunExe|${_binDir}/kfocus-firstrun-bin||optional"
     "_fixIbusExe|${_binDir}/kfocus-fix-ibus||optional"
     "_kcleanExe|${_binDir}/kfocus-kclean||optional"
-    "_resetEffectsExe|${_binDir}/kfocus-reset-effects||optional"
-    "_rollbackExe|${_binDir}/kfocus-rollback||optional"
-    "_rollbackBackendExe|${_binDir}/kfocus-rollback-backend||optional"
-    "_rollbackSetExe|${_binDir}/kfocus-rollback-set||optional"
-    "_chainHelperExe|${_binDir}/kfocus-chain-helper-ui||optional"
     "_kscreenDoctorExe|/usr/bin/kscreen-doctor||optional"
+    "_nvSettingsExe|nvidia-settings||optional"
+    "_primeSelectExe|prime-select||optional"
+    "_resetEffectsExe|${_binDir}/kfocus-reset-effects||optional"
+    "_rollbackBackendExe|${_binDir}/kfocus-rollback-backend||optional"
+    "_rollbackExe|${_binDir}/kfocus-rollback||optional"
+    "_rollbackSetExe|${_binDir}/kfocus-rollback-set||optional"
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2ErrStrFn 'Could not assign variables';
