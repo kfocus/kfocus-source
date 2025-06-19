@@ -14,4 +14,5 @@ Parent=FALLBACK/
 TerminalMargin=3
 
 [Scrolling]
+HighlightScrolledLines=false
 HistorySize=10000
