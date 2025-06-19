@@ -418,11 +418,9 @@ _installEnvFn () {
   # IMPORTANT: To get this to work with 5070 Ti, we needed to
   #   install special support for this gpu.
   # Per https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/16884
-  # torchaudio, -c pytorch and -c nvidia might not work
     _cm2EchoFn "Installing Pytorch for ${_nvSeriesStr}-series GPU";
-    pin install --pre torch torchvision torchaudio \
-      --index-url https://download.pytorch.org/whl/nightly/cu128 \
-      -c pytorch -c nvidia                       || _exitFn;
+    pip install --pre torch torchvision torchaudio \
+      --index-url https://download.pytorch.org/whl/nightly/cu128 || _exitFn;
     pip install gpu-benchmark                    || _exitFn;
 
     set -u;
@@ -435,25 +433,30 @@ _installEnvFn () {
   # https://pypi.org/project/ai-benchmark/
   # https://pypi.org/project/tensorflow
   # https://github.com/tensorflow/tensorflow/tags
+  # TensorFlow does not work with 5000-series GPUs, see
+  # https://github.com/tensorflow/tensorflow/issues/89272
   #
-  _reply_str=$( _fixCondaEnvFn 'tensorflow') || _exitFn;
-  if [ "${_reply_str}" = 'y' ]; then
-    _cm2SetMsgFn 'Install TensorFlow';
-    set +u;
-    conda activate base || _exitFn;
+  if [ "${_nvSeriesStr}" != 'rtx50' ]; then
+    _reply_str=$( _fixCondaEnvFn 'tensorflow') || _exitFn;
+    if [ "${_reply_str}" = 'y' ]; then
+      _cm2SetMsgFn 'Install TensorFlow';
+      set +u;
+      conda activate base || _exitFn;
 
-    _cm2EchoFn "Installing TensorFlow for ${_nvSeriesStr}-series GPU";
-    conda create -n tensorflow pip python=3.12 || _exitFn;
-    conda activate tensorflow                  || _exitFn;
-    # Prefer now not to specify a version, but 2.12.0 does work with GPU
-    # Latest as of 2025-05-30 is 2.19.0, does not.
-    # pip install -Iv tensorflow               || _exitFn;
-    pip install -Iv tensorflow==2.12.0         || _exitFn;
-    # Deprecated ai-benchmark
-    # pip install ai-benchmark                 || _exitFn;
-    conda activate base                        || _exitFn;
-    set -u;
-    _cm2SucFn;
+      _cm2EchoFn "Installing TensorFlow for ${_nvSeriesStr}-series GPU";
+      conda create -n tensorflow pip python=3.12 || _exitFn;
+      conda activate tensorflow                  || _exitFn;
+      # Prefer now not to specify a version, but 2.12.0 does work with GPU
+      # Latest as of 2025-05-30 is 2.19.0, does not.
+      # 2.12.0 is not available with Python 3.12.
+      # pip install -Iv tensorflow==2.12.0         || _exitFn;
+      pip install -Iv tensorflow               || _exitFn;
+      # Deprecated ai-benchmark
+      # pip install ai-benchmark                 || _exitFn;
+      conda activate base                        || _exitFn;
+      set -u;
+      _cm2SucFn;
+    fi
   fi
 
   # Theano
