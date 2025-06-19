@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2019-2024 MindShare Inc.
+# Copyright 2019-2025 MindShare Inc.
 # Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
 #
 # Name    : kfocus-power-set
@@ -19,15 +19,17 @@ _optionTable=(
   'High;1;X;performance;0;1'
   'Normal;1;X;powersave;0;1'
   'Studio;0;X;performance;1;1'
-  # 'Medium;.5;X;powersave;0;1'
   'Low;X;1;powersave;1;0'
-  # 'Frugal;X;.666666666;powersave;1;0'
   'Minimal;X;.5;powersave;1;0'
+
+  # These can be added back if desired
+  # 'Medium;.5;X;powersave;0;1'
+  # 'Frugal;X;.666666666;powersave;1;0'
 );
 
-_freqUnderreportTable=(
-  'Intel Core Ultra 9 275HX;Arrow Lake'
-)
+_freqMisreportTable=(
+  'Intel Core Ultra 9 275HX;This Arrow Lake CPU underreports frequencies. Actual turbo/non-turbo max is 5.4/2.7 as shown by system monitor.'
+);
 
 ## BEGIN _importCommonFn {
 # Summary   : _importCommonFn
@@ -269,7 +271,18 @@ _chkInitCpuFn () {
     fi
   done
 
-  if [ "${_is_turbo_enabled}" = 'n' ]; then
+# TODO: 2025-06-14 mmikowski warm: Retained for testing
+#  # Set default governor on all cores
+#  _proc_count="$("${_nprocExe}")";
+#
+#  for (( _proc_idx=0; _proc_idx < "${_proc_count}"; _proc_idx++ )); do
+#    if ! "${_cpufreqSetExe}" -c "${_proc_idx}" -g "${_altPsaveKey}"; then
+#      _cm2WarnStrFn "Governor |${_altPsaveKey}| NOT set for core |${_proc_idx}";
+#      _success_flag='n';
+#    fi
+#  done
+
+  if ! _setNoTurboFn 0; then
     _cm2WarnStrFn 'Could NOT set noturbo flag to |0|';
     _success_flag='n';
   fi
@@ -331,9 +344,9 @@ _setModeFn () {
 
 _calcOptionsFn () {
   declare _opt_line _out_list _out_str _title _model_msg _normal_cpu_freq \
-    _low_cpu_freq _opt_parts _out_parts _cpu_str _freq_underreport_line \
-    _bit_list _freq_underreport_cpuid _freq_underreport_codename \
-    _underreport_warn_str _return_val;
+    _low_cpu_freq _opt_parts _out_parts _cpu_str _freq_misreport_line \
+    _bit_list _freq_misreport_cpuid _freq_misreport_codename \
+    _misreport_warn_str _return_val;
 
   _out_list=();
   _cpu_str="$(
@@ -343,21 +356,20 @@ _calcOptionsFn () {
       | awk -F':' '{ print $2 }' \
       | sed 's/^ *//; s/(\(R\|TM\))//g'
   )";
-  _underreport_warn_str="";
+  _misreport_warn_str="";
   _normal_cpu_freq="";
   _low_cpu_freq="";
   _return_val='0';
 
-  for _freq_underreport_line in "${_freqUnderreportTable[@]}"; do
-    IFS=';' read -r -a _bit_list <<< "${_freq_underreport_line}";
-    _freq_underreport_cpuid="${_bit_list[0]}";
-    _freq_underreport_codename="${_bit_list[1]}";
-    if [ "${_cpu_str}" = "${_freq_underreport_cpuid}" ]; then
-      _underreport_warn_str="This ${_freq_underreport_codename} CPU underreports max frequencies. Actual performance is unaffected.";
+  for _freq_misreport_line in "${_freqMisreportTable[@]}"; do
+    IFS=';' read -r -a _bit_list <<< "${_freq_misreport_line}";
+    _freq_misreport_cpuid="${_bit_list[0]}";
+    if [ "${_cpu_str}" = "${_freq_misreport_cpuid}" ]; then
+      _misreport_warn_str="${_bit_list[1]}";
     fi
   done
   _out_list+=(
-    "$(_cm2EchoModelStrFn 'label');${_cpu_str};${_underreport_warn_str}"
+    "$(_cm2EchoModelStrFn 'label');${_cpu_str};${_misreport_warn_str}"
   );
 
   for _opt_line in "${_optionTable[@]}"; do
