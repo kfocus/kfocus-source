@@ -1,6 +1,13 @@
+kfocus-nvidia (24.04.2~beta8) noble; urgency=medium
+
+  * nvidia-edge.postinst: Hard-enable suspend-resume scripts (#5423)
+  * etc_modprobe.d_kfocus-nvidia-edge.conf: Add to improve resume (#5423)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Wed, 18 Jun 2025 23:32:27 -0400
+
 kfocus-nvidia (24.04.2~beta7) noble; urgency=medium
 
-  * kfocus-nvidia-edge: Enable suspend-resume script for edge only (#5313)
+  * kfocus-nvidia-edge: Soft-enable suspend-resume scripts (#5313)
 
  -- Michael S. Mikowski <support@kfocus.org>  Wed, 11 Jun 2025 14:59:26 -0400
 

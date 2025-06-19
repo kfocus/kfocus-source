@@ -25,11 +25,15 @@ fi
 # NON-EDGE currently disables.
 #   https://download.nvidia.com/XFree86/
 #     Linux-x86_64/570.86.16/README/powermanagement.html
+# IMPORTANT: We do NOT use deb-systemd-helper because it does NOT force
+#   the units to be activate if previously deactivated. Instead, we
+#   use systemctl which does this.
+#
 _cm2SetMsgFn 'Enable /proc/driver/nvidia/suspend methods';
-deb-systemd-helper enable nvidia-hibernate.service;
-deb-systemd-helper enable nvidia-resume.service;
-deb-systemd-helper enable nvidia-suspend.service;
-deb-systemd-helper enable nvidia-suspend-then-hibernate.service;
+systemctl enable nvidia-hibernate.service;
+systemctl enable nvidia-resume.service;
+systemctl enable nvidia-suspend.service;
+systemctl enable nvidia-suspend-then-hibernate.service;
 _cm2SucFn;
 
 # Set performance mode only on first install not upgrade
