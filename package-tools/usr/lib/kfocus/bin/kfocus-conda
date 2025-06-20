@@ -172,7 +172,7 @@ _installEnvFn () {
     _conda_oldstyle_vers _conda_installed_vers _conda_expect_dir \
     _conda_expect01_exe _conda_expect02_exe _conda_install_file \
     _conda_repo_url _conda_md5sum _is_new_conda _chk_str \
-    __conda_setup;
+    _do_install_tensorflow _msg _conda_pkg_url __conda_setup;
 
   ## Begin Install GPU Libs
   _cm2SetMsgFn 'Check GPU and install libs if needed';
@@ -433,12 +433,26 @@ _installEnvFn () {
   # https://pypi.org/project/ai-benchmark/
   # https://pypi.org/project/tensorflow
   # https://github.com/tensorflow/tensorflow/tags
+
   # TensorFlow does not work with 5000-series GPUs, see
   # https://github.com/tensorflow/tensorflow/issues/89272
-  #
-  if [ "${_nvSeriesStr}" != 'rtx50' ]; then
-    _reply_str=$( _fixCondaEnvFn 'tensorflow') || _exitFn;
-    if [ "${_reply_str}" = 'y' ]; then
+  _reply_str=$( _fixCondaEnvFn 'tensorflow') || _exitFn;
+  if [ "${_reply_str}" = 'y' ]; then
+    _do_install_tensorflow='n';
+    if [ "${_nvSeriesStr}" = 'rtx50' ]; then
+      _msg="$(cat <<EOF
+This RTX50-series GPU may not be supported by TensorFlow yet. Are you sure you
+want to install TensorFlow anyway?
+EOF
+      )"
+      if [ "$(_cm2ReadPromptYnFn "${_msg}" 'n')" = 'y' ]; then
+        _do_install_tensorflow='y';
+      fi
+    else
+      _do_install_tensorflow='y';
+    fi
+
+    if [ "${_do_install_tensorflow}" = 'y' ]; then
       _cm2SetMsgFn 'Install TensorFlow';
       set +u;
       conda activate base || _exitFn;
@@ -450,7 +464,7 @@ _installEnvFn () {
       # Latest as of 2025-05-30 is 2.19.0, does not.
       # 2.12.0 is not available with Python 3.12.
       # pip install -Iv tensorflow==2.12.0         || _exitFn;
-      pip install -Iv tensorflow               || _exitFn;
+      pip install -Iv 'tensorflow[and-cuda]'     || _exitFn;
       # Deprecated ai-benchmark
       # pip install ai-benchmark                 || _exitFn;
       conda activate base                        || _exitFn;
@@ -475,7 +489,7 @@ _installEnvFn () {
   #   _cm2SucFn;
   # fi
 
-  ## mxnet 
+  ## mxnet
   # This not supported with cuda 11.7 (requires 10.2)
   #   which means it is now way old. Disabled.
   #
@@ -502,6 +516,35 @@ _installEnvFn () {
 
     2>/dev/null python -c "${_testPytorchStr}" || _cm2WarnFn;
     _cm2SucFn;
+  fi
+
+  if _chkCondaEnvFn 'pytorch'; then
+    _reply_str="$(_cm2ReadPromptYnFn \
+      "Benchmark PyTorch (takes about 12m + model download time)" 'n'
+    )";
+    if [ "${_reply_str}" = 'y' ]; then
+      _cm2SetMsgFn 'Benchmark PyTorch';
+      set +u;
+      conda activate pytorch || _exitFn;
+      set -u;
+      _cm2EchoFn 'Benchmarking Stable Diffusion 1.5...';
+      2>/dev/null gpu-benchmark --model=stable-diffusion-1-5;
+      _cm2EchoFn 'Stable diffusion benchmark result link shown above. Copy';
+      _cm2EchoFn 'the URL into a browser, click "Stable Diffusion 1.5", and';
+      _cm2EchoFn 'find the table row matching your ID to see results.';
+      _cm2EchoFn 'Press Enter to continue.';
+      read -r;
+      _cm2EchoFn 'Benchmarking Qwen 3 6B...';
+      2>/dev/null gpu-benchmark --model=qwen3-0-6b;
+      _cm2EchoFn 'Qwen benchmark result link shown above. Copy the URL into';
+      _cm2EchoFn 'a browser, click "Qwen 3-0-6b", and find the table row';
+      _cm2EchoFn 'mathcing your ID to see results.';
+      _cm2EchoFn 'Press Enter to continue.';
+      read -r;
+      set +u;
+      conda deactivate
+      set -u;
+    fi
   fi
 
   ## TODO: Use code /like/ this to invoke GPU Benchmark with Pytorch
