@@ -236,13 +236,12 @@ _scanFn () {
 
 _chkInitCpuFn () {
   declare _success_flag _delay_int _delay_fib_one_int _delay_fib_two_int \
-    _is_turbo_enabled;
+    _proc_count _proc_idx;
 
   _success_flag='y';
   _delay_fib_one_int='1';
   _delay_fib_two_int='1';
   _delay_int='1';
-  _is_turbo_enabled='n';
 
   # This drop file should clear on every boot
   if [ -f "${_cpuDropFile}" ]; then
@@ -261,7 +260,6 @@ _chkInitCpuFn () {
   # 21 = 8th fibonacci number, max total delay time = 54 seconds
   while (( _delay_int <= 21 )); do
     if _setNoTurboFn 0; then
-      _is_turbo_enabled='y';
       break;
     else
       sleep "${_delay_int}";
@@ -271,20 +269,41 @@ _chkInitCpuFn () {
     fi
   done
 
-# TODO: 2025-06-14 mmikowski warm: Retained for testing
-#  # Set default governor on all cores
-#  _proc_count="$("${_nprocExe}")";
-#
-#  for (( _proc_idx=0; _proc_idx < "${_proc_count}"; _proc_idx++ )); do
-#    if ! "${_cpufreqSetExe}" -c "${_proc_idx}" -g "${_altPsaveKey}"; then
-#      _cm2WarnStrFn "Governor |${_altPsaveKey}| NOT set for core |${_proc_idx}";
-#      _success_flag='n';
-#    fi
-#  done
-
   if ! _setNoTurboFn 0; then
     _cm2WarnStrFn 'Could NOT set noturbo flag to |0|';
     _success_flag='n';
+  fi
+
+  # Put intel_pstate in passive mode
+  _delay_fib_one_int='1';
+  _delay_fib_two_int='1';
+  _delay_int='1';
+  while (( _delay_int <= 21 )); do
+    if echo 'passive' > "${_cpuStatusFile}" \
+      && [ "$(cat "${_cpuStatusFile}")" = 'passive' ]; then
+      break;
+    else
+      sleep "${_delay_int}";
+      (( _delay_int = _delay_fib_one_int + _delay_fib_two_int )) || true;
+      _delay_fib_one_int="${_delay_fib_two_int}";
+      _delay_fib_two_int="${_delay_int}";
+    fi
+  done
+
+  if ! echo 'passive' > "${_cpuStatusFile}" \
+    || [ "$(cat "${_cpuStatusFile}")" != 'passive' ]; then
+    _cm2WarnStrFn 'Could NOT set pstate flag to |passive|';
+    _success_flag='n';
+  else
+    # Set default governor on all cores
+    _proc_count="$("${_nprocExe}")";
+
+    for (( _proc_idx=0; _proc_idx < "${_proc_count}"; _proc_idx++ )); do
+      if ! "${_cpufreqSetExe}" -c "${_proc_idx}" -g "${_altPsaveKey}"; then
+        _cm2WarnStrFn "Governor |${_altPsaveKey}| NOT set for core |${_proc_idx}";
+        _success_flag='n';
+      fi
+    done
   fi
 
   if [ "${_success_flag}" = 'y' ]; then
@@ -345,8 +364,7 @@ _setModeFn () {
 _calcOptionsFn () {
   declare _opt_line _out_list _out_str _title _model_msg _normal_cpu_freq \
     _low_cpu_freq _opt_parts _out_parts _cpu_str _freq_misreport_line \
-    _bit_list _freq_misreport_cpuid _freq_misreport_codename \
-    _misreport_warn_str _return_val;
+    _bit_list _freq_misreport_cpuid _misreport_warn_str _return_val;
 
   _out_list=();
   _cpu_str="$(
@@ -569,12 +587,13 @@ _mainFn () {
 
 ## BEGIN Declare and assign global vars {
 declare _binName _binDir _baseDir _baseName _rootDir \
-  _cpuDropFile _noTurboFile _altPsaveKey \
+  _cpuDropFile _noTurboFile _cpuStatusFile _altPsaveKey \
   _cpufreqSetExe _cpufreqInfoExe _nprocExe _kbdColorSetExe;
 
 _rootDir='';
 _cpuDropFile='/run/kfocus-cpu-init';
 _noTurboFile='/sys/devices/system/cpu/intel_pstate/no_turbo';
+_cpuStatusFile='/sys/devices/system/cpu/intel_pstate/status';
 _altPsaveKey='ondemand'; # schedutil has lower gb5 scores
 _computedTableFile='/run/kfocus-power-computed-table';
 _prettyComputedTableFile='/run/kfocus-power-pretty-computed-table';
