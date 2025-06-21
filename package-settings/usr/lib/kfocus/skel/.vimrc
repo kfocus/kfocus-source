@@ -274,7 +274,6 @@ syntax sync minlines=10000
 au VimEnter * if &diff | execute 'windo set wrap' | endif
 set ai
 
-" =====[ Wrap for vimdiff, both panes ] ===============================
 " =====[ Fix for pattern uses more memory than 'maxmempattern' ] ======
 " See https://github.com/vim/vim/issues/2049
 " MAY be resolved in vim 9.0. Tends to happen in Markdown syntax
