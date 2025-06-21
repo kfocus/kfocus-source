@@ -30,6 +30,9 @@ Kirigami.ApplicationWindow {
     property string liveUsbWarnStr              : '<b>This step is '
         + 'not available in a live USB session</b>. Please '
         + 'install to a system disk to run this step.'
+    property string modelCode                   : ""
+    property string modelLabel                  : ""
+    property var faqModelList                   : [ "m2g6" ]
 
     property string ding01Str : '<font size="5">\u2776</font>&nbsp;'
     property string ding02Str : '<font size="5">\u2777</font>&nbsp;'
@@ -781,9 +784,9 @@ Kirigami.ApplicationWindow {
 
     function getThemedImageFn (icon_name, file_type) {
         if ( Kirigami.Theme.textColor.hsvValue < 0.5 ) {
-            return 'qrc:/assets/images/' + icon_name + '_light.' + file_type;
+            return 'qrc:/assets/images/' + getModelSpecificIconNameFn( icon_name ) + '_light.' + file_type;
         } else {
-            return 'qrc:/assets/images/' + icon_name + '_dark.' + file_type;
+            return 'qrc:/assets/images/' + getModelSpecificIconNameFn( icon_name ) + '_dark.' + file_type;
         }
     }
 
@@ -795,7 +798,50 @@ Kirigami.ApplicationWindow {
             case 'green':
                 return 'lightgreen';
             }
-         }
+        }
+    }
+
+    function getModelSpecificStringFn (string_id) {
+        switch ( string_id ) {
+        case 'welcome':
+            if ( modelCode === 'other' ) {
+                return 'Welcome to the Kubuntu Focus!';
+            } else {
+                return 'Welcome to the Kubuntu Focus ' + modelLabel + '!';
+            }
+            break;
+        }
+        return '';
+    }
+
+    function getModelSpecificIconNameFn (image_id) {
+        // TODO: Fill this in once model-specific images are made
+        switch ( image_id ) {
+        case 'frontpage':
+            switch ( modelCode ) {
+            case 'ir16g2':
+            case 'ir14g2':
+            case 'ir14g1':
+            case 'zrg1':
+            case 'm2g6':
+            case 'm2g5p':
+            case 'm2g5':
+            case 'm2g4':
+            case 'm2g3':
+            case 'm2g2':
+            case 'm2g1':
+            case 'm1g1':
+            case 'xeg2':
+            case 'xeg1':
+            case 'nxg1':
+            case 'nxg2':
+            case 'nxg3':
+            default:
+                return "frontpage_generic";
+            }
+        default:
+            return image_id;
+        }
     }
 
     function setCheckMarkFn () {
@@ -879,16 +925,26 @@ Kirigami.ApplicationWindow {
         case 'introductionItem':
             pageTitleText     = 'Introduction';
             frontImage.source = getThemedImageFn( 'frontpage', 'webp' );
-            frontHeading.text = 'Welcome To The Kubuntu Focus!';
+            frontHeading.text = getModelSpecificStringFn( 'welcome' );
             frontText.text
               = '<p><b>This Welcome Wizard helps you get started as quickly '
               + 'as possible.</b> Each step helps you select tools and '
               + 'settings that best fit your workflow.<br></p>'
+              ;
 
-              + '<p><b>This is not an endorsement of any product,</b> and '
-              + 'the Focus Team is not compensated in any way for '
-              + 'these suggestions. You may always run this wizard '
-              + 'later using Start Menu &gt; Kubuntu Focus Tools &gt; '
+            if ( faqModelList.includes( modelCode ) ) {
+                frontText.text = frontText.text
+                  + '<p>You can view frequently asked questions for the '
+                  + modelLabel
+                  + ' <a href="https://kfocus.org/wf/help.html#bkm_'
+                  + modelCode
+                  + '_faq">here</a>.<br></p>'
+                  ;
+            }
+
+            frontText.text = frontText.text
+              + '<p><b>You may always run this wizard later</b> '
+              + 'using Start Menu &gt; Kubuntu Focus Tools &gt; '
               + 'Welcome Wizard or visit '
               + 'the <a href="https://kfocus.org/wf/tools#wizard">'
               + 'documentation.</a></p>'
@@ -2299,6 +2355,17 @@ Kirigami.ApplicationWindow {
         if ( systemDataMap.rollbackCmd === '' ) {
           removeSidebarItemFn( 'systemRollbackItem' );
         }
+
+        exeRun.execSync( 'source /usr/lib/kfocus/lib/common.2.source;'
+          + ' _cm2EchoModelStrFn \'code\''
+        );
+        modelCode = exeRun.stdout.trim();
+        console.log(modelCode);
+        exeRun.execSync( 'source /usr/lib/kfocus/lib/common.2.source;'
+          + ' _cm2EchoModelStrFn \'label\''
+        );
+        modelLabel = exeRun.stdout.trim();
+        console.log(modelLabel);
 
         startPageIdx = findSidebarItemFn( systemDataMap.startPage );
         if ( startPageIdx === -1 ) {
