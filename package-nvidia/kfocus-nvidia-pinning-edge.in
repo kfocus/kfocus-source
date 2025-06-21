@@ -93,22 +93,22 @@ Pin-Priority: -1
 #   cuda-drivers cuda-drivers-570 cuda*
 
 # Prefer 1st 570.153.* CUDA packages from nvidia repos
-Package: cuda*
+Package: cuda-driver cuda-drivers-570
 Pin: release o=NVIDIA,l=NVIDIA CUDA
 Pin: origin developer.download.nvidia.com
 Pin: version 570.153.*
 Pin-Priority: 1006
 
 # Prefer 2nd 570.148.* CUDA packages from nvidia repos
-Package: cuda*
+Package: cuda-drivers cuda-drivers-570
 Pin: release o=NVIDIA,l=NVIDIA CUDA
 Pin: origin developer.download.nvidia.com
 Pin: version 570.148.*
 Pin-Priority: 1005
 
 # BLACKLIST (alway ignore) other CUDA packages from the NVIDIA repos
-Package: cuda*
-Pin: release o=NVIDIA,l=NVIDIA CUDA
-Pin: origin developer.download.nvidia.com
-Pin-Priority: -1
+# Package: cuda*
+# Pin: release o=NVIDIA,l=NVIDIA CUDA
+# Pin: origin developer.download.nvidia.com
+# Pin-Priority: -1
 

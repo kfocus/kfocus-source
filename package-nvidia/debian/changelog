@@ -1,3 +1,9 @@
+kfocus-nvidia (24.04.2~beta9) noble; urgency=medium
+
+  * kfocus-nvidia-pinning-edge: Remove CUDA blacklist (#5423)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Sat, 21 Jun 2025 17:37:58 -0400
+
 kfocus-nvidia (24.04.2~beta8) noble; urgency=medium
 
   * nvidia-edge.postinst: Hard-enable suspend-resume scripts (#5423)
@@ -13,8 +19,8 @@ kfocus-nvidia (24.04.2~beta7) noble; urgency=medium
 
 kfocus-nvidia (24.04.2~beta6) noble; urgency=medium
 
-  * kfocus-pinning-edge.in: Revamp to tested set of 570 drivers (#5313)
-  * kfocus-pinning*.in: Pin block mixing edge, non-edge pkgs (#5313)
+  * kfocus-nvidia-pinning-edge.in: Revamp to tested set of 570 drivers (#5313)
+  * kfocus-nvidia-pinning*.in: Pin block mixing edge, non-edge pkgs (#5313)
 
  -- Michael S. Mikowski <support@kfocus.org>  Wed, 04 Jun 2025 11:28:33 -0400
 
