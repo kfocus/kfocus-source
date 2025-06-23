@@ -442,7 +442,7 @@ _installEnvFn () {
     if [ "${_nvSeriesStr}" = 'rtx50' ]; then
       _msg="$(cat <<EOF
 This RTX50-series GPU may not be supported by TensorFlow yet. Are you sure you
-want to install TensorFlow anyway?
+want to install TensorFlow anyway
 EOF
       )"
       if [ "$(_cm2ReadPromptYnFn "${_msg}" 'n')" = 'y' ]; then

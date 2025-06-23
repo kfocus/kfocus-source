@@ -936,9 +936,11 @@ Kirigami.ApplicationWindow {
             frontText.text
               +='<p><b>You may always revisit this wizard later</b> '
               + 'using Start Menu &gt; Kubuntu Focus Tools &gt; '
-              + 'Welcome Wizard. You can visit the docs '
-              + '<a href="https://kfocus.org/wf/tools#wizard">'
-              + 'here.</a></p>'
+              + 'Welcome Wizard.'
+              ;
+              // You can visit the docs
+              // <a href="https://kfocus.org/wf/tools#wizard">'
+              // here.</a></p>';
             actionName        = 'nextPage';
             regenUiFn( frontTemplatePage, true );
             break;
