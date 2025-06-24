@@ -362,13 +362,13 @@ _chkOemMultiDiskFn () {
 
 ## BEGIN _chkNvPMizerFn {
 _chkNvPMizerFn () {
-  declare _title _param_key _current_idx _tgt_idx;
+  declare _title _param_key _tgt_idx _rc_file _sed_str;
 
   # Skip if no exe, not right package, or not running nvidia
   if [ -z "${_nvSettingsExe}" ] || [ -z "${_primeSelectExe}" ]; then return; fi
   if ! _cm2ChkInstalledPkgFn 'kfocus-nvidia-edge'; then return; fi
 
-  _title='Set PowerMizer for kfocus-nvidia-edge';
+  _title='Set PowerMizerMode for kfocus-nvidia-edge';
   _cm2SetMsgFn "${_title}";
   if ! [[ "$("${_primeSelectExe}" query)" =~ ^(nvidia|on-demand) ]]; then
     _cm2SucStrFn 'Skipped, display mode does not use framebuffer.';
@@ -379,13 +379,21 @@ _chkNvPMizerFn () {
   # Declare values
   _param_key='GPUPowerMizerMode';
   _tgt_idx=1;
-  _current_idx="$("${_nvSettingsExe}" -q "${_param_key}" -t)";
 
+  # TODO: Query like so. We do not currently use there appears to
+  #  be no performance benefit.
+  # _current_idx="$("${_nvSettingsExe}" -q "${_param_key}" -t)";
   # Set value if needed
-  if [ "${_current_idx:-}" = "${_tgt_idx}" ]; then
-    _cm2SucStrFn 'Skipped, parameter already set.';
-    _cm2SucStrFn;
-    return;
+  # if [ "${_current_idx:-}" = "${_tgt_idx}" ]; then
+  #   _cm2SucStrFn 'Skipped, parameter already set.';
+  #   _cm2SucFn;
+  #   return;
+  # fi
+
+  _rc_file="${HOME}/.nvidia-settings-rc";
+  if [ -f "${_rc_file}" ]; then
+    _sed_str="s/${_param_key}=[0-9]\$/${_param_key}=${_tgt_idx}/";
+    sed -i "${_sed_str}" "${_rc_file}" || true;
   fi
 
   if "${_nvSettingsExe}" -a "${_param_key}=${_tgt_idx}"; then
