@@ -98,7 +98,7 @@ _echoCpuModelNameFn () {
   _model_line="$(lscpu | grep -Ei '^\s*model name' | cut -f2 -d: |sed 's/^\s*//' )";
 
   case "${_model_line}" in
-    'Intel(R) Core(TM) Ultra 5 225H') _cpu_name='u50-255h';;
+    'Intel(R) Core(TM) Ultra 5 225H' ) _cpu_name='u5-255h';;
     'Intel(R) Core(TM) Ultra 9 275HX') _cpu_name='u9-275hx';;
     *) _cpu_name="$(
         sed -E 's/^.*\s(i[579]-[^ ]+)(|\s.*)$/\1/' <<< "${_model_line}"
