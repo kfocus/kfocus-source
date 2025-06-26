@@ -195,8 +195,10 @@ else
 fi
 ## . End Import Common }
 
-_isNvidiaSystem="$(_cm2EchoModelStrFn 'is_nv_sys')" || exit 202;
+_modelCode="$(     _cm2EchoModelStrFn 'code'     )" || exit 202;
 _modelLabel="$(    _cm2EchoModelStrFn 'label'    )" || exit 202;
+_isNvidiaSystem="$(_cm2EchoModelStrFn 'is_nv_sys')" || exit 202;
+
 if [ "${_modelLabel}" != 'generic' ]; then
   _modelLabel="Kubuntu Focus ${_modelLabel}";
 fi
@@ -427,10 +429,14 @@ if [ "${_isNvidiaSystem}" = 'y' ]; then
   _primeExeStr="$(command -v 'prime-select' || true)";
   if [ -n "${_primeExeStr}" ]; then
     _primeQueryStr="$("${_primeExeStr}" query || true)";
-    if [ "${_primeQueryStr}" != 'nvidia' ]; then
-      _nextStepFn 'Ensure Nvidia mode for next boot';
-      if "${_primeExeStr}" 'nvidia'; then _cm2SucFn; else _cm2WarnFn; fi
+    if [ "${_modelCode}" = 'm2g6' ]; then
+      _nextStepFn 'Ensure Intel mode for next boot';
+      _modeStr='intel';
+    else
+      _nextStepFn 'Ensure Nivida mode for next boot';
+      _modeStr='nvidia';
     fi
+    if "${_primeExeStr}" "${_modeStr}"; then _cm2SucFn; else _cm2WarnFn; fi
   fi
 fi
 
