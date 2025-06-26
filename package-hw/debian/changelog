@@ -1,38 +1,12 @@
-kfocus-hw (24.04.11~beta5) noble; urgency=medium
+kfocus-hw (24.04.11) noble; urgency=medium
 
+  * Add hardware config for m2g6 (#5423,5416)
+  * Add hints widget images for m2g6 (#5417)
+  * m2g5-etc_default_grub.d_kfocus.cfg: Remove intel_pstate=passive parameter
+    for m2g5
   * m2g6-etc_default_grub.d_kfocus.cfg: block ucsi_acpi (#5422)
 
- -- Michael S. Mikowski <support@kfocus.org>  Thu, 26 Jun 2025 10:32:32 -0400
-
-kfocus-hw (24.04.11~beta4) noble; urgency=medium
-
-  * m2g6-etc_default_grub.d_kfocus.cfg: block, unload nouveau (#5422)
-  * m2g6-etc_modprobe.d_kfocus.conf: Limit to sound (#5422)
-
- -- Michael S. Mikowski <support@kfocus.org>  Wed, 18 Jun 2025 23:11:22 -0400
-
-kfocus-hw (24.04.11~beta3) noble; urgency=medium
-
-  * m2g5-etc_default_grub.d_kfocus.cfg: remove intel_pstate=passive parameter
-    (#5210)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 10 Jun 2025 15:11:54 -0500
-
-kfocus-hw (24.04.11~beta2) noble; urgency=medium
-
-  * m2g6-etc_default_grub.d_kfocus.cfg: remove xe.enable_psr=0 parameter
-    (#5423)
-  * m2g6-etc_modprobe.d_kfocus.conf: add nvidia-drm modeset=1 parameter
-    (#5423)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 21 May 2025 21:45:37 -0500
-
-kfocus-hw (24.04.11~beta1) noble; urgency=medium
-
-  * Add hardware config for M2G6 (#5416)
-  * Add hints widget images for M2G6 (#5417)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 15 May 2025 09:22:51 -0500
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 26 Jun 2025 15:18:18 -0500
 
 kfocus-hw (24.04.10) noble; urgency=medium
 

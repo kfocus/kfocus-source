@@ -1,47 +1,20 @@
-kfocus-main (24.04.19~beta6) noble; urgency=medium
+kfocus-main (24.04.19) noble; urgency=medium
 
-  * package-check m2g6: gfx intel; reset-effects m2g6: 136dpi (#5423)
-
- -- Michael S. Mikowski <support@kfocus.org>  Thu, 26 Jun 2025 10:36:09 -0400
-
-kfocus-main (24.04.19~beta5) noble; urgency=medium
-
-  * kfocus-focusrx: Update _chkNvPMizerFn to modify .nv-settings-rc (#5423)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 24 Jun 2025 12:27:04 -0500
-
-kfocus-main (24.04.19~beta4) noble; urgency=medium
-
-  * kfocus-focusrx: Replace _chkRefreshRateFn with _chkNvPMizerFn (#5423)
-
- -- Michael S. Mikowski <support@kfocus.org>  Wed, 18 Jun 2025 23:16:50 -0400
-
-kfocus-main (24.04.19~beta3) noble; urgency=medium
-
-  * kfocus-focusrx: Add display refresh rate adjustment for m2g6 (#5423)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 10 Jun 2025 15:13:15 -0500
-
-kfocus-main (24.04.19~beta2) noble; urgency=medium
-
-  * kfocus-reset-efects: Adjust DPI 136 => 120 to fit more on screen (#5422)
-  * kfocus-mime: msteams added, skype removed (#5429)
-
- -- Michael S. Mikowski <support@kfocus.org>  Wed, 04 Jun 2025 11:12:39 -0400
-
-kfocus-main (24.04.19~beta1) noble; urgency=medium
-
+  * kfocus-focusrx: Add NVIDIA performance mode tuning for m2g6 (#5423)
   * kfocus-focusrx-set: Install kfocus-nvidia-edge during hardware config when
     appropriate (#5313)
   * kfocus-focusrx-set: Install kfocus-tools-m2g6 on m2g6 systems (#5425)
-  * kfocus-focusrx-set: Set nvidia install to kfocus-nvidia-edge (#5315)
+  * kfocus-focusrx-set: Set nvidia install to kfocus-nvidia-edge for m2g6
+    (#5315)
   * kfocus-reset-effects: Add m2g6 scale factor (#5422)
   * kfocus-focusrx-set: Set tool package for m2g6 (#5422)
   * kfocus-kclean: Fix UI issue when running in a TTY (#5418)
   * common.2.source: Add multiple executable path support, add m2g6 model
     recognition (#5422)
+  * package-check m2g6: gfx intel; reset-effects m2g6: 136dpi (#5423)
+  * kfocus-reset-effects: Adjust default mouse cursor size to 36px (#5423)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 22 May 2025 13:46:08 -0500
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 26 Jun 2025 15:23:14 -0500
 
 kfocus-main (24.04.18) noble; urgency=medium
 

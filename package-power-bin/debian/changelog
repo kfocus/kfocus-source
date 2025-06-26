@@ -1,65 +1,19 @@
-kfocus-power-bin (24.04.6~beta9) noble; urgency=medium
-
-  * kfocus-power-set, kfocus-fan: Update CPU, fan messages (#5245)
-
- -- Michael S. Mikowski <support@kfocus.org>  Sat, 21 Jun 2025 14:40:09 -0400
-
-kfocus-power-bin (24.04.6~beta8) noble; urgency=medium
-
-  * kfocus-power-set: Generalize CPU anomaly handling (#5421)
-  * kfocus-power-set: Improve U9 275HX message (#5421)
-
- -- Michael S. Mikowski <support@kfocus.org>  Wed, 18 Jun 2025 23:37:41 -0400
-
-kfocus-power-bin (24.04.6~beta7) noble; urgency=medium
-
-  * kfocus-power-set: Fix CPU init for m2g5 (#5210)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 10 Jun 2025 15:14:15 -0500
-
-kfocus-power-bin (24.04.6~beta6) noble; urgency=medium
-
-  * Restore CPU init for hw_config_code m2g5, models m2g5, m2g5p (#5421)
-
- -- Michael S. Mikowski <support@kfocus.org>  Fri, 30 May 2025 13:02:02 -0400
-
-kfocus-power-bin (24.04.6~beta5) noble; urgency=medium
-
-  * main.qml: Add model label to fan profile header (#5421)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Fri, 23 May 2025 19:15:56 -0500
-
-kfocus-power-bin (24.04.6~beta4) noble; urgency=medium
-
-  * kfocus-power-set: Update test files (#5245)
-  * kfocus-power-set: Flush gui cache files on upgrade (#5421)
-
- -- Michael S. Mikowski <support@kfocus.org>  Thu, 22 May 2025 17:27:43 -0400
-
-kfocus-power-bin (24.04.6~beta3) noble; urgency=medium
-
-  * kfocus-fan-set: Add fan curve info for m2g6 (#5425)
-  * kfocus-power-set: Add frequency underreporting message for m2g6 (#5421)
-  * kfocus-power-set: Output CPU model information (#5421)
-  * main.qml: Display CPU model information, frequency underreporting message
-    (#5421)
-  * main.qml: Make header row of frequency profile table grey
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 21 May 2025 21:53:56 -0500
-
-kfocus-power-bin (24.04.6~beta2) noble; urgency=medium
-
-  * kfocus-power-set: Add alternate library and executable paths (#5422)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 15 May 2025 09:42:55 -0500
-
-kfocus-power-bin (24.04.6~beta1) noble; urgency=medium
+kfocus-power-bin (24.04.6) noble; urgency=medium
 
   * kfocus-power-set: Fix maximum CPU frequency displayed with 6.11 kernel
     (#5245)
   * kfocus-power-set: Fix CPU init issues on m2g5 (#5245)
+  * kfocus-power-set: Add alternate library and executable paths (#5422)
+  * kfocus-power-set: Output CPU model information (#5421)
+  * kfocus-power-set: Add frequency misreporting message for m2g6 (#5421)
+  * main.qml: Make header row of frequency profile table grey
+  * main.qml: Display CPU model information, frequency misreporting message
+    (#5421)
+  * main.qml: Add model label to fan profile header (#5421)
+  * kfocus-fan-set: Add fan curve info for m2g6 (#5425)
+  * kfocus-power-set: Flush gui cache files on upgrade (#5421)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Fri, 09 May 2025 12:23:42 -0500
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 26 Jun 2025 15:25:52 -0500
 
 kfocus-power-bin (24.04.5) noble; urgency=medium
 
