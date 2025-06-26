@@ -218,7 +218,7 @@ _chkHwConfigFn () {
   declare _btrfs_status _dmi_hw_config_code _dmi_hw_model_code \
     _do_force _file_hw_config_code _file_hw_model_code _is_hw_reconfig \
     _is_nv_system _msg _nv_pkg_suffix _reason_list \
-    _tool_pkg_name _tool_pkg_suffix;
+    _tool_pkg_name _tool_pkg_suffix _nv_series_str;
 
   _do_force='n';
   if [[ "${1:-}" =~ ^[Yy] ]]; then _do_force='y'; fi
