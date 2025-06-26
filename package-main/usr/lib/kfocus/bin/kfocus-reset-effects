@@ -138,6 +138,9 @@ _resetShortcutsFn () {
     'kwin|Effect-trackmouse|Meta|'
     'kwin|Effect-trackmouse|Shift|'
 
+    # Set cursorsize for all devices to 36
+    'inpu|Mouse|cursorSize|36'
+
     # Prevent plasma-welcome center from running alone.
     # It is presented in first-run wizard.
     "plwc|General|LastSeenVersion|${_plasma_version:-5.27.11}"
@@ -358,6 +361,7 @@ declare -A _fileMap=(
   ['kwin']=kwinrc
   ['plwc']=plasma-welcomerc
   ['scut']=kglobalshortcutsrc
+  ['inpu']=kcminputrc
 );
 _configDir='';
 _settingsExe="$(command -v systemsettings)";

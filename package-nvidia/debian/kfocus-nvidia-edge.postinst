@@ -36,11 +36,11 @@ systemctl enable nvidia-suspend.service;
 systemctl enable nvidia-suspend-then-hibernate.service;
 _cm2SucFn;
 
-# Set performance mode only on first install not upgrade
+# Set Intel mode only on first install not upgrade
 case "${1:-}" in
   configure)
   if [ -x /usr/bin/prime-select ]; then
-    /usr/bin/prime-select nvidia || true
+    /usr/bin/prime-select intel || true
   fi
   ;;
 esac
