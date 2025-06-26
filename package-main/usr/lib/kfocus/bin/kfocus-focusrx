@@ -1088,15 +1088,15 @@ _mainFn () {
   _chkRollbackPresence;
   _chkKbdLedFn;         #3735
   _offerKfRollbackFn;
-  # _chkKernelPkgFn;    #4423 66226a00c
-  # _chkNvidiaPkgFn;    #2928
-  # _cleanupZoomFn;     #2146,2305
+  # _chkKernelPkgFn;    # Disabled: See 4423, 66226a00c
+  # _chkNvidiaPkgFn;    # Disabled: See 2928
+  # _cleanupZoomFn;     # Disabled: See 2146,2305
   _chkXorgConfigFn;
   _runKernelCleanFn;
   _chkIbusConfigFn;
   _ensureCrontabFn;
   _runDropScriptsFn;
-  # _chkExperRepoFn;    # 66226a00c
+  # _chkExperRepoFn;    # Disabled: See 66226a00c
   _chkResetEffectsFn;
   _postRollbackHandlerFn;
   _announceEndFn;
