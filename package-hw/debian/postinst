@@ -266,7 +266,6 @@ _handle_m2g5Fn () {
 # shellcheck disable=SC2317
 #
 _handle_m2g6Fn () {
-  declare _symlink _target_file;
   if [ -x "/usr/bin/deb-systemd-helper" ]; then
     deb-systemd-helper mask \
       systemd-backlight@backlight:nvidia_0.service >/dev/null;
