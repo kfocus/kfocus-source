@@ -528,14 +528,14 @@ EOF
       conda activate pytorch || _exitFn;
       set -u;
       _cm2EchoFn 'Benchmarking Stable Diffusion 1.5...';
-      2>/dev/null gpu-benchmark --model=stable-diffusion-1-5;
+      gpu-benchmark --model=stable-diffusion-1-5;
       _cm2EchoFn 'Stable diffusion benchmark result link shown above. Copy';
       _cm2EchoFn 'the URL into a browser, click "Stable Diffusion 1.5", and';
       _cm2EchoFn 'find the table row matching your ID to see results.';
       _cm2EchoFn 'Press Enter to continue.';
       read -r;
       _cm2EchoFn 'Benchmarking Qwen 3 6B...';
-      2>/dev/null gpu-benchmark --model=qwen3-0-6b;
+      gpu-benchmark --model=qwen3-0-6b;
       _cm2EchoFn 'Qwen benchmark result link shown above. Copy the URL into';
       _cm2EchoFn 'a browser, click "Qwen 3-0-6b", and find the table row';
       _cm2EchoFn 'mathcing your ID to see results.';
