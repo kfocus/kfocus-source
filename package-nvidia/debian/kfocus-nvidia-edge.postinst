@@ -36,14 +36,5 @@ systemctl enable nvidia-suspend.service;
 systemctl enable nvidia-suspend-then-hibernate.service;
 _cm2SucFn;
 
-# Set Intel mode only on first install not upgrade
-case "${1:-}" in
-  configure)
-  if [ -x /usr/bin/prime-select ]; then
-    /usr/bin/prime-select intel || true
-  fi
-  ;;
-esac
-
 # Tag to allow some debhelper commands to inject relevant code
 #DEBHELPER#

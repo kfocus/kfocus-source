@@ -33,7 +33,8 @@ Package:      kfocus-nvidia-edge
 Architecture: all
 Pre-Depends:  kfocus-nvidia-pinning-edge
 Depends:      ${misc:Depends}, kfocus-main,
-              nvidia-driver-570-open
+              nvidia-driver-570-open,
+              acpid
 Recommends:   nvidia-modprobe,
               plasma-optimus
 Breaks:       kfocus-nvidia
