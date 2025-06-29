@@ -157,16 +157,19 @@ _mainFn () {
   </style>
   <h3 style="color:#1d99f3;text-align:center">GPU Power Warning</h3>
   <table align="center">
-  <tr><td>The system is using the discrete GPU on battery power.<br>
-    To increase battery life up to 75%, follow these steps:
+  <tr><td>The system is using the discrete GPU on battery power. <br>
+    This can cut battery life in half and introduce screen <br>
+    flicker. To avoid both conditions, switch to Intel GPU:
   </td></tr>
   <tr><td>
     <ol style="margin:16px 32px;">
-      <li>Use System Settings to lower screen refresh &lt;= 60.</li>
       <li>Click the Nvidia Icon in the system tray.</li>
       <li>Click 'Switch to Intel GPU...'</li>
       <li>When asked, click 'Log Out' and enter password.</li>
     </ol>
+  </td></tr>
+  <tr><td>To extend battery life even further, use System <br>
+    Settings to lower screen refresh to 60 Hz or less.
   </tr></td>
   <tr><td>To use the discrete GPU again:
     <ol style="margin:16px 32px;">
@@ -198,7 +201,7 @@ _EOH01
     re-enable the dGPU.
   </td></tr>
   <tr><td><b>NOTE:</b> To extend battery life even further, use<br>
-    System Settings to lower screen refresh &lt;= 60 Hz.
+    System Settings to lower screen refresh to 60 Hz or less.
   </td></tr>
   </table>
 </html>
