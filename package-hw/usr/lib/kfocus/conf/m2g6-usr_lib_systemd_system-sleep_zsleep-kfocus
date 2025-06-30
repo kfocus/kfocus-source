@@ -1,0 +1,63 @@
+#!/bin/bash
+# THIS IS A MACHINE GENERATED FILE. DO NOT EDIT.
+# REMOVE THE OWNING PACKAGE kfocus-hw TO REMOVE THIS FILE.
+# KFOCUS_TEST_ID=2231,5591
+#
+# Original concept from
+# https://gist.github.com/ioggstream/8f380d398aef989ac455b93b92d42048
+#
+# Debugged and tested by kfocus team on ALL M-series models 2022-06-25
+#
+# This should fix usb hub sleep-reusme issues like these found in syslog:
+#   # The PCI 00:14.0 device is the usb xhci controller.
+#   kernel: pci_pm_suspend(): hcd_pci_suspend+0x0/0x30 returns -16
+#   kernel: dpm_run_callback(): pci_pm_suspend+0x0/0x150 returns -16
+#   kernel: PM: Device 0000:00:14.0 failed to suspend async: error -16
+#   kernel: PM: Some devices failed to suspend, or early wake event detected
+#
+_wakeFile=/proc/acpi/wakeup;
+_baseName='zsleep-kfocus';
+_reportFn () {
+  declare _grep_str;
+  _grep_str="$(grep "^XHCI" "${_wakeFile}")";
+  1>&2 echo -e "Current acpi XHCI status:\n ${_grep_str}";
+}
+_toggleKscreenFn () {
+  declare _action_key _uname;
+  _action_key="${1:-}";
+  _username="$(
+    ps -elf |grep /usr/bin/plasmashell |awk '{print $3}' |head -n1
+  )";
+
+  if [ -z "${_uname}" ]; then
+    1>&2 echo 'SKIP: No user owning plasmashell found.';
+    return;
+  fi
+
+  if ! [[ "${_action_key}" =~ ^(start|stop)$ ]]; then
+    1>&2 echo "Unsupport action key: ${_action_key}";
+    return;
+  fi
+
+	1>&2 echo "Toggle kscreen |${_action_key}|";
+  systemctl --user -M "${_uname}@" "${_action_key}" \
+    plasma-kscreen-osd.service || true;
+}
+case "${1:-}" in
+  pre)
+    _toggleKscreenFn stop; # 5591
+    echo "${_baseName}: Disable XHCI on sleep to avoid premature wake";
+    grep -q '^XHCI.*enable' "${_wakeFile}" && echo XHCI > "${_wakeFile}";
+    _reportFn;
+    ;;
+  post)
+    # 2258 Do NOT call _pstateExe here because /lib/systemd/systemd --user
+    #   now calls it without arguments and therefore is redundant here.
+    echo "${_baseName}: Enable XHCI on wake";
+    grep -q '^XHCI.*disable' "${_wakeFile}" && echo XHCI > "${_wakeFile}";
+    _reportFn;
+    _toggleKscreenFn start; # 5591
+    ;;
+  *) echo "Unsupported action: ${1:-}";
+esac
+
