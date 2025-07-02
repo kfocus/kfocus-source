@@ -281,8 +281,8 @@ _handle_m2g6Fn () {
     '/etc/modprobe.d/kfocus.conf|/usr/lib/kfocus/conf/m2g6-etc_modprobe.d_kfocus.conf'
     # Load keyboard
     '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
-    # xhci and kscreen-osd.service toggle on sleep
-    '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/m2g6-usr_lib_systemd_system-sleep_zsleep-kfocus'
+    # xhci enable/disable on sleep
+    '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
     # Select Trackpad config and driver
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|/usr/lib/kfocus/conf/m2g6-usr_share_X11_xorg.conf.d_80-kfocus.conf'
     # DPI Scale Symlink removed; Deprecated by _supplementXdgConfigsFn.
