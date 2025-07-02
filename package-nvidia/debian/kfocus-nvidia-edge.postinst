@@ -30,10 +30,15 @@ fi
 #   use systemctl ensure this is set every time.
 #
 _cm2SetMsgFn 'Enable /proc/driver/nvidia/suspend methods';
-systemctl enable nvidia-hibernate.service;
-systemctl enable nvidia-resume.service;
-systemctl enable nvidia-suspend.service;
-systemctl enable nvidia-suspend-then-hibernate.service;
+systemctl enable nvidia-hibernate.service || true;
+systemctl enable nvidia-resume.service    || true;
+systemctl enable nvidia-suspend.service   || true;
+systemctl enable nvidia-suspend-then-hibernate.service || true;
+_cm2SucFn;
+
+_cm2SetMsgFn 'Enable helper services';
+systemctl enable kfocus-nve-resume.service  || true;
+systemctl enable kfocus-nve-suspend.service || true;
 _cm2SucFn;
 
 # Tag to allow some debhelper commands to inject relevant code

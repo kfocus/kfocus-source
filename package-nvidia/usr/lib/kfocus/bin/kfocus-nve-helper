@@ -1,0 +1,57 @@
+#!/bin/bash
+#
+# Copyright 2025 MindShare Inc.
+# Written for the Kubuntu Focus by Michael Mikowski
+#
+# Name   : kfocus-nve-helper
+# Purpose: Helper functions for suspend-resume.
+#
+# License: GPL v2
+# Run by : kfocus-nve-suspend, kfocus-nve-resume
+# Spec   : 5591
+#
+set -u;
+
+_mainFn () {
+  declare _action_key _action_str _xserver_id _uname _uid;
+  _action_key="${1:-}";
+  _action_str='';
+
+  case "${_action_key}" in
+    'pre')  _action_str='org.kde.kded5.unloadModule';;
+    'post') _action_str='org.kde.kded5.loadModule';;
+    *) echo "Unsupported action: ${_action_key}"; return;;
+  esac
+
+  while read -r _xserver_id; do
+    _uname="$(
+      who | grep "(:${_xserver_id})" | head -n1 | awk '{ print $1 }'
+    )";
+    if [ -z "${_uname}" ]; then continue; fi
+    _uid="$(id -u "${_uname}")";
+
+    if 1>/dev/null sudo -u "${_uname}" \
+      DISPLAY="${_xserver_id}" \
+      DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${_uid}/bus" \
+      qdbus org.kde.kded5 /kded "${_action_str}" 'kscreen';
+    then
+      echo "pass: ${_action_key} for |${_uname}|${_xserver_id}|";
+    else
+      echo "fail: ${_action_key} for |${_uname}|${_xserver_id}|";
+    fi
+  done < <(
+    find '/tmp/.X11-unix/' -mindepth 1 -maxdepth 1 -printf '%f\n' | sed 's?X??'
+  );
+}
+_mainFn "$@";
+
+# Command reference
+# qdbus org.kde.kded5 /kded org.kde.kded5.loadModule      'kscreen' || true;
+# qdbus org.kde.kded5 /kded org.kde.kded5.unloadModule    'kscreen' || true;
+# systemctl --user -M "${_uname}@" stop plasma-kscreen-osd.service  || true;
+# systemctl --user -M "${_uname}@" stop plasma-kscreen.service      || true;
+# systemctl --user -M "${_uname}@" start plasma-kscreen.service     || true;
+# systemctl --user -M "${_uname}@" start plasma-kscreen-osd.service || true;
+# _uname="$(
+#   ps -elf |grep /usr/bin/plasmashell |awk '{print $3}' |head -n1
+# )";

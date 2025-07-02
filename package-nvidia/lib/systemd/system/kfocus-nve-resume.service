@@ -1,0 +1,13 @@
+[Unit]
+Description=KFocus-nvidia-edge after resume
+After=suspend.target
+After=nvidia-resume.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/kfocus/bin/kfocus-nve-helper post
+
+[Install]
+WantedBy=suspend.target
+WantedBy=nvidia-resume.service
+
