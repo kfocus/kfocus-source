@@ -41,9 +41,12 @@ _importCommonFn () {
 
 ## BEGIN _resetShortcutsFn {
 _resetShortcutsFn () {
-  declare _model_code _plasma_version _config_list _line _bit_list \
-    _key _apply_str _log_list _name_file _config_file _opt_list _tab_char;
+  declare _do_clear_params _model_code _plasma_version _config_list \
+    _line _bit_list _key _log_list _name_file _config_file \
+    _opt_list _tab_char _value_str;
 
+  _do_clear_params='n';
+  [ "${1:-}" = 'do_clear' ] && _do_clear_params='y';
   _model_code="$(_cm2EchoModelStrFn 'code')";
   _plasma_version="$(
     dpkg -l plasma-desktop |awk -F'[:-]' '/plasma-desktop\s/{print $3}'
@@ -163,21 +166,25 @@ _resetShortcutsFn () {
 
   _tab_char=$'\t';
   _log_list=();
+  if [ "${_do_clear_params}" = 'y' ]; then
+    _log_list+=("NOTICE: All config keys will be cleared.");
+  fi
+
   for _line in "${_config_list[@]}"; do
     IFS='|' read -r -a _bit_list <<<"${_line}";
     _key="${_bit_list[0]:-}";
+    if [ "${_do_clear_params}" = 'y' ]; then
+      _bit_list[3]='';
+    fi
 
     ## DEBUG: Skip keys
     # if [[ "${_key}" =~ ^(font|glob)$ ]];
     # then _cm2EchoFn "Process ${_line}";
     # else _cm2WarnStrFn "Skip ${_line}"; continue;
     # fi
-
-    _apply_str="${_line}";
     # DEBUG Delete all kwin keys
     # if [ "${_key}" = 'kwin' ]; then
     #   _bit_list[3]='';
-    #   _apply_str="$(IFS='|'; echo "${_bit_list[*]}")";
     # fi
 
     _name_file="${_fileMap[$_key]}";
@@ -188,15 +195,15 @@ _resetShortcutsFn () {
 
     _config_file="${_configDir}/${_name_file}";
     # If this is a symbolic link, remove it
-    if [ -h "${_config_file}" ]; then
-      rm "${_config_file}";
-    fi
+    if [ -h "${_config_file}" ]; then rm "${_config_file}"; fi
+
+    # Create config file if missing
     if [ ! -f "${_config_file}" ]; then
-      # Skip creating a file just to delete an attribute
+      # Skip creating just to delete an attribute
       if [ -z "${_bit_list[3]:-}" ]; then continue; fi
 
       if touch "${_config_file}"; then
-        _log_list+=("NOTICE: Created config file |${_config_file}|.");
+        _log_list+=("INFO: Created config file |${_config_file}|.");
       else
         _log_list+=("ERROR: Could not create config file |${_config_file}|.");
         continue;
@@ -205,13 +212,11 @@ _resetShortcutsFn () {
 
     if [ -n "${_bit_list[4]:-}" ]; then
       if grep -q "^${_model_code}$" <<<"${_bit_list[4]:-}"; then
-        _log_list+=("Apply ${_apply_str} for model ${_bit_list[4]:-}");
+        _log_list+=("INFO: match model |${_bit_list[4]:-}|");
       else
-        _log_list+=("SKIP  ${_apply_str} for model ${_bit_list[4]:-}");
+        _log_list+=("INFO: SKIP no match model |${_bit_list[4]:-}|");
         continue
       fi
-    else
-      _log_list+=("Apply ${_apply_str}");
     fi
 
     _opt_list=(
@@ -221,9 +226,12 @@ _resetShortcutsFn () {
 
     if [ -n "${_bit_list[3]:-}" ]; then
       # Important: Must replace \t with real tab char for this to work
-      _opt_list+=("${_bit_list[3]//\\t/${_tab_char}}");
+      _value_str="${_bit_list[3]//\\t/${_tab_char}}"
+      _opt_list+=( "${_value_str}" );
+      _log_list+=("INFO: Set |${_bit_list[@]:1:3}| in |${_config_file}|");
     else
       _opt_list+=('--delete');
+      _log_list+=("INFO: Delete |${_bit_list[@]:1:2} in |${_config_file}|");
     fi
 
     "${_kwriteconfig5Exe}" "${_opt_list[@]}";
@@ -231,7 +239,7 @@ _resetShortcutsFn () {
 
   ( IFS=$'\n'; echo "Reset values:"; echo "${_log_list[*]}" )
 }
-## . END _resetEffects }
+## . END _resetShortcutsFn }
 
 ## BEGIN _mainFn {
 _mainFn () {
@@ -251,10 +259,9 @@ _mainFn () {
     _cm2WarnStrFn 'SKIP: No HOME var set.';
     return;
   fi
+
   _configDir="${HOME:-}/.config";
-
   _notify_str='';
-
   if [ -n "${_settingsExe}" ] \
     && pgrep -xf "${_settingsExe}" > /dev/null; then
     _notify_str="$(cat <<_EOH00
@@ -265,8 +272,7 @@ _EOH00
   fi
 
   # Notify user
-  _prompt_msg="$(
-    cat <<_EOH01
+  _prompt_msg="$(cat <<_EOH01
 ${_cm2HtmBeginStr}
 <h3 style="color:#f7941d">KFocus Reset Effects</h3>
 
@@ -291,7 +297,7 @@ _EOH01
   # Request to reset effects and keyboard shortcuts
   _prompt_msg='Reset effects and keyboard shortcuts';
   _reply_str="$(_cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}" 'a')";
-  if [ "${_reply_str}" = 'y' ]; then _resetShortcutsFn; fi
+  if [ "${_reply_str}" = 'y' ]; then _resetShortcutsFn 'do_clear'; fi
 
   # Request to reset power management
   _power_file="${_configDir}/powermanagementprofilesrc";
