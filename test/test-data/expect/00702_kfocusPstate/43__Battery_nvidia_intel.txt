@@ -13,14 +13,15 @@ REQUEST kdialog --yesno <html>
   </style>
   <h3 style="color:#1d99f3;text-align:center">GPU Power Warning</h3>
   <table align="center">
-  <tr><td>The system is using the integrated GPU, but the discrete GPU is<br>
-    still powered-on.
+  <tr><td>The system is using the integrated GPU, but the discrete GPU<br>
+    (dGPU) is still powered-on.
   </td></tr>
-  <tr><td>Would you like to power-down the discrete GPU to gain an<br>
-    additional 1-2 hours of battery life?
+  <tr><td>Would you like to power-down the dGPU to gain 1-2 more<br>
+    hours of battery life? A system reboot will be required to<br>
+    re-enable the dGPU.
   </td></tr>
-  <tr><td><b>NOTE:</b> To use the discrete GPU again, a system reboot will<br>
-    be required if you choose to power-down the dGPU.
+  <tr><td><b>NOTE:</b> To extend battery life even further, use<br>
+    System Settings to lower screen refresh to 60 Hz or less.
   </td></tr>
   </table>
 </html>
