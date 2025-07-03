@@ -1,3 +1,10 @@
+kfocus-nvidia (24.04.5~beta1) noble; urgency=medium
+
+  * Remove pin to prevent cross install of normal and edge; this is handled by
+    package Breaks and Replaces (#5591)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Thu, 03 Jul 2025 16:08:36 -0400
+
 kfocus-nvidia (24.04.4) noble; urgency=medium
 
   * Restore all screens on resume, enhanced (#5591)
