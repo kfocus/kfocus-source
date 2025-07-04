@@ -426,20 +426,20 @@ _chkHwConfigFn () {
     else
       _prompt_msg="$(cat << _EOH06
 ${_cm2HtmBeginStr}
-${_cm2HtmH3Str}SKIP ${_title}?</h3>
+${_cm2HtmH3Str}${_title}?</h3>
 
 ${_cm2HtmPStr}<b>The hardware signature already matches expected.</b><br>
 You can reconfigure for the hardware, but it takes <br>
 time and is usually not needed.</p>
 
-${_cm2HtmPStr}<b>SKIP reconfigure to hardware?</b><br></p>
+${_cm2HtmPStr}<b>${_title} now?</b><br></p>
 ${_cm2HtmEndStr}
 _EOH06
       )";
       _ans_str="$(
-        _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'a'
+        _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'A'
       )";
-      if [ "${_ans_str}" = 'n' ]; then
+      if [ "${_ans_str}" = 'y' ]; then
         _reason_str="$("${_escExe}" "${_focusRxSetExe}" 'force-hw-config')";
       fi
     fi
@@ -802,24 +802,24 @@ _runDropScriptsFn () {
         else
           _prompt_msg="$(cat <<_EOH14
 ${_cm2HtmBeginStr}
-${_cm2HtmH3Str}SKIP Running ${_loop_name}?</h3>
+${_cm2HtmH3Str}Run ${_loop_name}?</h3>
 
 ${_loop_check_str}
 
 ${_cm2HtmPStr}This script was run on this system in the past. You may<br>
 run it again, but it can take time and is usually not required.</p>
 
-${_cm2HtmPStr}<b>SKIP running ${_loop_name}?</b><br></p>
+${_cm2HtmPStr}<b>Run ${_loop_name} now?</b><br></p>
 ${_cm2HtmEndStr}
 _EOH14
           )";
           _ans_str="$(
-            _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_loop_name}" 'a'
-           )";
+            _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_loop_name}" 'A'
+          )";
         fi
 
         # User has agreed to skip, so continue
-        if [ "${_ans_str}" = 'y' ]; then
+        if [ "${_ans_str}" = 'n' ]; then
           _cm2EchoFn "Skipping previously run ${_loop_name}";
           continue;
         fi
@@ -880,15 +880,15 @@ ${_cm2HtmH3Str}REBOOT RECOMMENDED</h3>
 
 ${_cm2HtmPStr}You system has changed and a reboot is <b>RECOMMENDED</b>.<br>
 However, for safety, this is not the default action.<br><br>
-Continue <b>WITHOUT</b> rebooting?<br></p>
+Reboot now?<br></p>
 
 ${_cm2HtmEndStr}
 _EOH15
     )";
     _ans_str="$(
-      _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: SKIP Reboot?" 'a'
+      _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: Reboot?" 'A'
     )";
-    if [ "${_ans_str}" = 'n' ]; then
+    if [ "${_ans_str}" = 'y' ]; then
       "${_escExe}" systemctl reboot;
     fi
   ## . End: Handle reboot if recommended }
@@ -920,7 +920,7 @@ _chkResetEffectsFn () {
 
   _prompt_msg="$(cat <<_EOH17b
 ${_cm2HtmBeginStr}
-${_cm2HtmH3Str}SKIP ${_title}?</h3>
+${_cm2HtmH3Str}Run ${_title}?</h3>
 
 ${_cm2HtmPStr}You can run kfocus-reset-effects <br>
 to reset effects and keyboard shortcuts, <br>
@@ -929,16 +929,16 @@ associations to their defaults. This is usually <br>
 unnecessary unless some settings or shortcuts <br>
 are not behaving as desired.</p>
 
-${_cm2HtmPStr}<b>SKIP run kfocus-reset-effects?</b></p>
+${_cm2HtmPStr}<b>Run ${_title} now?</b></p>
 ${_cm2HtmEndStr}
 _EOH17b
   )";
 
   _ans_str="$(
-    _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'a'
+    _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'A'
   )";
 
-  if [ "${_ans_str}" = 'n' ]; then
+  if [ "${_ans_str}" = 'y' ]; then
     if "${_resetEffectsExe}"; then
       _cm2SucFn; else _cm2WarnFn;
     fi

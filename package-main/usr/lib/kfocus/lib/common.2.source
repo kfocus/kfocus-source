@@ -283,7 +283,7 @@ _cm2CalcModelCodeFn () {
   if [ -f "${_cm2DmiProductNameFile}" ]; then
     _dmi_name="$(_cm2CatStripEchoFn "${_cm2DmiProductNameFile}")";
 
-    # Use ${var,,} syntax to convert to lowercase
+    # Use double-comma syntax to convert to lowercase
     if [[ "${_dmi_name,,}" =~ ^iridium.*$ ]]; then
       # Ex: LCS14-12i5, LCS16-13i7G
       _dmi_name="$(_cm2CatStripEchoFn "${_cm2DmiProductSkuFile}")";
@@ -542,7 +542,7 @@ _cm2StripTagsFn () {
 _cm2PromptUserFn () {
   declare _icon_key _opt_str _prompt_str _window_title _query_type \
     _cmd_list _ans_str _key_list _val_list _default_option_str _params_list \
-    _params_idx _cycle_idx;
+    _params_idx _cycle_idx _default_key;
 
   _icon_key='kfocus-bug-rx';
   local OPTIND=1;
@@ -573,12 +573,13 @@ _cm2PromptUserFn () {
     # These arguments *must* be inserted before the actual '--yesno' argument
     # below, or KDialog glitches badly (at least on Kubuntu 24.04).
     case "${_query_type}" in
+      'A') _cmd_list+=('--yes-label=No' '--no-label=Yes');;
       'o') _cmd_list+=('--yes-label=OK' '--no-label=Cancel');;
       'm') _cmd_list+=('--yes-label=OK' '--no-label=More Info');;
     esac
 
     case "${_query_type}" in
-      [aom]) _cmd_list+=('--yesno');;
+      [Aaom]) _cmd_list+=('--yesno');;
       w) _cmd_list+=('--warningyesno');;
       s) _cmd_list+=('--sorry');;
       e) _cmd_list+=('--error');;
@@ -636,6 +637,9 @@ _cm2PromptUserFn () {
           break;
         fi
       done
+    # Handle inverted Yes and No labels
+    elif [ "${_query_type}" = 'A' ]; then
+      if "${_cmd_list[@]}"; then _ans_str='n'; else _ans_str='y'; fi
     else
       if "${_cmd_list[@]}"; then _ans_str='y'; else _ans_str='n'; fi
     fi
@@ -644,9 +648,11 @@ _cm2PromptUserFn () {
   else
     if [ "${_cm2CliType}" = 'cli' ]; then
       case "${_query_type}" in
-      [aw])
+      [Aaw])
+        _default_key='y';
+        [ "${_query_type}" = 'A' ] && _default_key='n';
         _prompt_str="$(_cm2StripTagsFn "${_prompt_str}")";
-        _cmd_list=('_cm2ReadPromptYnFn' "${_prompt_str}" 'y');
+        _cmd_list=('_cm2ReadPromptYnFn' "${_prompt_str}" "${_default_key}");
         ;;
       p)
         # bashsupport disable=BP2002
@@ -679,12 +685,13 @@ _cm2PromptUserFn () {
       );
 
       case "${_query_type}" in
-        [aomw]) _cmd_list+=('--yesno') ;;
+        [Aaomw]) _cmd_list+=('--yesno') ;;
         [rd]) _cmd_list+=('--radiolist') ;;
         *) _cmd_list+=('--msgbox') ;;
       esac
 
       case "${_query_type}" in
+        'A') _cmd_list+=('--defaultno');;
         'o') _cmd_list+=('--yes-button=OK' '--no-button=Cancel');;
         'm') _cmd_list+=('--yes-button=OK' '--no-button=More Info');;
       esac
@@ -714,7 +721,7 @@ _cm2PromptUserFn () {
     fi
   fi
 
-  if [[ "${_query_type}" =~ [aomwrd] ]]; then
+  if [[ "${_query_type}" =~ [Aaomwrd] ]]; then
     echo "${_ans_str}";
   fi
 }

@@ -98,6 +98,9 @@ _purgeKbdIteFn () {
 }
 ## . END _purgeKbdIteFn }
 
+## BEGIN _getNvSeriesStrFn {
+# Purpose: Determine nvidia graphics card series
+#
 _getNvSeriesStrFn () {
   declare _nv_line;
   _nv_line=$(lspci |grep -i 'VGA compatible controller' |grep -i 'nvidia');
@@ -114,7 +117,7 @@ _getNvSeriesStrFn () {
   else echo '';
   fi
 }
-
+## . END _getNvSeriesStrFn }
 
 ## BEGIN _installNvidiaFn {
 # Purpose: Install kfocus nvidia packages.
