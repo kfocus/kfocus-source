@@ -40,6 +40,9 @@ _importCommonFn () {
 ## . END _importCommonFn }
 
 ## BEGIN _resetShortcutsFn {
+# Due to KDE param handling, local writing of default is required.
+# The do_clear_params option is not used, but may be useful in the future.
+#
 _resetShortcutsFn () {
   declare _do_clear_params _model_code _plasma_version _config_list \
     _line _bit_list _key _log_list _name_file _config_file \
@@ -298,7 +301,7 @@ _EOH01
   # Request to reset effects and keyboard shortcuts
   _prompt_msg='Reset effects and keyboard shortcuts';
   _reply_str="$(_cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}" 'a')";
-  if [ "${_reply_str}" = 'y' ]; then _resetShortcutsFn 'do_clear'; fi
+  if [ "${_reply_str}" = 'y' ]; then _resetShortcutsFn 'keep'; fi
 
   # Request to reset power management
   _power_file="${_configDir}/powermanagementprofilesrc";

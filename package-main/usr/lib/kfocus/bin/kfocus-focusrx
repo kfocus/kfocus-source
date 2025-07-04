@@ -975,7 +975,7 @@ _EOH18
   )";
 
   _ans_str="$(
-    _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'a'
+    _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'A'
   )";
 
   if [ "${_ans_str}" = 'y' ]; then

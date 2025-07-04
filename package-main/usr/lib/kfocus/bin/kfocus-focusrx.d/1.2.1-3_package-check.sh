@@ -339,25 +339,48 @@ _mainFn () {
 
   _step_name='Check disk space';
   _nextStepFn "${_step_name}";
+
+  ## TODO: Provide assement here. The following relies far too much on
+  #   user initiative. Instead it should say:
+  # OK: Disk space for all drives is sufficient: 
+  #   /     130.8 of 232.2 GB
+  #   /home 130.8 of 232.2 GB
+  #   /boot 002.5 of 004.0 GB
+  #
+  # WARNING: Disk space is low on one or more drives
+  #   /     130.8 of 232.2 GB
+  #   /home 130.8 of 232.2 GB
+  #   /boot 003.5 of 004.0 GB Low!
+  #
+  # PLEASE free up some disk space in /boot by removing unused
+  # files, using System Rollback to remove old snapshots, or
+  # using Kernel Cleaner or the CLI to purge older kernels.
+  #
+  # I recommend using a function call, because it could get a bit
+  # more verbose than what we want in _mainFn.
+  #
   _cm2EchoFn "${_adviceStr} Please review the disk space. The system
   disk, /, should have 5GB free, as should any separate /home
   disk. If you see full disks, open another terminal and backup
   or remove files as needed to get more disk space.
 
-  The /boot partition (if it exists) should have at least 150MB
+  The /boot partition (if it exists) should have at least 300 MB
   free. If it does not, run the Focus Kernel Cleaner tool to
   free up space.
-
   ";
 
-  ## TODO: Check the for the user. This is horrible with BTRFS.
+  ## TODO: Create an array of messages for each disk, then print them out at the end
   for _disk_space_dir in '/' '/home' '/boot'; do
     if findmnt --mountpoint="${_disk_space_dir}"; then
       _fs_type="$(stat -f -c %T "${_disk_space_dir}")";
+     ## TODO: make this easy for the user to read and provide an assessment!
       if [ "${_fs_type}" = 'btrfs' ]; then
         btrfs 'filesystem' 'usage' "${_disk_space_dir}";
+     ## TODO: make this easy for the user to read and provide an assessment!
       else
-        df -h "${_disk_space_dir}";
+        echo -n '/home: ';
+        df -h "${_disk_space_dir}" |tail -n-1 \
+          | awk '{print "Used "$3" of "$2", "$4" available."}';
       fi
     fi
   done
@@ -412,6 +435,7 @@ _mainFn () {
     else
       _nextStepFn "${_step_name}";
       if _installNvidiaFn "${_config_code}" "${_nv_series_str}"; then
+         _cm2BlockMsg="${_step_name}"; # reset to original banner name
          _cm2SucFn; else _cm2WarnFn;
       fi
     fi
@@ -561,4 +585,3 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _mainFn "$@";
 fi
 ## . END Run main if script is not sourced }
-
