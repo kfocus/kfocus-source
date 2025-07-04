@@ -260,6 +260,205 @@ _echoInstalledNvPkgsFn () {
 }
 ## . END _echoInstalledNvPkgsFn }
 
+## BEGIN _printDiskReportLineFn {
+_printDiskReportLineFn () {
+  declare _mount_str _size_int _space_int _unalloc_int _min_pct_int \
+    _pretty_size_int _pretty_space_int _status_str _printf_str;
+
+  _mount_str="${1:-}";
+  _size_int="${2:-}";
+  _space_int="${3:-}";
+  _unalloc_int="${4:-}";
+  _min_pct_int="${5:-}";
+  _printf_str="${6:-}";
+
+  _pretty_size_int="$(
+    bc <<< "scale=2; ${_size_int} / 1024 / 1024 / 1024"
+  )";
+  _pretty_space_int="$(
+    bc <<< "scale=2; ${_space_int} / 1024 / 1024 / 1024"
+  )";
+  if [ "$(bc <<< "${_unalloc_int} >= ${_min_pct_int}")" = '1' ]; then
+    _status_str="Good >${_min_pct_int}%";
+  else
+    _status_str="ALERT <${_min_pct_int}%";
+  fi
+
+  # shellcheck disable=SC2059
+  printf "${_printf_str}" \
+    "${_mount_str}" \
+    "${_pretty_size_int}" \
+    "${_pretty_space_int}" \
+    "${_unalloc_int}" \
+    "${_status_str}";
+}
+## . END _printDiskReportLineFn }
+
+## BEGIN _displayDiskReportFn {
+_displayDiskReportFn () {
+  declare _mount_list _space_list _size_list _unalloc_pct_list _fs_type_list \
+    _min_pct_list _mount_str _unalloc_int _fs_type _df_report_str _space_int \
+    _size_int _btrfs_report_str _is_space_low _idx _msg \
+    _btrfs_header_printed _ext4_header_printed;
+
+  _mount_list=( '/' '/home' '/boot' );
+  _fs_type_list=();
+  _size_list=();
+  _space_list=();
+  _unalloc_pct_list=();
+  _min_pct_list=();
+
+  for _mount_str in "${_mount_list[@]}"; do
+    if ! mountpoint -q "${_mount_str}"; then
+      _fs_type_list+=( '' );
+      _size_list+=( '' );
+      _space_list+=( '' );
+      _unalloc_pct_list+=( '' );
+      _min_pct_list+=( '' );
+      continue;
+    fi
+
+    _fs_type="$(stat -f -c %T "${_mount_str}")";
+    _fs_type_list+=( "${_fs_type}" );
+    if [ "${_fs_type}" = 'btrfs' ]; then
+      _btrfs_report_str="$(
+        btrfs filesystem usage -b "${_mount_str}" 2>/dev/null
+      )";
+
+      _size_int="$(awk '/Device size/{ print $3 }' \
+        <<< "${_btrfs_report_str}")";
+      _size_int="$(_cm2EchoIntFn "${_size_int}")";
+      if (( _size_int == 0 )); then
+        # TODO: better error handling
+        return 1;
+      fi
+      _size_list+=( "${_size_int}" )
+
+      _space_int="$(awk '/Free \(estimated\)/{ print $3 }' \
+        <<< "${_btrfs_report_str}")";
+      _space_int="$(_cm2EchoIntFn "${_space_int}")";
+      if (( _space_int == 0 )); then
+        # TODO: better error handling
+        return 1;
+      fi
+      _space_list+=( "${_space_int}" );
+
+      _unalloc_int="$(awk '/Device unallocated/{ print $3 }' \
+        <<< "${_btrfs_report_str}")"
+      _unalloc_int="$(_cm2EchoIntFn "${_unalloc_int}")"
+      if (( _unalloc_int == 0 )); then
+        # TODO: better error handling
+        return 1;
+      fi
+      # Convert _unalloc_int to a percentage
+      _unalloc_int="$(bc <<< \
+        "scale=4; ( ${_unalloc_int} / ${_size_int} ) * 100")";
+      _unalloc_pct_list+=( "${_unalloc_int}" );
+
+      if [ "${_mount_str}" = '/boot' ]; then
+        _min_pct_list+=( '25' );
+      else
+        _min_pct_list+=( '15' );
+      fi
+    else
+      _df_report_str="$(df "${_mount_str}" | tail -n-1)";
+
+      _size_int="$(awk '{ print $2 }' <<< "${_df_report_str}")";
+      _size_int="$(_cm2EchoIntFn "${_size_int}")";
+      if (( _size_int == 0 )); then
+        # TODO: better error handling
+        return 1
+      fi
+      (( _size_int *= 1024 )) || true;
+      _size_list+=( "${_size_int}" )
+
+      _space_int="$(awk '{ print $4 }' <<< "${_df_report_str}")";
+      _space_int="$(_cm2EchoIntFn "${_space_int}")";
+      if (( _space_int == 0 )); then
+        # TODO: better error handling
+        return 1
+      fi
+      (( _space_int *= 1024 )) || true;
+      _space_list+=( "${_space_int}" );
+
+      (( _unalloc_int = _size_int - _space_int )) || true;
+      # Convert _unalloc_int to a percentage
+      _unalloc_int="$(bc <<< \
+        "scale=4; ( ${_unalloc_int} / ${_size_int} ) * 100")";
+      _unalloc_pct_list+=( "${_unalloc_int}" );
+
+      if [ "${_mount_str}" = '/boot' ]; then
+        _min_pct_list+=( '10' );
+      else
+        _min_pct_list+=( '5' );
+      fi
+    fi
+  done
+
+  _is_space_low='n'
+  for _idx in "${!_mount_list[@]}"; do
+    if [ "$(bc <<< "${_unalloc_pct_list[_idx]} < ${_min_pct_list[_idx]}")" \
+      = '1' ]; then
+      _is_space_low='y'
+      break
+    fi
+  done
+
+  if [ "${_is_space_low}" = 'y' ]; then
+    echo 'WARNING: Disk space is low on one or more drives!';
+  else
+    echo 'OK: Disk space for all drives is sufficient.';
+  fi
+
+  _btrfs_header_printed='n'
+  for _idx in "${!_mount_list[@]}"; do
+    _fs_type="${_fs_type_list[_idx]}"
+    if [ "${_fs_type}" != 'btrfs' ]; then
+      continue
+    fi
+
+    if [ "${_btrfs_header_printed}" = 'n' ]; then
+      echo 'BTRFS: Mount  Size (GiB)  Remain (GiB) Unalloc %  Status';
+      _btrfs_header_printed='y';
+    fi
+
+    _printDiskReportLineFn "${_mount_list[_idx]}" "${_size_list[_idx]}" \
+      "${_space_list[_idx]}" "${_unalloc_pct_list[_idx]}" \
+      "${_min_pct_list[_idx]}" "       %-5s  %10.2f  %12.2f %9.2f  %s\n";
+  done
+
+  echo '';
+
+  _ext4_header_printed='n';
+  for _idx in "${!_mount_list[@]}"; do
+    _fs_type="${_fs_type_list[_idx]}"
+    if [ "${_fs_type}" != 'ext2/ext3' ]; then
+      continue
+    fi
+
+    if [ "${_ext4_header_printed}" = 'n' ]; then
+      echo ' EXT4: Mount  Size (GiB)  Remain (GiB)  Unused %  Status';
+      _ext4_header_printed='y';
+    fi
+
+    _printDiskReportLineFn "${_mount_list[_idx]}" "${_size_list[_idx]}" \
+      "${_space_list[_idx]}" "${_unalloc_pct_list[_idx]}" \
+      "${_min_pct_list[_idx]}" "       %-5s  %10.2f  %12.2f  %8.2f  %s\n";
+  done
+
+  if [ "${_is_space_low}" = 'y' ]; then
+    _msg="$(cat <<EOF
+
+PLEASE free up some disk space in filesystems marked as 'ALERT' by removing
+unused files, using System Rollback to remove old snapshots, or using Kernel
+Cleaner or the CLI to purge older kernels, as appropriate.
+EOF
+    )";
+    echo "${_msg}";
+  fi
+}
+## . END _displayDiskReportFn }
+
 ## BEGIN _mainFn {
 _mainFn () {
   declare _config_code _is_nv_system _model_code _model_label \
@@ -340,50 +539,13 @@ _mainFn () {
   _step_name='Check disk space';
   _nextStepFn "${_step_name}";
 
-  ## TODO: Provide assement here. The following relies far too much on
-  #   user initiative. Instead it should say:
-  # OK: Disk space for all drives is sufficient: 
-  #   /     130.8 of 232.2 GB
-  #   /home 130.8 of 232.2 GB
-  #   /boot 002.5 of 004.0 GB
-  #
-  # WARNING: Disk space is low on one or more drives
-  #   /     130.8 of 232.2 GB
-  #   /home 130.8 of 232.2 GB
-  #   /boot 003.5 of 004.0 GB Low!
-  #
-  # PLEASE free up some disk space in /boot by removing unused
-  # files, using System Rollback to remove old snapshots, or
-  # using Kernel Cleaner or the CLI to purge older kernels.
-  #
-  # I recommend using a function call, because it could get a bit
-  # more verbose than what we want in _mainFn.
-  #
-  _cm2EchoFn "${_adviceStr} Please review the disk space. The system
-  disk, /, should have 5GB free, as should any separate /home
-  disk. If you see full disks, open another terminal and backup
-  or remove files as needed to get more disk space.
-
-  The /boot partition (if it exists) should have at least 300 MB
-  free. If it does not, run the Focus Kernel Cleaner tool to
-  free up space.
+  _cm2EchoFn "${_adviceStr} Please review the disk space. If you see full
+  disks, open another terminal and backup or remove files as needed to get
+  more disk space.
   ";
 
-  ## TODO: Create an array of messages for each disk, then print them out at the end
-  for _disk_space_dir in '/' '/home' '/boot'; do
-    if findmnt --mountpoint="${_disk_space_dir}"; then
-      _fs_type="$(stat -f -c %T "${_disk_space_dir}")";
-     ## TODO: make this easy for the user to read and provide an assessment!
-      if [ "${_fs_type}" = 'btrfs' ]; then
-        btrfs 'filesystem' 'usage' "${_disk_space_dir}";
-     ## TODO: make this easy for the user to read and provide an assessment!
-      else
-        echo -n '/home: ';
-        df -h "${_disk_space_dir}" |tail -n-1 \
-          | awk '{print "Used "$3" of "$2", "$4" available."}';
-      fi
-    fi
-  done
+  _displayDiskReportFn;
+
   _cm2EchoFn;
   _cm2SucFn;
 
