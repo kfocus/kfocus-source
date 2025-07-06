@@ -52,42 +52,36 @@ _EOH
  # Requires _sysVersStr and _tgtVersStr
  #
 _echoBannerFn () {
-  declare _banner_msg _sys_vers _tgt_vers;
+  declare _msg _sys_vers _tgt_vers;
 
   _sys_vers="${1:-}";
   _tgt_vers="${2:-}";
 
-  _banner_msg="$( cat <<'_EOL01';
- _____                    ____
-|  ___|__   ___ _   _ ___|  _ \ __  __
-| |_ / _ \ / __| | | / __| |_| |\ \/ /
-|  _| |_| | |__| |_| \__ \  _ <  >  <
-|_|  \___/ \___|\__,_|___/_| \_\/_/\_\
+  _msg="$( cat <<'_EOL01';
 
-GUIDED SYSTEM MAINTENANCE: PACKAGE-CHECK
+FOCUSRX: PACKAGE-CHECK
 __upgrade_str__
 
-FocusRx PACKAGE-CHECK looks for common system issues by scanning
-files, packages, and settings. It then offers to fix and issues
-it finds on your approval.
+This script looks for common system issues by scanning files,
+packages, and settings and offers to fix them.
 
-AS WITH ANY SYSTEM MAINTENANCE, PLEASE BACK UP YOUR DATA BEFORE
+As with any system maintenance, PLEASE BACK UP YOUR DATA BEFORE
 PROCEEDING. You may exit this app to back up your data, and then
 start it again using Start Menu > Kubuntu Focus > FocusRx.
 
-Please ensure system is connected to the Internet before proceeding.
-The entire check can take 2-15 minutes depending on the system state
-and connection speed.
+When you are ready, make sure this system is connected to the
+Internet and continue. The entire check can take 2-15 minutes
+depending on the system state and connection speed.
 
 Have questions? Write the support team at support@kfocus.org.
 _EOL01
   )";
 
   # shellcheck disable=SC2001
-  _banner_msg="$(echo "${_banner_msg}" \
-    | sed "s|__upgrade_str__|${_sys_vers} => ${_tgt_vers}|g"
+  _msg="$(
+    sed "s|__upgrade_str__|${_sys_vers} => ${_tgt_vers}|g" <<< "${_msg}"
   )";
-  _cm2EchoFn "${_banner_msg}\n";
+  _cm2EchoFn "${_msg}\n";
 }
 ## . END _echoBannerFn }
 
@@ -121,12 +115,11 @@ _nextStepFn () {
   if [ -n "${_this_descr}" ]; then
     _cm2EchoFn "${_this_descr}\n";
   fi
-  ((_stepNum++));
   _ans_str="$( _cm2ReadPromptYnFn 'Continue' 'y' )";
   if [ "${_ans_str}" = 'n' ]; then
     _cm2InterruptFn;
   fi
-  _cm2EchoFn "${_adviceStr} Please wait; this can take up to a minute...\n";
+  ((_stepNum++));
 }
 ## . END _nextStepFn }
 
@@ -141,7 +134,7 @@ _nextStepFn () {
  #
 _reinstallRecommendsFn () {
   declare _return_int _recommends_list _reinstall_list _pkg_name \
-    _status_str _prompt_msg _ans_str;
+    _status_str _msg _ans_str;
 
   _return_int='0';
 
@@ -166,9 +159,9 @@ _reinstallRecommendsFn () {
   if [ "${#_reinstall_list[@]}" -gt 0 ]; then
     _cm2EchoFn "These recommended packages are not installed:"
     _cm2EchoFn "${_reinstall_list[*]}";
-    _prompt_msg='Reinstall these (recommended)';
+    _msg='Reinstall these (recommended)';
 
-    _ans_str="$( _cm2ReadPromptYnFn "${_prompt_msg}" 'y' )";
+    _ans_str="$( _cm2ReadPromptYnFn "${_msg}" 'y' )";
     if [ "${_ans_str}" = 'y' ]; then
       if ! apt-get install --reinstall "${_reinstall_list[@]}";
         then _return_int=1; fi
@@ -263,14 +256,15 @@ _echoInstalledNvPkgsFn () {
 ## BEGIN _printDiskReportLineFn {
 _printDiskReportLineFn () {
   declare _mount_str _size_int _space_int _unalloc_int _min_pct_int \
-    _pretty_size_int _pretty_space_int _status_str _printf_str;
+    _crit_pct_int _pretty_size_int _pretty_space_int _status_str _printf_str;
 
   _mount_str="${1:-}";
   _size_int="${2:-}";
   _space_int="${3:-}";
   _unalloc_int="${4:-}";
   _min_pct_int="${5:-}";
-  _printf_str="${6:-}";
+  _crit_pct_int="${6:-}";
+  _printf_str="${7:-}";
 
   _pretty_size_int="$(
     bc <<< "scale=2; ${_size_int} / 1024 / 1024 / 1024"
@@ -278,10 +272,12 @@ _printDiskReportLineFn () {
   _pretty_space_int="$(
     bc <<< "scale=2; ${_space_int} / 1024 / 1024 / 1024"
   )";
-  if [ "$(bc <<< "${_unalloc_int} >= ${_min_pct_int}")" = '1' ]; then
-    _status_str="Good >${_min_pct_int}%";
+  if [ "$(bc <<< "${_unalloc_int} < ${_crit_pct_int}")" = '1' ]; then
+    _status_str="$(printf 'CRIT < %2.2f%%' "${_crit_pct_int}")";
+  elif [ "$(bc <<< "${_unalloc_int} < ${_min_pct_int}")" = '1' ]; then
+    _status_str="$(printf 'ALERT < %2.2f%%' "${_min_pct_int}")";
   else
-    _status_str="ALERT <${_min_pct_int}%";
+    _status_str="$(printf 'Good > %2.2f%%' "${_min_pct_int}")";
   fi
 
   # shellcheck disable=SC2059
@@ -294,167 +290,231 @@ _printDiskReportLineFn () {
 }
 ## . END _printDiskReportLineFn }
 
+## BEGIN _echoDiskCritAdviceFn {
+_echoDiskCritAdviceFn () {
+  declare _mount_str _fs_type _unalloc_pct_num _crit_pct_num _list \
+  _crit_str _unalloc_str _msg;
+
+  _mount_str="${1:-}";
+  _fs_type="${2:-}";
+  _unalloc_pct_num="${3:-}";
+  _crit_pct_num="${4:-}";
+  _list=();
+
+  _crit_str="$(printf '%2.2f%%' "${_crit_pct_num}")";
+  _unalloc_str="$(printf '%2.2f%%' "${_unalloc_pct_num}")";
+
+  _msg="Available (${_unalloc_str}) < CRIT threshold (${_crit_str}).\n";
+  case "${1:0}" in
+    '/')
+      _list+=('Root (/) disk space is critically low.');
+      _list+=("${_msg}");
+      _list+=('This can prevent the system from booting or app issues.');
+      _list+=('  * Compress or remove log file found in /var/log.');
+      _list+=('  * Compress databases & VMs, or move to another filesystem.');
+      if [ "${_fs_type}" = 'btrfs' ]; then
+        _list+=('  * Use Start Menu > Kubuntu Focus Tools > System Rollback');
+        _list+=('    then [ Show Snapshot Sizes ], to find snapshots that');
+        _list+=('    use root (/) disk space and delete them if possible.');
+      fi
+    ;;
+    '/boot')
+      _list+=('Boot (/boot) disk space is critically low.');
+      _list+=("${_msg}");
+      _list+=('This can prevent the system from booting.');
+      _list+=('  * Use Start Menu > Kubuntu Focus Tools > Kernel Cleaner');
+      _list+=('    to identify and remove old kernels.');
+      _list+=('  * Remove old kernels using the package manager.');
+      _list+=('    Remember to autoremove old packages to free up space.');
+      if [ "${_fs_type}" = 'btrfs' ]; then
+        _list+=('  * Use Start Menu > Kubuntu Focus Tools > System Rollback');
+        _list+=('    then [ Show Snapshot Sizes ], to find snapshots that');
+        _list+=('    use /boot disk space and delete them if possible.');
+      fi
+    ;;
+    '/home')
+      _list+=('Home (/home) disk space is critically low');
+      _list+=("${_msg}");
+      _list+=('This can prevent apps opening or the ability to save files.');
+      _list+=('  * Delete unused files or local app data stored on /home.');
+      _list+=('    For example, large ML models or Steam games.');
+      _list+=('  * Use Dolphin to empty the Trash');
+   ;;
+  esac
+  IFS=$'\n'; echo "${_list[*]}";
+}
+## . END _echoDiskCritAdviceFn }
+
 ## BEGIN _displayDiskReportFn {
 _displayDiskReportFn () {
-  declare _mount_list _space_list _size_list _unalloc_pct_list _fs_type_list \
-    _min_pct_list _mount_str _unalloc_int _fs_type _df_report_str _space_int \
-    _size_int _btrfs_report_str _is_space_low _idx _msg \
-    _btrfs_header_printed _ext4_header_printed;
+  declare _mount_list _crit_pct_list _fs_type_list _min_pct_list  \
+    _size_list _space_list _unalloc_pct_list _mount_str _fs_type  \
+    _btrfs_report_str _size_int _space_int _calc_str _unalloc_int \
+    _crit_int _df_report_str _unalloc_pct_num _min_pct_num _crit_pct_num \
+    _disk_advice_list _idx _was_ext4_head_printed _was_btrfs_head_printed;
 
   _mount_list=( '/' '/home' '/boot' );
+  _crit_pct_list=();
   _fs_type_list=();
+  _min_pct_list=();
   _size_list=();
   _space_list=();
   _unalloc_pct_list=();
-  _min_pct_list=();
 
   for _mount_str in "${_mount_list[@]}"; do
+    # Skip filesystems that are not a mount point
     if ! mountpoint -q "${_mount_str}"; then
+      _crit_pct_list+=( '' );
       _fs_type_list+=( '' );
+      _min_pct_list+=( '' );
       _size_list+=( '' );
       _space_list+=( '' );
       _unalloc_pct_list+=( '' );
-      _min_pct_list+=( '' );
       continue;
     fi
-
     _fs_type="$(stat -f -c %T "${_mount_str}")";
-    _fs_type_list+=( "${_fs_type}" );
+
+    ## Begin Handle btrfs fs type
     if [ "${_fs_type}" = 'btrfs' ]; then
       _btrfs_report_str="$(
         btrfs filesystem usage -b "${_mount_str}" 2>/dev/null
       )";
 
-      _size_int="$(awk '/Device size/{ print $3 }' \
-        <<< "${_btrfs_report_str}")";
+      # Calc size, skip mount on error
+      _size_int="$(
+        awk '/Device size/{ print $3 }' <<< "${_btrfs_report_str}"
+      )";
       _size_int="$(_cm2EchoIntFn "${_size_int}")";
-      if (( _size_int == 0 )); then
-        # TODO: better error handling
-        return 1;
-      fi
-      _size_list+=( "${_size_int}" )
+      if (( _size_int == 0 )); then continue; fi
 
-      _space_int="$(awk '/Free \(estimated\)/{ print $3 }' \
-        <<< "${_btrfs_report_str}")";
+      # Calc space, skip mount on error
+      _space_int="$(
+        awk '/Free \(estimated\)/{ print $3 }' <<< "${_btrfs_report_str}"
+      )";
       _space_int="$(_cm2EchoIntFn "${_space_int}")";
-      if (( _space_int == 0 )); then
-        # TODO: better error handling
-        return 1;
-      fi
-      _space_list+=( "${_space_int}" );
+      if (( _space_int == 0 )); then continue; fi
 
-      _unalloc_int="$(awk '/Device unallocated/{ print $3 }' \
-        <<< "${_btrfs_report_str}")"
+      # Calc unalloc percent, skip mount on error
+      _unalloc_int="$(
+        awk '/Device unallocated/{ print $3 }' <<< "${_btrfs_report_str}"
+      )";
       _unalloc_int="$(_cm2EchoIntFn "${_unalloc_int}")"
-      if (( _unalloc_int == 0 )); then
-        # TODO: better error handling
-        return 1;
-      fi
-      # Convert _unalloc_int to a percentage
-      _unalloc_int="$(bc <<< \
-        "scale=4; ( ${_unalloc_int} / ${_size_int} ) * 100")";
-      _unalloc_pct_list+=( "${_unalloc_int}" );
+      if (( _unalloc_int == 0 )); then continue; fi
+      _calc_str="scale=4; ( ${_unalloc_int} / ${_size_int} ) * 100";
+      _unalloc_pct_num="$(bc <<< "${_calc_str}")";
 
       if [ "${_mount_str}" = '/boot' ]; then
-        _min_pct_list+=( '25' );
+        _crit_int="${_btrfsBootCritInt}"; # was 300 MiB
       else
-        _min_pct_list+=( '15' );
+        _crit_int="${_btrfsMainCritInt}"; # was 10 GiB
       fi
+    ## . End Handle btrfs fs type
+
+    ## Begin Handle other fs types
     else
       _df_report_str="$(df "${_mount_str}" | tail -n-1)";
 
+      # Calc size, skip mount on error
       _size_int="$(awk '{ print $2 }' <<< "${_df_report_str}")";
       _size_int="$(_cm2EchoIntFn "${_size_int}")";
-      if (( _size_int == 0 )); then
-        # TODO: better error handling
-        return 1
-      fi
+      if (( _size_int == 0 )); then continue; fi
       (( _size_int *= 1024 )) || true;
-      _size_list+=( "${_size_int}" )
 
+      # Calc space, skip mount on error
       _space_int="$(awk '{ print $4 }' <<< "${_df_report_str}")";
       _space_int="$(_cm2EchoIntFn "${_space_int}")";
-      if (( _space_int == 0 )); then
-        # TODO: better error handling
-        return 1
-      fi
+      if (( _space_int == 0 )); then continue; fi
       (( _space_int *= 1024 )) || true;
-      _space_list+=( "${_space_int}" );
 
+      # Calc unalloc percent, skip mount on error
       (( _unalloc_int = _size_int - _space_int )) || true;
-      # Convert _unalloc_int to a percentage
-      _unalloc_int="$(bc <<< \
-        "scale=4; ( ${_unalloc_int} / ${_size_int} ) * 100")";
-      _unalloc_pct_list+=( "${_unalloc_int}" );
+      _calc_str="scale=4; ( ${_unalloc_int} / ${_size_int} ) * 100";
+      _unalloc_pct_num="$(bc <<< "${_calc_str}")";
 
       if [ "${_mount_str}" = '/boot' ]; then
-        _min_pct_list+=( '10' );
+        _crit_int="${_otherBootCritInt}"; # was 200 MiB
       else
-        _min_pct_list+=( '5' );
+        _crit_int="${_otherMainCritInt}"; # was 7.5 GiB
       fi
     fi
+    ## End Handle other fs types
+
+    # Store calculated values in aligned lists for this mount
+    _fs_type_list+=( "${_fs_type}" );
+    _size_list+=(  "${_size_int}"  );
+    _space_list+=( "${_space_int}" );
+    _unalloc_pct_list+=( "${_unalloc_pct_num}" );
+
+    # Calc critical low disk percentages for this mount
+    _calc_str="scale=4; ( ${_crit_int} / ${_size_int} ) * 100";
+    _crit_pct_num="$(bc <<< "${_calc_str}")";
+    _crit_pct_list+=( "${_crit_pct_num}" );
+
+    # Calc alert low disk percentages for this mount
+    _calc_str="scale=4; ( ${_crit_pct_num} * 3.3 )";
+    _min_pct_num="$(bc <<< "${_calc_str}")";
+    [ "$(bc <<< "${_min_pct_num} > 100")" = '1' ] && _min_pct_num='100.00';
+    _min_pct_list+=( "${_min_pct_num}" );
   done
 
-  _is_space_low='n'
+  _disk_advice_list=();
   for _idx in "${!_mount_list[@]}"; do
-    if [ "$(bc <<< "${_unalloc_pct_list[_idx]} < ${_min_pct_list[_idx]}")" \
-      = '1' ]; then
-      _is_space_low='y'
-      break
+    _calc_str="${_unalloc_pct_list[_idx]} < ${_crit_pct_list[_idx]}";
+    if [ "$(bc <<< "${_calc_str}")" = '1' ]; then
+      _disk_advice_list+=( "$(
+         _echoDiskCritAdviceFn "${_mount_list[_idx]}" \
+         "${_fs_type_list[_idx]}" "${_unalloc_pct_list[_idx]}" \
+         "${_crit_pct_list[_idx]}"
+      )");
     fi
   done
 
-  if [ "${_is_space_low}" = 'y' ]; then
-    echo 'WARNING: Disk space is low on one or more drives!';
-  else
-    echo 'OK: Disk space for all drives is sufficient.';
-  fi
-
-  _btrfs_header_printed='n'
+  _was_btrfs_head_printed='n'
   for _idx in "${!_mount_list[@]}"; do
     _fs_type="${_fs_type_list[_idx]}"
     if [ "${_fs_type}" != 'btrfs' ]; then
-      continue
+      continue;
     fi
 
-    if [ "${_btrfs_header_printed}" = 'n' ]; then
-      echo 'BTRFS: Mount  Size (GiB)  Remain (GiB) Unalloc %  Status';
-      _btrfs_header_printed='y';
+    if [ "${_was_btrfs_head_printed}" = 'n' ]; then
+      _cm2EchoFn 'BTRFS: Mount  Size (GiB)  Remain (GiB) Unalloc %  Status';
+      _was_btrfs_head_printed='y';
     fi
 
     _printDiskReportLineFn "${_mount_list[_idx]}" "${_size_list[_idx]}" \
       "${_space_list[_idx]}" "${_unalloc_pct_list[_idx]}" \
-      "${_min_pct_list[_idx]}" "       %-5s  %10.2f  %12.2f %9.2f  %s\n";
+      "${_min_pct_list[_idx]}" "${_crit_pct_list[_idx]}" \
+      '       %-5s  %10.2f  %12.2f %9.2f  %s\n';
   done
 
-  echo '';
+  _cm2EchoFn;
 
-  _ext4_header_printed='n';
+  _was_ext4_head_printed='n';
   for _idx in "${!_mount_list[@]}"; do
     _fs_type="${_fs_type_list[_idx]}"
     if [ "${_fs_type}" != 'ext2/ext3' ]; then
       continue
     fi
 
-    if [ "${_ext4_header_printed}" = 'n' ]; then
-      echo ' EXT4: Mount  Size (GiB)  Remain (GiB)  Unused %  Status';
-      _ext4_header_printed='y';
+    if [ "${_was_ext4_head_printed}" = 'n' ]; then
+      _cm2EchoFn ' EXT4: Mount  Size (GiB)  Remain (GiB)  Unused %  Status';
+      _was_ext4_head_printed='y';
     fi
 
     _printDiskReportLineFn "${_mount_list[_idx]}" "${_size_list[_idx]}" \
       "${_space_list[_idx]}" "${_unalloc_pct_list[_idx]}" \
-      "${_min_pct_list[_idx]}" "       %-5s  %10.2f  %12.2f  %8.2f  %s\n";
+      "${_min_pct_list[_idx]}" "${_crit_pct_list[_idx]}" \
+      '       %-5s  %10.2f  %12.2f  %8.2f  %s\n';
   done
 
-  if [ "${_is_space_low}" = 'y' ]; then
-    _msg="$(cat <<EOF
-
-PLEASE free up some disk space in filesystems marked as 'ALERT' by removing
-unused files, using System Rollback to remove old snapshots, or using Kernel
-Cleaner or the CLI to purge older kernels, as appropriate.
-EOF
-    )";
-    echo "${_msg}";
+  if (( "${#_disk_advice_list[@]}" > 0 )); then
+    for _msg in "${_disk_advice_list[@]}"; do
+      _cm2EchoFn "${_msg}\n";
+    done
+    return 1;
+  else
+    _cm2SucStrFn 'Disk space appears fine.';
+    return 0;
   fi
 }
 ## . END _displayDiskReportFn }
@@ -462,10 +522,13 @@ EOF
 ## BEGIN _mainFn {
 _mainFn () {
   declare _config_code _is_nv_system _model_code _model_label \
-    _nv_series_str _option_key _dup_pid _step_name \
-    _installed_nv_list _sys_vers _tgt_vers _do_safe \
-    _disk_space_dir _fs_type _do_pkg_warn _do_advise_reboot \
-    _prompt_msg _prime_query_key _prime_set_key;
+    _nv_series_str _option_key _dup_pid _step_name _installed_nv_list \
+    _sys_vers _tgt_vers _do_safe _do_pkg_warn _do_advise_reboot \
+    _msg _prime_query_key _prime_set_key;
+
+  if [ "$(id -u)" != '0' ]; then
+    _cm2AskExitFn 7 "Please run as root. Press <return> to exit.";
+  fi
 
   _config_code="$( _cm2EchoModelStrFn 'config_code')" || exit 202;
   _is_nv_system="$(_cm2EchoModelStrFn 'is_nv_sys'  )" || exit 202;
@@ -521,12 +584,8 @@ _mainFn () {
   read -rp 'Press <return> to continue or <ctrl-c> to cancel. ';
   _cm2EchoFn;
 
-  if [ "$(id -u)" != '0' ]; then
-    _cm2AskExitFn 7 "Please run as root. Press <return> to exit.";
-  fi
-
-  # Reverse trap as this can cause problems (TODO: indicate how)
-  trap '' SIGINT SIGTERM;
+  # Revert interrupt handling to default
+  # trap - SIGINT SIGTERM;
 
   # Prevent concurrent runs
   # shellcheck disable=SC2119
@@ -538,25 +597,25 @@ _mainFn () {
 
   _step_name='Check disk space';
   _nextStepFn "${_step_name}";
-
-  _cm2EchoFn "${_adviceStr} Please review the disk space. If you see full
-  disks, open another terminal and backup or remove files as needed to get
-  more disk space.
-  ";
-
-  _displayDiskReportFn;
-
-  _cm2EchoFn;
+  while ! _displayDiskReportFn; do
+    _msg="${_adviceStr} or more disks are low on space.";
+    _msg+='Increase free space as discussed above.';
+    _msg+=$'\n';
+    _msg='Rerun disk scan (No continues)';
+    _ans_str="$( _cm2ReadPromptYnFn "${_msg}" 'y' )";
+    if [ "${_ans_str}" = 'n' ]; then break; fi
+    _cm2EchoFn '\n\n\n\n\nRE-SCAN DISKS\n=============';
+  done
   _cm2SucFn;
 
-  _step_name='Repair packages';
+  _step_name='Check package installation';
   if [ "${_do_safe}" = 'y' ]; then
     _cm2WarnStrFn "${_alertStr} Skip: ${_step_name}";
   else
     _nextStepFn "${_step_name}";
-    _cm2EchoFn 'The following steps will repair packages.
-  Please provide your user password when prompted.
-  ';
+    _msg='The following steps will check and repair packages.\n';
+    _msg+='Please provide your user password when prompted.';
+    _cm2EchoFn "${_msg}";
 
     _do_pkg_warn='n';
     # See /usr/share/wajig/commands.py for source commands
@@ -613,8 +672,8 @@ _mainFn () {
         _nextStepFn "${_step_name}";
         _cm2EchoFn "NVIDIA libs are not expected for this ${_model_label} system:";
         _cm2EchoFn "${_installed_nv_list[*]}";
-        _prompt_msg='Shall we remove them';
-        _ans_str="$( _cm2ReadPromptYnFn "${_prompt_msg}" 'n' )";
+        _msg='Shall we remove them';
+        _ans_str="$( _cm2ReadPromptYnFn "${_msg}" 'n' )";
         if [ "${_ans_str}" = 'y' ]; then
           if apt-get purge "${_installed_nv_list[@]}"; then
             _cm2SucFn; else _cm2WarnFn; fi
@@ -636,8 +695,8 @@ _mainFn () {
       _cm2WarnStrFn "${_alertStr} Skip ${_step_name}";
     else
       _nextStepFn "${_step_name}";
-      _prompt_msg='Shall we remove this?';
-      _ans_str="$( _cm2ReadPromptYnFn "${_prompt_msg}" 'y' )";
+      _msg='Shall we remove this?';
+      _ans_str="$( _cm2ReadPromptYnFn "${_msg}" 'y' )";
       if [ "${_ans_str}" = 'y' ]; then
         if ppa-purge graphics-drivers; then
           _cm2SucFn; else _cm2WarnFn;
@@ -674,10 +733,6 @@ _mainFn () {
   else
     _nextStepFn "${_step_name}";
     _cm2EchoFn "${_adviceStr} This updates only the latest kernel version.";
-    _cm2EchoFn "${_adviceStr} Do not be alarmed by missing i915 module warnings,";
-    _cm2EchoFn "  THESE ARE NORMAL.\n";
-    # Use -k all to update all initramfs (this can be dangerous as it can
-    # propagate an issue to all kernels, so be careful!)
     if update-initramfs -u; then _cm2SucFn; else _cm2WarnFn; fi
   fi
 
@@ -718,11 +773,20 @@ _mainFn () {
 
 ## BEGIN Declare global variables {
 declare _binName _binDir _baseDir _baseName _assignList \
-  _adviceStr _alertStr _stepNum _lspciExe _primeExe \
-  _do_safe;
+  _adviceStr _alertStr _btrfsBootCritInt _btrfsMainCritInt \
+  _otherBootCritInt _otherMainCritInt \
+  _stepNum _lspciExe _primeExe;
 
 _adviceStr='FocusRx Advice:';
 _alertStr='FocusRx SAFE MODE:';
+
+# Set unallocated thresholds
+# _btrfsBootCritInt='3145728000'; #  3000 MiB # TEST
+_btrfsBootCritInt='314572800';    # 300.0 MiB
+_btrfsMainCritInt='10737418240';  # 10.00 GiB
+_otherBootCritInt='209715200';    # 200.0 MiB
+_otherMainCritInt='8053063680';   #  7.50 GiB
+
 _stepNum=1;
 ## . END Declare global variables }
 

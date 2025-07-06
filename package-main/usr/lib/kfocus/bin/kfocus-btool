@@ -44,7 +44,7 @@ _EOT
 _exitCleanFn () {
   declare _int;
   _int="$(_echoIntFn "${1:-0}")";
-  trap '' EXIT;
+  trap '' EXIT; # Ignore EXIT signal. 'trap - EXIT' would revert to default.
   _cleanupFn;
   exit "${_int}";
 }
