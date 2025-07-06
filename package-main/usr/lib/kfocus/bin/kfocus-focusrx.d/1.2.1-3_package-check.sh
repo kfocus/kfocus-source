@@ -255,37 +255,37 @@ _echoInstalledNvPkgsFn () {
 
 ## BEGIN _printDiskReportLineFn {
 _printDiskReportLineFn () {
-  declare _mount_str _size_int _space_int _unalloc_int _min_pct_int \
-    _crit_pct_int _pretty_size_int _pretty_space_int _status_str _printf_str;
+  declare _mount_str _size_int _space_int _unalloc_pct_num _alert_pct_num \
+    _crit_pct_num _pretty_size_num _pretty_space_num _status_str _printf_str;
 
   _mount_str="${1:-}";
   _size_int="${2:-}";
   _space_int="${3:-}";
-  _unalloc_int="${4:-}";
-  _min_pct_int="${5:-}";
-  _crit_pct_int="${6:-}";
+  _unalloc_pct_num="${4:-}";
+  _alert_pct_num="${5:-}";
+  _crit_pct_num="${6:-}";
   _printf_str="${7:-}";
 
-  _pretty_size_int="$(
+  _pretty_size_num="$(
     bc <<< "scale=2; ${_size_int} / 1024 / 1024 / 1024"
   )";
-  _pretty_space_int="$(
+  _pretty_space_num="$(
     bc <<< "scale=2; ${_space_int} / 1024 / 1024 / 1024"
   )";
-  if [ "$(bc <<< "${_unalloc_int} < ${_crit_pct_int}")" = '1' ]; then
-    _status_str="$(printf 'CRIT < %2.2f%%' "${_crit_pct_int}")";
-  elif [ "$(bc <<< "${_unalloc_int} < ${_min_pct_int}")" = '1' ]; then
-    _status_str="$(printf 'ALERT < %2.2f%%' "${_min_pct_int}")";
+  if [ "$(bc <<< "${_unalloc_pct_num} < ${_crit_pct_num}")" = '1' ]; then
+    _status_str="$(printf 'CRIT < %2.2f%%' "${_crit_pct_num}")";
+  elif [ "$(bc <<< "${_unalloc_pct_num} < ${_alert_pct_num}")" = '1' ]; then
+    _status_str="$(printf 'ALERT < %2.2f%%' "${_alert_pct_num}")";
   else
-    _status_str="$(printf 'Good > %2.2f%%' "${_min_pct_int}")";
+    _status_str="$(printf 'Good > %2.2f%%' "${_alert_pct_num}")";
   fi
 
   # shellcheck disable=SC2059
-  printf "${_printf_str}" \
-    "${_mount_str}" \
-    "${_pretty_size_int}" \
-    "${_pretty_space_int}" \
-    "${_unalloc_int}" \
+  printf "${_printf_str}"  \
+    "${_mount_str}"        \
+    "${_pretty_size_num}"  \
+    "${_pretty_space_num}" \
+    "${_unalloc_pct_num}"  \
     "${_status_str}";
 }
 ## . END _printDiskReportLineFn }
@@ -347,16 +347,16 @@ _echoDiskCritAdviceFn () {
 
 ## BEGIN _displayDiskReportFn {
 _displayDiskReportFn () {
-  declare _mount_list _crit_pct_list _fs_type_list _min_pct_list  \
+  declare _mount_list _crit_pct_list _fs_type_list _alert_pct_list  \
     _size_list _space_list _unalloc_pct_list _mount_str _fs_type  \
     _btrfs_report_str _size_int _space_int _calc_str _unalloc_int \
-    _crit_int _df_report_str _unalloc_pct_num _min_pct_num _crit_pct_num \
+    _crit_int _df_report_str _unalloc_pct_num _alert_pct_num _crit_pct_num \
     _disk_advice_list _idx _was_ext4_head_printed _was_btrfs_head_printed;
 
   _mount_list=( '/' '/home' '/boot' );
   _crit_pct_list=();
   _fs_type_list=();
-  _min_pct_list=();
+  _alert_pct_list=();
   _size_list=();
   _space_list=();
   _unalloc_pct_list=();
@@ -364,9 +364,9 @@ _displayDiskReportFn () {
   for _mount_str in "${_mount_list[@]}"; do
     # Skip filesystems that are not a mount point
     if ! mountpoint -q "${_mount_str}"; then
+      _alert_pct_list+=( '' );
       _crit_pct_list+=( '' );
       _fs_type_list+=( '' );
-      _min_pct_list+=( '' );
       _size_list+=( '' );
       _space_list+=( '' );
       _unalloc_pct_list+=( '' );
@@ -405,8 +405,10 @@ _displayDiskReportFn () {
 
       if [ "${_mount_str}" = '/boot' ]; then
         _crit_int="${_btrfsBootCritInt}"; # was 300 MiB
+        _alert_pct_num="${_btrfsBootAlertPct}";
       else
         _crit_int="${_btrfsMainCritInt}"; # was 10 GiB
+        _alert_pct_num="${_btrfsMainAlertPct}";
       fi
     ## . End Handle btrfs fs type
 
@@ -431,6 +433,7 @@ _displayDiskReportFn () {
       _calc_str="scale=4; ( ${_unalloc_int} / ${_size_int} ) * 100";
       _unalloc_pct_num="$(bc <<< "${_calc_str}")";
 
+      _alert_pct_num='';
       if [ "${_mount_str}" = '/boot' ]; then
         _crit_int="${_otherBootCritInt}"; # was 200 MiB
       else
@@ -439,22 +442,25 @@ _displayDiskReportFn () {
     fi
     ## End Handle other fs types
 
-    # Store calculated values in aligned lists for this mount
-    _fs_type_list+=( "${_fs_type}" );
-    _size_list+=(  "${_size_int}"  );
-    _space_list+=( "${_space_int}" );
-    _unalloc_pct_list+=( "${_unalloc_pct_num}" );
-
     # Calc critical low disk percentages for this mount
     _calc_str="scale=4; ( ${_crit_int} / ${_size_int} ) * 100";
     _crit_pct_num="$(bc <<< "${_calc_str}")";
-    _crit_pct_list+=( "${_crit_pct_num}" );
 
-    # Calc alert low disk percentages for this mount
-    _calc_str="scale=4; ( ${_crit_pct_num} * 3.3 )";
-    _min_pct_num="$(bc <<< "${_calc_str}")";
-    [ "$(bc <<< "${_min_pct_num} > 100")" = '1' ] && _min_pct_num='100.00';
-    _min_pct_list+=( "${_min_pct_num}" );
+    # Calc alert low disk percentages for this mount if not already set
+    if [ -z "${_alert_pct_num}" ]; then
+      _calc_str="scale=4; ( ${_crit_pct_num} * 3.3 )";
+      _alert_pct_num="$(bc <<< "${_calc_str}")";
+      [ "$(bc <<< "${_alert_pct_num} > 100")" = '1' ] \
+       && _alert_pct_num='100.00';
+    fi
+
+    # Store calculated values in aligned lists for this mount
+    _alert_pct_list+=(   "${_alert_pct_num}"   );
+    _crit_pct_list+=(    "${_crit_pct_num}"    );
+    _fs_type_list+=(     "${_fs_type}"         );
+    _size_list+=(        "${_size_int}"        );
+    _space_list+=(       "${_space_int}"       );
+    _unalloc_pct_list+=( "${_unalloc_pct_num}" );
   done
 
   _disk_advice_list=();
@@ -483,7 +489,7 @@ _displayDiskReportFn () {
 
     _printDiskReportLineFn "${_mount_list[_idx]}" "${_size_list[_idx]}" \
       "${_space_list[_idx]}" "${_unalloc_pct_list[_idx]}" \
-      "${_min_pct_list[_idx]}" "${_crit_pct_list[_idx]}" \
+      "${_alert_pct_list[_idx]}" "${_crit_pct_list[_idx]}" \
       '       %-5s  %10.2f  %12.2f %9.2f  %s\n';
   done
 
@@ -503,13 +509,13 @@ _displayDiskReportFn () {
 
     _printDiskReportLineFn "${_mount_list[_idx]}" "${_size_list[_idx]}" \
       "${_space_list[_idx]}" "${_unalloc_pct_list[_idx]}" \
-      "${_min_pct_list[_idx]}" "${_crit_pct_list[_idx]}" \
+      "${_alert_pct_list[_idx]}" "${_crit_pct_list[_idx]}" \
       '       %-5s  %10.2f  %12.2f  %8.2f  %s\n';
   done
 
   if (( "${#_disk_advice_list[@]}" > 0 )); then
     for _msg in "${_disk_advice_list[@]}"; do
-      _cm2EchoFn "${_msg}\n";
+      _cm2EchoFn "\n${_msg}\n";
     done
     return 1;
   else
@@ -525,10 +531,6 @@ _mainFn () {
     _nv_series_str _option_key _dup_pid _step_name _installed_nv_list \
     _sys_vers _tgt_vers _do_safe _do_pkg_warn _do_advise_reboot \
     _msg _prime_query_key _prime_set_key;
-
-  if [ "$(id -u)" != '0' ]; then
-    _cm2AskExitFn 7 "Please run as root. Press <return> to exit.";
-  fi
 
   _config_code="$( _cm2EchoModelStrFn 'config_code')" || exit 202;
   _is_nv_system="$(_cm2EchoModelStrFn 'is_nv_sys'  )" || exit 202;
@@ -552,21 +554,21 @@ _mainFn () {
     source '/etc/lsb-release';
   fi
 
-  ## Begin Process Options {
+  # Process options
   while getopts ':ch' _option_key; do
     case "${_option_key}" in
-      c ) echo "
+      c) echo "
   <p>FocusRx PACKAGE-CHECK inspects libraries, configurations,<br>
   and other settings to ensure this ${_model_label}<br>
   system works properly.</p>";
           exit 0;;
-      h ) _echoHelpFn; exit 0;;
-      * ) _cm2EchoFn "\nInvalid option: -${OPTARG} \n";
+      h) _echoHelpFn; exit 0;;
+      *) _cm2EchoFn "\nInvalid option: -${OPTARG} \n";
           _echoHelpFn; exit 1;;
     esac
   done
-  ## . End Process Options }
 
+  # Process arguments
   _sys_vers="${_cm2Arg01:=0.0.0-0}";
   _tgt_vers="${_cm2Arg02:=1.2.1-3}";
   [ $# -gt 2 ] && _do_safe='y' || _do_safe='n';
@@ -574,15 +576,20 @@ _mainFn () {
   # Trap interrupts in xterm exec env to prevent script crash message
   trap _cm2InterruptFn SIGINT SIGTERM;
 
-  # Echo banner
+  # Echo banner and prompt user
   _echoBannerFn "${_sys_vers}" "${_tgt_vers}";
-
   if [ "${_do_safe}" = 'y' ]; then
     _cm2WarnStrFn "${_alertStr} No changes will be made.";
   fi
-
-  read -rp 'Press <return> to continue or <ctrl-c> to cancel. ';
+  read -rp 'Press [Enter] to continue or [CTRL][C] to cancel. ';
   _cm2EchoFn;
+
+  # This must be done AFTER option checking, as option
+  #   'c' must be available without root.
+  #
+  if [ "$(id -u)" != '0' ]; then
+    _cm2AskExitFn 7 "Please run as root. Press [Enter] to exit.";
+  fi
 
   # Revert interrupt handling to default
   # trap - SIGINT SIGTERM;
@@ -781,12 +788,12 @@ _adviceStr='FocusRx Advice:';
 _alertStr='FocusRx SAFE MODE:';
 
 # Set unallocated thresholds
-# _btrfsBootCritInt='3145728000'; #  3000 MiB # TEST
+_btrfsBootAlertPct='25';          # Recommended alert for BTRFS
 _btrfsBootCritInt='314572800';    # 300.0 MiB
+_btrfsMainAlertPct='15';          # Recommended alert for BTRFS
 _btrfsMainCritInt='10737418240';  # 10.00 GiB
 _otherBootCritInt='209715200';    # 200.0 MiB
 _otherMainCritInt='8053063680';   #  7.50 GiB
-
 _stepNum=1;
 ## . END Declare global variables }
 
