@@ -512,7 +512,7 @@ Kirigami.ApplicationWindow {
             }
             width : Kirigami.Units.gridUnit * 15
 
-            text  : '<b>Once you are finished,</b> please return here and '
+            text  : '<b>Once you are finished</b>, please return here and '
                   + 'click “Continue” to proceed to the next step.'
             wrapMode: Text.WordWrap
         }
@@ -918,7 +918,7 @@ Kirigami.ApplicationWindow {
             frontHeading.text = getModelSpecificStringFn( 'welcome' );
             frontText.text
               = '<p><b>This Welcome Wizard is meant to help you get started '
-              + 'quickly.</b> Each step helps you select tools and '
+              + 'quickly</b>. Each step helps you select tools and '
               + 'settings that best fit your workflow.'
               ;
 
@@ -931,12 +931,14 @@ Kirigami.ApplicationWindow {
                   + '_faq">here</a>.'
                   ;
             }
-            frontText.text += '<p>';
+            frontText.text += '<br></p>';
 
             frontText.text
-              +='<p><b>You may always revisit this wizard later</b> '
-              + 'using Start Menu &gt; Kubuntu Focus Tools &gt; '
-              + 'Welcome Wizard.'
+              +='<p><b>To help keep your system current and secure</b>, '
+              + 'update the software regularly as described '
+              + '<a href="https://kfocus.org/wf/update.html">here</a>. '
+              + 'You may always revisit this wizard later using Start Menu '
+              + '&gt; Kubuntu Focus Tools &gt; Welcome Wizard.</p>'
               ;
               // You can visit the docs
               // <a href="https://kfocus.org/wf/tools#wizard">'
@@ -1325,7 +1327,7 @@ Kirigami.ApplicationWindow {
             topHeading.text
               = 'Install MS Fonts, VirtualBox Extensions, and More';
             primaryText.text
-              = '<p><b>Some software is restricted,</b> '
+              = '<p><b>Some software is restricted</b>, '
               + 'meaning you have to approve certain agreements before '
               + 'you install it. We recommend you at least install the '
               + 'MS fonts to assist in compatibility. If you use '
@@ -1363,7 +1365,7 @@ Kirigami.ApplicationWindow {
               + 'installation. Please enter your password to '
               + 'proceed.<br></p>'
 
-              + '<p>' + ding02Str + '<b>As you follow the steps,</b> '
+              + '<p>' + ding02Str + '<b>As you follow the steps</b>, '
               + 'you will be prompted to accept license terms. If you do not '
               + 'agree with the terms for a particular software '
               + 'component, you may skip installing it.</p>'
@@ -1396,7 +1398,7 @@ Kirigami.ApplicationWindow {
               + 'periodically and before software updates, although this '
               + 'is not enabled by default.<br></p>'
 
-              + '<p><b>System Rollback does not snapshot files in /home.</b> '
+              + '<p><b>System Rollback does not snapshot files in /home</b>. '
               + 'For more info, see the '
               + '<a href="https://kfocus.org/wf/tools#rollback">Tools Guided '
               + 'Solution.</a></p>'
@@ -1490,7 +1492,7 @@ Kirigami.ApplicationWindow {
             interTopHeading.text      = 'Proceed with BackInTime...';
             instructionsText.text
               = '<p>' + ding01Str + '<b>If BackInTime is not '
-              + 'installed,</b> you will be asked to install it, and '
+              + 'installed</b>, you will be asked to install it, and '
               + 'will need to provide your password to do so. ' + ding02Str
               + '<b>Once installed, the BackInTime app</b> should appear as '
               + 'shown.<br></p>'
@@ -1566,7 +1568,7 @@ Kirigami.ApplicationWindow {
               + 'you will be asked to install it, and will need to provide '
               + 'your password to do so.<br></p>'
 
-              + '<p>' + ding02Str + '<b>Once installed,</b> you may need to '
+              + '<p>' + ding02Str + '<b>Once installed</b>, you may need to '
               + 'click on the icon in the system tray as shown.<br></p>'
 
               + '<p>' + ding03Str + '<b>The main window should then '
@@ -1636,7 +1638,7 @@ Kirigami.ApplicationWindow {
             interTopHeading.text      = 'Proceed with Thunderbird...';
             instructionsText.text
               = '<p>' + ding01Str
-              + '<b>If Thunderbird is not installed,</b> you will be '
+              + '<b>If Thunderbird is not installed</b>, you will be '
               + 'asked to install it, and will need to provide your password '
               + 'to do so.<br></p>'
 
@@ -1710,12 +1712,12 @@ Kirigami.ApplicationWindow {
             interTopHeading.text      = 'Proceed with Dropbox...';
             instructionsText.text
               = '<p>' + ding01Str
-              + '<b>If Dropbox is not installed,</b> you will be asked to '
+              + '<b>If Dropbox is not installed</b>, you will be asked to '
               + 'install it, and will need to provide your password to do '
               + 'so.<br></p>'
 
               + '<p>' + ding02Str
-              + '<b>Once installed,</b> you may need to click on the icon '
+              + '<b>Once installed</b>, you may need to click on the icon '
               + 'in the system tray as shown.<br></p>'
 
               + '<p>' + ding03Str
@@ -1784,12 +1786,12 @@ Kirigami.ApplicationWindow {
             interTopHeading.text      = 'Proceed with Insync...';
             instructionsText.text
               = '<p>' + ding01Str
-              + '<b>If Insync is not installed,</b> you will be asked to '
+              + '<b>If Insync is not installed</b>, you will be asked to '
               + 'install it, and will need to provide your password to do '
               + 'so.<br></p>'
 
               + '<p>' + ding02Str
-              + '<b>When you first start Insync,</b> you will be shown '
+              + '<b>When you first start Insync</b>, you will be shown '
               + 'account options. Select your drive type to proceed.<br></p>'
 
               + '<p>' + ding03Str
@@ -1855,13 +1857,13 @@ Kirigami.ApplicationWindow {
             interTopHeading.text      = 'Proceed with JetBrains Toolbox...';
             instructionsText.text
               = '<p>' + ding01Str
-              + '<b>If JetBrains Toolbox is not installed,</b> you will '
+              + '<b>If JetBrains Toolbox is not installed</b>, you will '
               + 'be asked to install it, and will need to provide your '
               + 'password to do so.<br></p>'
 
               + '<p>' + ding02Str
               + '<b>If you’re launching the Toolbox for the first '
-              + 'time,</b> you will be asked to configure it and accept the '
+              + 'time</b>, you will be asked to configure it and accept the '
               + 'JetBrains User Agreement. It may take up to 30 seconds for '
               + 'the Toolbox to launch.<br></p>'
 
@@ -1925,7 +1927,7 @@ Kirigami.ApplicationWindow {
               + 'interface.<br></p>'
 
               + '<p>' + ding02Str
-              + '<b>Pick one of the preinstalled avatars,</b> or click '
+              + '<b>Pick one of the preinstalled avatars</b>, or click '
               + '“Choose File” to use a custom avatar.<br></p>'
               // TODO: Specify image type and size?
 
@@ -1955,7 +1957,7 @@ Kirigami.ApplicationWindow {
             topImage.source = imgDir + 'kfocus_bug_apps.svg';
             topHeading.text = 'Find and Install Apps Quickly';
             primaryText.text
-              = '<p><b>The Curated Apps Page lists recommended apps </b> '
+              = '<p><b>The Curated Apps Page lists recommended apps</b> '
               + 'that work well with Kubuntu Focus systems. Click on an '
               + 'icon to launch an app. If it is not installed, the system '
               + 'will install the repository and the package before '
@@ -2032,10 +2034,10 @@ Kirigami.ApplicationWindow {
               + 'checkmark. Click the “Clear Checkmarks” button below to '
               + 'reset them.<br></p>'
 
-              + '<p><b>To get more help,</b> click Start Menu &gt; Kubuntu Focus '
+              + '<p><b>To get more help</b>, click Start Menu &gt; Kubuntu Focus '
               + 'Tools &gt; Help.<br></p>'
 
-              + '<p><b>To run this wizard again,</b> click Start Menu &gt; '
+              + '<p><b>To run this wizard again</b>, click Start Menu &gt; '
               + 'Kubuntu Focus Tools &gt; Welcome Wizard.</p>'
               ;
             actionButton.text      = 'Finish';
