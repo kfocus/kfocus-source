@@ -26,43 +26,38 @@
 #include <sys/fanotify.h>
 #include <linux/magic.h>
 #include <time.h>
+#include <linux/limits.h>
 
-#define PATH_DATA_LEN 2
+void *safe_calloc(size_t nmemb, size_t size) {
+  void *ptr = calloc(nmemb, size);
+  if (ptr == NULL) {
+    perror("Cannot allocate memory");
+    exit(1);
+  }
+  return ptr;
+}
 
 char *fd_to_path(int fd) {
   const char *base = "/proc/self/fd";
   ssize_t init_path_size;
   char *init_path;
-  struct stat statbuf = { 0 };
-  int ret;
   char *final_path;
   ssize_t rl_len;
 
   init_path_size = snprintf(NULL, 0, "%s/%d", base, fd);
-  init_path = malloc(init_path_size + 1);
+  init_path = safe_calloc(1, init_path_size + 1);
   snprintf(init_path, init_path_size + 1, "%s/%d", base, fd);
-
-  while (1) {
-    ret = lstat(init_path, &statbuf);
-    if (ret == -1) {
-      perror("fd_to_path stat failed");
-      exit(1);
-    }
-    final_path = malloc(statbuf.st_size + 1);
-    rl_len = readlink(init_path, final_path, statbuf.st_size + 1);
-    if (rl_len == -1) {
-      perror("fd_to_path readlink failed");
-      exit(1);
-    } else if (rl_len == statbuf.st_size + 1) {
-      // Path value changed out from under us, try again
-      free(final_path);
-      continue;
-    }
-    break;
+  final_path = safe_calloc(1, PATH_MAX);
+  rl_len = readlink(init_path, final_path, PATH_MAX);
+  if (rl_len == -1) {
+    return NULL;
+  } else if (rl_len == PATH_MAX) {
+    final_path[PATH_MAX - 1] = '\0';
+  } else {
+    final_path = reallocarray(final_path, 1, rl_len + 1);
   }
 
   free(init_path);
-  final_path = realloc(final_path, rl_len);
   return final_path;
 }
 
@@ -103,7 +98,7 @@ ssize_t get_best_matching_path(const char ***path_data, const char *path) {
   ssize_t match_idx = -1;
   size_t match_len = 0;
 
-  for (size_t i = 0; i < PATH_DATA_LEN; ++i) {
+  for (size_t i = 0; path_data[i] != NULL; ++i) {
     for (size_t j = 0; path_data[i][j] != NULL; ++j) {
       size_t idx_len = strlen(path_data[i][j]);
       if (idx_len < match_len) {
@@ -121,6 +116,13 @@ ssize_t get_best_matching_path(const char ***path_data, const char *path) {
 
 int main(int argc, char **argv) {
   /* Parameters */
+
+  /* The first element in each path_data subarray is the canonical filesystem
+   * mountpoint. Subsequent items are other mountpoints that are likely to be
+   * on the same filesystem. Lists are terminated with a null pointer. If one
+   * of the "alias" paths is not mounted from the same filesystem as the
+   * canonical mountpoint, fanotify will not pick up events from those
+   * filesystems, so these aliases won't cause problems. */
   const char *path_data_main[] = {
     "/",
     "/btrfs_main",
@@ -133,14 +135,33 @@ int main(int argc, char **argv) {
     "/btrfs_boot",
     NULL,
   };
-  const char **path_data[] = { path_data_main, path_data_boot };
-  const uint8_t threshold_pct_list[PATH_DATA_LEN] = { 15, 25 };
+
+  /* The path_data array contains nested arrays, one for each filesystem to
+   * take into account. The list is NULL-terminated. */
+  const char **path_data[] = { path_data_main, path_data_boot, NULL };
+
+  /* The threshold_pct_list array specifies the percentage of unallocated
+   * space each filesystem in path_data must have. If free space dips below
+   * this value, a warning should be displayed to the user for the
+   * corresponding filesystem. This array MUST have the same number of
+   * elements as path_data, minus 1. It should NOT be NULL-terminated. */
+  const uint8_t threshold_pct_list[] = { 15, 25 };
+
+  /* The warn_cmd_list array specifies the shell command that should be run to
+   * display a warning message to a user if the corresponding filesystem's
+   * unallocated space dips below the threshold. The strings in this array
+   * will be passed through to system() unmodified. */
+  const char *warn_cmd_list[] = {
+    "/usr/lib/kfocus/bin/kfocus-rollback-backend checkMainUnallocSpace",
+    "/usr/lib/kfocus/bin/kfocus-rollback-backend checkBootUnallocSpace",
+  };
 
   /* Working variables */
-  int path_fd_list[PATH_DATA_LEN] = { 0, 0 };
-  uint64_t fs_size_list[PATH_DATA_LEN] = { 0, 0 };
-  uint64_t fs_alloc_threshold_list[PATH_DATA_LEN] = { 0, 0 };
-  time_t fs_overfull_timeout_list[PATH_DATA_LEN] = { 0, 0 };
+  size_t path_data_len = 0;
+  int *path_fd_list;
+  uint64_t *fs_size_list;
+  uint64_t *fs_alloc_threshold_list;
+  time_t *fs_overfull_timeout_list;
   struct stat statbuf;
   struct statfs statfsbuf;
   uint64_t fs_alloc;
@@ -152,6 +173,18 @@ int main(int argc, char **argv) {
   struct fanotify_event_metadata *next_fem = NULL;
   uint32_t fanlen;
 
+  /* Allocate memory for working variable arrays */
+  while (1) {
+    ++path_data_len;
+    if (path_data[path_data_len] == NULL) {
+      break;
+    }
+  }
+  path_fd_list = safe_calloc(path_data_len, sizeof(int));
+  fs_size_list = safe_calloc(path_data_len, sizeof(uint64_t));
+  fs_alloc_threshold_list = safe_calloc(path_data_len, sizeof(uint64_t));
+  fs_overfull_timeout_list = safe_calloc(path_data_len, sizeof(time_t));
+
   /* Initialize fanotify */
   fanfd = fanotify_init(FAN_CLASS_NOTIF, FAN_CLOEXEC);
   if (fanfd < 0) {
@@ -160,7 +193,7 @@ int main(int argc, char **argv) {
   }
 
   /* Open and register paths */
-  for (size_t i = 0; i < PATH_DATA_LEN; ++i) {
+  for (size_t i = 0; path_data[i] != NULL; ++i) {
     const char *current_path = path_data[i][0];
     if (access(current_path, R_OK) == -1) {
       fprintf(stderr, "Cannot access path |%s|: ", current_path);
@@ -211,6 +244,7 @@ int main(int argc, char **argv) {
   while ((fanlen = read(fanfd, fanbuf, sizeof(fanbuf))) > 0) {
     ssize_t event_path_idx = -1;
     const char *event_path = NULL;
+    char *event_full_path = NULL;
 
     fem = NULL;
     next_fem = (void *)fanbuf;
@@ -231,11 +265,16 @@ int main(int argc, char **argv) {
 
     /* Find the primary mountpoint of the filesystem a file was changed on,
      * and check if it has sufficient unallocated space */
-    event_path_idx = get_best_matching_path(path_data, fd_to_path(fem->fd));
+    event_full_path = fd_to_path(fem->fd);
+    if (event_full_path == NULL) {
+      continue;
+    }
+    event_path_idx = get_best_matching_path(path_data, event_full_path);
     if (event_path_idx == -1) {
       continue;
     }
     event_path = path_data[event_path_idx][0];
+    free(event_full_path);
 
     fs_alloc = get_btrfs_fs_info(path_fd_list[event_path_idx], event_path, UNALLOC);
 
@@ -251,11 +290,7 @@ int main(int argc, char **argv) {
       if (fs_overfull_timeout_list[event_path_idx] < ts.tv_sec) {
         /* 3600 seconds = 1 hour */
         fs_overfull_timeout_list[event_path_idx] = ts.tv_sec + 3600;
-        if (strcmp(event_path, "/") == 0) {
-          system("/usr/lib/kfocus/bin/kfocus-rollback-backend checkMainUnallocSpace");
-        } else if (strcmp(event_path, "/boot") == 0) {
-          system("/usr/lib/kfocus/bin/kfocus-rollback-backend checkBootUnallocSpace");
-        }
+        system(warn_cmd_list[event_path_idx]);
       }
     }
 
