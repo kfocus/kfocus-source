@@ -27,6 +27,8 @@
 #include <linux/magic.h>
 #include <time.h>
 #include <linux/limits.h>
+#include <poll.h>
+#include <stdbool.h>
 
 void *safe_calloc(size_t nmemb, size_t size) {
   void *ptr = calloc(nmemb, size);
@@ -35,30 +37,6 @@ void *safe_calloc(size_t nmemb, size_t size) {
     exit(1);
   }
   return ptr;
-}
-
-char *fd_to_path(int fd) {
-  const char *base = "/proc/self/fd";
-  ssize_t init_path_size;
-  char *init_path;
-  char *final_path;
-  ssize_t rl_len;
-
-  init_path_size = snprintf(NULL, 0, "%s/%d", base, fd);
-  init_path = safe_calloc(1, init_path_size + 1);
-  snprintf(init_path, init_path_size + 1, "%s/%d", base, fd);
-  final_path = safe_calloc(1, PATH_MAX);
-  rl_len = readlink(init_path, final_path, PATH_MAX);
-  if (rl_len == -1) {
-    return NULL;
-  } else if (rl_len == PATH_MAX) {
-    final_path[PATH_MAX - 1] = '\0';
-  } else {
-    final_path = reallocarray(final_path, 1, rl_len + 1);
-  }
-
-  free(init_path);
-  return final_path;
 }
 
 enum fs_info {
@@ -94,51 +72,22 @@ uint64_t get_btrfs_fs_info(int fd, const char *path, enum fs_info info_type) {
   return fs_val;
 }
 
-ssize_t get_best_matching_path(const char ***path_data, const char *path) {
-  ssize_t match_idx = -1;
-  size_t match_len = 0;
-
-  for (size_t i = 0; path_data[i] != NULL; ++i) {
-    for (size_t j = 0; path_data[i][j] != NULL; ++j) {
-      size_t idx_len = strlen(path_data[i][j]);
-      if (idx_len < match_len) {
-        continue;
-      }
-      if (strncmp(path_data[i][j], path, idx_len) == 0) {
-        match_idx = i;
-        match_len = idx_len;
-      }
+bool timespec_compare_ge(struct timespec tsbig, struct timespec tssmall) {
+  if (tsbig.tv_sec == tssmall.tv_sec) {
+    if (tsbig.tv_nsec >= tssmall.tv_nsec) {
+      return true;
     }
+    return false;
   }
-
-  return match_idx;
+  if (tsbig.tv_sec >= tssmall.tv_sec) {
+    return true;
+  }
+  return false;
 }
 
 int main(int argc, char **argv) {
   /* Parameters */
-
-  /* The first element in each path_data subarray is the canonical filesystem
-   * mountpoint. Subsequent items are other mountpoints that are likely to be
-   * on the same filesystem. Lists are terminated with a null pointer. If one
-   * of the "alias" paths is not mounted from the same filesystem as the
-   * canonical mountpoint, fanotify will not pick up events from those
-   * filesystems, so these aliases won't cause problems. */
-  const char *path_data_main[] = {
-    "/",
-    "/btrfs_main",
-    "/etc/libvirt",
-    "/var/lib/libvirt",
-    NULL,
-  };
-  const char *path_data_boot[] = {
-    "/boot",
-    "/btrfs_boot",
-    NULL,
-  };
-
-  /* The path_data array contains nested arrays, one for each filesystem to
-   * take into account. The list is NULL-terminated. */
-  const char **path_data[] = { path_data_main, path_data_boot, NULL };
+  const char *path_data[] = { "/", "/boot", NULL };
 
   /* The threshold_pct_list array specifies the percentage of unallocated
    * space each filesystem in path_data must have. If free space dips below
@@ -159,42 +108,42 @@ int main(int argc, char **argv) {
   /* Working variables */
   size_t path_data_len = 0;
   int *path_fd_list;
+  int *fan_fd_list;
+  struct pollfd *fan_poll_list;
+  bool *fs_mod_flag_list;
+  struct timespec *debounce_ts_list;
+  struct timespec *debounce_max_ts_list;
   uint64_t *fs_size_list;
   uint64_t *fs_alloc_threshold_list;
   time_t *fs_overfull_timeout_list;
   struct stat statbuf;
   struct statfs statfsbuf;
   uint64_t fs_alloc;
-
-  /* fanotify stuff */
-  int fanfd;
   char fanbuf[4096];
-  struct fanotify_event_metadata *fem = NULL;
-  struct fanotify_event_metadata *next_fem = NULL;
   uint32_t fanlen;
+  struct fanotify_event_metadata *fem = NULL;
+  struct timespec ts;
 
   /* Allocate memory for working variable arrays */
-  while (1) {
+  while (true) {
     ++path_data_len;
     if (path_data[path_data_len] == NULL) {
       break;
     }
   }
   path_fd_list = safe_calloc(path_data_len, sizeof(int));
+  fan_fd_list = safe_calloc(path_data_len, sizeof(int));
+  fan_poll_list = safe_calloc(path_data_len, sizeof(struct pollfd));
+  fs_mod_flag_list = safe_calloc(path_data_len, sizeof(bool));
+  debounce_ts_list = safe_calloc(path_data_len, sizeof(struct timespec));
+  debounce_max_ts_list = safe_calloc(path_data_len, sizeof(struct timespec));
   fs_size_list = safe_calloc(path_data_len, sizeof(uint64_t));
   fs_alloc_threshold_list = safe_calloc(path_data_len, sizeof(uint64_t));
   fs_overfull_timeout_list = safe_calloc(path_data_len, sizeof(time_t));
 
-  /* Initialize fanotify */
-  fanfd = fanotify_init(FAN_CLASS_NOTIF, FAN_CLOEXEC);
-  if (fanfd < 0) {
-    perror("Cannot initialize fanotify");
-    return 1;
-  }
-
   /* Open and register paths */
   for (size_t i = 0; path_data[i] != NULL; ++i) {
-    const char *current_path = path_data[i][0];
+    const char *current_path = path_data[i];
     if (access(current_path, R_OK) == -1) {
       fprintf(stderr, "Cannot access path |%s|: ", current_path);
       perror(NULL);
@@ -220,8 +169,11 @@ int main(int argc, char **argv) {
     }
 
     path_fd_list[i] = open(current_path, O_RDONLY);
+    fan_fd_list[i] = fanotify_init(FAN_CLASS_NOTIF, FAN_CLOEXEC);
+    fan_poll_list[i].fd = fan_fd_list[i];
+    fan_poll_list[i].events = POLLIN;
     if (fanotify_mark(
-      fanfd,
+      fan_fd_list[i],
       FAN_MARK_ADD | FAN_MARK_FILESYSTEM,
       FAN_CLOSE_WRITE,
       AT_FDCWD,
@@ -241,65 +193,77 @@ int main(int argc, char **argv) {
   }
 
   /* fanotify event loop */
-  while ((fanlen = read(fanfd, fanbuf, sizeof(fanbuf))) > 0) {
-    ssize_t event_path_idx = -1;
-    const char *event_path = NULL;
-    char *event_full_path = NULL;
-
-    fem = NULL;
-    next_fem = (void *)fanbuf;
-
-    while (FAN_EVENT_OK(next_fem, fanlen)) {
-      if (fem != NULL) {
-        close(fem->fd);
+  while (poll(fan_poll_list, path_data_len, -1) != -1) {
+    for (size_t i = 0; i < path_data_len; ++i) {
+      if (!(fan_poll_list[i].revents & POLLIN)) {
+        continue;
       }
-      fem = next_fem;
-      next_fem = FAN_EVENT_NEXT(next_fem, fanlen);
+      fs_mod_flag_list[i] = true;
+
+      fanlen = read(fan_fd_list[i], fanbuf, sizeof(fanbuf));
+      if (fanlen < 0) {
+        fprintf(stderr, "Failed to read fanotify events for path |%s|: ", path_data[i]);
+        exit(1);
+      }
+      fem = (void *)fanbuf;
+      while (FAN_EVENT_OK(fem, fanlen)) {
+        if (fem != NULL) {
+          close(fem->fd);
+        }
+        fem = FAN_EVENT_NEXT(fem, fanlen);
+      }
     }
 
-    /* next_fem is now invalid, fem has the last event from the buffer */
-    if (fem->vers < 2) {
-      fprintf(stderr, "fanotify version is too old!\n");
+    if (clock_gettime(CLOCK_MONOTONIC, &ts) == -1) {
+      fprintf(stderr, "failed to get time: ");
+      perror(NULL);
       exit(1);
     }
 
-    /* Find the primary mountpoint of the filesystem a file was changed on,
-     * and check if it has sufficient unallocated space */
-    event_full_path = fd_to_path(fem->fd);
-    if (event_full_path == NULL) {
-      continue;
-    }
-    event_path_idx = get_best_matching_path(path_data, event_full_path);
-    if (event_path_idx == -1) {
-      continue;
-    }
-    event_path = path_data[event_path_idx][0];
-    free(event_full_path);
+    for (size_t i = 0; i < path_data_len; ++i) {
+      if (!fs_mod_flag_list[i]) {
+        continue;
+      }
+      fs_mod_flag_list[i] = false;
 
-    fs_alloc = get_btrfs_fs_info(path_fd_list[event_path_idx], event_path, UNALLOC);
+      if (timespec_compare_ge(debounce_ts_list[i], ts)
+        && timespec_compare_ge(debounce_max_ts_list[i], ts)) {
+        debounce_ts_list[i] = ts;
+        continue;
+      }
+      debounce_ts_list[i] = ts;
+      debounce_max_ts_list[i] = ts;
+      debounce_max_ts_list[i].tv_sec += 5;
 
-    if (fs_alloc < fs_alloc_threshold_list[event_path_idx]) {
+      /* TODO: Debugging, remove later */
+      printf("Path: %s\n", path_data[i]);
+      printf("Size: %lu\n", fs_size_list[i]);
+      printf("Unalloc: %lu\n", fs_alloc);
+      printf("Min unalloc: %lu\n", fs_alloc_threshold_list[i]);
+
+      fs_alloc = get_btrfs_fs_info(path_fd_list[i], path_data[i], UNALLOC);
+      if (fs_alloc >= fs_alloc_threshold_list[i]) {
+        continue;
+      }
+
+      close(fem->fd);
+
       /* Unallocated space is insufficient, display a warning to the user if
        * we haven't displayed one within the last hour */
-      struct timespec ts;
       if (clock_gettime(CLOCK_MONOTONIC, &ts) == -1) {
         fprintf(stderr, "failed to get time: ");
         perror(NULL);
         exit(1);
       }
-      if (fs_overfull_timeout_list[event_path_idx] < ts.tv_sec) {
+
+      if (fs_overfull_timeout_list[i] < ts.tv_sec) {
         /* 3600 seconds = 1 hour */
-        fs_overfull_timeout_list[event_path_idx] = ts.tv_sec + 3600;
-        system(warn_cmd_list[event_path_idx]);
+        fs_overfull_timeout_list[i] = ts.tv_sec + 3600;
+        system(warn_cmd_list[i]);
       }
     }
-
-    /* TODO: Debugging, remove later */
-    printf("Path: %s\n", event_path);
-    printf("Size: %lu\n", fs_size_list[event_path_idx]);
-    printf("Unalloc: %lu\n", fs_alloc);
-    printf("Min unalloc: %lu\n", fs_alloc_threshold_list[event_path_idx]);
-
-    close(fem->fd);
   }
+
+  perror("Failed to poll fanoitfy file descriptors");
+  exit(1);
 }
