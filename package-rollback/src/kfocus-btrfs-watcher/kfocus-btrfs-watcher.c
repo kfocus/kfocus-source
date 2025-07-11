@@ -29,6 +29,7 @@
 #include <linux/limits.h>
 #include <poll.h>
 #include <stdbool.h>
+#include <limits.h>
 
 void *safe_calloc(size_t nmemb, size_t size) {
   void *ptr = calloc(nmemb, size);
@@ -85,9 +86,50 @@ bool timespec_compare_ge(struct timespec tsbig, struct timespec tssmall) {
   return false;
 }
 
+int get_poll_timeout(struct timespec *debounce_ts_list,
+  struct timespec *debounce_max_ts_list, bool *fs_mod_flag_list,
+  size_t path_data_len, struct timespec ts) {
+
+  int solve_timeout_ms = INT_MAX;
+  int current_timeout;
+
+  for (size_t i = 0; i < path_data_len; ++i) {
+    if (!fs_mod_flag_list[i]) {
+      continue;
+    }
+    if (timespec_compare_ge(debounce_ts_list[i], ts)) {
+      current_timeout = ((debounce_ts_list[i].tv_sec - ts.tv_sec) * 1000)
+        + ((debounce_ts_list[i].tv_nsec - ts.tv_nsec) / 1000000);
+      if (current_timeout < solve_timeout_ms) {
+        solve_timeout_ms = current_timeout;
+      }
+    }
+  }
+
+  for (size_t i = 0; i < path_data_len; ++i) {
+    if (!fs_mod_flag_list[i]) {
+      continue;
+    }
+    if (timespec_compare_ge(debounce_max_ts_list[i], ts)) {
+      current_timeout = ((debounce_max_ts_list[i].tv_sec - ts.tv_sec) * 1000)
+        + ((debounce_ts_list[i].tv_nsec - ts.tv_nsec) / 1000000);
+      if (current_timeout < solve_timeout_ms) {
+        solve_timeout_ms = current_timeout;
+      }
+    }
+  }
+
+  if (solve_timeout_ms == INT_MAX) {
+    return -1;
+  }
+  solve_timeout_ms += 1; /* don't trigger just before a timer expires */
+  return solve_timeout_ms;
+}
+
 int main(int argc, char **argv) {
   /* Parameters */
-  const char *path_data[] = { "/", "/boot", NULL };
+  //const char *path_data[] = { "/", "/boot", NULL };
+  const char *path_data[] = { "/boot", NULL };
 
   /* The threshold_pct_list array specifies the percentage of unallocated
    * space each filesystem in path_data must have. If free space dips below
@@ -118,11 +160,11 @@ int main(int argc, char **argv) {
   time_t *fs_overfull_timeout_list;
   struct stat statbuf;
   struct statfs statfsbuf;
-  uint64_t fs_alloc;
+  uint64_t fs_alloc = 0;
   char fanbuf[4096];
   uint32_t fanlen;
   struct fanotify_event_metadata *fem = NULL;
-  struct timespec ts;
+  struct timespec ts = { 0 };
 
   /* Allocate memory for working variable arrays */
   while (true) {
@@ -131,18 +173,18 @@ int main(int argc, char **argv) {
       break;
     }
   }
-  path_fd_list = safe_calloc(path_data_len, sizeof(int));
-  fan_fd_list = safe_calloc(path_data_len, sizeof(int));
-  fan_poll_list = safe_calloc(path_data_len, sizeof(struct pollfd));
-  fs_mod_flag_list = safe_calloc(path_data_len, sizeof(bool));
-  debounce_ts_list = safe_calloc(path_data_len, sizeof(struct timespec));
-  debounce_max_ts_list = safe_calloc(path_data_len, sizeof(struct timespec));
-  fs_size_list = safe_calloc(path_data_len, sizeof(uint64_t));
-  fs_alloc_threshold_list = safe_calloc(path_data_len, sizeof(uint64_t));
+  path_fd_list             = safe_calloc(path_data_len, sizeof(int));
+  fan_fd_list              = safe_calloc(path_data_len, sizeof(int));
+  fan_poll_list            = safe_calloc(path_data_len, sizeof(struct pollfd));
+  fs_mod_flag_list         = safe_calloc(path_data_len, sizeof(bool));
+  debounce_ts_list         = safe_calloc(path_data_len, sizeof(struct timespec));
+  debounce_max_ts_list     = safe_calloc(path_data_len, sizeof(struct timespec));
+  fs_size_list             = safe_calloc(path_data_len, sizeof(uint64_t));
+  fs_alloc_threshold_list  = safe_calloc(path_data_len, sizeof(uint64_t));
   fs_overfull_timeout_list = safe_calloc(path_data_len, sizeof(time_t));
 
   /* Open and register paths */
-  for (size_t i = 0; path_data[i] != NULL; ++i) {
+  for (size_t i = 0; i < path_data_len; ++i) {
     const char *current_path = path_data[i];
     if (access(current_path, R_OK) == -1) {
       fprintf(stderr, "Cannot access path |%s|: ", current_path);
@@ -193,26 +235,18 @@ int main(int argc, char **argv) {
   }
 
   /* fanotify event loop */
-  while (poll(fan_poll_list, path_data_len, -1) != -1) {
-    for (size_t i = 0; i < path_data_len; ++i) {
-      if (!(fan_poll_list[i].revents & POLLIN)) {
-        continue;
-      }
-      fs_mod_flag_list[i] = true;
-
-      fanlen = read(fan_fd_list[i], fanbuf, sizeof(fanbuf));
-      if (fanlen < 0) {
-        fprintf(stderr, "Failed to read fanotify events for path |%s|: ", path_data[i]);
-        exit(1);
-      }
-      fem = (void *)fanbuf;
-      while (FAN_EVENT_OK(fem, fanlen)) {
-        if (fem != NULL) {
-          close(fem->fd);
-        }
-        fem = FAN_EVENT_NEXT(fem, fanlen);
-      }
-    }
+  while (
+    poll(
+      fan_poll_list,
+      path_data_len,
+      get_poll_timeout(
+        debounce_ts_list,
+        debounce_max_ts_list,
+        fs_mod_flag_list,
+        path_data_len,
+        ts
+      )
+    ) != -1) {
 
     if (clock_gettime(CLOCK_MONOTONIC, &ts) == -1) {
       fprintf(stderr, "failed to get time: ");
@@ -221,25 +255,45 @@ int main(int argc, char **argv) {
     }
 
     for (size_t i = 0; i < path_data_len; ++i) {
+      if (fan_poll_list[i].revents & POLLIN) {
+        if (!fs_mod_flag_list[i]) {
+          debounce_max_ts_list[i] = ts;
+          debounce_max_ts_list[i].tv_sec += 5;
+        }
+        debounce_ts_list[i] = ts;
+        debounce_ts_list[i].tv_sec += 1;
+        fs_mod_flag_list[i] = true;
+
+        fanlen = read(fan_fd_list[i], fanbuf, sizeof(fanbuf));
+        if (fanlen < 0) {
+          fprintf(stderr, "Failed to read fanotify events for path |%s|: ", path_data[i]);
+          exit(1);
+        }
+        fem = (void *)fanbuf;
+        while (FAN_EVENT_OK(fem, fanlen)) {
+          if (fem != NULL) {
+            close(fem->fd);
+          }
+          fem = FAN_EVENT_NEXT(fem, fanlen);
+        }
+      }
+
       if (!fs_mod_flag_list[i]) {
         continue;
       }
-      fs_mod_flag_list[i] = false;
 
       if (timespec_compare_ge(debounce_ts_list[i], ts)
         && timespec_compare_ge(debounce_max_ts_list[i], ts)) {
-        debounce_ts_list[i] = ts;
         continue;
       }
-      debounce_ts_list[i] = ts;
-      debounce_max_ts_list[i] = ts;
-      debounce_max_ts_list[i].tv_sec += 5;
+      fs_mod_flag_list[i] = false;
 
       /* TODO: Debugging, remove later */
       printf("Path: %s\n", path_data[i]);
       printf("Size: %lu\n", fs_size_list[i]);
       printf("Unalloc: %lu\n", fs_alloc);
       printf("Min unalloc: %lu\n", fs_alloc_threshold_list[i]);
+      printf("-----------------\n");
 
       fs_alloc = get_btrfs_fs_info(path_fd_list[i], path_data[i], UNALLOC);
       if (fs_alloc >= fs_alloc_threshold_list[i]) {
@@ -250,16 +304,14 @@ int main(int argc, char **argv) {
 
       /* Unallocated space is insufficient, display a warning to the user if
        * we haven't displayed one within the last hour */
-      if (clock_gettime(CLOCK_MONOTONIC, &ts) == -1) {
-        fprintf(stderr, "failed to get time: ");
-        perror(NULL);
-        exit(1);
-      }
-
       if (fs_overfull_timeout_list[i] < ts.tv_sec) {
         /* 3600 seconds = 1 hour */
         fs_overfull_timeout_list[i] = ts.tv_sec + 3600;
-        system(warn_cmd_list[i]);
+        if (system(warn_cmd_list[i]) == -1) {
+          fprintf(stderr, "Failed to trigger warning message for filesystem |%s|: ", path_data[i]);
+          perror(NULL);
+          exit(1);
+        }
       }
     }
   }
