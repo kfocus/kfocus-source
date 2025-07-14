@@ -42,7 +42,7 @@ void *safe_calloc(size_t nmemb, size_t size) {
 
 enum fs_info {
   SIZE,
-  UNALLOC
+  USED
 };
 
 uint64_t get_btrfs_fs_info(int fd, const char *path, enum fs_info info_type) {
@@ -65,7 +65,7 @@ uint64_t get_btrfs_fs_info(int fd, const char *path, enum fs_info info_type) {
 
     if (info_type == SIZE) {
       fs_val += dev_info.total_bytes;
-    } else if (info_type == UNALLOC) {
+    } else if (info_type == USED) {
       fs_val += dev_info.bytes_used;
     }
   }
@@ -128,8 +128,8 @@ int get_poll_timeout(struct timespec *debounce_ts_list,
 
 int main(int argc, char **argv) {
   /* Parameters */
-  //const char *path_data[] = { "/", "/boot", NULL };
-  const char *path_data[] = { "/boot", NULL };
+  const char *path_data[] = { "/", "/boot", NULL };
+  //const char *path_data[] = { "/boot", NULL };
 
   /* The threshold_pct_list array specifies the percentage of unallocated
    * space each filesystem in path_data must have. If free space dips below
@@ -288,15 +288,16 @@ int main(int argc, char **argv) {
       }
       fs_mod_flag_list[i] = false;
 
+      fs_alloc = get_btrfs_fs_info(path_fd_list[i], path_data[i], USED);
+
       /* TODO: Debugging, remove later */
       printf("Path: %s\n", path_data[i]);
       printf("Size: %lu\n", fs_size_list[i]);
-      printf("Unalloc: %lu\n", fs_alloc);
+      printf("Alloc: %lu\n", fs_alloc);
       printf("Min unalloc: %lu\n", fs_alloc_threshold_list[i]);
       printf("-----------------\n");
 
-      fs_alloc = get_btrfs_fs_info(path_fd_list[i], path_data[i], UNALLOC);
-      if (fs_alloc >= fs_alloc_threshold_list[i]) {
+      if ((fs_size_list[i] - fs_alloc) >= fs_alloc_threshold_list[i]) {
         continue;
       }
 
