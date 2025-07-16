@@ -290,13 +290,6 @@ int main(int argc, char **argv) {
 
       fs_alloc = get_btrfs_fs_info(path_fd_list[i], path_data[i], USED);
 
-      /* TODO: Debugging, remove later */
-      printf("Path: %s\n", path_data[i]);
-      printf("Size: %lu\n", fs_size_list[i]);
-      printf("Alloc: %lu\n", fs_alloc);
-      printf("Min unalloc: %lu\n", fs_alloc_threshold_list[i]);
-      printf("-----------------\n");
-
       if ((fs_size_list[i] - fs_alloc) >= fs_alloc_threshold_list[i]) {
         continue;
       }

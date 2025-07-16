@@ -4,6 +4,7 @@
 	dh $@
 
 override_dh_auto_build:
+	(cd src/kfocus-btrfs-watcher && ./build.sh)
 	(cd src/kfocus-report-filefrag && ./build.sh)
 	(cd src/kfocus-rollback-bin && mkdir build && cd build && cmake .. && make)
 	dh_auto_build

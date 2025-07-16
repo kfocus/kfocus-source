@@ -1,0 +1,7 @@
+[Unit]
+Description=KFocus BTRFS disk space monitoring
+[Service]
+Type=exec
+ExecStart=/usr/lib/kfocus/bin/kfocus-btrfs-watcher
+[Install]
+WantedBy=multi-user.target

@@ -23,6 +23,7 @@ _kwriteconfig5Exe="$(which 'kwriteconfig5')";
 #
 _cmXSetMsgFn 'Enable scheduled snapshotting';
 2>/dev/null deb-systemd-helper enable kfocus-rollback-btrfs-maintain.timer || true;
+2>/dev/null deb-systemd-helper enable kfocus-btrfs-watcher.service || true;
 _cmXSucFn;
 ## . END Enable scheduled snapshotting }
 

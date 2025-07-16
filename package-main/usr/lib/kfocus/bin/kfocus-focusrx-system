@@ -110,7 +110,7 @@ _manageSnapshotsOnBootFn () {
     _cm2WarnFn;
     return 1;
   fi
-  
+
   _main_unalloc="$("${_rollbackBackendExe}" 'getMainUnallocSpace')";
   _main_min_unalloc="$("${_rollbackBackendExe}" 'getMainMinUnalloc')";
   _boot_unalloc="$("${_rollbackBackendExe}" 'getBootUnallocSpace')";
@@ -180,11 +180,7 @@ _maintainBtrfsFn () {
     fi
     _cm2SucFn;
   else
-    if (( _main_unalloc <= _main_min_unalloc )); then
-      _promptAllUsersFn 'rollbackLowMainSpace' "${_lowDiskMsg}";
-    elif (( _boot_unalloc <= _boot_min_unalloc )); then
-      _promptAllUsersFn 'rollbackLowBootSpace' "${_lowBootMsg}";
-    fi
+    _cm2WarnStrFn 'Main or boot disk space low!';
     _cm2WarnFn;
   fi
 }
@@ -215,7 +211,7 @@ _mainFn () {
 
 ## BEGIN Declare and assign global vars {
 #
-declare _binName _binDir _baseName _baseDir _rootTitle _assignList _lowDiskMsg;
+declare _binName _binDir _baseName _baseDir _rootTitle _assignList;
 ## . END Declare and assign global vars }
 
 ## BEGIN Run mainFn when script is NOT sourced {
@@ -243,44 +239,6 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _erowStr='</td></tr>';
   _tableStr='<table style="width:100%;margin-right:32px">';
 
-  _lowDiskMsg="$(cat <<EOF
-${_cm2HtmBeginStr}${_tableStr}
-${_browStr}<h3 style="color:#f7941d">Low Disk Space</h3>
-${_erowStr}
-
-${_browStr}FocusRx has detected that the system's disk space is<br>
-low. This could result in filesystem corruption if not corrected.<br>
-Snapshot maintenance has been paused until this is corrected.<br>
-<br>
-It is highly recommended that you delete large snapshots<br>
-using System Rollback. You may also need to delete excess files<br>
-or move them to other drives.<br>
-<br>
-You can access System Rollback by clicking <code>Start Menu &gt;<br>
-Kubuntu Focus Tools &gt; System Rollback</code>. Click "Show<br>
-Snapshot Sizes" when prompted to quickly find large snapshots.<br>
-${_cm2HtmEndStr}
-EOF
-  )";
-
-  _lowBootMsg="$(cat <<EOF
-${_cm2HtmBeginStr}${_tableStr}
-${_browStr}<h3 style="color:#f7941d">Low Boot Space</h3>
-${_erowStr}
-
-${_browStr}FocusRx has detected that the system's boot<br>
-filesystem is low on space. This could result in failure to<br>
-boot. Snapshot maintenance has been paused until this<br>
-is corrected.<br>
-<br>
-It is highly recommended that you run the Kernel Cleaner<br>
-utility. You can access the Kernel Cleaner by clicking <code>Start<br>
-Menu &gt; Kubuntu Focus Tools &gt; Kernel Cleaner</code>.
-${_cm2HtmEndStr}
-EOF
-  )";
-
   _mainFn "$@";
 fi
 ## . END Run mainFn when script is NOT sourced }
-
