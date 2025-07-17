@@ -31,6 +31,8 @@
 #include <stdbool.h>
 #include <limits.h>
 
+#define HOUR_SEC_COUNT 3600
+
 void *safe_calloc(size_t nmemb, size_t size) {
   void *ptr = calloc(nmemb, size);
   if (ptr == NULL) {
@@ -129,7 +131,7 @@ int get_poll_timeout(struct timespec *debounce_ts_list,
 int main(int argc, char **argv) {
   /* Parameters */
   const char *path_data[] = { "/", "/boot", NULL };
-  //const char *path_data[] = { "/boot", NULL };
+  /* DEBUG: const char *path_data[] = { "/boot", NULL }; */
 
   /* The threshold_pct_list array specifies the percentage of unallocated
    * space each filesystem in path_data must have. If free space dips below
@@ -288,8 +290,16 @@ int main(int argc, char **argv) {
       }
       fs_mod_flag_list[i] = false;
 
-      fs_alloc = get_btrfs_fs_info(path_fd_list[i], path_data[i], USED);
+      /*
+       * DEBUG: 
+       * printf("Path: %s\n", path_data[i]);
+       * printf("Size: %lu\n", fs_size_list[i]);
+       * printf("Unalloc: %lu\n", fs_alloc);
+       * printf("Min unalloc: %lu\n", fs_alloc_threshold_list[i]);
+       * printf("-----------------\n");
+       */
 
+      fs_alloc = get_btrfs_fs_info(path_fd_list[i], path_data[i], USED);
       if ((fs_size_list[i] - fs_alloc) >= fs_alloc_threshold_list[i]) {
         continue;
       }
@@ -299,8 +309,7 @@ int main(int argc, char **argv) {
       /* Unallocated space is insufficient, display a warning to the user if
        * we haven't displayed one within the last hour */
       if (fs_overfull_timeout_list[i] < ts.tv_sec) {
-        /* 3600 seconds = 1 hour */
-        fs_overfull_timeout_list[i] = ts.tv_sec + 3600;
+        fs_overfull_timeout_list[i] = ts.tv_sec + HOUR_SEC_COUNT;
         if (system(warn_cmd_list[i]) == -1) {
           fprintf(stderr, "Failed to trigger warning message for filesystem |%s|: ", path_data[i]);
           perror(NULL);

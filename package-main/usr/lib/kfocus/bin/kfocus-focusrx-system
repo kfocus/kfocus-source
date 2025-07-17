@@ -111,10 +111,13 @@ _manageSnapshotsOnBootFn () {
     return 1;
   fi
 
+  # Get unallocated and minimum unallocated byte count for main and boot FS
   _main_unalloc="$("${_rollbackBackendExe}" 'getMainUnallocSpace')";
   _main_min_unalloc="$("${_rollbackBackendExe}" 'getMainMinUnalloc')";
   _boot_unalloc="$("${_rollbackBackendExe}" 'getBootUnallocSpace')";
   _boot_min_unalloc="$("${_rollbackBackendExe}" 'getBootMinUnalloc')";
+
+  # Perform on-boot snapshot maintenance if space is sufficient
   if (( _main_unalloc > _main_min_unalloc )) \
     && (( _boot_unalloc > _boot_min_unalloc )); then
     "${_rollbackBackendExe}" 'finalizeRestore'
@@ -160,10 +163,13 @@ _maintainBtrfsFn () {
     return 1;
   fi
 
+  # Get unallocated and minimum unallocated byte count for main and boot FS
   _main_unalloc="$("${_rollbackBackendExe}" 'getMainUnallocSpace')";
   _main_min_unalloc="$("${_rollbackBackendExe}" 'getMainMinUnalloc')";
   _boot_unalloc="$("${_rollbackBackendExe}" 'getBootUnallocSpace')";
   _boot_min_unalloc="$("${_rollbackBackendExe}" 'getBootMinUnalloc')";
+
+  # Perform routine snapshot maintenance if space is sufficient
   if (( _main_unalloc > _main_min_unalloc )) \
     && (( _boot_unalloc > _boot_min_unalloc )); then
     "${_rollbackBackendExe}" 'createSnapshot' 'Timed';
