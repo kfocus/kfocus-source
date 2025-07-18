@@ -213,7 +213,17 @@ int main(int argc, char **argv) {
     }
 
     path_fd_list[i] = open(current_path, O_RDONLY);
+    if (path_fd_list[i] < 0) {
+      fprintf(stderr, "Cannot open path |%s|: ", current_path);
+      perror(NULL);
+      exit(1);
+    }
     fan_fd_list[i] = fanotify_init(FAN_CLASS_NOTIF, FAN_CLOEXEC);
+    if (fan_fd_list[i] < 0) {
+      fprintf(stderr, "Failed to initialize fanotify watcher for |%s|: ", current_path);
+      perror(NULL);
+      exit(1);
+    }
     fan_poll_list[i].fd = fan_fd_list[i];
     fan_poll_list[i].events = POLLIN;
     if (fanotify_mark(
@@ -268,7 +278,11 @@ int main(int argc, char **argv) {
 
         fanlen = read(fan_fd_list[i], fanbuf, sizeof(fanbuf));
         if (fanlen < 0) {
-          fprintf(stderr, "Failed to read fanotify events for path |%s|: ", path_data[i]);
+          fprintf(stderr, "Failed to read fanotify events for path |%s|!\n", path_data[i]);
+          exit(1);
+        }
+        if (fanlen == 0) {
+          fprintf(stderr, "Event triggered but absent for path |%s|, fanotify hung up?\n", path_data[i]);
           exit(1);
         }
         fem = (void *)fanbuf;
@@ -291,7 +305,7 @@ int main(int argc, char **argv) {
       fs_mod_flag_list[i] = false;
 
       /*
-       * DEBUG: 
+       * DEBUG:
        * printf("Path: %s\n", path_data[i]);
        * printf("Size: %lu\n", fs_size_list[i]);
        * printf("Unalloc: %lu\n", fs_alloc);
