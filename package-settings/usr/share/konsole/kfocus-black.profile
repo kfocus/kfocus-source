@@ -1,6 +1,7 @@
 [Appearance]
+BoldIntense=false
 ColorScheme=kfocus-black
-Font=Noto Mono
+Font=Ubuntu Mono,12,-1,5,50,0,0,0,0,0
 LineSpacing=3
 
 [Cursor Options]
@@ -9,6 +10,7 @@ CustomCursorColor=0,255,0
 UseCustomCursorColor=true
 
 [General]
+InvertSelectionColors=true
 Name=KFocus Black
 Parent=FALLBACK/
 TerminalMargin=3
