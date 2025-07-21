@@ -78,15 +78,17 @@ _dispatchFn () {
   _mode_str="${1:-}";
   _arg_str="${2:-}";
 
-  if [ -n "${_arg_str}" ]; then
-    if ! grep -q '@[0-9]\+' <<< "${_arg_str}"; then
-      _cm2WarnStrFn 'Argument passed to command is not a snapshot ID!';
-      exit 1;
-    fi
-  fi
+#  if [ -n "${_arg_str}" ]; then
+#    if ! grep -q '@[0-9]\+' <<< "${_arg_str}"; then
+#      _cm2WarnStrFn 'Argument passed to command is not a snapshot ID!';
+#      exit 1;
+#    fi
+#  fi
 
   case "${_mode_str}" in
     'getBaseSnapshotMetadata')
+      "${_rollbackBackendExe}" "${_mode_str}" "${_arg_str}";;
+    'getDirSpace')
       "${_rollbackBackendExe}" "${_mode_str}" "${_arg_str}";;
     'getFullSnapshotMetadata')
       "${_rollbackBackendExe}" "${_mode_str}" "${_arg_str}";;
@@ -143,6 +145,7 @@ _mainFn () {
     'getBootMinUnalloc')       _dispatchFn 'getBootMinUnalloc';;
     'getBootUnallocSpace')     _dispatchFn 'getBootUnallocSpace';;
     'getBtrfsStatus')          _dispatchFn 'getBtrfsStatus';;
+    'getDirSpace')             _dispatchFn 'getDirSpace' "${1}";;
     'getFullSnapshotMetadata') _dispatchFn 'getFullSnapshotMetadata' "${1}";;
     'getMainMinUnalloc')       _dispatchFn 'getMainMinUnalloc';;
     'getMainUnallocSpace')     _dispatchFn 'getMainUnallocSpace';;

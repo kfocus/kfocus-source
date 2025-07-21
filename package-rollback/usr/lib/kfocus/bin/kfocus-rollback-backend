@@ -2384,6 +2384,24 @@ _getBootUnallocSpacePublicFn () {
 }
 ## . END _getBootUnallocSpacePublicFn }
 
+## BEGIN _getDirSpacePublicFn {
+# Purpose   : Gets the amount of disk space consumed by a directory.
+# Throws    :
+#   1 - Directory does not exist or cannot have its space calculated.
+# Outputs   : Directory size, in bytes
+#
+_getDirSpacePublicFn () {
+  declare _dir_str;
+
+  _dir_str="${1:-}";
+  [   -z "${_dir_str}" ] && _logExitFn 'err' '1' 'No directory provided!';
+  [ ! -d "${_dir_str}" ] && _logExitFn 'err' '1' 'Directory does not exist!';
+  [   -L "${_dir_str}" ] && return;
+
+  cut -f1 < <(du -b -s "${_dir_str}");
+}
+## . END _getDirSpacePublicFn }
+
 ## BEGIN _getMainMinUnallocPublicFn {
 # Purpose   : A public wrapper around _getMainMinUnallocFn.
 # Throws    :
@@ -3190,6 +3208,7 @@ _mainFn () {
     'getBootMinUnalloc')       _getBootMinUnallocPublicFn;;
     'getBootUnallocSpace')     _getBootUnallocSpacePublicFn;;
     'getBtrfsStatus')          echo "${_btrfsStatus}";;
+    'getDirSpace')             _getDirSpacePublicFn          "${1:-}";;
     'getFullSnapshotMetadata') _getSnapshotMetadataPublicFn  "${1:-}"   'full';;
     'getMainMinUnalloc')       _getMainMinUnallocPublicFn;;
     'getMainUnallocSpace')     _getMainUnallocSpacePublicFn;;

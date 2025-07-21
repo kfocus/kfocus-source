@@ -6,7 +6,6 @@
 
 BackendEngine::BackendEngine()
 {
-
 }
 
 QString BackendEngine::rollbackBackendExe() {
@@ -97,6 +96,20 @@ bool BackendEngine::bootWorkingSubvolExists() {
 
 bool BackendEngine::snapshotSizeInfoPresent() {
     return m_snapshotSizeInfoPresent;
+}
+
+QStringList BackendEngine::bulkDataList() {
+    return m_bulkDataList;
+}
+
+bool BackendEngine::bulkDataWarningEnabled() {
+    m_settings.beginGroup("kfocus-rollback");
+    QString val = m_settings.value("bulkDataWarningDisabled", "false").toString();
+    m_settings.endGroup();
+    if (val == "true") {
+        return false;
+    }
+    return true;
 }
 
 int BackendEngine::getSnapshotCount() {
@@ -414,10 +427,39 @@ void BackendEngine::loadGlobalInfo() {
             execEngine->deleteLater();
             m_snapshotSizeInfoPresent = m_calcSize;
             snapshotSizeInfoPresentChanged();
+
+            if (!m_bulkDataChecked) {
+                m_bulkDataList.clear();
+                for (int i = 0; i < m_bulkLocationMap.count(); i++) {
+                    execEngine->execSync("pkexec " + m_rollbackSetExe + " getDirSpace \"" + m_bulkLocationMap.keys()[i] + "\"");
+                    qDebug() << execEngine->stdout();
+                    QString bulkSizeStr = execEngine->stdout().split('\n')[0];
+                    quint64 bulkSizeInt = bulkSizeStr.toULongLong();
+                    if (bulkSizeInt > m_bulkSizeThreshold) {
+                        m_bulkDataList.append(m_bulkLocationMap.keys()[i] + " (" + m_bulkLocationMap.values()[i] + ")");
+                    }
+                }
+                bulkDataListChanged();
+            }
+
             systemDataLoaded();
             m_updateInProgress = false;
         });
         execEngine->exec(m_pkexecExe + ' ' + m_rollbackSetExe + " getBootMinUnalloc");
     });
     execEngine->exec(m_pkexecExe + ' ' + m_rollbackSetExe + " getMainMinUnalloc");
+}
+
+void BackendEngine::enableBulkDataWarning() {
+    m_settings.beginGroup("kfocus-rollback");
+    m_settings.setValue("bulkDataWarningDisabled", "false");
+    m_settings.endGroup();
+    bulkDataWarningEnabledChanged();
+}
+
+void BackendEngine::disableBulkDataWarning() {
+    m_settings.beginGroup("kfocus-rollback");
+    m_settings.setValue("bulkDataWarningDisabled", "true");
+    m_settings.endGroup();
+    bulkDataWarningEnabledChanged();
 }
