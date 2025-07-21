@@ -1570,11 +1570,11 @@ Kirigami.ApplicationWindow {
     }
 
     function genBulkDataListStrFn( bulkDataList ) {
-        let rsltStr = '';
+        let solve_str = '';
         for ( let i = 0; i < bulkDataList.length; i++ ) {
-            rsltStr += '<li>' + bulkDataList[i] + '</li>';
+            solve_str += '<li>' + bulkDataList[i] + '</li>';
         }
-        return rsltStr;
+        return solve_str;
     }
 
     function getIconForReasonFn( reason ) {

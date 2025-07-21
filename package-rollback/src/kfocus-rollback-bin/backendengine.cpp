@@ -4,9 +4,7 @@
 #include "backendengine.h"
 #include "shellengine.h"
 
-BackendEngine::BackendEngine()
-{
-}
+BackendEngine::BackendEngine() { }
 
 QString BackendEngine::rollbackBackendExe() {
     return m_rollbackBackendExe;
@@ -440,6 +438,7 @@ void BackendEngine::loadGlobalInfo() {
                     }
                 }
                 bulkDataListChanged();
+                m_bulkDataChecked = true;
             }
 
             systemDataLoaded();
