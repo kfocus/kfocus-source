@@ -1,3 +1,12 @@
+kfocus-rollback (24.04.9~beta6) noble; urgency=medium
+
+  * kfocus-rollback-backend, kfocus-rollback-set, kfocus-rollback-bin:
+    Refactor bulk data detection code (#5636)
+  * etc_apt_apt.conf.d_100kfocus-rollback: Add post-install bulk data check
+    hook (#5636)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 23 Jul 2025 11:45:44 -0500
+
 kfocus-rollback (24.04.9~beta5) noble; urgency=medium
 
   * kfocus-rollback-bin: Add warning for bulk data (#5636)

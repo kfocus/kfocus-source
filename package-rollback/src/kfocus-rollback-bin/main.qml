@@ -364,8 +364,8 @@ Kirigami.ApplicationWindow {
                         Controls.Label {
                             text: backend.bulkDataList.length === 0
                               ? 'Running a large database? See '
-                              + '<a href="https://kfocus.org/wf/db#bkm_move_large_databases">this '
-                              + 'advice</a>.'
+                              + '<a href="https://kfocus.org/wf/db#bkm_move_large_databases">'
+                              + 'this advice</a>.'
                               : '⚠️ <font color="#f7941d">Bulk data found on '
                               + 'root.</font> '
                               + '<a href="large-snapshot-warn">Learn to '
@@ -1378,9 +1378,9 @@ Kirigami.ApplicationWindow {
               + 'maintenance.<br>'
               + '<br>'
               + 'We strongly recommends you move this data to a mount point '
-              + 'that is not included in snapshots, such as /home. This will '
-              + 'preserve root filesystem space and can also improve data '
-              + 'access time.'
+              + 'that is not included in snapshots, such as /home. See '
+              + '<a href="https://kfocus.org/wf/db#bkm_move_large_databases">'
+              + 'this advice</a> for guidance.'
             primaryButtonText: 'Continue'
             primaryButtonIcon: 'go-next-symbolic'
             secondaryButtonText: 'Don\'t Show Again'

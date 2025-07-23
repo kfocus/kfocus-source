@@ -102,12 +102,12 @@ QStringList BackendEngine::bulkDataList() {
 
 bool BackendEngine::bulkDataWarningEnabled() {
     m_settings.beginGroup("kfocus-rollback");
-    QString val = m_settings.value("bulkDataWarningDisabled", "false").toString();
+    QString val = m_settings.value("bulkDataWarningEnabled", "true").toString();
     m_settings.endGroup();
     if (val == "true") {
-        return false;
+        return true;
     }
-    return true;
+    return false;
 }
 
 int BackendEngine::getSnapshotCount() {
@@ -428,15 +428,8 @@ void BackendEngine::loadGlobalInfo() {
 
             if (!m_bulkDataChecked) {
                 m_bulkDataList.clear();
-                for (int i = 0; i < m_bulkLocationMap.count(); i++) {
-                    execEngine->execSync("pkexec " + m_rollbackSetExe + " getDirSpace \"" + m_bulkLocationMap.keys()[i] + "\"");
-                    qDebug() << execEngine->stdout();
-                    QString bulkSizeStr = execEngine->stdout().split('\n')[0];
-                    quint64 bulkSizeInt = bulkSizeStr.toULongLong();
-                    if (bulkSizeInt > m_bulkSizeThreshold) {
-                        m_bulkDataList.append(m_bulkLocationMap.keys()[i] + " (" + m_bulkLocationMap.values()[i] + ")");
-                    }
-                }
+                execEngine->execSync("pkexec " + m_rollbackSetExe + " getBulkDirList");
+                m_bulkDataList.append(execEngine->stdout().split('\n', Qt::SkipEmptyParts));
                 bulkDataListChanged();
                 m_bulkDataChecked = true;
             }
@@ -451,14 +444,14 @@ void BackendEngine::loadGlobalInfo() {
 
 void BackendEngine::enableBulkDataWarning() {
     m_settings.beginGroup("kfocus-rollback");
-    m_settings.setValue("bulkDataWarningDisabled", "false");
+    m_settings.setValue("bulkDataWarningEnabled", "true");
     m_settings.endGroup();
     bulkDataWarningEnabledChanged();
 }
 
 void BackendEngine::disableBulkDataWarning() {
     m_settings.beginGroup("kfocus-rollback");
-    m_settings.setValue("bulkDataWarningDisabled", "true");
+    m_settings.setValue("bulkDataWarningEnabled", "false");
     m_settings.endGroup();
     bulkDataWarningEnabledChanged();
 }

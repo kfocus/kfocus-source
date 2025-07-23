@@ -24,6 +24,10 @@ Rectangle {
     anchors.fill: parent
     color: Kirigami.Theme.backgroundColor
 
+    MouseArea {
+        anchors.fill: parent
+    }
+
     ColumnLayout {
         anchors {
             verticalCenter: parent.verticalCenter

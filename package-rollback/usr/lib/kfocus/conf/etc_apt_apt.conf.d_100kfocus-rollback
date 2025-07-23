@@ -1,1 +1,2 @@
 DPkg::Pre-Invoke { "/usr/lib/kfocus/bin/kfocus-rollback-backend aptSnapshot"; };
+DPkg::Post-Invoke { "/usr/lib/kfocus/bin/kfocus-rollback-backend checkBulkDirs"; };

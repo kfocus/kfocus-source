@@ -91,8 +91,6 @@ private:
     static QString m_rollbackBootWorkingDir;
     static QString m_pkexecExe;
     static QString m_systemdInhibitExe;
-    static quint64 m_bulkSizeThreshold;
-    static QMap<QString, QString> m_bulkLocationMap;
 
     static bool m_automaticSnapshotsEnabled;
     static QList<QMap<QString, QString>> *m_snapshotList;
@@ -115,7 +113,7 @@ private:
     static quint64 m_mainMinUnalloc;
     static quint64 m_bootMinUnalloc;
     static bool m_updateInProgress;
-    
+
     static QSettings m_settings;
 };
 
