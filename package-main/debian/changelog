@@ -1,4 +1,4 @@
-kfocus-main (24.04.22~beta3) noble; urgency=medium
+kfocus-main (24.04.23~beta3) noble; urgency=medium
 
   * kfocus-focusrx-dbus-dispatch: Add rollbackBulkDataWarn call (#5636)
   * kfocus-focusrx-system: Reset kfocus-rollback's bulk location seen file on
@@ -6,17 +6,23 @@ kfocus-main (24.04.22~beta3) noble; urgency=medium
 
  -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 23 Jul 2025 11:43:57 -0500
 
-kfocus-main (24.04.22~beta2) noble; urgency=medium
+kfocus-main (24.04.23~beta2) noble; urgency=medium
 
   * kfocus-focusrx-system comments (#5133)
 
  -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 17 Jul 2025 09:49:40 -0500
 
-kfocus-main (24.04.22~beta1) noble; urgency=medium
+kfocus-main (24.04.23~beta1) noble; urgency=medium
 
   * Move low disk space warning to kfocus-btrfs-watcher (#5133)
 
  -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 16 Jul 2025 10:16:59 -0500
+
+kfocus-main (24.04.22) noble; urgency=medium
+
+  * usr/lib/kfocus/lib/common.2.source: Expand nxg3 recognition (#5302)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Fri, 18 Jul 2025 12:21:28 -0400
 
 kfocus-main (24.04.21) noble; urgency=medium
 
@@ -76,7 +82,7 @@ kfocus-main (24.04.16) noble; urgency=medium
   * usr/lib/kfocus/bin/{kfocus-kclean,kfocus-kclean-set}: Offer additional
     disk space clearing advice on BTRFS rather than forcing unconditional deep
     clean (#4534)
-  * usr/lib/kfocus/lib/common.2.source: Add NXg3 support (#5302)
+  * usr/lib/kfocus/lib/common.2.source: Add nxg3 support (#5302)
   * usr/lib/kfocus/bin/kfocus-reset-effects: Enable easy window
     minimize/maximize shortcuts on Ir16 (#5066)
   * src/kfocus-focusrx-dbus-dispatch: Prevent screen locking in live sessions
