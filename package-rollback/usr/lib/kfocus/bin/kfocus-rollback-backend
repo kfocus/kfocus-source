@@ -3362,13 +3362,11 @@ _metaFullKeyList=( "${_metaGlobalKeyList[@]}" "${_metaSnapshotKeyList[@]}" );
 
 _bulkLocationPathList=(
   '/var/lib/mysql'
-  '/var/lib/mariadb'
-  '/var/lib/pgsql'
+  '/var/lib/postgresql'
   '/var/lib/docker'
 )
 _bulkLocationNameList=(
   'MySQL'
-  'MariaDB'
   'PostgreSQL'
   'Docker'
 )

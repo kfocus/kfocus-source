@@ -110,7 +110,9 @@ void KDialogLauncher::cleanupDialog() {
 
         case RollbackBulkDataWarn:
             switch (kdialogProc->exitCode()) {
+                // 0 = user clicked continue, 2 = user closed window
                 case 0:
+                case 2:
                     subProc->setProgram("/usr/lib/kfocus/bin/kfocus-rollback");
                     break;
                 default:
