@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
     if (QFile::exists(dat.homeDir() + "/.config/kfocus-firstrun-wizard")) {
         if (!forced) {
             qWarning() << "User has directed to not run again. Use -f to override.";
-            return 1;
+            return 0;
         }
     }
 
