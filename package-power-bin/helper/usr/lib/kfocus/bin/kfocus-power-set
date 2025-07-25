@@ -28,7 +28,9 @@ _optionTable=(
 );
 
 _freqMisreportTable=(
-  'Intel Core Ultra 9 275HX;This CPU under-reports frequencies. Actual base/turbo values are 2.7/5.4 and performance is unaffected.'
+  'Intel Core Ultra 5 225H;This CPU over-reports frequency. Actual base/turbo values of 1.7/4.9 are shown in system monitor.'
+  'Intel Core Ultra 7 255H;This CPU over-reports frequency. Actual base/turbo values of 2.0/5.1 are shown system monitor.'
+  'Intel Core Ultra 9 275HX;This CPU under-reports frequency. Actual base/turbo values of 2.7/5.4 are shown in system monitor.'
 );
 
 ## BEGIN _importCommonFn {
@@ -50,7 +52,7 @@ _importCommonFn () {
   _is_loaded='n';
   for _lib_file in "${_lib_list[@]}"; do
     if [ -r "${_lib_file}" ]; then
-      # shellcheck source=/usr/lib/kfocus/lib/common.2.source
+      # shellcheck source=../lib/common.2.source
       if source "${_lib_file}"; then
         _is_loaded='y';
         break;
