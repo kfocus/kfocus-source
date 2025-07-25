@@ -262,6 +262,35 @@ _handle_m2g5Fn () {
   fi
   ## . End Add or remove symlink for m2g5p1 thunderbolt blacklist
 }
+# hw_config_code 'zrg1' handles hw_model_code zrg1 5080/5090
+# shellcheck disable=SC2317
+#
+_handle_zrg1Fn () {
+  if [ -x "/usr/bin/deb-systemd-helper" ]; then
+    deb-systemd-helper mask \
+      systemd-backlight@backlight:nvidia_0.service >/dev/null;
+  fi
+  _symlinkTable+=(
+    # Bigger tty fonts
+    '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
+    # Boot parameters
+    '/etc/default/grub.d/kfocus.cfg|/usr/lib/kfocus/conf/m2g6-etc_default_grub.d_kfocus.cfg'
+    # Initramfs config
+    '/etc/initramfs-tools/conf.d/kfocus.conf|'
+    # Sound, nv power
+    '/etc/modprobe.d/kfocus.conf|/usr/lib/kfocus/conf/m2g6-etc_modprobe.d_kfocus.conf'
+    # Load keyboard
+    '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
+    # xhci enable/disable on sleep
+    '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
+    # Select Trackpad config and driver
+    '/usr/share/X11/xorg.conf.d/80-kfocus.conf|/usr/lib/kfocus/conf/m2g6-usr_share_X11_xorg.conf.d_80-kfocus.conf'
+    # DPI Scale Symlink removed; Deprecated by _supplementXdgConfigsFn.
+    '/usr/share/kfocus/kf5-settings/kcmfonts|'
+    # Remove old TLP config
+    '/etc/tlp.d/kfocus.conf|'
+  );
+}
 # hw_config_code 'm2g6' handles hw_model_code m2g6 5070Ti
 # shellcheck disable=SC2317
 #
@@ -339,9 +368,8 @@ _cleanupGrubFileFn () {
   _cmXSetMsgFn 'Clean up grub file';
 
   _grub_file='/etc/default/grub';
-  _grub_line="$(
-    grep -E '^\s*GRUB_CMDLINE_LINUX_DEFAULT="' ${_grub_file} | tail -n1
-  )";
+  _grub_line="$(grep -E '^\s*GRUB_CMDLINE_LINUX_DEFAULT="' ${_grub_file} \
+    | tail -n1 )";
 
   if [ -z "${_grub_line}" ]; then
     _cmXWarnStrFn "grub line from file ${_grub_file} not found";
