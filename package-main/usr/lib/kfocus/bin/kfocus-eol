@@ -1,0 +1,213 @@
+#!/bin/bash
+#
+# Copyright 2019-2025 MindShare Inc.
+#
+# Written for the Kubuntu Focus by A. Rainbolt
+#   See recommended practice in kfocus-example-app.
+#
+# Name     : kfocus-eol
+# Summary  : kfocus-eol
+# Purpose  : Warns the user that their system is EOL and offers to switch them
+#            to the HWE kernel.
+# Example  : kfocus-eol
+# License  : GPLv2
+# Run By   : End users
+# Spec     : 5169
+#
+set -u;
+
+## BEGIN _importCommonFn {
+# Summary   : _importCommonFn
+# Purpose   : Load common routines, prefer relative dir
+# Example   : _importCommonFn;
+# Arguments : none
+# Globals   : Package vars _baseDir _baseName
+# Outputs   : none
+# Returns   : none
+#
+_importCommonFn () {
+  declare _lib_list _is_loaded _lib_file;
+  _lib_list=(
+    "${_baseDir}/lib/common.2.source"
+    '/usr/lib/kfocus/lib/common.2.source'
+  );
+  _is_loaded='n';
+  for _lib_file in "${_lib_list[@]}"; do
+    if [ -r "${_lib_file}" ]; then
+      # shellcheck source=../lib/common.2.source
+      if source "${_lib_file}"; then
+        _is_loaded='y';
+        break;
+      fi
+    fi
+  done
+
+  if [ "${_is_loaded}" = 'n' ]; then
+    echo 1>&2 "${_baseName}: ABORT - Cannot source common lib";
+    exit 202;
+  fi
+}
+## . END _importCommonFn }
+
+## BEGIN _assignGlobalUiVarsFn {
+_assignGlobalUiVarsFn () {
+  _browStr='<tr><td style="padding:8px 32px 8px 0">';
+  _erowStr='</td></tr>';
+  _tableStr='<table style="width:100%;margin-right:32px">';
+  _winTitle='FocusRx';
+
+  _eolNoticeMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}<h3 style="color:#f7941d">Kubuntu 22.04 is End-of-Life</h3>${_erowStr}
+
+${_browStr}Your system is currently running Kubuntu 22.04 LTS, which is <br>
+no longer supported by Kubuntu. You can continue using it, <br>
+but Kubuntu Focus will no longer provide tool or kernel updates <br>
+for it.${_erowStr}
+
+${_browStr}We highly recommend upgrading to Kubuntu 24.04 LTS with the <br>
+Focus Suite. This will provide you with newer software, <br>
+continued kernel security updates, and the latest tools <br>
+and optimizations from Kubuntu Focus. You can download the <br>
+Kubuntu Focus 24.04 image from https://kfocus.org/try/.${_erowStr}
+
+${_browStr}If you want to stay on 22.04 for a while longer, we <br>
+recommend that you switch to the official Ubuntu 22.04 HWE kernel, <br>
+which is scheduled to receive updates into 2027. This kernel <br>
+is not tested by the Kubuntu Focus team, and therefore some <br>
+features may not function as expected when using it.${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _remindLaterMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}<h3 style="color:#f7941d">EOL notice deferred</h3>${_erowStr}
+
+${_browStr}You will be shown this notice again the next time you <br>
+log in.${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _hweSwitchSuccessMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}<h3 style="color:#f7941d">HWE kernel switch success</h3>${_erowStr}
+
+${_browStr}Your system has successfully switched to the Ubuntu HWE <br>
+kernel. You will not be shown further EOL notices.${_erowStr}
+
+${_browStr}Please reboot your system to run the new kernel.${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _hweSwitchFailureMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}<h3 style="color:#f7941d">HWE kernel switch failure</h3>${_erowStr}
+
+${_browStr}An error occurred while switching to the Ubuntu HWE
+kernel:${_erowStr}
+
+${_browStr}<pre>XXX_ERROR_TEXT_XXX</pre>${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+}
+## . END _assignGlobalUiVarsFn }
+
+## BEGIN _hweKernelInstallFn {
+_hweKernelInstallFn () {
+  _cm2SetMsgFn 'Removing kfocus kernel metapackage';
+  if ! apt-get -y remove linux-generic-hwe-22.04-kfocus \
+    linux-headers-generic-hwe-22.04-kfocus \
+    linux-image-generic-hwe-22.04-kfocus \
+    linux-tools-generic-hwe-22.04-kfocus; then
+    _cm2ErrFn;
+  else
+    _cm2SucFn;
+  fi
+  _cm2SetMsgFn 'Installing Ubuntu HWE kernel metapackage';
+  if ! apt-get -y install linux-generic-hwe-22.04 \
+    linux-headers-generic-hwe-22.04 \
+    linux-image-generic-hwe-22.04 \
+    linux-tools-generic-hwe-22.04; then
+    _cm2ErrFn;
+  else
+    _cm2SucFn;
+  fi
+}
+## . END _hweKernelInstallFn }
+
+## BEGIN _mainFn {
+_mainFn () {
+  declare _reply _mode_str _kernel_switch_output \
+    _kernel_switch_exit_int _error_msg;
+
+  _mode_str="${1:-}";
+
+  if dpkg-query -s linux-generic-hwe-22.04 2>/dev/null \
+    | grep -q 'Status: install ok installed'; then
+    # User has already switched to the HWE kernel, don't prompt
+    exit 0;
+  fi
+
+  if [ "${_mode_str}" = 'hweKernelInstall' ]; then
+    # We've been called as root by _cm2RunLongCmdFn, uninstall the KFocus
+    # kernel metapackages and install the upstream HWE kernel metapackages
+    _hweKernelInstallFn;
+    exit 0;
+  fi
+
+  _reply="$("${_kdialogExe}" --title "${_winTitle}" --warningyesnocancel \
+    "${_eolNoticeMsg}" --yes-label 'Get Kubuntu 24.04' \
+    --no-label 'Switch to HWE Kernel' --cancel-label 'Remind Me Later'; echo "$?" )";
+
+  case "${_reply}" in
+    0) "${_kfocusWebLaunchExe}" 'https://kfocus.org/try/';;
+    1) _kernel_switch_output="$(_cm2RunLongCmdFn 'Installing HWE kernel' \
+        "${_binName}" 'hweKernelInstall')";
+      _kernel_switch_exit_int="$?";
+      if [ "${_kernel_switch_exit_int}" = '0' ]; then
+        _cm2PromptUserFn "${_hweSwitchSuccessMsg}";
+      else
+        _error_msg="${_hweSwitchFailureMsg//XXX_ERROR_TEXT_XXX/"${_kernel_switch_output}"}";
+        _cm2PromptUserFn "${_error_msg}";
+      fi
+      ;;
+    2) _cm2PromptUserFn "${_remindLaterMsg}" "${_winTitle}";;
+  esac
+}
+## . END _mainFn }
+
+## BEGIN Declare and assign global vars {
+declare _binName _binDir _baseDir _baseName _assignList _browStr _erowStr \
+  _tableStr _winTitle _eolNoticeMsg _remindLaterMsg _kdialogExe \
+  _kfocusWebLaunchExe;
+## . END Declare and assign global vars }
+
+## BEGIN Run mainFn when script is NOT sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+
+  # Import libs and assign more global vars
+  _importCommonFn;
+
+  _assignGlobalUiVarsFn;
+
+  _assignList=(
+    '_kdialogExe|/usr/bin/kdialog'
+    "_kfocusWebLaunchExe|${_binDir}/kfocus-web-launcher"
+  );
+
+  if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
+    _cm2ErrStrFn 'Could not assign variables';
+    exit 1;
+  fi
+
+  _mainFn "$@";
+fi
+## . END Run mainFn when script is NOT sourced }
