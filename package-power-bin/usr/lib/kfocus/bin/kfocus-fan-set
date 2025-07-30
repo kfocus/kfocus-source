@@ -1,10 +1,8 @@
 #!/bin/bash
 #
-# Copyright 2019-2024 MindShare Inc.
-# Written for the Kubuntu Focus by
-#   * Michael Mikowski
-#   * Aaron Rainbolt
-#   * Erich Eickmeyer
+# Copyright 2019-2025 MindShare Inc.
+# Written for Kubuntu Focus by:
+# Michael Mikowski, Aaron Rainbolt, Erich Eickmeyer
 #
 # Name    : kfocus-fan-set
 # Purpose : Run-as-root utility to set fan profile
@@ -99,63 +97,71 @@ _chkReportFanSupportFn () {
 
   _title="Fan Profile (${_model_label})";
   case "${_model_code}" in
-    m1*|m2g1*|m2g2*|m2g3*|m2g4*|m2g5*|xe*)
-      if [ "${_is_kpf_installed}" = 'y' ]; then return 0; fi
-      _model_msg="$(cat <<_EOH01
-<b>Custom fan profiles are available</b>. Please install
- <code>kfocus-power-fan</code> and then rerun this app to see
- the controls.
-_EOH01
-      )";;
-
-    m2g6*)
-      _model_msg="$(cat <<_EOH06
-The M2 GEN 6 fan profile is non-linear and preferred for
-most tasks. Press [ Fn ][ 1 ] to toggle max cooling.
-_EOH06
-      )";;
-
     ir14*|ir16*)
-      _model_msg="$(cat <<_EOH02
+      _model_msg="$(cat <<_EOH010
 <b>Select a fan profile in the BIOS</b>.
  Press <code>F2</code> during boot and select <code>BIOS &gt;
  Advanced &gt; Operating Mode &gt; Balanced</code> or
  other mode. ${_kpf_msg}
-_EOH02
+_EOH010
       )";;
 
+    m1*|m2g1*|m2g2*|m2g3*|m2g4*|m2g5*|xe*)
+      if [ "${_is_kpf_installed}" = 'y' ]; then return 0; fi
+      _model_msg="$(cat <<_EOH020
+<b>Custom fan profiles are available</b>. Please install
+ <code>kfocus-power-fan</code> and then rerun this app to see
+ the controls.
+_EOH020
+      )";;
+
+    m2g6*)
+      _model_msg="$(cat <<_EOH030
+The M2 GEN 6 fan profile is non-linear and preferred for
+most tasks. Press [ Fn ][ 1 ] to toggle max cooling.
+_EOH030
+      )";;
+
+
     nxg1*)
-      _model_msg="$(cat <<_EOH03
+      _model_msg="$(cat <<_EOH040
 <b>Select a fan profile in the BIOS</b>. Press <code>F2</code>
  during boot and select <code>BIOS &gt; Cooling &gt; Fan Control
  &gt; Balanced</code> or other mode. ${_kpf_msg}
-_EOH03
+_EOH040
       )";;
 
     nxg2*)
-      _model_msg="$(cat <<_EOH04
+      _model_msg="$(cat <<_EOH050
 <b>Select a fan profile in the BIOS</b>.
  Press <code>F2</code> during boot and select <code>BIOS &gt;
  Power, Performance, and Cooling &gt; Fan Control &gt;
  Balanced</code> or other mode. ${_kpf_msg}
-_EOH04
+_EOH050
       )";;
 
     nxg3*)
-      _model_msg="$(cat <<_EOH04
+      _model_msg="$(cat <<_EOH060
 <b>Select a fan profile in the BIOS</b>.
  Press <code>F2</code> during boot and select <code>BIOS &gt;
  Cooling &gt; Fan Mode</code> and then pick <code>Whisper</code>,
  <code>Standard</code>, or <code>Performance</code>. ${_kpf_msg}
-_EOH04
+_EOH060
+      )";;
+
+    zrg1*)
+      _model_msg="$(cat <<_EOH070
+The Zr GEN 1 fan profile is non-linear and preferred for
+most tasks. Press [ Fn ][ 1 ] to toggle max cooling.
+_EOH070
       )";;
 
    *)
-     _model_msg="$(cat <<_EOH05
+     _model_msg="$(cat <<_EOH080
 <b>Fan profile not found for this device</b>. You may be able
  to adjust the fans in the BIOS or with a device specific tool.
  ${_kpf_msg}
-_EOH05
+_EOH080
       )";;
   esac
 
