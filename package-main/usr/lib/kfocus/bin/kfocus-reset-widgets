@@ -118,7 +118,8 @@ _mainFn () {
 
 ## BEGIN Declare and assign global vars {
 declare _binName _binDir _baseDir _baseName _winTitle _browStr _erowStr \
-  _tableStr;
+  _tableStr _doResetWidgetsMsg _resetWidgetsDoneMsg \
+  _resetWidgetsCancelledMsg _resetWidgetsFailedMsg;
 ## . END Declare and assign global vars }
 
 ## BEGIN Run mainFn when script is NOT sourced {
