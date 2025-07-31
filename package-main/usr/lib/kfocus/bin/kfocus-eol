@@ -54,7 +54,7 @@ _assignGlobalUiVarsFn () {
   _browStr='<tr><td style="padding:8px 32px 8px 0">';
   _erowStr='</td></tr>';
   _tableStr='<table style="width:100%;margin-right:32px">';
-  _winTitle='FocusRx';
+  _winTitle='FocusRx: EOL Alert';
 
   _eolNoticeMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
@@ -62,20 +62,21 @@ ${_browStr}<h3 style="color:#f7941d">Kubuntu 22.04 is End-of-Life</h3>${_erowStr
 
 ${_browStr}Your system is currently running Kubuntu 22.04 LTS, which is <br>
 no longer supported by Kubuntu. You can continue using it, <br>
-but Kubuntu Focus will no longer provide tool or kernel updates <br>
-for it.${_erowStr}
+but Kubuntu Focus will no longer provide tool or kernel <br>
+updates for it.${_erowStr}
 
-${_browStr}We highly recommend upgrading to Kubuntu 24.04 LTS with the <br>
-Focus Suite. This will provide you with newer software, <br>
-continued kernel security updates, and the latest tools <br>
-and optimizations from Kubuntu Focus. You can download the <br>
+${_browStr}We highly recommend upgrading to Kubuntu 24.04 LTS with <br>
+the Focus Suite. This will provide you with newer software, <br>
+continued kernel security updates, and the latest tools and <br>
+optimizations from Kubuntu Focus. You can download the <br>
 Kubuntu Focus 24.04 image from https://kfocus.org/try/.${_erowStr}
 
-${_browStr}If you want to stay on 22.04 for a while longer, we <br>
-recommend that you switch to the official Ubuntu 22.04 HWE kernel, <br>
-which is scheduled to receive updates into 2027. This kernel <br>
-is not tested by the Kubuntu Focus team, and therefore some <br>
-features may not function as expected when using it.${_erowStr}</table>
+${_browStr}If you want to stay on 22.04 for a while longer, we
+recommend <br>
+that you switch to the official Ubuntu 22.04 HWE kernel, which <br>
+is scheduled to receive updates into 2027. This kernel is not <br>
+tested by the Kubuntu Focus team, and therefore some <br>
+features may not function as expected when using it. <br>${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
@@ -98,6 +99,18 @@ ${_browStr}Your system has successfully switched to the Ubuntu HWE <br>
 kernel. You will not be shown further EOL notices.${_erowStr}
 
 ${_browStr}Please reboot your system to run the new kernel.${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _authFailedMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}<h3 style="color:#f7941d">Authorization Not
+Provided</h3>${_erowStr}
+
+${_browStr}You did not provide valid authorization for installing the HWE <br>
+kernel. You will be shown an end-of-life notice again the next <br>
+time you log in.${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
@@ -170,6 +183,8 @@ _mainFn () {
       _kernel_switch_exit_int="$?";
       if [ "${_kernel_switch_exit_int}" = '0' ]; then
         _cm2PromptUserFn "${_hweSwitchSuccessMsg}";
+      elif [ "${_kernel_switch_exit_int}" = '127' ]; then
+        _cm2PromptUserFn "${_authFailedMsg}";
       else
         _error_msg="${_hweSwitchFailureMsg//XXX_ERROR_TEXT_XXX/"${_kernel_switch_output}"}";
         _cm2PromptUserFn "${_error_msg}";
@@ -183,7 +198,7 @@ _mainFn () {
 ## BEGIN Declare and assign global vars {
 declare _binName _binDir _baseDir _baseName _assignList _browStr _erowStr \
   _tableStr _winTitle _eolNoticeMsg _remindLaterMsg _kdialogExe \
-  _kfocusWebLaunchExe;
+  _kfocusWebLaunchExe _authFailedMsg;
 ## . END Declare and assign global vars }
 
 ## BEGIN Run mainFn when script is NOT sourced {
