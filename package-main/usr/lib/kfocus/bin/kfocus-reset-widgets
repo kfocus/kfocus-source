@@ -1,0 +1,139 @@
+#!/bin/bash
+#
+# Copyright 2019-2024 MindShare Inc.
+#
+# Written for the Kubuntu Focus by A. Rainbolt.
+#
+# Name     : kfocus-reset-widgets
+# Summary  : kfocus-reset-widgets
+# Purpose  : Deletes any present KFocus widgets and recreates them.
+# Example  : kfocus-reset-widgets
+# License  : GPLv2
+# Run By   : Users
+# Spec     : 4966
+#
+set -u;
+
+## BEGIN _importCommonFn {
+# Summary   : _importCommonFn
+# Purpose   : Load common routines, prefer relative dir
+# Example   : _importCommonFn;
+# Arguments : none
+# Globals   : Package vars _baseDir _baseName
+# Outputs   : none
+# Returns   : none
+#
+_importCommonFn () {
+  declare _lib_list _is_loaded _lib_file;
+  _lib_list=(
+    "${_baseDir}/lib/common.2.source"
+    '/usr/lib/kfocus/lib/common.2.source'
+  );
+  _is_loaded='n';
+  for _lib_file in "${_lib_list[@]}"; do
+    if [ -r "${_lib_file}" ]; then
+      # shellcheck source=/usr/lib/kfocus/lib/common.2.source
+      if source "${_lib_file}"; then
+        _is_loaded='y';
+        break;
+      fi
+    fi
+  done
+
+  if [ "${_is_loaded}" = 'n' ]; then
+    echo 1>&2 "${_baseName}: ABORT - Cannot source common lib";
+    exit 202;
+  fi
+}
+## . END _importCommonFn }
+
+## BEGIN _assignGlobalUiVarsFn {
+_assignGlobalUiVarsFn () {
+  _winTitle='Kubuntu Focus Reset Widgets';
+  _browStr='<tr><td style="padding:8px 32px 8px 0">';
+  _erowStr='</td></tr>';
+  _tableStr='<table style="width:100%;margin-right:32px">';
+
+  _doResetWidgetsMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}<h3 style="color:#f7941d">Reset KFocus Desktop Widgets?</h3>${_erowStr}
+
+${_browStr}All KFocus desktop widgets will be removed, then recreated. <br>
+User-added widgets will not be changed.${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _resetWidgetsDoneMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}<h3 style="color:#f7941d">Widget Reset Complete</h3>${_erowStr}
+
+${_browStr}KFocus desktop widgets have been reset.${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _resetWidgetsCancelledMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}<h3 style="color:#f7941d">Widget Reset Cancelled</h3>${_erowStr}
+
+${_browStr}Widgets will not be reset.${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _resetWidgetsFailedMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}<h3 style="color:#f7941d">Widget Reset Failed</h3>${_erowStr}
+
+${_browStr}KFocus desktop widgets could not be reset! The Plasma scripts <br>
+for widget reset may be missing.${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+}
+## . END _assignGlobalUiVarsFn }
+
+## BEGIN _mainFn {
+_mainFn () {
+  declare _reply;
+
+  _reply="$(_cm2PromptUserFn "${_doResetWidgetsMsg}" "${_winTitle}" 'a')";
+
+  if [ "${_reply}" = 'y' ]; then
+    if ! _cm2RunPlasmaScriptFn 'removeKfocusWidgets.js'; then
+      _cm2PromptUserFn "${_resetWidgetsFailedMsg}" "${_winTitle}" 's';
+      exit 1;
+    fi
+    if ! _cm2RunPlasmaScriptFn 'createKfocusWidgets.js'; then
+      _cm2PromptUserFn "${_resetWidgetsFailedMsg}" "${_winTitle}" 's';
+      exit 1;
+    fi
+    _cm2PromptUserFn "${_resetWidgetsDoneMsg}" "${_winTitle}";
+  else
+    _cm2PromptUserFn "${_resetWidgetsCancelledMsg}" "${_winTitle}";
+  fi
+}
+## . END _mainFn }
+
+## BEGIN Declare and assign global vars {
+declare _binName _binDir _baseDir _baseName _winTitle _browStr _erowStr \
+  _tableStr _doResetWidgetsMsg _resetWidgetsDoneMsg \
+  _resetWidgetsCancelledMsg _resetWidgetsFailedMsg;
+## . END Declare and assign global vars }
+
+## BEGIN Run mainFn when script is NOT sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+
+  # Import libs and assign more global vars
+  _importCommonFn;
+
+  _assignGlobalUiVarsFn;
+
+  _mainFn "$@";
+fi
+## . END Run mainFn when script is NOT sourced }
