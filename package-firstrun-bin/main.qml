@@ -2282,7 +2282,7 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'launchBackInTime':
-            exeRun.exec( systemDataMap.binDir + '/kfocus-mime -k backintime' );
+            exeRun.exec( systemDataMap.binDir + '/kfocus-mime -kf backintime' );
             switchPageFn( 'fileBackupLaunchedItem' );
             break;
 
