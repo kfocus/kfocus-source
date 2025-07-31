@@ -182,12 +182,12 @@ _mainFn () {
         "${_binName}" 'hweKernelInstall')";
       _kernel_switch_exit_int="$?";
       if [ "${_kernel_switch_exit_int}" = '0' ]; then
-        _cm2PromptUserFn "${_hweSwitchSuccessMsg}";
+        _cm2PromptUserFn "${_hweSwitchSuccessMsg}" "${_winTitle}";
       elif [ "${_kernel_switch_exit_int}" = '127' ]; then
-        _cm2PromptUserFn "${_authFailedMsg}";
+        _cm2PromptUserFn "${_authFailedMsg}" "${_winTitle}";
       else
         _error_msg="${_hweSwitchFailureMsg//XXX_ERROR_TEXT_XXX/"${_kernel_switch_output}"}";
-        _cm2PromptUserFn "${_error_msg}";
+        _cm2PromptUserFn "${_error_msg}" ${_winTitle}";
       fi
       ;;
     2) _cm2PromptUserFn "${_remindLaterMsg}" "${_winTitle}";;
