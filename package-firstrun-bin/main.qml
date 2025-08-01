@@ -33,7 +33,9 @@ Kirigami.ApplicationWindow {
     property string modelCode                   : ''
     property string modelLabel                  : ''
     property var faqModelList                   : [ 'm2g6' ]
-    property var imageModelMatrix               : ({ frontpage: { m2g6: true } })
+    property var imageModelMatrix               : ({ 
+      frontpage: { m2g6: true, nxg3: true, zrg1: true }
+    })
 
     property string ding01Str : '<font size="5">\u2776</font>&nbsp;'
     property string ding02Str : '<font size="5">\u2777</font>&nbsp;'
