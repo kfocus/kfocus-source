@@ -4,16 +4,13 @@ Priority: optional
 Maintainer: Kubuntu Focus Developers <support@kfocus.org>
 Build-Depends: debhelper-compat (= 13), intltool
 Standards-Version: 4.6.0
-Homepage: https://launchpad.net/ubuntustudio-default-settings
-Vcs-Git: https://git.launchpad.net/ubuntustudio-default-settings
-Vcs-Browser: https://git.launchpad.net/ubuntustudio-default-settings/tree/
 
 Package: kfocus-wallpapers
 Architecture: all
 Pre-Depends: dpkg (>= 1.15.7.2~)
 Depends: ${misc:Depends},
-         kfocus-settings (>> 20.04.4) |
-         ubuntustudio-default-settings (>= 20.10)
+         kfocus-settings (>> 20.04.4)
 Conflicts: kfocus-main (<= 20.04.8)
 Description: Kubuntu Focus Wallpapers
- This package contains the background wallpapers used by the Kubuntu Focus.
+ This package contains the background wallpapers used by 
+ Kubuntu Focus systems.
