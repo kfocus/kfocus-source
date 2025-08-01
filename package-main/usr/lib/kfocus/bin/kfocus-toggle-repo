@@ -1,0 +1,31 @@
+#!/bin/bash
+#
+# Copyright 2025 MindShare Inc.
+#
+# Written for Kubuntu Focus by M. Mikowski
+# This is a WIP, and is currently not published.
+#
+# Name     : kfocus-toggle-repo
+# Summary  : kfocus-toggle-repo -a -c <comment> <on|off> <debian-path>
+# Purpose  : Toggle the repository with an optional comment
+# Example  : 
+#   kfocus-toggle-repo -a -c 'Disabled by the KFocus team 2025-07-28' \
+#     'https://ppa.launchpadcontent.net/ubuntustudio-ppa/backports/';
+# License  : GPLv2
+# Run By   : Developers only
+# Spec     : TBD
+#
+set -u;
+readarray -t _file_list < <(
+  find /etc/apt/sources.list.d/ -mindepth 1 -maxdepth 1 -name '*.list'
+);
+
+for _file in "${_file_list[@]}"; do
+  if grep -q \
+    '^deb[^ ]* https://ppa.launchpadcontent.net/ubuntustudio-ppa/backports/' \
+    "${_file}"; then
+    1>&2 echo "Fixing |${_file}|";
+    sed -i 's?^\(deb[^ ]* https://ppa.launchpadcontent.net/ubuntustudio-ppa/backports/.*\)$?# Disabled by     kfocus team; As of 2025-07-28, this repo is defunct\n# \1?g' "${_file}";
+  fi
+done
+
