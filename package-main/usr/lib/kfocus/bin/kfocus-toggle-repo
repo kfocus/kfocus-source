@@ -8,7 +8,7 @@
 # Name     : kfocus-toggle-repo
 # Summary  : kfocus-toggle-repo -a -c <comment> <on|off> <debian-path>
 # Purpose  : Toggle the repository with an optional comment
-# Example  : 
+# Example  :
 #   kfocus-toggle-repo -a -c 'Disabled by the KFocus team 2025-07-28' \
 #     'https://ppa.launchpadcontent.net/ubuntustudio-ppa/backports/';
 # License  : GPLv2
@@ -25,7 +25,7 @@ for _file in "${_file_list[@]}"; do
     '^deb[^ ]* https://ppa.launchpadcontent.net/ubuntustudio-ppa/backports/' \
     "${_file}"; then
     1>&2 echo "Fixing |${_file}|";
-    sed -i 's?^\(deb[^ ]* https://ppa.launchpadcontent.net/ubuntustudio-ppa/backports/.*\)$?# Disabled by     kfocus team; As of 2025-07-28, this repo is defunct\n# \1?g' "${_file}";
+    sed -i 's?^\(deb[^ ]* https://ppa.launchpadcontent.net/ubuntustudio-ppa/backports/.*\)$?# Disabled by kfocus team; As of 2025-07-28, this repo is defunct\n# \1?g' "${_file}";
   fi
 done
 
