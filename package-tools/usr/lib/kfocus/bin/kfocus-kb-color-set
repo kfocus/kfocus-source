@@ -1,7 +1,8 @@
 #!/bin/bash
 #
-# Copyright 2020-2024 MindShare Inc.
-# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
+# Copyright 2020-2025 MindShare Inc.
+# Written for Kubuntu Focus by:
+# Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
 #
 # Name    : kfocus-kb-color-set
 # Purpose : Run-as-root utility to set keyboard LEDs
@@ -248,7 +249,7 @@ _setKbdFromConfigFn () {
     return 202;
   fi
 
-  if [ "${_modelCode}" = 'm2g5p' ]; then
+  if [[ "${_modelCode}" =~ ^(m2g5p|zrg1)$ ]]; then
     _iteRestoreKbdFn;
     # Std restores from modprobe file and is not needed here.
   fi
@@ -314,8 +315,8 @@ _enableKbdFn () {
     return 201;
   fi
 
-  # Handle m2g5p ITE logic
-  if [ "${_modelCode}" = 'm2g5p' ]; then
+  # Handle m2g5p|zrg1 ITE logic
+  if [[ "${_modelCode}" =~ ^(m2g5p|zrg1)$ ]]; then
     _iteReadInStateFile;
     _enable_int="${_configStateList[2]}";
     if [ "${_set_str}" = '0' ]; then
@@ -355,7 +356,7 @@ _enableKbdFn () {
 # Purpose: Print current keyboard state to STDOUT.
 #
 _listActiveStateFn () {
-  if [ "${_modelCode}" = 'm2g5p' ]; then
+  if [[ "${_modelCode}" =~ ^(m2g5p|zrg1)$ ]]; then
     _iteCalcKbdStateFn;
   else
     _stdCalcKbdStateFn;
@@ -371,7 +372,7 @@ _readInStateFileFn () {
   declare _arg_str;
   _arg_str="${1:-}";
 
-  if [ "${_modelCode}" = 'm2g5p' ]; then
+  if [[ "${_modelCode}" =~ ^(m2g5p|zrg1)$ ]]; then
     _iteReadInStateFile;
   else
     _stdReadInStateFile;
@@ -417,7 +418,7 @@ _setKbdValsFn () {
   #   The restore routines should always re-enable.
   #
   _configStateList=( "${_bright_str}" "${_hex_str}" '1' );
-  if [ "${_modelCode}" = 'm2g5p' ]; then
+  if [[ "${_modelCode}" =~ ^(m2g5p|zrg1)$ ]]; then
     if _iteRestoreKbdFn; then _iteWriteStateFileFn; fi
   else
     if _stdRestoreKbdFn; then _stdWriteStateFileFn; fi
@@ -429,7 +430,7 @@ _setKbdValsFn () {
 # Purpose: Toggle enable based on existing value.
 #
 _toggleEnableFn () {
-  if [ "${_modelCode}" = 'm2g5p' ]; then
+  if [[ "${_modelCode}" =~ ^(m2g5p|zrg1)$ ]]; then
     _iteCalcKbdStateFn; else _stdCalcKbdStateFn;
   fi
 

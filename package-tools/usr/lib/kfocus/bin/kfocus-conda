@@ -2,9 +2,7 @@
 #
 # Copyright 2020-2025 MindShare Inc.
 # Written for the Kubuntu Focus by:
-#   - Michael Mikowski
-#   - Vishwas Mruthyunjaya
-#   - Erich Eickmeyer
+# Michael Mikowski, Vishwas Mruthyunjaya, Erich Eickmeyer
 #
 # Name    : kfocus-conda
 # Purpose : Install Anaconda AI environments
@@ -368,6 +366,10 @@ _installEnvFn () {
     _cm2EchoFn "${_str:=success}";
   fi
   _cm2SucFn;
+
+  # See https://stackoverflow.com/questions/54429210
+  # Disable block in bashrc if this does not work
+  conda config --set auto_activate_base false;
   ## . End Install or Update Conda
 
   # Jupyter Notebook
@@ -601,13 +603,13 @@ _vendTempDir="${HOME}/vendor.$(date +%s)";
 #
 for _fileName in 'common.2.source' 'arrayPath.source'; do
   _doExitStr='y';
-  for _dir in "${_baseDir}" '/usr/lib/kfocus/lib'; do
+  for _dir in "${_baseDir}" '/usr/lib/kfocus'; do
     _libFile="${_dir}/lib/${_fileName}";
 
     if [ -r "${_libFile}" ]; then
       # shellcheck source=../lib/common.2.source
       # shellcheck source=../lib/arrayPath.source
-      if source "${_libFile}"; then _doExitStr='n'; fi
+      if source "${_libFile}"; then _doExitStr='n'; break; fi
     fi
   done
 

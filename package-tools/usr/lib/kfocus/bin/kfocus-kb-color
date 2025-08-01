@@ -1,7 +1,8 @@
 #!/bin/bash
 #
-# Copyright 2020-2024 MindShare Inc.
-# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
+# Copyright 2020-2025 MindShare Inc.
+# Written for Kubuntu Focus by:
+# Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
 #
 # Name    : kfocus-kb-color
 # Purpose : GUI to change keyboard LED settings
@@ -57,6 +58,7 @@ _mainFn () {
   case "${_model_code}" in
     m1g1) true;;
     m2g*) true;;
+    zrg*) true;;
     xeg*|ir14*|ir16*)
       if [[ "${_model_code}" =~ ^xeg.*$ ]]; then
         _key_str='Fn + F4';
