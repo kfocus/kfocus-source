@@ -1,4 +1,4 @@
-kfocus-main (24.04.23~beta5) noble; urgency=medium
+kfocus-main (24.04.23~beta6) noble; urgency=medium
 
   [ Michael S. Mikowski ]
   * kfocus-focusrx: Support kbd color restore for zrg1 (#5651)
@@ -13,6 +13,13 @@ kfocus-main (24.04.23~beta5) noble; urgency=medium
   * kfocus-bug-widget.svg: Add menu icon (#4966)
 
  -- Michael S. Mikowski <support@kfocus.org>  Fri, 01 Aug 2025 00:36:32 -0400
+
+kfocus-main (24.04.23~beta5) noble; urgency=medium
+
+  * kfocus-main.postinst: Restart kfocus-focusrx-dbus-dispatch for all users
+    on upgrade (#5636)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Fri, 25 Jul 2025 10:30:07 -0500
 
 kfocus-main (24.04.23~beta4) noble; urgency=medium
 
