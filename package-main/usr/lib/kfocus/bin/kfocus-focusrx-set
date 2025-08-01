@@ -1,7 +1,8 @@
 #!/bin/bash
 #
-# Copyright 2019-2024 MindShare Inc.
-# Written for the Kubuntu Focus by Michael Mikowski
+# Copyright 2019-2025 MindShare Inc.
+# Written for Kubuntu Focus by:
+# Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
 #
 # Name    : kfocus-focusrx-set
 # Purpose : run-as-root options for kfocus-focusrx
@@ -129,7 +130,7 @@ _installNvidiaFn () {
   # Use kfocus-nvidia-pinning-edge and kfocus-nvidia-edge for latest hw
   _dmi_hw_config_code="$(_cm2EchoModelStrFn 'config_code')";
   _nv_pkg_suffix='';
-  if [ "${_dmi_hw_config_code}" = 'm2g6' ]; then
+  if [[ "${_dmi_hw_config_code}" =~ ^(m2g6|zrg1)$ ]]; then
     _nv_pkg_suffix='-edge';
   else
     _nv_series_str="$(_getNvSeriesStrFn)";
@@ -257,6 +258,7 @@ _chkHwConfigFn () {
     default|generic|m2g4|m2g5|xeg2) _tool_pkg_suffix='';;
     nxg1) _tool_pkg_suffix='-nxg1';;
     m2g6) _tool_pkg_suffix='-m2g6';;
+    zrg1) _tool_pkg_suffix='-m2g6';;
     ir14g1|ir1Xg2|other|*) _tool_pkg_suffix='-other';;
   esac
   _tool_pkg_name="kfocus-tools${_tool_pkg_suffix}";
@@ -276,7 +278,7 @@ _chkHwConfigFn () {
   ## . End Adjust tool suffix per config code }
 
   ## Begin add or remove extra keyboard package {
-  if [ "${_dmi_hw_model_code}" = 'm2g5p' ]; then
+  if [[ "${_dmi_hw_model_code}" =~ ^(m2g5p|zrg1) ]]; then
     if ! _cm2ChkInstalledPkgFn 'kfocus-keyboard-ite'; then
       _msg='install-kbd-ite;;';
       _msg+='Package kfocus-keyboard-ite needs to be installed.';
@@ -305,7 +307,7 @@ _chkHwConfigFn () {
     # Supplemental check for Nvidia systems
     _nv_pkg_suffix='';
     if [ "${_is_nv_system}" = 'y' ]; then
-      if [ "${_dmi_hw_config_code}" = 'm2g6' ]; then
+      if [[ "${_dmi_hw_config_code}" =~ ^(m2g6|zrg1)$ ]]; then
         _nv_pkg_suffix='-edge';
       fi
     else

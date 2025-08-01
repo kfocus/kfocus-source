@@ -1,7 +1,8 @@
 #!/bin/bash
 #
-# Copyright 2019-2024 MindShare Inc.
-# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
+# Copyright 2019-2025 MindShare Inc.
+# Written for Kubuntu Focus by:
+# Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
 #
 # Name    : kfocus-focusrx
 # Purpose : Prompt user to apply latest FocusRx System upgrade and other
@@ -504,10 +505,10 @@ _chkRollbackPresence () {
 ## BEGIN _chkKbdLedFn {
 # Purpose: Restore keyboard colors for specific models.
 # Important: Enable is set by kfocus-power-set which precedes this on sign-in.
-#   All non-m2g5p models use modprobe settings and are not affected.
+#   All non-m2g5p|zrg1 models use modprobe settings and are not affected.
 #
 _chkKbdLedFn () {
-  if [[ "$(_cm2EchoModelStrFn 'code')" =~ ^(m2g5p)$ ]]; then
+  if [[ "$(_cm2EchoModelStrFn 'code')" =~ ^(m2g5p|zrg1)$ ]]; then
     if [ -x "${_kbdColorSetExe}" ]; then
       "${_escExe}" "${_kbdColorSetExe}" -r || return 200;
     fi
