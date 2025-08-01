@@ -1,6 +1,8 @@
 #include "KDialogLauncher.h"
 
 #include <QProcess>
+#include <QSettings>
+#include <QDir>
 
 void KDialogLauncher::info(const QString &msg) {
     launchDialog(Info, msg);
@@ -19,53 +21,67 @@ void KDialogLauncher::rollbackLowMainSpace(const QString &msg) {
 void KDialogLauncher::rollbackLowBootSpace(const QString &msg) {
     launchDialog(RollbackLowBootSpace, msg);
 }
+void KDialogLauncher::rollbackBulkDataWarn(const QString &msg) {
+    launchDialog(RollbackBulkDataWarn, msg);
+}
 
 void KDialogLauncher::launchDialog(const KDialogType &type, const QString &msg) {
-    auto *proc = new QProcess();
-    proc->setProgram("/usr/bin/kdialog");
+    if (type == RollbackBulkDataWarn) {
+        QSettings rollbackSettings = QSettings(QDir::homePath() + "/.config/kfocus-rollback", QSettings::IniFormat);
+        rollbackSettings.beginGroup("kfocus-rollback");
+        QString val = rollbackSettings.value("bulkDataWarningEnabled", "true").toString();
+        if (val == "false") {
+            return;
+        }
+    }
+
+    auto *kdialogProc = new QProcess();
+    kdialogProc->setProgram("/usr/bin/kdialog");
     switch (type) {
         case Info:
-            proc->setArguments(QStringList() << "--title" << "FocusRx" << "--msgbox" << msg);
+            kdialogProc->setArguments(QStringList() << "--title" << "FocusRx" << "--msgbox" << msg);
             break;
         case Warning:
-            proc->setArguments(QStringList() << "--title" << "FocusRx" << "--sorry" << msg);
+            kdialogProc->setArguments(QStringList() << "--title" << "FocusRx" << "--sorry" << msg);
             break;
         case Error:
-            proc->setArguments(QStringList() << "--title" << "FocusRx" << "--error" << msg);
+            kdialogProc->setArguments(QStringList() << "--title" << "FocusRx" << "--error" << msg);
             break;
         case RollbackLowMainSpace:
-            proc->setArguments(QStringList() << "--title" << "FocusRx" << "--warningyesnocancel" << msg << "--yes-label" << "Open Rollback Dashboard" << "--no-label" << "Open File Manager");
+            kdialogProc->setArguments(QStringList() << "--title" << "FocusRx" << "--warningyesnocancel" << msg << "--yes-label" << "Open Rollback Dashboard" << "--no-label" << "Open File Manager");
             break;
         case RollbackLowBootSpace:
-            proc->setArguments(QStringList() << "--title" << "FocusRx" << "--warningcontinuecancel" << msg << "--continue-label" << "Open Kernel Cleaner");
+            kdialogProc->setArguments(QStringList() << "--title" << "FocusRx" << "--warningcontinuecancel" << msg << "--continue-label" << "Open Kernel Cleaner");
+            break;
+        case RollbackBulkDataWarn:
+            kdialogProc->setArguments(QStringList() << "--title" << "FocusRx" << "--warningcontinuecancel" << msg << "--continue-label" << "Open Rollback Dashboard");
             break;
     }
-    connect(proc, SIGNAL(finished(int)), this, SLOT(cleanupDialog()));
-    connect(proc, &QProcess::started, this, [&, proc, type](){
-        m_processList.append(proc);
-        m_typeList.append(type);
+    connect(kdialogProc, SIGNAL(finished(int)), this, SLOT(cleanupDialog()));
+    connect(kdialogProc, &QProcess::started, this, [&, kdialogProc, type](){
+        m_kdialogProcessList.append(kdialogProc);
+        m_kdialogTypeList.append(type);
     });
-    proc->start();
+    kdialogProc->start();
 }
 
 void KDialogLauncher::cleanupDialog() {
-    QProcess *proc = static_cast<QProcess *>(QObject::sender());
+    QProcess *kdialogProc = static_cast<QProcess *>(QObject::sender());
     KDialogType type;
-    int procIdx;
-    for (int i = 0;i < m_processList.count();i++) {
-        if (proc == m_processList.at(i)) {
-            type = m_typeList.at(i);
-            procIdx = i;
+    int kdialogProcIdx;
+    for (int i = 0;i < m_kdialogProcessList.count();i++) {
+        if (kdialogProc == m_kdialogProcessList.at(i)) {
+            type = m_kdialogTypeList.at(i);
+            kdialogProcIdx = i;
             break;
         }
     }
 
     QProcess *subProc = new QProcess();
-    bool runSubProc = true;
 
     switch (type) {
         case RollbackLowMainSpace:
-            switch (proc->exitCode()) {
+            switch (kdialogProc->exitCode()) {
                 case 0:
                     subProc->setProgram("/usr/lib/kfocus/bin/kfocus-rollback");
                     break;
@@ -74,37 +90,51 @@ void KDialogLauncher::cleanupDialog() {
                     break;
                 default:
                     delete subProc;
-                    runSubProc = false;
+                    subProc = NULL;
                     break;
             }
             break;
 
         case RollbackLowBootSpace:
-            switch (proc->exitCode()) {
+            switch (kdialogProc->exitCode()) {
                 case 0:
                     subProc->setProgram("/usr/lib/kfocus/bin/kfocus-kclean");
                     subProc->setArguments(QStringList() << "-f");
                     break;
                 default:
                     delete subProc;
-                    runSubProc = false;
+                    subProc = NULL;
+                    break;
+            }
+            break;
+
+        case RollbackBulkDataWarn:
+            switch (kdialogProc->exitCode()) {
+                // 0 = user clicked continue, 2 = user closed window
+                case 0:
+                case 2:
+                    subProc->setProgram("/usr/lib/kfocus/bin/kfocus-rollback");
+                    break;
+                default:
+                    delete subProc;
+                    subProc = NULL;
                     break;
             }
             break;
 
         default:
             delete subProc;
-            runSubProc = false;
+            subProc = NULL;
     }
 
-    if (runSubProc) {
+    if (subProc != NULL) {
         connect(subProc, SIGNAL(finished(int)), this, SLOT(cleanupSubproc()));
         subProc->start();
     }
 
-    m_processList.removeAt(procIdx);
-    m_typeList.removeAt(procIdx);
-    proc->deleteLater();
+    m_kdialogProcessList.removeAt(kdialogProcIdx);
+    m_kdialogTypeList.removeAt(kdialogProcIdx);
+    kdialogProc->deleteLater();
 }
 
 void KDialogLauncher::cleanupSubproc() {

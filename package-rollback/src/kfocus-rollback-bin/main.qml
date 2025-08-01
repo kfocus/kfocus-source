@@ -362,7 +362,14 @@ Kirigami.ApplicationWindow {
                             Layout.fillWidth: true
                         }
                         Controls.Label {
-                            text: "Running a large database? See <a href=\"https://kfocus.org/wf/db#bkm_move_large_databases\">this advice</a>."
+                            text: backend.bulkDataList.length === 0
+                              ? 'Running a large database? See '
+                              + '<a href="https://kfocus.org/wf/db#bkm_move_large_databases">'
+                              + 'this advice</a>.'
+                              : '⚠️ <font color="#f7941d">Bulk data found on '
+                              + 'root.</font> '
+                              + '<a href="large-snapshot-warn">Learn to '
+                              + 'fix</a><font color=\"#f7941d\">.</font>'
                             enabled: !uiLocked
                             color            : uiLocked
                               ? Kirigami.Theme.disabledTextColor
@@ -370,7 +377,14 @@ Kirigami.ApplicationWindow {
                             linkColor        : uiLocked
                               ? Kirigami.Theme.disabledTextColor
                               : Kirigami.Theme.linkColor
-                            onLinkActivated: Qt.openUrlExternally(link)
+                            onLinkActivated : {
+                                if ( link === 'large-snapshot-warn' ) {
+                                    backend.enableBulkDataWarning();
+                                    bulkDataOverlay.visible = true;
+                                } else {
+                                    Qt.openUrlExternally(link);
+                                }
+                            }
                         }
                     }
 
@@ -916,12 +930,6 @@ Kirigami.ApplicationWindow {
                         }
                         return outputStr;
                     }
-                    onLinkActivated : {
-                        if ( link === 'enable-automatic-snapshots' ) {
-                            automaticSnapshotsSwitch.checked = true
-                            switchAutomaticSnapshotsFn();
-                        }
-                    }
                     visible         : false
                 }
 
@@ -1353,6 +1361,40 @@ Kirigami.ApplicationWindow {
                 Qt.quit();
             }
         }
+
+        OverlayAlertItem {
+            id: bulkDataOverlay
+            isVisible: ((backend.bulkDataList.length !== 0)
+              && (backend.bulkDataWarningEnabled))
+            mainIcon: 'dialog-warning'
+            headerText: 'Bulk Data Found on Root'
+            mainText: 'You have bulk data on the following locations of the '
+              + 'root filesystem:<br><ul>'
+              + genBulkDataListStrFn( backend.bulkDataList )
+              + '</ul><br>'
+              + 'This data will be included in snapshots. If left as-is, '
+              + 'bulk data management software may cause snapshots to '
+              + 'grow rapidly in size during routine optimization and '
+              + 'maintenance.<br>'
+              + '<br>'
+              + 'We strongly recommends you move this data to a mount point '
+              + 'that is not included in snapshots, such as /home. See '
+              + '<a href="https://kfocus.org/wf/db#bkm_move_large_databases">'
+              + 'this advice</a> for guidance.'
+            primaryButtonText: 'Continue'
+            primaryButtonIcon: 'go-next-symbolic'
+            secondaryButtonText: 'Don\'t Show Again'
+            secondaryButtonIcon: 'go-next-skip'
+            showSecondaryButton: true
+
+            onPrimaryButtonClicked: {
+                bulkDataOverlay.visible = false;
+            }
+            onSecondaryButtonClicked: {
+                backend.disableBulkDataWarning();
+                bulkDataOverlay.visible = false;
+            }
+        }
     }
     // == . END Views =================================================
 
@@ -1525,6 +1567,14 @@ Kirigami.ApplicationWindow {
            outStr = ' ' + outStr;
         }
         return outStr;
+    }
+
+    function genBulkDataListStrFn( bulkDataList ) {
+        let solve_str = '';
+        for ( let i = 0; i < bulkDataList.length; i++ ) {
+            solve_str += '<li>' + bulkDataList[i] + '</li>';
+        }
+        return solve_str;
     }
 
     function getIconForReasonFn( reason ) {

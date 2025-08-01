@@ -7,6 +7,7 @@
 #include <QList>
 #include <QFile>
 #include <QDateTime>
+#include <QSettings>
 #include <unistd.h>
 #include "shellengine.h"
 #include "backendengine.h"
@@ -20,6 +21,7 @@ QString BackendEngine::m_rollbackMainWorkingDir = "/btrfs_main/@kfocus-rollback-
 QString BackendEngine::m_rollbackBootWorkingDir = "/btrfs_boot/@kfocus-rollback-working-boot";
 QString BackendEngine::m_pkexecExe = "/usr/bin/pkexec";
 QString BackendEngine::m_systemdInhibitExe = "/usr/bin/systemd-inhibit";
+
 bool BackendEngine::m_automaticSnapshotsEnabled = false;
 QList<QMap<QString, QString>> *BackendEngine::m_snapshotList = new QList<QMap<QString, QString>>();
 QMap<QString, QString> *BackendEngine::m_mainFsInfo = new QMap<QString, QString>();
@@ -34,10 +36,14 @@ bool BackendEngine::m_updateInProgress = false;
 bool BackendEngine::m_mainWorkingSubvolExists = false;
 bool BackendEngine::m_bootWorkingSubvolExists = false;
 bool BackendEngine::m_snapshotSizeInfoPresent = false;
+QStringList BackendEngine::m_bulkDataList = QStringList();
+bool BackendEngine::m_bulkDataChecked = false;
+
 bool BackendEngine::m_btrfsStateUnusable = false;
 bool BackendEngine::m_postRestoreSubvolsMounted = false;
 quint64 BackendEngine::m_mainMinUnalloc = 0;
 quint64 BackendEngine::m_bootMinUnalloc = 0;
+QSettings BackendEngine::m_settings = QSettings(QDir::homePath() + "/.config/kfocus-rollback", QSettings::IniFormat);
 
 int main(int argc, char *argv[])
 {

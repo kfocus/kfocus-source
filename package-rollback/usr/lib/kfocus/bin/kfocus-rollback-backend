@@ -196,6 +196,17 @@ ${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
+
+  _bulkDataWarnMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}<h3 style="color:#f7941d">Bulk Data Dirs Found</h3>${_erowStr}
+
+${_browStr}Bulk data directories have been found on the system disk.<br>
+This can cause snapshots to become excessively large. Open<br>
+System Rollback Dashboard to see how to resolve.${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
 }
 ## . END Private init _assignGlobalUiVarsFn }
 ## . END INITIALIZATION AND EXIT FUNCTIONS ==============================
@@ -341,6 +352,53 @@ _checkBootUnallocSpaceFn () {
   fi
 }
 ## . END private _checkBootUnallocSpaceFn }
+
+## BEGIN private _checkBulkDirsFn {
+# Summary   : _checkBulkDirsFn
+# Purpose   : Shows an error message to all graphically logged-in users
+#             warning of the existence of bulk data directories on the root
+#             filesystem, if those users have not opted out of warnings.
+# Example   : _checkBulkDirsFn
+# Arguments : none
+# Globals   : _bulkDataWarnMsg
+# Outputs   : Log info
+# Returns   : 0 on success, 1 when the bulk location seen file cannot be
+#             written
+# Throws    : none
+# Notes     : Check Git history at 9269f7de for getDirSpace if needed
+#
+_checkBulkDirsFn () {
+  declare _idx_list _idx _bulk_dir_list _seen_bulk_dir_list _bulk_dir;
+
+  _bulk_dir_list=();
+
+  readarray -t _idx_list < <(_getBulkDirIdxListFn);
+  if [ "${#_idx_list[@]}" = '0' ] || [ -z "${_idx_list[0]}" ]; then
+    return 0;
+  fi
+
+  for _idx in "${_idx_list[@]}"; do
+    _bulk_dir_list+=( "${_bulkLocationPathList[_idx]}" );
+  done
+
+  if [ -f "${_bulkLocationSeenFile}" ]; then
+    readarray -t _seen_bulk_dir_list < "${_bulkLocationSeenFile}" \
+      || return 1;
+  else
+    _seen_bulk_dir_list=();
+  fi
+
+  ( IFS=$'\n'; echo "${_bulk_dir_list[*]}" > "${_bulkLocationSeenFile}"; )
+
+  for _bulk_dir in "${_bulk_dir_list[@]}"; do
+    # shellcheck disable=SC2076
+    if ! [[ " ${_seen_bulk_dir_list[*]} " =~ " ${_bulk_dir} " ]]; then
+      _promptAllUsersFn 'rollbackBulkDataWarn' "${_bulkDataWarnMsg}";
+      return 0;
+    fi
+  done
+}
+## . END private _checkBulkDirsFn }
 
 # NOTE: All functions above this point have had their documentation checked
 # and redone. PICK UP HERE!
@@ -1224,6 +1282,33 @@ _getBootUsageReportFn () {
   LC_ALL='C' "${_btrfsExe}" filesystem usage -b "${_rb2BootDir}" || return 1;
 }
 ## . END private _getBootUsageReportFn }
+
+## BEGIN private _getBulkDirIdxListFn {
+# Summary   : _getBulkDirIdxListFn
+# Purpose   : Gets a list of bulk storage directories on the system that exist
+#             and are not symlinks.
+# Example   : _getBulkDirIdxListFn
+# Arguments : none
+# Globals   : _bulkLocationPathList, _bulkLocationNameList
+# Outputs   : Newline-separated list of indexes into the _bulkLocationPathList
+#             global array
+# Returns   : 0
+# Throws    : none
+#
+_getBulkDirIdxListFn () {
+  declare _idx _solve_arr;
+
+  _solve_arr=();
+
+  for (( _idx=0; _idx < ${#_bulkLocationPathList[@]}; _idx++)); do
+    [ ! -d "${_bulkLocationPathList[_idx]}" ] && continue;
+    [   -L "${_bulkLocationPathList[_idx]}" ] && continue;
+    _solve_arr+=( "${_idx}" );
+  done
+
+  ( IFS=$'\n'; echo "${_solve_arr[*]}" );
+}
+## . END private _getBulkDirIdxListFn }
 
 ## BEGIN private _getMainBtduReportFn {
 # Summary   : _getMainBtduReportFn
@@ -2116,6 +2201,24 @@ _checkBootUnallocSpacePublicFn () {
 }
 ## . END _checkBootUnallocSpacePublicFn }
 
+## BEGIN _checkBulkDirsPublicFn {
+# Summary   : _checkBulkDirsPublicFn
+# Purpose   : Shows an error message to all graphically logged-in users
+#             warning of the existence of bulk data directories on the root
+#             filesystem, if those users have not opted out of warnings.
+# Example   : _checkBulkDirsPublicFn
+# Arguments : none
+# Globals   : _bulkDataWarnMsg
+# Outputs   : Log info
+# Returns   : none
+# Throws    : 2 when the bulk location seen file cannot be written
+#
+_checkBulkDirsPublicFn () {
+  _checkBulkDirsFn || _logExitFn 'err' '2' \
+    "Cannot save seen bulk dir list to |${_bulkLocationSeenFile}|!";
+}
+## . END _checkBulkDirsPublicFn }
+
 ## BEGIN _checkMainUnallocSpacePublicFn {
 # Summary   : _checkMainUnallocSpacePublicFn
 # Purpose   : A public wrapper around _checkMainUnallocSpaceFn. Shows an error
@@ -2383,6 +2486,25 @@ _getBootUnallocSpacePublicFn () {
   _getBootUnallocSpaceFn;
 }
 ## . END _getBootUnallocSpacePublicFn }
+
+## BEGIN _getBulkDirListPublicFn {
+# Purpose   : Gets a list of all bulk data directories on the system that are
+#             not symlinks, and the applications they belong to.
+# Throws    : none
+#
+_getBulkDirListPublicFn () {
+  declare _idx_list _idx;
+
+  readarray -t _idx_list < <(_getBulkDirIdxListFn);
+  if [ "${#_idx_list[@]}" = '0' ] || [ -z "${_idx_list[0]}" ]; then
+    return 0;
+  fi
+
+  for _idx in "${_idx_list[@]}"; do
+    echo "${_bulkLocationPathList[_idx]} (${_bulkLocationNameList[_idx]})";
+  done
+}
+## . END _getBulkDirListPublicFn }
 
 ## BEGIN _getMainMinUnallocPublicFn {
 # Purpose   : A public wrapper around _getMainMinUnallocFn.
@@ -3179,6 +3301,7 @@ _mainFn () {
     'btrfsDeepClean')          _btrfsDeepCleanPublicFn;;
     'btrfsMaintain')           _btrfsMaintainPublicFn;;
     'checkBootUnallocSpace')   _checkBootUnallocSpacePublicFn;;
+    'checkBulkDirs')           _checkBulkDirsPublicFn;;
     'checkEchoLockDir')        _checkEchoLockDirFn;;
     'checkMainUnallocSpace')   _checkMainUnallocSpacePublicFn;;
     'clearRestore')            _clearRestorePublicFn;;
@@ -3186,11 +3309,12 @@ _mainFn () {
     'createSnapshot')          _createSnapshotPublicFn       "${1:-}";;
     'deleteSnapshot')          _deleteSnapshotPublicFn       "${1:-}";;
     'finalizeRestore')         _finalizeRestorePublicFn;;
-    'getBaseSnapshotMetadata') _getSnapshotMetadataPublicFn  "${1:-}"   'base';;
+    'getBaseSnapshotMetadata') _getSnapshotMetadataPublicFn  "${1:-}" 'base';;
     'getBootMinUnalloc')       _getBootMinUnallocPublicFn;;
     'getBootUnallocSpace')     _getBootUnallocSpacePublicFn;;
     'getBtrfsStatus')          echo "${_btrfsStatus}";;
-    'getFullSnapshotMetadata') _getSnapshotMetadataPublicFn  "${1:-}"   'full';;
+    'getBulkDirList')          _getBulkDirListPublicFn;;
+    'getFullSnapshotMetadata') _getSnapshotMetadataPublicFn  "${1:-}" 'full';;
     'getMainMinUnalloc')       _getMainMinUnallocPublicFn;;
     'getMainUnallocSpace')     _getMainUnallocSpacePublicFn;;
     'getManualSwitchState')    _getManualSwitchStatePublicFn;;
@@ -3218,7 +3342,8 @@ declare _binName _binDir _baseName _baseDir \
   _snapshotMetaDb _libTable _browStr _erowStr _tableStr _prepareFailMsg \
   _lowDiskWithHomeMsg _lowDiskWithoutHomeMsg _lowBootMsg _inconsistentMsg \
   _btrfsExe _btduExe _filefragExe _btrfsBalanceExe _kwriteconfig5Exe \
-  _kreadconfig5Exe _diffExe _legacySnapshotReasonFile;
+  _kreadconfig5Exe _diffExe _legacySnapshotReasonFile _bulkLocationPathList \
+  _bulkLocationNameList _bulkLocationSeenFile _bulkDataWarnMsg;
 
 _btrfsStatus='';
 _legacySnapshotReasonFile='/var/lib/kfocus/rollback_snapshot_reason';
@@ -3234,6 +3359,18 @@ _metaGlobalKeyList=( 'lastFreeInt' 'lastUnallocInt' 'manualSwitchState' );
 _metaSnapshotKeyList=( 'desc' 'name' 'pinned' 'reason' );
 
 _metaFullKeyList=( "${_metaGlobalKeyList[@]}" "${_metaSnapshotKeyList[@]}" );
+
+_bulkLocationPathList=(
+  '/var/lib/mysql'
+  '/var/lib/postgresql'
+  '/var/lib/docker'
+)
+_bulkLocationNameList=(
+  'MySQL'
+  'PostgreSQL'
+  'Docker'
+)
+_bulkLocationSeenFile='/var/lib/kfocus/rollback_bulk_seen';
 ## . END Declare and assign global vars }
 
 ## BEGIN Run mainFn when script is NOT sourced {

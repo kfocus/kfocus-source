@@ -4,10 +4,7 @@
 #include "backendengine.h"
 #include "shellengine.h"
 
-BackendEngine::BackendEngine()
-{
-
-}
+BackendEngine::BackendEngine() { }
 
 QString BackendEngine::rollbackBackendExe() {
     return m_rollbackBackendExe;
@@ -97,6 +94,20 @@ bool BackendEngine::bootWorkingSubvolExists() {
 
 bool BackendEngine::snapshotSizeInfoPresent() {
     return m_snapshotSizeInfoPresent;
+}
+
+QStringList BackendEngine::bulkDataList() {
+    return m_bulkDataList;
+}
+
+bool BackendEngine::bulkDataWarningEnabled() {
+    m_settings.beginGroup("kfocus-rollback");
+    QString val = m_settings.value("bulkDataWarningEnabled", "true").toString();
+    m_settings.endGroup();
+    if (val == "true") {
+        return true;
+    }
+    return false;
 }
 
 int BackendEngine::getSnapshotCount() {
@@ -414,10 +425,33 @@ void BackendEngine::loadGlobalInfo() {
             execEngine->deleteLater();
             m_snapshotSizeInfoPresent = m_calcSize;
             snapshotSizeInfoPresentChanged();
+
+            if (!m_bulkDataChecked) {
+                m_bulkDataList.clear();
+                execEngine->execSync("pkexec " + m_rollbackSetExe + " getBulkDirList");
+                m_bulkDataList.append(execEngine->stdout().split('\n', Qt::SkipEmptyParts));
+                bulkDataListChanged();
+                m_bulkDataChecked = true;
+            }
+
             systemDataLoaded();
             m_updateInProgress = false;
         });
         execEngine->exec(m_pkexecExe + ' ' + m_rollbackSetExe + " getBootMinUnalloc");
     });
     execEngine->exec(m_pkexecExe + ' ' + m_rollbackSetExe + " getMainMinUnalloc");
+}
+
+void BackendEngine::enableBulkDataWarning() {
+    m_settings.beginGroup("kfocus-rollback");
+    m_settings.setValue("bulkDataWarningEnabled", "true");
+    m_settings.endGroup();
+    bulkDataWarningEnabledChanged();
+}
+
+void BackendEngine::disableBulkDataWarning() {
+    m_settings.beginGroup("kfocus-rollback");
+    m_settings.setValue("bulkDataWarningEnabled", "false");
+    m_settings.endGroup();
+    bulkDataWarningEnabledChanged();
 }

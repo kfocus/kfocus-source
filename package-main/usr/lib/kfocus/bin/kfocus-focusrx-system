@@ -93,7 +93,7 @@ _initCpuFn () {
 #
 _manageSnapshotsOnBootFn () {
   declare _title _main_unalloc _main_min_unalloc _boot_unalloc \
-    _boot_min_unalloc _btrfs_status;
+    _boot_min_unalloc _btrfs_status _return_code;
   _title='Manage Snapshots On Boot';
 
   _cm2SetMsgFn "${_title}";
@@ -111,6 +111,9 @@ _manageSnapshotsOnBootFn () {
     return 1;
   fi
 
+  # Reset seen bulk data directory file
+  rm -f "${_rollbackBulkLocationSeenFile}";
+
   # Get unallocated and minimum unallocated byte count for main and boot FS
   _main_unalloc="$("${_rollbackBackendExe}" 'getMainUnallocSpace')";
   _main_min_unalloc="$("${_rollbackBackendExe}" 'getMainMinUnalloc')";
@@ -120,16 +123,19 @@ _manageSnapshotsOnBootFn () {
   # Perform on-boot snapshot maintenance if space is sufficient
   if (( _main_unalloc > _main_min_unalloc )) \
     && (( _boot_unalloc > _boot_min_unalloc )); then
-    "${_rollbackBackendExe}" 'finalizeRestore'
-    if [ "$?" != '0' ] && [ "$?" != '1' ]; then
+    "${_rollbackBackendExe}" 'finalizeRestore';
+    _return_code="$?"
+    if [ "${_return_code}" != '0' ] && [ "${_return_code}" != '1' ]; then
       _cm2WarnFn; return;
     fi
-    "${_rollbackBackendExe}" 'createSnapshot' 'Timed'
-    if [ "$?" != '0' ] && [ "$?" != '1' ]; then
+    "${_rollbackBackendExe}" 'createSnapshot' 'Timed';
+    _return_code="$?"
+    if [ "${_return_code}" != '0' ] && [ "${_return_code}" != '1' ]; then
       _cm2WarnFn; return;
     fi
-    "${_rollbackBackendExe}" 'trimSnapshots'
-    if [ "$?" != '0' ] && [ "$?" != '1' ]; then
+    "${_rollbackBackendExe}" 'trimSnapshots';
+    _return_code="$?"
+    if [ "${_return_code}" != '0' ] && [ "${_return_code}" != '1' ]; then
       _cm2WarnFn; return;
     fi
     _cm2SucFn;
@@ -145,7 +151,7 @@ _manageSnapshotsOnBootFn () {
 #
 _maintainBtrfsFn () {
   declare _title _main_unalloc _main_min_unalloc _boot_unalloc \
-    _boot_min_unalloc;
+    _boot_min_unalloc _btrfs_status _return_code;
   _title='Maintain Snapshots';
 
   _cm2SetMsgFn "${_title}";
@@ -173,15 +179,18 @@ _maintainBtrfsFn () {
   if (( _main_unalloc > _main_min_unalloc )) \
     && (( _boot_unalloc > _boot_min_unalloc )); then
     "${_rollbackBackendExe}" 'createSnapshot' 'Timed';
-    if [ "$?" != '0' ] && [ "$?" != '1' ]; then
+    _return_code="$?"
+    if [ "${_return_code}" != '0' ] && [ "${_return_code}" != '1' ]; then
       _cm2WarnFn; return;
     fi
     "${_rollbackBackendExe}" 'trimSnapshots';
-    if [ "$?" != '0' ] && [ "$?" != '1' ]; then
+    _return_code="$?"
+    if [ "${_return_code}" != '0' ] && [ "${_return_code}" != '1' ]; then
       _cm2WarnFn; return;
     fi
     "${_rollbackBackendExe}" 'btrfsMaintain';
-    if [ "$?" != '0' ] && [ "$?" != '1' ]; then
+    _return_code="$?"
+    if [ "${_return_code}" != '0' ] && [ "${_return_code}" != '1' ]; then
       _cm2WarnFn; return;
     fi
     _cm2SucFn;
@@ -217,7 +226,10 @@ _mainFn () {
 
 ## BEGIN Declare and assign global vars {
 #
-declare _binName _binDir _baseName _baseDir _rootTitle _assignList;
+declare _binName _binDir _baseName _baseDir _rootTitle _assignList \
+  _rollbackBulkLocationSeenFile;
+
+_rollbackBulkLocationSeenFile='/var/lib/kfocus/rollback_bulk_seen';
 ## . END Declare and assign global vars }
 
 ## BEGIN Run mainFn when script is NOT sourced {
