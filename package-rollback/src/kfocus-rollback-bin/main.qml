@@ -363,10 +363,10 @@ Kirigami.ApplicationWindow {
                         }
                         Controls.Label {
                             text: backend.bulkDataList.length === 0
-                              ? 'Running a large database? See '
-                              + '<a href="https://kfocus.org/wf/db#bkm_move_large_databases">'
+                              ? 'Avoid big data on root FS. See '
+                              + '<a href="https://kfocus.org/wf/big-data.html">'
                               + 'this advice</a>.'
-                              : '⚠️ <font color="#f7941d">Bulk data found on '
+                              : '⚠️ <font color="#f7941d">Big data found on '
                               + 'root.</font> '
                               + '<a href="large-snapshot-warn">Learn to '
                               + 'fix</a><font color=\"#f7941d\">.</font>'
@@ -1367,19 +1367,19 @@ Kirigami.ApplicationWindow {
             isVisible: ((backend.bulkDataList.length !== 0)
               && (backend.bulkDataWarningEnabled))
             mainIcon: 'dialog-warning'
-            headerText: 'Bulk Data Found on Root'
-            mainText: 'You have bulk data on the following locations of the '
+            headerText: 'Big Data Found on Root FS'
+            mainText: 'You have big data on the following locations of the '
               + 'root filesystem:<br><ul>'
               + genBulkDataListStrFn( backend.bulkDataList )
               + '</ul><br>'
               + 'This data will be included in snapshots. If left as-is, '
-              + 'bulk data management software may cause snapshots to '
-              + 'grow rapidly in size during routine optimization and '
-              + 'maintenance.<br>'
+              + 'big data apps, such as databases or containers, may cause '
+              + 'snapshots to rapidly grow in size during routine operation '
+              + 'and maintenance.<br>'
               + '<br>'
-              + 'We strongly recommends you move this data to a mount point '
+              + 'We strongly recommend you move this data to a mount point '
               + 'that is not included in snapshots, such as /home. See '
-              + '<a href="https://kfocus.org/wf/db#bkm_move_large_databases">'
+              + '<a href="https://kfocus.org/wf/big-data.html">'
               + 'this advice</a> for guidance.'
             primaryButtonText: 'Continue'
             primaryButtonIcon: 'go-next-symbolic'
