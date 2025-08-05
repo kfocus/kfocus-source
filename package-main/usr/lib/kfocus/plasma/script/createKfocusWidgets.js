@@ -1,13 +1,17 @@
-/*globals gridUnit, screenGeometry, panelIds, desktops */
-/* Plasma scripting API: https://develop.kde.org/docs/plasma/scripting/api/ */
+/*globals gridUnit, screenGeometry, panelIds, panelById, desktops */
+/* Plasma scripting API: https://develop.kde.org/docs/plasma/scripting/api/
+ *
+ * Passed ESLint 2025-08-04
+ * */
 
 // Given two points on a curve, return y at x (rounded)
 function getScaleNumFn ( map ) {
+  // noinspection ES6ConvertVarToLetConst
   var
     s = (map.y2 - map.y1 ) / (map.x2 - map.x1 ),
     k = map.y2 - (s * map.x2),
     solve_num = k + map.x * s,
-    // Round to interger
+    // Round to the nearest integer
     round_num = Math.round( solve_num );
 
   if (      round_num < map.min ) { round_num = map.min; }
@@ -16,6 +20,7 @@ function getScaleNumFn ( map ) {
   return round_num;
 }
 
+// noinspection ES6ConvertVarToLetConst
 var
   scaleMatrix = {
     large : {
@@ -34,7 +39,7 @@ var
       widget_padx_px: 0.5 * gridUnit,
       // Offset widget from edge
       widget_pady_px: 1 * gridUnit,
-      // Hack to make sure widget fits on 176 DPI
+      // Hack to make sure the widget fits on 176 DPI
       widget_h_px   : 994 + gridUnit / 4,
       widget_w_px   : 640
     },
@@ -96,15 +101,11 @@ var
 // Purpose: Defines and loads serialized layout
 //
 function setLayoutFn () {
-  var rect_obj, screen_w_px, screen_h_px, screen_w_num,
-    screen_h_num, scale_key, scale_map, icon_ht_int, icon_padx_int,
-    icon_space_int, icon_top_int, icon_w_int,
-    icon_x_num,
-
-    widget_w_px, widget_w_num,
-    widget_h_px, widget_padx_num, widget_pady_num,
-    widget_h_num, widget_x_num, widget_y_num,
-    layout_matrix,
+  // noinspection ES6ConvertVarToLetConst
+  var rect_obj, screen_w_px, screen_h_px, scale_key, scale_map,
+    icon_h_px, icon_padx_px, icon_space_px, icon_top_px, icon_w_px,
+    widget_padx_px, widget_pady_px, widget_w_px, widget_h_px,
+    widget_x_px, widget_y_px, icon_x_px, panel_obj,
 
     main_desktop_obj, mediaframe_widget_obj, curated_icon_widget_obj,
     guided_icon_widget_obj, feature_icon_widget_obj,
@@ -119,7 +120,7 @@ function setLayoutFn () {
     : (screen_w_px >= 2560 && screen_h_px >= 1440 ) ? 'medium' : 'small';
   scale_map    = scaleMatrix[ scale_key ];
 
-  icon_ht_px    = scale_map.icon_ht_px;
+  icon_h_px    = scale_map.icon_ht_px;
   icon_padx_px  = scale_map.icon_padx_px;
   icon_space_px = scale_map.icon_space_px;
   icon_top_px   = scale_map.icon_top_px;
@@ -166,7 +167,7 @@ function setLayoutFn () {
 
   curated_icon_widget_obj = main_desktop_obj.addWidget(
     "org.kde.plasma.icon",
-    icon_x_px, icon_top_px + icon_space_px * 0, icon_w_px, icon_ht_px, 2
+    icon_x_px, icon_top_px, icon_w_px, icon_h_px, 2
   );
   curated_icon_widget_obj.currentConfigGroup = [];
   curated_icon_widget_obj.writeConfig("localPath",
@@ -176,7 +177,7 @@ function setLayoutFn () {
 
   guided_icon_widget_obj = main_desktop_obj.addWidget(
     "org.kde.plasma.icon",
-    icon_x_px, icon_top_px + icon_space_px * 1, icon_w_px, icon_ht_px, 3
+    icon_x_px, icon_top_px + icon_space_px * 1, icon_w_px, icon_h_px, 3
   );
   guided_icon_widget_obj.currentConfigGroup = [];
   guided_icon_widget_obj.writeConfig("localPath",
@@ -186,17 +187,17 @@ function setLayoutFn () {
 
   feature_icon_widget_obj = main_desktop_obj.addWidget(
     "org.kde.plasma.icon",
-    icon_x_px, icon_top_px + icon_space_px * 2, icon_w_px, icon_ht_px, 4
+    icon_x_px, icon_top_px + icon_space_px * 2, icon_w_px, icon_h_px, 4
   );
   feature_icon_widget_obj.currentConfigGroup = [];
   feature_icon_widget_obj.writeConfig("localPath",
-    "/usr/share/applications/kfocus-support-welcome.desktop"),
+    "/usr/share/applications/kfocus-support-welcome.desktop");
   feature_icon_widget_obj.writeConfig("url",
     "file:///usr/share/applications/kfocus-support-welcome.desktop");
 
   reference_icon_widget_obj = main_desktop_obj.addWidget(
     "org.kde.plasma.icon",
-    icon_x_px, icon_top_px + icon_space_px * 3, icon_w_px, icon_ht_px, 5
+    icon_x_px, icon_top_px + icon_space_px * 3, icon_w_px, icon_h_px, 5
   );
   reference_icon_widget_obj.currentConfigGroup = [];
   reference_icon_widget_obj.writeConfig("localPath",

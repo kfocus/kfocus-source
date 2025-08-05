@@ -6,7 +6,8 @@
 # This is a WIP, and is currently not published.
 #
 # Name     : kfocus-toggle-repo
-# Summary  : kfocus-toggle-repo -a -c <comment> <on|off> <debian-path>
+# Summary  : kfocus-toggle-repo [--enable|--disable] [--do-include-source]
+#            [--comment '<comment>' <path-string>
 # Purpose  : Toggle the repository with an optional comment
 # Example  :
 #   kfocus-toggle-repo -a -c 'Disabled by the KFocus team 2025-07-28' \
@@ -15,17 +16,212 @@
 # Run By   : Developers only
 # Spec     : TBD
 #
+# For a debian linux system, can you write a bash shell script that enable or
+# disables any repository found in any *.sources file found in
+# /etc/apt/sources.list.d? Capabilities should include:
+#
+# 1. Unset any repo, regardless if it uses the old-style single-line format or
+#    the new deb822 style.
+# 2. Provide a switch to also include the associated
+#    source packages (e.g. deb-src repos as they are described in the single-line
+#    format) to enable or disable
+# 3. Provide an option to provide a comment that is added to the file that describes
+#    the repository. If a comment already exists, replace the prior comment.
+#
 set -u;
-readarray -t _file_list < <(
-  find /etc/apt/sources.list.d/ -mindepth 1 -maxdepth 1 -name '*.list'
-);
 
-for _file in "${_file_list[@]}"; do
-  if grep -q \
-    '^deb[^ ]* https://ppa.launchpadcontent.net/ubuntustudio-ppa/backports/' \
-    "${_file}"; then
-    1>&2 echo "Fixing |${_file}|";
-    sed -i 's?^\(deb[^ ]* https://ppa.launchpadcontent.net/ubuntustudio-ppa/backports/.*\)$?# Disabled by kfocus team; As of 2025-07-28, this repo is defunct\n# \1?g' "${_file}";
+
+
+_processListFileFn() {
+    declare _file _tmp_file;
+    _file="${1:-}";
+    _tmp_file="$(mktemp)";
+    temp="$(mktemp)"
+
+    awk -v act="${_actionKey}" -v do_src="${_doIncludeSrc}" \
+      -v comment="${_commentStr}" '
+  BEGIN { comment_mark = "#"; }
+  # Remove previous reason comment if present
+  /^# repository-manager:/ { next }
+  # For enable/disable
+  {
+    matched = 0
+    # Single-line format, match deb or deb-src lines not already commented
+    if ($1 == "deb" || $1 == "deb-src" || ($1 == "#" && ($2 == "deb" || $2 == "deb-src"))) {
+      type = ($1 == "#" ? $2 : $1)
+      is_src = (type == "deb-src")
+      change = (do_src == "true" || !is_src)
+      if (change) {
+        matched = 1
+        if (act == "enable") {
+          sub(/^# */, "")
+        } else if (act == "disable" && $1 != "#") {
+          $0 = "# " $0
+        }
+      }
+    }
+    print $0
+    if (matched) {
+      if (comment != "") print "# repository-manager: " comment
+    }
+  }' "${_file}" > "${tmp_file}" && mv "${_tmp_file}" "${_file}"
+}
+
+_processSourcesFileFn() {
+    _file="${1:-}";
+    _tmp_file="$(mktemp)";
+
+    awk -v act="${_actionKey}" -v do_src="${_doIncludeSrc}" \
+      -v comment="${_commentStr}" '
+  BEGIN { OFS=FS }
+  /^# repository-manager:/ { next }
+  /^Types:/ { type_line=NR }
+  /^Enabled:/ { enabled_line=NR }
+  {
+    if ($1 == "Enabled:") {
+      is_src = 0
+      if (type_line > 0) {
+        # Find type from the most recent Types: before this Enabled:
+        for (i=type_line;i<=NR;i++) {
+          if ($1 == "Types:" && $2 ~ /deb-src/) is_src=1
+        }
+      }
+      # If we are supposed to act on this line
+      if ((do_src == "true") || (!is_src)) {
+        if (act == "enable") {
+          print "Enabled: yes"
+        } else if (act == "disable") {
+          print "Enabled: no"
+        }
+      } else {
+        print $0
+      }
+    } else {
+      print $0
+    }
+    if ($1 == "Enabled:" && comment != "") {
+      print "# repository-manager: " comment
+    }
+  }' "${_file}" > "${tmp_file}" && mv "${_tmp_file}" "${_file}"
+}
+
+
+## BEGIN _importCommonFn {
+# Summary   : _importCommonFn
+# Purpose   : Load common routines, prefer relative dir
+# Example   : _importCommonFn;
+# Arguments : none
+# Globals   : Package vars _baseDir _baseName
+# Outputs   : none
+# Returns   : none
+#
+_importCommonFn () {
+  declare _lib_list _is_loaded _lib_file;
+  _lib_list=(
+    "${_baseDir}/lib/common.2.source"
+    '/usr/lib/kfocus/lib/common.2.source'
+  );
+  _is_loaded='n';
+  for _lib_file in "${_lib_list[@]}"; do
+    if [ -r "${_lib_file}" ]; then
+      # shellcheck source=/usr/lib/kfocus/lib/common.2.source
+      if source "${_lib_file}"; then
+        _is_loaded='y';
+        break;
+      fi
+    fi
+  done
+
+  if [ "${_is_loaded}" = 'n' ]; then
+    echo 1>&2 "${_baseName}: ABORT - Cannot source common lib";
+    exit 202;
   fi
-done
+}
+## . END _importCommonFn }
+
+## BEGIN _echoUsageFn () {
+_echoUsageFn () {
+  declare _msg;
+
+  _msg="Usage: ${_baseName} [--enable|--disable] [--do-include-source]";
+  _msg+='\n       [--comment "<comment>"] --source';
+  _cm2EchoFn  "${_msg}";
+}
+## . END _echoUsageFn () }
+
+## BEGIN _mainFn {
+_mainFn () {
+  declare _file _file_list;
+
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      --enable|-e)  _actionKey="enable";;
+      --disable|-d) _actionKey="disable";;
+      --do-include-source|-s) _doIncludeSrc=true;;
+      --comment|-c) shift;
+        [[ -z "$1" ]] && _echoUsageFn;
+        _commentStr="$1";;
+      --repo|-r) shift;
+        [[ -z "$1" ]] && _echoUsageFn;
+        _repoStr="$1";;
+      --help|-h) _echoUsageFn; exit 0;;
+      *) _echoUsageFn; exit 1;;
+    esac
+    shift
+  done
+
+  [[ -z "${_actionKey}" ]] && usage
+
+  readarray -t _file_list < <(
+    _cm2LsFn /etc/apt/sources.list.d/ |grep '\.(list|sources)';
+  );
+
+  _cm2EchoFn "WARN: This is a WIP and does not consider the repo correctly.";
+  _cm2EchoFn "  DO NOT USE!";
+  _cm2EchoFn "|_actionKey|_doIncludeSrc|_commentStr|_repoStr|";
+  _cm2EchoFn "|${_actionKey}|${_doIncludeSrc}|${_commentStr}|${_repoStr}|";
+  exit 0;
+
+  for _file in "${_file_list[@]}"; do
+    [[ -f "${_file}" ]] || continue
+    if [[ "${_file}" == *.list ]]; then
+      processListFileFn "${_file}";
+    elif [[ "$file" == *.sources ]]; then
+      processSourcesFileFn "${_file}";
+    fi
+  done
+}
+## . END _mainFn }
+
+## BEGIN Declare and assign global vars {
+# <= Declare all package variables
+declare _userId _binName _binDir _baseName _baseDir \
+  _actionKey _doIncludeSrc _commentStr;
+
+# This is usually the same as EUID
+_actionKey='';
+_doIncludeSrc=false;
+_commentStr='';
+_repoStr='';
+
+_userId="$(id -u)";
+## . END Declare and assign global vars }
+
+## BEGIN Run mainFn when script is NOT sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+
+  # Import libs and assign more global vars
+  _importCommonFn;
+
+  if [[ "${_userId}" != '0' ]]; then
+    _cm2EchoFn "Please run |${_baseName}| as root".
+    exit 2;
+  fi
+  _mainFn "$@";
+fi
+## . END Run mainFn when script is NOT sourced }
 
