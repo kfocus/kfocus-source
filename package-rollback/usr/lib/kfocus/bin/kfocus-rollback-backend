@@ -126,8 +126,8 @@ ${_browStr}&bull; Remove unused files from /home using Dolphin.<br>
 &bull; Purge software packages with Discover or apt.<br>
 <br>
 &bull; Move or delete databases, VMs, or logs from the root filesystem. To<br>
-move a database to another partition, see advice at<br>
-<a href="https://kfocus.org/wf/database">https://kfocus.org/wf/database</a>.<br>
+move big data to another partition, see advice at<br>
+<a href="https://kfocus.org/wf/big-data">https://kfocus.org/wf/big-data</a>.<br>
 <br>
 &bull; Delete large snapshots or free up disk space using Rollback
 Dashboard.<br>
@@ -151,8 +151,8 @@ disk space as soon as possible.${_erowStr}
 ${_browStr}&bull; Purge software packages with Discover or apt.<br>
 <br>
 &bull; Move or delete databases, VMs, or logs from the root filesystem. To<br>
-move a database to another partition, see advice at<br>
-<a href="https://kfocus.org/wf/database">https://kfocus.org/wf/database</a>.<br>
+move big data to another partition, see advice at<br>
+<a href="https://kfocus.org/wf/big-data">https://kfocus.org/wf/big-data</a>.<br>
 <br>
 &bull; Delete large snapshots or free up disk space using Rollback
 Dashboard.<br>
@@ -199,9 +199,9 @@ EOF
 
   _bulkDataWarnMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browStr}<h3 style="color:#f7941d">Bulk Data Dirs Found</h3>${_erowStr}
+${_browStr}<h3 style="color:#f7941d">Big Data Found</h3>${_erowStr}
 
-${_browStr}Bulk data directories have been found on the system disk.<br>
+${_browStr}Big data directories have been found on the system disk.<br>
 This can cause snapshots to become excessively large. Open<br>
 System Rollback Dashboard to see how to resolve.${_erowStr}</table>
 ${_cm2HtmEndStr}
