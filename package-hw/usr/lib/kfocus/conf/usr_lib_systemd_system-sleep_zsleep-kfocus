@@ -1,24 +1,15 @@
 #!/bin/bash
 # THIS IS A MACHINE GENERATED FILE. DO NOT EDIT.
 # REMOVE THE OWNING PACKAGE kfocus-hw TO REMOVE THIS FILE.
-# KFOCUS_TEST_ID=2231,5591
+# KFOCUS_TEST_ID=2231,5591,5692
 #
-# Original concept from
-# https://gist.github.com/ioggstream/8f380d398aef989ac455b93b92d42048
+# Validated on all KFocus M- and Z-series models thru 2025-08-06
+# This handles sleep-resume usb xhci and keyboard LEDs.
 #
-# Debugged and tested by kfocus team on ALL M-series models 2022-06-25
-#
-# This fixes usb hub sleep-reusme issues like these found in syslog:
-#   # The PCI 00:14.0 device is the usb xhci controller.
-#   kernel: pci_pm_suspend(): hcd_pci_suspend+0x0/0x30 returns -16
-#   kernel: dpm_run_callback(): pci_pm_suspend+0x0/0x150 returns -16
-#   kernel: PM: Device 0000:00:14.0 failed to suspend async: error -16
-#   kernel: PM: Some devices failed to suspend, or early wake event detected
-#
-# modprobe -r i2c_hid_acpi and i2_hid can sometimes block sleep, but
-#   we have confirmed this is not an issue here.
-#
+set -u;
+
 _wakeFile=/proc/acpi/wakeup;
+_setKbdExe=/usr/lib/kfocus/bin/kfocus-kb-color-set;
 _baseName='zsleep-kfocus';
 
 _reportFn () {
@@ -29,16 +20,16 @@ _reportFn () {
 
 case "${1:-}" in
   pre) # Before-suspend actions
+    [ -x "${_setKbdExe}" ] && "${_setKbdExe}" -E 0 || true;
     echo "${_baseName}: Disable XHCI on sleep to avoid premature wake";
     grep -q '^XHCI.*enable' "${_wakeFile}" && echo XHCI > "${_wakeFile}";
     _reportFn;
     ;;
   post) # After-suspend actions
-    # 2258 Do NOT call kfocus-pstate because /lib/systemd/systemd --user
-    #   now calls it without arguments, and doing so here is redundant.
     echo "${_baseName}: Enable XHCI on wake";
     grep -q '^XHCI.*disable' "${_wakeFile}" && echo XHCI > "${_wakeFile}";
     _reportFn;
+    [ -x "${_setKbdExe}" ] && "${_setKbdExe}" -E 1 || true;
     ;;
   *) echo "Unsupported action: ${1:-}";
 esac

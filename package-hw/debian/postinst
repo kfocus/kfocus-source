@@ -59,7 +59,7 @@ _supplementXdgConfigsFn () {
 
 # hw_config_code 'default' handles hw_model_codes m2g3, m2g2, m2g1, m1g1.
 #   DPI scale set by _supplementXdgConfigsFn (none at time of writing).
-# shellcheck disable=SC2317
+# shellcheck disable=SC2317,SC2329
 #
 _handle_defaultFn () {
   # target |  source | do_file_backup
@@ -79,7 +79,7 @@ _handle_defaultFn () {
 }
 # hw_config_code 'generic' handles model xeg1.
 #   DPI scale set by _supplementXdgConfigsFn (none at time of writing).
-# shellcheck disable=SC2317
+# shellcheck disable=SC2317,SC2329
 #
 _handle_genericFn () {
   _symlinkTable+=(
@@ -105,7 +105,7 @@ _handle_genericFn () {
 }
 # hw_config_code 'xeg2' handles model xeg2.
 #   DPI scale set by _supplementXdgConfigsFn (none at time of writing).
-# shellcheck disable=SC2317
+# shellcheck disable=SC2317,SC2329
 #
 _handle_xeg2Fn () {
   _symlinkTable+=(
@@ -131,7 +131,7 @@ _handle_xeg2Fn () {
 }
 # hw_config_code 'ir14g1' handles model ir14g1
 #   DPI scale set by _supplementXdgConfigsFn (120 at time of writing).
-# shellcheck disable=SC2317
+# shellcheck disable=SC2317,SC2329
 #
 _handle_ir14g1Fn () {
   _symlinkTable+=(
@@ -158,7 +158,7 @@ _handle_ir14g1Fn () {
 
 # hw_config_code 'ir1Xg2' handles model ir14g2, ir16g2
 #   DPI scale set by _supplementXdgConfigsFn (120, 136 at time of writing).
-# shellcheck disable=SC2317
+# shellcheck disable=SC2317,SC2329
 #
 _handle_ir1Xg2Fn () {
   _symlinkTable+=(
@@ -185,7 +185,7 @@ _handle_ir1Xg2Fn () {
 
 # hw_config_code 'm2g4' handles hw_model_codes m2g4
 #   DPI scale set by _supplementXdgConfigsFn (120 at time of writing).
-# shellcheck disable=SC2317
+# shellcheck disable=SC2317,SC2329
 #
 _handle_m2g4Fn () {
   if [ -x "/usr/bin/deb-systemd-helper" ]; then
@@ -216,7 +216,7 @@ _handle_m2g4Fn () {
   # _setScaleFactorFn '';
 }
 # hw_config_code 'm2g5' handles hw_model_codes m2g5, m2g5p, m2g5p1 (barlow ridge TB)
-# shellcheck disable=SC2317
+# shellcheck disable=SC2317,SC2329
 #
 _handle_m2g5Fn () {
   declare _symlink _target_file;
@@ -262,7 +262,7 @@ _handle_m2g5Fn () {
   ## . End Add or remove symlink for m2g5p1 thunderbolt blacklist
 }
 # hw_config_code 'zrg1' handles hw_model_code zrg1 5080/5090
-# shellcheck disable=SC2317
+# shellcheck disable=SC2317,SC2329
 #
 _handle_zrg1Fn () {
   if [ -x "/usr/bin/deb-systemd-helper" ]; then
@@ -291,7 +291,7 @@ _handle_zrg1Fn () {
   );
 }
 # hw_config_code 'm2g6' handles hw_model_code m2g6 5070Ti
-# shellcheck disable=SC2317
+# shellcheck disable=SC2317,SC2329
 #
 _handle_m2g6Fn () {
   if [ -x "/usr/bin/deb-systemd-helper" ]; then
@@ -320,7 +320,7 @@ _handle_m2g6Fn () {
   );
 }
 # hw_config_code 'nxg1' handles hw_model_codes nxg1, nxg2, nxg3
-# shellcheck disable=SC2317
+# shellcheck disable=SC2317,SC2329
 #
 _handle_nxg1Fn () {
   _symlinkTable+=(
@@ -342,7 +342,7 @@ _handle_nxg1Fn () {
   # _setScaleFactorFn '';
 }
 # hw_config_code 'other' handles unrecognized hw_model_codes
-# shellcheck disable=SC2317
+# shellcheck disable=SC2317,SC2329
 #
 _handle_otherFn () {
   _symlinkTable+=(
