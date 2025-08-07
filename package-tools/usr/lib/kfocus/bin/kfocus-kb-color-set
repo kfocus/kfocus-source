@@ -66,7 +66,7 @@ _convertByteToStr () {
 ## . END _convertByteToStr {
 
 ## BEGIN _iteCalcKbdStateFn {
-# Purpose: Calculate keyboard state and save to _configStateList.
+# Purpose: Calculate kbd state and save to _configStateList.
 #
 _iteCalcKbdStateFn () {
   declare _bright_str _rgb_file _rgb_str _hex_str _enable_int;
@@ -86,16 +86,15 @@ _iteCalcKbdStateFn () {
     _hex_str='001820'; # default
   fi
 
-  # If keyboard is actually on, then the user pressed keys.
+  # If the kbd is actually on, then the user pressed keys.
   #   In this case, change enable_int to 1.
-  #
   [ "${_bright_str}" = '0' ] && _enable_int=0 || _enable_int=1;
   _configStateList=( "${_bright_str}" "${_hex_str}" "${_enable_int}" );
 }
 ## . END _iteCalcKbdStateFn }
 
 ## BEGIN _iteReadFileListFn {
-# Purpose: Read keyboard state file into _configStateList.
+# Purpose: Read kbd state file into _configStateList.
 #
 _iteReadInStateFile () {
   declare _str;
@@ -146,7 +145,7 @@ _iteWriteStateFileFn () {
 ## . END _iteWriteStateFileFn }
 
 ## BEGIN _stdCalcKbdStateFn {
-# Purpose: Calculate keyboard state and save to _configStateList.
+# Purpose: Calculate kbd state and save to _configStateList.
 #
 _stdCalcKbdStateFn () {
   declare _bright_byte _bright_str _hex_str _enable_int;
@@ -183,7 +182,8 @@ _stdRestoreKbdFn () {
 ## . END _stdRestoreKbdFn }
 
 ## BEGIN _stdReadInStateFile {
-# Purpose: Read standard (modprobe) state file and populate _configStateList.
+# Purpose: Read the standard (modprobe) state file and populate
+# _configStateList.
 #
 _stdReadInStateFile () {
   declare _line _bright_byte _hex_str _enable_int _bright_str;
@@ -240,7 +240,7 @@ _stdWriteStateFileFn () {
 ## . END _stdWriteStateFileFn }
 
 ## BEGIN _setKbdFromConfigFn {
-# Purpose: Dispatches to set keyboard from _configStateList.
+# Purpose: Dispatches to set kbd from _configStateList.
 #   This must be called after the config file is read-in.
 #
 _setKbdFromConfigFn () {
@@ -251,7 +251,7 @@ _setKbdFromConfigFn () {
 
   if [[ "${_modelCode}" =~ ^(m2g5p|zrg1)$ ]]; then
     _iteRestoreKbdFn;
-    # Std restores from modprobe file and is not needed here.
+    # Std restores from the modprobe file and is not needed here.
   fi
 }
 ## . END _setKbdFromConfigFn }
@@ -302,10 +302,10 @@ _convertRgbToHexFn () {
 ## . END _convertRgbToHexFn }
 
 ## BEGIN _enableKbdFn {
-# Purpose: Enable keyboard. Do not change color-bright.
+# Purpose: Enable or disable kbd. Do not change color-bright.
 #
 _enableKbdFn () {
-  declare _set_str _do_ignore_other _bright_str _enable_int _save_str;
+  declare _set_str _do_ignore_other;
 
   _set_str="${1:-}";
   _do_ignore_other="${2:-n}";
@@ -318,28 +318,33 @@ _enableKbdFn () {
   # Handle m2g5p|zrg1 ITE logic
   if [[ "${_modelCode}" =~ ^(m2g5p|zrg1)$ ]]; then
     _iteReadInStateFile;
-    _enable_int="${_configStateList[2]}";
     if [ "${_set_str}" = '0' ]; then
-      _save_str="${_configStateList[0]}";
-      _bright_str=0;
-    else
-      _bright_str="${_configStateList[0]}";
-      _save_str="${_bright_str}"
-    fi
-    if [ -n "${_bright_str:-}" ]; then
-      if echo "${_bright_str}" > "${_iteBrightFile}"; then
-        # Do not save state if directed.
-        if [ -z "${_do_ignore_other}" ]; then
-          _iteCalcKbdStateFn;
-          _configStateList[0]="${_save_str}";
-          _configStateList[2]="${_set_str}";
-          _iteWriteStateFileFn;
-        fi
-      fi
+      # If currently enabled, calc the current kbd state
+      if [ "${_configStateList[2]}" = '1' ]; then _iteCalcKbdStateFn; fi
+      # Write brightness to 0, set state enabled to 0, and save to file.
+      echo 0 > "${_iteBrightFile}";
+      _configStateList[2]=0;
+      _iteWriteStateFileFn;
     fi
 
+    if [ "${_set_str}" = '1' ]; then
+      # If enabled, calc the current kbd state and save to the state file
+      if [ "${_configStateList[2]}" = '1' ]; then
+        _iteCalcKbdStateFn;
+        _configStateList[2]=1;
+      # Otherwise set enabled to 1 and restore colors
+      else
+        _configStateList[2]=1;
+        _iteRestoreKbdFn;
+      fi
+      # Save to the state file
+      _iteWriteStateFileFn;
+    fi
+    return;
+  fi
+
   # Handle m1, m2 logic
-  elif [[ "${_modelCode}" =~ ^m1|m2 ]]; then
+  if [[ "${_modelCode}" =~ ^m1|m2 ]]; then
     _stdCalcKbdStateFn;
     if echo "${_set_str}" > "${_stdEnableFile}"; then
       # Do not save state if directed.
@@ -353,7 +358,7 @@ _enableKbdFn () {
 ## . END _enableKbdFn }
 
 ## BEGIN _listActiveStateFn {
-# Purpose: Print current keyboard state to STDOUT.
+# Purpose: Print current kbd state to STDOUT.
 #
 _listActiveStateFn () {
   if [[ "${_modelCode}" =~ ^(m2g5p|zrg1)$ ]]; then
@@ -366,7 +371,7 @@ _listActiveStateFn () {
 ## . END _listActiveStateFn }
 
 ## BEGIN _readInStateFileFn {
-# Purpose: Read state file into _configStateList.
+# Purpose: Read the state file into _configStateList.
 #
 _readInStateFileFn () {
   declare _arg_str;
@@ -378,7 +383,7 @@ _readInStateFileFn () {
     _stdReadInStateFile;
   fi
 
-  # Handle apply directive
+  # Handle the apply directive
   if [ "${_arg_str}" = 'apply' ]; then
     _setKbdFromConfigFn;
   else
@@ -388,7 +393,7 @@ _readInStateFileFn () {
 ## . END _readInStateFileFn }
 
 ## BEGIN _setKbdValsFn {
-# Purpose: Set keyboard brightness and color from input string.
+# Purpose: Set kbd brightness and color from the input string.
 #
 _setKbdValsFn () {
   declare _set_str _bit_list _bright_str _hex_str;
@@ -412,10 +417,9 @@ _setKbdValsFn () {
     return 1;
   fi
 
-  # Restore keyboard from _configStateList values and then
+  # Restore kbd colors from _configStateList values and then
   #   store to the appropriate state file.
-  #   The last value is_enable; 1 = true, 0 = false.
-  #   The restore routines should always re-enable.
+  #   The restore routines should always set the enabled flag.
   #
   _configStateList=( "${_bright_str}" "${_hex_str}" '1' );
   if [[ "${_modelCode}" =~ ^(m2g5p|zrg1)$ ]]; then
@@ -443,21 +447,21 @@ _toggleEnableFn () {
 
 ## BEGIN _mainFn {
 # Summary   : _mainFn <options>
-# Purpose   : Dispatch per option to set keyboard brightness and color.
-#   This is a no-op if _cm2EchoModelStrFn 'has_kb_led' echos 'n'.
+# Purpose   : Dispatch per option to set kbd brightness and color.
+#   This does nothing if _cm2EchoModelStrFn 'has_kb_led' echos 'n'.
 # Examples  : See below.
 # Arguments : Some options take values.
 #   Hex colors have the form '<rrggbb>'.
-#   Rgb color have the form '<0-255> <0-255> <0-255>'.
-#   -c <hex> : Convert hex color to rgb (debug).
-#   -C <rgb> : Convert rgb color to hex (debug).
-#   -e 0|1   : Enable keyboard OFF or ON.
-#   -E 0|1   : Enable keyboard OFF or ON, ignore other state.
-#   -l       : print active state from keyboard <int:0-10>;<hex>;<0-1>.
-#   -p       : Read and print state from file <int:0-10>;<hex>;<0-1>.
-#   -r       : Read, print, apply state from file.
-#   -s       : '<0-10>;<hex>' : Set brightness and color; enable is set to 1.
-#   -t       : Toggle keyboard OFF/ON.
+#   Rgb colors have the form '<0-255> <0-255> <0-255>'.
+# | -c <hex> : Convert hex color to rgb (debug).
+# | -C <rgb> : Convert rgb color to hex (debug).
+# | -e 0|1   : Enable kbd OFF or ON.
+# | -E 0|1   : Enable kbd OFF or ON, ignore other state values.
+# | -l       : print active state from kbd <int:0-10>;<hex>;<0-1>.
+# | -p       : Read and print from the state file <int:0-10>;<hex>;<0-1>.
+# | -r       : Read, print, and apply state from the state file.
+# | -s       : '<0-10>;<hex>' : Set brightness and color; enable is set to 1.
+# | -t       : Toggle kbd OFF/ON.
 # Globals    : OPTIND is reset to local for arg processing.
 # Outputs    : Prints diagnostics to stderr.
 # Returns    : 0 on success; no-zero on failure.
@@ -465,7 +469,7 @@ _toggleEnableFn () {
 _mainFn () {
   declare _opt_str;
 
-  # Skip any action if model does not have kbd leds
+  # Skip any action if the model does not have kbd LEDs
   if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'n' ]; then
     return;
   fi
@@ -502,7 +506,7 @@ _stdKeyDir='/sys/devices/platform/tuxedo_keyboard';
 _stdModprobeFile='/etc/modprobe.d/tuxedo_keyboard.conf';
 ## . END Declare and assign global vars }
 
-## BEGIN Run main if script is not sourced {
+## BEGIN Run main if the script is not sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binName="$(  readlink -f "$0"       )" || exit 101;
   _binDir="$(   dirname  "${_binName}" )" || exit 101;
@@ -515,4 +519,4 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   _mainFn "$@";
 fi
-## . END Run main if script is not sourced }
+## . END Run main if the script is not sourced }
