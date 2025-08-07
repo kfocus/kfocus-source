@@ -13,7 +13,7 @@
 set -u;
 
 ## BEGIN _importCommonFn {
-# Purpose: Import common library with _cm2* symbols
+# Purpose: Import the common library with _cm2* symbols
 #
 _importCommonFn() {
   declare _lib_file;
@@ -127,7 +127,7 @@ _getNvSeriesStrFn () {
 _installNvidiaFn () {
   declare _dmi_hw_config_code _nv_pkg_suffix _nv_series_str;
 
-  # Use kfocus-nvidia-pinning-edge and kfocus-nvidia-edge for latest hw
+  # Use kfocus-nvidia-pinning-edge and kfocus-nvidia-edge for the latest hw
   _dmi_hw_config_code="$(_cm2EchoModelStrFn 'config_code')";
   _nv_pkg_suffix='';
   if [[ "${_dmi_hw_config_code}" =~ ^(m2g6|zrg1)$ ]]; then
@@ -181,7 +181,7 @@ _purgeRollbackFn () {
 ## . END _purgeRollbackFn }
 
 ## BEGIN _chkBiosUpdateFn {
-# Purpose: Return true if no bios upgrade needed, false otherwise
+# Purpose: Return true if no BIOS is upgrade needed
 #
 _chkBiosUpdateFn () {
   declare _model_code _min_vers _dmi_exe _bios_vers;
@@ -277,7 +277,7 @@ _chkHwConfigFn () {
   fi
   ## . End Adjust tool suffix per config code }
 
-  ## Begin add or remove extra keyboard package {
+  ## Begin: Add or remove the extra keyboard package {
   if [[ "${_dmi_hw_model_code}" =~ ^(m2g5p|zrg1) ]]; then
     if ! _cm2ChkInstalledPkgFn 'kfocus-keyboard-ite'; then
       _msg='install-kbd-ite;;';
@@ -295,9 +295,9 @@ _chkHwConfigFn () {
       _reason_list+=( "${_msg}" );
     fi
   fi
-  ## . End add or remove extra keyboard package }
+  ## . End: Add or remove the extra keyboard package }
 
-  ## Begin Run lib updates iff hardware reconfig is flagged {
+  ## Begin: Run lib updates iff hardware reconfigure is flagged {
   #   do_force OR mismatched config-code triggers this.
   # Thus do_force is NOT guaranteed = 'y' for this block.
   #
@@ -347,7 +347,7 @@ _chkHwConfigFn () {
       *) true;
     esac
   fi
-  ## . End Run lib updates iff hardware reconfig is flagged }
+  ## . End: Run lib updates iff hardware reconfigure is flagged }
 
   ## BEGIN Detect if kfocus-rollback should be removed {
   #
@@ -400,7 +400,7 @@ _fixHwConfigFn () {
   # Indicate post-install (finalize) setup is complete
   _model_code="$(_cm2EchoModelStrFn 'code')"    || return;
   mkdir -p "${_varLibDir}"                      || return;
-  # This is set only on post-install configure
+  # This is set only on post-install configuration
   echo "${_model_code}" > "${_hwModelCodeFile}" || true;
 }
 ## . END_fixHwConfigFn }
@@ -414,12 +414,26 @@ _prepareSnapshotFn () {
 ## . END _prepareSnapshotFn }
 
 ## BEGIN _clearRestoreFn {
-#
 _clearRestoreFn () {
   [ -z "${_rollbackBackendExe}" ] && return;
   "${_rollbackBackendExe}" 'clearRestore';
 }
 ## . END _clearRestoreFn }
+
+## BEGIN _setKeyCodesFn {
+# Purpose: Used to set keyboard codes per model.
+# Typically this is needed if a key code is undefined.
+#
+_setKeyCodesFn () {
+  declare _model_code;
+  _model_code="$(_cm2EchoModelStrFn 'code')" || return;
+
+  case "${_model_code}" in
+    zrg1) setkeycodes 6f 120 || true;;
+    *) true;;
+  esac
+}
+## . END _setKeyCodesFn }
 
 ## BEGIN _mainFn {
 _mainFn () {
@@ -432,6 +446,7 @@ _mainFn () {
     'fix-hw-config'   ) _fixHwConfigFn "${2:-}";;
     'prep-snapshot'   ) _prepareSnapshotFn;;
     'clear-restore'   ) _clearRestoreFn;;
+    'set-keycodes'    ) _setKeyCodesFn;;
     *) _cm2WarnStrFn "Unrecognized directive |${_arg_str}|";;
   esac
 }
@@ -446,7 +461,7 @@ _hwConfigCodeFile="${_varLibDir}/hw_config_code";
 _hwModelCodeFile="${_varLibDir}/hw_model_code";
 ## . END Declare global variables }
 
-## BEGIN Run main if script is not sourced {
+## BEGIN Run main if the script is not sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binName="$(  readlink -f "$0"        )" || exit 101;
   _binDir="$(   dirname  "${_binName}"  )" || exit 101;
@@ -465,4 +480,4 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   _mainFn "$@";
 fi
-## . END Run main if script is not sourced }
+## . END Run main if the script is not sourced }

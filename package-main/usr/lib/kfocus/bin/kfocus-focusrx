@@ -5,7 +5,7 @@
 # Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
 #
 # Name    : kfocus-focusrx
-# Purpose : Prompt user to apply latest FocusRx System upgrade and other
+# Purpose : Prompt user to apply latest FocusRx System upgrades and other
 #         :   on-login checks and actions.
 # License : GPL v2
 # Run By  : Users
@@ -45,11 +45,11 @@ _importCommonFn () {
 
 ## BEGIN _testNagCountFn {
  # Purpose: Read a _drop_file count.
- #   Increment that count and place in _drop_file.
+ #   Increment the counter and place in _drop_file.
  # Arguments: (positional)
  #  _mode          (required) "check" or "inc" nag counter.
  #  _file_name     (required) Drop file relative to $HOME/.config/)
- #  _max_nag_count (optional) Max times to nag. Default is _maxNagCount.
+ #  _max_nag_count (optional) Max times to nag. The default is _maxNagCount.
  # Returns:
  #   0: _view_count is less than _nag_count.
  #   1: _view_count is greater than or equal to _nag_count.
@@ -365,7 +365,7 @@ _chkOemMultiDiskFn () {
 _chkNvPMizerFn () {
   declare _title _param_key _tgt_idx _rc_file _sed_str;
 
-  # Skip if no exe, not right package, or not running nvidia
+  # Skip if no exe, not the correct package, or not running nvidia
   if [ -z "${_nvSettingsExe}" ] || [ -z "${_primeSelectExe}" ]; then return; fi
   if ! _cm2ChkInstalledPkgFn 'kfocus-nvidia-edge'; then return; fi
 
@@ -508,18 +508,26 @@ _chkRollbackPresence () {
 #   All non-m2g5p|zrg1 models use modprobe settings and are not affected.
 #
 _chkKbdLedFn () {
-  if [[ "$(_cm2EchoModelStrFn 'code')" =~ ^(m2g5p|zrg1)$ ]]; then
+  declare _model_code;
+  _model_code="$(_cm2EchoModelStrFn 'code')";
+
+  if [[ "${_model_code}" =~ ^(m2g5p|zrg1)$ ]]; then
     if [ -x "${_kbdColorSetExe}" ]; then
       "${_escExe}" "${_kbdColorSetExe}" -r || return 200;
     fi
+  fi
+
+  # Set keycodes
+  if [[ "${_model_code}" =~ ^(zrg1)$ ]]; then
+    "${_escExe}" "${_focusRxSetExe}" 'set-keycodes';
   fi
 }
 ## . END _chkKbdLedFn }
 
 ## BEGIN _chkXorgConfigFn {
 # Purpose: Warn if xorg.conf exists.
-# Offer to delete xorg.conf file.
-# User may opt out of future warnings.
+# Offer to delete the xorg.conf file.
+# The user may opt out of future warnings.
 #
 _chkXorgConfigFn () {
   declare _title _win_title _xorg_file _drop_file _explain_str \
@@ -712,7 +720,7 @@ _ensureCrontabFn () {
 
 ## BEGIN _runDropScriptsFn {
 # Summary : _runDropScriptsFn;
-# Purpose : Run fixup scripts in kfocus-focusrx.d in order of version.
+# Purpose : Run fixup scripts in kfocus-focusrx.d in order of versions.
 # Each file must be named like so:
 #   <semver>_<description>.sh
 #   1.2.1-3_check-install.sh
@@ -742,7 +750,7 @@ _runDropScriptsFn () {
     return 1;
   fi
 
-  # Build list of scripts
+  # Build a list of scripts
   # See https://www.baeldung.com/linux/reading-output-into-array
   IFS=$'\n' read -r -d '' -a _script_list < <(
    find ./ -mindepth 1 -maxdepth 1 -type f \
@@ -778,7 +786,7 @@ _runDropScriptsFn () {
       fi
     fi
 
-    # Semver is newer that system version: prompt and run
+    # Prompt and run if semver is newer than the system version
     if _cm2TestVersFn "${_loop_vers_str}" "${_sysVersStr}"; then
       # Always run source and let version number and doForce propagate
       if [ "${_loop_ext}" = 'source' ]; then
@@ -791,12 +799,13 @@ _runDropScriptsFn () {
         _cm2WarnStrFn "Skip unsupported file type: ${_loop_file}";
       fi
 
-    # Semver of script is older that system version: offer to run if doForce
+    # Semver of the script is older that system version.
+    # Offer to run if doForce flag is set.
     else
       # If the force flag is set, offer to run this drop script
       if [ "${_doForce}" = 'y' ]; then
 
-        # Always rerun source on force
+        # Always rerun a source on force
         if [ "${_loop_ext}" = 'source' ]; then
           _ans_str='n'
         # Prompt for runnable script
@@ -825,7 +834,7 @@ _EOH14
           continue;
         fi
 
-      # Since force flag is NOT set, quietly skip this script
+      # Since the force flag is NOT set, quietly skip this script
       else
         _cm2EchoFn "Skipping previously run ${_loop_name}";
         continue;
@@ -1000,12 +1009,12 @@ _postRollbackHandlerFn () {
 
   if [ "${_btrfs_status}" == 'SUPPORTED, AUTO' ] \
     || [ "${_btrfs_status}" == 'SUPPORTED, MANUAL' ]; then
-    # If drop file is found, run _rollbackExe, so it can use the contents
+    # If a drop file is found, run _rollbackExe, so it can use the contents
     #   of that file to display the name of the restored snapshot to the user.
     if [ -e "${_restoreCompleteFile}" ]; then
       "${_rollbackExe}" 'afterRestore';
 
-      # Remove drop file after completion
+      # Remove the drop file after completion
       "${_escExe}" "${_focusRxSetExe}" 'clear-restore';
     fi
   fi
@@ -1048,8 +1057,8 @@ _chkFirstrunFn () {
   # Skip if required tool not installed.
   [ -z "${_firstrunExe}" ] && return;
 
-  # Check if launched at login. 'plasma_session' is used by Plasma 5.24;
-  # 'systemd' in Plasma 5.27
+  # Check if launched at login: 'plasma_session' is used by Plasma 5.24
+  #   and 'systemd' by Plasma 5.27
   if [[ "${_parentCmdStr}" =~ ^(plasma_session|systemd) ]]; then
     "${_firstrunExe}";
   fi
@@ -1118,15 +1127,15 @@ declare _parentCmdStr _lookupList \
   _rollbackSetExe _chainHelperExe _sysVersStr;
 
 _parentCmdStr="$(ps -o comm= $PPID)";
-# These domain names exist here only for the purposes of looking them up via
-# DNS to confirm if Internet is working. They are not connected to or
-# otherwise communicated with by FocusRx.
+
+# These domain names are pinged only to see if the Internet is working.
+# They are not used for any other purpose.
 _lookupList=( 'example.com' 'cloudflare.com' 'fastly.com' 'akamai.com' );
 _maxNagCount=6;
 _restoreCompleteFile='/var/lib/kfocus/rollback_restore_complete';
 ## . END Declare and assign global vars }
 
-## BEGIN Run main if script is not sourced {
+## BEGIN Run main if the script is not sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binName="$(  readlink -f "$0"       )" || exit 101;
   _binDir="$(   dirname  "${_binName}" )" || exit 101;
@@ -1164,4 +1173,4 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   _mainFn "$@";
 fi
-## . END Run main if script is not sourced }
+## . END Run main if the script is not sourced }
