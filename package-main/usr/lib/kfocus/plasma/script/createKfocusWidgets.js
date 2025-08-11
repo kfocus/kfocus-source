@@ -97,6 +97,10 @@ var
     '{"path":"file:///usr/share/kfocus-hints//11_vim_03.png","type":"file"}'
   ];
 
+function quantizeToGridFn(px) {
+  return Math.floor( px / gridUnit ) * gridUnit;
+}
+
 // BEGIN setLayoutFn {
 // Purpose: Defines and loads serialized layout
 //
@@ -148,7 +152,8 @@ function setLayoutFn () {
 
   mediaframe_widget_obj = main_desktop_obj.addWidget(
     "org.kde.plasma.mediaframe",
-    widget_x_px, widget_y_px, widget_w_px, widget_h_px, 1
+    quantizeToGridFn(widget_x_px), quantizeToGridFn(widget_y_px),
+    quantizeToGridFn(widget_w_px), quantizeToGridFn(widget_h_px), 1
   );
   mediaframe_widget_obj.currentConfigGroup = [];
   mediaframe_widget_obj.writeConfig("PreloadWeight", "0");
@@ -167,7 +172,8 @@ function setLayoutFn () {
 
   curated_icon_widget_obj = main_desktop_obj.addWidget(
     "org.kde.plasma.icon",
-    icon_x_px, icon_top_px, icon_w_px, icon_h_px, 2
+    quantizeToGridFn(icon_x_px), quantizeToGridFn(icon_top_px),
+    quantizeToGridFn(icon_w_px), quantizeToGridFn(icon_h_px), 2
   );
   curated_icon_widget_obj.currentConfigGroup = [];
   curated_icon_widget_obj.writeConfig("localPath",
@@ -177,7 +183,9 @@ function setLayoutFn () {
 
   guided_icon_widget_obj = main_desktop_obj.addWidget(
     "org.kde.plasma.icon",
-    icon_x_px, icon_top_px + icon_space_px * 1, icon_w_px, icon_h_px, 3
+    quantizeToGridFn(icon_x_px),
+    quantizeToGridFn(icon_top_px + icon_space_px * 1),
+    quantizeToGridFn(icon_w_px), quantizeToGridFn(icon_h_px), 3
   );
   guided_icon_widget_obj.currentConfigGroup = [];
   guided_icon_widget_obj.writeConfig("localPath",
@@ -187,7 +195,9 @@ function setLayoutFn () {
 
   feature_icon_widget_obj = main_desktop_obj.addWidget(
     "org.kde.plasma.icon",
-    icon_x_px, icon_top_px + icon_space_px * 2, icon_w_px, icon_h_px, 4
+    quantizeToGridFn(icon_x_px),
+    quantizeToGridFn(icon_top_px + icon_space_px * 2),
+    quantizeToGridFn(icon_w_px), quantizeToGridFn(icon_h_px), 4
   );
   feature_icon_widget_obj.currentConfigGroup = [];
   feature_icon_widget_obj.writeConfig("localPath",
@@ -197,7 +207,9 @@ function setLayoutFn () {
 
   reference_icon_widget_obj = main_desktop_obj.addWidget(
     "org.kde.plasma.icon",
-    icon_x_px, icon_top_px + icon_space_px * 3, icon_w_px, icon_h_px, 5
+    quantizeToGridFn(icon_x_px),
+    quantizeToGridFn(icon_top_px + icon_space_px * 3),
+    quantizeToGridFn(icon_w_px), quantizeToGridFn(icon_h_px), 5
   );
   reference_icon_widget_obj.currentConfigGroup = [];
   reference_icon_widget_obj.writeConfig("localPath",
