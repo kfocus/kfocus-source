@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# Copyright 2022-2024 MindShare Inc.
+# Copyright 2022-2025 MindShare Inc.
 #
-# Written for the Kubuntu Focus by A. Rainbolt and M. Mikowski
+# Written for Kubuntu Focus by A. Rainbolt and M. Mikowski
 #
 # Name     : kfocus-rollback-backend
 # Summary  : kfocus-rollback-backend <mode> [<args...>]
@@ -10,7 +10,7 @@
 # Example  : kfocus-rollback-backend restoreSnapshot @1234
 # License  : GPLv2
 # Run By   : kfocus-rollback, system processes
-# Spec     : 4013
+# Spec     : 4013,4411
 #
 # Notice: 'Throws' below refers to when the script exits due to an error
 # condition, typically by using _logExitFn. The associated exit code is shown
@@ -3366,7 +3366,7 @@ _bulkLocationPathList=(
   '/var/lib/docker'
 )
 _bulkLocationNameList=(
-  'MySQL'
+  'MySQL/MariaDB'
   'PostgreSQL'
   'Docker'
 )

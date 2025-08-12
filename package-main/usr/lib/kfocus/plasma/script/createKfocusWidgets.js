@@ -1,6 +1,10 @@
 /*globals gridUnit, screenGeometry, panelIds, panelById, desktops */
 /* Plasma scripting API: https://develop.kde.org/docs/plasma/scripting/api/
  *
+ * Copyright: 2025 MindShare Inc.
+ * Written for Kubuntu Focus by Michael Mikowski and Aaron Rainbolt
+ * License: GPLv2
+ *
  * Passed ESLint 2025-08-04
  * */
 

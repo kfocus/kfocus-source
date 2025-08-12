@@ -502,6 +502,7 @@ _chkRollbackPresence () {
 }
 ## . END _chkRollbackPresence }
 
+# TODO: Rename this to _chkRestoreKbdFn to reflect increased scope.
 ## BEGIN _chkKbdLedFn {
 # Purpose: Restore keyboard colors for specific models.
 # Important: Enable is set by kfocus-power-set which precedes this on sign-in.
@@ -1128,8 +1129,9 @@ declare _parentCmdStr _lookupList \
 
 _parentCmdStr="$(ps -o comm= $PPID)";
 
-# These domain names are pinged only to see if the Internet is working.
-# They are not used for any other purpose.
+# These names are used only for DNS lookups as a means to confirm the internet
+# is working. FocusRx does not ping, connect to, or otherwise communicate with
+# these servers directly.
 _lookupList=( 'example.com' 'cloudflare.com' 'fastly.com' 'akamai.com' );
 _maxNagCount=6;
 _restoreCompleteFile='/var/lib/kfocus/rollback_restore_complete';

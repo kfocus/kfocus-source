@@ -123,16 +123,19 @@ _manageSnapshotsOnBootFn () {
   # Perform on-boot snapshot maintenance if space is sufficient
   if (( _main_unalloc > _main_min_unalloc )) \
     && (( _boot_unalloc > _boot_min_unalloc )); then
+    # Finalize a snapshot restore if one was restored on last boot
     "${_rollbackBackendExe}" 'finalizeRestore';
     _return_code="$?"
     if [ "${_return_code}" != '0' ] && [ "${_return_code}" != '1' ]; then
       _cm2WarnFn; return;
     fi
+    # Create an automatic snapshot if enabled and enough time has passed
     "${_rollbackBackendExe}" 'createSnapshot' 'Timed';
     _return_code="$?"
     if [ "${_return_code}" != '0' ] && [ "${_return_code}" != '1' ]; then
       _cm2WarnFn; return;
     fi
+    # Trim excess snapshots, if any exist
     "${_rollbackBackendExe}" 'trimSnapshots';
     _return_code="$?"
     if [ "${_return_code}" != '0' ] && [ "${_return_code}" != '1' ]; then
@@ -178,16 +181,19 @@ _maintainBtrfsFn () {
   # Perform routine snapshot maintenance if space is sufficient
   if (( _main_unalloc > _main_min_unalloc )) \
     && (( _boot_unalloc > _boot_min_unalloc )); then
+    # Create an automatic snapshot if enabled and enough time has passed
     "${_rollbackBackendExe}" 'createSnapshot' 'Timed';
     _return_code="$?"
     if [ "${_return_code}" != '0' ] && [ "${_return_code}" != '1' ]; then
       _cm2WarnFn; return;
     fi
+    # Trim excess snapshots, if any exist
     "${_rollbackBackendExe}" 'trimSnapshots';
     _return_code="$?"
     if [ "${_return_code}" != '0' ] && [ "${_return_code}" != '1' ]; then
       _cm2WarnFn; return;
     fi
+    # Balance main and boot partitions if needed
     "${_rollbackBackendExe}" 'btrfsMaintain';
     _return_code="$?"
     if [ "${_return_code}" != '0' ] && [ "${_return_code}" != '1' ]; then
