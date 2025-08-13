@@ -226,7 +226,7 @@ declare _modelCode _cpuName _toolDir _kbColorSetExe _powerSetExe _assignList;
 _modelCode="$(_cm2EchoModelStrFn 'code')";
 _cpuName="$(_echoCpuModelNameFn)";
 _toolDir="${_t00TopDir}/package-tools/usr/lib/kfocus/bin";
-_powerDir="${_t00TopDir}/package-power-bin/helper/usr/lib/kfocus/bin";
+_powerDir="${_t00TopDir}/package-power-bin/usr/lib/kfocus/bin";
 
 _assign_list=(
   "_kbColorSetExe|${_toolDir}/kfocus-kb-color-set"
