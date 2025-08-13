@@ -1,4 +1,5 @@
 // Copyright: 2025 MindShare Inc.
+// Written for the Kubuntu Focus by Aaron Rainbolt
 // License: GPLv2
 
 desktops().forEach((desktop) => {
