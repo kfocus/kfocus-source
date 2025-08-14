@@ -15,6 +15,10 @@
 #   offers new version
 # Priority > 1000 will downgrade even from lower-priority repo
 
+# assign-highest-priority-to-my-local-repository
+# https://askubuntu.com/questions/135339
+# When multiple pins at the same priority, the first one is preferred.
+
 # == Paired kfocus-nvidia Package =====================================
 # Pair pinning with a specific kfocus-nvidia package version.
 # IMPORTANT: This must be done so that the pinning package is
@@ -44,7 +48,7 @@ Pin: release o=LP-PPA-kfocus-team-package-testing
 Pin-Priority: 1006
 
 # 3rd: Core nvidia packages version 570.169* from highest-ranked repo
-# Note: Although specified, kfocus-team-package-release repo constraint 
+# Note: Although specified, kfocus-team-package-release repo constraint
 #    is NOT honored.
 Package: nvidia-* libnvidia-* xserver-xorg-video-nvidia-*
 Pin: release o=LP-PPA-kfocus-team-package-release
