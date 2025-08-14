@@ -7,7 +7,7 @@
 #   https://github.com/wimpysworld/deb-get.
 #
 # Name   : kfocus-mime
-# Purpose: Launch app for link with x-schema-handler/kfocus-mime
+# Purpose: Launch app with x-schema-handler/kfocus-mime
 #          Recent additions for repo add from deb-get project
 # License: GPL v2
 # Example: xdg-open ./link.kfocus-001
@@ -67,6 +67,7 @@ _exeLookupList=(
   'kfocus_pick_gcc|kfocus-pick-gcc||kfocus-pick-gcc|KFocus C Compiler Switcher: Change default C compiler version'
   'kfocus_power|kfocus-power||kfocus-power|KFocus Power and Fan: Review and adjust power settings'
   'kfocus_reset_effects|kfocus-reset-effects||kfocus-main|KFocus Reset Defaults: Reset keyboard shortcuts, effects, and power config'
+  'kfocus_reset_widgets|kfocus-reset-widgets||kfocus-main|KFocus Reset Widget: Reset desktop hint and icon widgets'
   'kfocus_rollback|/usr/lib/kfocus/bin/kfocus-rollback|/usr/lib/kfocus/bin/kfocus-rollback|kfocus-rollback|KFocus System Rollback Dashboard: Create, manage, and restore coherent system snapshots'
   'kfocus_tbt|/usr/lib/kfocus/bin/kfocus-tbt||kfocus-tools|KFocus Thunderbolt Control: Enable or disable Thunderbolt'
   'kfocus_vidsync|kfocus-vidsync||kfocus-vidsync|KFocus Video Sync Utility: Change video sync settings'
@@ -123,14 +124,14 @@ _exeLookupList=(
 
   # Future consideration: Nvidia CUDA and ML libs
 
-  # Deprecated
+  # these are deprecated:
   # 'atom|atom;--no-sandbox||atom|Atom: A hackable text editor.'
   # 'brave-browser|brave-browser||brave-browser|Brave Browser'
   # 'jetbrains-toolbox-plain|jetbrains-toolbox|jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs'
 );
 
 ## BEGIN _importCommonFn {
-# Run ls-common-symbols.sh to get list of used symbols
+# Run ls-common-symbols.sh to get a list of used symbols
 #
 _importCommonFn () {
   declare _lib_file;
@@ -187,7 +188,7 @@ function deb_backintime() {
 # The key is out-of-date. We would like to fix this with a method that does
 # not require trusted.gpg.d, such as creating a sources.list file for Brave
 # that embeds the key directly.
-#
+
 #function deb_brave-browser() {
 #  APT_KEY_URL="https://brave-browser-apt-release.s3.brave.com/brave-core.asc"
 #  APT_LIST_NAME="brave-browser-release"
@@ -812,8 +813,8 @@ to access more controls.</p>
 EOT
       )";
       _cmd_str='dropbox';
-      # Args is the same as dropbox.desktop.
-      # '-i' is needed if not installed for user.
+      # Arguments are the same as dropbox.desktop.
+      # The '-i' is needed if not installed for the user.
       _arg_list=( 'start' '-i' );
       ;;
 
@@ -846,7 +847,7 @@ EOT
     exit 1;
   fi
 
-  # Prompt user if there is a message
+  # Prompt the user if there is a message
   if [ -n "${_prompt_msg}" ]; then
     _promptFn "${_cm2HtmBeginStr}${_prompt_msg}${_cm2HtmEndStr}";
   fi
@@ -868,7 +869,7 @@ EOT
 #   in the lookup list, the user is notified and this script exits.
 #
 #   If the app is found in the list but not available, the routine calls
-#   pkexec <this-file> -i <pkg_id> to install the package, and possibly
+#   pkexec <this-file> -i <pkg_id> to install the package and possibly
 #   the required repo as well. On successful completion, the app is then
 #   run as the user.
 # Arguments: app_id - App identifier key
@@ -940,7 +941,7 @@ _runAppFn () {
     exit 0;
   fi
 
-  # Exit if pkg_name is not in table
+  # Exit if pkg_name is not in the table
   if [ -z "${_pkg_name}" ]; then
     _prompt_msg="Sorry, |${_arg_app_id}| is not supported";
     _promptFn "${_prompt_msg}";
@@ -957,7 +958,7 @@ _runAppFn () {
       _sniff_exe="$(command -v "${_sniff_str}" || true)";
     fi
 
-    # Try to install package using (may install repository too)
+    # Try to install the package using (may install repository too)
     if [ ! -x "${_sniff_exe}" ] && [ "${_idx}" = '0' ]; then
       if _install_prompt_msg="$(
         _echoInstallPromptMsgFn "${_app_id}" "${_pkg_name}" "${_descr}"
@@ -1064,13 +1065,13 @@ _mainFn () {
       # DEBUG: _cm2EchoFn "_arg_app_id=${_arg_app_id}";
     # Handle link file. Bail if not readable.
     else
-      # Ensure link file is readable
+      # Ensure the link file is readable
       if ! [ -r "${_arg1_str}" ]; then
         _cm2WarnStrFn "Abort: Link file |${_arg1_str}| cannot be read";
         exit 1;
       fi
 
-      # Read id from link file and then remove it.
+      # Read id from the link file and then remove it.
       read -r _arg_app_id < "${_arg1_str}" || exit 1;
       rm "${_arg1_str}" || true;
     fi
@@ -1101,7 +1102,7 @@ _pkgNameList=();
 _userName="$(id -un)";
 ## . END Declare and set global vars }
 
-## BEGIN Run main if script is not sourced {
+## BEGIN Run main if the script is not sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binName="$(readlink -f "$0")"        || exit 1;
   _binDir="$(dirname "${_binName}")"    || exit 1;
@@ -1115,4 +1116,4 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _escExe="$(_cm2GetEscExeFn)" || exit 1;
   _mainFn "$@";
 fi
-## . END Run main if script is not sourced }
+## . END Run main if the script is not sourced }
