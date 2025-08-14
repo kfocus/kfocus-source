@@ -1,68 +1,11 @@
-kfocus-rollback (24.04.9~beta11) noble; urgency=medium
+kfocus-rollback (24.04.9) noble; urgency=medium
 
-  * Redefine 'Bulk Data' => 'Big Data' (#5636)
-
- -- Michael S. Mikowski <support@kfocus.org>  Tue, 05 Aug 2025 21:04:05 -0400
-
-kfocus-rollback (24.04.9~beta10) noble; urgency=medium
-
-  * Revise language and links - rebuild (#5636)
-
- -- Michael S. Mikowski <support@kfocus.org>  Tue, 05 Aug 2025 02:48:57 -0400
-
-kfocus-rollback (24.04.9~beta9) noble; urgency=medium
-
-  * Revise language and links (#5636)
-
- -- Michael S. Mikowski <support@kfocus.org>  Tue, 05 Aug 2025 02:40:03 -0400
-
-kfocus-rollback (24.04.9~beta8) noble; urgency=medium
-
-  * Release beta from integration branch (#5636)
-
- -- Michael S. Mikowski <support@kfocus.org>  Fri, 01 Aug 2025 00:41:23 -0400
-
-kfocus-rollback (24.04.9~beta7) noble; urgency=medium
-
-  * kfocus-rollback-backend: Remove MariaDB (uses mysql data paths by
-    default), fix PostgreSQL path (#5636)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 23 Jul 2025 16:19:57 -0500
-
-kfocus-rollback (24.04.9~beta6) noble; urgency=medium
-
-  * kfocus-rollback-backend, kfocus-rollback-set, kfocus-rollback-bin:
-    Refactor bulk data detection code (#5636)
-  * etc_apt_apt.conf.d_100kfocus-rollback: Add post-install bulk data check
+  * etc_apt_apt.conf.d_100kfocus-rollback: Add post-install big data check
     hook (#5636)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 23 Jul 2025 11:45:44 -0500
-
-kfocus-rollback (24.04.9~beta5) noble; urgency=medium
-
-  * kfocus-rollback-bin: Add warning for bulk data (#5636)
-  * kfocus-rollback-backend, kfocus-rollback-set: Add directory size
-    calculation routine (#5636)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 21 Jul 2025 17:12:14 -0500
-
-kfocus-rollback (24.04.9~beta4) noble; urgency=medium
-
-  * kfocus-btrfs-watcher: improve error handling, add debug symbols (#5133)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Fri, 18 Jul 2025 11:30:50 -0500
-
-kfocus-rollback (24.04.9~beta3) noble; urgency=medium
-
-  * kfocus-btrfs-watcher: comments, break magic number into constant (#5133)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 17 Jul 2025 09:50:30 -0500
-
-kfocus-rollback (24.04.9~beta2) noble; urgency=medium
-
+  * kfocus-rollback-bin: Add warning for big data (#5636)
   * Add BTRFS disk space monitoring (#5133)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 16 Jul 2025 11:24:09 -0500
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 13 Aug 2025 10:49:48 -0500
 
 kfocus-rollback (24.04.8) noble; urgency=medium
 
