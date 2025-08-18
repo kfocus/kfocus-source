@@ -187,7 +187,7 @@ _mainFn () {
         _cm2PromptUserFn "${_authFailedMsg}" "${_winTitle}";
       else
         _error_msg="${_hweSwitchFailureMsg//XXX_ERROR_TEXT_XXX/"${_kernel_switch_output}"}";
-        _cm2PromptUserFn "${_error_msg}" ${_winTitle}";
+        _cm2PromptUserFn "${_error_msg}" "${_winTitle}";
       fi
       ;;
     2) _cm2PromptUserFn "${_remindLaterMsg}" "${_winTitle}";;
