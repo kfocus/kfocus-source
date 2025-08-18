@@ -1,14 +1,14 @@
 #!/bin/bash
 #
-# Copyright 2020-2024 MindShare Inc.
+# Copyright 2020-2025 MindShare Inc.
 # Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
 #
 # Name   : kfocus-pstate
 # Purpose:
-#   - As in kfocus-power, set Power Profile, Brightness, Frequency Profile,
-#   and Fan Profile when device is plugged or unplugged.
-#   - In Battery model, check if dGPU is in-use and warn user to switch to
-#     Intel to save power.
+#   Set Power Profile, Brightness, Frequency Profile, and Fan Profile based
+#   on the provided power state string (AC, Battery, LowBattery) or by the
+#   calculated power state if no string is provided. It may prompt the user
+#   to make decisions based on the target state.
 #
 # License: GPL v2
 # Run by : Power manager on switch to battery
@@ -59,11 +59,11 @@ _chkSetFlockFn () {
     1>&2 echo "Cannot get lock on ${_lockFile}";
     exit 1;
   fi
-  # Trap unexpected exits to clean up lock file
+  # Trap unexpected exits to clean up the lock file
   trap _trapExitFn EXIT;
 }
 
-# Remove lock file on exit
+# Remove the lock file on exit
 # Use before common.2.source is imported.
 _exitEarlyFn () {
   1>&2 echo 'An unexpected error has occurred';
@@ -86,7 +86,7 @@ _runEscFn () {
   "${_escExe}" "$@";
 }
 
-_setPlasmaPowerProfileFn () {
+_setPowerProfileFn () {
   declare _is_on_ac _target_key _msg _current_key \
     _mode_list _line _bit_list _search_str _set_key;
 
@@ -257,7 +257,7 @@ _EOH03
   done
   ## . End Process options }
 
-  # Set _is_on_ac flag from commandline argument
+  # Set _is_on_ac flag
   _is_on_ac='';
   case "${_pstate_arg_str}" in
     AC)         _is_on_ac='y';;
@@ -269,37 +269,30 @@ _EOH03
       _exitCleanFn 1;;
   esac
 
-  # If _is_on_ac flag NOT set, pause and read from udev
+  # If _is_on_ac flag is not provided, pause and then calculate here
   if [ -z "${_is_on_ac}" ]; then
-    # 1821 Pause to allow upower system to correctly read AC status
-    # PowerDevil automatically runs this now.
     _pid_str="$(ps -o args= $PPID)"; # TODO: Use ptree
     _cm2WarnStrFn "Called without arguments from: ${_pid_str}";
 
     # Pause to let udev catch up
-    sleep 3;
+    sleep 10;
     _is_on_ac="$(
       ( "${_upowerExe}" -i '/org/freedesktop/UPower/devices/line_power_AC' \
        | grep '^\s*online:' | awk '{print $2}' | cut -c1 ) || echo 'n'
     )";
-
-    # Set kde power profile if available based on freshly-set _is_on_ac
-    # IMPORTANT: This is handled by the plasma power management widget
-    # and therefore is NOT included in the settings below.
-    _setPlasmaPowerProfileFn "${_is_on_ac}";
+    # Restore pre-suspend state
+    [ -n "${_kbdColorSetExe}" ] && "${_kbdColorSetExe}" -K;
   fi
 
   # Invoke on-battery settings
   if [ "${_is_on_ac}" = 'n' ]; then
     _cm2SetMsgFn 'Set CPU power mode to Low on battery';
-    if [ -n "${_powerSetExe}" ] \
-      && _runEscFn "${_powerSetExe}" 'Low'; then
+    if _runEscFn "${_powerSetExe}" 'Low'; then
       _cm2SucFn; else _cm2WarnFn;
     fi
 
     _cm2SetMsgFn 'Set writeback for battery use';
-    if [ -n "${_pstateSetExe}" ] \
-      && _runEscFn "${_pstateSetExe}" 'writeback-battery'; then
+    if _runEscFn "${_pstateSetExe}" 'writeback-battery'; then
       _cm2SucFn; else _cm2WarnFn;
     fi
 
@@ -313,14 +306,12 @@ _EOH03
   # Invoke on-AC settings
   else
     _cm2SetMsgFn 'Set CPU power mode to Normal on AC';
-    if [ -n "${_powerSetExe}" ] \
-      && _runEscFn "${_powerSetExe}" 'Normal'; then
+    if _runEscFn "${_powerSetExe}" 'Normal'; then
       _cm2SucFn; else _cm2WarnFn;
     fi
 
     _cm2SetMsgFn 'Set writeback for AC use';
-    if [ -n "${_pstateSetExe}" ] \
-      && _runEscFn "${_pstateSetExe}" 'writeback-ac'; then
+    if _runEscFn "${_pstateSetExe}" 'writeback-ac'; then
       _cm2SucFn; else _cm2WarnFn;
     fi
 
@@ -331,6 +322,9 @@ _EOH03
     #   _cm2SucFn; else _cm2WarnFn;
     # fi
   fi
+
+  # Set the system power profile if available
+  _setPowerProfileFn "${_is_on_ac}";
 
   # Sniff gpu in use
   _gpu_mode_str='intel';
@@ -346,14 +340,18 @@ _EOH03
     || [ "${_gpu_mode_str}" = 'on-demand' ]; then
     if [ -z "${_nvidia_list_str}" ]; then
       _cm2SetMsgFn 'Warn user if using iGPU when dGPU requested';
-      if "${_cm2KdiagExe}" --warningyesno "${_ask_reboot_msg}"; then
-        "${_qdbusExe}" org.kde.Shutdown /Shutdown logoutAndReboot;
+      if [ "${_doGui}" = 'y' ]; then
+        if "${_cm2KdiagExe}" --warningyesno "${_ask_reboot_msg}"; then
+          "${_qdbusExe}" org.kde.Shutdown /Shutdown logoutAndReboot;
+        fi
       fi
       _cm2SucFn;
     else
       _cm2SetMsgFn 'Warn user if using dGPU on battery';
       if [ "${_is_on_ac}" = 'n' ]; then
-        "${_cm2KdiagExe}" --msgbox "${_warn_dgpu_msg}" &
+        if [ "${_doGui}" = 'y' ]; then
+          "${_cm2KdiagExe}" --msgbox "${_warn_dgpu_msg}" &
+        fi
         _cm2SucFn;
       else
         _cm2SucStrFn 'Using AC Power, no action needed';
@@ -367,9 +365,13 @@ _EOH03
     if [ "${_is_on_ac}" = 'n' ]; then
       _cm2SetMsgFn 'Give user option to disable dGPU when on battery';
       if [ -n "${_nvidia_list_str}" ]; then
-        if "${_cm2KdiagExe}" --yesno "${_ask_disable_msg}"; then
-          if [ -n "${_pstateSetExe}" ] \
-            && _runEscFn "${_pstateSetExe}" 'disable-nvidia'; then
+        if [ "${_doGui}" = 'n' ]; then
+          if [ -f "${_disableNvOnbatFile}" ]; then
+            _runEscFn "${_pstateSetExe}" 'disable-nvidia'
+          fi
+        elif "${_cm2KdiagExe}" --yesno "${_ask_disable_msg}"; then
+          # The following call creates the _disableNvOnbatFile
+          if _runEscFn "${_pstateSetExe}" 'disable-nvidia'; then
             _cm2SucStrFn 'Discrete GPU disable successfully.';
             _cm2SucFn;
           else
@@ -393,13 +395,16 @@ _EOH03
 ## . END _mainFn }
 
 ## BEGIN Declare and set global vars {
-declare _binName _binDir _baseName _lockFile _userName \
-  _assignExeList _lspciExe _powerSetExe _primeExe _profilesCtlExe \
-  _pstateSetExe _qdbusExe _pstateSetExe _upowerExe _escExe;
+declare _binName _binDir _baseName  _userName _doGui _lockFile \
+  _disableNvOnbatFile _assignExeList _kbdColorSetExe _lspciExe \
+  _powerSetExe _primeExe _profilesCtlExe _pstateSetExe _qdbusExe \
+  _upowerExe _escExe;
 
+# Sync this with the kfocus-pstate-set value
+_disableNvOnbatFile='/run/kfocus-disable-nv-onbat';
 ## . END Declare and set global vars }
 
-## BEGIN Run main if script is not sourced {
+## BEGIN Run main if the script is not sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binName="$(readlink -f "$0")"        || exit 101;
   _binDir="$(dirname "${_binName}")"    || exit 101;
@@ -407,6 +412,10 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _baseName="$(basename "${_binName}")" || exit 101;
 
   _userName="$(id -un)";
+
+  if [ "${XDG_SESSION_TYPE:-}" != 'x11' ] || [ "$(id -u)" = '0' ]; then
+    _doGui='n'; else _doGui='y';
+  fi
   _lockFile="/tmp/${_baseName}-${_userName}.lock";
 
   # Import libs and assign more global vars
@@ -414,12 +423,14 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _assign_exe_list=(
     # "_fanSetExe|${_binDir}/kfocus-fan-set||optional"
     "_lspciExe|lspci"
-    "_powerSetExe|${_binDir}/kfocus-power-set||optional"
-    "_primeExe|prime-select||optional"
-    "_profilesCtlExe|powerprofilesctl||optional"
-    "_pstateSetExe|${_binDir}/kfocus-pstate-set||optional"
+    "_powerSetExe|${_binDir}/kfocus-power-set"
+    "_pstateSetExe|${_binDir}/kfocus-pstate-set"
     "_qdbusExe|qdbus"
     "_upowerExe|upower"
+
+    "_kbdColorSetExe|${_binDir}/kfocus-kb-color-set||optional"
+    "_profilesCtlExe|powerprofilesctl||optional"
+    "_primeExe|prime-select||optional"
   );
   if ! _cm2AssignExeVarsFn "${_assign_exe_list[@]}"; then
     _cm2ErrStrFn 'Required commands not found.';
@@ -427,7 +438,9 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   fi
   _escExe="$(_cm2GetEscExeFn)" || exit 1;
 
-  _mainFn "$@";
+  { echo -e '\n===================='; date;
+    _mainFn "$@";
+  } 2>> /tmp/pstate-run;
 fi
-## . END Run main if script is not sourced }
+## . END Run main if the script is not sourced }
 

@@ -3,13 +3,14 @@
 # REMOVE THE OWNING PACKAGE kfocus-hw TO REMOVE THIS FILE.
 # KFOCUS_TEST_ID=2231,5591,5692
 #
-# Validated on all KFocus M- and Z-series models thru 2025-08-06
+# Copyright 2022-2025 MindShare Inc.
 # This handles sleep-resume usb xhci and keyboard LEDs.
 #
 set -u;
 
 _wakeFile=/proc/acpi/wakeup;
 _setKbdExe=/usr/lib/kfocus/bin/kfocus-kb-color-set;
+_pstateExe=/usr/lib/kfocus/bin/kfocus-pstate;
 _baseName='zsleep-kfocus';
 
 _reportFn () {
@@ -20,7 +21,8 @@ _reportFn () {
 
 case "${1:-}" in
   pre) # Before-suspend actions
-    [ -x "${_setKbdExe}" ] && "${_setKbdExe}" -E 0 || true;
+    # Scan and save current keyboard settings
+    [ -x "${_setKbdExe}" ] && "${_setKbdExe}" -k || true;
     echo "${_baseName}: Disable XHCI on sleep to avoid premature wake";
     grep -q '^XHCI.*enable' "${_wakeFile}" && echo XHCI > "${_wakeFile}";
     _reportFn;
@@ -29,7 +31,8 @@ case "${1:-}" in
     echo "${_baseName}: Enable XHCI on wake";
     grep -q '^XHCI.*disable' "${_wakeFile}" && echo XHCI > "${_wakeFile}";
     _reportFn;
-    [ -x "${_setKbdExe}" ] && "${_setKbdExe}" -E 1 || true;
+    # Restore pstate settings; this includes the keyboard state
+    [ -x "${_pstateExe}" ] && "${_pstateExe}" || true;
     ;;
   *) echo "Unsupported action: ${1:-}";
 esac

@@ -429,7 +429,7 @@ _setKeyCodesFn () {
   _model_code="$(_cm2EchoModelStrFn 'code')" || return;
 
   case "${_model_code}" in
-    zrg1) setkeycodes 6f 120 || true;;
+    zrg1) setkeycodes 6f 112 || true;;
     *) true;;
   esac
 }

@@ -514,7 +514,7 @@ _chkKbdLedFn () {
 
   if [[ "${_model_code}" =~ ^(m2g5p|zrg1)$ ]]; then
     if [ -x "${_kbdColorSetExe}" ]; then
-      "${_escExe}" "${_kbdColorSetExe}" -r || return 200;
+      "${_escExe}" "${_kbdColorSetExe}" -r || true;
     fi
   fi
 
@@ -582,7 +582,6 @@ _EOH12
   fi
 
   if [ -f "${_xorg_file}" ]; then
-    # DEBUG _cm2EchoFn "xorg.conf exists";
     if ! [ -f "${_drop_file}" ]; then
       _do_remove_file="$(
         _cm2PromptUserFn "${_warn_str}" "${_win_title}" 'a'
