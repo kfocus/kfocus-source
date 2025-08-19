@@ -514,7 +514,10 @@ _chkKbdLedFn () {
 
   if [[ "${_model_code}" =~ ^(m2g5p|zrg1)$ ]]; then
     if [ -x "${_kbdColorSetExe}" ]; then
-      "${_escExe}" "${_kbdColorSetExe}" -r || true;
+      _cm2SetMsgFn 'Restore ITE keyboard colors';
+      if "${_escExe}" "${_kbdColorSetExe}" -r; then
+        _cm2SucFn; else _cm2WarnFn;
+      fi
     fi
   fi
 
@@ -1147,7 +1150,6 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _importCommonFn;
   _escExe="$(_cm2GetEscExeFn)" || exit;
   _focusRxDropDir="${_binDir}/kfocus-focusrx.d";
-  _kbdColorSetExe="${_binDir}/kfocus-kb-color-set";
   _rootTitle='FocusRx';
   _assignList=(
     "_focusRxSetExe|${_binDir}/kfocus-focusrx-set"
@@ -1157,6 +1159,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     "_chainHelperExe|${_binDir}/kfocus-chain-helper-ui||optional"
     "_firstrunExe|${_binDir}/kfocus-firstrun-bin||optional"
     "_fixIbusExe|${_binDir}/kfocus-fix-ibus||optional"
+    "_kbdColorSetExe|${_binDir}/kfocus-kb-color-set||optional"
     "_kcleanExe|${_binDir}/kfocus-kclean||optional"
     "_kscreenDoctorExe|/usr/bin/kscreen-doctor||optional"
     "_nvSettingsExe|nvidia-settings||optional"

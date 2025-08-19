@@ -144,8 +144,9 @@ _setPowerProfileFn () {
 ## BEGIN _mainFn {
 _mainFn () {
   ## Begin Initialize {
-  declare _warn_dgpu_msg _ask_disable_msg _ask_reboot_msg _pstate_arg_str \
-    _opt_str _is_on_ac _pid_str _gpu_mode_str _nvidia_list_str;
+  declare _warn_dgpu_msg _ask_disable_msg _ask_reboot_msg \
+    _pstate_arg_str _is_resume_mode _opt_str _is_on_ac _pid_str \
+    _gpu_mode_str _nvidia_list_str;
 
   _warn_dgpu_msg=$(
     cat <<_EOH01
@@ -270,18 +271,18 @@ _EOH03
   esac
 
   # If _is_on_ac flag is not provided, pause and then calculate here
+  _is_resume_mode='n';
   if [ -z "${_is_on_ac}" ]; then
     _pid_str="$(ps -o args= $PPID)"; # TODO: Use ptree
     _cm2WarnStrFn "Called without arguments from: ${_pid_str}";
 
     # Pause to let udev catch up
-    sleep 10;
+    sleep 5;
     _is_on_ac="$(
       ( "${_upowerExe}" -i '/org/freedesktop/UPower/devices/line_power_AC' \
        | grep '^\s*online:' | awk '{print $2}' | cut -c1 ) || echo 'n'
     )";
-    # Restore pre-suspend state
-    [ -n "${_kbdColorSetExe}" ] && "${_kbdColorSetExe}" -K;
+    _is_resume_mode='y';
   fi
 
   # Invoke on-battery settings
@@ -325,6 +326,13 @@ _EOH03
 
   # Set the system power profile if available
   _setPowerProfileFn "${_is_on_ac}";
+
+  # Restore kbd to pre-resume state
+  if [ "${_is_resume_mode}" = 'y' ]; then
+    if [ -n "${_kbdColorSetExe}" ]; then
+      "${_escExe}" "${_kbdColorSetExe}" -K || true;
+    fi
+  fi
 
   # Sniff gpu in use
   _gpu_mode_str='intel';
@@ -438,9 +446,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   fi
   _escExe="$(_cm2GetEscExeFn)" || exit 1;
 
-  { echo -e '\n===================='; date;
-    _mainFn "$@";
-  } 2>> /tmp/pstate-run;
+  _mainFn "$@";
 fi
 ## . END Run main if the script is not sourced }
 

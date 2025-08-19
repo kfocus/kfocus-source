@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -e;
+
+deb-systemd-helper disable kfocus-kb-save.service;
+
+# Tag to allow some debhelper commands to inject relevant code
+#DEBHELPER#
+

@@ -63,7 +63,7 @@ _convertStrToByte () {
 _convertByteToStr () {
   echo "$(( ${1:-0} / 25 ))";
 }
-## . END _convertByteToStr {
+## . END _convertByteToStr }
 
 ## BEGIN _iteCalcKbdStateFn {
 # Purpose: Calculate kbd state and save to _configStateList.
@@ -96,7 +96,7 @@ _iteCalcKbdStateFn () {
 ## BEGIN _iteReadFileListFn {
 # Purpose: Read kbd state file into _configStateList.
 #
-_iteReadInStateFile () {
+_iteReadStateFileFn () {
   declare _calc_file _str;
   [ -z "${1:-}" ] && _calc_file="${_iteStateFile}" || _calc_file="$1";
 
@@ -195,11 +195,11 @@ _stdRestoreKbdFn () {
 }
 ## . END _stdRestoreKbdFn }
 
-## BEGIN _stdReadInStateFile {
+## BEGIN _stdReadStateFileFn {
 # Purpose: Read the standard (modprobe) state file and populate
 # _configStateList.
 #
-_stdReadInStateFile () {
+_stdReadStateFileFn () {
   declare _calc_file _line _bright_byte _hex_str _enable_int _bright_str;
   [ -z "${1:-}" ] && _calc_file="${_stdModprobeFile}" || _calc_file="$1";
 
@@ -216,7 +216,7 @@ _stdReadInStateFile () {
 
   # Carry forward enabled flag if already set
   _enable_int=1;
-  if [ "${#_configStateList}" = 3 ]; then
+  if [ -n "${_configStateList+x}" ] && [ "${#_configStateList[@]}" = 3 ]; then
     _enable_int="${_configStateList[2]:-1}";
   fi
 
@@ -238,7 +238,7 @@ _stdReadInStateFile () {
   _bright_str="$(_convertByteToStr "${_bright_byte}")";
   _configStateList=( "${_bright_str}" "${_hex_str}" "${_enable_int}" );
 }
-## . END _stdReadInStateFile }
+## . END _stdReadStateFileFn }
 
 ## BEGIN _stdWriteStateFileFn {
 # Purpose: Write standard (modprobe) state file from _configStateList.
@@ -260,22 +260,23 @@ _stdWriteStateFileFn () {
 }
 ## . END _stdWriteStateFileFn }
 
-## BEGIN _setKbdFromConfigFn {
+## BEGIN _restoreKbdFromConfigFn {
 # Purpose: Dispatches to set kbd from _configStateList.
 #   This must be called after the config file is read-in.
 #
-_setKbdFromConfigFn () {
+_restoreKbdFromConfigFn () {
   if [ "${#_configStateList[@]}" -lt 2 ]; then
     _cm2WarnStrFn 'No valid config state available';
     return 202;
   fi
 
-  if [[ "${_modelCode}" =~ ^(m2g5p|zrg1)$ ]]; then
+  if [ "${_isIte}" = 'y' ]; then
     _iteRestoreKbdFn;
-    # Std restores from the modprobe file and is not needed here.
+  else
+    _stdRestoreKbdFn;
   fi
 }
-## . END _setKbdFromConfigFn }
+## . END _restoreKbdFromConfigFn }
 ## == . END private functions ========================================= }
 
 ## == BEGIN functions run by mainFn =================================== {
@@ -322,6 +323,20 @@ _convertRgbToHexFn () {
 }
 ## . END _convertRgbToHexFn }
 
+## BEGIN _simpleEnableKbdFn {
+_simpleEnableKbdFn () {
+  declare _set_int;
+  _set_int="${1:-}";
+  if ! [[ "${_set_int}" =~ ^(0|1)$ ]]; then
+    _cm2WarnStrFn 'Invalid set int, must be 0 or 1'; return 1;
+  fi
+  if _readInStateFileFn; then
+    _configStateList[2]="${_set_int}";
+    _restoreKbdFromConfigFn;
+  fi
+}
+## . END _simpleEnableKbdFn }
+
 ## BEGIN _enableKbdFn {
 # Purpose: Enable or disable kbd. Do not change color-bright.
 #
@@ -332,21 +347,17 @@ _enableKbdFn () {
   if ! [[ "${_set_int}" =~ ^(0|1)$ ]]; then
     _cm2WarnStrFn 'Invalid set int, must be 0 or 1'; return 1;
   fi
+  _readInStateFileFn;
 
-  # Handle m2g5p|zrg1 ITE logic
-  if [[ "${_modelCode}" =~ ^(m2g5p|zrg1)$ ]]; then
-    _iteReadInStateFile;
+  # Handle ITE logic
+  if [ "${_isIte}" = 'y' ]; then
     _old_list=( "${_configStateList[@]}" );
 
-    # If the user has made the kbd visible, load the current state into
-    #   _configStateList and mark as enabled, otherwise keep the old state and
-    #   mark as disabled.
+    # If the user has made the kbd visible, keep the calculated state;
+    #   otherwise, keep the old state.
     _iteCalcKbdStateFn;
-    if (( _configStateList[0] > 0 )); then
-      _configStateList[2]=1;
-    else
+    if (( _configStateList[0] == 0 )); then
       _configStateList=( "${_old_list[@]}" );
-      _configStateList[2]=0;
     fi
 
     # Set the enabled flag, update keyboard colors, write config
@@ -356,32 +367,42 @@ _enableKbdFn () {
     return;
   fi
 
-  # Handle m1, m2 logic
-  if [[ "${_modelCode}" =~ ^m1|m2 ]]; then
-    _stdReadInStateFile;
-    _old_list=( "${_configStateList[@]}" );
-    _enable_int=$(head -n1 "${_stdEnableFile}" );
+  # Handle STD logic
+  _enable_int=$(head -n1 "${_stdEnableFile}" );
 
-    # If the intent is to disable, and the current kbd is enabled,
-    #  then calculate current settings.
-    if [ "${_set_int}" = 0 ] && (( _enable_int == 1 )); then
-      _stdCalcKbdStateFn;
-    fi
+  # If the intent is to disable, and the current kbd is enabled,
+  #  then calculate current settings.
+  if [ "${_set_int}" = 0 ] && (( _enable_int == 1 )); then
+    _stdCalcKbdStateFn;
+  fi
 
-    # Set and store
-    if echo "${_set_int}" > "${_stdEnableFile}"; then
-      _configStateList[2]="${_set_int}";
-      _stdWriteStateFileFn;
-    fi
+  # Set and store
+  if echo "${_set_int}" > "${_stdEnableFile}"; then
+    _configStateList[2]="${_set_int}";
+    _stdWriteStateFileFn;
   fi
 }
 ## . END _enableKbdFn }
 
+## BEGIN _keepStateFn {
+# Purpose: Calculate keyboard state and store into default files
+#
+_keepStateFn () {
+  if [ "${_isIte}" = 'y' ]; then
+    _iteCalcKbdStateFn;
+    _iteWriteStateFileFn;
+  else
+    _stdCalcKbdStateFn;
+    _stdWriteStateFileFn;
+  fi
+}
+## .END _keepStateFn }
+
 ## BEGIN _keepSuspendStateFn {
-# Purpose: Read keyboard state and store into the state file
+# Purpose: Calculate keyboard state and store into a suspend file
 #
 _keepSuspendStateFn () {
-  if [[ "${_modelCode}" =~ ^(m2g5p|zrg1)$ ]]; then
+  if [ "${_isIte}" = 'y' ]; then
     _iteCalcKbdStateFn;
     _iteWriteStateFileFn "${_iteSuspendFile}";
   else
@@ -391,16 +412,41 @@ _keepSuspendStateFn () {
 }
 ## . END _keepSuspendStateFn }
 
+## BEGIN _readInStateFileFn {
+# Purpose: Read state from the default file to populate  configStateList
+#
+_readInStateFileFn () {
+  if [ "${_isIte}" = 'y' ]; then
+    _iteReadStateFileFn;
+  else
+    _stdReadStateFileFn;
+  fi
+}
+## . END _readInStateFileFn }
+
+## BEGIN _restoreStateFn {
+# Purpose: Read state from the default file and restore to the keyboard
+#
+_restoreStateFn () {
+  if [ "${_isIte}" = 'y' ]; then
+    _iteReadStateFileFn;
+  else
+    _stdReadStateFileFn;
+  fi
+  _restoreKbdFromConfigFn;
+}
+## . END _restoreStateFn }
+
 ## BEGIN _restoreSuspendStateFn {
-# Purpose: Read keyboard state and store into the state file
+# Purpose: Read state from a suspend file and restore it to the keyboard
 #
 _restoreSuspendStateFn () {
-  if [[ "${_modelCode}" =~ ^(m2g5p|zrg1)$ ]]; then
-    _iteReadInStateFile "${_iteSuspendFile}";
+  if [ "${_isIte}" = 'y' ]; then
+    _iteReadStateFileFn "${_iteSuspendFile}";
   else
-    _stdReadInStateFile "${_stdSuspendFile}";
+    _stdReadStateFileFn "${_stdSuspendFile}";
   fi
-  _setKbdFromConfigFn;
+  _restoreKbdFromConfigFn;
 }
 ## . END _restoreSuspendStateFn }
 
@@ -408,36 +454,12 @@ _restoreSuspendStateFn () {
 # Purpose: Print current kbd state to STDOUT.
 #
 _listActiveStateFn () {
-  if [[ "${_modelCode}" =~ ^(m2g5p|zrg1)$ ]]; then
-    _iteCalcKbdStateFn;
-  else
-    _stdCalcKbdStateFn;
+  if [ "${_isIte}" = 'y' ]; then
+    _iteCalcKbdStateFn; else _stdCalcKbdStateFn;
   fi
   ( IFS=';'; echo "${_configStateList[*]}"; )
 }
 ## . END _listActiveStateFn }
-
-## BEGIN _readInStateFileFn {
-# Purpose: Read the state file into _configStateList.
-#
-_readInStateFileFn () {
-  declare _arg_str;
-  _arg_str="${1:-}";
-
-  if [[ "${_modelCode}" =~ ^(m2g5p|zrg1)$ ]]; then
-    _iteReadInStateFile;
-  else
-    _stdReadInStateFile;
-  fi
-
-  # Handle the apply directive
-  if [ "${_arg_str}" = 'apply' ]; then
-    _setKbdFromConfigFn;
-  else
-    ( IFS=';'; echo "${_configStateList[*]}"; )
-  fi
-}
-## . END _readInStateFileFn }
 
 ## BEGIN _setKbdValsFn {
 # Purpose: Set kbd brightness and color from the input string.
@@ -469,27 +491,13 @@ _setKbdValsFn () {
   #   The restore routines should always set the enabled flag.
   #
   _configStateList=( "${_bright_str}" "${_hex_str}" '1' );
-  if [[ "${_modelCode}" =~ ^(m2g5p|zrg1)$ ]]; then
+  if [ "${_isIte}" = 'y' ]; then
     if _iteRestoreKbdFn; then _iteWriteStateFileFn; fi
   else
     if _stdRestoreKbdFn; then _stdWriteStateFileFn; fi
   fi
 }
 ## . END _setKbdValsFn }
-
-## BEGIN _toggleEnableFn {
-# Purpose: Toggle enable based on existing value.
-#
-_toggleEnableFn () {
-  if [[ "${_modelCode}" =~ ^(m2g5p|zrg1)$ ]]; then
-    _iteCalcKbdStateFn; else _stdCalcKbdStateFn;
-  fi
-
-  if [ "${_configStateList[2]:-}" = 1 ]; then
-    _enableKbdFn 0; else _enableKbdFn 1;
-  fi
-}
-## . END _toggleEnableFn }
 ## == . END functions run by mainFn =================================== }
 
 ## BEGIN _mainFn {
@@ -502,13 +510,14 @@ _toggleEnableFn () {
 #   Rgb colors have the form '<0-255> <0-255> <0-255>'.
 # | -c <hex> : Convert hex color to rgb (debug).
 # | -C <rgb> : Convert rgb color to hex (debug).
-# | -e 0|1   : Enable kbd OFF or ON.
-# | -E 0|1   : Enable kbd OFF or ON, ignore other state values.
-# | -l       : print active state from kbd <int:0-10>;<hex>;<0-1>.
-# | -p       : Read and print from the state file <int:0-10>;<hex>;<0-1>.
-# | -r       : Read, print, and apply state from the state file.
+# | -E 0|1   : Enable kbd OFF or ON, use existing color stored.
+# | -k       : Calculate keyboard start and write to the suspend file.
+# | -K       : Restore keyboard state from the suspend file.
+# | -l       : List active state from kbd <int:0-10>;<hex>;<0-1>.
+# | -p       :
 # | -s       : '<0-10>;<hex>' : Set brightness and color; enable is set to 1.
-# | -t       : Toggle kbd OFF/ON.
+# | -r       : Read and apply state from the default file.
+# | -w       : Calculate keyboard state and write to the default file.
 # Globals    : OPTIND is reset to local for arg processing.
 # Outputs    : Prints diagnostics to stderr.
 # Returns    : 0 on success; no-zero on failure.
@@ -523,18 +532,25 @@ _mainFn () {
 
   # Do not use 'while getopts...'; instead enforce one-time dispatch
   local OPTIND=1;
-  getopts 'c:C:e:E:kKlprs:t' _opt_str;
+  getopts 'c:C:E:kKrwls:' _opt_str;
   case "${_opt_str}" in
     c) _convertHexToRgbFn "${OPTARG}"; shift;;
     C) _convertRgbToHexFn "${OPTARG}"; shift;;
-    e|E) _enableKbdFn "${OPTARG}"; shift;;
+    E)
+      if [ -f "${_dropFile}" ]; then
+        _enableKbdFn "${OPTARG}"; shift;
+      else
+        _simpleEnableKbdFn "${OPTARG}"; shift;
+        touch "${_dropFile}";
+      fi
+      ;;
     k) _keepSuspendStateFn;;
     K) _restoreSuspendStateFn;;
+    r) _restoreStateFn;;
+    w) _keepStateFn;;
+
     l) _listActiveStateFn;;
-    p) _readInStateFileFn;;
-    r) _readInStateFileFn 'apply';;
     s) _setKbdValsFn "${OPTARG}"; shift;;
-    t) _toggleEnableFn;;
     *) _cm2EchoFn "Option ${_opt_str} not supported";;
   esac
 }
@@ -542,10 +558,12 @@ _mainFn () {
 
 ## BEGIN Declare and assign global vars {
 declare _binName _binDir _baseDir _baseName \
-  _configStateList _iteBrightFile _iteStateFile _modelCode   \
-  _stdEnableFile _stdKeyDir _stdModprobeFile;
+  _configStateList _dropFile _isIte _iteBrightFile _iteStateFile \
+  _modelCode _stdEnableFile _stdKeyDir _stdModprobeFile;
 
 _configStateList=();
+_dropFile='/run/kfocus-kb-color-set-enable';
+_isIte='n';
 _iteBrightFile='/sys/class/leds/rgb:kbd_backlight/brightness';
 _iteRgbDir='/sys/class/leds';
 _iteStateFile='/var/lib/kfocus/kbd_color_state';
@@ -565,8 +583,11 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   # Import libs and assign more global vars
   _importCommonFn;
-  _modelCode="$(_cm2EchoModelStrFn 'code')";
 
+  # Get model code, skip unsupported models, set ITE mode if needed
+  _modelCode="$(_cm2EchoModelStrFn 'code')";
+  if ! [[ "${_modelCode}" =~ ^(m1|m2|zr) ]]; then exit 0; fi
+  if [[ "${_modelCode}" =~ ^(m2g5p|zrg1)$ ]]; then _isIte='y'; fi
   _mainFn "$@";
 fi
 ## . END Run main if the script is not sourced }
