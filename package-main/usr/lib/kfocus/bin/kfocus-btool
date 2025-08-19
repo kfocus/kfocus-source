@@ -78,6 +78,8 @@ OFFERS by the OS to 'mount' or 'open' any files or folders on the drive.
 IMPORTANT: THIS TOOL WILL REMOVE ALL DATA FROM THE USB DRIVE. As a precaution,
 make sure you back up any data from the USB and system drives before
 proceeding.
+
+Press <return> to continue.
 EOF
   )";
 
@@ -160,7 +162,9 @@ _echoHelpFn () {
 _loadConfigFn () {
   declare _config_file;
 
-  _modelStr="$(_cm2EchoModelStrFn 'code')";
+  # TODO: undo
+  #_modelStr="$(_cm2EchoModelStrFn 'code')";
+  _modelStr='m2g4';
   _config_file="${_binDir}/kfocus-btool.d/${_modelStr}.source"
 
   # If no configuration found for this model, return and leave config-specific
@@ -183,7 +187,7 @@ _loadConfigFn () {
 #             the user needs to run the upgrade to fix common system issues.
 # Example   : _detectUpgradeStatusFn
 # Arguments : none
-# Globals   : _dmiDecodeExe, _availBiosVersion, _minBiosVersion
+# Globals   : _dmiDecodeExe, _availBiosVers, _minBiosVers
 # Outputs   : One of the following:
 #   * dl_bios_not_available
 #   * dl_bios_matches
@@ -193,24 +197,26 @@ _loadConfigFn () {
 # Returns   : none
 #
 _detectUpgradeStatusFn () {
-  declare _do_print _current_bios_version;
+  declare _do_print _current_bios_vers;
 
   _do_print="${1:-}";
-  _current_bios_version="$("${_dmiDecodeExe}" 'bios-version')"
+  # TODO: undo
+  #_current_bios_vers="$("${_dmiDecodeExe}" 'bios-version')"
+  _current_bios_vers='1.06.07MIN29'
 
-  if [ -z "${_availBiosVersion}" ]; then
+  if [ -z "${_availBiosVers}" ]; then
     echo 'dl_bios_not_available';
     return 0;
   fi
 
-  if [ "${_current_bios_version}" = "${_availBiosVersion}" ]; then
+  if [ "${_current_bios_vers}" = "${_availBiosVers}" ]; then
     echo 'dl_bios_matches';
     return 0;
   fi
 
-  if _cm2TestVersFn "${_availBiosVersion}" "${_current_bios_version}"; then
-    if [ "${_current_bios_version}" = "${_minBiosVersion}" ] \
-      || _cm2TestVersFn "${_current_bios_version}" "${_minBiosVersion}"; then
+  if _cm2TestVersFn "${_availBiosVers}" "${_current_bios_vers}"; then
+    if [ "${_current_bios_vers}" = "${_minBiosVers}" ] \
+      || _cm2TestVersFn "${_current_bios_vers}" "${_minBiosVers}"; then
       echo 'dl_bios_greater_optional_upgrade';
     else
       echo 'dl_bios_greater_required_upgrade';
@@ -218,7 +224,7 @@ _detectUpgradeStatusFn () {
     return 0;
   fi
 
-  if _testVers "${_current_bios_version}" "${_availBiosVersion}"; then
+  if _testVers "${_current_bios_vers}" "${_availBiosVers}"; then
     echo 'dl_bios_lesser_required_downgrade';
     return 0;
   fi
@@ -232,8 +238,7 @@ _detectUpgradeStatusFn () {
 _downloadBiosFn () {
   _cm2EchoFn "${_biosDownloadMsg}";
   _tmpBiosFile="${_tmpDir}/kfocus-bios-download";
-  # TODO: Do we really want to use -q (quiet) here?
-  wget -q "${_biosDownloadUrl}" -O "${_tmpBiosFile}" || return 1;
+  wget "${_biosDownloadUrl}" -O "${_tmpBiosFile}" || return 1;
   _cm2EchoFn "${_biosDownloadEndMsg}";
 }
 ## . END _downloadBiosFn }
@@ -309,7 +314,7 @@ EOF
     _cm2NechoFn "Enter action id (${_idx}): ";
     read -r _reply;
     _cm2EchoFn '--------------------------------';
-    _pick_idx="$(_echoIntFn "${_reply:-${_idx}}")";
+    _pick_idx="$(_cm2EchoIntFn "${_reply:-${_idx}}")";
 
     if (( _pick_idx == _idx )); then
       _cm2EchoFn "${_cancelUpgradeMsg}";
@@ -366,7 +371,7 @@ _beginUpgradeFn () {
 
   _downloadBiosFn || return 1;
 
-  _selectDiskFn || return 1;
+  _selectDiskFn;
   _return_int="$?";
   if [ "${_return_int}" = '1' ]; then
     return 1;
@@ -396,10 +401,10 @@ _tryOfferUpgradeFn () {
 | |_ / _ \ / __| | | / __| |  _ \| |/ _ \/ __|   | |/ _ \ / _ \| |
 |  _| (_) | (__| |_| \__ \ | |_) | | (_) \__ \   | | (_) | (_) | |
 |_|  \___/ \___|\__,_|___/ |____/|_|\___/|___/   |_|\___/ \___/|_|
-
 EOF
   )";
   _cm2EchoFn "${_msg}";
+  _cm2EchoFn '';
 
   _upgrade_status_str="$(_detectUpgradeStatusFn)";
   case "${_upgrade_status_str}" in
@@ -474,7 +479,7 @@ _mainFn () {
 ## BEGIN Declare global variables {
 declare _binName _binDir _baseDir _baseName _tmpDir _tmpBiosFile \
   _usbTmpMountDir _modelStr _targetUsbDev _mibBytes _32gibMibs _dmiDecodeExe \
-  _minBiosVersion _availBiosVersion _biosDownloadUrl _installStepsMsg \
+  _minBiosVers _availBiosVers _biosDownloadUrl _installStepsMsg \
   _windowTitle _dlBiosNotAvailableMsg _dlBiosMatchesMsg \
   _dlBiosGreaterOptionalUpgradeMsg _dlBiosGreaterRequiredUpgradeMsg \
   _dlBiosLesserRequiredDowngradeMsg _insertUsbMsg _biosDownloadMsg \
@@ -491,8 +496,8 @@ _mibBytes=1048576;
 _32gibMibs=32768;
 
 # These variables will be filled in by the config scripts under kfocus-btool.d.
-_minBiosVersion='';
-_availBiosVersion='';
+_minBiosVers='';
+_availBiosVers='';
 _biosDownloadUrl='';
 _installStepsMsg='';
 ## . END Declare global variables }
