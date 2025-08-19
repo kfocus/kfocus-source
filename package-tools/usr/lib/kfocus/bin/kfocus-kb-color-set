@@ -150,8 +150,8 @@ _iteWriteStateFileFn () {
 
   _bright_str="${_configStateList[0]}";
   _hex_str="${_configStateList[1]}";
-  _enable_int="${_configStateList[2]}";
-  echo -n "${_bright_str};${_hex_str};${_enable_int:-1}" > "${_calc_file}";
+  _enable_int="${_configStateList[2]:-1}";
+  echo -n "${_bright_str};${_hex_str};${_enable_int}" > "${_calc_file}";
 }
 ## . END _iteWriteStateFileFn }
 
@@ -177,7 +177,13 @@ _stdRestoreKbdFn () {
 
   _bright_str="${_configStateList[0]}";
   _hex_str="${_configStateList[1]}";
-  _enable_int="${_configStateList[2]}";
+  _enable_int="${_configStateList[2]:-1}";
+
+  # Minimize flashing
+  if [ "${_enable_int}" = 0 ]; then
+    echo '1' > "${_stdKeyDir}/brightness" || true;
+    echo '0' > "${_stdKeyDir}/brightness" || true;
+  fi
 
   _extra_support_int="$(cat "${_stdKeyDir}/extra")";
   _zone_list=( 'color_left' 'color_center' 'color_right' );
@@ -407,7 +413,8 @@ _keepSuspendStateFn () {
     _iteWriteStateFileFn "${_iteSuspendFile}";
   else
     _stdCalcKbdStateFn;
-    _stdWriteStateFileFn "${_stdSuspendFile}";
+    # This is NOT a typo; we want to save enabled state
+    _iteWriteStateFileFn "${_stdSuspendFile}";
   fi
 }
 ## . END _keepSuspendStateFn }
@@ -443,10 +450,14 @@ _restoreStateFn () {
 _restoreSuspendStateFn () {
   if [ "${_isIte}" = 'y' ]; then
     _iteReadStateFileFn "${_iteSuspendFile}";
+    _iteWriteStateFileFn;
+    _stdRestoreKbdFn;
   else
-    _stdReadStateFileFn "${_stdSuspendFile}";
+    # This is NOT a typo; we want to read enabled state
+    _iteReadStateFileFn "${_stdSuspendFile}";
+    _stdWriteStateFileFn;
+    _stdRestoreKbdFn;
   fi
-  _restoreKbdFromConfigFn;
 }
 ## . END _restoreSuspendStateFn }
 

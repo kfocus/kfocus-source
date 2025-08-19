@@ -512,10 +512,10 @@ _chkKbdLedFn () {
   declare _model_code;
   _model_code="$(_cm2EchoModelStrFn 'code')";
 
-  if [[ "${_model_code}" =~ ^(m2g5p|zrg1)$ ]]; then
+  if [[ "${_model_code}" =~ ^(m1|m2|zr) ]]; then
     if [ -x "${_kbdColorSetExe}" ]; then
-      _cm2SetMsgFn 'Restore ITE keyboard colors';
-      if "${_escExe}" "${_kbdColorSetExe}" -r; then
+      _cm2SetMsgFn 'Restore keyboard colors';
+      if "${_escExe}" "${_kbdColorSetExe}" -K; then
         _cm2SucFn; else _cm2WarnFn;
       fi
     fi

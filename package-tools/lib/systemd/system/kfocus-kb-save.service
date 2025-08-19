@@ -9,7 +9,7 @@ Before=shutdown.target reboot.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/lib/kfocus/bin/kfocus-kb-color -w
+ExecStart=/usr/lib/kfocus/bin/kfocus-kb-color -k
 # Optional: Keeps the service active even after the script finishes
 RemainAfterExit=true
 # Optional: Log script output to systemd journal
