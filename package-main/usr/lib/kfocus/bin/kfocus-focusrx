@@ -522,7 +522,7 @@ _chkKbdLedFn () {
   fi
 
   # Set keycodes
-  if [[ "${_model_code}" =~ ^(zrg1)$ ]]; then
+  if [[ "${_model_code}" =~ ^(zrg1|m2g5p)$ ]]; then
     "${_escExe}" "${_focusRxSetExe}" 'set-keycodes';
   fi
 }

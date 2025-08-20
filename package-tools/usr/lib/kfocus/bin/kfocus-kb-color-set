@@ -452,8 +452,7 @@ _restoreStateFn () {
 _restoreSuspendStateFn () {
   if [ "${_isIte}" = 'y' ]; then
     _iteReadStateFileFn "${_iteSuspendFile}";
-    _iteWriteStateFileFn;
-    _stdRestoreKbdFn;
+    _iteRestoreKbdFn;
   else
     # This is NOT a typo; we want to read enabled state
     _iteReadStateFileFn "${_stdSuspendFile}";
