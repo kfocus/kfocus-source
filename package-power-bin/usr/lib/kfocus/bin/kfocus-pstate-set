@@ -152,6 +152,8 @@ _mainFn() {
       if [ -n "${_nvidia_list_str}" ]; then
         _disableNvidiaDevicesFn "${_gfx_mode_str}" "${_nvidia_list_str}";
       fi
+      # Create a drop file so pstate knows to disable again after resume.
+      # Like all /run files, this is cleared on boot.
       touch "${_disabledNvDropFile}" || true;
       ;;
     *) _cm2EchoFn "Unsupported argument |${_arg_str}|.";;
