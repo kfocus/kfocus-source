@@ -37,7 +37,7 @@ _assignGlobalUiVarsFn () {
   # XSMC is a placeholder for "system model code", kept short to avoid
   # wrapping issues
   _dlBiosMatchesMsg="$(cat <<EOF
-Your system's BIOS is fully up-to-date.
+The system's BIOS is fully up-to-date.
 
 If you have other XSMC systems that you would like to upgrade the BIOS of,
 you can download the most recent BIOS upgrade and flash it to a USB stick.
@@ -46,7 +46,7 @@ EOF
   )";
 
   _dlBiosGreaterOptionalUpgradeMsg="$(cat <<EOF
-Your system's BIOS is sufficiently up-to-date. A newer BIOS is available, but
+The system's BIOS is sufficiently up-to-date. A newer BIOS is available, but
 it is not critical to install the update.
 
 Would you like to download the newest XSMC BIOS and flash it to a USB stick?
@@ -54,16 +54,16 @@ EOF
   )";
 
   _dlBiosGreaterRequiredUpgradeMsg="$(cat <<EOF
-Your system's BIOS is not up-to-date. A newer BIOS is available that will
-resolve known bugs on your system.
+The system's BIOS is not up-to-date. A newer BIOS is available that will
+resolve known bugs on this system.
 
 Would you like to download the newest XSMC BIOS and flash it to a USB stick?
 EOF
   )";
 
   _dlBiosLesserRequiredDowngradeMsg="$(cat <<EOF
-Your system's BIOS is newer than the recommended version. An older version is
-available that will resolve known bugs on your system.
+The system's BIOS is newer than the recommended version. An older version is
+available that will resolve known bugs on this system.
 
 Would you like to download the recommended XSMC BIOS and flash it to a USB
 stick?
@@ -76,8 +76,10 @@ systems come with a USB drive that can be used for this purpose. IGNORE ANY
 OFFERS by the OS to 'mount' or 'open' any files or folders on the drive.
 
 IMPORTANT: THIS TOOL WILL REMOVE ALL DATA FROM THE USB DRIVE. As a precaution,
-make sure you back up any data from the USB and system drives before
+make sure to back up any data from the USB and system drives before
 proceeding.
+
+The BIOS upgrade will now be downloaded.
 
 Press <return> to continue.
 EOF
@@ -107,7 +109,6 @@ EOF
   _cm2ErrStrFn "${_msg}";
   _cleanupFn;
   # Original exit value is returned to calling routine
-  # TODO: Does this prevent the script from exiting, or is this fine?
 }
 ## . END _trapExitFn }
 
@@ -162,9 +163,7 @@ _echoHelpFn () {
 _loadConfigFn () {
   declare _config_file;
 
-  # TODO: undo
-  #_modelStr="$(_cm2EchoModelStrFn 'code')";
-  _modelStr='m2g4';
+  _modelStr="$(_cm2EchoModelStrFn 'code')";
   _config_file="${_binDir}/kfocus-btool.d/${_modelStr}.source"
 
   # If no configuration found for this model, return and leave config-specific
@@ -200,9 +199,7 @@ _detectUpgradeStatusFn () {
   declare _do_print _current_bios_vers;
 
   _do_print="${1:-}";
-  # TODO: undo
-  #_current_bios_vers="$("${_dmiDecodeExe}" 'bios-version')"
-  _current_bios_vers='1.06.07MIN29'
+  _current_bios_vers="$("${_dmiDecodeExe}" 'bios-version')"
 
   if [ -z "${_availBiosVers}" ]; then
     echo 'dl_bios_not_available';

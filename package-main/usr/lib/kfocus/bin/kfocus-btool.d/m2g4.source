@@ -4,8 +4,7 @@
 
 _minBiosVers='1.07.07MIN29';
 _availBiosVers='1.07.12MIN29';
-_biosDownloadUrl='https://kfocus-001.s3.amazonaws.com/public/'
-_biosDownloadUrl+='2022-12-08_m2g4-PD5xPNP12_MIN29.efi.zip'
+_biosDownloadUrl='https://f005.backblazeb2.com/file/kfocus-bios/m2g4_2022-12-08_PD5xPNP12_MIN29.efi.zip'
 _installStepsMsg="$(cat <<EOF
 Now that you have prepared the USB Drive, follow these steps to upgrade
 the BIOS. We recommend you print these steps for your reference.
@@ -38,6 +37,8 @@ EOF
 # See ../kfocus-btool for available global variables
 # common.2.source functions are available
 _flashBiosFn () {
+  declare _msg;
+
   _cm2EchoFn "Wipe and install to ${_targetUsbDev}";
   # See https://superuser.com/questions/332252
   {
@@ -51,12 +52,16 @@ _flashBiosFn () {
 
     echo 'a'; # Set bootable flag
     echo 'c'; # Set DOS compatibility flag
-    echo 'w'; # Set DOS compatibility flag
+    echo 'w'; # Write changes to disk
   } | fdisk -walways -Walways "${_targetUsbDev}"                 || return 1;
+
+  # Give the kernel time to refresh partition tables
+  sleep 1;
 
   mkfs.fat -F32 "${_targetUsbDev}1"                              || return 1;
   _usbTmpMountDir="${_tmpDir}/usbMount";
   mkdir -p "${_usbTmpMountDir}"                                  || return 1;
+  mount "${_targetUsbDev}1" "${_usbTmpMountDir}"                 || return 1;
   unzip -oP 'password' -d "${_usbTmpMountDir}" "${_tmpBiosFile}" || return 1;
   if ! (
     # Using 'exit' rather than return because we're in a subshell.
@@ -66,6 +71,6 @@ _flashBiosFn () {
   ); then return 1; fi
   sync "${_usbTmpMountDir}"                                      || return 1;
   umount "${_usbTmpMountDir}"                                    || return 1;
-  _cm2EchoFn "${_baseName}: Wrote M2 GEN 4 ${_availBiosVers} BIOS to USB";
-  _cm2EchoFn "Device.";
+  _msg="${_baseName}: Wrote M2 GEN 4 ${_availBiosVers} BIOS to USB Device.";
+  _cm2EchoFn "${_msg}";
 }

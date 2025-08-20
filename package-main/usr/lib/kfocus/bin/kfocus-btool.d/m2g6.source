@@ -54,6 +54,9 @@ _flashBiosFn () {
     echo 'w'; # Set DOS compatibility flag
   } | fdisk -walways -Walways "${_targetUsbDev}"                 || return 1;
 
+  # Give the kernel time to refresh partition tables
+  sleep 1;
+
   mkfs.fat -F32 "${_targetUsbDev}1"                              || return 1;
   _usbTmpMountDir="${_tmpDir}/usbMount";
   mkdir -p "${_usbTmpMountDir}"                                  || return 1;
