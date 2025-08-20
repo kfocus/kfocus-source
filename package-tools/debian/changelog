@@ -1,37 +1,12 @@
-kfocus-tools (24.04.10~beta5) noble; urgency=medium
-
-  * kfocus-kb-color-set: Remove redundant write call (#5750)
-
- -- Michael S. Mikowski <support@kfocus.org>  Tue, 19 Aug 2025 22:17:46 -0400
-
-kfocus-tools (24.04.10~beta4) noble; urgency=medium
+kfocus-tools (24.04.10) noble; urgency=medium
 
   * kfocus-kb-color.postinst: Use deb-systemd-helper (#5750)
-  * kfocus-kb-save.service: Refine to use execStop (#5750)
+  * kfocus-kb-save.service: Save keyboard color on shutdown (#5750)
   * kfocus-kb-color-set: Save modprobe file for std kbd (#5750)
-
- -- Michael S. Mikowski <support@kfocus.org>  Tue, 19 Aug 2025 20:55:53 -0400
-
-kfocus-tools (24.04.10~beta3) noble; urgency=medium
-
-  * kfocus-kb-color-set: Revise flow for std kbd toggle (#5750)
-
- -- Michael S. Mikowski <support@kfocus.org>  Tue, 19 Aug 2025 14:51:52 -0400
-
-kfocus-tools (24.04.10~beta2) noble; urgency=medium
-
-  * kfocus-kb-color-set: Analyze all calls, refactor and test in system (#5750)
-  * kfocus-kb-color-set: Add systemd unit to store color on shutdown (#5750)
+  * kfocus-kb-color-set: Revise behavior for suspend, power events (#5750)
   * kfocus-kb-color-set: Add drop file to distinguish first color enable (#5750)
 
- -- Michael S. Mikowski <support@kfocus.org>  Tue, 19 Aug 2025 02:16:01 -0400
-
-kfocus-tools (24.04.10~beta1) noble; urgency=medium
-
-  * kfocus-kb-color, -set: Support suspend / restore kbd actions (#5750)
-  * kfocus-kb-color, -set: Simplify ensable / disable actions (#5750)
-
- -- Michael S. Mikowski <support@kfocus.org>  Mon, 18 Aug 2025 02:15:55 -0400
+ -- Michael S. Mikowski <support@kfocus.org>  Wed, 20 Aug 2025 15:13:17 -0400
 
 kfocus-tools (24.04.9) noble; urgency=medium
 
