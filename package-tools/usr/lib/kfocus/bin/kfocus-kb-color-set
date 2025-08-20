@@ -415,6 +415,8 @@ _keepSuspendStateFn () {
     _stdCalcKbdStateFn;
     # This is NOT a typo; we want to save enabled state
     _iteWriteStateFileFn "${_stdSuspendFile}";
+    # Also store in modprobe file so we can have color on boot
+    _stdWriteStateFileFn; 
   fi
 }
 ## . END _keepSuspendStateFn }

@@ -374,11 +374,11 @@ _EOH03
       _cm2SetMsgFn 'Give user option to disable dGPU when on battery';
       if [ -n "${_nvidia_list_str}" ]; then
         if [ "${_doGui}" = 'n' ]; then
-          if [ -f "${_disableNvOnbatFile}" ]; then
+          if [ -f "${_disabledNvDropFile}" ]; then
             _runEscFn "${_pstateSetExe}" 'disable-nvidia'
           fi
         elif "${_cm2KdiagExe}" --yesno "${_ask_disable_msg}"; then
-          # The following call creates the _disableNvOnbatFile
+          # The following call creates the _disabledNvDropFile
           if _runEscFn "${_pstateSetExe}" 'disable-nvidia'; then
             _cm2SucStrFn 'Discrete GPU disable successfully.';
             _cm2SucFn;
@@ -404,12 +404,12 @@ _EOH03
 
 ## BEGIN Declare and set global vars {
 declare _binName _binDir _baseName  _userName _doGui _lockFile \
-  _disableNvOnbatFile _assignExeList _kbdColorSetExe _lspciExe \
+  _disabledNvDropFile _assignExeList _kbdColorSetExe _lspciExe \
   _powerSetExe _primeExe _profilesCtlExe _pstateSetExe _qdbusExe \
   _upowerExe _escExe;
 
 # Sync this with the kfocus-pstate-set value
-_disableNvOnbatFile='/run/kfocus-disable-nv-onbat';
+_disabledNvDropFile='/run/kfocus-disable-nv-onbat';
 ## . END Declare and set global vars }
 
 ## BEGIN Run main if the script is not sourced {

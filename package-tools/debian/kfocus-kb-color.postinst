@@ -16,7 +16,7 @@ _cm2WarnFn    () { _cm2EchoFn "== . END : WARN Could not ${_cm2BlockMsg}..\n\n";
 
 
 _cm2SetMsgFn 'Enable kbd color save service';
-systemctl enable kfocus-kb-save.service || true;
+deb-systemd-helper enable kfocus-kb-save.service || true;
 _cm2SucFn;
 
 # Tag to allow some debhelper commands to inject relevant code
