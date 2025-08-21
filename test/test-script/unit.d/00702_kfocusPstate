@@ -79,13 +79,14 @@ _EOT
     _powerSetExe _primeExe _profilesCtlExe _pstateSetExe _qdbusExe \
     _upowerExe _userName;
 
-  _user_name="$(id -un)";
-
   _baseName='kfocus-pstate';
-  _lockFile="/tmp/${_user_name}-kfocus-pstate.lock";
+  _doGui='y';
+  _userName="$(id -un)";
+  _lockFile="/tmp/${_baseName}-${_userName}.lock";
 
   _cm2KdiagExe='_cm2KdiagExeFn';
   _escExe='';
+  _kbdColorSetExe="${_t00TopDir}/package-tools/usr/lib/kfocus/bin/kfocus-kb-color-set";
   _lspciExe='_lspciExeFn';
   _powerSetExe='_powerSetExeFn';
   _primeExe='_primeExeFn';
