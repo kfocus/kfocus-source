@@ -10,7 +10,6 @@ CustomCursorColor=0,255,0
 UseCustomCursorColor=true
 
 [General]
-InvertSelectionColors=true
 Name=KFocus Black
 Parent=FALLBACK/
 TerminalMargin=3
