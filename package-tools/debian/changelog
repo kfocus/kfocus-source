@@ -1,3 +1,26 @@
+kfocus-tools (24.04.11~beta2) noble; urgency=medium
+
+  * kfocus-kb-color: Always enable keyboard before editing color (#5599)
+  * kfocus-kb-color-set: Add support zonekb for 4-zone and lightbar keyboards (#5599)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Wed, 27 Aug 2025 15:34:41 -0400
+
+kfocus-tools (24.04.11~beta1) noble; urgency=medium
+
+  * kfocus-kb-color.prerm: Do not disable except on remove (#5750)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Wed, 20 Aug 2025 18:13:24 -0400
+
+kfocus-tools (24.04.10) noble; urgency=medium
+
+  * kfocus-kb-color.postinst: Use deb-systemd-helper (#5750)
+  * kfocus-kb-save.service: Save keyboard color on shutdown (#5750)
+  * kfocus-kb-color-set: Save modprobe file for std kbd (#5750)
+  * kfocus-kb-color-set: Revise behavior for suspend, power events (#5750)
+  * kfocus-kb-color-set: Add drop file to distinguish first color enable (#5750)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Wed, 20 Aug 2025 15:13:17 -0400
+
 kfocus-tools (24.04.9) noble; urgency=medium
 
   * kfocus-kb-color-set: Improve enable toggle for restore (#5692)

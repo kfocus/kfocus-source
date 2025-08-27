@@ -121,6 +121,7 @@ EOE
   ## . End Get keyboard string }
 
   ## Begin Handle selection loop {
+  pkexec "${_setKbdExe}" -E 1 || true; # Always enable
   while true; do
     _kbd_stat_str="$(pkexec "${_setKbdExe}" -l)"
     IFS=';' read -r -a _kbd_stat_list <<< "${_kbd_stat_str}";
@@ -159,7 +160,7 @@ EOH
 
     if [ "${#_change_list[@]}" -eq 0 ]; then exit 0; fi
 
-    ## Begin Handle change list
+    ## Begin Handle the change list
     for _loop_line in "${_change_list[@]}"; do
       _loop_line="${_loop_line//\"/}";
       _bright_default_str="${_color_bright_str}0%";
@@ -203,7 +204,7 @@ declare _binName _binDir _baseDir _baseName \
   _assignList _setKbdExe;
 ## . END declare global vars
 
-## BEGIN Run main if script is not sourced {
+## BEGIN Run main if the script is not sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binName="$(  readlink -f "$0"       )" || exit 101;
   _binDir="$(   dirname  "${_binName}" )" || exit 101;
@@ -218,4 +219,4 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   fi
   _mainFn "$@";
 fi
-## . END Run main if script is not sourced }
+## . END Run main if the script is not sourced }

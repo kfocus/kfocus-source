@@ -4,6 +4,7 @@ prime-select query returns |nvidia|
 
 REQUEST power-set Low
 REQUEST pstate-set writeback-battery
+REQUEST powerprofilesctl set power-saver
 REQUEST kdialog --warningyesno <html>
   <style>
     table{width:100%;margin:0}
@@ -26,6 +27,11 @@ REQUEST kdialog --warningyesno <html>
 
 == BEGIN : Set writeback for battery use
 == . END : OK   Set writeback for battery use
+
+
+== BEGIN : Set preferred mode for Battery power
+ok  : Set profile to |power-saver|.
+== . END : OK   Set preferred mode for Battery power
 
 
 == BEGIN : Warn user if using iGPU when dGPU requested

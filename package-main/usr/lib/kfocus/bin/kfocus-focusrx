@@ -512,14 +512,17 @@ _chkKbdLedFn () {
   declare _model_code;
   _model_code="$(_cm2EchoModelStrFn 'code')";
 
-  if [[ "${_model_code}" =~ ^(m2g5p|zrg1)$ ]]; then
+  if [[ "${_model_code}" =~ ^(m1|m2|zr) ]]; then
     if [ -x "${_kbdColorSetExe}" ]; then
-      "${_escExe}" "${_kbdColorSetExe}" -r || return 200;
+      _cm2SetMsgFn 'Restore keyboard colors';
+      if "${_escExe}" "${_kbdColorSetExe}" -K; then
+        _cm2SucFn; else _cm2WarnFn;
+      fi
     fi
   fi
 
   # Set keycodes
-  if [[ "${_model_code}" =~ ^(zrg1)$ ]]; then
+  if [[ "${_model_code}" =~ ^(zrg1|m2g5p)$ ]]; then
     "${_escExe}" "${_focusRxSetExe}" 'set-keycodes';
   fi
 }
@@ -582,7 +585,6 @@ _EOH12
   fi
 
   if [ -f "${_xorg_file}" ]; then
-    # DEBUG _cm2EchoFn "xorg.conf exists";
     if ! [ -f "${_drop_file}" ]; then
       _do_remove_file="$(
         _cm2PromptUserFn "${_warn_str}" "${_win_title}" 'a'
@@ -1148,7 +1150,6 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _importCommonFn;
   _escExe="$(_cm2GetEscExeFn)" || exit;
   _focusRxDropDir="${_binDir}/kfocus-focusrx.d";
-  _kbdColorSetExe="${_binDir}/kfocus-kb-color-set";
   _rootTitle='FocusRx';
   _assignList=(
     "_focusRxSetExe|${_binDir}/kfocus-focusrx-set"
@@ -1158,6 +1159,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     "_chainHelperExe|${_binDir}/kfocus-chain-helper-ui||optional"
     "_firstrunExe|${_binDir}/kfocus-firstrun-bin||optional"
     "_fixIbusExe|${_binDir}/kfocus-fix-ibus||optional"
+    "_kbdColorSetExe|${_binDir}/kfocus-kb-color-set||optional"
     "_kcleanExe|${_binDir}/kfocus-kclean||optional"
     "_kscreenDoctorExe|/usr/bin/kscreen-doctor||optional"
     "_nvSettingsExe|nvidia-settings||optional"

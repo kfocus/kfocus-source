@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2021-2024 MindShare Inc.
+# Copyright 2021-2025 MindShare Inc.
 # Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
 #
 # Name   : kfocus-pstate-set
@@ -34,7 +34,7 @@ _importCommonFn() {
 ## BEGIN _writeVmWbFile {
 # Purpose  : Set VM writeback centi-secs per PowerTop
 # Arguments: (positional)
-#   1 = _arg_csec_str   writeback value in centisecs (1500 is good default)
+#   1 = _arg_csec_str   writeback value in centisecs (1500 is a good default)
 #   2 = _arg_file       writeback file path
 #
 _writeVmWbFile() {
@@ -78,8 +78,7 @@ _writeVmWbFile() {
 #                             Usually /sys/bus/pci/devices unless testing
 #
 _disableNvidiaDevicesFn() {
-  declare _arg_gfx_mode_str _arg_nvidia_list_str _arg_dev_root_dir \
-    _dev_id _dev_file;
+  declare _arg_gfx_mode_str _arg_nvidia_list_str _arg_dev_root_dir;
 
   _cm2SetMsgFn 'Power-off NV devices if not in use'
   _arg_gfx_mode_str="${1:-}"
@@ -99,8 +98,8 @@ _disableNvidiaDevicesFn() {
     return 0;
   fi
 
-  # Disable devices from the highest number to lowest.
-  # This disabled the GPU device last and avoids a system lock.
+  # Disable devices from the highest number to the lowest.
+  # This disables the GPU device last and avoids a system lock.
   #
   if [ "${_nvidia_list_str}" != '' ]; then
     echo -n "${_nvidia_list_str}" | awk '{print $1}' |sort -rn \
@@ -153,6 +152,9 @@ _mainFn() {
       if [ -n "${_nvidia_list_str}" ]; then
         _disableNvidiaDevicesFn "${_gfx_mode_str}" "${_nvidia_list_str}";
       fi
+      # Create a drop file so pstate knows to disable again after resume.
+      # Like all /run files, this is cleared on boot.
+      touch "${_disabledNvDropFile}" || true;
       ;;
     *) _cm2EchoFn "Unsupported argument |${_arg_str}|.";;
   esac
@@ -161,10 +163,13 @@ _mainFn() {
 ## . END _mainFn }
 
 ## BEGIN Declare global vars {
-declare _binName _binDir _baseDir _baseName;
+declare _binName _binDir _baseDir _baseName _disabledNvDropFile;
+
+# Sync this with the kfocus-pstate value
+_disabledNvDropFile='/run/kfocus-disable-nv-onbat';
 ## . END Declare global vars }
 
-## BEGIN Run main if script is not sourced {
+## BEGIN Run main if this script is not sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binName="$(  readlink -f "$0"       )" || exit 101;
   _binDir="$(   dirname "${_binName}"  )" || exit 101;
@@ -173,4 +178,4 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _importCommonFn;
   _mainFn "$@";
 fi
-## . END Run main if script is not sourced }
+## . END Run main if this script is not sourced }

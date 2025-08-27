@@ -12,6 +12,11 @@ REQUEST pstate-set writeback-ac
 == . END : OK   Set writeback for AC use
 
 
+== BEGIN : Set preferred mode for AC power
+ok  : Set key |balanced| matches current.
+== . END : OK   Set preferred mode for AC power
+
+
 == BEGIN : Warn user if using dGPU on battery
 ok  : Using AC Power, no action needed
 == . END : OK   Warn user if using dGPU on battery

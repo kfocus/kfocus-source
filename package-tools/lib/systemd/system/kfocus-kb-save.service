@@ -1,0 +1,21 @@
+[Unit]
+Description=Save keyboard colors on logout
+# Ensure graphical environment is up before this service is considered
+Requires=graphical.target
+# Ensure this service starts after the graphical environment
+After=graphical.target
+# Ensures this service runs before shutdown/reboot
+Before=shutdown.target reboot.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/true
+ExecStop=/usr/lib/kfocus/bin/kfocus-kb-color-set -k
+# Optional: Keeps the service active even after the script finishes
+RemainAfterExit=true
+# Optional: Log script output to systemd journal
+StandardOutput=journal
+
+[Install]
+# Link this service to the graphical target, making it active when graphical environment starts
+WantedBy=graphical.target
