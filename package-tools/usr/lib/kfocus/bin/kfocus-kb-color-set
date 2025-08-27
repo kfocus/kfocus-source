@@ -172,8 +172,8 @@ _stdCalcKbdStateFn () {
 # Purpose: Write color and brightness values to standard registers.
 #
 _stdRestoreKbdFn () {
-  declare _bright_str _hex_str _enable_int _bright_byte \
-    _zone_line _zone_list _zonekb_msg;
+  declare _bright_str _hex_str _enable_int _zone_line _bright_byte \
+    _zone_list _zonekb_str;
 
   _bright_str="${_configStateList[0]}";
   _hex_str="${_configStateList[1]}";
@@ -189,7 +189,7 @@ _stdRestoreKbdFn () {
   # Handle zonekb API (m2g6)
   if [ -f "${_stdKeyDir}/zonekb" ]; then
     # ZoneKB API - set five color zones plus brightness in one call.
-    _zonekb_msg="$(cat <<EOF
+    _zonekb_str="$(cat <<EOF
 LEFT_COLOR=0x${_hex_str}
 CENTER_COLOR=0x${_hex_str}
 RIGHT_COLOR=0x${_hex_str}
@@ -198,7 +198,7 @@ LIGHTBAR_COLOR=0x${_hex_str}
 KB_BRIGHTNESS=${_bright_byte}
 EOF
     )";
-    echo "${_zonekb_msg}" > "${_stdKeyDir}/zonekb" || true;
+    echo "${_zonekb_str}" > "${_stdKeyDir}/zonekb" || true;
     return;
   fi
 
@@ -433,9 +433,9 @@ _keepSuspendStateFn () {
     _iteWriteStateFileFn "${_iteSuspendFile}";
   else
     _stdCalcKbdStateFn;
-    # This is NOT a typo; we want to save enabled state
+    # This is NOT a typo; we want to save the enabled state
     _iteWriteStateFileFn "${_stdSuspendFile}";
-    # Also store in modprobe file so we can have color on boot
+    # Also store it in the modprobe file so we can have color on boot
     _stdWriteStateFileFn;
   fi
 }
@@ -475,7 +475,7 @@ _restoreSuspendStateFn () {
     _iteReadStateFileFn "${_iteSuspendFile}";
     _iteRestoreKbdFn;
   else
-    # This is NOT a typo; we want to read enabled state
+    # This is NOT a typo; we want to read the enabled state
     _iteReadStateFileFn "${_stdSuspendFile}";
     _stdWriteStateFileFn;
     _stdRestoreKbdFn;
