@@ -199,6 +199,7 @@ KB_BRIGHTNESS=${_bright_byte}
 EOF
     )";
     echo "${_zonekb_str}" > "${_stdKeyDir}/zonekb" || true;
+    echo "${_enable_int}" > "${_stdEnableFile}"    || true;
     return;
   fi
 

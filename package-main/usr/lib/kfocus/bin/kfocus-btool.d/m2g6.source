@@ -1,43 +1,41 @@
 #!/bin/bash
 
 # shellcheck source=../kfocus-btool
-
 _minBiosVers='1.07.07S3min29';
 _availBiosVers='1.07.07S3min29';
-# TODO: We need to actually upload the BIOS and put the link here.
-_biosDownloadUrl='TODO'
-# TODO: These instructions most likely need changed.
+_biosDownloadUrl='https://f005.backblazeb2.com/file/kfocus-bios/m2g6_2025-08-12_X56xWNx_07S3min29.efi.zip';
 _installStepsMsg="$(cat <<EOF
 Now that you have prepared the USB Drive, follow these steps to upgrade
-the BIOS. We recommend you print these steps for your reference.
+the BIOS. We recommend you print these instructions and then mark each
+step off as you complete it.
 
-* Power off the target M2 GEN 6 laptop you wish to upgrade.
+* [ ] Power off the target M2 GEN 6 laptop you wish to upgrade.
 
-* Plug the power adaptor and the freshly prepared Thumb Drive
-  into the laptop.
+* [ ] Plug the power coable into the laptop. Plug the freshly prepared
+  thumb drive into a USB-A port of the laptop.
 
-* Boot the laptop. Tap F2 to get to the BIOS screen. If you see
-  the disk decrypt screen, the login screen, or the grub menu, you've
-  missed it. Power off and try again.
+* [ ] Boot the laptop and tap F7 to get to the BIOS 'Boot Manager'
+  screen. If you see the disk decrypt screen, the login screen, or the
+  grub menu, you've missed it. Power off and try again.
 
-* Select the top-center 'Boot Manager' option and then select
-  the USB Drive. Press return to boot.
+* [ ] In the BIOS 'Boot Manager' option, press the down arrow to select
+  the USB drive thumb drive. Then press return to boot using this drive.
 
-* The system will boot into a text interface with white and
-  colored text on a black background. At the prompt, type 'flash' and
-  press return to begin the upgrade process.
+*[ ] The system will boot into a text interface with white and colored text
+  on a black background. Let it proceed to a second screen after around
+  30 seconds. At the prompt, type 'flash' and press return to
+  begin the upgrade process.
 
-* Let the upgrade process complete. This may take up to 5
-  minutes. DO NOT press the power button, DO NOT remove the USB Drive,
-  DO NOT unplug the power! The laptop will reboot by itself.
+* [ ] Let the upgrade process complete. This may take up to 5 minutes.
+  DO NOT press the power button, DO NOT remove the USB Drive, DO NOT
+  unplug the power! The laptop will reboot by itself.
 
-* Run this tool on the upgrade system to confirm the BIOS
-  is up-to-date: 'sudo ${_binName}'
+* [ ] Run this tool on the upgrade system to confirm the BIOS is
+  up-to-date: 'sudo ${_binName}'
 EOF
 )";
 
 _flashBiosFn () {
-  ## TODO: This function may be incorrect!
   _cm2EchoFn "Wipe and install to ${_targetUsbDev}";
   # See https://superuser.com/questions/332252
   {
