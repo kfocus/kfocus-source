@@ -1,4 +1,5 @@
 #!/bin/bash
+#bashsupport disable=BP1001
 #
 # Copyright 2019-2024 MindShare Inc.
 # Written for the Kubuntu Focus by:
@@ -186,7 +187,7 @@ _cm2AskExitFn () {
   _exit_str="${2:-}";
 
   if [ -z "${_exit_str}" ]; then
-    _exit_str='Press <return> to finish';
+    _exit_str='Press [ Enter ] to finish';
   fi
 
   _cm2NechoFn "${_exit_str} ";
@@ -658,7 +659,7 @@ _cm2PromptUserFn () {
         # bashsupport disable=BP2002
         _prompt_str="$(_cm2StripTagsFn "${_prompt_str}" 'y')";
         _cm2EchoFn "${_prompt_str}\n";
-        _cmd_list=('read' '-rp' 'Press <return> to continue. ');
+        _cmd_list=('read' '-rp' 'Press [ Enter ] to continue. ');
         ;;
       [rd])
         # TODO 2024-04-10 warm mmikowski: Add radio list method

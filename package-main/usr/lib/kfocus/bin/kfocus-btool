@@ -4,7 +4,7 @@
 # Written for the Kubuntu Focus by Michael Mikowski and Aaron Rainbolt
 #
 # Name    : kfocus-btool
-# Purpose : Run-as-root utility to get and set bios tool values
+# Purpose : Run-as-root Focus BIOS Tool
 # License : GPL v2
 # Run By  : User
 # Spec    : 2455,2506,5740
@@ -30,72 +30,93 @@ _importCommonFn () {
 
 ## BEGIN _assignGlobalUiVarsFn {
 _assignGlobalUiVarsFn () {
-  _windowTitle='Focus Bios Tool';
+  _windowTitle='Focus BIOS Tool';
 
   _dlBiosNotAvailableMsg='No BIOS downloads are available for this system.';
 
-  # XSMC is a placeholder for "system model code", kept short to avoid
-  # wrapping issues
+  # XXXSMLXXX is a placeholder for "system model label".
+  # It is the same length of model labels to minimize wrapping issues.
   _dlBiosMatchesMsg="$(cat <<EOF
-The system's BIOS is fully up-to-date.
+The BIOS of this XXXSMLXXX system is up-to-date.
 
-If you have other XSMC systems that you would like to upgrade the BIOS of,
-you can download the most recent BIOS upgrade and flash it to a USB stick.
+If you want to update the BIOS of another XXXSMLXXX system, this tool
+can download the recommended BIOS image, flash it onto a 1 GB or larger
+USB drive, and show you the steps to complete the update.
+
 Would you like to do this now?
 EOF
   )";
 
   _dlBiosGreaterOptionalUpgradeMsg="$(cat <<EOF
-The system's BIOS is sufficiently up-to-date. A newer BIOS is available, but
-it is not critical to install the update.
+The BIOS of this XXXSMLXXX system is up-to-date. A newer BIOS is available,
+but it is not critical to install it.
 
-Would you like to download the newest XSMC BIOS and flash it to a USB stick?
+XXX_UPGRADE_REASON_XXX
+
+If you want to update the BIOS, this tool can download the recommended
+BIOS image, flash it onto a 1 GB or larger USB drive, and show you the
+steps to complete the update.
+
+Would you like to do this now?
 EOF
   )";
 
   _dlBiosGreaterRequiredUpgradeMsg="$(cat <<EOF
 The system's BIOS is not up-to-date. A newer BIOS is available that will
-resolve known bugs on this system.
+resolve known issues on this system:
 
-Would you like to download the newest XSMC BIOS and flash it to a USB stick?
+XXX_UPGRADE_REASON_XXX
+
+We STRONGLY recommend you update the BIOS. This tool can download the
+recommended BIOS image, flash it onto a 1 GB or larger USB drive, and show
+you the steps to complete the update.
+
+Would you like to do this now?
 EOF
   )";
 
   _dlBiosLesserRequiredDowngradeMsg="$(cat <<EOF
-The system's BIOS is newer than the recommended version. An older version is
-available that will resolve known bugs on this system.
+The system's BIOS is newer than the recommended version. An older version
+is available that may resolve known issues on this system:
 
-Would you like to download the recommended XSMC BIOS and flash it to a USB
-stick?
+XXX_UPGRADE_REASON_XXX
+
+If you suspect the BIOS is causing issues, you may with to downgrade it.
+This tool can download the recommended BIOS image, flash it onto a 1 GB or
+larger USB drive, and show you the steps to complete the update.
+
+Would you like to do this now?
 EOF
   )";
 
   _insertUsbMsg="$(cat <<EOF
-Please insert an 8+ GB USB on which to install the BIOS upgrade. Kubuntu Focus
-systems come with a USB drive that can be used for this purpose. IGNORE ANY
-OFFERS by the OS to 'mount' or 'open' any files or folders on the drive.
+Please insert an 1+ GB USB on which to install the BIOS update. Kubuntu
+Focus systems come with a USB drive that can be used for this purpose.
+IGNORE ANY OFFERS by the OS to 'mount' or 'open' any files or folders on
+the drive.
 
-IMPORTANT: THIS TOOL WILL REMOVE ALL DATA FROM THE USB DRIVE. As a precaution,
-make sure to back up any data from the USB and system drives before
-proceeding.
+IMPORTANT: THIS TOOL WILL REMOVE ALL DATA FROM THE USB DRIVE. As a
+precaution, make sure to back up any data from the USB and system drives
+before proceeding.
 
-The BIOS upgrade will now be downloaded.
+Please also ensure an active internet connection so this tool can download
+the recommended BIOS image.
 
-Press <return> to continue.
+Press [ Enter ] to continue.
 EOF
   )";
 
   _biosDownloadMsg='Downloading BIOS...';
   _biosDownloadEndMsg='BIOS download complete.';
 
-  _biosFlashMsg='Flashing BIOS to USB stick...';
-  _biosFlashEndMsg='Finished flashing BIOS to USB stick.';
-  _biosFlashErrMsg='Failed to flash BIOS to USB stick!';
+  _biosFlashMsg='Flashing BIOS to USB drive...';
+  _biosFlashEndMsg='Successfully flashed BIOS to USB drive.';
+  _biosFlashErrMsg='Failed to flash BIOS to USB drive!';
 
-  _cancelUpgradeMsg='BIOS upgrade cancelled.';
+  _cancelUpgradeMsg='BIOS update cancelled.';
 
-  _toolEndMsg='The Focus Bios Tool has finished running.';
-  _toolEndErrMsg='The Focus Bios Tool encountered errors and has failed.';
+  _toolEndMsg='The Focus BIOS Tool has finished running.';
+  _toolEndErrMsg='The Focus BIOS Tool encountered errors and failed.';
 }
 ## . END _assignGlobalUiVarsFn }
 
@@ -163,8 +184,9 @@ _echoHelpFn () {
 _loadConfigFn () {
   declare _config_file;
 
-  _modelStr="$(_cm2EchoModelStrFn 'code')";
-  _config_file="${_binDir}/kfocus-btool.d/${_modelStr}.source"
+  _modelCode="$(_cm2EchoModelStrFn 'code')";
+  _modelLabel="$(_cm2EchoModelStrFn 'label')";
+  _config_file="${_binDir}/kfocus-btool.d/${_modelCode}.source"
 
   # If no configuration found for this model, return and leave config-specific
   # globals empty
@@ -174,7 +196,7 @@ _loadConfigFn () {
 
   # shellcheck source=kfocus-btool.d/m2g6.source
   source "${_config_file}" || {
-    _cm2ErrStrFn "Could not source config file for |${_modelStr}|!";
+    _cm2ErrStrFn "Could not source config file for |${_modelCode}|!";
     exit 1;
   }
 }
@@ -196,10 +218,9 @@ _loadConfigFn () {
 # Returns   : none
 #
 _detectUpgradeStatusFn () {
-  declare _do_print _current_bios_vers;
+  declare _current_bios_vers;
 
-  _do_print="${1:-}";
-  _current_bios_vers="$("${_dmiDecodeExe}" 'bios-version')"
+  _current_bios_vers="$("${_dmiDecodeExe}" -s 'bios-version')";
 
   if [ -z "${_availBiosVers}" ]; then
     echo 'dl_bios_not_available';
@@ -211,9 +232,10 @@ _detectUpgradeStatusFn () {
     return 0;
   fi
 
-  if _cm2TestVersFn "${_availBiosVers}" "${_current_bios_vers}"; then
+  # BIOS comparison is done in lowercase to ensure proper order.
+  if _cm2TestVersFn "${_availBiosVers,,}" "${_current_bios_vers,,}"; then
     if [ "${_current_bios_vers}" = "${_minBiosVers}" ] \
-      || _cm2TestVersFn "${_current_bios_vers}" "${_minBiosVers}"; then
+      || _cm2TestVersFn "${_current_bios_vers,,}" "${_minBiosVers,,}"; then
       echo 'dl_bios_greater_optional_upgrade';
     else
       echo 'dl_bios_greater_required_upgrade';
@@ -221,7 +243,7 @@ _detectUpgradeStatusFn () {
     return 0;
   fi
 
-  if _testVers "${_current_bios_vers}" "${_availBiosVers}"; then
+  if _cm2TestVersFn "${_current_bios_vers,,}" "${_availBiosVers,,}"; then
     echo 'dl_bios_lesser_required_downgrade';
     return 0;
   fi
@@ -236,7 +258,7 @@ _downloadBiosFn () {
   _cm2EchoFn "${_biosDownloadMsg}";
   _tmpBiosFile="${_tmpDir}/kfocus-bios-download";
   wget "${_biosDownloadUrl}" -O "${_tmpBiosFile}" || return 1;
-  _cm2EchoFn "${_biosDownloadEndMsg}";
+  _cm2EchoFn "${_biosDownloadEndMsg}\n\n";
 }
 ## . END _downloadBiosFn }
 
@@ -290,7 +312,7 @@ EOF
       _found_list+=( "${_dev_file};${_mib_int}" );
     done # end dev-block
 
-    _cm2EchoFn 'Scan complete.';
+    _cm2EchoFn 'Scan complete.\n\n';
 
     _cm2EchoFn 'Choose an action:';
     _cm2EchoFn '=================';
@@ -378,10 +400,12 @@ _beginUpgradeFn () {
 
   _cm2EchoFn "${_biosFlashMsg}";
   _flashBiosFn || {
-    _cm2EchoFn "${_biosFlashErrMsg}"
+    _cm2EchoFn "${_biosFlashErrMsg}\n\n"
     return 1;
   }
-  _cm2EchoFn "${_biosFlashEndMsg}";
+  _cm2EchoFn "Wrote ${_modelLabel} BIOS ${_availBiosVers} to ";
+  _cm2EchoFn "USB drive ${_targetUsbDev}. It is now safe to remove.";
+  _cm2EchoFn "${_biosFlashEndMsg}\n\n";
 
   _cm2EchoFn "${_installStepsMsg}";
 }
@@ -409,28 +433,32 @@ EOF
       _cm2EchoFn "${_dlBiosNotAvailableMsg}";
       ;;
     'dl_bios_matches')
-      _msg="${_dlBiosMatchesMsg//XSMC/"${_modelStr}"}";
+      _msg="${_dlBiosMatchesMsg//XXXSMLXXX/"${_modelLabel}"}";
+      _msg="${_msg//XXX_UPGRADE_REASON_XXX/"${_upgradeReasonMsg}"}";
       _reply="$(_cm2PromptUserFn "${_msg}" "${_windowTitle}" 'a')";
       if [ "${_reply}" = 'y' ]; then
         _beginUpgradeFn || _is_error_hit='y';
       fi
       ;;
     'dl_bios_greater_optional_upgrade')
-      _msg="${_dlBiosGreaterOptionalUpgradeMsg//XSMC/"${_modelStr}"}";
+      _msg="${_dlBiosGreaterOptionalUpgradeMsg//XXXSMLXXX/"${_modelLabel}"}";
+      _msg="${_msg//XXX_UPGRADE_REASON_XXX/"${_upgradeReasonMsg}"}";
       _reply="$(_cm2PromptUserFn "${_msg}" "${_windowTitle}" 'a')";
       if [ "${_reply}" = 'y' ] ; then
         _beginUpgradeFn || _is_error_hit='y';
       fi
       ;;
     'dl_bios_greater_required_upgrade')
-      _msg="${_dlBiosGreaterRequiredUpgradeMsg//XSMC/"${_modelStr}"}";
+      _msg="${_dlBiosGreaterRequiredUpgradeMsg//XXXSMLXXX/"${_modelLabel}"}";
+      _msg="${_msg//XXX_UPGRADE_REASON_XXX/"${_upgradeReasonMsg}"}";
       _reply="$(_cm2PromptUserFn "${_msg}" "${_windowTitle}" 'a')";
       if [ "${_reply}" = 'y' ] ; then
         _beginUpgradeFn || _is_error_hit='y';
       fi
       ;;
     'dl_bios_lesser_required_downgrade')
-      _msg="${_dlBiosLesserRequiredDowngradeMsg//XSMC/"${_modelStr}"}";
+      _msg="${_dlBiosLesserRequiredDowngradeMsg//XXXSMLXXX/"${_modelLabel}"}";
+      _msg="${_msg//XXX_UPGRADE_REASON_XXX/"${_upgradeReasonMsg}"}";
       _reply="$(_cm2PromptUserFn "${_msg}" "${_windowTitle}" 'a')";
       if [ "${_reply}" = 'y' ] ; then
         _beginUpgradeFn || _is_error_hit='y';
@@ -442,6 +470,7 @@ EOF
       ;;
   esac
 
+  _cm2EchoFn '\n\n';
   if [ "${_is_error_hit}" = 'y' ]; then
     _cm2PromptUserFn "${_toolEndErrMsg}" "${_windowTitle}" 'p';
     _exitCleanFn 1;
@@ -475,18 +504,20 @@ _mainFn () {
 
 ## BEGIN Declare global variables {
 declare _binName _binDir _baseDir _baseName _tmpDir _tmpBiosFile \
-  _usbTmpMountDir _modelStr _targetUsbDev _mibBytes _32gibMibs _dmiDecodeExe \
-  _minBiosVers _availBiosVers _biosDownloadUrl _installStepsMsg \
-  _windowTitle _dlBiosNotAvailableMsg _dlBiosMatchesMsg \
-  _dlBiosGreaterOptionalUpgradeMsg _dlBiosGreaterRequiredUpgradeMsg \
-  _dlBiosLesserRequiredDowngradeMsg _insertUsbMsg _biosDownloadMsg \
-  _biosDownloadEndMsg _biosFlashMsg _biosFlashEndMsg _biosFlashErrMsg \
-  _cancelUpgradeMsg _toolEndMsg _toolEndErrMsg;
+  _usbTmpMountDir _modelCode _modelLabel _targetUsbDev _mibBytes _32gibMibs \
+  _dmiDecodeExe _minBiosVers _availBiosVers _biosDownloadUrl \
+  _upgradeReasonMsg _installStepsMsg _windowTitle _dlBiosNotAvailableMsg \
+  _dlBiosMatchesMsg _dlBiosGreaterOptionalUpgradeMsg \
+  _dlBiosGreaterRequiredUpgradeMsg _dlBiosLesserRequiredDowngradeMsg \
+  _biosDownloadMsg _biosDownloadEndMsg _insertUsbMsg _biosFlashMsg \
+  _biosFlashEndMsg _biosFlashErrMsg _cancelUpgradeMsg _toolEndMsg \
+  _toolEndErrMsg;
 
 _tmpDir='';
 _tmpBiosFile='';
 _usbTmpMountDir='';
-_modelStr='';
+_modelCode='';
+_modelLabel='';
 _targetUsbDev='';
 
 _mibBytes=1048576;
@@ -496,6 +527,7 @@ _32gibMibs=32768;
 _minBiosVers='';
 _availBiosVers='';
 _biosDownloadUrl='';
+_upgradeReasonMsg='';
 _installStepsMsg='';
 ## . END Declare global variables }
 

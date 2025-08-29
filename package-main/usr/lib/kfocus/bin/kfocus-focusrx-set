@@ -185,13 +185,12 @@ _purgeRollbackFn () {
 #
 _chkBiosUpdateFn () {
   declare _btool_check_str;
-
+  if [ -z "${_btoolExe}" ]; then exit 0; fi
   _btool_check_str="$("${_btoolExe}" '-d')";
   if [ "${_btool_check_str}" = 'dl_bios_greater_required_upgrade' ] \
     || [ "${_btool_check_str}" = 'dl_bios_lesser_required_downgrade' ]; then
     exit 1;
   fi
-
   exit 0;
 }
 ## . END _chkBiosUpdateFn }

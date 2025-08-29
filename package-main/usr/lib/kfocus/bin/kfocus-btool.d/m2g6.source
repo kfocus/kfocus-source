@@ -4,38 +4,66 @@
 _minBiosVers='1.07.07S3min29';
 _availBiosVers='1.07.07S3min29';
 _biosDownloadUrl='https://f005.backblazeb2.com/file/kfocus-bios/m2g6_2025-08-12_X56xWNx_07S3min29.efi.zip';
+_upgradeReasonMsg="$(cat <<'EOF'
+BIOS VERSION 1.07.07S3MIN29:
+
+  * Enables full keyboard and lightbar color control.
+  * Enables S3 deep sleep mode. This results in a more complete suspend
+    that uses less battery, stops the fans immediately, and extinguishes
+    the power light. Open the laptop lid or press the power button to
+    resume from deep sleep.
+  * Passes all 498 KFocus KPCs 2025-08-14, log f15052b8.
+
+EOF
+)";
+
 _installStepsMsg="$(cat <<EOF
-Now that you have prepared the USB Drive, follow these steps to upgrade
+Now that we have prepared the USB Drive, follow these steps to update
 the BIOS. We recommend you print these instructions and then mark each
-step off as you complete it.
+step off as it is complete it.
 
-* [ ] Power off the target M2 GEN 6 laptop you wish to upgrade.
+  * [ ] Power off the target M2 GEN 6 laptop to update.
 
-* [ ] Plug the power coable into the laptop. Plug the freshly prepared
-  thumb drive into a USB-A port of the laptop.
+  * [ ] Plug the power cable into the laptop. Also, insert the freshly
+    prepared thumb drive into a USB-A port of the laptop.
 
-* [ ] Boot the laptop and tap F7 to get to the BIOS 'Boot Manager'
-  screen. If you see the disk decrypt screen, the login screen, or the
-  grub menu, you've missed it. Power off and try again.
+  * [ ] Boot the laptop and tap F7 to get to the BIOS 'Boot Manager'
+    screen. If you see the disk decrypt screen, the login screen, or the
+    grub menu, you've missed it. Power off and try again.
 
-* [ ] In the BIOS 'Boot Manager' option, press the down arrow to select
-  the USB drive thumb drive. Then press return to boot using this drive.
+  * [ ] In the BIOS 'Boot Manager' option, press the down arrow to
+    select the USB drive thumb drive. Then press [ Enter ]to boot using
+    this drive.
 
-*[ ] The system will boot into a text interface with white and colored text
-  on a black background. Let it proceed to a second screen after around
-  30 seconds. At the prompt, type 'flash' and press return to
-  begin the upgrade process.
+  * [ ] The BIOS updater will boot into a text interface with white and
+    colored text on a black background. Wait for the 5-second timer to
+    expire, and you will be shown a second screen that prompts "type
+    flash to start BIOS update". Type 'flash' and press [ Enter ] to
+    begin the update process.
 
-* [ ] Let the upgrade process complete. This may take up to 5 minutes.
-  DO NOT press the power button, DO NOT remove the USB Drive, DO NOT
-  unplug the power! The laptop will reboot by itself.
+  * [ ] During the update process, the laptop will show multiple
+    progress bars while loading firmware. It will then reboot into a
+    black screen with red and white text and a single progress bar. Once
+    the progress bar completes, the laptop will power down.
 
-* [ ] Run this tool on the upgrade system to confirm the BIOS is
-  up-to-date: 'sudo ${_binName}'
+    DO NOT INTERRUPT THE UPDATE PROCESS! DO NOT press the power button.
+    DO NOT remove the USB Drive. DO NOT unplug the power. Only after
+    the system stays off for 30 seconds or reboots into the Kubuntu OS
+    is it safe to take any of those actions.
+
+  * [ ] The first boot after the update will take longer. You may also
+    need to boot twice. Once you have signed-in, you should notice that
+    the keyboard colors are more uniform. Also, suspending the system
+    (Start Menu > Sleep) should extinguish the power, turn off the fans
+    promptly, and use less idle power.
+
+  * [ ] Run 'sudo ${_baseName} -d' in a terminal to see
+    'dl_bios_matches'. This confirms the BIOS is up-to-date.
 EOF
 )";
 
 _flashBiosFn () {
+  declare _target_usb_part_dev;
   _cm2EchoFn "Wipe and install to ${_targetUsbDev}";
   # See https://superuser.com/questions/332252
   {
@@ -49,24 +77,28 @@ _flashBiosFn () {
 
     echo 'a'; # Set bootable flag
     echo 'c'; # Set DOS compatibility flag
-    echo 'w'; # Set DOS compatibility flag
-  } | fdisk -walways -Walways "${_targetUsbDev}"                 || return 1;
+    echo 'w'; # Write partition table to disk
+  } | fdisk -walways -Walways "${_targetUsbDev}"         || return 1;
 
   # Give the kernel time to refresh partition tables
   sleep 1;
 
-  mkfs.fat -F32 "${_targetUsbDev}1"                              || return 1;
+  # Make sure we have a sane dev path
+  [[ "${_targetUsbDev}" =~ ^/dev/sd ]]                   || return 1;
+  _target_usb_part_dev="${_targetUsbDev}1";
+  mkfs.fat -F32 "${_target_usb_part_dev}"                || return 1;
+
   _usbTmpMountDir="${_tmpDir}/usbMount";
-  mkdir -p "${_usbTmpMountDir}"                                  || return 1;
-  unzip -oP 'password' -d "${_usbTmpMountDir}" "${_tmpBiosFile}" || return 1;
-  if ! (
-    # Using 'exit' rather than return because we're in a subshell.
-    cd "${_usbTmpMountDir}"                                      || exit 1;
-    mkdir -p  'EFI/Insyde'                                       || exit 1;
-    chmod 775 'EFI/Insyde'                                       || exit 1;
-  ); then return 1; fi
-  sync "${_usbTmpMountDir}"                                      || return 1;
-  umount "${_usbTmpMountDir}"                                    || return 1;
-  _cm2EchoFn "${_baseName}: Wrote M2 GEN 6 ${_availBiosVers} BIOS to USB";
-  _cm2EchoFn "Device.";
+  mkdir -p "${_usbTmpMountDir}"                          || return 1;
+  mount "${_target_usb_part_dev}" "${_usbTmpMountDir}"   || return 1;
+  mountpoint "${_usbTmpMountDir}"                        || return 1;
+
+  cd "${_tmpDir}"                                        || return 1;
+  unzip -oP 'password' "${_tmpBiosFile}"                 || return 1;
+  mv "${_tmpDir}"/X56xWNx_07S3min29.efi/* \
+    "${_usbTmpMountDir}/"                                || return 1;
+
+  sleep 1;
+  sync "${_usbTmpMountDir}"                              || return 1;
+  umount "${_usbTmpMountDir}"                            || return 1;
 }
