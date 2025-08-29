@@ -92,7 +92,7 @@ _runTestFn () {
   #   depended on, then parse out the version. Then if that changes, this
   #   will automatically update.
   #
-  if [ "$(_cm2EchoModelStrFn 'config_code')" = 'm2g6' ]; then
+  if [[ "$(_cm2EchoModelStrFn 'config_code')" =~ ^(m2g6|zrg1)$ ]]; then
     _nvDriverVers='570'; _nvDriverSuffix='570-open';
     _expectDir="${_t00ExpectDir}/edge";
   else
