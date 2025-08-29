@@ -32,14 +32,20 @@ _importCommonFn () {
 _assignGlobalUiVarsFn () {
   _windowTitle='Focus BIOS Tool';
 
-  _dlBiosNotAvailableMsg='No BIOS downloads are available for this system.';
-
-  # XXXSMLXXX is a placeholder for "system model label".
+  # XX_SML_XX is a placeholder for "system model label".
+  # XX_CURBIOS_XX is a placeholder for "current, installed bios".
   # It is the same length of model labels to minimize wrapping issues.
-  _dlBiosMatchesMsg="$(cat <<EOF
-The BIOS of this XXXSMLXXX system is up-to-date.
+  _dlBiosNotAvailableMsg="$(cat <<EOF
+The installed BIOS, version XX_CURBIOS_XX, is the latest available for
+this XX_SML_XX system.
+EOF
+  )";
 
-If you want to update the BIOS of another XXXSMLXXX system, this tool
+  _dlBiosMatchesMsg="$(cat <<EOF
+The installed BIOS, version XX_CURBIOS_XX, is the latest available for
+this XX_SML_XX system.
+
+If you want to update the BIOS of another XX_SML_XX system, this tool
 can download the recommended BIOS image, flash it onto a 1 GB or larger
 USB drive, and show you the steps to complete the update.
 
@@ -48,8 +54,10 @@ EOF
   )";
 
   _dlBiosGreaterOptionalUpgradeMsg="$(cat <<EOF
-The BIOS of this XXXSMLXXX system is up-to-date. A newer BIOS is available,
-but it is not critical to install it.
+The installed BIOS, version XX_CURBIOS_XX, is sufficiently up-to-date
+for this XX_SML_XX system. A newer BIOS is available, but it is not
+necessary to install it. If your system is working well, we recommend
+leaving it alone.
 
 XXX_UPGRADE_REASON_XXX
 
@@ -62,28 +70,29 @@ EOF
   )";
 
   _dlBiosGreaterRequiredUpgradeMsg="$(cat <<EOF
-The system's BIOS is not up-to-date. A newer BIOS is available that will
-resolve known issues on this system:
+The installed BIOS, version XX_CURBIOS_XX, is NOT the latest available
+for this XX_SML_XX system. A newer BIOS is available that will resolve
+known issues.
 
 XXX_UPGRADE_REASON_XXX
 
 We STRONGLY recommend you update the BIOS. This tool can download the
-recommended BIOS image, flash it onto a 1 GB or larger USB drive, and show
-you the steps to complete the update.
+recommended BIOS image, flash it onto a 1 GB or larger USB drive, and
+show you the steps to complete the update.
 
 Would you like to do this now?
 EOF
   )";
 
   _dlBiosLesserRequiredDowngradeMsg="$(cat <<EOF
-The system's BIOS is newer than the recommended version. An older version
-is available that may resolve known issues on this system:
+The installed BIOS, version XX_CURBIOS_XX, is NEWER than the recommended
+version for this XX_SML_XX system.
 
 XXX_UPGRADE_REASON_XXX
 
-If you suspect the BIOS is causing issues, you may with to downgrade it.
-This tool can download the recommended BIOS image, flash it onto a 1 GB or
-larger USB drive, and show you the steps to complete the update.
+If you suspect the installed BIOS is causing issues, you may downgrade
+it. This tool can download the recommended BIOS image, flash it onto a
+1 GB or larger USB drive, and show you the steps to complete the update.
 
 Would you like to do this now?
 EOF
@@ -99,8 +108,8 @@ IMPORTANT: THIS TOOL WILL REMOVE ALL DATA FROM THE USB DRIVE. As a
 precaution, make sure to back up any data from the USB and system drives
 before proceeding.
 
-Please also ensure an active internet connection so this tool can download
-the recommended BIOS image.
+Please also ensure an active internet connection so this tool can
+download the recommended BIOS image.
 
 Press [ Enter ] to continue.
 EOF
@@ -128,8 +137,8 @@ ${_baseName}: Error encountered, operation was not successful!
 EOF
   )";
   _cm2ErrStrFn "${_msg}";
+  # The original exit value is returned to calling routine
   _cleanupFn;
-  # Original exit value is returned to calling routine
 }
 ## . END _trapExitFn }
 
@@ -153,7 +162,7 @@ _cleanupFn () {
 _exitCleanFn () {
   declare _int;
   _int="$(_cm2EchoIntFn "${1:-0}")";
-  trap '' EXIT; # Ignore EXIT signal. 'trap - EXIT' would revert to default.
+  trap '' EXIT; # Ignore EXIT signal; 'trap - EXIT' reverts to default.
   _cleanupFn;
   exit "${_int}";
 }
@@ -204,7 +213,7 @@ _loadConfigFn () {
 
 ## BEGIN _detectUpgradeStatusFn {
 # Summary   : _detectUpgradeStatusFn
-# Purpose   : Detects if an upgrade is available for the current system, and if
+# Purpose   : Detects if an upgrade is available for the current system and if
 #             the user needs to run the upgrade to fix common system issues.
 # Example   : _detectUpgradeStatusFn
 # Arguments : none
@@ -218,24 +227,20 @@ _loadConfigFn () {
 # Returns   : none
 #
 _detectUpgradeStatusFn () {
-  declare _current_bios_vers;
-
-  _current_bios_vers="$("${_dmiDecodeExe}" -s 'bios-version')";
-
   if [ -z "${_availBiosVers}" ]; then
     echo 'dl_bios_not_available';
     return 0;
   fi
 
-  if [ "${_current_bios_vers}" = "${_availBiosVers}" ]; then
+  if [ "${_currentBiosVers}" = "${_availBiosVers}" ]; then
     echo 'dl_bios_matches';
     return 0;
   fi
 
   # BIOS comparison is done in lowercase to ensure proper order.
-  if _cm2TestVersFn "${_availBiosVers,,}" "${_current_bios_vers,,}"; then
-    if [ "${_current_bios_vers}" = "${_minBiosVers}" ] \
-      || _cm2TestVersFn "${_current_bios_vers,,}" "${_minBiosVers,,}"; then
+  if _cm2TestVersFn "${_availBiosVers,,}" "${_currentBiosVers,,}"; then
+    if [ "${_currentBiosVers}" = "${_minBiosVers}" ] \
+      || _cm2TestVersFn "${_currentBiosVers,,}" "${_minBiosVers,,}"; then
       echo 'dl_bios_greater_optional_upgrade';
     else
       echo 'dl_bios_greater_required_upgrade';
@@ -243,7 +248,7 @@ _detectUpgradeStatusFn () {
     return 0;
   fi
 
-  if _cm2TestVersFn "${_current_bios_vers,,}" "${_availBiosVers,,}"; then
+  if _cm2TestVersFn "${_currentBiosVers,,}" "${_availBiosVers,,}"; then
     echo 'dl_bios_lesser_required_downgrade';
     return 0;
   fi
@@ -407,7 +412,7 @@ _beginUpgradeFn () {
   _cm2EchoFn "USB drive ${_targetUsbDev}. It is now safe to remove.";
   _cm2EchoFn "${_biosFlashEndMsg}\n\n";
 
-  _cm2EchoFn "${_installStepsMsg}";
+  _cm2EchoFn "${_installStepsMsg}\n\n";
 }
 ## . END _beginUpgradeFn }
 
@@ -430,10 +435,13 @@ EOF
   _upgrade_status_str="$(_detectUpgradeStatusFn)";
   case "${_upgrade_status_str}" in
     'dl_bios_not_available')
-      _cm2EchoFn "${_dlBiosNotAvailableMsg}";
+      _msg="${_dlBiosNotAvailableMsg//XX_SML_XX/"${_modelLabel}"}";
+      _msg="${_msg//XX_CURBIOS_XX/"${_currentBiosVers}"}";
+      _cm2EchoFn "${_msg}";
       ;;
     'dl_bios_matches')
-      _msg="${_dlBiosMatchesMsg//XXXSMLXXX/"${_modelLabel}"}";
+      _msg="${_dlBiosMatchesMsg//XX_SML_XX/"${_modelLabel}"}";
+      _msg="${_msg//XX_CURBIOS_XX/"${_currentBiosVers}"}";
       _msg="${_msg//XXX_UPGRADE_REASON_XXX/"${_upgradeReasonMsg}"}";
       _reply="$(_cm2PromptUserFn "${_msg}" "${_windowTitle}" 'a')";
       if [ "${_reply}" = 'y' ]; then
@@ -441,7 +449,8 @@ EOF
       fi
       ;;
     'dl_bios_greater_optional_upgrade')
-      _msg="${_dlBiosGreaterOptionalUpgradeMsg//XXXSMLXXX/"${_modelLabel}"}";
+      _msg="${_dlBiosGreaterOptionalUpgradeMsg//XX_SML_XX/"${_modelLabel}"}";
+      _msg="${_msg//XX_CURBIOS_XX/"${_currentBiosVers}"}";
       _msg="${_msg//XXX_UPGRADE_REASON_XXX/"${_upgradeReasonMsg}"}";
       _reply="$(_cm2PromptUserFn "${_msg}" "${_windowTitle}" 'a')";
       if [ "${_reply}" = 'y' ] ; then
@@ -449,7 +458,8 @@ EOF
       fi
       ;;
     'dl_bios_greater_required_upgrade')
-      _msg="${_dlBiosGreaterRequiredUpgradeMsg//XXXSMLXXX/"${_modelLabel}"}";
+      _msg="${_dlBiosGreaterRequiredUpgradeMsg//XX_SML_XX/"${_modelLabel}"}";
+      _msg="${_msg//XX_CURBIOS_XX/"${_currentBiosVers}"}";
       _msg="${_msg//XXX_UPGRADE_REASON_XXX/"${_upgradeReasonMsg}"}";
       _reply="$(_cm2PromptUserFn "${_msg}" "${_windowTitle}" 'a')";
       if [ "${_reply}" = 'y' ] ; then
@@ -457,7 +467,8 @@ EOF
       fi
       ;;
     'dl_bios_lesser_required_downgrade')
-      _msg="${_dlBiosLesserRequiredDowngradeMsg//XXXSMLXXX/"${_modelLabel}"}";
+      _msg="${_dlBiosLesserRequiredDowngradeMsg//XX_SML_XX/"${_modelLabel}"}";
+      _msg="${_msg//XX_CURBIOS_XX/"${_currentBiosVers}"}";
       _msg="${_msg//XXX_UPGRADE_REASON_XXX/"${_upgradeReasonMsg}"}";
       _reply="$(_cm2PromptUserFn "${_msg}" "${_windowTitle}" 'a')";
       if [ "${_reply}" = 'y' ] ; then
@@ -470,7 +481,6 @@ EOF
       ;;
   esac
 
-  _cm2EchoFn '\n\n';
   if [ "${_is_error_hit}" = 'y' ]; then
     _cm2PromptUserFn "${_toolEndErrMsg}" "${_windowTitle}" 'p';
     _exitCleanFn 1;
@@ -505,9 +515,9 @@ _mainFn () {
 ## BEGIN Declare global variables {
 declare _binName _binDir _baseDir _baseName _tmpDir _tmpBiosFile \
   _usbTmpMountDir _modelCode _modelLabel _targetUsbDev _mibBytes _32gibMibs \
-  _dmiDecodeExe _minBiosVers _availBiosVers _biosDownloadUrl \
-  _upgradeReasonMsg _installStepsMsg _windowTitle _dlBiosNotAvailableMsg \
-  _dlBiosMatchesMsg _dlBiosGreaterOptionalUpgradeMsg \
+  _dmiDecodeExe _currentBiosVers _minBiosVers _availBiosVers \
+  _biosDownloadUrl _upgradeReasonMsg _installStepsMsg _windowTitle \
+  _dlBiosNotAvailableMsg _dlBiosMatchesMsg _dlBiosGreaterOptionalUpgradeMsg \
   _dlBiosGreaterRequiredUpgradeMsg _dlBiosLesserRequiredDowngradeMsg \
   _biosDownloadMsg _biosDownloadEndMsg _insertUsbMsg _biosFlashMsg \
   _biosFlashEndMsg _biosFlashErrMsg _cancelUpgradeMsg _toolEndMsg \
@@ -546,6 +556,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   fi
 
   _assignGlobalUiVarsFn;
+  _currentBiosVers="$("${_dmiDecodeExe}" -s 'bios-version')";
 
   # Only prompt using the terminal
   _cm2IsTty='y';

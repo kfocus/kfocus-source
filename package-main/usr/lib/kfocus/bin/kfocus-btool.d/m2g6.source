@@ -5,60 +5,59 @@ _minBiosVers='1.07.07S3min29';
 _availBiosVers='1.07.07S3min29';
 _biosDownloadUrl='https://f005.backblazeb2.com/file/kfocus-bios/m2g6_2025-08-12_X56xWNx_07S3min29.efi.zip';
 _upgradeReasonMsg="$(cat <<'EOF'
-BIOS VERSION 1.07.07S3MIN29:
+BIOS VERSION 1.07.07S3MIN29
 
   * Enables full keyboard and lightbar color control.
   * Enables S3 deep sleep mode. This results in a more complete suspend
     that uses less battery, stops the fans immediately, and extinguishes
-    the power light. Open the laptop lid or press the power button to
-    resume from deep sleep.
+    the power button LED. Open the laptop lid or press the power
+    button to resume from deep sleep.
   * Passes all 498 KFocus KPCs 2025-08-14, log f15052b8.
 
 EOF
 )";
 
 _installStepsMsg="$(cat <<EOF
-Now that we have prepared the USB Drive, follow these steps to update
+Now that we have prepared the USB drive, follow these steps to update
 the BIOS. We recommend you print these instructions and then mark each
-step off as it is complete it.
+step off as you complete it.
 
-  * [ ] Power off the target M2 GEN 6 laptop to update.
+  * [ ] Power off the M2 GEN 6 laptop you wish to update.
 
   * [ ] Plug the power cable into the laptop. Also, insert the freshly
-    prepared thumb drive into a USB-A port of the laptop.
+    prepared USB drive into a USB-A port of the laptop.
 
   * [ ] Boot the laptop and tap F7 to get to the BIOS 'Boot Manager'
     screen. If you see the disk decrypt screen, the login screen, or the
     grub menu, you've missed it. Power off and try again.
 
   * [ ] In the BIOS 'Boot Manager' option, press the down arrow to
-    select the USB drive thumb drive. Then press [ Enter ]to boot using
-    this drive.
+    select the USB drive. Then press [ Enter ] to boot this drive.
 
   * [ ] The BIOS updater will boot into a text interface with white and
     colored text on a black background. Wait for the 5-second timer to
-    expire, and you will be shown a second screen that prompts "type
-    flash to start BIOS update". Type 'flash' and press [ Enter ] to
+    expire. Next, a second screen should appear that prompts you to "type
+    flash to start BIOS update." Type 'flash' and press [ Enter ] to
     begin the update process.
 
   * [ ] During the update process, the laptop will show multiple
-    progress bars while loading firmware. It will then reboot into a
-    black screen with red and white text and a single progress bar. Once
-    the progress bar completes, the laptop will power down.
+    progress bars while loading firmware. It will then reboot to a black
+    screen with red and white text and a single progress bar. Once the
+    progress bar completes, the laptop will power down.
 
-    DO NOT INTERRUPT THE UPDATE PROCESS! DO NOT press the power button.
-    DO NOT remove the USB Drive. DO NOT unplug the power. Only after
+    DO NOT INTERRUPT THIS UPDATE PROCESS! DO NOT press the power button.
+    DO NOT remove the USB drive. DO NOT unplug the power cable. Only after
     the system stays off for 30 seconds or reboots into the Kubuntu OS
-    is it safe to take any of those actions.
+    is it safe to take any of these actions.
 
-  * [ ] The first boot after the update will take longer. You may also
-    need to boot twice. Once you have signed-in, you should notice that
-    the keyboard colors are more uniform. Also, suspending the system
-    (Start Menu > Sleep) should extinguish the power, turn off the fans
-    promptly, and use less idle power.
+  * [ ] The first boot after the update will take longer, and you may
+    need to boot twice. Once you have signed in, you should notice that
+    the keyboard LEDs remain uniform when you switch colors. Also,
+    suspending the system (Start Menu > Sleep) should extinguish the power
+    button LED, turn off the fans promptly, and use less idle power.
 
-  * [ ] Run 'sudo ${_baseName} -d' in a terminal to see
-    'dl_bios_matches'. This confirms the BIOS is up-to-date.
+  * [ ] If desired, run 'sudo ${_baseName} -o' in a terminal to confirm 
+    the BIOS is up to date.
 EOF
 )";
 
@@ -67,11 +66,11 @@ _flashBiosFn () {
   _cm2EchoFn "Wipe and install to ${_targetUsbDev}";
   # See https://superuser.com/questions/332252
   {
-    echo 'o'; # Create DOS partition table
+    echo 'o'; # Create a DOS partition table
 
-    echo 'n'; # Create new partition
-    echo 'p'; # Create new partition
-    echo "1"; # PartID 1
+    echo 'n'; # Create a new partition
+    echo 'p'; # Create a primary partition
+    echo '1'; # Partition 1
     echo;     # Start sector (default)
     echo;     # End sector (default)
 
