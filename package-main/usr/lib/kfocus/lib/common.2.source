@@ -435,7 +435,7 @@ _cm2AssignExeVarsFn () {
   _var_list=("$@");
   _return_int=0;
 
-  ## Begin: Iterate over variable list {
+  ## Begin: Iterate over the variable list {
   for _line_str in "${_var_list[@]}"; do
     IFS='|' read -r -a _bit_list <<< "${_line_str}";
     if (( "${#_bit_list[@]}" < 2 || ${#_bit_list[@]} > 4 )); then
@@ -500,7 +500,7 @@ _cm2AssignExeVarsFn () {
     printf -v "${_var_name}" '%s' "${_solve_str}";
     # TODO: This may be desirable: export "${_var_name}";
   done
-  ## . End: iterate over variable list }
+  ## . End: iterate over the variable list }
 
   return "${_return_int}";
 }
@@ -523,7 +523,7 @@ _cm2StripTagsFn () {
   )";
 
   case "${_do_strip_last}" in
-    # Remove last line of text if directed
+    # Remove the last line of text if directed
     y) _line_count="$(echo "${_strip_str}" | wc -l)";
       if (( _line_count > 1 )); then
         _strip_str="$(echo "${_strip_str}" | sed '$d')";
@@ -533,7 +533,7 @@ _cm2StripTagsFn () {
     # If 'w' is specified, do not modify the string
     w) true;;
 
-    # Remove last question mark if directed (default)
+    # Remove the last question mark if directed (default)
     *) _strip_str="$(echo "${_strip_str}" | sed '$ s|\?\s*$||g')";;
   esac
 
@@ -700,8 +700,8 @@ _cm2PromptUserFn () {
       _prompt_str="$(_cm2StripTagsFn "${_prompt_str}" 'w')";
       _prompt_str="$(fmt <<< "${_prompt_str}")";
 
-      # whiptail accepts arguments for setting window and list sizes, but we
-      # want all of these to be automatically set as appropriate. To do that
+      # Whiptail accepts arguments for setting window and list sizes, but we
+      # want all of these to be automatically set as appropriate. To do that,
       # we set the various size arguments to 0 as necessary, thus the strange
       # 0s here.
       _cmd_list+=("${_prompt_str}" '0' '0' );
@@ -793,7 +793,7 @@ _cm2SetIsTtyFn () {
   export _cm2IsTty;
 }
 
-## BEGIN Execute on source {
+## BEGIN Execute when sourced {
 # Get args
 _cm2Arg01="${1:-}";
 _cm2Arg02="${2:-}";
@@ -857,7 +857,7 @@ _cm2RmExe='/bin/rm';
 _cm2WhiptailExe="$(command -v whiptail || true)";
 
 # Export Strings
-# shellcheck disable=2090 # Disable complaining about html vars
+# shellcheck disable=2090 # Disable complaining about HTML vars
 export _cm2Arg01 _cm2Arg02 _cm2BlockMsg _cm2HtmBeginStr _cm2HtmEndStr      \
   _cm2HtmH3Str _cm2HtmPStr _cm2IsTty _cm2KdiagExe _cm2ModelCode _cm2RmExe  \
   _cm2CliType _cm2WhiptailExe _cm2LogExe _cm2LogIdxMap _cm2LogLevelIdx     \
@@ -874,5 +874,5 @@ export -f _cm2AskExitFn _cm2AssignExeVarsFn _cm2CatStripEchoFn               \
   _cm2StripTagsFn _cm2SucFn _cm2SucStrFn _cm2TestVersFn _cm2TrapErrorFn      \
   _cm2TrapExitFn _cm2TrapInterruptFn _cm2WarnFn _cm2WarnStrFn _cm2SetIsTtyFn \
   _cm2SetCliTypeFn _cm2SetLogLevelFn _cm2SetLogTagFn _cm2LogFn;
-## . END Execute on source }
+## . END Execute when sourced }
 

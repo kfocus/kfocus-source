@@ -48,11 +48,11 @@ _flashBiosFn () {
   _cm2EchoFn "Wipe and install to ${_targetUsbDev}";
   # See https://superuser.com/questions/332252
   {
-    echo 'o'; # Create DOS partition table
+    echo 'o'; # Create a DOS partition table
 
-    echo 'n'; # Create new partition
-    echo 'p'; # Create new partition
-    echo "1"; # PartID 1
+    echo 'n'; # Create a new partition
+    echo 'p'; # Select primary
+    echo '1'; # PartID 1
     echo;     # Start sector (default)
     echo;     # End sector (default)
 

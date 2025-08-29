@@ -263,8 +263,8 @@ _chkUpdateBiosFn () {
   _cmd_list=("${_escExe}" "${_focusRxSetExe}" 'chk-bios');
 
   # Skip if check succeeds (no bios update available)
-  if _check_msg="$("${_cmd_list[@]}")"; then
-    _cm2SucStrFn "${_check_msg}";
+  if "${_cmd_list[@]}"; then
+    _cm2SucStrFn 'Bios update not suggested';
     _cm2SucFn;
     return;
   fi
@@ -293,8 +293,7 @@ _EOH05
   )"
 
   if [ "${_do_run_btool}" = 'n' ]; then
-    _cm2SucStrFn "${_check_msg}";
-    _cm2SucStrFn 'Skipped on user request';
+    _cm2SucStrFn 'BIOS update skipped on user request';
     _cm2SucFn;
     _testNagCountFn 'inc' 'kfocus-bios-count';
     return;
