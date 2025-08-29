@@ -254,7 +254,7 @@ _chkUpdateBiosFn () {
   _cm2SetMsgFn "${_title}";
   _win_title="${_rootTitle}: ${_title} ";
 
-  if ! _nag_msg="$(_testNagCountFn 'check' 'kfocus-bios-count' 10)"; then
+  if ! _nag_msg="$(_testNagCountFn 'check' 'kfocus-bios-count' 7)"; then
     _cm2SucStrFn 'View count limit reached.';
     _cm2SucFn;
     return;
@@ -1095,7 +1095,6 @@ _mainFn () {
   _cm2EchoFn "== BEGIN :      ${_rootTitle}\n";
   _announceStartFn;
   _chkNvPMizerFn;       #5423
-  _chkUpdateBiosFn;
   _chkBtrfsSetUpFn;
   _chkOemMultiDiskFn;
   _chkHwConfigFn;
@@ -1113,6 +1112,7 @@ _mainFn () {
   # _chkExperRepoFn;    # Disabled: See 66226a00c
   _chkResetEffectsFn;
   _postRollbackHandlerFn;
+  _chkUpdateBiosFn;
   _announceEndFn;
   _cm2EchoFn "\n== . END : OK   ${_rootTitle}\n\n";
   ## . End Run focusrx steps }

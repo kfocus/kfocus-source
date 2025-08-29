@@ -443,7 +443,7 @@ EOF
       _msg="${_dlBiosMatchesMsg//XX_SML_XX/"${_modelLabel}"}";
       _msg="${_msg//XX_CURBIOS_XX/"${_currentBiosVers}"}";
       _msg="${_msg//XXX_UPGRADE_REASON_XXX/"${_upgradeReasonMsg}"}";
-      _reply="$(_cm2PromptUserFn "${_msg}" "${_windowTitle}" 'a')";
+      _reply="$(_cm2PromptUserFn "${_msg}" "${_windowTitle}" 'A')";
       if [ "${_reply}" = 'y' ]; then
         _beginUpgradeFn || _is_error_hit='y';
       fi
@@ -452,7 +452,7 @@ EOF
       _msg="${_dlBiosGreaterOptionalUpgradeMsg//XX_SML_XX/"${_modelLabel}"}";
       _msg="${_msg//XX_CURBIOS_XX/"${_currentBiosVers}"}";
       _msg="${_msg//XXX_UPGRADE_REASON_XXX/"${_upgradeReasonMsg}"}";
-      _reply="$(_cm2PromptUserFn "${_msg}" "${_windowTitle}" 'a')";
+      _reply="$(_cm2PromptUserFn "${_msg}" "${_windowTitle}" 'A')";
       if [ "${_reply}" = 'y' ] ; then
         _beginUpgradeFn || _is_error_hit='y';
       fi
