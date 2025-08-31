@@ -18,6 +18,8 @@ EOF
 )";
 
 _installStepsMsg="$(cat <<EOF
+Instructions for BIOS 1.07.07S3MIN29
+
 Now that we have prepared the USB drive, follow these steps to update
 the BIOS. We recommend you print these instructions and then mark each
 step off as you complete it.
@@ -43,12 +45,13 @@ step off as you complete it.
   * [ ] During the update process, the laptop will show multiple
     progress bars while loading firmware. It will then reboot to a black
     screen with red and white text and a single progress bar. Once the
-    progress bar completes, the laptop will power down.
+    progress bar completes, the laptop will reboot 2-3 more times until
+    it boots into the default OS, typically Kubuntu.
 
     DO NOT INTERRUPT THIS UPDATE PROCESS! DO NOT press the power button.
     DO NOT remove the USB drive. DO NOT unplug the power cable. Only after
-    the system stays off for 30 seconds or reboots into the Kubuntu OS
-    is it safe to take any of these actions.
+    the system reboots into the Kubuntu OS or it remains turned off
+    for more than four minutes should you consider any of these actions.
 
   * [ ] The first boot after the update will take longer, and you may
     need to boot twice. Once you have signed in, you should notice that
@@ -56,13 +59,15 @@ step off as you complete it.
     suspending the system (Start Menu > Sleep) should extinguish the power
     button LED, turn off the fans promptly, and use less idle power.
 
-  * [ ] If desired, run 'sudo ${_baseName} -o' in a terminal to confirm 
+  * [ ] If desired, run 'sudo ${_baseName} -o' in a terminal to confirm
     the BIOS is up to date.
+
+End of instructions.
 EOF
 )";
 
 _flashBiosFn () {
-  declare _target_usb_part_dev;
+  declare _tgt_usb_part_dev _fatlabel_exe;
   _cm2EchoFn "Wipe and install to ${_targetUsbDev}";
   # See https://superuser.com/questions/332252
   {
@@ -84,12 +89,18 @@ _flashBiosFn () {
 
   # Make sure we have a sane dev path
   [[ "${_targetUsbDev}" =~ ^/dev/sd ]]                   || return 1;
-  _target_usb_part_dev="${_targetUsbDev}1";
-  mkfs.fat -F32 "${_target_usb_part_dev}"                || return 1;
+  _tgt_usb_part_dev="${_targetUsbDev}1";
+  mkfs.fat -F32 "${_tgt_usb_part_dev}"                   || return 1;
+
+  _fatlabel_exe="$(command -v 'fatlabel' || true)";
+  if [ -n "${_fatlabel_exe}" ]; then
+    "${_fatlabel_exe}" "${_tgt_usb_part_dev}" 'M2G6BIOS7S3' || true;
+    partprobe "${_targetUsbDev}" || true;
+  fi
 
   _usbTmpMountDir="${_tmpDir}/usbMount";
   mkdir -p "${_usbTmpMountDir}"                          || return 1;
-  mount "${_target_usb_part_dev}" "${_usbTmpMountDir}"   || return 1;
+  mount "${_tgt_usb_part_dev}" "${_usbTmpMountDir}"   || return 1;
   mountpoint "${_usbTmpMountDir}"                        || return 1;
 
   cd "${_tmpDir}"                                        || return 1;

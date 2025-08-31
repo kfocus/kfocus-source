@@ -99,6 +99,7 @@ EOF
   )";
 
   _insertUsbMsg="$(cat <<EOF
+=======================================================================
 Please insert an 1+ GB USB on which to install the BIOS update. Kubuntu
 Focus systems come with a USB drive that can be used for this purpose.
 IGNORE ANY OFFERS by the OS to 'mount' or 'open' any files or folders on
@@ -111,7 +112,7 @@ before proceeding.
 Please also ensure an active internet connection so this tool can
 download the recommended BIOS image.
 
-Press [ Enter ] to continue.
+.
 EOF
   )";
 
@@ -182,10 +183,10 @@ _checkRootFn () {
 
 ## BEGIN _echoHelpFn {
 _echoHelpFn () {
-  _cm2EchoFn "${_baseName}: Create a BIOS upgrade USB disk";
+  _cm2EchoFn "${_baseName}: Create a BIOS update USB drive";
   _cm2EchoFn "  -h | --help:   Print this help message.";
   _cm2EchoFn "  -d | --detect: Detect and print the system's firmware status.";
-  _cm2EchoFn "  -o | --offer:  Offer a BIOS upgrade if one is available.";
+  _cm2EchoFn "  -o | --offer:  Offer a BIOS update if one is available.";
 }
 ## . END _echoHelpFn }
 
@@ -319,6 +320,7 @@ EOF
 
     _cm2EchoFn 'Scan complete.\n\n';
 
+    _cm2EchoFn '=================';
     _cm2EchoFn 'Choose an action:';
     _cm2EchoFn '=================';
     _idx=0;
@@ -327,7 +329,7 @@ EOF
       printf -v _info_str '%s %3.2f GB' "${_bit_list[0]}" "$(\
         bc <<< "scale=2; ${_bit_list[1]} / 1024"
       )";
-      _cm2EchoFn "${_idx}. Install BIOS upgrade to ${_info_str}.";
+      _cm2EchoFn "${_idx}. Install BIOS update to ${_info_str}.";
       (( _idx++ )) || true;
     done
     _cm2EchoFn "${_idx}. Rescan USB storage devices.";
@@ -372,10 +374,12 @@ EOF
       fi
     fi
     _msg="$(cat <<EOF
-About to OVERWRITE USB drive ${_info_str} with the BIOS upgrade. All data
-on this drive will be lost.
+This tool will OVERWRITE the USB drive ${_info_str} with the BIOS update.
+All data on this drive will be ERASED in this process.
 
-If this is correct, continue, otherwise press Ctrl+C to abort.
+If this is unacceptable, press Ctrl+C NOW to abort.
+
+.
 EOF
     )";
     _cm2PromptUserFn "${_msg}" "${_windowTitle}" 'p'
@@ -386,9 +390,27 @@ EOF
 }
 ## . END _selectDiskFn }
 
+## BEGIN _echoPrintFileFn {
+_echoPrintFileFn () {
+  declare _date_str _uid _home_dir;
+  _date_str="$(date '+%Y-%m-%d')";
+  if [ -n "${SUDO_UID:-}" ]; then
+    _uid="${SUDO_UID}";
+  elif [ -n "${PKEXEC_UID:-}" ]; then
+    _uid="${PKEXEC_UID}"
+  fi
+
+  if [ -n "${_uid:-}" ]; then
+    _home_dir="$(getent passwd "${_uid}" |cut -d':' -f6 |head -n1)" || true;
+  fi
+  echo "${_home_dir:-/tmp}/${_date_str}_${_modelCode}-bios-directions.txt";
+}
+## . END _echoPrintFileFn }
+
 ## BEGIN _beginUpgradeFn {
 _beginUpgradeFn () {
-  declare _return_int;
+  declare _print_file _return_int _print_msg;
+  _print_file="$(_echoPrintFileFn)";
   _tmpDir="$(mktemp -d)";
 
   _cm2PromptUserFn "${_insertUsbMsg}" "${_windowTitle}" 'p';
@@ -412,7 +434,23 @@ _beginUpgradeFn () {
   _cm2EchoFn "USB drive ${_targetUsbDev}. It is now safe to remove.";
   _cm2EchoFn "${_biosFlashEndMsg}\n\n";
 
-  _cm2EchoFn "${_installStepsMsg}\n\n";
+  _print_msg="$(cat <<EOD
+Detailed instructions have been saved to the file:
+===================================================
+${_print_file}
+===================================================
+
+Please print these instructions or copy them to a different
+device so you can use them while upgrading the BIOS.
+
+EOD
+  )";
+
+  if echo "${_installStepsMsg}" > "${_print_file}"; then
+    _cm2EchoFn "${_print_msg}\n\n";
+  else
+    _cm2EchoFn "${_installStepsMsg}\n\n";
+  fi
 }
 ## . END _beginUpgradeFn }
 
@@ -476,16 +514,18 @@ EOF
       fi
       ;;
     *)
-      _cm2ErrStrFn "Unexpected upgrade status |${_upgrade_status_str}| hit!";
+      _cm2ErrStrFn "Unexpected update status |${_upgrade_status_str}| hit!";
       _is_error_hit='y';
       ;;
   esac
 
   if [ "${_is_error_hit}" = 'y' ]; then
     _cm2PromptUserFn "${_toolEndErrMsg}" "${_windowTitle}" 'p';
+    read -rp 'Press [ Enter ] to exit. ';
     _exitCleanFn 1;
   else
     _cm2PromptUserFn "${_toolEndMsg}" "${_windowTitle}" 'p';
+    read -rp 'Press [ Enter ] to exit. ';
     _exitCleanFn;
   fi
 }
