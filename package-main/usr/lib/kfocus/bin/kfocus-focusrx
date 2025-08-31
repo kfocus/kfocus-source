@@ -244,8 +244,7 @@ _EOH04
  # Purpose: Check BIOS for updates
  #
 _chkUpdateBiosFn () {
-  declare _win_title _nag_msg _cmd_list _check_msg \
-    _prompt_msg _do_run_btool;
+  declare _win_title _nag_msg _cmd_list _prompt_msg _do_run_btool;
 
   # Skip if required tool not installed.
   [ -z "${_btoolExe}" ] && return;

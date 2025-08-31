@@ -5,7 +5,8 @@
 # Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
 #
 # Name   : kfocus-reset-effects
-# Purpose: Reset KFocus desktop effects and keybindings
+# Purpose: Reset KFocus desktop effects and keybindings.
+#   This is also used for new user and system default initialization.
 # License: GPL v2
 # Run by : User
 # Spec   : 2169
@@ -41,8 +42,9 @@ _importCommonFn () {
 ## . END _importCommonFn }
 
 ## BEGIN _resetShortcutsFn {
-# Due to KDE param handling, local writing of default is required.
-# The do_clear_params option is not used, but may be useful in the future.
+# Due to KDE param handling, local writing of the default is required.
+# The "do_clear_params" option is not used, but it may be useful in the
+# future.
 #
 _resetShortcutsFn () {
   declare _do_clear_params _model_code _plasma_version _config_list \
@@ -57,7 +59,7 @@ _resetShortcutsFn () {
   )";
 
   _config_list=(
-    # Desktops
+    # Define desktops.
     'kwin|Desktops|Name_1|ONE'
     'kwin|Desktops|Name_2|TWO'
     'kwin|Desktops|Name_3|THREE'
@@ -65,7 +67,7 @@ _resetShortcutsFn () {
     'kwin|Desktops|Number|4'
     'kwin|Desktops|Rows|4'
 
-    # Desktopgrid
+    # Configure desktopgrid.
     'kwin|Effect-desktopgrid|BorderActivate|'
     'kwin|Effect-desktopgrid|ClickBehavior|'
     'kwin|Effect-desktopgrid|CustomLayoutRows|'
@@ -75,13 +77,12 @@ _resetShortcutsFn () {
     'kwin|Effect-desktopgrid|PresentWindows|'
     'kwin|Effect-desktopgrid|ShowAddRemove|false'
 
-    # Night Color
-    # Disable night by default as it can cause flickering on Intel.
+    # Disable Night Color by default as it can cause flickering on Intel.
     # Users also find it confusing.
     'kwin|Compositing|OpenGLIsUnsafe|false'
     'kwin|NightColor|Active|false'
 
-    # Effects of transparent move, squash windows, wobbly
+    # Enable transparent move, squash windows, wobbly effects.
     'kwin|Effect-kwin4_effect_translucency|MoveResize|80'
     'kwin|Effect-presentwindows|LayoutMode|1'
     'kwin|Effect-wobblywindows|AdvancedMode|true'
@@ -98,18 +99,18 @@ _resetShortcutsFn () {
     'kwin|Plugins|trackmouseEnabled|true'
     'kwin|Plugins|wobblywindowsEnabled|true'
 
-    # Window borders
+    # Adjust window borders
     'kwin|org.kde.kdecoration2|BorderSize|Tiny'
     'kwin|org.kde.kdecoration2|BorderSizeAuto|false'
 
-    # Wrap-around navigation
+    # Enable Wrap-around navigation
     'kwin|Windows|RollOverDesktops|true'
 
-    # Keyboard shortcuts
+    # Set Keyboard shortcuts
     'scut|kwin|Switch to Previous Desktop|Meta+Ctrl+Up,,Switch to Previous Desktop'
     'scut|kwin|Switch to Next Desktop|Meta+Ctrl+Down,,Switch to Next Desktop'
     'scut|kwin|Window Fullscreen|Meta+F,none,Make Window Fullscreen'
-    # Reverted from Meta+F8 to Ctrl+F8 as this is the default again in 5.27.9+
+    # Reverted from Meta+F8 to Ctrl+F8 as this is the default after 5.27.9.
     'scut|kwin|ShowDesktopGrid|Ctrl+F8,Ctrl+F8,Show Desktop Grid'
     'scut|kwin|Switch to Desktop 1|Ctrl+F1,Ctrl+F1,Switch to Desktop 1'
     'scut|kwin|Switch to Desktop 2|Ctrl+F2,Ctrl+F2,Switch to Desktop 2'
@@ -134,27 +135,27 @@ _resetShortcutsFn () {
     'scut|kwin|Window Quick Tile Bottom|Meta+Down,Meta+Down,Quick Tile Window to the Bottom'
     'scut|kcm_touchpad|Toggle Touchpad|Meta+Space\tTouchpad Toggle,Touchpad Toggle,Toggle Touchpad'
 
-    # Model-specific shortcuts
+    # Set the model-specific shortcuts.
     'scut|kwin|Window Minimize|Meta+Num+PgDown\tMeta+PgDown,Meta+PgDown,Minimize Window|ir16g2'
     'scut|kwin|Window Maximize|Meta+PgUp\tMeta+Num+PgUp,Meta+PgUp,Maximize Window|ir16g2'
 
-    # Reset all things mouse tracking to defaults
+    # Reset all things mouse tracking to defaults.
     'scut|kwin|TrackMouse|'
     'kwin|Effect-trackmouse|Alt|'
     'kwin|Effect-trackmouse|Control|'
     'kwin|Effect-trackmouse|Meta|'
     'kwin|Effect-trackmouse|Shift|'
 
-    # Set cursorsize for all devices to 36
+    # Set cursorsize for all devices to 36.
     'inpu|Mouse|cursorSize|36'
     'inpu|Mouse|cursorTheme|breeze_cursors'
 
-    # Prevent plasma-welcome center from running alone.
-    # It is presented in first-run wizard.
+    # Prevent the plasma-welcome center from running alone.
+    # It is presented in the first-run wizard.
     "plwc|General|LastSeenVersion|${_plasma_version:-5.27.11}"
     'plwc|General|ShouldShow|false'
 
-    # Reset DPI per ticket 3521: Set scale factor based on device.
+    # Reset DPI per ticket 3521: Set the scale factor based on the device.
     #   First, clear prior values.
     'font|General|forceFontDPI|'
     'glob|KScreen|ScaleFactor|'
@@ -163,11 +164,11 @@ _resetShortcutsFn () {
     'font|General|forceFontDPI|120|ir14g1'
     'font|General|forceFontDPI|120|ir14g2'
     'font|General|forceFontDPI|120|ir16g2'
-    'font|General|forceFontDPI|136|m2g4'
-    'font|General|forceFontDPI|136|m2g5'
-    'font|General|forceFontDPI|136|m2g5p'
-    'font|General|forceFontDPI|136|m2g6'
-    'font|General|forceFontDPI|136|zrg1'
+    'font|General|forceFontDPI|120|m2g4'
+    'font|General|forceFontDPI|120|m2g5'
+    'font|General|forceFontDPI|120|m2g5p'
+    'font|General|forceFontDPI|120|m2g6'
+    'font|General|forceFontDPI|120|zrg1'
   );
 
   _tab_char=$'\t';
@@ -188,7 +189,7 @@ _resetShortcutsFn () {
     # then _cm2EchoFn "Process ${_line}";
     # else _cm2WarnStrFn "Skip ${_line}"; continue;
     # fi
-    # DEBUG Delete all kwin keys
+    # DEBUG: delete all kwin keys
     # if [ "${_key}" = 'kwin' ]; then
     #   _bit_list[3]='';
     # fi
@@ -203,7 +204,7 @@ _resetShortcutsFn () {
     # If this is a symbolic link, remove it
     if [ -h "${_config_file}" ]; then rm "${_config_file}"; fi
 
-    # Create config file if missing
+    # Create a config file if it is missing
     if [ ! -f "${_config_file}" ]; then
       # Skip creating just to delete an attribute
       if [ -z "${_bit_list[3]:-}" ]; then continue; fi
@@ -251,7 +252,7 @@ _resetShortcutsFn () {
 _mainFn () {
   declare _notify_str _prompt_msg _reply_str _power_file _mime_file;
 
-  # Immediately apply effects and return if -d option provided.
+  # Immediately apply effects and return if a "-d" option is provided.
   if [ "${1:-}" = '-d' ]; then
     if [ -n "${2:-}" ]; then
       _configDir="$(readlink -f "${2:-}")";
@@ -342,7 +343,7 @@ _EOH02
   )";
   _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}";
 
-  # Reload global key mappings. kglobalaccel is NOT a typo.
+  # Reload global key mappings. The keyword "kglobalaccel" is NOT a typo.
   kquitapp5 kglobalaccel && sleep 2 && kglobalaccel5 &
   # shellcheck disable=SC2181
   if [ "$?" = '0' ]; then disown "$!"; fi
@@ -380,7 +381,7 @@ _settingsExe="$(command -v systemsettings)";
 _rootTitle='Kubuntu Focus Reset Effects';
 ## . END Declare and assign global vars }
 
-## BEGIN Run main if script is not sourced {
+## BEGIN Run main if the script is not sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binName="$(  readlink -f "$0"       )" || exit 101;
   _binDir="$(   dirname  "${_binName}" )" || exit 101;
@@ -398,4 +399,4 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   fi
   _mainFn "$@";
 fi
-## . END Run main if script is not sourced }
+## . END Run main if the script is not sourced }
