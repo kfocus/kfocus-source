@@ -1,3 +1,14 @@
+kfocus-tools (24.04.11) noble; urgency=medium
+
+  * kfocus-kb-color.postinst: Always enable kfocus-kb-save.service (#5750
+  * kfocus-kb-color: Always enable keyboard before editing color (#5599)
+  * kfocus-kb-color.prerm: Disable kfocus-kb-save.service only on remove (#5750)
+
+  [ Aaron Rainbolt ]
+  * kfocus-kb-color-set: Add support zonekb for 4-zone+lightbar kbds (#5599)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Sun, 31 Aug 2025 02:03:56 -0400
+
 kfocus-tools (24.04.10) noble; urgency=medium
 
   * kfocus-kb-color.postinst: Use deb-systemd-helper (#5750)

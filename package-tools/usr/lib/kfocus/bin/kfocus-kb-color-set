@@ -173,11 +173,12 @@ _stdCalcKbdStateFn () {
 #
 _stdRestoreKbdFn () {
   declare _bright_str _hex_str _enable_int _zone_line _bright_byte \
-    _extra_support_int _zone_list;
+    _zone_list _zonekb_str;
 
   _bright_str="${_configStateList[0]}";
   _hex_str="${_configStateList[1]}";
   _enable_int="${_configStateList[2]:-1}";
+  _bright_byte="$(_convertStrToByte "${_bright_str}")";
 
   # Minimize flashing
   if [ "${_enable_int}" = 0 ]; then
@@ -185,9 +186,28 @@ _stdRestoreKbdFn () {
     echo '0' > "${_stdKeyDir}/brightness" || true;
   fi
 
-  _extra_support_int="$(cat "${_stdKeyDir}/extra")";
+  # Handle zonekb API (m2g6)
+  if [ -f "${_stdKeyDir}/zonekb" ]; then
+    # ZoneKB API - set five color zones plus brightness in one call.
+    _zonekb_str="$(cat <<EOF
+LEFT_COLOR=0x${_hex_str}
+CENTER_COLOR=0x${_hex_str}
+RIGHT_COLOR=0x${_hex_str}
+NUMPAD_COLOR=0x${_hex_str}
+LIGHTBAR_COLOR=0x${_hex_str}
+KB_BRIGHTNESS=${_bright_byte}
+EOF
+    )";
+    echo "${_zonekb_str}" > "${_stdKeyDir}/zonekb" || true;
+    echo "${_enable_int}" > "${_stdEnableFile}"    || true;
+    return;
+  fi
+
+  # Handle Standard API:
+  #   set three or four color zones and brightness in individual calls.
+  #
   _zone_list=( 'color_left' 'color_center' 'color_right' );
-  if [ "${_extra_support_int}" = '1' ]; then
+  if [ "$(cat "${_stdKeyDir}/extra")" = '1' ]; then
     _zone_list+=( 'color_extra' );
   fi
 
@@ -195,7 +215,6 @@ _stdRestoreKbdFn () {
     echo "0x${_hex_str}" > "${_stdKeyDir}/${_zone_line}" || true;
   done;
 
-  _bright_byte="$(_convertStrToByte "${_bright_str}")";
   echo "${_bright_byte}" > "${_stdKeyDir}/brightness" || true;
   echo "${_enable_int}"  > "${_stdEnableFile}"        || true;
 }
@@ -205,6 +224,7 @@ _stdRestoreKbdFn () {
 # Purpose: Read the standard (modprobe) state file and populate
 # _configStateList.
 #
+# shellcheck disable=SC2120
 _stdReadStateFileFn () {
   declare _calc_file _line _bright_byte _hex_str _enable_int _bright_str;
   [ -z "${1:-}" ] && _calc_file="${_stdModprobeFile}" || _calc_file="$1";
@@ -260,7 +280,8 @@ _stdWriteStateFileFn () {
   _state_str="options tuxedo-keyboard mode=0 ";
   _state_str+="brightness=${_bright_byte} color_left=0x${_hex_str} ";
   _state_str+="color_center=0x${_hex_str} ";
-  _state_str+="color_right=0x${_hex_str}";
+  _state_str+="color_right=0x${_hex_str} ";
+  _state_str+="color_numpad=0x${_hex_str}";
 
   echo "${_state_str}" > "${_calc_file}";
 }
@@ -413,10 +434,10 @@ _keepSuspendStateFn () {
     _iteWriteStateFileFn "${_iteSuspendFile}";
   else
     _stdCalcKbdStateFn;
-    # This is NOT a typo; we want to save enabled state
+    # This is NOT a typo; we want to save the enabled state
     _iteWriteStateFileFn "${_stdSuspendFile}";
-    # Also store in modprobe file so we can have color on boot
-    _stdWriteStateFileFn; 
+    # Also store it in the modprobe file so we can have color on boot
+    _stdWriteStateFileFn;
   fi
 }
 ## . END _keepSuspendStateFn }
@@ -428,6 +449,7 @@ _readInStateFileFn () {
   if [ "${_isIte}" = 'y' ]; then
     _iteReadStateFileFn;
   else
+    # shellcheck disable=SC2119
     _stdReadStateFileFn;
   fi
 }
@@ -454,7 +476,7 @@ _restoreSuspendStateFn () {
     _iteReadStateFileFn "${_iteSuspendFile}";
     _iteRestoreKbdFn;
   else
-    # This is NOT a typo; we want to read enabled state
+    # This is NOT a typo; we want to read the enabled state
     _iteReadStateFileFn "${_stdSuspendFile}";
     _stdWriteStateFileFn;
     _stdRestoreKbdFn;

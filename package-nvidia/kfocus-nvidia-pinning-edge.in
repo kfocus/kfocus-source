@@ -14,10 +14,10 @@
 # Priority = 1000 will downgrade IFF a higher priority (e.g. Ubuntu)
 #   offers new version
 # Priority > 1000 will downgrade even from lower-priority repo
-
-# assign-highest-priority-to-my-local-repository
-# https://askubuntu.com/questions/135339
-# When multiple pins at the same priority, the first one is preferred.
+# 
+# If more than one selector matches a package at the same priority, the 
+# the match nearest the top of this file wins.
+# See https://askubuntu.com/questions/135339
 
 # == Paired kfocus-nvidia Package =====================================
 # Pair pinning with a specific kfocus-nvidia package version.
@@ -147,5 +147,3 @@ Pin: origin developer.download.nvidia.com
 Pin: version 570.148.*
 Pin-Priority: 1004
 
-# SEE ALSO
-# https://askubuntu.com/questions/135339

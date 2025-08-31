@@ -184,32 +184,14 @@ _purgeRollbackFn () {
 # Purpose: Return true if no BIOS is upgrade needed
 #
 _chkBiosUpdateFn () {
-  declare _model_code _min_vers _dmi_exe _bios_vers;
-  _model_code="$(_cm2EchoModelStrFn 'code')"  || exit 0;
-
-  # Only support m2g4 check at this time
-  if [ "${_model_code}" != 'm2g4' ]; then
-    echo "${_model_code} BIOS update not needed";
-    exit 0;
-  fi
-
-  # Get dmidecode for bios version
-  if ! _cm2AssignExeVarsFn '_dmi_exe|dmidecode'; then
-    _cm2WarnStrFn 'ABORT: Required dmidecode not found. Run:';
-    _cm2WarnStrFn '  sudo apt install dmidecode';
-    exit 0;
-  fi
-
-  _min_vers='1.07.07MIN29';
-  _bios_vers="$( "${_dmi_exe}" -s 'bios-version' )" || exit 0;
-  if [ "${_bios_vers}" = "${_min_vers}" ] ||
-    _cm2TestVersFn "${_bios_vers}" "${_min_vers}"; then
-    echo "${_model_code} ${_bios_vers} vs. ${_min_vers}";
-    exit 0;
-  else
-    echo "${_model_code} ${_bios_vers} vs. ${_min_vers}";
+  declare _btool_check_str;
+  if [ -z "${_btoolExe}" ]; then exit 0; fi
+  _btool_check_str="$("${_btoolExe}" '-d')";
+  if [ "${_btool_check_str}" = 'dl_bios_greater_required_upgrade' ] \
+    || [ "${_btool_check_str}" = 'dl_bios_lesser_required_downgrade' ]; then
     exit 1;
   fi
+  exit 0;
 }
 ## . END _chkBiosUpdateFn }
 
@@ -454,7 +436,8 @@ _mainFn () {
 
 ## BEGIN Declare global variables {
 declare  _binName _binDir _baseName _assignList \
-  _focusRxVersExe _hwConfigCodeFile _hwModelCodeFile;
+  _focusRxVersExe _rollbackBackendExe _btoolExe _hwConfigCodeFile \
+  _hwModelCodeFile;
 
 _varLibDir='/var/lib/kfocus';
 _hwConfigCodeFile="${_varLibDir}/hw_config_code";
@@ -472,6 +455,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _assignList=(
     "_focusRxVersExe|${_binDir}/kfocus-rx-version"
     "_rollbackBackendExe|${_binDir}/kfocus-rollback-backend||optional"
+    "_btoolExe|${_binDir}/kfocus-btool||optional"
   );
   if ! _cm2AssignExeVarsFn  "${_assignList[@]}"; then
     _cm2ErrStrFn 'Could not assign variable';

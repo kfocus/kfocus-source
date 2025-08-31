@@ -277,7 +277,7 @@ _EOH03
     _cm2WarnStrFn "Called without arguments from: ${_pid_str}";
 
     # Pause to let udev catch up
-    sleep 5;
+    sleep 3;
     _is_on_ac="$(
       ( "${_upowerExe}" -i '/org/freedesktop/UPower/devices/line_power_AC' \
        | grep '^\s*online:' | awk '{print $2}' | cut -c1 ) || echo 'n'
