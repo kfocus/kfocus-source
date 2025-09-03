@@ -100,8 +100,8 @@ int get_poll_timeout(struct timespec *debounce_ts_list,
       continue;
     }
     if (timespec_compare_ge(debounce_ts_list[i], ts)) {
-      current_timeout = ((debounce_ts_list[i].tv_sec - ts.tv_sec) * 1000)
-        + ((debounce_ts_list[i].tv_nsec - ts.tv_nsec) / 1000000);
+      current_timeout = (int)(((debounce_ts_list[i].tv_sec - ts.tv_sec)
+        * 1000) + ((debounce_ts_list[i].tv_nsec - ts.tv_nsec) / 1000000));
       if (current_timeout < solve_timeout_ms) {
         solve_timeout_ms = current_timeout;
       }
@@ -113,8 +113,8 @@ int get_poll_timeout(struct timespec *debounce_ts_list,
       continue;
     }
     if (timespec_compare_ge(debounce_max_ts_list[i], ts)) {
-      current_timeout = ((debounce_max_ts_list[i].tv_sec - ts.tv_sec) * 1000)
-        + ((debounce_ts_list[i].tv_nsec - ts.tv_nsec) / 1000000);
+      current_timeout = (int)(((debounce_max_ts_list[i].tv_sec - ts.tv_sec)
+        * 1000) + ((debounce_ts_list[i].tv_nsec - ts.tv_nsec) / 1000000));
       if (current_timeout < solve_timeout_ms) {
         solve_timeout_ms = current_timeout;
       }
@@ -164,7 +164,7 @@ int main(int argc, char **argv) {
   struct statfs statfsbuf;
   uint64_t fs_alloc = 0;
   char fanbuf[4096];
-  uint32_t fanlen;
+  ssize_t fanlen;
   struct fanotify_event_metadata *fem = NULL;
   struct timespec ts = { 0 };
 
@@ -218,7 +218,7 @@ int main(int argc, char **argv) {
       perror(NULL);
       exit(1);
     }
-    fan_fd_list[i] = fanotify_init(FAN_CLASS_NOTIF, FAN_CLOEXEC);
+    fan_fd_list[i] = fanotify_init(FAN_CLASS_NOTIF | FAN_CLOEXEC, O_CLOEXEC);
     if (fan_fd_list[i] < 0) {
       fprintf(stderr, "Failed to initialize fanotify watcher for |%s|: ", current_path);
       perror(NULL);
@@ -278,15 +278,26 @@ int main(int argc, char **argv) {
 
         fanlen = read(fan_fd_list[i], fanbuf, sizeof(fanbuf));
         if (fanlen < 0) {
-          fprintf(stderr, "Failed to read fanotify events for path |%s|!\n", path_data[i]);
+          if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
+            continue;
+          }
+          fprintf(stderr, "Failed to read fanotify events for path |%s|! Error code: %d\n", path_data[i], errno);
           exit(1);
         }
         if (fanlen == 0) {
           fprintf(stderr, "Event triggered but absent for path |%s|, fanotify hung up?\n", path_data[i]);
           exit(1);
         }
+        /*
+         * Debug
+         * fprintf(stderr, "fanlen: %ld\n", fanlen);
+         */
         fem = (void *)fanbuf;
         while (FAN_EVENT_OK(fem, fanlen)) {
+          /*
+           * Debug
+           * fprintf(stderr, "fanotify fd close loop iteration\n");
+           */
           if (fem != NULL) {
             close(fem->fd);
           }
@@ -308,7 +319,7 @@ int main(int argc, char **argv) {
        * DEBUG:
        * printf("Path: %s\n", path_data[i]);
        * printf("Size: %lu\n", fs_size_list[i]);
-       * printf("Unalloc: %lu\n", fs_alloc);
+       * printf("Alloc: %lu\n", fs_alloc);
        * printf("Min unalloc: %lu\n", fs_alloc_threshold_list[i]);
        * printf("-----------------\n");
        */
