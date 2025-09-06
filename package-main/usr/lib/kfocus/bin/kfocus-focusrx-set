@@ -51,8 +51,16 @@ _updatePkgsFn () {
 # IMPORTANT: dpkg-configure kfocus-hw runs update-initramfs, update-grub
 #
 _reconfigHwPkgFn () {
-  declare _str;
+  declare _symlink _str;
   _cm2SetMsgFn 'Adjust for hardware';
+
+  # Reset thunderbolt enable symlink (#5790)
+  _symlink='/etc/default/grub.d/10_kfocus-tbt.cfg';
+  if [ -f "${_symlink}" ] || [ -h "${_symlink}" ]; then
+    rm -rf "${_symlink}";
+  fi
+
+  # Then reconfigure
   if _str="$(dpkg-reconfigure kfocus-hw 2>&1)"; then
     _cm2SucFn; else _cm2WarnStrFn "${_str}"; _cm2WarnFn;
   fi

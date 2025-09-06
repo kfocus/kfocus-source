@@ -1,33 +1,75 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 
+# Clean up services and links more completely (#5790)
+_clearLinksFn () {
+  declare _symlink_table _line _link_list _do_rm_link;
+
+  # target [| compare file ]
+  _symlink_table=(
+    # Global Slack workaround 2357,2377
+    '/usr/local/bin/xdg-open|/usr/lib/kfocus/conf/usr_local_bin_xdg-open'
+    # Per-model setups
+    '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup'
+    '/etc/default/console-setup|'
+    '/etc/default/grub.d/kfocus.cfg|'
+    '/etc/initramfs-tools/conf.d/kfocus.conf|'
+    '/etc/modprobe.d/kfocus.conf|'
+    '/etc/modules-load.d/kfocus.conf|'
+    '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
+    '/usr/local/bin/xdg-open|/usr/lib/kfocus/conf/usr_local_bin_xdg-open'
+    '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
+    '/usr/share/kfocus/kf5-settings/kcmfonts|'
+    '/etc/tlp.d/kfocus.conf|'
+    # Additional thunderbolt settings
+    '/etc/default/grub.d/10_kfocus-tbt.cfg|'
+  );
+
+  for _line in "${_symlink_table[@]}"; do
+    IFS='|' read -r -a _link_list <<<"${_line}";
+    _do_rm_link='y';
+
+    # Do not remove the copied file if it has been modified from the source
+    if [ -n "${_link_list[1]:-}" ]; then
+      if [ -f "${_link_list[0]}" ] && [ ! -h "${_link_list[0]}" ] \
+        && [ -f "${_link_list[1]}" ]; then
+        if ! diff -q "${_link_list[0]}" "${_link_list[1]}"; then
+          _do_rm_link='n';
+        fi
+      fi
+    fi
+
+    if [ "${_do_rm_link}" = 'y' ]; then
+      rm -f "${_link_list[0]}" || true;
+    fi
+  done;
+
+  if [ -x '/usr/bin/deb-systemd-helper' ]; then
+    /usr/bin/deb-systemd-helper unmask \
+      systemd-backlight@backlight:nvidia_0.service >/dev/null;
+  fi
+}
+
 case "$1" in
-    remove)
-    if [ -x "/usr/bin/deb-systemd-helper" ]; then
-        /usr/bin/deb-systemd-helper unmask \
-          systemd-backlight@backlight:nvidia_0.service >/dev/null
-    fi
-    if [ -e "/etc/default/grub.d/kfocus.cfg" ]; then
-        rm -f /etc/default/grub.d/kfocus.cfg;
-    fi
-    if [ -e "/etc/modprobe.d/kfocus.conf" ]; then
-        rm -f /etc/modprobe.d/kfocus.conf
-    fi
+  remove)
+    _clearLinksFn;
     if [ -x "/usr/sbin/update-grub" ]; then
-        /usr/sbin/update-grub
+      /usr/sbin/update-grub;
     fi
     if [ -x "/usr/sbin/update-initramfs" ]; then
-        /usr/sbin/update-initramfs -u
+      /usr/sbin/update-initramfs -u;
     fi
-    ;;
-    abort-upgrade|abort-remove|abort-deconfigure|upgrade)
+  ;;
+
+    upgrade|deconfigure|failed-upgrade)
+      true;
     ;;
 
     *)
-        echo "prerm called with unhandled argument \`$1'" >&2
-        exit 0
+      echo "prerm called with unhandled argument \`$1'" >&2;
+      exit 0;
     ;;
 esac
 #DEBHELPER#
 
-exit 0
+exit 0;
