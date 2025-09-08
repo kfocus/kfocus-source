@@ -1,75 +1,107 @@
 #!/bin/bash
-set -e
+#
+# Copyright 2020-2025 MindShare Inc.
+# Written for the Kubuntu Focus by
+#   Michael Mikowski, Erich Eickmeyer, and Aaron Rainbolt
+#
+set -e;
 
-# Clean up services and links more completely (#5790)
+# Clean up services and links more completely (#5790).
+#   See postinst for the list of symlinks.
+declare _symlinkTable _cmxBlockMsg;
+_cmXEchoFn    () { echo 1>&2 -e "$*"; }
+_cmXSetMsgFn  () { _cmXBlockMsg="$*"; _cmXEchoFn "== BEGIN : ${_cmXBlockMsg}"; }
+_cmXSucFn     () { _cmXEchoFn "== . END : OK   ${_cmXBlockMsg}\n\n"; }
+_cmXSucStrFn  () { _cmXEchoFn "ok  : ${*}"; }
+_cmXWarnStrFn () { _cmXEchoFn "warn: ${*}"; }
+
+_cmXBlockMsg='';
+_symlinkTable=(
+  # target [| comparison file ]
+  # Global Slack workaround 2357,2377
+  '/usr/local/bin/xdg-open|/usr/lib/kfocus/conf/usr_local_bin_xdg-open'
+  # Per-model setups
+  '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup'
+  '/etc/default/grub.d/kfocus.cfg|'
+  '/etc/initramfs-tools/conf.d/kfocus.conf|'
+  '/etc/modprobe.d/kfocus.conf|'
+  '/etc/modules-load.d/kfocus.conf|'
+  '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
+  '/usr/local/bin/xdg-open|/usr/lib/kfocus/conf/usr_local_bin_xdg-open'
+  '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
+  '/usr/share/kfocus/kf5-settings/kcmfonts|'
+  '/etc/tlp.d/kfocus.conf|'
+  # Additional thunderbolt settings
+  '/etc/default/grub.d/10_kfocus-tbt.cfg|'
+);
+
 _clearLinksFn () {
-  declare _symlink_table _line _link_list _do_rm_link;
+  declare _line _link_list _target_path _source_path _do_rm_target;
 
-  # target [| compare file ]
-  _symlink_table=(
-    # Global Slack workaround 2357,2377
-    '/usr/local/bin/xdg-open|/usr/lib/kfocus/conf/usr_local_bin_xdg-open'
-    # Per-model setups
-    '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup'
-    '/etc/default/console-setup|'
-    '/etc/default/grub.d/kfocus.cfg|'
-    '/etc/initramfs-tools/conf.d/kfocus.conf|'
-    '/etc/modprobe.d/kfocus.conf|'
-    '/etc/modules-load.d/kfocus.conf|'
-    '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
-    '/usr/local/bin/xdg-open|/usr/lib/kfocus/conf/usr_local_bin_xdg-open'
-    '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
-    '/usr/share/kfocus/kf5-settings/kcmfonts|'
-    '/etc/tlp.d/kfocus.conf|'
-    # Additional thunderbolt settings
-    '/etc/default/grub.d/10_kfocus-tbt.cfg|'
-  );
+  _cmXSetMsgFn 'Clean up symlinks';
+  for _line in "${_symlinkTable[@]}"; do
+    IFS='|' read -r -a _link_list <<<"${_line:-}";
+    _target_path="${_link_list[0]:-}";
+    _source_path="${_link_list[1]:-}";
 
-  for _line in "${_symlink_table[@]}"; do
-    IFS='|' read -r -a _link_list <<<"${_line}";
-    _do_rm_link='y';
+    # Skip empty or non-valid targets
+    if [ -z "${_target_path}" ]; then
+      _cmXWarnStrFn "Skip empty target path from |${_line}|";
+      continue;
+    fi
+    if [ ! -e "${_target_path}" ]; then
+      _cmXSucStrFn "Skipped non-existent |${_target_path}|";
+      continue;
+    fi
 
+    _do_rm_target='y';
     # Do not remove the copied file if it has been modified from the source
-    if [ -n "${_link_list[1]:-}" ]; then
-      if [ -f "${_link_list[0]}" ] && [ ! -h "${_link_list[0]}" ] \
-        && [ -f "${_link_list[1]}" ]; then
-        if ! diff -q "${_link_list[0]}" "${_link_list[1]}"; then
-          _do_rm_link='n';
+    if [ -n "${_source_path}" ]; then
+      if [ -f "${_target_path}" ] && [ ! -h "${_target_path}" ] \
+        && [ -f "${_source_path}" ]; then
+        if ! diff -q "${_target_path}" "${_source_path}"; then
+          _do_rm_target='n';
+          _cmXSucStrFn "Retained |${_target_path}| as it has been modified.";
         fi
       fi
     fi
 
-    if [ "${_do_rm_link}" = 'y' ]; then
-      rm -f "${_link_list[0]}" || true;
+    if [ "${_do_rm_target}" = 'y' ]; then
+      if rm -f "${_target_path}"; then
+        _cmXSucStrFn "Removed |${_target_path}|";
+      else
+        _cmXWarnStrFn "Could NOT remove |${_target_path}|";
+      fi
     fi
   done;
 
-  if [ -x '/usr/bin/deb-systemd-helper' ]; then
-    /usr/bin/deb-systemd-helper unmask \
-      systemd-backlight@backlight:nvidia_0.service >/dev/null;
+  if deb-systemd-helper unmask \
+    systemd-backlight@backlight:nvidia_0.service >/dev/null; then
+    _cmXSucStrFn 'Nvidia Backlight mask removed';
+  else
+    _cmXSucStrFn 'Nvidia Backlight mask NOT removed';
   fi
+  _cmXSucFn;
 }
 
 case "$1" in
   remove)
     _clearLinksFn;
-    if [ -x "/usr/sbin/update-grub" ]; then
+
+    _cmXSetMsgFn 'Prepare for next boot';
+    if [ -x '/usr/sbin/update-grub' ]; then
       /usr/sbin/update-grub;
     fi
-    if [ -x "/usr/sbin/update-initramfs" ]; then
+    if [ -x '/usr/sbin/update-initramfs' ]; then
       /usr/sbin/update-initramfs -u;
     fi
+    _cmXSucFn;
   ;;
 
-    upgrade|deconfigure|failed-upgrade)
-      true;
-    ;;
+  upgrade|deconfigure|failed-upgrade) true;;
 
-    *)
-      echo "prerm called with unhandled argument \`$1'" >&2;
-      exit 0;
-    ;;
+  *) _cmXEchoFn "prerm called with unhandled argument \`$1'" >&2;;
 esac
-#DEBHELPER#
 
+#DEBHELPER#
 exit 0;
