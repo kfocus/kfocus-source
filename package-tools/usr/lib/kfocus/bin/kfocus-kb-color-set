@@ -46,50 +46,117 @@ _importCommonFn () {
 }
 ## . END _importCommonFn }
 
-## BEGIN _configStrToByte {
-# Purpose: Convert value from range 0-10 to 0-255.
-#
-_convertStrToByte () {
+## BEGIN Scrubbers for hex_str, bright_int, bright_byte, enable_int
+_echoSafeHexStrFn () {
+  declare _hex_str;
+  _hex_str="${1:-}";
+  if [[ ! "${_hex_str}" =~ ^[0-9a-fA-F]{6}$ ]]; then
+    _cm2WarnStrFn "Invalid hex_str |${_hex_str}| set to |${_defaultHexStr}|";
+    _hex_str="${_defaultHexStr}";
+  fi
+  echo "${_hex_str}";
+}
+_echoSafeBrightIntFn () {
+  declare _bright_int;
+  _bright_int="$(_cm2EchoIntFn "${1:-}")";
+  if (( _bright_int < 0 || _bright_int > 10 )); then
+    _cm2WarnStrFn "Invalid bright_int |${_bright_int}| set to |${_defaultBrightInt}|";
+    _bright_int="${_defaultBrightInt}";
+  fi
+  echo "${_bright_int}";
+}
+_echoSafeByteFn () {
   declare _bright_byte;
-  _bright_byte="$(( ${1:-0} * 25 ))";
-  if [ "${_bright_byte}" = 250 ]; then _bright_byte=255; fi
+  _bright_byte="$(_cm2EchoIntFn "${1:-}")";
+  if (( _bright_byte < 0 || _bright_byte > 255 )); then
+    _bright_byte="${_defaultBrightByte}";
+    _cm2WarnStrFn "Invalid bright_byte |${_bright_byte}| set to |${_defaultBrightByte}|";
+  fi
   echo "${_bright_byte}";
 }
-## . END _configStrToByte }
+_echoSafeBoolIntFn () {
+  declare _enable_int;
+  _enable_int="$(_cm2EchoIntFn "${1:-}")";
+  if (( _enable_int < 0 || _enable_int > 1 )); then
+    _enable_int=1;
+    _cm2WarnStrFn "Invalid enable_int |${_enable_int}| set to |1|";
+  fi
+  echo "${_enable_int}";
+}
+_slurpFileFn () {
+  declare _file;
+  _file="${1:-}";
+  if [ -z "${_file}" ]; then 
+    _cm2WarnStrFn "File argument cannot be empty";
+    return 1;
+  fi
 
-## BEGIN _convertByteToStr {
+  if [ ! -f "${_file}" ]; then
+		_cm2WarnStrFn "Cannot read non-existent file |${_file}|";
+    return 1;
+	fi
+
+  head -n1 "${_file}";
+}
+_writeRegisterFn () {
+  declare _file _str _do_create;
+  _file="${1:-}";
+  _str="${2:-}";
+  _do_create="${3:-}";
+  if [ -z "${_file}" ]; then 
+    _cm2WarnStrFn "File argument cannot be empty";
+    return 1;
+  fi
+
+  if [ ! -f "${_file}" ] && [ -z "${_do_create}" ]; then
+    _cm2WarnStrFn "Could not find register |${_file}|";
+    return 1;
+  fi
+
+  if ! echo "${_str}" > "${_file}"; then
+    _cm2WarnStrFn "Trouble writing |${_str}| to |${_file}|";
+    return 1;
+  fi
+}
+## . END Scrubbers for hex_str, bright_int, bright_byte, enable_int
+
+## BEGIN _convertBrightIntToByteFn {
+# Purpose: Convert value from range 0-10 to 0-255.
+#
+_convertBrightIntToByteFn () {
+  declare _bright_byte;
+  _bright_byte="$(_echoSafeByteFn "$(( ${1:-0} * 25 ))")";
+  if (( _bright_byte > 237 )); then _bright_byte=255; fi
+  echo "${_bright_byte}";
+}
+## . END _convertBrightIntToByteFn }
+
+## BEGIN _convertBrightByteToIntFn {
 # Purpose: Convert value from range 0-255 to 0-10.
 #
-_convertByteToStr () {
-  echo "$(( ${1:-0} / 25 ))";
+_convertBrightByteToIntFn () {
+  _echoSafeBrightIntFn "$(( "${1:-0}" / 25 ))";
 }
-## . END _convertByteToStr }
+## . END _convertBrightByteToIntFn }
+
 
 ## BEGIN _iteCalcKbdStateFn {
 # Purpose: Calculate kbd state and save to _configStateList.
 #
 _iteCalcKbdStateFn () {
-  declare _bright_str _rgb_file _rgb_str _hex_str _enable_int;
+  declare _slurp_str _bright_int _rgb_file _hex_str _enable_int;
 
-  if [ -f "${_iteBrightFile}" ]; then
-    _bright_str="$(head -n1 "${_iteBrightFile}")";
-  else
-    _bright_str='5'; # default
-  fi
+  _slurp_str="$(_slurpFileFn "${_iteBrightFile}")";
+  _bright_int="$(_echoSafeBrightIntFn "${_slurp_str}")";
 
   _rgb_file="${_iteRgbDir}/rgb:kbd_backlight/multi_intensity";
+  _slurp_str="$(_slurpFileFn "${_rgb_file}")";
+  _hex_str="$(_convertRgbToHexFn "${_slurp_str}")";
 
-  if [ -f "${_rgb_file}" ]; then
-    _rgb_str="$(head -n1 "${_rgb_file}")";
-    _hex_str="$(_convertRgbToHexFn "${_rgb_str}")";
-  else
-    _hex_str='001820'; # default
-  fi
-
-  # If the kbd is actually on, then the user pressed keys.
+  # If the kbd has brightness, then the user pressed keys.
   #   In this case, change enable_int to 1.
-  [ "${_bright_str}" = '0' ] && _enable_int=0 || _enable_int=1;
-  _configStateList=( "${_bright_str}" "${_hex_str}" "${_enable_int}" );
+  [ "${_bright_int}" = '0' ] && _enable_int=0 || _enable_int=1;
+  _configStateList=( "${_bright_int}" "${_hex_str}" "${_enable_int}" );
 }
 ## . END _iteCalcKbdStateFn }
 
@@ -97,7 +164,7 @@ _iteCalcKbdStateFn () {
 # Purpose: Read kbd state file into _configStateList.
 #
 _iteReadStateFileFn () {
-  declare _calc_file _str;
+  declare _calc_file _str _val_list _bright_int _hex_str _enable_int;
   [ -z "${1:-}" ] && _calc_file="${_iteStateFile}" || _calc_file="$1";
 
   # Create the state file if needed
@@ -107,8 +174,14 @@ _iteReadStateFileFn () {
   fi
 
   # Read and process state file contents.
-  _str="$(head -n1 "${_calc_file}")";
-  IFS=';' read -r -a _configStateList <<< "${_str}"
+  _str="$(_slurpFileFn "${_calc_file}")";
+  IFS=';' read -r -a _val_list <<< "${_str}";
+
+  _bright_int="$(_echoSafeBrightIntFn "${_val_list[0]:-}")";
+  _hex_str="$(   _echoSafeHexStrFn    "${_val_list[1]:-}")";
+  _enable_int="$(_echoSafeBoolIntFn "${_val_list[2]:-}")";
+
+  _configStateList=( "${_bright_int}" "${_hex_str}" "${_enable_int}" );
 }
 ## . END _iteReadFileListFn }
 
@@ -116,42 +189,46 @@ _iteReadStateFileFn () {
 # Purpose: Restores color and brightness from _configStateList.
 #
 _iteRestoreKbdFn () {
-  declare _bright_str _rgb_str _enable_int _line_dir _calc_bright_str;
+  declare _bright_int _rgb_str _rgb_file \
+    _enable_int _line_dir _calc_bright_int;
 
-  _bright_str="${_configStateList[0]}";
-  _rgb_str="$(_convertHexToRgbFn "${_configStateList[1]}")";
-  _enable_int="${_configStateList[2]}";
+  _bright_int="$(_echoSafeBrightIntFn "${_configStateList[0]:-}")";
+  _rgb_str="$(   _convertHexToRgbFn   "${_configStateList[1]:-}")";
+  _enable_int="$(_echoSafeBoolIntFn "${_configStateList[2]:-}")";
 
-  while read -r _line_dir; do
-    if [ -f "${_line_dir}/multi_intensity" ]; then
-      echo "${_rgb_str}" > "${_line_dir}/multi_intensity";
-    fi
-  done < <(find "${_iteRgbDir}" -maxdepth 1 -mindepth 1 -type l \
-    | grep 'rgb:kbd_backlight'
-  );
+  if [ -d "${_iteRgbDir}" ]; then
+    while read -r _line_dir; do
+      _rgb_file="${_line_dir}/multi_intensity";
+      _writeRegisterFn "${_rgb_file}" "${_rgb_str}";
+    done < <(find "${_iteRgbDir}" -maxdepth 1 -mindepth 1 -type l \
+      | grep 'rgb:kbd_backlight'
+    );
+  fi
 
   if [ -f "${_iteBrightFile}" ]; then
     if [ "${_enable_int}" = '1' ]; then
-      _calc_bright_str="${_bright_str}";
+      _calc_bright_int="${_bright_int}";
     else
-      _calc_bright_str=0;
+      _calc_bright_int=0;
     fi
-    echo "${_calc_bright_str}" > "${_iteBrightFile}";
+    _writeRegisterFn "${_iteBrightFile}" "${_calc_bright_int}";
   fi
 }
 ## . END _iteRestoreKbdFn }
 
 ## BEGIN _iteWriteStateFileFn {
-# Purpose: Write state to _configStateList.
+# Purpose: Write _configStateList to the ITE file.
 #
 _iteWriteStateFileFn () {
-  declare _calc_file _bright_str _hex_str _enable_int;
+  declare _calc_file _bright_int _hex_str _enable_int _config_str;
   [ -z "${1:-}" ] && _calc_file="${_iteStateFile}" || _calc_file="$1";
 
-  _bright_str="${_configStateList[0]}";
-  _hex_str="${_configStateList[1]}";
-  _enable_int="${_configStateList[2]:-1}";
-  echo -n "${_bright_str};${_hex_str};${_enable_int}" > "${_calc_file}";
+  _bright_int="$(_echoSafeBrightIntFn "${_configStateList[0]:-}")";
+  _hex_str="$(   _echoSafeHexStrFn    "${_configStateList[1]:-}")";
+  _enable_int="$(_echoSafeBoolIntFn "${_configStateList[2]:-}")";
+  _config_str="${_bright_int};${_hex_str};${_enable_int}";
+
+  _writeRegisterFn "${_calc_file}" "${_config_str}" '_do_create';
 }
 ## . END _iteWriteStateFileFn }
 
@@ -159,12 +236,21 @@ _iteWriteStateFileFn () {
 # Purpose: Calculate kbd state and save to _configStateList.
 #
 _stdCalcKbdStateFn () {
-  declare _bright_byte _bright_str _hex_str _enable_int;
-  _bright_byte="$(head -n1 "${_stdKeyDir}/brightness")";
-  _bright_str="$(_convertByteToStr "${_bright_byte}")";
-  _hex_str="$(head -n1 "${_stdKeyDir}/color_center")";
-  _enable_int=$(head -n1 "${_stdEnableFile}" );
-  _configStateList=( "${_bright_str}" "${_hex_str}" "${_enable_int}" );
+  declare _bright_file _bright_byte _bright_int \
+  _hex_file _hex_str _enable_int;
+
+  _bright_file="${_stdKeyDir}/brightness";
+  _bright_byte="$(_slurpFileFn "${_bright_file}")";
+  _bright_int="$(_convertBrightByteToIntFn "${_bright_byte}")";
+
+  _hex_file="${_stdKeyDir}/color_center";
+  _slurp_str="$(_slurpFileFn "${_hex_file}")";
+  _hex_str="$(_echoSafeHexStrFn "${_slurp_str}")";
+
+  _slurp_str="$(_slurpFileFn "${_stdEnableFile}")";
+  _enable_int="$(_echoSafeBoolIntFn "${_slurp_str}")";
+
+  _configStateList=( "${_bright_int}" "${_hex_str}" "${_enable_int}" );
 }
 ## . END _stdCalcKbdStateFn }
 
@@ -172,22 +258,30 @@ _stdCalcKbdStateFn () {
 # Purpose: Write color and brightness values to standard registers.
 #
 _stdRestoreKbdFn () {
-  declare _bright_str _hex_str _enable_int _zone_line _bright_byte \
-    _zone_list _zonekb_str;
+  declare _bright_int _hex_str _enable_int _bright_byte \
+    _bright_file _zonekb_file _zonekb_str _extra_file   \
+    _section_list _section_str _section_str _section_file;
 
-  _bright_str="${_configStateList[0]}";
-  _hex_str="${_configStateList[1]}";
-  _enable_int="${_configStateList[2]:-1}";
-  _bright_byte="$(_convertStrToByte "${_bright_str}")";
+  if [ ! -d "${_stdKeyDir}" ]; then
+    _cm2WarnStrFn 'Cannot restore keyboard state: no registers!';
+    return;
+  fi
 
-  # Minimize flashing
+  _bright_int="$(_echoSafeBrightIntFn "${_configStateList[0]:-}")";
+  _hex_str="$(   _echoSafeHexStrFn    "${_configStateList[1]:-}")";
+  _enable_int="$(_echoSafeBoolIntFn "${_configStateList[2]:-}")";
+  _bright_byte="$(_convertBrightIntToByteFn "${_bright_int}")";
+
+  # Toggle the "enable" register to wake up std keyboard to changes
+  _bright_file="${_stdKeyDir}/brightness";
   if [ "${_enable_int}" = 0 ]; then
-    echo '1' > "${_stdKeyDir}/brightness" || true;
-    echo '0' > "${_stdKeyDir}/brightness" || true;
+    _writeRegister "${_bright_file}" 1;
+    _writeRegister "${_bright_file}" 0;
   fi
 
   # Handle zonekb API (m2g6)
-  if [ -f "${_stdKeyDir}/zonekb" ]; then
+  _zonekb_file="${_stdKeyDir}/zonekb";
+  if [ -f "${_zonekb_file}" ]; then
     # ZoneKB API - set five color zones plus brightness in one call.
     _zonekb_str="$(cat <<EOF
 LEFT_COLOR=0x${_hex_str}
@@ -198,25 +292,27 @@ LIGHTBAR_COLOR=0x${_hex_str}
 KB_BRIGHTNESS=${_bright_byte}
 EOF
     )";
-    echo "${_zonekb_str}" > "${_stdKeyDir}/zonekb" || true;
-    echo "${_enable_int}" > "${_stdEnableFile}"    || true;
+    _writeRegisterFn "${_zonekb_file}"   "${_zonekb_str}";
+    _writeRegisterFn "${_stdEnableFile}" "${_enable_int}";
     return;
   fi
 
   # Handle Standard API:
-  #   set three or four color zones and brightness in individual calls.
+  #   set three or four color sections and brightness in individual calls.
   #
-  _zone_list=( 'color_left' 'color_center' 'color_right' );
-  if [ "$(cat "${_stdKeyDir}/extra")" = '1' ]; then
-    _zone_list+=( 'color_extra' );
+  _section_list=( 'color_left' 'color_center' 'color_right' );
+  _extra_file="${_stdKeyDir}/extra";
+  if [ -f "${_extra_file}" ] && [ "$(cat "${_extra_file}")" = '1' ]; then
+    _section_list+=( 'color_extra' );
   fi
 
-  for _zone_line in "${_zone_list[@]}"; do
-    echo "0x${_hex_str}" > "${_stdKeyDir}/${_zone_line}" || true;
+  for _section_str in "${_section_list[@]}"; do
+    _section_file="${_stdKeyDir}/${_section_str}";
+   _writeRegisterFn "${_section_file}" "0x${_hex_str}";
   done;
 
-  echo "${_bright_byte}" > "${_stdKeyDir}/brightness" || true;
-  echo "${_enable_int}"  > "${_stdEnableFile}"        || true;
+  _writeRegisterFn "${_bright_file}" "${_bright_byte}";
+  _writeRegisterFn "${_stdEnableFile}" "${_enable_int}";
 }
 ## . END _stdRestoreKbdFn }
 
@@ -226,7 +322,7 @@ EOF
 #
 # shellcheck disable=SC2120
 _stdReadStateFileFn () {
-  declare _calc_file _line _bright_byte _hex_str _enable_int _bright_str;
+  declare _calc_file _line _slurp_str _bright_int _hex_str _enable_int;
   [ -z "${1:-}" ] && _calc_file="${_stdModprobeFile}" || _calc_file="$1";
 
   # Create the state file if needed
@@ -236,54 +332,47 @@ _stdReadStateFileFn () {
   fi
 
   # Get config line
+  _line='';
   if [ -f "${_calc_file}" ]; then
     _line="$(grep -Ei '^\s*options\s+tuxedo-keyboard' "${_calc_file}")";
   fi
 
-  # Carry forward enabled flag if already set
-  _enable_int=1;
-  if [ -n "${_configStateList+x}" ] && [ "${#_configStateList[@]}" = 3 ]; then
-    _enable_int="${_configStateList[2]:-1}";
-  fi
+  # Extract values from line or use defaults
+  _slurp_str="$(sed -n 's/^.*\sbrightness=\([^ ]\+\).*$/\1/p' <<< "${_line}")";
+  _bright_int="$(_convertBrightByteToIntFn "${_slurp_str}")";
 
-  # Force defaults if no state line
-  if [ -z "${_line:-}" ]; then _line='___'; fi
+  _slurp_str="$(sed -n 's/^.*\scolor_center=0x\([^ ]\+\).*$/\1/p' <<< "${_line}")";
+  _hex_str="$(_echoSafeHexStrFn "${_slurp_str}")";
 
-  # Extract values from line
-  # shellcheck disable=SC2001
-  _bright_byte="$(sed 's/^.*\sbrightness=\([^ ]\+\).*$/\1/' <<< "${_line}")";
-  # shellcheck disable=SC2001
-  _hex_str="$(sed 's/^.*\scolor_center=0x\([^ ]\+\).*$/\1/' <<< "${_line}")";
-
-  # Set defaults if values not found
-  if [ "${_line}" = "${_bright_byte}" ]; then _bright_byte=125; fi
-  if [ "${_line}" = "${_hex_str}"     ]; then _hex_str='001820'; fi
-  if ! [[ "${_enable_int}" =~ ^[01]$ ]]; then _enable_int=1; fi
+  # Carry forward enable_int
+  _enable_int="$(_echoSafeBoolIntFn "${_configStateList[2]:-}")";
 
   # Convert and save
-  _bright_str="$(_convertByteToStr "${_bright_byte}")";
-  _configStateList=( "${_bright_str}" "${_hex_str}" "${_enable_int}" );
+  _configStateList=( "${_bright_int}" "${_hex_str}" "${_enable_int}" );
 }
 ## . END _stdReadStateFileFn }
 
 ## BEGIN _stdWriteStateFileFn {
 # Purpose: Write standard (modprobe) state file from _configStateList.
+#   The state=[0|1] value is ignored by the kbd module, but maybe some day
+#   we will use it.
 #
 _stdWriteStateFileFn () {
-  declare _calc_file _bright_str _bright_byte _hex_str _state_str;
+  declare _calc_file _bright_byte _hex_str _state_str;
   [ -z "${1:-}" ] && _calc_file="${_stdModprobeFile}" || _calc_file="$1";
 
-  _bright_str="${_configStateList[0]}";
-  _bright_byte="$(_convertStrToByte "${_bright_str}")";
-  _hex_str="${_configStateList[1]}";
+  _bright_byte="$(_convertBrightIntToByteFn "${_configStateList[0]:-}")";
+  _hex_str="$(    _echoSafeHexStrFn         "${_configStateList[1]:-}")";
+  # _enable_int="$( _echoSafeHexStrFn       "${_configStateList[2]:-}")";
 
   _state_str="options tuxedo-keyboard mode=0 ";
   _state_str+="brightness=${_bright_byte} color_left=0x${_hex_str} ";
   _state_str+="color_center=0x${_hex_str} ";
   _state_str+="color_right=0x${_hex_str} ";
   _state_str+="color_numpad=0x${_hex_str}";
+  # _state_str+="state=${_enable_int}";
 
-  echo "${_state_str}" > "${_calc_file}";
+  _writeRegisterFn "${_calc_file}" "${_state_str}" '_do_create';
 }
 ## . END _stdWriteStateFileFn }
 
@@ -311,18 +400,19 @@ _restoreKbdFromConfigFn () {
 # Purpose: Converts hex value to RGB triple.
 #
 _convertHexToRgbFn () {
-  declare _input_str _str _hex_list _rgb_list;
-  _input_str="${1:-}";
+  declare _input_str _hex_list _bit_str _rgb_list;
+  _input_str="$(_echoSafeHexStrFn "${1:-}")";
+
   mapfile -n3 -t _hex_list< <(fold -w 2 <<<"${_input_str}");
 
   if [ "${#_hex_list[@]}" != 3 ]; then
     _cm2WarnStrFn 'Bad input';
-    return 201;
+    return 1;
   fi
 
   _rgb_list=();
-  for _str in "${_hex_list[@]}"; do
-    _rgb_list+=( $(( "16#${_str}")) );
+  for _bit_str in "${_hex_list[@]}"; do
+    _rgb_list+=( $(( "16#${_bit_str}")) );
   done
   echo "${_rgb_list[*]}";
 }
@@ -332,31 +422,29 @@ _convertHexToRgbFn () {
 # Purpose: Convert RGB triple to hex.
 #
 _convertRgbToHexFn () {
-  declare _input_str _rgb_list _line_str _hex_str;
+  declare _input_str _rgb_list _bit_str _byte_str _hex_str;
   _input_str="${1:-}";
   IFS=' ' read -r -a _rgb_list <<<"${_input_str}";
 
   if [ "${#_rgb_list[@]}" != 3 ]; then
-    _cm2WarnStrFn 'Bad input';
-    return 201;
+    echo "${_defaultHexStr}";
+    return 1;
   fi
 
   _hex_str='';
-  for _line_str in "${_rgb_list[@]}"; do
-    _hex_str+="$(printf '%02x' "${_line_str}")";
+  for _bit_str in "${_rgb_list[@]}"; do
+    _byte_str="$(_echoSafeByteFn "${_bit_str}")";
+    _hex_str+="$(printf '%02x' "${_byte_str}")";
   done
 
-  echo "${_hex_str}";
+  _echoSafeHexStrFn "${_hex_str}";
 }
 ## . END _convertRgbToHexFn }
 
 ## BEGIN _simpleEnableKbdFn {
 _simpleEnableKbdFn () {
   declare _set_int;
-  _set_int="${1:-}";
-  if ! [[ "${_set_int}" =~ ^(0|1)$ ]]; then
-    _cm2WarnStrFn 'Invalid set int, must be 0 or 1'; return 1;
-  fi
+  _set_int="$(_echoSafeBoolIntFn "${1:-}")";
   if _readInStateFileFn; then
     _configStateList[2]="${_set_int}";
     _restoreKbdFromConfigFn;
@@ -370,10 +458,7 @@ _simpleEnableKbdFn () {
 _enableKbdFn () {
   declare _set_int _old_list _enable_int;
 
-  _set_int="${1:-}";
-  if ! [[ "${_set_int}" =~ ^(0|1)$ ]]; then
-    _cm2WarnStrFn 'Invalid set int, must be 0 or 1'; return 1;
-  fi
+  _set_int="$(_echoSafeBoolIntFn "${1:-}")";
   _readInStateFileFn;
 
   # Handle ITE logic
@@ -395,7 +480,8 @@ _enableKbdFn () {
   fi
 
   # Handle STD logic
-  _enable_int=$(head -n1 "${_stdEnableFile}" );
+  _slurp_str="$(_slurpFileFn "${_stdEnableFile}")";
+  _enable_int="$(_echoSafeBoolIntFn "${_slurp_str}")";
 
   # If the intent is to disable, and the current kbd is enabled,
   #  then calculate current settings.
@@ -404,7 +490,7 @@ _enableKbdFn () {
   fi
 
   # Set and store
-  if echo "${_set_int}" > "${_stdEnableFile}"; then
+  if _writeRegisterFn "${_stdEnableFile}" "${_set_int}"; then
     _configStateList[2]="${_set_int}";
     _stdWriteStateFileFn;
   fi
@@ -443,7 +529,7 @@ _keepSuspendStateFn () {
 ## . END _keepSuspendStateFn }
 
 ## BEGIN _readInStateFileFn {
-# Purpose: Read state from the default file to populate  configStateList
+# Purpose: Read state from the default file to populate configStateList
 #
 _readInStateFileFn () {
   if [ "${_isIte}" = 'y' ]; then
@@ -499,32 +585,19 @@ _listActiveStateFn () {
 # Purpose: Set kbd brightness and color from the input string.
 #
 _setKbdValsFn () {
-  declare _set_str _bit_list _bright_str _hex_str;
+  declare _set_str _bit_list _bright_int _hex_str _enable_int;
 
+  # Parse input
   _set_str="${1:-}";
-  IFS=';' read -r -a _bit_list<<<"${_set_str}";
+  IFS=';' read -r -a _bit_list <<< "${_set_str}";
 
-  _bright_str="${_bit_list[0]}";
-  _hex_str="${_bit_list[1]}";
-  if (( _bright_str < 0 || _bright_str > 10 )); then
-    _cm2WarnStrFn "Brightness arg out of bounds |${_bright_str}|";
-    return 1;
-  fi
-  if ! [[ "${_bright_str}" =~ ^[0-9]+$ ]]; then
-    _cm2WarnStrFn "Brightness arg is not a number |${_bright_str}|";
-    return 1;
-  fi
+  # Update _configStateList.
+  _bright_int="$(_echoSafeBrightIntFn "${_bit_list[0]:-}")";
+  _hex_str="$(   _echoSafeHexStrFn    "${_bit_list[1]:-}")";
+  _enable_int="$(_echoSafeBoolIntFn   "${_bit_list[2]:-}")";
+  _configStateList=( "${_bright_int}" "${_hex_str}" "${_enable_int}" );
 
-  if ! [[ "${_hex_str}" =~ ^[0-9a-fA-F]{6}$ ]]; then
-    _cm2WarnStrFn 'Color arg is not a hex';
-    return 1;
-  fi
-
-  # Restore kbd colors from _configStateList values and then
-  #   store to the appropriate state file.
-  #   The restore routines should always set the enabled flag.
-  #
-  _configStateList=( "${_bright_str}" "${_hex_str}" '1' );
+  # Restore and write
   if [ "${_isIte}" = 'y' ]; then
     if _iteRestoreKbdFn; then _iteWriteStateFileFn; fi
   else
@@ -560,31 +633,29 @@ _mainFn () {
   declare _opt_str;
 
   # Skip any action if the model does not have kbd LEDs
-  if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'n' ]; then
-    return;
-  fi
+  if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'n' ]; then return; fi
 
-  # Do not use 'while getopts...'; instead enforce one-time dispatch
-  local OPTIND=1;
-  getopts 'c:C:E:kKrwls:' _opt_str;
+  _opt_str="${1:-}"; shift;
+
   case "${_opt_str}" in
-    c) _convertHexToRgbFn "${OPTARG}"; shift;;
-    C) _convertRgbToHexFn "${OPTARG}"; shift;;
-    E)
+    '-c') _convertHexToRgbFn "$@";;
+    '-C') _convertRgbToHexFn "$*";;
+    '-E')
       if [ -f "${_dropFile}" ]; then
-        _enableKbdFn "${OPTARG}"; shift;
+        _enableKbdFn "$@";
       else
-        _simpleEnableKbdFn "${OPTARG}"; shift;
+        _simpleEnableKbdFn "$@";
         touch "${_dropFile}";
       fi
       ;;
-    k) _keepSuspendStateFn;;
-    K) _restoreSuspendStateFn;;
-    r) _restoreStateFn;;
-    w) _keepStateFn;;
 
-    l) _listActiveStateFn;;
-    s) _setKbdValsFn "${OPTARG}"; shift;;
+    '-k') _keepSuspendStateFn;;
+    '-K') _restoreSuspendStateFn;;
+    '-r') _restoreStateFn;;
+    '-w') _keepStateFn;;
+
+    '-l') _listActiveStateFn;;
+    '-s') _setKbdValsFn "$@";;
     *) _cm2EchoFn "Option ${_opt_str} not supported";;
   esac
 }
@@ -592,10 +663,14 @@ _mainFn () {
 
 ## BEGIN Declare and assign global vars {
 declare _binName _binDir _baseDir _baseName \
-  _configStateList _dropFile _isIte _iteBrightFile _iteStateFile \
+  _configStateList _defaultBrightInt _defaultHexStr \
+  _dropFile _isIte _iteBrightFile _iteStateFile \
   _modelCode _stdEnableFile _stdKeyDir _stdModprobeFile;
 
 _configStateList=();
+_defaultBrightByte=175;
+_defaultBrightInt=7;
+_defaultHexStr='ffff00';
 _dropFile='/run/kfocus-kb-color-set-enable';
 _isIte='n';
 _iteBrightFile='/sys/class/leds/rgb:kbd_backlight/brightness';

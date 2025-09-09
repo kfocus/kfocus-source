@@ -193,7 +193,7 @@ EOH
     if [ -z "${_read_bright_str}" ]; then
       _read_bright_str="${_color_bright_str}"; fi
     if [ -z "${_read_hex_str}"  ]; then _read_hex_str="${_color_hex_str}"; fi
-    pkexec "${_setKbdExe}" -s "${_read_bright_str};${_read_hex_str}";
+    pkexec "${_setKbdExe}" -s "${_read_bright_str};${_read_hex_str};1";
   done
   ## . End Handle selection loop }
 }
