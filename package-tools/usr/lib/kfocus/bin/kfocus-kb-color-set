@@ -275,8 +275,8 @@ _stdRestoreKbdFn () {
   # Toggle the "enable" register to wake up std keyboard to changes
   _bright_file="${_stdKeyDir}/brightness";
   if [ "${_enable_int}" = 0 ]; then
-    _writeRegister "${_bright_file}" 1;
-    _writeRegister "${_bright_file}" 0;
+    _writeRegisterFn "${_bright_file}" 1;
+    _writeRegisterFn "${_bright_file}" 0;
   fi
 
   # Handle zonekb API (m2g6)
@@ -697,6 +697,13 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _modelCode="$(_cm2EchoModelStrFn 'code')";
   if ! [[ "${_modelCode}" =~ ^(m1|m2|zr) ]]; then exit 0; fi
   if [[ "${_modelCode}" =~ ^(m2g5p|zrg1)$ ]]; then _isIte='y'; fi
+
+  ## Debug Code
+  # declare _parent_name _debug_file;
+  # _parent_name="$(ps -o comm= ${PPID:-})";
+  # _debug_file='/tmp/kfocus-kb-set.log';
+  # echo "|${_baseName} $*| called by ${_parent_name}" >> "${_debug_file}";
+  # _mainFn "$@" |& tee -a "${_debug_file}";
   _mainFn "$@";
 fi
 ## . END Run main if the script is not sourced }
