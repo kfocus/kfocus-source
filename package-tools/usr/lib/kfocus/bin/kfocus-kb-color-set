@@ -179,7 +179,7 @@ _iteReadStateFileFn () {
 
   _bright_int="$(_echoSafeBrightIntFn "${_val_list[0]:-}")";
   _hex_str="$(   _echoSafeHexStrFn    "${_val_list[1]:-}")";
-  _enable_int="$(_echoSafeBoolIntFn "${_val_list[2]:-}")";
+  _enable_int="$(_echoSafeBoolIntFn   "${_val_list[2]:-}")";
 
   _configStateList=( "${_bright_int}" "${_hex_str}" "${_enable_int}" );
 }
@@ -194,7 +194,7 @@ _iteRestoreKbdFn () {
 
   _bright_int="$(_echoSafeBrightIntFn "${_configStateList[0]:-}")";
   _rgb_str="$(   _convertHexToRgbFn   "${_configStateList[1]:-}")";
-  _enable_int="$(_echoSafeBoolIntFn "${_configStateList[2]:-}")";
+  _enable_int="$(_echoSafeBoolIntFn   "${_configStateList[2]:-}")";
 
   if [ -d "${_iteRgbDir}" ]; then
     while read -r _line_dir; do
