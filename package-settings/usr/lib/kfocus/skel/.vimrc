@@ -64,9 +64,6 @@ filetype plugin on  "Identify syntax
 set autoread        "Reload buffer when external change detected
 set autowrite       "Save buffer when changing files
 
-" Reduce IO latency by using SSD
-"   See http://unix.stackexchange.com/questions/37076
-set dir=/tmp
 set fileformats=unix,mac,dos
 set noautoread
 set viminfo=h,'50,<10000,s1000,/1000,:100 "Set values to save to .viminfo
@@ -169,7 +166,7 @@ endfunction
 set timeout timeoutlen=300 ttimeoutlen=300
 
 " H Switch off highlighting till next search
-" map H :nohlsearch<CR>
+map H :nohlsearch<CR>
 
 " e Edit a file
 map e :n
@@ -270,9 +267,12 @@ let g:markdown_fenced_languages = ['bash','css','erb=eruby','javascript','js=jav
 syntax sync minlines=10000
 
 " =====[ Wrap for vimdiff, both panes ] ===============================
-"   https://stackoverflow.com/questions/16840433
-au VimEnter * if &diff | execute 'windo set wrap' | endif
-set ai
+function! VimdiffWrap ()
+  windo setlocal wrap      " Enable line wraps in local buffers
+  windo setlocal linebreak " Break lines at words
+  windo setlocal nolist    " Do not show special chars
+endfunction
+au VimEnter * if &diff | call VimdiffWrap() | endif
 
 " =====[ Fix for pattern uses more memory than 'maxmempattern' ] ======
 " See https://github.com/vim/vim/issues/2049
