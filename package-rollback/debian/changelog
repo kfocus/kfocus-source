@@ -1,3 +1,10 @@
+kfocus-rollback (24.04.11) noble; urgency=medium
+
+  * kfocus-btrfs-watcher.service: Don't start unless snapshot setup is
+    complete (#5810)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Fri, 19 Sep 2025 14:28:03 -0500
+
 kfocus-rollback (24.04.10) noble; urgency=medium
 
   * kfocus-btrfs-watcher: Prevent segfault during system startup (#5783)
