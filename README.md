@@ -53,11 +53,12 @@ All these are source packages. Many create multiple binary packages.
 | wallpapers           |
 
 As of 24.04, the following packages are deprecated:
-```
-001-*     # 22.04 packages renamed above
-cuda-lib  # Replaced kfocus kfocus-conda tool
-rest      # Restricted packages, now offerred in kfocus-extra.
-```
+
+| Packages          | Reason
+| ------------------| -------------------- |
+| `kfocus-001-*`    | Since 22.04, `001` is dropped.                 |
+| `kfocus-cuda-lib` | Replaced by kfocus-conda tool dynamic loading. |
+| `kfocus-rest`     | Replaced by interactive script, kfocus-extra.  |
 
 ## Build and Distribution
 Packages are built using standard PPA preparation and uploaded to the [Kubuntu
