@@ -1,5 +1,7 @@
 [Unit]
 Description=KFocus BTRFS disk space monitoring
+ConditionPathExists=/btrfs_boot/@kfocus-rollback-boot-snapshots
+ConditionPathExists=/btrfs_main/@kfocus-rollback-snapshots
 [Service]
 Type=exec
 ExecStart=/usr/lib/kfocus/bin/kfocus-btrfs-watcher
