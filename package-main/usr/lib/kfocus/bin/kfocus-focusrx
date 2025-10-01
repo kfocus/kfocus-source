@@ -56,7 +56,7 @@ _importCommonFn () {
  #   2: Other error.
  #
 _testNagCountFn () {
-  declare _mode _file_name _max_count _drop_file _view_count _left_count;
+  declare _mode _file_name _max_count _drop_file _view_count _left_count _msg;
 
   _mode="${1:-}";
   _file_name="${2:-}";
@@ -86,14 +86,16 @@ _testNagCountFn () {
 
   case "${_mode}" in
     check)
-      _left_count=$(( _max_count - _view_count ));
-      if (( _left_count == 0 )); then
-        echo 'warning will not be shown again';
+      _left_count=$(( _max_count - _view_count - 1 ));
+      if (( _left_count <= 0 )); then
+        _msg='warning will not be shown again.';
       elif (( _left_count == 1 )); then
-        echo 'warning will be shown for one more login';
+        _msg='warning will be shown for one more login.';
       else
-        echo "warning will be shown for ${_left_count} more logins";
+        _msg="warning will be shown for ${_left_count} more logins.";
       fi
+      _msg+='<br>\nRunning <code>focusrx -f</code> will reset this counter';
+      echo -e "${_msg}";
       ;;
     inc)
       (( _view_count++ ));
@@ -405,6 +407,143 @@ _chkNvPMizerFn () {
   fi
 }
 ## . END _chkNvPMizerFn }
+
+## BEGIN _chkDispRefreshFn {
+_chkDispRefreshFn () {
+  declare _title _win_title _prompt_msg _kscreen_doctor_report \
+    _internal_disp_name _nag_name _init_nag_count _warn_nag_count;
+
+  # Skip if not on m2g6 or zrg1 or kscreen tool not installed
+  [[ "$(_cm2EchoModelStrFn 'config_code')" =~ ^(m2g6|zrg1)$ ]] || return;
+  [ -z "${_kscreenDoctorExe}" ] && return;
+
+  # Set tunables
+  _init_nag_count='1';
+  _warn_nag_count='4';
+  _nag_name='kfocus-disphz_count';
+
+  _title='Configure display refresh';
+  _cm2SetMsgFn "${_title}";
+  _win_title="${_rootTitle}: ${_title}";
+
+  # Calculate laptop display name
+  _kscreen_doctor_report="$("${_kscreenDoctorExe}" -o)";
+  _internal_disp_name="$(
+    ansi2txt <<< "${_kscreen_doctor_report}" \
+      | cut -d' ' -f3-5 \
+      | grep 'eDP.* enabled connected' \
+      | cut -d' ' -f1 \
+      | head -n1
+  )";
+  if [ -z "${_internal_disp_name}" ]; then
+    _cm2WarnStrFn 'Laptop display not found. Will try again next login.';
+    _cm2WarnFn;
+    return;
+  fi
+
+  ## Begin Handle initial run {
+  #  Always set display to 60 Hz
+  if _nag_msg="$(
+    _testNagCountFn 'check' "${_nag_name}" "${_init_nag_count}"
+  )"; then
+    if "${_kscreenDoctorExe}" "output.${_internal_disp_name}.mode.2560x1600@60";
+      then _testNagCountFn 'fill' "${_nag_name}" "${_init_nag_count}";
+      _cm2SucFn;
+    else
+      # Do not set the nag count and try again later
+      _cm2WarnStrFn 'Could not set screen mode. Will try again next login';
+      _cm2WarnFn;
+    fi
+    return;
+  fi
+  ## End Handle initial run }
+
+  ## Begin Handle 60 Hz refresh rate {
+  if grep " ${_internal_disp_name} " <<< "${_kscreen_doctor_report}" \
+    | grep -q '2560x1600@60\*'; then
+    _cm2SucStrFn 'Desired screen refresh already set.';
+    _cm2SucFn;
+    return;
+  fi
+  ## . End Handle 60 Hz refresh rate }
+
+  ## Begin Handle 240 Hz refresh rate {
+  if grep " ${_internal_disp_name} " <<< "${_kscreen_doctor_report}" \
+    | grep -q '2560x1600@240\*'; then
+
+    # Bail if nag count is met
+    if ! _nag_msg="$(
+      _testNagCountFn 'check' "${_nag_name}" "${_warn_nag_count}"
+    )"; then
+      _cm2SucStrFn 'View count limit reached.';
+      _cm2SucFn;
+      return;
+    fi
+
+    _prompt_msg="$(cat <<EOF
+${_cm2HtmBeginStr}
+${_cm2HtmH3Str}${_title}</h3>
+
+${_cm2HtmPStr}The laptop display's refresh rate is currently set to<br>
+240 Hz. Higher refresh rates consume substantial<br>
+bandwidth, which may make it more difficult to use<br>
+multiple displays. If you encounter issues, consider<br>
+reducing the laptop display refresh rate to 60 Hz.</p>
+
+${_cm2HtmPStr}You may change the refresh rate using <code>System<br>
+Settings &gt; Display and Monitor &gt; Display<br>
+Configuration &gt; Refresh Rate</code>.</p>${_cm2HtmEndStr}
+
+${_cm2HtmPStr}If you keep the panel at 240 Hz, this <br>
+${_nag_msg}.</p>
+EOF
+  )";
+    _cm2PromptUserFn "${_prompt_msg}" "${_win_title}";
+    _testNagCountFn 'inc' "${_nag_name}";
+    _cm2SucFn;
+    return;
+  fi
+  ## . End Handle 240 Hz refresh rate }
+
+  ## Begin Handle 300 Hz refresh rate {
+  #  This should not affect nag count and should always be fixed.
+  #  TODO: Should we reset nag count here?
+  if grep " ${_internal_disp_name} " <<< "${_kscreen_doctor_report}" \
+    | grep -q '2560x1600@300\*'; then
+    _prompt_msg="$(cat <<EOF
+${_cm2HtmBeginStr}
+${_cm2HtmH3Str}${_title}</h3>
+
+<p><b>Setting screen refresh rate to 240 Hz.</b></p>
+
+${_cm2HtmPStr}Laptop display refresh rates greater than 240 Hz are<br>
+unstable, unsupported, and may cause system crashes<br>
+or other undesirable behavior.</p>
+
+${_cm2HtmPStr}If you are using multiple monitors, you may wish to<br>
+further reduce the laptop display refresh rate to 60 Hz.<br>
+This provides more display bandwidth for external<br>
+displays.</p>
+
+${_cm2HtmPStr}You may change the refresh rate later using <code>System<br>
+Settings &gt; Display and Monitor &gt; Display<br>
+Configuration &gt; Refresh Rate</code>.</p>${_cm2HtmEndStr}
+EOF
+    )";
+    _cm2PromptUserFn "${_prompt_msg}" "${_win_title}";
+
+    if "${_kscreenDoctorExe}" \
+      "output.${_internal_disp_name}.mode.2560x1600@240"; then
+      _cm2SucFn;
+    else
+      _cm2WarnStrFn 'Could not set screen mode. Will try again next login';
+      _cm2WarnFn;
+    fi
+    return;
+  fi
+  ## . End Handle 300 Hz refresh rate }
+}
+## . END _chkDispRefreshFn }
 
 ## BEGIN _chkHwConfigFn {
 _chkHwConfigFn () {
@@ -885,7 +1024,7 @@ _EOH14
   ## . End: Update version string }
 
   ## Begin: Handle reboot if recommended {
-  if [ ${_do_reboot} = 'y' ]; then
+  if [ "${_do_reboot}" = 'y' ]; then
     _prompt_msg="$(cat <<_EOH15
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}REBOOT RECOMMENDED</h3>
@@ -1093,6 +1232,7 @@ _mainFn () {
   _cm2EchoFn "== BEGIN :      ${_rootTitle}\n";
   _announceStartFn;
   _chkNvPMizerFn;       #5423
+  _chkDispRefreshFn;
   _chkBtrfsSetUpFn;
   _chkOemMultiDiskFn;
   _chkHwConfigFn;
@@ -1128,7 +1268,7 @@ declare _parentCmdStr _lookupList \
   _fixIbusExe _kcleanExe _resetEffectsExe _rollbackBackendExe \
   _rollbackSetExe _chainHelperExe _sysVersStr;
 
-_parentCmdStr="$(ps -o comm= $PPID)";
+_parentCmdStr="$(ps -o comm= "$PPID")";
 
 # These names are used only for DNS lookups as a means to confirm the internet
 # is working. FocusRx does not ping, connect to, or otherwise communicate with
