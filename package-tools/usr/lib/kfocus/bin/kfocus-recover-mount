@@ -388,7 +388,8 @@ _getKubuntuMountDataFn() {
 _tryKfocusMountFn () {
   declare _mount_data_str _bit_list _mount_fs_uuid _mount_crypt_uuid \
     _mount_crypt_name _mount_subvol_str _blkid_report _target_part \
-    _part_list _is_crypt_opened _calc_mount_cmd _target_crypt_part;
+    _part_list _is_crypt_opened _calc_mount_cmd _target_crypt_part \
+    _mounted_fs_type;
 
   _mount_data_str="${1:-}";
   [ -z "${_mount_data_str}" ] && {
@@ -466,7 +467,9 @@ _tryKfocusMountFn () {
         "/dev/mapper/${_mount_crypt_name}|${_target_crypt_part}"
       );
     fi
-    _chosenMountList+=( "/mnt|${_target_part}" );
+    _mounted_fs_type="$(_extractBlkidDataFn "${_blkid_report}" \
+      "${_target_part}" 'type')";
+    _chosenMountList+=( "/mnt|${_mounted_fs_type}|${_target_part}" );
     return;
   fi
 
@@ -563,7 +566,8 @@ _mountFstabEntriesFn () {
   declare _fstab_bit_list _fstab_line _fstab_mount_src _fstab_mount_tgt \
     _fstab_fs_type _fstab_fs_opt _crypttab_line _crypttab_bit_list \
     _crypttab_vol_name _crypttab_raw_part _crypttab_part _crypttab_uuid \
-    _blkid_report _part_list _fstab_part _fstab_uuid _true_mount_tgt;
+    _blkid_report _part_list _fstab_part _fstab_uuid _true_mount_tgt \
+    _mounted_fs_type;
 
   _blkid_report="$("${_blkidExe}")";
   readarray -t _part_list < <(_getAllPartitionListFn);
@@ -651,7 +655,11 @@ _mountFstabEntriesFn () {
 
     if "${_mountExe}" -t "${_fstab_fs_type}" -o "${_fstab_fs_opt}" \
       "${_fstab_part}" "${_true_mount_tgt}" 2>/dev/null; then
-      _chosenMountList+=( "${_true_mount_tgt}|${_fstab_part}" );
+      _mounted_fs_type="$(_extractBlkidDataFn "${_blkid_report}" \
+        "${_fstab_part}" 'type')";
+      _chosenMountList+=(
+        "${_true_mount_tgt}|${_mounted_fs_type}|${_fstab_part}"
+      );
     fi
   done
 }
@@ -758,19 +766,6 @@ _printTableFn () {
 }
 ## . END _printTableFn }
 
-## BEGIN _displayMountSummaryFn {
-_displayMountSummaryFn () {
-  if [ "${#_chosenCryptList}" != '0' ]; then
-    _printTableFn 'Decrypted volumes:' 'Volume|Source Device' \
-      "${_chosenCryptList[@]}";
-  fi
-  if [ "${#_chosenMountList}" != '0' ]; then
-    _printTableFn 'Mounted directories:' 'Location|Source' \
-      "${_chosenMountList[@]}";
-  fi
-}
-## . END _displayMountSummaryFn }
-
 ## BEGIN _mountSystemDisksFn {
 _mountSystemDisksFn () {
   declare _unmounted_partition_list _kubuntu_mount_data_str _did_kfocus_mount \
@@ -839,11 +834,24 @@ _chrootBindFn () {
       return 1;
     fi
     _chosenMountList+=(
-      "${_sysMountPath}${_chroot_mount_str}|${_chroot_mount_str}"
+      "${_sysMountPath}${_chroot_mount_str}|bind|${_chroot_mount_str}"
     );
   done
 }
 ## . END _chrootBindFn }
+
+## BEGIN _displayMountSummaryFn {
+_displayMountSummaryFn () {
+  if [ "${#_chosenCryptList}" != '0' ]; then
+    _printTableFn 'Decrypted volumes:' 'Volume|Source Device' \
+      "${_chosenCryptList[@]}";
+  fi
+  if [ "${#_chosenMountList}" != '0' ]; then
+    _printTableFn 'Mounted directories:' 'Location|Type|Source' \
+      "${_chosenMountList[@]}";
+  fi
+}
+## . END _displayMountSummaryFn }
 
 ## BEGIN _unmountSystemDisksFn {
 _unmountSystemDisksFn () {
@@ -1016,7 +1024,7 @@ _sysCrypttabList=();
 # "vol_name|dev_name"
 _chosenCryptList=();
 
-# "mount_path|mount_src"
+# "mount_path|type|mount_src"
 _chosenMountList=();
 ## . END Declare and assign global vars }
 
