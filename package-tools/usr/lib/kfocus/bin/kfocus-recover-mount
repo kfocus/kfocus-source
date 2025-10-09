@@ -49,6 +49,8 @@ _importCommonFn () {
 ## . END _importCommonFn }
 
 ## BEGIN _assignGlobalUiVarsFn {
+# TODO: Get rid of this function and put all strings directly where the are
+#   needed
 _assignGlobalUiVarsFn () {
   # TODO:
   #   1, Identify and offer actions explicitly
@@ -70,6 +72,8 @@ EOF
 Exiting without mounting the internal KFocus disk(s), per user request.
 EOF
   )";
+
+  _confirmMountMsg="Is this the correct partition (if in doubt, answer Y)";
 
   _mountErrMsg="Could not mount the internal KFocus disk(s)!";
 
@@ -126,17 +130,10 @@ EOF
 The internal KFocus disk(s) have been unmounted successfully.
 EOF
   )";
+
+  _mountSummaryDisplayFailMsg="Failed to generate and display mount summary!";
 }
 ## . END _assignGlobalUiVarsFn }
-
-## BEGIN _ensureRootUserFn {
-_ensureRootUserFn () {
-  if [ "$(id -u)" != '0' ]; then
-    _cm2ErrStrFn 'Must be run as root!';
-    exit 1;
-  fi
-}
-## . END _ensureRootUserFn }
 
 ## BEGIN _readPromptFn {
 _readPromptFn () {
@@ -155,7 +152,7 @@ _getAllPartitionListFn () {
   _part_str="$("${_lsblkExe}" --paths --raw --output=NAME | tail -n+2)"
   if [ -z "${_part_str}" ]; then
     _cm2ErrStrFn 'No partitions found!';
-    exit 1;
+    return 1;
   fi
 
   echo "${_part_str}";
@@ -169,19 +166,19 @@ _getUnmountedPartitionListFn () {
 
   readarray -t _block_device_list < <(
     "${_lsblkExe}" --paths --raw --output=NAME | tail -n+2
-  );
+  ) || return 1;
   readarray -t _init_mountpoint_list < <(
     "${_lsblkExe}" --paths --raw --output=MOUNTPOINTS | tail -n+2
-  );
+  ) || return 1;
 
   if [ "${#_block_device_list[@]}" != "${#_init_mountpoint_list[@]}" ]; then
     _cm2ErrStrFn \
       'Block device list length does not equal mountpoint list length!';
-    exit 1;
+    return 1;
   fi
 
   _ignore_device_list=();
-  _disk_id_regex='(sd[a-z]+|hd[a-z]+|vd[a-z]+|xvd[a-z]+|nvme\d+n\d+|mmcblk\d+)';
+  _disk_id_regex='(sd[a-z]+|hd[a-z]+|vd[a-z]+|xvd[a-z]+|nvme[0-9]+n[0-9]+|mmcblk[0-9]+)';
 
   for _idx in "${!_block_device_list[@]}"; do
     # Ignore any devices that don't look like a normal disk device.
@@ -196,10 +193,10 @@ _getUnmountedPartitionListFn () {
         unset "_block_device_list[${_idx}]";
 
       # Mark disks that have at least one mounted partition as "to be
-      # ignored".
+      #   ignored".
       else
         if [[ "${_block_device_list[_idx]}" \
-          =~ (nvme\d+n\d+p\d+|mmcblk\d+p\d+)$ ]]; then
+          =~ (nvme[0-9]+n[0-9]+p[0-9]+|mmcblk[0-9]+p[0-9]+)$ ]]; then
           _ignore_device_list+=( "${_block_device_list[_idx]%p*}" );
         else
           [[ "${_block_device_list[_idx]}" =~ (.*[a-z]*)[0-9]+ ]];
@@ -233,15 +230,15 @@ _extractBlkidDataFn () {
   _data_type="${3:-}";
   [ -z "${_blkid_report}" ] && {
     _cm2ErrStrFn 'No blkid report provided!';
-    exit 1;
+    return 1;
   }
   [ -z "${_target_part}" ] && {
     _cm2ErrStrFn 'No target partition specified!';
-    exit 1;
+    return 1;
   }
   [ -z "${_data_type}" ] && {
     _cm2ErrStrFn 'No data type specified!';
-    exit 1;
+    return 1;
   }
 
   _blkid_field_str="$(grep "^${_target_part}: " <<< "${_blkid_report}" \
@@ -261,65 +258,58 @@ _getPartitionByFsUuid () {
 
   [ -z "${_fs_uuid}" ] && {
     _cm2ErrStrFn 'No FS UUID provided!';
-    exit 1;
+    return 1;
   }
   [ -z "${_blkid_report}" ] && {
     _cm2ErrStrFn 'No blkid report provided!';
-    exit 1;
+    return 1;
   }
   if [ "${#_part_list[@]}" = '0' ] \
     || [ -z "${_part_list[0]}" ]; then
     _cm2ErrStrFn 'No partition list provided!';
-    exit 1;
+    return 1;
   fi
 
   for _part_str in "${_part_list[@]}"; do
     _check_fs_uuid="$(_extractBlkidDataFn "${_blkid_report}" "${_part_str}" \
-      'uuid')";
+      'uuid')" || return 1;
     if [ "${_check_fs_uuid}" = "${_fs_uuid}" ]; then
       echo "${_part_str}";
-      return;
+      return 0;
     fi
   done
 }
 ## . END _getPartitionByFsUuid }
 
-## BEGIN _unmountOrDieFn {
-_unmountOrDieFn () {
-  declare _target_dir;
-
-  _target_dir="${1:-}";
-  [ -z "${_target_dir}" ] && {
-    _cm2ErrStrFn 'No target directory provided to unmount!';
-    exit 1;
-  }
-  "${_umountExe}" "${_target_dir}" || {
-    _cm2ErrStrFn "Could not unmount |${_target_dir}|!";
-    exit 1;
-  }
-}
-## . END _unmountOrDieFn }
-
-## BEGIN _getKubuntuMountDataFn {
+## BEGIN _getKubuntuRootMountDataFn {
 # Purpose : Search through the grub.cfg file on a partition, looking for
 #           Kubuntu installations. When one is found, extract the root device
 #           UUID, encrypted volume UUID, encrypted volume name, and BTRFS
 #           subvolume from the config file.
+# Returns : 1 if a critical error is encountered that requires stopping the
+#   script, 0 otherwise.
+# Outputs : A pipe-delimited string containing the values necessary to mount the
+#   root partition pointed to by the grub.cfg file:
+#   <root_fs_UUID>|<crypt_vol_UUID>|<crypt_vol_name>|<btrfs_subvol>. Fields that
+#   are not applicable for a partition are left empty. If the values cannot be
+#   found, returns an empty string.
 #
-_getKubuntuMountDataFn() {
+_getKubuntuRootMountDataFn() {
   declare _target_part _grub_cfg_search_path _grub_cfg_str _grub_cfg_path \
     _grub_kubuntu_sect_str _grub_linux_cmdline_str _mount_fs_uuid \
     _mount_crypt_uuid _mount_subvol_str _mount_crypt_name;
 
+  # Process arguments
   _target_part="${1:-}";
   _grub_cfg_path='';
   [ -z "${_target_part}" ] && {
     _cm2ErrStrFn 'No target partition specified!';
-    exit 1;
+    return 1;
   }
 
+  # Mount the specified partition and look for a grub.cfg file under it
   if ! "${_mountExe}" "${_target_part}" "${_sysMountPath}" 2>/dev/null; then
-    return;
+    return 0;
   fi
   for _grub_cfg_search_path in "${_grubCfgPathList[@]}"; do
     if [ -f "${_grub_cfg_search_path}" ]; then
@@ -328,58 +318,66 @@ _getKubuntuMountDataFn() {
     fi
   done
   if [ -z "${_grub_cfg_path}" ]; then
-    _unmountOrDieFn "${_sysMountPath}";
-    return;
+    "${_umountExe}" "${_sysMountPath}" || return 1;
+    return 0;
   fi
 
+  # Extract a Kubuntu boot menu entry from grub.cfg
   _grub_cfg_str="$(cat "${_grub_cfg_path}")";
-  _grub_kubuntu_sect_str="$(sed -z \
-    "s/.*\(menuentry 'Kubuntu' [^{]\+{[^}]\+}\).*/\1/" \
+  _grub_kubuntu_sect_str="$(sed -nz \
+    "s/.*\(menuentry 'Kubuntu' [^{]\+{[^}]\+}\).*/\1/p" \
     <<< "${_grub_cfg_str}")";
-  if [ "${_grub_cfg_str}" = "${_grub_kubuntu_sect_str}" ]; then
-    _unmountOrDieFn "${_sysMountPath}";
-    return;
+  if [ -z "${_grub_kubuntu_sect_str}" ]; then
+    "${_umountExe}" "${_sysMountPath}" || return 1;
+    return 0;
   fi
 
+  # Extract the "linux" line from the Kubuntu boot menu entry
   _grub_linux_cmdline_str="$(grep '^\s*linux' \
     <<< "${_grub_kubuntu_sect_str}")";
   if [ -z "${_grub_linux_cmdline_str}" ]; then
-    _unmountOrDieFn "${_sysMountPath}";
-    return;
+    "${_umountExe}" "${_sysMountPath}" || return 1;
+    return 0;
   fi
 
+  # Extract the root fs UUID from the kernel command line
   # shellcheck disable=SC2001
-  _mount_fs_uuid="$(sed 's/.*root=UUID=\([^ ]\+\).*/\1/' \
+  _mount_fs_uuid="$(sed -n 's/.*root=UUID=\([^ ]\+\).*/\1/p' \
     <<< "${_grub_linux_cmdline_str}")";
-  if [ "${_mount_fs_uuid}" = "${_grub_linux_cmdline_str}" ]; then
-    _unmountOrDieFn "${_sysMountPath}";
-    return;
+  if [ -z "${_mount_fs_uuid}" ]; then
+    "${_umountExe}" "${_sysMountPath}" || return 1;
+    return 0;
   fi
 
+  # Extract the LUKS volume UUID if available
   # shellcheck disable=SC2001
-  _mount_crypt_uuid="$(sed 's/.*cryptdevice=UUID=\([^:]\+\):.*/\1/' \
+  _mount_crypt_uuid="$(sed -n 's/.*cryptdevice=UUID=\([^:]\+\):.*/\1/p' \
     <<< "${_grub_linux_cmdline_str}")";
-  if [ "${_mount_crypt_uuid}" = "${_grub_linux_cmdline_str}" ]; then
+  if [ -z "${_mount_crypt_uuid}" ]; then
     _mount_crypt_uuid='';
   fi
+
+  # Extract the LUKS volume name if available
   # shellcheck disable=SC2001
-  _mount_crypt_name="$(sed 's/.*cryptdevice=UUID=[^:]\+:\([^ ]\+\).*/\1/' \
+  _mount_crypt_name="$(sed -n 's/.*cryptdevice=UUID=[^:]\+:\([^ ]\+\).*/\1/p' \
     <<< "${_grub_linux_cmdline_str}")";
-  if [ "${_mount_crypt_name}" = "${_grub_linux_cmdline_str}" ]; then
+  if [ -z "${_mount_crypt_name}" ]; then
     _mount_crypt_name='';
   fi
+
+  # Extract the root filesystem BTRFS subvolume if available
   # shellcheck disable=SC2001
-  _mount_subvol_str="$(sed 's/.*rootflags=subvol=\([^ ]\+\).*/\1/' \
+  _mount_subvol_str="$(sed -n 's/.*rootflags=subvol=\([^ ]\+\).*/\1/p' \
     <<< "${_grub_linux_cmdline_str}")";
-  if [ "${_mount_subvol_str}" = "${_grub_linux_cmdline_str}" ]; then
+  if [ -z "${_mount_subvol_str}" ]; then
     _mount_subvol_str='';
   fi
 
+  # Echo the root filesystem data, then unmount the boot partition
   echo "${_mount_fs_uuid}|${_mount_crypt_uuid}|${_mount_crypt_name}|${_mount_subvol_str}";
-
-  _unmountOrDieFn "${_sysMountPath}";
+  "${_umountExe}" "${_sysMountPath}" || return 1;
 }
-## . END _getKubuntuMountDataFn }
+## . END _getKubuntuRootMountDataFn }
 
 ## BEGIN _tryKfocusMountFn {
 # Purpose : Checks to see if a partition contains a KFocus installation or not,
@@ -389,15 +387,15 @@ _tryKfocusMountFn () {
   declare _mount_data_str _bit_list _mount_fs_uuid _mount_crypt_uuid \
     _mount_crypt_name _mount_subvol_str _blkid_report _target_part \
     _part_list _is_crypt_opened _calc_mount_cmd _target_crypt_part \
-    _mounted_fs_type;
+    _mounted_fs_type _msg;
 
   _mount_data_str="${1:-}";
   [ -z "${_mount_data_str}" ] && {
     _cm2ErrStrFn 'No mount data provided!';
-    exit 1;
+    return 2;
   }
 
-  readarray -t _part_list < <(_getAllPartitionListFn);
+  readarray -t _part_list < <(_getAllPartitionListFn) || return 2;
 
   _is_crypt_opened='n';
   _target_part='';
@@ -408,16 +406,16 @@ _tryKfocusMountFn () {
   _mount_fs_uuid="${_bit_list[0]:-}";
   [ -z "${_mount_fs_uuid}" ] && {
     _cm2ErrStrFn 'Malformed mount data provided!';
-    exit 1;
+    return 2;
   }
   _mount_crypt_uuid="${_bit_list[1]:-}";
   _mount_crypt_name="${_bit_list[2]:-}";
   _mount_subvol_str="${_bit_list[3]:-}";
 
-  _blkid_report="$("${_blkidExe}")";
+  _blkid_report="$("${_blkidExe}")" || return 1;
   if [ -n "${_mount_crypt_uuid}" ]; then
     _target_crypt_part="$(_getPartitionByFsUuid "${_mount_crypt_uuid}" \
-      "${_blkid_report}" "${_part_list[@]}")";
+      "${_blkid_report}" "${_part_list[@]}")" || return 2;
     if [ -z "${_target_crypt_part}" ]; then
       return 1;
     fi
@@ -428,12 +426,12 @@ _tryKfocusMountFn () {
     fi
 
     _is_crypt_opened='y';
-    _blkid_report="$("${_blkidExe}")";
-    readarray -t _part_list < <(_getAllPartitionListFn);
+    _blkid_report="$("${_blkidExe}")" || return 1;
+    readarray -t _part_list < <(_getAllPartitionListFn) || return 2;
   fi
 
   _target_part="$(_getPartitionByFsUuid "${_mount_fs_uuid}" \
-    "${_blkid_report}" "${_part_list[@]}")";
+    "${_blkid_report}" "${_part_list[@]}")" || return 2;
   if [ -z "${_target_part}" ]; then
     if [ "${_is_crypt_opened}" = 'y' ]; then
       # TODO: This may print a deluge of device-mapper errors, then error out.
@@ -460,22 +458,25 @@ _tryKfocusMountFn () {
   fi
 
   if [ -f "${_checkKfocusPath}" ]; then
-    # The mounted partition contains a Kubuntu Focus installation, exit and
-    # leave the partition mounted.
+    # The mounted partition contains a Kubuntu Focus installation, return and
+    #   leave the partition mounted.
     if [ "${_is_crypt_opened}" = 'y' ]; then
       _chosenCryptList+=(
         "/dev/mapper/${_mount_crypt_name}|${_target_crypt_part}"
       );
     fi
     _mounted_fs_type="$(_extractBlkidDataFn "${_blkid_report}" \
-      "${_target_part}" 'type')";
+      "${_target_part}" 'type')" || return 2;
     _chosenMountList+=( "/mnt|${_mounted_fs_type}|${_target_part}" );
-    return;
+    _msg="Internal KFocus root filesystem detected at |${_target_part}|,";
+    _msg+=" mounted to |${_sysMountPath}|.";
+    _cm2EchoFn "${_msg}";
+    return 0;
   fi
 
   # The mounted partition does not contain a Kubuntu Focus installation,
-  # unmount it.
-  _unmountOrDieFn "${_target_part}";
+  #   unmount it.
+  "${_umountExe}" "${_target_part}" || return 2;
   if [ "${_is_crypt_opened}" = 'y' ]; then
     # TODO: See note about device-mapper errors above
     "${_cryptsetupExe}" luksClose "${_mount_crypt_name}";
@@ -485,11 +486,16 @@ _tryKfocusMountFn () {
 ## . END _tryKfocusMountFn }
 
 ## BEGIN _loadCrypttabListFn {
+# Purpose : Load data from /mnt/etc/crypttab into _sysCrypttabList.
+# Returns : none
+# Outputs : none
+# Globals : _sysCrypttabList is updated
+#
 _loadCrypttabListFn () {
   declare _line _crypttab_bit_list;
 
   if ! [ -f "${_sysCrypttabPath}" ]; then
-    return;
+    return 0;
   fi
 
   while read -r _line; do
@@ -499,31 +505,41 @@ _loadCrypttabListFn () {
 
     IFS=' ' read -r -a _crypttab_bit_list < <(xargs <<< "${_line}");
     if [ -z "${_crypttab_bit_list[0]:-}" ] \
-      || [ -z "${_crypttab_bit_list[1]:-}" ]; then
+      || [ -z "${_crypttab_bit_list[1]:-}" ] \
+      || [ -z "${_crypttab_bit_list[2]:-}" ]; then
       continue;
     fi
 
     # See comments in global variable declaration block for details on the
-    # format of items in _sysCrypttabList
-    _sysCrypttabList+=( "${_crypttab_bit_list[0]}|${_crypttab_bit_list[1]}" );
+    #   format of items in _sysCrypttabList
+    _sysCrypttabList+=( "$(IFS='|'; echo "${_crypttab_bit_list[*]:0:3}")" );
   done < "${_sysCrypttabPath}"
 }
 ## . END _loadCrypttabListFn }
 
 ## BEGIN _loadFstabListFn {
+# Purpose : Load data from /mnt/etc/fstab into _sysFstabList, sorted by
+#   path depth.
+# Returns : none
+# Outputs : none
+# Globals : _sysFstabList is updated
+#
 _loadFstabListFn () {
   declare _line _fstab_bit_list _fstab_tgt_slash_count _fstab_data_sort_str \
     _fstab_mount_src _fstab_mount_tgt _fstab_fs_type _fstab_fs_opt;
 
   if ! [ -f "${_sysFstabPath}" ]; then
-    return;
+    return 0;
   fi
 
   # Ensure the items in _sysFstabList end up sorted such that filesystems
-  # mounted into less deeply nested directories appear earlier in the list than
-  # filesystems mounted into more deeply nested directories. This allows us to
-  # mount all filesystems by just walking down the list and mounting every item.
+  #   mounted into less deeply nested directories appear earlier in the list
+  #   than filesystems mounted into more deeply nested directories. This allows
+  #   us to mount all filesystems by just walking down the list and mounting
+  #   every item.
   _fstab_data_sort_str='';
+
+  ## Begin loop through fstab lines {
   while read -r _line; do
     if [[ "${_line}" =~ ^[[:space:]]*# ]]; then
       continue;
@@ -547,142 +563,189 @@ _loadFstabListFn () {
     # `wc -c` counts the newline at the end, remove that
     (( _fstab_tgt_slash_count-- )) || true;
 
-    _fstab_data_sort_str+="${_fstab_tgt_slash_count}|${_fstab_mount_src}|${_fstab_mount_tgt}|${_fstab_fs_type}|${_fstab_fs_opt}";
-    _fstab_data_sort_str+=$'\n';
+    _fstab_data_sort_str+="${_fstab_tgt_slash_count}|${_fstab_mount_src}|";
+    _fstab_data_sort_str+="${_fstab_mount_tgt}|${_fstab_fs_type}|";
+    _fstab_data_sort_str+="${_fstab_fs_opt}"$'\n';
   done < "${_sysFstabPath}"
+  ## . End loop through fstab lines }
 
   _fstab_data_sort_str="$(sort -n <<< "${_fstab_data_sort_str}")"
 
   while read -r _line; do
     # See comments in global variable declaration block for details on the
-    # format of items in _sysFstabList
+    #   format of items in _sysFstabList
     _sysFstabList+=("$(cut -d'|' -f2- <<< "${_line}")");
   done <<< "${_fstab_data_sort_str}"
 }
 ## . END _loadFstabListFn }
 
 ## BEGIN _mountFstabEntriesFn {
+# Purpose : Decrypt filesystems in /mnt/etc/crypttab, and mount filesystems in
+#   /mnt/etc/fstab under /mnt.
+# Returns : 1 on error
+# Outputs : none
+# Globals : Updates _chosenCryptList, _chosenMountList
+#
 _mountFstabEntriesFn () {
   declare _fstab_bit_list _fstab_line _fstab_mount_src _fstab_mount_tgt \
     _fstab_fs_type _fstab_fs_opt _crypttab_line _crypttab_bit_list \
     _crypttab_vol_name _crypttab_raw_part _crypttab_part _crypttab_uuid \
     _blkid_report _part_list _fstab_part _fstab_uuid _true_mount_tgt \
-    _mounted_fs_type;
+    _mounted_fs_type _crypttab_key_file _idx;
 
-  _blkid_report="$("${_blkidExe}")";
-  readarray -t _part_list < <(_getAllPartitionListFn);
+  # Get info to mount filesystems under /mnt
+  _loadCrypttabListFn;
+  _loadFstabListFn;
+
+  # If fstab is empty, return without trying to mount anything
+  if [ "${#_sysFstabList[@]}" = '0' ]; then
+    return 0;
+  fi
+
+  # Create a list of all OS-visible partitions with metadata
+  _blkid_report="$("${_blkidExe}")" || return 1;
+  readarray -t _part_list < <(_getAllPartitionListFn) || return 1;
   _crypttab_part='';
-
   if [ "${#_part_list[@]}" = '0' ] \
     || [ -z "${_part_list[0]}" ]; then
     _cm2ErrStrFn 'Could not get partition list!';
     return 1;
   fi
 
-  if [ "${#_sysFstabList[@]}" = '0' ]; then
-    return 0;
-  fi
-
+  ## Begin decrypt all disks in crypttab if needed {
   if [ "${#_sysCrypttabList[@]}" != '0' ]; then
+    ## Begin loop through crypttab entries {
     for _crypttab_line in "${_sysCrypttabList[@]}"; do
       IFS='|' read -r -a _crypttab_bit_list <<< "${_crypttab_line}";
       _crypttab_vol_name="${_crypttab_bit_list[0]:-}";
       _crypttab_raw_part="${_crypttab_bit_list[1]:-}";
+      _crypttab_key_file="${_crypttab_bit_list[2]:-}";
 
+      # Skip already-decrypted volumes
       if [ -b "/dev/mapper/${_crypttab_vol_name}" ]; then
         continue;
       fi
 
+      # Locate the block device associated with the volume
       if [[ "${_crypttab_raw_part}" =~ ^/dev/ ]]; then
         _crypttab_part="${_crypttab_raw_part}";
       elif [[ "${_crypttab_raw_part}" =~ ^UUID= ]]; then
         _crypttab_uuid="$(cut -d'=' -f2 <<< "${_crypttab_raw_part}")";
-        if [ -z "${_crypttab_uuid}" ]; then
-          continue;
-        fi
-
+        if [ -z "${_crypttab_uuid}" ]; then continue; fi
         _crypttab_part="$(_getPartitionByFsUuid "${_crypttab_uuid}" \
-          "${_blkid_report}" "${_part_list[@]}")";
-        if [ -z "${_crypttab_part}" ]; then
-          continue;
-        fi
+          "${_blkid_report}" "${_part_list[@]}")" || return 1;
+        if [ -z "${_crypttab_part}" ]; then continue; fi
       else
+        # Volume ID does not start with '/dev/' or 'UUID=', skip
+        # TODO: Should we support 'LABEL=' also?
         continue;
       fi
 
-      _cm2EchoFn "Opening encrypted volume |${_crypttab_vol_name}|...";
-      if "${_cryptsetupExe}" luksOpen "${_crypttab_part}" \
-        "${_crypttab_vol_name}"; then
-        _chosenCryptList+=(
-          "/dev/mapper${_crypttab_vol_name}|${_crypttab_part}"
-        );
+      # Skip block devices that do not exist
+      if [ -z "${_crypttab_part}" ] || ! [ -b "${_crypttab_part}" ]; then
+        continue;
       fi
-    done
-    _blkid_report="$("${_blkidExe}")";
-    readarray -t _part_list < <(_getAllPartitionListFn);
-  fi
 
+      ## Begin gauntlet for attempting to open encrypted volume {
+      # shellcheck disable=SC2043
+      for _idx in 1; do
+        # If a key file exists for this volume, try to use it
+        if [ "${_crypttab_key_file}" != 'none' ] \
+          && [ -f "${_crypttab_key_file}" ]; then
+          _cm2EchoFn "Open encrypted vol |${_crypttab_vol_name}| with key file";
+          if "${_cryptsetupExe}" luksOpen --key-file \
+            "${_sysMountPath}${_crypttab_key_file}" "${_crypttab_part}" \
+            "${_crypttab_vol_name}"; then
+            _chosenCryptList+=(
+              "/dev/mapper${_crypttab_vol_name}|${_crypttab_part}"
+            );
+            break;
+          fi
+          _cm2EchoFn 'Key file failed to open volume.';
+        fi
+
+        # Fall back to a passphrase
+        _cm2EchoFn "Open encrypted vol |${_crypttab_vol_name}| with passphrase";
+        if "${_cryptsetupExe}" luksOpen "${_crypttab_part}" \
+          "${_crypttab_vol_name}"; then
+          _chosenCryptList+=(
+            "/dev/mapper${_crypttab_vol_name}|${_crypttab_part}"
+          );
+          break;
+        fi
+        _cm2EchoFn 'Skip: Incorrect passphrase.';
+      done
+      ## . End gauntlet for attempting to open encrypted volume }
+    done
+    ## . End loop through crypttab entries }
+
+    # Re-create OS-visible partition and metadata list. Because this includes
+    #   system-generated UUIDs, this is the simplest way.
+    _blkid_report="$("${_blkidExe}")" || return 1;
+    readarray -t _part_list < <(_getAllPartitionListFn) || return 1;
+  fi
+  ## . End decrypt all disks in crypttab if needed }
+
+  ## Begin loop through fstab list {
   for _fstab_line in "${_sysFstabList[@]}"; do
+    # Extract fields
     IFS='|' read -r -a _fstab_bit_list <<< "${_fstab_line}";
     _fstab_mount_src="${_fstab_bit_list[0]:-}";
     _fstab_mount_tgt="${_fstab_bit_list[1]:-}";
     _fstab_fs_type="${_fstab_bit_list[2]:-}";
     _fstab_fs_opt="${_fstab_bit_list[3]:-}";
+    _true_mount_tgt="${_sysMountPath}${_fstab_mount_tgt}";
 
-    # Don't try to mount the root partition twice
+    # Do not try to mount the root partition twice
     if [ "${_fstab_mount_tgt}" = '/' ]; then
       continue;
     fi
 
-    _true_mount_tgt="${_sysMountPath}${_fstab_mount_tgt}";
-
+    # Locate the block device associated with the filesystem
     if [[ "${_fstab_mount_src}" =~ ^/dev/ ]]; then
       _fstab_part="${_fstab_mount_src}";
     elif [[ "${_fstab_mount_src}" =~ ^UUID= ]]; then
       _fstab_uuid="$(cut -d'=' -f2 <<< "${_fstab_mount_src}")";
-      if [ -z "${_fstab_uuid}" ]; then
-        continue;
-      fi
-
+      if [ -z "${_fstab_uuid}" ]; then continue; fi
       _fstab_part="$(_getPartitionByFsUuid "${_fstab_uuid}" \
-        "${_blkid_report}" "${_part_list[@]}")";
-      if [ -z "${_fstab_part}" ]; then
-        continue
-      fi
+        "${_blkid_report}" "${_part_list[@]}")" || return 1;
+      if [ -z "${_fstab_part}" ]; then continue; fi
     else
       continue;
     fi
 
+    # Mount the block device, record fs info for later reporting
     if "${_mountExe}" -t "${_fstab_fs_type}" -o "${_fstab_fs_opt}" \
       "${_fstab_part}" "${_true_mount_tgt}" 2>/dev/null; then
       _mounted_fs_type="$(_extractBlkidDataFn "${_blkid_report}" \
-        "${_fstab_part}" 'type')";
+        "${_fstab_part}" 'type')" || return 1;
       _chosenMountList+=(
         "${_true_mount_tgt}|${_mounted_fs_type}|${_fstab_part}"
       );
     fi
   done
+  ## . End loop through fstab list }
 }
 ## . END _mountFstabEntriesFn }
 
-## BEGIN _getFieldSizeFn {
-_getFieldSizeFn () {
-  declare _header_len_str _disp_table _field_len_list _bit_list _line _idx \
-    _cell_len;
+## BEGIN _getFieldWidthsStrFn {
+_getFieldWidthsStrFn () {
+  declare _header_len_str _disp_table _field_len_list _bit_list \
+    _line _idx _cell_len;
 
+  # Process arguments
   _header_len_str="${1:-}";
   shift 1;
   _disp_table=( "$@" );
-
   if [ -z "${_header_len_str}" ] \
     || [ "${#_disp_table}" = '0' ] \
     || [ -z "${_disp_table[0]}" ]; then
     _cm2ErrStrFn 'Missing table or header data!';
-    exit 1;
+    return 1;
   fi
 
+  ## Begin loop through fields and calculate maximum width {
   IFS='|' read -r -a _field_len_list <<< "${_header_len_str}";
-
   for _line in "${_disp_table[@]}"; do
     IFS='|' read -r -a _bit_list <<< "${_line}";
     for _idx in "${!_bit_list[@]}"; do
@@ -695,36 +758,35 @@ _getFieldSizeFn () {
       fi
     done
   done
+  ## . End loop through fields and calculate maximum width }
 
+  # Echo pipe-delimited list of field lengths, trimming off the final pipe
   printf '%s|' "${_field_len_list[@]}" | head -c-1;
 }
-## . END _getFieldSizeFn }
+## . END _getFieldWidthsStrFn }
 
 ## BEGIN _printTableFn {
 _printTableFn () {
-  declare _init_header_str _header_list_str _disp_table _header_list \
+  declare _table_name _header_list_str _disp_table _header_list \
     _header_len_list _item_str _field_size_list _printf_row_str \
     _printf_row_len _field_size_list_idx _header_len_str _bit_list;
 
-  _init_header_str="${1:-}";
+  # Process arguments
+  _table_name="${1:-}";
   _header_list_str="${2:-}";
   shift 2;
   _disp_table=( "$@" );
-
-  if [ -z "${_init_header_str}" ] \
+  if [ -z "${_table_name}" ] \
     || [ -z "${_header_list_str}" ] \
     || [ "${#_disp_table}" = '0' ] \
     || [ -z "${_disp_table[0]:-}" ]; then
     _cm2ErrStrFn 'Missing table or header data!';
-    exit 1;
+    return 1;
   fi
 
-  # Print the initial header.
-  _cm2EchoFn "${_init_header_str}"
-
   # Calculate the field widths for the table. Each field must be long enough
-  # to display the length of its longest element. The length of the headers
-  # must be taken into account.
+  #   to display the length of its longest element. The length of the headers
+  #   must be taken into account.
   IFS='|' read -r -a _header_list <<< "${_header_list_str}"
   _header_len_list=();
   for _item_str in "${_header_list[@]}"; do
@@ -732,10 +794,11 @@ _printTableFn () {
   done
   _header_len_str="$(printf '%s|' "${_header_len_list[@]}" | head -c-1)";
 
-  IFS='|' read -r -a _field_size_list < <(_getFieldSizeFn "${_header_len_str}" \
-    "${_disp_table[@]}");
+  # Calculate field width list
+  IFS='|' read -r -a _field_size_list < <(_getFieldWidthsStrFn \
+    "${_header_len_str}" "${_disp_table[@]}");
 
-  # Calculate the table row template for use with printf.
+  # Calculate the table row template for use with printf
   _printf_row_str="";
   (( _printf_row_len = 0 )) || true;
   for _field_size_list_idx in "${!_field_size_list[@]}"; do
@@ -748,14 +811,13 @@ _printTableFn () {
   done
   _printf_row_str+='\n';
 
-  # Print the header row.
+  # Print table name, header, separator
+  _cm2EchoFn "${_table_name}";
   # shellcheck disable=SC2059
   printf "${_printf_row_str}" "${_header_list[@]}" 1>&2;
-
-  # Print the separator line between the header and the table.
   printf "%${_printf_row_len}s\n" '' | tr ' ' '=' 1>&2;
 
-  # Print the rest of the table.
+  # Print table rows
   for _line in "${_disp_table[@]}"; do
     IFS='|' read -r -a _bit_list <<< "${_line}";
     # shellcheck disable=SC2059
@@ -768,63 +830,98 @@ _printTableFn () {
 
 ## BEGIN _mountSystemDisksFn {
 _mountSystemDisksFn () {
-  declare _unmounted_partition_list _kubuntu_mount_data_str _did_kfocus_mount \
-    _unmounted_partition_str;
+  declare _unmounted_partition_list _kubuntu_root_mount_data_str \
+    _is_root_mounted _unmounted_partition_str _try_mount_retcode;
 
-  readarray -t _unmounted_partition_list < <(_getUnmountedPartitionListFn);
-  _did_kfocus_mount='n';
+  # Get all unmounted partitions on the system. One of these will be the boot
+  #   partition for the KFocus installation, and will provide us the data we
+  #   need to mount the rest of the installation partitions.
+  readarray -t _unmounted_partition_list < <(_getUnmountedPartitionListFn) \
+    || return 1;
+  _is_root_mounted='n';
 
+  ## Begin loop to find and mount root partition {
   for _unmounted_partition_str in "${_unmounted_partition_list[@]}"; do
-    _kubuntu_mount_data_str="$(_getKubuntuMountDataFn \
-      "${_unmounted_partition_str}")";
-    if [ -z "${_kubuntu_mount_data_str}" ]; then
+    # Look for a boot partition containing mount info for the KFocus root
+    #   partition, and extract it
+    _kubuntu_root_mount_data_str="$(_getKubuntuRootMountDataFn \
+      "${_unmounted_partition_str}")" || return 1;
+    if [ -z "${_kubuntu_root_mount_data_str}" ]; then
       continue;
     fi
 
-    if _tryKfocusMountFn "${_kubuntu_mount_data_str}"; then
-      _did_kfocus_mount='y';
-      break;
+    # Mount the root partition and verify it contains a KFocus installation
+    _try_mount_retcode='0';
+    _tryKfocusMountFn "${_kubuntu_root_mount_data_str}" \
+      || _try_mount_retcode="$?";
+    if [ "${_try_mount_retcode}" = '0' ]; then
+      # Prompt the user to confirm the right partition has been mounted
+      if [ "$(_readPromptFn "${_confirmMountMsg}")" = 'y' ]; then
+        _is_root_mounted='y';
+        break;
+      else
+        if ! "${_umountExe}" "${_sysMountPath}"; then
+          _cm2ErrStrFn "Could not unmount |${_sysMountPath}|!"
+          return 1;
+        fi
+      fi
+    elif [ "${_try_mount_retcode}" = '2' ]; then
+      # Critical error, bail out
+      _cm2ErrStrFn \
+        'Critical error encountered trying to mount root filesystem!';
+      return 1;
     fi
   done
+  ## . End loop to find and mount root partition }
 
-  if [ "${_did_kfocus_mount}" = 'n' ]; then
+  if [ "${_is_root_mounted}" = 'n' ]; then
     _cm2ErrStrFn \
       'Could not find any Kubuntu Focus installation on this system!';
     return 1;
   fi
 
-  _loadCrypttabListFn;
-  _loadFstabListFn;
-  _mountFstabEntriesFn;
+  # Mount filesystems for the KFocus installation found on the hard drive under
+  #   /mnt. Exclude remote filesystems.
+  _mountFstabEntriesFn || {
+    _cm2ErrStrFn 'Trouble mounting filesystems from fstab!';
+    return 1;
+  }
 }
 ## . END _mountSystemDisksFn }
 
 ## BEGIN _chrootBindFn {
+# Purpose : Bind-mount /dev, /dev/pts, /proc, and /sys into directories under
+#   /mnt.
+#
 _chrootBindFn () {
   declare _chroot_mount_str _found_existing_binds _msg;
 
+  # Bail if /mnt has no fs mounted to it
   if ! "${_mountpointExe}" "${_sysMountPath}" >/dev/null 2>/dev/null; then
     _cm2ErrStrFn "No system mounted at |${_sysMountPath}|!";
     return 1;
   fi
 
+  ## Begin loop through dirs and check for mounts {
   _found_existing_binds='n';
-
   for _chroot_mount_str in "${_chrootMountList[@]}"; do
     if "${_mountpointExe}" "${_sysMountPath}${_chroot_mount_str}" \
       >/dev/null 2>/dev/null; then
       _cm2ErrStrFn \
-        "Chroot bind-mount |${_chroot_mount_str}| is already mounted!";
+        "Directory |${_chroot_mount_str}| is already mounted!";
       _found_existing_binds='y';
       # Don't return yet so that we can tell the user about all of the existing
-      # bind mounts
+      #   bind mounts
     fi
   done
+  ## . End loop through dirs and check for mounts }
 
+  # Bail if existing bind mounts were found
   if [ "${_found_existing_binds}" = 'y' ]; then
     return 1;
   fi
 
+  ## Begin loop through dirs and create bind mounts {
   for _chroot_mount_str in "${_chrootMountList[@]}"; do
     if ! "${_mountExe}" --bind "${_chroot_mount_str}" \
       "${_sysMountPath}${_chroot_mount_str}"; then
@@ -837,18 +934,22 @@ _chrootBindFn () {
       "${_sysMountPath}${_chroot_mount_str}|bind|${_chroot_mount_str}"
     );
   done
+  ## . End loop through dirs and create bind mounts }
 }
 ## . END _chrootBindFn }
 
 ## BEGIN _displayMountSummaryFn {
+# Purpose : Display a summary of all decrypted and mounted disks, displayed as
+#   a pair of tables.
+#
 _displayMountSummaryFn () {
   if [ "${#_chosenCryptList}" != '0' ]; then
     _printTableFn 'Decrypted volumes:' 'Volume|Source Device' \
-      "${_chosenCryptList[@]}";
+      "${_chosenCryptList[@]}" || return 1;
   fi
   if [ "${#_chosenMountList}" != '0' ]; then
     _printTableFn 'Mounted directories:' 'Location|Type|Source' \
-      "${_chosenMountList[@]}";
+      "${_chosenMountList[@]}" || return 1;
   fi
 }
 ## . END _displayMountSummaryFn }
@@ -862,9 +963,9 @@ _unmountSystemDisksFn () {
   _loadCrypttabListFn;
 
   # Similar sorting logic as used for _loadFstabListFn is used here, except we
-  # want more deeply nested mounts to appear earlier than less deeply nested
-  # ones. This allows us to unmount all the partitions by just walking down the
-  # list and unmounting every item.
+  #   want more deeply nested mounts to appear earlier than less deeply nested
+  #   ones. This allows us to unmount all the partitions by just walking down
+  #   the list and unmounting every item.
   _mount_data_sort_str='';
   while read -r _mount_line; do
     if [ -z "${_mount_line}" ]; then
@@ -895,7 +996,7 @@ _unmountSystemDisksFn () {
   done
 
   # Find unused encrypted volumes that were part of the internal KFocus disks
-  # and close them.
+  #   and close them
   if [ "${#_sysCrypttabList[@]}" = '0' ]; then
     return 0;
   fi
@@ -934,7 +1035,10 @@ _unmountSystemDisksFn () {
 _mainFn () {
   declare _chroot_mount_str _msg;
 
-  _ensureRootUserFn;
+  if [ "$(id -u)" != '0' ]; then
+    _cm2ErrStrFn 'Must be run as root!';
+    exit 1;
+  fi
 
   # If mounted, offer to unmount
   if "${_mountpointExe}" "${_sysMountPath}" >/dev/null 2>/dev/null; then
@@ -973,7 +1077,10 @@ _mainFn () {
 
     # Offer to prepare for chroot
     if [ "$(_readPromptFn "${_offerChrootBindMsg}" 'n')" = 'n' ]; then
-      _displayMountSummaryFn;
+      _displayMountSummaryFn || {
+        _cm2ErrStrFn "${_mountSummaryDisplayFailMsg}";
+        exit 1;
+      }
       _cm2EchoFn "${_mountDoneMsg}";
       exit 0;
     fi
@@ -983,7 +1090,10 @@ _mainFn () {
       exit 1;
     fi
 
-    _displayMountSummaryFn;
+    _displayMountSummaryFn || {
+      _cm2ErrStrFn "${_mountSummaryDisplayFailMsg}";
+      exit 1;
+    }
     _cm2EchoFn "${_chrootBindDoneMsg}";
     exit 0;
   fi
@@ -998,33 +1108,28 @@ declare _binName _binDir _baseDir _baseName _assignList _mountExe \
   _chrootBindErrMsg _chrootBindDoneMsg _offerUnmountMsg _declineUnmountMsg \
   _unmountErrMsg _offerChrootUnbindMsg _chrootUnbindErrMsg _unmountDoneMsg \
   _checkKfocusPath _sysFstabPath _sysCrypttabPath _offerUnmountWithBindsMsg \
-  _blkidExe _chosenCryptList _chosenMountList;
+  _blkidExe _chosenCryptList _chosenMountList _mountSummaryDisplayFailMsg;
 
 _sysMountPath='/mnt';
-_chrootMountList=(
-  "/dev"
-  "/dev/pts"
-  "/proc"
-  "/sys"
-)
+_chrootMountList=( '/dev' '/dev/pts' '/proc' '/sys' );
 _grubCfgPathList=(
   "${_sysMountPath}/grub/grub.cfg"
   "${_sysMountPath}/@boot/grub/grub.cfg"
-)
+);
 _checkKfocusPath="${_sysMountPath}/usr/lib/kfocus/bin/kfocus-focusrx";
 _sysFstabPath="${_sysMountPath}/etc/fstab";
 _sysCrypttabPath="${_sysMountPath}/etc/crypttab";
 
-# "mount_src|mount_tgt|fs_type|fs_opt"
+# <mount_src>|<mount_tgt>|<fs_type>|<fs_opt>
 _sysFstabList=();
 
-# "volume_name|source_device"
+# <volume_name>|<source_device>|<key_file>
 _sysCrypttabList=();
 
-# "vol_name|dev_name"
+# <vol_name>|<dev_name>
 _chosenCryptList=();
 
-# "mount_path|type|mount_src"
+# <mount_path>|<type>|<mount_src>
 _chosenMountList=();
 ## . END Declare and assign global vars }
 
