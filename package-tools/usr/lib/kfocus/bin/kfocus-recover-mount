@@ -344,6 +344,58 @@ _getBlockDevByFsUuid() {
 }
 ## . END _getBlockDevByFsUuid }
 
+## BEGIN _luksOpenFn {
+# Summary   : _luksOpenFn [--key-file <key_file>] <src_dev> <vol_name>
+# Purpose   : Opens the specified block device as a LUKS volume.
+# Example   : _luksOpenFn /dev/sda3 luks-ABCD...
+# Arguments :
+#   --keyfile  : Specifies that a key file should be used to decrypt
+#                this device
+#   <key_file> : Key file for decrypting device
+#   <src_dev>  : The device to open.
+#   <vol_name> : The name to give the encrypted volume in Device Mapper.
+# Outputs   : none
+# Returns   : 0 on success or if the volume is already open, 1 otherwise
+#
+_luksOpenFn () {
+  declare _key_file _src_dev_str _vol_name_str _cryptsetup_ret_int;
+
+  # Process arguments
+  _key_file="";
+  _src_dev_str="";
+  _vol_name_str="";
+  if [ "${1:-}" = '--key-file' ]; then
+    _key_file="${2:-}";
+    shift 2;
+  fi
+  _src_dev_str="${1:-}";
+  _vol_name_str="${2:-}";
+  [ -z "${_src_dev_str}" ] && {
+    _cm2ErrStrFn 'No source device specified to decrypt!';
+    return 1;
+  }
+  [ -z "${_vol_name_str}" ] && {
+    _cm2ErrStrFn 'No volume name specified for LUKS volume!';
+    return 1;
+  }
+
+  # Open volume and check exit code
+  if [ -n "${_key_file}" ]; then
+    "${_cryptsetupExe}" luksOpen --key-file "${_key_file}" "${_src_dev_str}" \
+      "${_vol_name_str}";
+  else
+    "${_cryptsetupExe}" luksOpen "${_src_dev_str}" "${_vol_name_str}";
+  fi
+  _cryptsetup_ret_int="$?";
+  # Exit code 5 = volume is already open
+  if [ "${_cryptsetup_ret_int}" != '0' ] \
+    && [ "${_cryptsetup_ret_int}" != '5' ]; then
+    return 1;
+  fi
+  return 0;
+}
+## . END _luksOpenFn }
+
 ## BEGIN _getKubuntuRootMountDataFn {
 # Summary   : _getKubuntuRootMountDataFn <target_dev>
 # Purpose   : Search through the grub.cfg file on a device, looking for
@@ -459,7 +511,7 @@ _tryKfocusMountFn() {
   declare _mount_data_str _bit_list _mount_fs_uuid _mount_crypt_uuid \
     _mount_crypt_name _mount_subvol_str _blkid_report _target_dev \
     _dev_list _is_crypt_opened _calc_mount_cmd _target_crypt_dev \
-    _mounted_fs_type _msg
+    _mounted_fs_type _msg;
 
   # Process arguments
   _mount_data_str="${1:-}"
@@ -495,8 +547,7 @@ _tryKfocusMountFn() {
       return 1
     fi
 
-    if ! "${_cryptsetupExe}" luksOpen "${_target_crypt_dev}" \
-      "${_mount_crypt_name}"; then
+    if ! _luksOpenFn "${_target_crypt_dev}" "${_mount_crypt_name}"; then
       return 1
     fi
 
@@ -744,9 +795,8 @@ _mountFstabEntriesFn() {
         if [ "${_crypttab_key_file}" != 'none' ] \
           && [ -f "${_crypttab_key_file}" ]; then
           _cm2EchoFn "Open encrypted vol |${_crypttab_vol_name}| with key file"
-          if "${_cryptsetupExe}" luksOpen --key-file \
-            "${_sysMountPath}${_crypttab_key_file}" "${_crypttab_dev}" \
-            "${_crypttab_vol_name}"; then
+          if _luksOpenFn --key-file "${_sysMountPath}${_crypttab_key_file}" \
+            "${_crypttab_dev}" "${_crypttab_vol_name}"; then
             _chosenCryptList+=(
               "/dev/mapper${_crypttab_vol_name}|${_crypttab_dev}"
             )
@@ -757,8 +807,7 @@ _mountFstabEntriesFn() {
 
         # Fall back to a passphrase
         _cm2EchoFn "Open encrypted vol |${_crypttab_vol_name}| with passphrase"
-        if "${_cryptsetupExe}" luksOpen "${_crypttab_dev}" \
-          "${_crypttab_vol_name}"; then
+        if _luksOpenFn "${_crypttab_dev}" "${_crypttab_vol_name}"; then
           _chosenCryptList+=(
             "/dev/mapper${_crypttab_vol_name}|${_crypttab_dev}"
           )
@@ -1084,11 +1133,11 @@ _chrootBindFn() {
 # Returns   : 1 on critical error
 #
 _displayMountSummaryFn() {
-  if [ "${#_chosenCryptList}" != '0' ]; then
+  if [ "${#_chosenCryptList[@]}" != '0' ]; then
     _printTableFn 'Decrypted volumes:' 'Volume|Source Device' \
       "${_chosenCryptList[@]}" || return 1
   fi
-  if [ "${#_chosenMountList}" != '0' ]; then
+  if [ "${#_chosenMountList[@]}" != '0' ]; then
     _printTableFn 'Mounted directories:' 'Location|Type|Source' \
       "${_chosenMountList[@]}" || return 1
   fi
@@ -1175,7 +1224,8 @@ _unmountSystemDisksFn() {
     fi
 
     if ! "${_cryptsetupExe}" luksClose "/dev/mapper/${_crypttab_vol_str}"; then
-      return 1
+      _cm2WarnStrFn \
+        "Cannot close encrypted volume |${_crypttab_vol_str}|. Skipped.";
     fi
   done
 }
