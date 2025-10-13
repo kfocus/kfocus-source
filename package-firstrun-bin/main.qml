@@ -32,9 +32,13 @@ Kirigami.ApplicationWindow {
         + 'install to a system disk to run this step.'
     property string modelCode                   : ''
     property string modelLabel                  : ''
-    property var faqModelList                   : [ 'm2g6' ]
-    property var imageModelMatrix               : ({ 
-      frontpage: { m2g6: true, nxg3: true, zrg1: true }
+    property var faqModelMap                    : ({
+      ir14g2 : 'bkm_ir1x_faq',
+      ir16g2 : 'bkm_ir1x_faq',  m2g6 : 'bkm_m2g6_faq',
+      nxg3   : 'bkm_nx_faq',    zrg1 : 'bkm_zrg1_faq'
+    })
+    property var imageModelMatrix               : ({
+      frontpage: { ir16g2: true, m2g6: true, nxg3: true, zrg1: true }
     })
 
     property string ding01Str : '<font size="5">\u2776</font>&nbsp;'
@@ -924,13 +928,20 @@ Kirigami.ApplicationWindow {
               + 'settings that best fit your workflow.'
               ;
 
-            if ( faqModelList.includes( modelCode ) ) {
+            if ( faqModelMap[ modelCode ] ) {
                 frontText.text
-                  += ' You can view frequently asked questions for the '
+                  += ' You can view frequently asked questions about the '
                   + modelLabel
-                  + ' <a href="https://kfocus.org/wf/help.html#bkm_'
-                  + modelCode
-                  + '_faq">here</a>.'
+                  + ' <a href="https://kfocus.org/wf/help.html#'
+                  + faqModelMap[ modelCode ]
+                  + '">here</a>.'
+                  ;
+            }
+            else {
+                frontText.text
+                  += ' You can view frequently asked questions '
+                  + 'for this and other models '
+                  + '<a href="https://kfocus.org/wf/help.html">here</a>.'
                   ;
             }
             frontText.text += '<br></p>';
@@ -2357,6 +2368,7 @@ Kirigami.ApplicationWindow {
         );
         modelCode = exeRun.stdout.trim();
         // DEBUG console.log(modelCode);
+
         exeRun.execSync( 'source /usr/lib/kfocus/lib/common.2.source;'
           + ' _cm2EchoModelStrFn \'label\''
         );
