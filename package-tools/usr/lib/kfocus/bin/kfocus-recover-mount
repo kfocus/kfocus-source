@@ -547,6 +547,7 @@ _tryKfocusMountFn() {
       return 1
     fi
 
+    _cm2EchoFn "Open encrypted vol |${_mount_crypt_name}| with passphrase"
     if ! _luksOpenFn "${_target_crypt_dev}" "${_mount_crypt_name}"; then
       return 1
     fi
@@ -793,12 +794,12 @@ _mountFstabEntriesFn() {
       for _idx in 1; do
         # If a key file exists for this volume, try to use it
         if [ "${_crypttab_key_file}" != 'none' ] \
-          && [ -f "${_crypttab_key_file}" ]; then
+          && [ -f "${_sysMountPath}${_crypttab_key_file}" ]; then
           _cm2EchoFn "Open encrypted vol |${_crypttab_vol_name}| with key file"
           if _luksOpenFn --key-file "${_sysMountPath}${_crypttab_key_file}" \
             "${_crypttab_dev}" "${_crypttab_vol_name}"; then
             _chosenCryptList+=(
-              "/dev/mapper${_crypttab_vol_name}|${_crypttab_dev}"
+              "/dev/mapper/${_crypttab_vol_name}|${_crypttab_dev}"
             )
             break
           fi
@@ -1200,6 +1201,9 @@ _unmountSystemDisksFn() {
     return 0
   fi
 
+  # Give the kernel time to clean up unmounts
+  sleep 1
+
   readarray -t _mapper_vol_list < <(cut -d' ' -f1 </proc/self/mounts \
     | grep '^/dev/mapper' | sed 's?/dev/mapper??')
 
@@ -1274,7 +1278,6 @@ _mainFn() {
       _cm2ErrStrFn "${_mountErrMsg}"
       exit 1
     fi
-    _cm2EchoFn
 
     # Offer to prepare for chroot
     if [ "$(_readPromptFn "${_offerChrootBindMsg}" 'n')" = 'n' ]; then
