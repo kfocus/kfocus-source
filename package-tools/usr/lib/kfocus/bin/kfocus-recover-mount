@@ -396,6 +396,125 @@ _luksOpenFn () {
 }
 ## . END _luksOpenFn }
 
+## BEGIN _fsckAndMountFn {
+# Summary   : _fsckAndMountFn [-t <fs_type>] [-o <option_str>]
+#   <src_dev> <tgt_dir>
+# Purpose   : Runs a filesystem check on the specified source device, and
+#   mounts the device to the specified target directory.
+# Example   : _fsckAndMountFn -t btrfs -o subvol=@ /dev/nvme0n1p3 /mnt
+# Arguments :
+#   -t <fs_type>    : The type of filesystem to mount. Auto-detected if
+#     not provided.
+#   -o <option_str> : The mount options, if any. May be specified multiple
+#     times, all options will be combined together.
+#   <src_dev>       : The block device containing the filesystem.
+#   <tgt_dir>       : The directory to mount the filesystem to.
+# Outputs   : none
+# Returns   : 1 on fsck or mount failure, 2 if the filesystem cannot be
+#   auto-detected, 3 on critical error
+#
+_fsckAndMountFn () {
+  declare _fs_type_str _mount_option_str _mount_src_dev _mount_tgt_dir \
+    _is_fs_mounted _blkid_report _calc_fsck_cmd _fsck_output _calc_mount_cmd;
+
+  # Process arguments
+  _fs_type_str='';
+  _mount_option_str='';
+  _mount_src_dev='';
+  _mount_tgt_dir='';
+  while true; do
+    case "${1:-}" in
+      '-t')
+        _fs_type_str="${2:-}";
+        shift 2;
+        ;;
+      '-o')
+        if [ -z "${_mount_option_str}" ]; then
+          _mount_option_str="${2:-}"
+        else
+          _mount_option_str+=",${2:-}"
+        fi
+        shift 2;
+        ;;
+      *)
+        break
+        ;;
+    esac
+  done
+  _mount_src_dev="${1:-}";
+  _mount_tgt_dir="${2:-}";
+  if [ -z "${_mount_src_dev}" ]; then
+    _cm2ErrStrFn 'No source device provided!';
+    return 3;
+  fi
+  if [ -z "${_mount_tgt_dir}" ]; then
+    _cm2ErrStrFn 'No mount target directory provided!';
+    return 3;
+  fi
+
+  # Auto-detect filesystem if needed
+  if [ -z "${_fs_type_str}" ]; then
+    _blkid_report="$("${_blkidExe}")";
+    _fs_type_str="$(_extractBlkidFieldStrFn "${_blkid_report}" \
+      "${_mount_src_dev}" 'type')";
+    if [ -z "${_fs_type_str}" ]; then
+      return 2;
+    fi
+  fi
+
+  # Run filesystem fsck if filesystem is ext4, btrfs, or xfs, skip otherwise
+  _is_fs_mounted="$(
+    if [ -n "$(lsblk --paths --raw --output=NAME,MOUNTPOINTS \
+      | grep "^${_mount_src_dev} " \
+      | cut -d' ' -f2)" ]; then
+      echo 'y';
+    else
+      echo 'n';
+    fi
+  )";
+  if [ "${_is_fs_mounted}" = 'n' ]; then
+    _calc_fsck_cmd=()
+    case "${_fs_type_str}" in
+      'ext4')
+        if [ -n "${_e2fsckExe}" ]; then
+          _calc_fsck_cmd=("${_e2fsckExe}" '-n' "${_mount_src_dev}")
+        fi
+        ;;
+      'btrfs')
+        if [ -n "${_btrfsExe}" ]; then
+          _calc_fsck_cmd=("${_btrfsExe}" 'check' \
+            '--readonly' "${_mount_src_dev}")
+        fi
+        ;;
+      'xfs')
+        if [ -n "${_xfsRepairExe}" ]; then
+          _calc_fsck_cmd=("${_xfsRepairExe}" '-n' "${_mount_src_dev}")
+        fi
+        ;;
+    esac
+    if [ "${#_calc_fsck_cmd[@]}" != '0' ] \
+      && ! _fsck_output="$(2>&1 "${_calc_fsck_cmd[@]}")"; then
+      _cm2WarnStrFn \
+        "Filesystem check failed for device '${_mount_src_dev}'!";
+      _cm2WarnStrFn 'Result:';
+      _cm2EchoFn "${_fsck_output}";
+      return 1;
+    fi
+  fi
+
+  # Mount filesystem
+  _calc_mount_cmd=("${_mountExe}" '-t' "${_fs_type_str}");
+  if [ -n "${_mount_option_str}" ]; then
+    _calc_mount_cmd+=('-o' "${_mount_option_str}");
+  fi
+  _calc_mount_cmd+=("${_mount_src_dev}" "${_mount_tgt_dir}");
+  if ! "${_calc_mount_cmd[@]}"; then
+    return 1;
+  fi
+  return 0;
+}
+## . END _fsckAndMountFn }
+
 ## BEGIN _getKubuntuRootMountDataFn {
 # Summary   : _getKubuntuRootMountDataFn <target_dev>
 # Purpose   : Search through the grub.cfg file on a device, looking for
@@ -425,7 +544,7 @@ _getKubuntuRootMountDataFn() {
   }
 
   # Mount the specified device and look for a grub.cfg file under it
-  if ! "${_mountExe}" "${_target_dev}" "${_sysMountPath}" 2>/dev/null; then
+  if ! _fsckAndMountFn "${_target_dev}" "${_sysMountPath}" 2>/dev/null; then
     return 0
   fi
   for _grub_cfg_search_path in "${_grubCfgPathList[@]}"; do
@@ -562,6 +681,8 @@ _tryKfocusMountFn() {
     "${_blkid_report}" "${_dev_list[@]}")" || return 2
   if [ -z "${_target_dev}" ]; then
     if [ "${_is_crypt_opened}" = 'y' ]; then
+      # Give the kernel some time before closing the volume
+      sleep 1;
       "${_cryptsetupExe}" luksClose "${_mount_crypt_name}" \
         || _cm2WarnStrFn \
           "Cannot close encrypted volume |${_mount_crypt_name}|. Skipped."
@@ -570,13 +691,15 @@ _tryKfocusMountFn() {
   fi
 
   # Mount root device
-  _calc_mount_cmd=("${_mountExe}")
+  _calc_mount_cmd=('_fsckAndMountFn')
   if [ -n "${_mount_subvol_str}" ]; then
     _calc_mount_cmd+=('-o' "subvol=${_mount_subvol_str}")
   fi
   _calc_mount_cmd+=("${_target_dev}" "${_sysMountPath}")
   if ! "${_calc_mount_cmd[@]}"; then
     if [ "${_is_crypt_opened}" = 'y' ]; then
+      # Give the kernel some time before closing the volume
+      sleep 1;
       "${_cryptsetupExe}" luksClose "${_mount_crypt_name}" \
         || _cm2WarnStrFn \
           "Cannot close encrypted volume |${_mount_crypt_name}|. Skipped."
@@ -607,6 +730,8 @@ _tryKfocusMountFn() {
   # This device does not contain a KFocus installation, unmount it.
   "${_umountExe}" "${_target_dev}" || return 2
   if [ "${_is_crypt_opened}" = 'y' ]; then
+    # Give the kernel some time before closing the volume
+    sleep 1;
     "${_cryptsetupExe}" luksClose "${_mount_crypt_name}" \
       || _cm2WarnStrFn \
         "Cannot close encrypted volume |${_mount_crypt_name}|. Skipped."
@@ -856,7 +981,7 @@ _mountFstabEntriesFn() {
     fi
 
     # Mount the block device, record fs info for later reporting
-    if "${_mountExe}" -t "${_fstab_fs_type}" -o "${_fstab_fs_opt}" \
+    if _fsckAndMountFn -t "${_fstab_fs_type}" -o "${_fstab_fs_opt}" \
       "${_fstab_dev}" "${_true_mount_tgt}" 2>/dev/null; then
       _mounted_fs_type="$(_extractBlkidFieldStrFn "${_blkid_report}" \
         "${_fstab_dev}" 'type')" || return 1
@@ -1201,12 +1326,8 @@ _unmountSystemDisksFn() {
     return 0
   fi
 
-  # Give the kernel time to clean up unmounts
-  sleep 1
-
   readarray -t _mapper_vol_list < <(cut -d' ' -f1 </proc/self/mounts \
     | grep '^/dev/mapper' | sed 's?/dev/mapper??')
-
   for _crypttab_str in "${_sysCrypttabList[@]}"; do
     IFS='|' read -r -a _bit_list <<<"${_crypttab_str}"
     _crypttab_vol_str="${_bit_list[0]}"
@@ -1227,6 +1348,8 @@ _unmountSystemDisksFn() {
       continue
     fi
 
+    # Give the kernel time to clean up unmounts
+    sleep 1
     if ! "${_cryptsetupExe}" luksClose "/dev/mapper/${_crypttab_vol_str}"; then
       _cm2WarnStrFn \
         "Cannot close encrypted volume |${_crypttab_vol_str}|. Skipped.";
@@ -1242,6 +1365,21 @@ _mainFn() {
   if [ "$(id -u)" != '0' ]; then
     _cm2ErrStrFn 'Must be run as root!'
     exit 1
+  fi
+
+  if ! "${_mountExe}" | grep -q '^/cow on / '; then
+    _msg="$(cat <<EOF
+The kfocus-recover-mount script is usually run from an external live USB to
+mount and repair internal disks. However, you appear to be running it from an
+internal disk. If you are not sure if this is what you want to do, please see
+the documentation at https://kfocus.org/wf/recovery.html.
+
+Are you sure you want to continue
+EOF
+    )";
+    if [ "$(_readPromptFn "${_msg}" 'n')" = 'n' ];
+      then exit 1;
+    fi
   fi
 
   # If mounted, offer to unmount
@@ -1312,7 +1450,8 @@ declare _binName _binDir _baseDir _baseName _assignList _mountExe \
   _chrootBindErrMsg _chrootBindDoneMsg _offerUnmountMsg _declineUnmountMsg \
   _unmountErrMsg _offerChrootUnbindMsg _chrootUnbindErrMsg _unmountDoneMsg \
   _checkKfocusFile _sysFstabPath _sysCrypttabPath _offerUnmountWithBindsMsg \
-  _blkidExe _chosenCryptList _chosenMountList _mountSummaryDisplayFailMsg
+  _blkidExe _chosenCryptList _chosenMountList _mountSummaryDisplayFailMsg \
+  _e2fsckExe _btrfsExe _xfsRepairExe;
 
 _sysMountPath='/mnt'
 _chrootMountList=('/dev' '/dev/pts' '/proc' '/sys')
@@ -1354,6 +1493,9 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     '_mountpointExe|/usr/bin/mountpoint'
     '_lsblkExe|/usr/bin/lsblk'
     '_blkidExe|/usr/sbin/blkid'
+    '_e2fsckExe|/usr/sbin/e2fsck||optional'
+    '_btrfsExe|/usr/bin/btrfs||optional'
+    '_xfsRepairExe|/usr/sbin/xfs_repair||optional'
   )
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2ErrStrFn 'Could not assign variables'
