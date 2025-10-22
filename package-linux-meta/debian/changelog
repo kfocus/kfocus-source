@@ -1,242 +1,133 @@
-linux-meta-kfocus (6.11.0-26.26+kfocus1) noble; urgency=medium
+linux-meta-kfocus (6.14.0-34.34+kfocus1) noble; urgency=medium
 
   * Release for Kubuntu Focus
-  * Upstream Ubuntu linux-meta-oem-6.11 6.11.0-1023.23
-  * Applied patch: intel/pmc: Fix Arrow Lake U/H NPU PCI ID (#5487)
-    (https://lore.kernel.org/all/a61f78be45c13f39e122dcc684b636f4b21e79a0.1747737446.git.todd.e.brandt@intel.com/)
+  * Upstream Ubuntu linux-meta-oem-6.14 6.14.0-1014.14
+  * Applied patch: ALSA: hda/realtek: Add quirks for some Clevo laptops
+    (#5699)
+    (https://lore.kernel.org/all/20250620204329.35878-1-tcrawford@system76.com/)
+  * Applied patch: Revert "cpufreq: intel_pstate: Unchecked MSR access in
+    legacy mode" (#5699)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 10 Jun 2025 09:16:05 -0500
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 22 Oct 2025 10:56:23 -0500
 
-linux-meta-oem-6.11 (6.11.0-1023.23) noble; urgency=medium
+linux-meta-oem-6.14 (6.14.0-1014.14) noble; urgency=medium
 
-  * Main version: 6.11.0-1023.23
+  * Main version: 6.14.0-1014.14
 
-  * Packaging resync (LP: #1786013)
-    - [Packaging] debian/dkms-versions -- resync from main package
+ -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Thu, 02 Oct 2025 11:22:17 +0800
 
- -- Chia-Lin Kao (AceLan) <acelan.kao@canonical.com>  Mon, 19 May 2025 14:37:25 +0800
+linux-meta-oem-6.14 (6.14.0-1013.13) noble; urgency=medium
 
-linux-meta-oem-6.11 (6.11.0-1022.22) noble; urgency=medium
-
-  * Main version: 6.11.0-1022.22
-
-  * Packaging resync (LP: #1786013)
-    - [Packaging] debian/dkms-versions -- resync from main package
-
- -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Fri, 25 Apr 2025 16:31:26 +0800
-
-linux-meta-oem-6.11 (6.11.0-1021.21) noble; urgency=medium
-
-  * Main version: 6.11.0-1021.21
-
- -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Tue, 22 Apr 2025 16:22:33 +0800
-
-linux-meta-oem-6.11 (6.11.0-1020.20) noble; urgency=medium
-
-  * Main version: 6.11.0-1020.20
+  * Main version: 6.14.0-1013.13
 
   * Packaging resync (LP: #1786013)
     - [Packaging] debian/dkms-versions -- resync from main package
 
- -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Wed, 16 Apr 2025 11:31:25 +0800
+ -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Wed, 24 Sep 2025 15:26:16 +0800
 
-linux-meta-oem-6.11 (6.11.0-1019.19) noble; urgency=medium
+linux-meta-oem-6.14 (6.14.0-1012.12) noble; urgency=medium
 
-  * Main version: 6.11.0-1019.19
-
- -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Tue, 01 Apr 2025 11:10:13 +0800
-
-linux-meta-oem-6.11 (6.11.0-1018.18) noble; urgency=medium
-
-  * Main version: 6.11.0-1018.18
-
-  * Packaging resync (LP: #1786013)
-    - [Packaging] debian/dkms-versions -- resync from main package
-
- -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Tue, 25 Mar 2025 11:38:29 +0800
-
-linux-meta-oem-6.11 (6.11.0-1017.17) noble; urgency=medium
-
-  * Main version: 6.11.0-1017.17
-
- -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Wed, 26 Feb 2025 19:18:19 +0800
-
-linux-meta-oem-6.11 (6.11.0-1016.16) noble; urgency=medium
-
-  * Main version: 6.11.0-1016.16
-
- -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Thu, 20 Feb 2025 14:24:13 +0800
-
-linux-meta-oem-6.11 (6.11.0-1015.15) noble; urgency=medium
-
-  * Main version: 6.11.0-1015.15
-
- -- Manuel Diewald <manuel.diewald@canonical.com>  Sat, 08 Feb 2025 15:00:39 +0100
-
-linux-meta-oem-6.11 (6.11.0-1014.14) noble; urgency=medium
-
-  * Main version: 6.11.0-1014.14
-
-  * Packaging resync (LP: #1786013)
-    - [Packaging] debian/dkms-versions -- resync from main package
-
- -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Fri, 24 Jan 2025 21:14:13 +0800
-
-linux-meta-oem-6.11 (6.11.0-1013.13) noble; urgency=medium
-
-  * Main version: 6.11.0-1013.13
-
- -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Fri, 17 Jan 2025 14:53:39 +0800
-
-linux-meta-oem-6.11 (6.11.0-1012.12) noble; urgency=medium
-
-  * Main version: 6.11.0-1012.12
-
- -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Fri, 10 Jan 2025 15:16:17 +0800
-
-linux-meta-oem-6.11 (6.11.0-1011.11) noble; urgency=medium
-
-  * Main version: 6.11.0-1011.11
-
-  * Packaging resync (LP: #1786013)
-    - [Packaging] debian/dkms-versions -- resync from main package
-
- -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Thu, 19 Dec 2024 17:59:23 +0800
-
-linux-meta-oem-6.11 (6.11.0-1010.10) noble; urgency=medium
-
-  * Main version: 6.11.0-1010.10
-
- -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Mon, 09 Dec 2024 14:28:57 +0800
-
-linux-meta-oem-6.11 (6.11.0-1009.9) noble; urgency=medium
-
-  * Main version: 6.11.0-1009.9
+  * Main version: 6.14.0-1012.12
 
   * Packaging resync (LP: #1786013)
     - [Packaging] resync git-ubuntu-log
+    - [Packaging] update variants
+    - [Packaging] debian/dkms-versions -- resync from main package
 
- -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Wed, 27 Nov 2024 11:13:05 +0800
+  * Migrate oem-6.11 to oem-6.14 (LP: #2122009)
+    - [Packaging] Migrate oem-24.04b to oem-24.04c
 
-linux-meta-oem-6.11 (6.11.0-1008.8) noble; urgency=medium
+ -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Thu, 04 Sep 2025 15:16:41 +0800
 
-  * Main version: 6.11.0-1008.8
+linux-meta-oem-6.14 (6.14.0-1011.11) noble; urgency=medium
+
+  * Main version: 6.14.0-1011.11
+
+ -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Fri, 15 Aug 2025 13:17:07 +0800
+
+linux-meta-oem-6.14 (6.14.0-1010.10) noble; urgency=medium
+
+  * Main version: 6.14.0-1010.10
+
+ -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Tue, 12 Aug 2025 12:29:29 +0800
+
+linux-meta-oem-6.14 (6.14.0-1009.9) noble; urgency=medium
+
+  * Main version: 6.14.0-1009.9
 
   * Packaging resync (LP: #1786013)
     - [Packaging] debian/dkms-versions -- resync from main package
 
- -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Wed, 13 Nov 2024 17:52:19 +0800
+  * Migrate oem-6.8 to oem-6.14 (LP: #2118880)
+    - [Packaging] Migrate oem-24.04a to oem-24.04c
 
-linux-meta-oem-6.11 (6.11.0-1007.7) noble; urgency=medium
+ -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Mon, 28 Jul 2025 13:56:31 +0800
 
-  * Main version: 6.11.0-1007.7
+linux-meta-oem-6.14 (6.14.0-1008.8) noble; urgency=medium
 
- -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Tue, 22 Oct 2024 14:53:44 +0800
-
-linux-meta-oem-6.11 (6.11.0-1006.6) noble; urgency=medium
-
-  * Main version: 6.11.0-1006.6
-
- -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Wed, 18 Sep 2024 17:26:34 +0800
-
-linux-meta-oem-6.11 (6.11.0-1005.5) noble; urgency=medium
-
-  * Main version: 6.11.0-1005.5
+  * Main version: 6.14.0-1008.8
 
   * Packaging resync (LP: #1786013)
     - [Packaging] debian/dkms-versions -- resync from main package
 
- -- Timo Aaltonen <timo.aaltonen@canonical.com>  Tue, 10 Sep 2024 17:15:13 +0300
+ -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Mon, 21 Jul 2025 11:51:23 +0800
 
-linux-meta-oem-6.11 (6.11.0-1004.4) noble; urgency=medium
+linux-meta-oem-6.14 (6.14.0-1007.7) noble; urgency=medium
 
-  * Main version: 6.11.0-1004.4
+  * Main version: 6.14.0-1007.7
+
+ -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Mon, 30 Jun 2025 13:47:16 +0800
+
+linux-meta-oem-6.14 (6.14.0-1006.6) noble; urgency=medium
+
+  * Main version: 6.14.0-1006.6
+
+  * Packaging resync (LP: #1786013)
+    - [Packaging] update variants
+
+ -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Mon, 23 Jun 2025 16:15:23 +0800
+
+linux-meta-oem-6.14 (6.14.0-1005.5) noble; urgency=medium
+
+  * Main version: 6.14.0-1005.5
+
+ -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Mon, 02 Jun 2025 12:37:58 +0800
+
+linux-meta-oem-6.14 (6.14.0-1004.4) noble; urgency=medium
+
+  * Main version: 6.14.0-1004.4
 
   * Packaging resync (LP: #1786013)
     - [Packaging] debian/dkms-versions -- resync from main package
 
- -- Timo Aaltonen <timo.aaltonen@canonical.com>  Thu, 05 Sep 2024 10:38:47 +0300
+ -- Chia-Lin Kao (AceLan) <acelan.kao@canonical.com>  Wed, 21 May 2025 10:11:59 +0800
 
-linux-meta-oem-6.11 (6.11.0-1003.3) noble; urgency=medium
+linux-meta-oem-6.14 (6.14.0-1003.3) noble; urgency=medium
 
-  * Main version: 6.11.0-1003.3
-
-  * Packaging resync (LP: #1786013)
-    - [Packaging] debian/dkms-versions -- resync from main package
-
- -- Timo Aaltonen <timo.aaltonen@canonical.com>  Wed, 04 Sep 2024 18:21:35 +0300
-
-linux-meta-oem-6.11 (6.11.0-1002.2) noble; urgency=medium
-
-  * Main version: 6.11.0-1002.2
+  * Main version: 6.14.0-1003.3
 
   * Packaging resync (LP: #1786013)
     - [Packaging] debian/dkms-versions -- resync from main package
 
-  * Miscellaneous Ubuntu changes
-    - [Packaging] Update Vcs-Git
+ -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Wed, 09 Apr 2025 14:03:16 +0800
 
- -- Timo Aaltonen <timo.aaltonen@canonical.com>  Mon, 19 Aug 2024 14:45:22 +0300
+linux-meta-oem-6.14 (6.14.0-1002.2) noble; urgency=medium
 
-linux-meta-oem-6.11 (6.11.0-1001.1) noble; urgency=medium
+  * Main version: 6.14.0-1002.2
 
-  * Main version: 6.11.0-1001.1
+ -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Fri, 21 Mar 2025 14:31:43 +0800
 
-  * Packaging resync (LP: #1786013)
-    - [Packaging] debian/dkms-versions -- resync from main package
+linux-meta-oem-6.14 (6.14.0-1001.1) noble; urgency=medium
 
- -- Timo Aaltonen <timo.aaltonen@canonical.com>  Tue, 06 Aug 2024 18:22:05 +0300
-
-linux-meta-oem-6.11 (6.11.0-1000.0) noble; urgency=medium
-
-  * Dummy entry.
-
- -- Timo Aaltonen <timo.aaltonen@canonical.com>  Tue, 06 Aug 2024 15:10:36 +0300
-
-linux-meta-oem-6.10 (6.10.0-1006.6) noble; urgency=medium
-
-  * Main version: 6.10.0-1006.6
+  * Main version: 6.14.0-1001.1
 
   * Packaging resync (LP: #1786013)
     - [Packaging] debian/dkms-versions -- resync from main package
 
- -- Timo Aaltonen <timo.aaltonen@canonical.com>  Wed, 03 Jul 2024 00:38:00 +0300
+ -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Thu, 20 Mar 2025 16:14:30 +0800
 
-linux-meta-oem-6.10 (6.10.0-1005.5) noble; urgency=medium
+linux-meta-oem-6.14 (6.14.0-1000.0) noble; urgency=medium
 
-  * Main version: 6.10.0-1005.5
+  * Dummy changelog entry.
 
- -- Timo Aaltonen <timo.aaltonen@canonical.com>  Tue, 18 Jun 2024 22:08:47 +0300
-
-linux-meta-oem-6.10 (6.10.0-1004.4) noble; urgency=medium
-
-  * Main version: 6.10.0-1004.4
-
- -- Timo Aaltonen <timo.aaltonen@canonical.com>  Thu, 13 Jun 2024 17:01:21 +0300
-
-linux-meta-oem-6.10 (6.10.0-1003.3) noble; urgency=medium
-
-  * Main version: 6.10.0-1003.3
-
- -- Timo Aaltonen <timo.aaltonen@canonical.com>  Fri, 31 May 2024 16:39:24 +0300
-
-linux-meta-oem-6.10 (6.10.0-1002.2) noble; urgency=medium
-
-  * Main version: 6.10.0-1002.2
-
- -- Timo Aaltonen <timo.aaltonen@canonical.com>  Wed, 29 May 2024 18:27:59 +0300
-
-linux-meta-oem-6.10 (6.10.0-1001.1) noble; urgency=medium
-
-  * Main version: 6.10.0-1001.1
-
-  * Packaging resync (LP: #1786013)
-    - [Packaging] debian/dkms-versions -- resync from main package
-
- -- Timo Aaltonen <timo.aaltonen@canonical.com>  Wed, 29 May 2024 11:50:59 +0300
-
-linux-meta-oem-6.10 (6.10.0-1000.0) noble; urgency=medium
-
-  * Dummy entry.
-
- -- Timo Aaltonen <timo.aaltonen@canonical.com>  Wed, 29 May 2024 09:32:31 +0300
+ -- Kuan-Ying Lee <kuan-ying.lee@canonical.com>  Wed, 12 Mar 2025 10:36:36 +0800
