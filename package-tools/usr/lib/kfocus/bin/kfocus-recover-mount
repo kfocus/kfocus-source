@@ -14,6 +14,7 @@
 # Spec     : 5806
 #
 set -u
+export LC_ALL='C'
 
 ## BEGIN _importCommonFn {
 # Summary   : _importCommonFn
@@ -186,14 +187,88 @@ _getBlockDevListFn() {
 
 ## BEGIN _getUnmountedBlockDevListFn {
 # Summary   : _getUnmountedBlockDevListFn
-# Purpose   : Gets all unmounted block devices visible to the system
-# Example   : _getUnmountedBlockDevListFn;
+# Purpose   : Gets all devices that should be scanned when looking for the
+#   boot volume corresponding to the installed system's root volume. Devices
+#   are candidates if all of the following is true:
+#   - The device is not a whole disk device with partitions.
+#   - The device is not a whole disk mounted to a directory.
+#   - The device is not a whole disk open as a device-mapper volume.
+#   - The device is not a partition on a disk where other partitions of the
+#     same disk are mounted or open as device-mapper volumes.
+# Example   : _getUnmountedBlockDevListFn
 # Arguments : none
 # Globals   : none
-# Outputs   : Newline-separated block device list
+# Outputs   : Newline-separated block device list.
 # Returns   : 1 on critical failure
 #
 _getUnmountedBlockDevListFn() {
+  declare _base_rx _dev_prt_rx _dev_only_rx _prt_only_rx _part_px_format_rx \
+    _block_dev_str _mapper_list _dev_file _dev_only_list _dev \
+    _prt_only_line_list _prt_line _prt _filter_rx;
+
+  # Create regexes to match device-only and partitions
+  _base_rx='^/dev/(sd[a-z]+|hd[a-z]+|vd[a-z]+|xvd[a-z]+';
+  _dev_prt_rx="${_base_rx}|nvme[0-9]+n[0-9]+|mmcblk[0-9]+|mapper/).* ";
+  _dev_only_rx="${_base_rx}|nvme[0-9]+n[0-9]+|mmcblk[0-9]+|mapper/.*) ";
+  _prt_only_rx="${_base_rx}|nvme[0-9]+n[0-9]+p|mmcblk[0-9]+p)[0-9]+ ";
+  _part_px_format_rx='(nvme[0-9]+n[0-9]+p[0-9]+|mmcblk[0-9]+p[0-9]+)$';
+
+  # Get block devices and mount points in a correlated list
+  _block_dev_str="$(
+    "${_lsblkExe}" --paths --raw --output=NAME,MOUNTPOINTS \
+      | grep -E "${_dev_prt_rx}"
+  )";
+
+  # Get all partitions that are used by mapper and are therefore already mounted
+  readarray -t _mapper_list < <(
+    sudo dmsetup deps -o devname \
+      | awk '{print gensub( "^.*: \\((.+)\\).*$", "/dev/\\1", "g" )}'
+  );
+
+  # Map mounts onto partitions in _mapper_list
+  for _dev_file in "${_mapper_list[@]}"; do
+    _replace_rx="s|^\\(${_dev_file} \\)$|\\1 OPEN_MAPPER_VOL|g";
+    _block_dev_str="$(sed "${_replace_rx}" <<< "${_block_dev_str}")";
+  done
+
+  # Filter out dev-only entries if they have partitions;
+  #   also filter out any mounted whole-disk devices
+  readarray -t _dev_only_list < <(
+    grep -E "${_dev_only_rx}" <<< "${_block_dev_str}" | awk '{ print $1 }'
+  );
+  for _dev in "${_dev_only_list[@]}"; do
+    if grep -qE "^${_dev}([0-9]|p[0-9])" <<< "${_block_dev_str}"; then
+      _block_dev_str="$(grep -Ev "^${_dev} " <<< "${_block_dev_str}")";
+    fi
+    # Remove any mounted whole-disk devices
+    _block_dev_str="$(grep -Ev "^${_dev} .+$" <<< "${_block_dev_str}")";
+  done
+
+  # Filter out all partitions that have related partitions with a mount
+  readarray -t _prt_only_line_list < <(
+    grep -E "${_prt_only_rx}" <<< "${_block_dev_str}"
+  );
+  for _prt_line in "${_prt_only_line_list[@]}"; do
+    # Search for any partition based on this _dev with a mount in the string
+    #   IFF one is found, grep -v ALL lines starting with _dev in its name
+    if [ -n "$(awk '{ print $2 }' <<< "${_prt_line}")" ]; then
+      _prt="$(awk '{ print $1 }' <<< "${_prt_line}")";
+      if [[ "${_prt}" =~ ${_part_px_format_rx} ]]; then
+        _filter_rx="^${_prt%p*}";
+      else
+        [[ "${_prt}" =~ (.*[a-z]*)[0-9]+ ]];
+        _filter_rx="^${BASH_REMATCH[1]}";
+      fi
+      # Get the _dev name of this partition
+      _block_dev_str="$(grep -Ev "${_filter_rx}" <<< "${_block_dev_str}")";
+    fi
+  done
+
+  echo "${_block_dev_str}";
+}
+
+## DEPRECATED
+_getUnmountedBlockDevListOldFn() {
   declare _block_device_list _init_mountpoint_list _ignore_device_list \
     _disk_id_regex _ignore_device_str _idx
 
@@ -259,7 +334,7 @@ _getUnmountedBlockDevListFn() {
 ## BEGIN _extractBlkidFieldStrFn {
 # Summary   : _extractBlkidFieldStrFn <blkid_report> <target_dev> <field_name>
 # Purpose   : Extracts a metadata field for a disk from blkid data
-# Example   : _extractBlkidFieldStrFn "${_blkid_report}" '/dev/sda1' 'uuid'
+# Example   : _extractBlkidFieldStrFn "${_blkid_report}" '/dev/sda1' 'UUID'
 # Arguments :
 #   <blkid_report> : Raw output from `blkid`
 #   <target_dev>   : Path to target block device
@@ -335,7 +410,7 @@ _getBlockDevByFsUuid() {
   # Loop through device list and print the device with the specified UUID
   for _dev_str in "${_dev_list[@]}"; do
     _check_fs_uuid="$(_extractBlkidFieldStrFn "${_blkid_report}" \
-      "${_dev_str}" 'uuid')" || return 1
+      "${_dev_str}" 'UUID')" || return 1
     if [ "${_check_fs_uuid}" = "${_fs_uuid}" ]; then
       echo "${_dev_str}"
       return 0
@@ -399,8 +474,9 @@ _luksOpenFn () {
 ## BEGIN _fsckAndMountFn {
 # Summary   : _fsckAndMountFn [-t <fs_type>] [-o <option_str>]
 #   <src_dev> <tgt_dir>
-# Purpose   : Runs a filesystem check on the specified source device, and
-#   mounts the device to the specified target directory.
+# Purpose   : A wrapper for the standard 'mount' command for use in this
+#   script. It adds an automatic fsck for ext4, btrfs, and xfs
+#   before mounting.
 # Example   : _fsckAndMountFn -t btrfs -o subvol=@ /dev/nvme0n1p3 /mnt
 # Arguments :
 #   -t <fs_type>    : The type of filesystem to mount. Auto-detected if
@@ -410,12 +486,16 @@ _luksOpenFn () {
 #   <src_dev>       : The block device containing the filesystem.
 #   <tgt_dir>       : The directory to mount the filesystem to.
 # Outputs   : none
-# Returns   : 1 on fsck or mount failure, 2 if the filesystem cannot be
-#   auto-detected, 3 on critical error
+# Returns   :
+#   1: filesystem cannot be auto-detected
+#   2: fsck failure
+#   3: mount failure
+#   4: critical error
 #
 _fsckAndMountFn () {
   declare _fs_type_str _mount_option_str _mount_src_dev _mount_tgt_dir \
-    _is_fs_mounted _blkid_report _calc_fsck_cmd _fsck_output _calc_mount_cmd;
+    _is_fs_mounted _blkid_report _fsck_cmd_list _fsck_output \
+    _mount_cmd_list _msg;
 
   # Process arguments
   _fs_type_str='';
@@ -430,39 +510,43 @@ _fsckAndMountFn () {
         ;;
       '-o')
         if [ -z "${_mount_option_str}" ]; then
-          _mount_option_str="${2:-}"
+          _mount_option_str="${2:-}";
         else
-          _mount_option_str+=",${2:-}"
+          _mount_option_str+=",${2:-}";
         fi
         shift 2;
         ;;
       *)
-        break
+        break;
         ;;
     esac
   done
   _mount_src_dev="${1:-}";
   _mount_tgt_dir="${2:-}";
-  if [ -z "${_mount_src_dev}" ]; then
-    _cm2ErrStrFn 'No source device provided!';
-    return 3;
+  if ! [ -b "${_mount_src_dev}" ]; then
+    _cm2ErrStrFn 'Source device does not exist!';
+    return 4;
   fi
-  if [ -z "${_mount_tgt_dir}" ]; then
-    _cm2ErrStrFn 'No mount target directory provided!';
-    return 3;
+  if ! [ -d "${_mount_tgt_dir}" ]; then
+    _cm2ErrStrFn 'Target directory does not exist!';
+    return 4;
   fi
 
   # Auto-detect filesystem if needed
   if [ -z "${_fs_type_str}" ]; then
     _blkid_report="$("${_blkidExe}")";
     _fs_type_str="$(_extractBlkidFieldStrFn "${_blkid_report}" \
-      "${_mount_src_dev}" 'type')";
+      "${_mount_src_dev}" 'TYPE')";
     if [ -z "${_fs_type_str}" ]; then
-      return 2;
+      _cm2ErrStrFn \
+        "Cannot detect filesystem type for device |${_mount_src_dev}|!";
+      return 1;
     fi
   fi
 
   # Run filesystem fsck if filesystem is ext4, btrfs, or xfs, skip otherwise
+  # NOTE: Mapped LUKS partitions will show as unmounted, but that doesn't
+  #   matter here.
   _is_fs_mounted="$(
     if [ -n "$(lsblk --paths --raw --output=NAME,MOUNTPOINTS \
       | grep "^${_mount_src_dev} " \
@@ -473,43 +557,58 @@ _fsckAndMountFn () {
     fi
   )";
   if [ "${_is_fs_mounted}" = 'n' ]; then
-    _calc_fsck_cmd=()
+    _fsck_cmd_list=()
+    _missing_pkg_name=""
     case "${_fs_type_str}" in
       'ext4')
         if [ -n "${_e2fsckExe}" ]; then
-          _calc_fsck_cmd=("${_e2fsckExe}" '-n' "${_mount_src_dev}")
+          _fsck_cmd_list=("${_e2fsckExe}" '-n' "${_mount_src_dev}")
+        else
+          _missing_pkg_name='e2fsprogs'
         fi
         ;;
       'btrfs')
         if [ -n "${_btrfsExe}" ]; then
-          _calc_fsck_cmd=("${_btrfsExe}" 'check' \
+          _fsck_cmd_list=("${_btrfsExe}" 'check' \
             '--readonly' "${_mount_src_dev}")
+        else
+          _missing_pkg_name='btrfs-progs'
         fi
         ;;
       'xfs')
         if [ -n "${_xfsRepairExe}" ]; then
-          _calc_fsck_cmd=("${_xfsRepairExe}" '-n' "${_mount_src_dev}")
+          _fsck_cmd_list=("${_xfsRepairExe}" '-n' "${_mount_src_dev}");
+        else
+          _missing_pkg_name='xfsprogs';
         fi
         ;;
     esac
-    if [ "${#_calc_fsck_cmd[@]}" != '0' ] \
-      && ! _fsck_output="$(2>&1 "${_calc_fsck_cmd[@]}")"; then
-      _cm2WarnStrFn \
-        "Filesystem check failed for device '${_mount_src_dev}'!";
-      _cm2WarnStrFn 'Result:';
-      _cm2EchoFn "${_fsck_output}";
-      return 1;
+    if (( ${#_fsck_cmd_list[@]} > 0 )); then
+      if ! _fsck_output="$(2>&1 "${_fsck_cmd_list[@]}")"; then
+        _cm2WarnStrFn \
+          "Filesystem check failed for device '${_mount_src_dev}'!";
+        _cm2WarnStrFn 'Result:';
+        _cm2EchoFn "${_fsck_output}";
+        return 2;
+      fi
+    else
+      _msg="SKIP integrity check on device |${_mount_src_dev}|,";
+      _msg+=" no fsck available for fs type |${_fs_type_str}|.";
+      if [ -n "${_missing_pkg_name}" ]; then
+        _msg+=" Install |${_missing_pkg_name}| to enable checks.";
+      fi
+      _cm2WarnStrFn "${_msg}";
     fi
   fi
 
   # Mount filesystem
-  _calc_mount_cmd=("${_mountExe}" '-t' "${_fs_type_str}");
+  _mount_cmd_list=("${_mountExe}" '-t' "${_fs_type_str}");
   if [ -n "${_mount_option_str}" ]; then
-    _calc_mount_cmd+=('-o' "${_mount_option_str}");
+    _mount_cmd_list+=('-o' "${_mount_option_str}");
   fi
-  _calc_mount_cmd+=("${_mount_src_dev}" "${_mount_tgt_dir}");
-  if ! "${_calc_mount_cmd[@]}"; then
-    return 1;
+  _mount_cmd_list+=("${_mount_src_dev}" "${_mount_tgt_dir}");
+  if ! "${_mount_cmd_list[@]}"; then
+    return 3;
   fi
   return 0;
 }
@@ -629,7 +728,7 @@ _getKubuntuRootMountDataFn() {
 _tryKfocusMountFn() {
   declare _mount_data_str _bit_list _mount_fs_uuid _mount_crypt_uuid \
     _mount_crypt_name _mount_subvol_str _blkid_report _target_dev \
-    _dev_list _is_crypt_opened _calc_mount_cmd _target_crypt_dev \
+    _dev_list _is_crypt_opened _mount_cmd_list _target_crypt_dev \
     _mounted_fs_type _msg;
 
   # Process arguments
@@ -682,7 +781,7 @@ _tryKfocusMountFn() {
   if [ -z "${_target_dev}" ]; then
     if [ "${_is_crypt_opened}" = 'y' ]; then
       # Give the kernel some time before closing the volume
-      sleep 1;
+      sleep 2;
       "${_cryptsetupExe}" luksClose "${_mount_crypt_name}" \
         || _cm2WarnStrFn \
           "Cannot close encrypted volume |${_mount_crypt_name}|. Skipped."
@@ -691,15 +790,15 @@ _tryKfocusMountFn() {
   fi
 
   # Mount root device
-  _calc_mount_cmd=('_fsckAndMountFn')
+  _mount_cmd_list=('_fsckAndMountFn')
   if [ -n "${_mount_subvol_str}" ]; then
-    _calc_mount_cmd+=('-o' "subvol=${_mount_subvol_str}")
+    _mount_cmd_list+=('-o' "subvol=${_mount_subvol_str}")
   fi
-  _calc_mount_cmd+=("${_target_dev}" "${_sysMountPath}")
-  if ! "${_calc_mount_cmd[@]}"; then
+  _mount_cmd_list+=("${_target_dev}" "${_sysMountPath}")
+  if ! "${_mount_cmd_list[@]}"; then
     if [ "${_is_crypt_opened}" = 'y' ]; then
       # Give the kernel some time before closing the volume
-      sleep 1;
+      sleep 2;
       "${_cryptsetupExe}" luksClose "${_mount_crypt_name}" \
         || _cm2WarnStrFn \
           "Cannot close encrypted volume |${_mount_crypt_name}|. Skipped."
@@ -719,7 +818,7 @@ _tryKfocusMountFn() {
 
     # Append information about the root device to _chosenMountList
     _mounted_fs_type="$(_extractBlkidFieldStrFn "${_blkid_report}" \
-      "${_target_dev}" 'type')" || return 2
+      "${_target_dev}" 'TYPE')" || return 2
     _chosenMountList+=("/mnt|${_mounted_fs_type}|${_target_dev}")
     _msg="Internal KFocus root filesystem detected at |${_target_dev}|,"
     _msg+=" mounted to |${_sysMountPath}|."
@@ -731,7 +830,7 @@ _tryKfocusMountFn() {
   "${_umountExe}" "${_target_dev}" || return 2
   if [ "${_is_crypt_opened}" = 'y' ]; then
     # Give the kernel some time before closing the volume
-    sleep 1;
+    sleep 2;
     "${_cryptsetupExe}" luksClose "${_mount_crypt_name}" \
       || _cm2WarnStrFn \
         "Cannot close encrypted volume |${_mount_crypt_name}|. Skipped."
@@ -984,7 +1083,7 @@ _mountFstabEntriesFn() {
     if _fsckAndMountFn -t "${_fstab_fs_type}" -o "${_fstab_fs_opt}" \
       "${_fstab_dev}" "${_true_mount_tgt}" 2>/dev/null; then
       _mounted_fs_type="$(_extractBlkidFieldStrFn "${_blkid_report}" \
-        "${_fstab_dev}" 'type')" || return 1
+        "${_fstab_dev}" 'TYPE')" || return 1
       _chosenMountList+=(
         "${_true_mount_tgt}|${_mounted_fs_type}|${_fstab_dev}"
       )
@@ -1315,7 +1414,7 @@ _unmountSystemDisksFn() {
   readarray -t _mount_list < <(cut -d'|' -f2 <<<"${_mount_data_sort_str}")
   for _mount_item in "${_mount_list[@]}"; do
     if ! "${_umountExe}" "${_mount_item}"; then
-      _cm2EchoFn "Failed to unmount |${_mount_item}|!"
+      _cm2ErrStrFn "Failed to unmount |${_mount_item}|!"
       return 1
     fi
   done
@@ -1349,7 +1448,7 @@ _unmountSystemDisksFn() {
     fi
 
     # Give the kernel time to clean up unmounts
-    sleep 1
+    sleep 2
     if ! "${_cryptsetupExe}" luksClose "/dev/mapper/${_crypttab_vol_str}"; then
       _cm2WarnStrFn \
         "Cannot close encrypted volume |${_crypttab_vol_str}|. Skipped.";
@@ -1371,8 +1470,8 @@ _mainFn() {
     _msg="$(cat <<EOF
 The kfocus-recover-mount script is usually run from an external live USB to
 mount and repair internal disks. However, you appear to be running it from an
-internal disk. If you are not sure if this is what you want to do, please see
-the documentation at https://kfocus.org/wf/recovery.html.
+internal disk. If you are not sure this is what you want to do, please see the
+documentation at https://kfocus.org/wf/recovery.html.
 
 Are you sure you want to continue
 EOF
