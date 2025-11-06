@@ -2,22 +2,23 @@
 
 export LC_ALL=C.UTF-8
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
-export GOPATH=/usr/share/gocode
-export GO111MODULE=off
-export GOCACHE=$(CURDIR)/.gocache
 
 DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
 MODULES_DIR = "debian/kfocus-calamares-settings/usr/lib/$(DEB_HOST_MULTIARCH)/calamares/modules"
+INTEGRITY = "common/modules/integrity"
 
 %:
 	dh $@
 
+override_dh_auto_configure:
+	(cd $(INTEGRITY) && mkdir build && cd build && cmake ..)
+
 override_dh_auto_build:
 	make;
+	(cd $(INTEGRITY)/build && $(MAKE))
 
-override_dh_auto_clean:
-	dh_auto_clean
-	rm -rf $(GOCACHE)
+override_dh_auto_install:
+	(cd $(INTEGRITY)/build && $(MAKE) DESTDIR=$(CURDIR)/debian/kfocus-calamares-settings/ install)
 
 override_dh_missing:
 	dh_missing
