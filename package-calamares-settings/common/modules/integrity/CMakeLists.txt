@@ -26,6 +26,6 @@ calamares_add_plugin( integrity
     SOURCES
       IntegrityViewStep.cpp
     UI
-        integrity.ui
+      integrity.ui
     SHARED_LIB
 )

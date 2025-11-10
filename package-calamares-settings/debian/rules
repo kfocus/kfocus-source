@@ -11,14 +11,14 @@ INTEGRITY = "common/modules/integrity"
 	dh $@
 
 override_dh_auto_configure:
-	(cd $(INTEGRITY) && mkdir build && cd build && cmake ..)
+	cd $(INTEGRITY) && mkdir build && cd build && cmake ..
 
 override_dh_auto_build:
 	make;
-	(cd $(INTEGRITY)/build && $(MAKE))
+	cd $(INTEGRITY)/build && $(MAKE)
 
 override_dh_auto_install:
-	(cd $(INTEGRITY)/build && $(MAKE) DESTDIR=$(CURDIR)/debian/kfocus-calamares-settings/ install)
+	cd $(INTEGRITY)/build && $(MAKE) DESTDIR=$(CURDIR)/debian/kfocus-calamares-settings/ install
 
 override_dh_missing:
 	dh_missing
