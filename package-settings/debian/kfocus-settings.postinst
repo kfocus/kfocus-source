@@ -269,5 +269,21 @@ if ! [ -e "${_sddmSetFile}" ]; then
 fi
 ## . END Set default SDDM theme
 
+## BEGIN Set DKMS autoinstall_all_kernels option
+#
+_dkmsFrameworkConfFile='/etc/dkms/framework.conf';
+_dkmsAutoinstallStr='autoinstall_all_kernels="yes"';
+mkdir -p '/etc/dkms';
+if ! [ -e "${_dkmsFrameworkConfFile}" ]; then
+  echo "${_dkmsAutoinstallStr}" > "${_dkmsFrameworkConfFile}";
+elif [ -f "${_dkmsFrameworkConfFile}" ]; then
+  if ! grep -q '^\s*autoinstall_all_kernels=' "${_dkmsFrameworkConfFile}";
+    then echo "${_dkmsAutoinstallStr}" >> "${_dkmsFrameworkConfFile}";
+  fi
+else
+  1>&2 echo "warn: |${_dkmsFrameworkConfFile}| exists but is not a file";
+fi
+## . END Set DKMS autoinstall_all_kernels option
+
 # Tag to allow some debhelper commands to inject relevant code
 #DEBHELPER#
