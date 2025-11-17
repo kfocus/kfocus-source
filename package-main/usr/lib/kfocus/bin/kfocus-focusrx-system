@@ -69,6 +69,39 @@ _promptAllUsersFn () {
 }
 ## . END _promptAllUsersFn }
 
+## BEGIN _cleanupDkmsFilesFn {
+# Purpose   : Clean up residual dkms files not supported by dkms 3.0.x.
+#
+_cleanupDkmsFilesFn () {
+  declare _dkms_vers _verify_str _rm_list _file;
+
+  # Determine installed dkms version
+  _dkms_vers="$(awk -F': ' '/^Version:/ {print $NF}' < <(dpkg --status dkms))";
+
+  # Bail if dkms version is not in the 3.0.x range
+  dpkg --compare-versions "${_dkms_vers}" ge '3.1.0' && return;
+  dpkg --compare-versions "${_dkms_vers}" lt '3.0.0' && return;
+
+  # Create a list of residual files to remove and dkms file status string
+  _rm_list=(
+    '/etc/dkms/framework.conf.d/autoinstall_all_kernels.conf'
+    '/etc/kernel/preinst.d/dkms'
+  );
+  _verify_str="$(dpkg --verify dkms)";
+
+  ## Begin Loop through the residual file list {
+  for _file in "${_rm_list[@]}"; do
+    # Skip this file if it does not exist
+    #   or if it has been modified from the original config
+    if [ ! -f "${_file}" ]; then continue; fi
+    if grep -q "..5...... c ${_file}" <<< "${_verify_str}"; then continue; fi
+
+    rm -f "${_file}";
+  done
+  ## . End Loop through the residual file list }
+}
+## . END _cleanupDkmsFilesFn }
+
 ## BEGIN _initCpuFn {
 # Purpose   : Initialize CPU for 2023+ systems
 # This is done here so CPU tweaks are available w/o GUI.
@@ -123,7 +156,7 @@ _manageSnapshotsOnBootFn () {
   # Perform on-boot snapshot maintenance if space is sufficient
   if (( _main_unalloc > _main_min_unalloc )) \
     && (( _boot_unalloc > _boot_min_unalloc )); then
-    # Finalize a snapshot restore if one was restored on last boot
+    # Finalize a snapshot restore if one was restored on the last boot
     "${_rollbackBackendExe}" 'finalizeRestore';
     _return_code="$?"
     if [ "${_return_code}" != '0' ] && [ "${_return_code}" != '1' ]; then
@@ -216,6 +249,7 @@ _mainFn () {
     case "${_opt_str}" in
     b) # Boot tasks
       _cm2EchoFn "== BEGIN :     ${_rootTitle}\n";
+      _cleanupDkmsFilesFn;
       _initCpuFn;
       _manageSnapshotsOnBootFn;
       _cm2EchoFn "\n==. END : OK   ${_rootTitle}\n\n";
@@ -238,7 +272,7 @@ declare _binName _binDir _baseName _baseDir _rootTitle _assignList \
 _rollbackBulkLocationSeenFile='/var/lib/kfocus/rollback_bulk_seen';
 ## . END Declare and assign global vars }
 
-## BEGIN Run mainFn when script is NOT sourced {
+## BEGIN Run mainFn when the script is NOT sourced {
 #
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binName="$(  readlink -f "$0"       )" || exit 101;
@@ -265,4 +299,4 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   _mainFn "$@";
 fi
-## . END Run mainFn when script is NOT sourced }
+## . END Run mainFn when the script is NOT sourced }
