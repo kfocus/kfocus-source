@@ -1,3 +1,19 @@
+kfocus-nvidia (24.04.8~beta2) noble; urgency=medium
+
+  * nvidia-pinning-edge: Update to 570.195.* packages (#6012)
+  * etc_modprobe.d_kfocus-nvidia-edge.conf: Restored kernel option
+    nvidia-modeset vblank_sem_control=0 after tests (#6012)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Wed, 05 Nov 2025 19:53:52 -0500
+
+kfocus-nvidia (24.04.8~beta1) noble; urgency=medium
+
+  * nvidia-pinning-edge: Update to 570.195.* packages (#6012)
+  * etc_modprobe.d_kfocus-nvidia-edge.conf: Remove option
+    nvidia-modeset vblank_sem_control=0 to test if still required (#6012)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Wed, 05 Nov 2025 12:51:17 -0500
+
 kfocus-nvidia (24.04.7) noble; urgency=medium
 
   * nvidia-pinning-edge: LP-PPA-kfocus-team-package-testing (#5626)
@@ -6,7 +22,7 @@ kfocus-nvidia (24.04.7) noble; urgency=medium
 
 kfocus-nvidia (24.04.6) noble; urgency=medium
 
-  * Update to 570.169* packages (#5626)
+  * nvidia-pinning-edge: Update to 570.169.* packages (#5626)
 
  -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 13 Aug 2025 10:48:14 -0500
 
