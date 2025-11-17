@@ -18,7 +18,8 @@ Recommends:   kfocus-conda,
               kfocus-pick-gcc,
               kfocus-power-bin,
               kfocus-tbt,
-              kfocus-vidsync
+              kfocus-vidsync,
+              kfocus-recover-mount
 Breaks:       kfocus-tools-m2g6,
               kfocus-tools-nxg1,
               kfocus-tools-other
@@ -34,7 +35,8 @@ Recommends:   kfocus-conda,
               kfocus-pick-gcc,
               kfocus-power-bin,
               kfocus-tbt,
-              kfocus-vidsync
+              kfocus-vidsync,
+              kfocus-recover-mount
 Breaks:       kfocus-power-fan,
               kfocus-tools-nxg1,
               kfocus-tools-other,
@@ -51,7 +53,8 @@ Recommends:   kfocus-conda,
               kfocus-pick-gcc,
               kfocus-power-bin,
               kfocus-tbt,
-              kfocus-vidsync
+              kfocus-vidsync,
+              kfocus-recover-mount
 Breaks:       kfocus-power-fan,
               kfocus-keyboard,
               kfocus-tools-m2g6,
@@ -69,7 +72,8 @@ Recommends:   kfocus-conda,
               kfocus-pick-gcc,
               kfocus-power-bin,
               kfocus-tbt,
-              kfocus-vidsync
+              kfocus-vidsync,
+              kfocus-recover-mount
 Breaks:       kfocus-power-fan,
               kfocus-keyboard,
               kfocus-tools-m2g6,
@@ -149,3 +153,9 @@ Architecture: any
 Depends:      ${misc:Depends}, ${shlibs:Depends}
 Description:  KFocus Thunderbolt control tool
  Allows enabling and disabling Thunderbolt temporarily or permanently.
+
+Package:      kfocus-recover-mount
+Architecture: any
+Depends:      ${misc:Depends}, ${shlibs:Depends}
+Description:  KFocus system disk mount tool
+ Allows mounting internal system disks from a live ISO for recovery.
