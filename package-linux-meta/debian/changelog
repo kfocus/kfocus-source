@@ -5,8 +5,9 @@ linux-meta-kfocus (6.14.0-34.34+kfocus1) noble; urgency=medium
   * Applied patch: ALSA: hda/realtek: Add quirks for some Clevo laptops
     (#5699)
     (https://lore.kernel.org/all/20250620204329.35878-1-tcrawford@system76.com/)
-  * Applied patch: Revert "cpufreq: intel_pstate: Unchecked MSR access in
-    legacy mode" (#5699)
+  * Applied patch: cpufreq: intel_pstate: Check IDA feature only during MSR
+    0x199 write (#5699)
+    (https://lore.kernel.org/linux-pm/20251111010840.141490-1-srinivas.pandruvada@linux.intel.com/)
 
  -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 22 Oct 2025 10:56:23 -0500
 
