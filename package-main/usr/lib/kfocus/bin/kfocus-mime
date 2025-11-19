@@ -638,9 +638,9 @@ _installPkgFn () {
   # Dispatch
   case "${METHOD:-}" in
     direct|github|website) install_deb "${URL:-}";;
-    apt) install_apt;;
-    ppa) install_ppa;;
-    snap) install_snap;;
+    apt)    install_apt;;
+    ppa)    install_ppa;;
+    snap)   install_snap;;
     custom) install_custom;;
     *) echo -e "Unexpected method |${METHOD:-}|";
       exit 1;;
@@ -881,7 +881,7 @@ EOT
       fi
       _promptFn "${_cm2HtmBeginStr}${_prompt_msg}${_cm2HtmEndStr}";
       # There's nothing to execute, so exit now
-      exit
+      exit;
       ;;
 
     *) true;;
