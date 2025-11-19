@@ -121,6 +121,7 @@ _exeLookupList=(
   'webstorm|!webstorm|jetbrains-toolbox|jetbrains-toolbox|WebStorm: JetBrains Web IDE'
   'virtualbox|!virtualbox||virtualbox|VirtualBox: Run Virtual Machines'
   'zoom|!zoom||zoom|Zoom: Start and Join Video and Web Conferencing'
+  'displaylink-driver|!displaylink-driver|displaylink-installer|displaylink-driver|DisplayLink: Driver for DisplayLink Docking Stations'
 
   # Future consideration: Nvidia CUDA and ML libs
 
@@ -339,6 +340,11 @@ function deb_telegram-desktop() {
   WEBSITE="https://telegram.org/"
   SNAP_PKG_NAME="telegram-desktop"
 }
+function deb_displaylink-driver() {
+  PRETTY_NAME="DisplayLink Driver"
+  WEBSITE="https://www.synaptics.com/products/displaylink-graphics"
+  CUSTOM_FUNC_NAME="_installDisplaylinkDriverFn"
+}
 # Extracted from main
 function _makeAppListFn () {
   IFS=$'\n' read -r -d '' -a _pkgNameList < <(
@@ -364,7 +370,7 @@ function _readPkgRepoInfoFn () {
   export CACHE_DIR ERROR_STR HOST_CPU HOST_ARCH USER_AGENT UBUNTU_CODENAME \
     APT_KEY_URL GPG_KEY_URL APT_LIST_NAME APT_REPO_URL APT_EXTRA_PKGLIST PPA \
     ARCHS_SUPPORTED METHOD EULA SNAP_PKG_NAME URL VERSION_INSTALLED \
-    VERSION_PUBLISHED PRETTY_NAME WEBSITE;
+    VERSION_PUBLISHED PRETTY_NAME WEBSITE CUSTOM_FUNC_NAME;
 
   CACHE_DIR='/var/cache/deb-get'
 
@@ -409,6 +415,7 @@ function _readPkgRepoInfoFn () {
   VERSION_PUBLISHED='';
   PRETTY_NAME='';
   WEBSITE='';
+  CUSTOM_FUNC_NAME='';
 
   # Source the variables
   if "deb_${_pkg_name}"; then
@@ -419,7 +426,9 @@ function _readPkgRepoInfoFn () {
   fi
 
   VERSION_INSTALLED=$(version_deb)
-  if [ -n "${SNAP_PKG_NAME:-}" ]; then
+  if [ -n "${CUSTOM_FUNC_NAME:-}" ]; then
+    METHOD='custom';
+  elif [ -n "${SNAP_PKG_NAME:-}" ]; then
     METHOD='snap';
   elif [ -n "${APT_REPO_URL:-}" ]; then
     METHOD='apt';
@@ -486,6 +495,9 @@ function install_snap() {
     snap install "${SNAP_PKG_NAME:-}";
   fi
 }
+function install_custom() {
+  "${CUSTOM_FUNC_NAME:-}";
+}
 function download_deb() {
   local URL="${1}"
   local FILE="${URL##*/}"
@@ -528,6 +540,18 @@ function install_ppa() {
 }
 ## . END deb-get functions }
 
+## BEGIN _installDisplaylinkDriverFn {
+_installDisplaylinkDriverFn() {
+  declare _url
+
+  _url='https://www.synaptics.com/sites/default/files/Ubuntu/pool';
+  _url+='/stable/main/all/synaptics-repository-keyring.deb';
+  install_deb "${_url}"
+  update_apt
+  install_apt
+}
+## . END _installDisplaylinkDriverFn }
+
 ## BEGIN _echoKeyListFn {
 _echoKeyListFn () {
   IFS=$'\n';
@@ -551,6 +575,11 @@ _echoInstallPromptMsgFn () {
   if _cm2ChkPkgFn "${_pkg_name}"; then
     echo -e "\n'${_descr_str}' is available ";
     echo -e "but it is not installed."
+    echo -e "\nInstall and start now?\n";
+    return 0;
+  elif [ "${METHOD:-}" = 'custom' ]; then
+    echo -e "\n'${_descr_str}' is available ";
+    echo -e "but it is not installed.";
     echo -e "\nInstall and start now?\n";
     return 0;
   elif [ "${METHOD:-}" = 'snap' ]; then
@@ -612,6 +641,7 @@ _installPkgFn () {
     apt) install_apt;;
     ppa) install_ppa;;
     snap) install_snap;;
+    custom) install_custom;;
     *) echo -e "Unexpected method |${METHOD:-}|";
       exit 1;;
   esac;
@@ -835,6 +865,23 @@ EOT
       fi
       _cmd_str='zoom';
       _arg_list=( '&' 'disown' );
+      ;;
+
+    displaylink-driver)
+      if lsmod | grep -q '^evdi '; then
+        _prompt_msg="$(cat <<EOT
+${_cm2HtmPStr}The DisplayLink driver is already running.</p>
+EOT
+        )";
+      else
+        _prompt_msg="$(cat <<EOT
+${_cm2HtmPStr}Restart your system to enable the DisplayLink driver.</p>
+EOT
+        )";
+      fi
+      _promptFn "${_cm2HtmBeginStr}${_prompt_msg}${_cm2HtmEndStr}";
+      # There's nothing to execute, so exit now
+      exit
       ;;
 
     *) true;;
