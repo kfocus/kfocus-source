@@ -7,7 +7,7 @@
 #   https://github.com/wimpysworld/deb-get.
 #
 # Name   : kfocus-mime
-# Purpose: Launch app for link with x-schema-handler/kfocus-mime
+# Purpose: Launch app with x-schema-handler/kfocus-mime
 #          Recent additions for repo add from deb-get project
 # License: GPL v2
 # Example: xdg-open ./link.kfocus-001
@@ -54,24 +54,27 @@ _exeLookupList=(
   'kdenlive|kdenlive||kdenlive|KDEnlive: Edit  Non-Linear Videos'
   'kdiff3|kdiff3||kdiff3|KDiff3: Diff and Merge Files and Directories'
   'keepassxc|keepassxc||keepassxc|KeepassXC: Password Manager'
-  'kfocus_apps|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://kfocus.org/wf/apps.html||kfocus-main|KFocus Curated Apps: find and install apps'
-  'kfocus_conda|konsole;-e;kfocus-conda|kfocus-conda|kfocus-conda|KFocus Conda: Deep Learning Suite'
-  'kfocus_extra|konsole;-e;pkexec;kfocus-extra|kfocus-extra|kfocus-main|KFocus Extra: Install extra and restricted software'
+  'kfocus_apps|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://kfocus.org/wf/apps.html||kfocus-main|KFocus Curated Apps: View Curated Apps in browser'
+  'kfocus_conda|konsole;-e;kfocus-conda|kfocus-conda|kfocus-conda|KFocus Anaconda GPU AI Suite Installer: Install GPU accelerated deep learning'
+  'kfocus_extra|konsole;-e;pkexec;kfocus-extra|kfocus-extra|kfocus-main|KFocus Extra Software Installer: Install extra optional software'
   'kfocus_fan|kfocus-fan||kfocus-fan|Fan Control: Select a desired fan profile.'
-  'kfocus_focusrx|focusrx;-f||kfocus-main|FocusRx: System diagnostics and repair'
-  'kfocus_guided|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://kfocus.org/wf||kfocus-main|KFocus Guided Solutions'
-  'kfocus_help|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://kfocus.org/wf/help.html||kfocus-main|KFocus Help: Help and FAQs'
-  'kfocus_kb_color|kfocus-kb-color||kfocus-kb-color|Keyboard Color: Set color and intensity'
-  'kfocus_kclean|/usr/lib/kfocus/bin/kfocus-kclean;-f|/usr/lib/kfocus/bin/kfocus-kclean|kfocus-main|Kernel Cleaner: Clean up old kernels'
-  'kfocus_passphrase_changer|/usr/lib/kfocus/bin/kfocus-firstrun-bin;-f;diskPassphraseItem||kfocus-main|Passphrase Changer: Change disk encryption passphrases'
-  'kfocus_pick_gcc|kfocus-pick-gcc||kfocus-pick-gcc|KFocus Pick GCC: Select default compiler toolchain'
-  'kfocus_power|kfocus-power||kfocus-power|KFocus Power: Control CPU Power'
-  'kfocus_rollback|/usr/lib/kfocus/bin/kfocus-rollback|/usr/lib/kfocus/bin/kfocus-rollback|kfocus-rollback|KFocus Rollback: Restore the system to an earlier state'
-  'kfocus_vidsync|kfocus-vidsync||kfocus-vidsync|KFocus Vidsync: Sync video across all displays'
-  'kfocus_welcome|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://docs.google.com/presentation/d/e/2PACX-1vTsKGkzy_tFm2xZo-BYX7mqeLG43C2vy108qsWZ2L_c4XJGXEVh2fAt3sNvgiqXfw4OFPWynHS-32xx/pub?start=false&loop=false&delayms=3000||kfocus-main|KFocus Welcome Document'
+  'kfocus_focusrx|focusrx;-f||kfocus-main|FocusRx: System maintenance and repair'
+  'kfocus_guided|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://kfocus.org/wf||kfocus-main|KFocus Guided Solutions: View guided solutions in browser'
+  'kfocus_help|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://kfocus.org/wf/help.html||kfocus-main|KFocus Reference Pages: Basic help and resources for Kubuntu Focus'
+  'kfocus_kb_color|kfocus-kb-color||kfocus-kb-color|KFocus Keyboard Color Chooser: Change keyboard color and brightness'
+  'kfocus_kclean|/usr/lib/kfocus/bin/kfocus-kclean;-f|/usr/lib/kfocus/bin/kfocus-kclean|kfocus-main|KFocus Kernel Cleaner: Remove unused and old kernel files'
+  'kfocus_passphrase_changer|/usr/lib/kfocus/bin/kfocus-firstrun-bin;-f;diskPassphraseItem||kfocus-main|KFocus Disk Passphrase Changer: Change encrypted disk passphrases'
+  'kfocus_pick_gcc|kfocus-pick-gcc||kfocus-pick-gcc|KFocus C Compiler Switcher: Change default C compiler version'
+  'kfocus_power|kfocus-power||kfocus-power|KFocus Power and Fan: Review and adjust power settings'
+  'kfocus_reset_effects|kfocus-reset-effects||kfocus-main|KFocus Reset Defaults: Reset keyboard shortcuts, effects, and power config'
+  'kfocus_reset_widgets|kfocus-reset-widgets||kfocus-main|KFocus Reset Widget: Reset desktop hint and icon widgets'
+  'kfocus_rollback|/usr/lib/kfocus/bin/kfocus-rollback|/usr/lib/kfocus/bin/kfocus-rollback|kfocus-rollback|KFocus System Rollback Dashboard: Create, manage, and restore coherent system snapshots'
+  'kfocus_tbt|/usr/lib/kfocus/bin/kfocus-tbt||kfocus-tools|KFocus Thunderbolt Control: Enable or disable Thunderbolt'
+  'kfocus_vidsync|kfocus-vidsync||kfocus-vidsync|KFocus Video Sync Utility: Change video sync settings'
+  'kfocus_welcome|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://docs.google.com/presentation/d/e/2PACX-1vTsKGkzy_tFm2xZo-BYX7mqeLG43C2vy108qsWZ2L_c4XJGXEVh2fAt3sNvgiqXfw4OFPWynHS-32xx/pub?start=false&loop=false&delayms=3000||kfocus-main|KFocus Feature Guide: Explore the features of Kubuntu Focus systems'
   # app_id|cmd_str;with;args|sniff_str|pkg_str|descr_str
   # 1       2                 3         4       5
-  'kfocus_wizard|/usr/lib/kfocus/bin/kfocus-firstrun-bin;-f||kfocus-firstrun-bin|Welcome Wizard: Configure your apps'
+  'kfocus_wizard|/usr/lib/kfocus/bin/kfocus-firstrun-bin;-f||kfocus-firstrun-bin|KFocus Welcome Wizard: Select tools and settings for your workflow'
   'kleopatra|kleopatra||kleopatra|Kleopatra: Unified Crypto GUI'
   'konsole|konsole||konsole|Konsole: Use an X Terminal Emulator'
   'krita|krita||krita|Krita: Raster Image Editor'
@@ -94,12 +97,14 @@ _exeLookupList=(
   'ppa-purge|konsole;-e;man ppa-purge|ppa-purge|ppa-purge|PPA Purge: Purge PPAs'
   'rar|konsole;-e;man rar|rar|rar|Rar: Create .rar Archive Files'
   'simplescreenrecorder|simplescreenrecorder||simplescreenrecorder|SimpleScreenRecorder: Record Your Screen with Powerful Options'
-  'skype|skype||skype|Skype: Video Call Platform'
+  # Disabled 2025-05-01
+  # 'skype|skype||skype|Skype: Video Call Platform'
   'slack|slack||slack-desktop|Slack: Team Messaging'
   'spectacle|spectacle||kde-spectacle|Spectacle: Take Screenshots'
   'steam|steam||steam|Steam: Manage and Play Games'
   'sublime-text|subl||sublime-text|Sublime Text editor'
   'systemsettings5|systemsettings5||systemsettings|System Settings: Adjust Your System'
+  'msteams|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://www.microsoft.com/en-us/microsoft-teams/group-chat-software||kfocus-main|Microsoft Teams'
   'telegram-desktop|telegram-desktop||telegram-desktop|Telegram: Encrypted Instant Messenger'
   'thunderbird|thunderbird||thunderbird|Thunderbird: Email and Calendar'
   'vlc|vlc||vlc|VLC: Play and Stream Video and Multimedia'
@@ -116,17 +121,18 @@ _exeLookupList=(
   'webstorm|!webstorm|jetbrains-toolbox|jetbrains-toolbox|WebStorm: JetBrains Web IDE'
   'virtualbox|!virtualbox||virtualbox|VirtualBox: Run Virtual Machines'
   'zoom|!zoom||zoom|Zoom: Start and Join Video and Web Conferencing'
+  'displaylink-driver|!displaylink-driver|displaylink-installer|displaylink-driver|DisplayLink: Driver for DisplayLink Docking Stations'
 
   # Future consideration: Nvidia CUDA and ML libs
 
-  # Deprecated
+  # these are deprecated:
   # 'atom|atom;--no-sandbox||atom|Atom: A hackable text editor.'
   # 'brave-browser|brave-browser||brave-browser|Brave Browser'
   # 'jetbrains-toolbox-plain|jetbrains-toolbox|jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs'
 );
 
 ## BEGIN _importCommonFn {
-# Run ls-common-symbols.sh to get list of used symbols
+# Run ls-common-symbols.sh to get a list of used symbols
 #
 _importCommonFn () {
   declare _lib_file;
@@ -183,7 +189,7 @@ function deb_backintime() {
 # The key is out-of-date. We would like to fix this with a method that does
 # not require trusted.gpg.d, such as creating a sources.list file for Brave
 # that embeds the key directly.
-#
+
 #function deb_brave-browser() {
 #  APT_KEY_URL="https://brave-browser-apt-release.s3.brave.com/brave-core.asc"
 #  APT_LIST_NAME="brave-browser-release"
@@ -291,11 +297,12 @@ function deb_nvidia-ml() {
   PRETTY_NAME="Nvidia ML (deprecated; use CUDA for later lib versions)"
   WEBSITE="https://developer.nvidia.com"
 }
-function deb_skype() {
-  PRETTY_NAME="Skype"
-  SNAP_PKG_NAME="skype"
-  WEBSITE="https://www.skype.com/"
-}
+# Disabled 2025-05-01
+# function deb_skype() {
+#   PRETTY_NAME="Skype"
+#   SNAP_PKG_NAME="skype"
+#   WEBSITE="https://www.skype.com/"
+# }
 function deb_slack-desktop() {
   APT_KEY_URL="https://packagecloud.io/slacktechnologies/slack/gpgkey"
   APT_LIST_NAME="slack"
@@ -333,6 +340,11 @@ function deb_telegram-desktop() {
   WEBSITE="https://telegram.org/"
   SNAP_PKG_NAME="telegram-desktop"
 }
+function deb_displaylink-driver() {
+  PRETTY_NAME="DisplayLink Driver"
+  WEBSITE="https://www.synaptics.com/products/displaylink-graphics"
+  CUSTOM_FUNC_NAME="_installDisplaylinkDriverFn"
+}
 # Extracted from main
 function _makeAppListFn () {
   IFS=$'\n' read -r -d '' -a _pkgNameList < <(
@@ -358,7 +370,7 @@ function _readPkgRepoInfoFn () {
   export CACHE_DIR ERROR_STR HOST_CPU HOST_ARCH USER_AGENT UBUNTU_CODENAME \
     APT_KEY_URL GPG_KEY_URL APT_LIST_NAME APT_REPO_URL APT_EXTRA_PKGLIST PPA \
     ARCHS_SUPPORTED METHOD EULA SNAP_PKG_NAME URL VERSION_INSTALLED \
-    VERSION_PUBLISHED PRETTY_NAME WEBSITE;
+    VERSION_PUBLISHED PRETTY_NAME WEBSITE CUSTOM_FUNC_NAME;
 
   CACHE_DIR='/var/cache/deb-get'
 
@@ -403,6 +415,7 @@ function _readPkgRepoInfoFn () {
   VERSION_PUBLISHED='';
   PRETTY_NAME='';
   WEBSITE='';
+  CUSTOM_FUNC_NAME='';
 
   # Source the variables
   if "deb_${_pkg_name}"; then
@@ -413,7 +426,9 @@ function _readPkgRepoInfoFn () {
   fi
 
   VERSION_INSTALLED=$(version_deb)
-  if [ -n "${SNAP_PKG_NAME:-}" ]; then
+  if [ -n "${CUSTOM_FUNC_NAME:-}" ]; then
+    METHOD='custom';
+  elif [ -n "${SNAP_PKG_NAME:-}" ]; then
     METHOD='snap';
   elif [ -n "${APT_REPO_URL:-}" ]; then
     METHOD='apt';
@@ -480,6 +495,9 @@ function install_snap() {
     snap install "${SNAP_PKG_NAME:-}";
   fi
 }
+function install_custom() {
+  "${CUSTOM_FUNC_NAME:-}";
+}
 function download_deb() {
   local URL="${1}"
   local FILE="${URL##*/}"
@@ -522,6 +540,18 @@ function install_ppa() {
 }
 ## . END deb-get functions }
 
+## BEGIN _installDisplaylinkDriverFn {
+_installDisplaylinkDriverFn() {
+  declare _url
+
+  _url='https://www.synaptics.com/sites/default/files/Ubuntu/pool';
+  _url+='/stable/main/all/synaptics-repository-keyring.deb';
+  install_deb "${_url}"
+  update_apt
+  install_apt
+}
+## . END _installDisplaylinkDriverFn }
+
 ## BEGIN _echoKeyListFn {
 _echoKeyListFn () {
   IFS=$'\n';
@@ -545,6 +575,11 @@ _echoInstallPromptMsgFn () {
   if _cm2ChkPkgFn "${_pkg_name}"; then
     echo -e "\n'${_descr_str}' is available ";
     echo -e "but it is not installed."
+    echo -e "\nInstall and start now?\n";
+    return 0;
+  elif [ "${METHOD:-}" = 'custom' ]; then
+    echo -e "\n'${_descr_str}' is available ";
+    echo -e "but it is not installed.";
     echo -e "\nInstall and start now?\n";
     return 0;
   elif [ "${METHOD:-}" = 'snap' ]; then
@@ -603,9 +638,10 @@ _installPkgFn () {
   # Dispatch
   case "${METHOD:-}" in
     direct|github|website) install_deb "${URL:-}";;
-    apt) install_apt;;
-    ppa) install_ppa;;
-    snap) install_snap;;
+    apt)    install_apt;;
+    ppa)    install_ppa;;
+    snap)   install_snap;;
+    custom) install_custom;;
     *) echo -e "Unexpected method |${METHOD:-}|";
       exit 1;;
   esac;
@@ -807,7 +843,9 @@ to access more controls.</p>
 EOT
       )";
       _cmd_str='dropbox';
-      _arg_list=( 'start' );
+      # Arguments are the same as dropbox.desktop.
+      # The '-i' is needed if not installed for the user.
+      _arg_list=( 'start' '-i' );
       ;;
 
     docker)
@@ -829,6 +867,23 @@ EOT
       _arg_list=( '&' 'disown' );
       ;;
 
+    displaylink-driver)
+      if lsmod | grep -q '^evdi '; then
+        _prompt_msg="$(cat <<EOT
+${_cm2HtmPStr}The DisplayLink driver is already running.</p>
+EOT
+        )";
+      else
+        _prompt_msg="$(cat <<EOT
+${_cm2HtmPStr}Restart your system to enable the DisplayLink driver.</p>
+EOT
+        )";
+      fi
+      _promptFn "${_cm2HtmBeginStr}${_prompt_msg}${_cm2HtmEndStr}";
+      # There's nothing to execute, so exit now
+      exit;
+      ;;
+
     *) true;;
   esac
 
@@ -839,7 +894,7 @@ EOT
     exit 1;
   fi
 
-  # Prompt user if there is a message
+  # Prompt the user if there is a message
   if [ -n "${_prompt_msg}" ]; then
     _promptFn "${_cm2HtmBeginStr}${_prompt_msg}${_cm2HtmEndStr}";
   fi
@@ -861,7 +916,7 @@ EOT
 #   in the lookup list, the user is notified and this script exits.
 #
 #   If the app is found in the list but not available, the routine calls
-#   pkexec <this-file> -i <pkg_id> to install the package, and possibly
+#   pkexec <this-file> -i <pkg_id> to install the package and possibly
 #   the required repo as well. On successful completion, the app is then
 #   run as the user.
 # Arguments: app_id - App identifier key
@@ -933,7 +988,7 @@ _runAppFn () {
     exit 0;
   fi
 
-  # Exit if pkg_name is not in table
+  # Exit if pkg_name is not in the table
   if [ -z "${_pkg_name}" ]; then
     _prompt_msg="Sorry, |${_arg_app_id}| is not supported";
     _promptFn "${_prompt_msg}";
@@ -950,7 +1005,7 @@ _runAppFn () {
       _sniff_exe="$(command -v "${_sniff_str}" || true)";
     fi
 
-    # Try to install package using (may install repository too)
+    # Try to install the package using (may install repository too)
     if [ ! -x "${_sniff_exe}" ] && [ "${_idx}" = '0' ]; then
       if _install_prompt_msg="$(
         _echoInstallPromptMsgFn "${_app_id}" "${_pkg_name}" "${_descr}"
@@ -1057,13 +1112,13 @@ _mainFn () {
       # DEBUG: _cm2EchoFn "_arg_app_id=${_arg_app_id}";
     # Handle link file. Bail if not readable.
     else
-      # Ensure link file is readable
+      # Ensure the link file is readable
       if ! [ -r "${_arg1_str}" ]; then
         _cm2WarnStrFn "Abort: Link file |${_arg1_str}| cannot be read";
         exit 1;
       fi
 
-      # Read id from link file and then remove it.
+      # Read id from the link file and then remove it.
       read -r _arg_app_id < "${_arg1_str}" || exit 1;
       rm "${_arg1_str}" || true;
     fi
@@ -1094,7 +1149,7 @@ _pkgNameList=();
 _userName="$(id -un)";
 ## . END Declare and set global vars }
 
-## BEGIN Run main if script is not sourced {
+## BEGIN Run main if the script is not sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binName="$(readlink -f "$0")"        || exit 1;
   _binDir="$(dirname "${_binName}")"    || exit 1;
@@ -1108,4 +1163,4 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _escExe="$(_cm2GetEscExeFn)" || exit 1;
   _mainFn "$@";
 fi
-## . END Run main if script is not sourced }
+## . END Run main if the script is not sourced }

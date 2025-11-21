@@ -1,12 +1,13 @@
 #!/bin/bash
 #
-# Copyright 2019-2022 MindShare Inc.
-# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
+# Copyright 2019-2025 MindShare Inc.
+# Written for the Kubuntu Focus by
+#   Michael Mikowski, Aaron Rainbolt, Erich Eickmeyer
 #
 # Name    : kfocus-kclean
 # Purpose : User script to remove redundant kernel packages
 # License : GPL v2
-# Spec    : 744
+# Spec    : 744, 4534
 #
 set -u;
 
@@ -292,11 +293,11 @@ _echoIsBootMountPointFn () {
 ## . END _echoIsBootMountPointFn }
 
 ## BEGIN _echoBootMegsFn {
-# Mock this for tests
+# Mock this for tests.
+# Takes argument of 'avail' or 'size'.
 #
 _echoBootMegsFn() {
   declare _arg_str _int;
-
   _arg_str="${1:-size}";
 
   if [ "${_isBtrfsYn}" = 'y' ]; then
@@ -333,7 +334,6 @@ _echoBootMegsFn() {
   #   another round of kernels are selected, until all of them have a priority
   #   marker.
   # * Sorts the list, removes the priority markers, and echos it.
-
 _echoPrioritizedKversExtraKeepStr () {
   declare _kvers_list _kernel_flavor_list_str _kernel_flavor_list \
     _kvers_str _kernel_flavor_str _flavor_idx _kvers_idx \
@@ -452,6 +452,7 @@ _notifyAndExitFn () {
 ${_cm2HtmBeginStr}${_tableStr}
 ${_browStr}<h3 style="color:#f7941d">${_bodyTitle}</h3>${_erowStr}
 ${_browStr}${_prompt_str}${_erowStr}
+${_browStr}Click OK to exit.${_erowStr}
 </table>
 ${_cm2HtmEndStr}
 EOF
@@ -479,7 +480,7 @@ _triggerActionFn () {
   else
     _result_msg="${_fail_msg}";
     if [ -n "${_exit_str}" ]; then
-      _result_msg+=":<br>${_exit_str}";
+      _result_msg+="<br>${_exit_str}";
     fi
   fi
 
@@ -487,6 +488,7 @@ _triggerActionFn () {
 ${_cm2HtmBeginStr}${_tableStr}
 ${_browStr}<h3 style="color:#f7941d">${_bodyTitle}</h3>${_erowStr}
 ${_browStr}${_result_msg}${_erowStr}
+${_browStr}Click OK to finish.${_erowStr}
 </table>
 ${_cm2HtmEndStr}
 EOF
@@ -499,7 +501,7 @@ EOF
 _mainFn() {
   declare \
     _boot_free_int _boot_size_int _cmd_list _do_check _do_force \
-    _do_offer_deep_clean _eff_free_int _check_msg _eff_size_int \
+    _do_btrfs_low_check _eff_free_int _check_msg _eff_size_int \
     _filtered_purge_list _filtered_purge_list_str _inst_kvers_count \
     _inst_kvers_list_str _is_boot_low _is_boot_partition \
     _keep_kvers_list_count _keep_pkg_list_str _kernel_free_count \
@@ -507,8 +509,9 @@ _mainFn() {
     _kversExtraKeepStr _kversFullPrefStr _kversFullRunStr \
     _opt_str _overfull_threshold_count _purge_msg _purge_pkg_list_str \
     _purge_pkg_list _purge_pkg _reply _reserve_kvers_count _run_msg \
-    _btrfs_status _deep_clean_msg _no_purgeable_kernels_msg \
-    _no_purgeable_kernels_end_msg _exit_wizard_msg;
+    _btrfs_status _still_low_warn_msg _no_purgeable_kernels_msg \
+    _no_purgeable_kernels_end_msg _exit_wizard_msg _exclude_str \
+    _file_list_str _snap_count _unalloc_int;
 
   ## Begin Initialize {
   _aptListStr="$(_echoAptListStrFn)";
@@ -517,12 +520,12 @@ _mainFn() {
 
   ## Begin Process Options {
   _do_force='n';
-  _do_offer_deep_clean='n';
+  _do_btrfs_low_check='n';
   while getopts ':fhd' _opt_str; do
     case "${_opt_str}" in
     h) _echoHelpFn; return 0;;
     f) _do_force='y';;
-    d) _do_offer_deep_clean='y';;
+    d) _do_btrfs_low_check='y';;
     *) _cm2EchoFn "\nInvalid option: ${_opt_str} \n";
       _echoHelpFn;
       return 1;;
@@ -619,15 +622,15 @@ _mainFn() {
       _check_msg="Check forced: "; else _check_msg+="<br>${_cStr}";
     fi
     if [ "${_is_boot_partition}" = 'y' ]; then
-      _check_msg+='/boot space is low ';
-      _check_msg+="(${_boot_free_int} of ${_boot_size_int} MB).";
+      _check_msg+='<span style="color:#da4453">/boot space is low ';
+      _check_msg+="(${_boot_free_int} of ${_boot_size_int} MB).</span>";
     elif (( _boot_free_int > _lowRootDiskInt )); then
-      _check_msg+="Kernel count (${_inst_kvers_count}) exceeds <br>${_cStr}";
+      _check_msg+="<span style=\"color:#da4453\">Kernel count (${_inst_kvers_count}) exceeds <br>${_cStr}";
       _check_msg+="recommended max ($(( _kernel_max_count - \
-        _overfull_threshold_count - 1 ))).";
+        _overfull_threshold_count - 1 ))).</span>";
     else
-      _check_msg+="System disk is low (${_boot_free_int} MB).<br>${_cStr}";
-      _check_msg+="<b>MAKE ROOM TO KEEP MORE KERNELS!</b>";
+      _check_msg+="<span style=\"color:#da4453\">System disk is low (${_boot_free_int} MB).<br>${_cStr}";
+      _check_msg+="MAKE ROOM TO KEEP MORE KERNELS!</span>";
     fi
 
   # This should never be encountered, but we keep it here as
@@ -692,59 +695,72 @@ Tools > Kernel Cleaner</code>.
 EOF
   )";
 
-  ## Begin Offer Deep Clean {
-  if [ "${_do_offer_deep_clean}" = 'y' ]; then
-    [ -z "${_rollbackBackendExe}" ] && return;
+  ## Begin Warn Still Low {
+  if [ "${_do_btrfs_low_check}" = 'y' ] && [ "${_isBtrfsYn}" = 'y' ]; then
+    _exclude_str='System.map|config|efi|grub|initrd.img';
+    _exclude_str+='|keyfile|memtest86|vmlinuz';
 
-    _deep_clean_msg="$(cat <<EOF
+    _file_list_str="$(
+      du -xt 10M -BM /boot/* |sort -rn \
+      | grep -vP '\s+/boot/('"${_exclude_str}"')' \
+      | awk '{print $2" "$1 }';
+    )";
+
+    # Get percentage of 4 GiB left unallocated
+    _unalloc_int="$(_echoBootMegsFn 'avail')";
+    (( _unalloc_int = _unalloc_int * 100 / 4096 )) || true;
+    if (( _unalloc_int >= 25 )); then return; fi
+
+    _still_low_warn_msg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
 ${_browStr}<h3 style="color:#f7941d">FocusRx: Disk Space Still Low</h3>${_erowStr}
 
-${_browStr}Boot space on this system is still low. This is most likely <br>
-because System Rollback has snapshots of older kernels still <br>
-on the disk. Deleting older snapshots will usually resolve this.${_erowStr}
+${_browStr}<span style="color:#da4453">The <code>/boot</code> filesystem has
+only ${_unalloc_int}% unallocated space.</span><br>
+We recommend a minimum of 25%.${_erowStr}
+EOF
+    )";
 
-${_browStr}To free up as much boot space as possible, you can purge all <br>
-snapshots and clean the disk now. Please note that this <br>
-operation is permanent and cannot be undone!${_erowStr}
+    if [ -n "${_file_list_str}" ]; then
+      _still_low_warn_msg+="$(cat <<EOF
+${_browStr}There are one or more large files in the /boot filesystem <br>
+that do not appear to belong:${_erowStr}
 
-${_browStr}Purge all snapshots now?${_erowStr}</table>
+${_browStr}<code>${_file_list_str#  }</code>${_erowStr}
+
+${_browStr}You may free up space by moving files out of <code>/boot</code>, but <br>
+ONLY if you created them and you know it is safe. Otherwise, <br>
+we recommend backing up your data first because moving or <br>
+deleting a key file could render your system unbootable.
+EOF
+      )";
+    fi
+    _still_low_warn_msg+="${_erowStr}";
+
+    _snap_count="$(
+      _cm2LsFn /btrfs_boot/@kfocus-rollback-boot-snapshots/ |wc -l
+    )";
+
+    if (( _snap_count > 0 )); then
+      _still_low_warn_msg+="$(cat <<EOF
+${_browStr}This system has rollback snapshots which can retain disk space. <br>
+You may use System Rollback Dashboard to view the space <br>
+used by each snapshot, and delete them to reduce disk usage.${_erowStr}
+EOF
+      )";
+    fi
+    _still_low_warn_msg+="$(cat <<EOF
+${_browStr}You may need to reboot to clear any open file handles to <br>
+deleted snapshots. This will allow the system to reclaim <br>
+all available disk space.${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
     )";
 
-    _reply="$(_cm2PromptUserFn "${_deep_clean_msg}" "${_winTitle}" 'w')";
-    [ "${_reply}" = 'n' ] && _notifyAndExitFn "$(cat <<EOF
-Snapshots were NOT purged, per user request. <br>
-${_exit_wizard_msg}
-EOF
-    )";
-
-    _deep_clean_msg="$(cat <<EOF
-${_cm2HtmBeginStr}${_tableStr}
-${_browStr}<h3 style="color:#f7941d">FocusRx: Snapshot Purge</h3>${_erowStr}
-
-${_browStr}Final confirmation - All snapshots will be deleted. <b style="color:#da4453"> <br>
-WARNING: This will delete all system rollback snapshots, <br>
-INCLUDING PINNED SNAPSHOTS! This cannot be undone!</b> <br>
-Continue?${_erowStr}</table>
-${_cm2HtmEndStr}
-EOF
-    )";
-
-    _reply="$(_cm2PromptUserFn "${_deep_clean_msg}" "${_winTitle}" 'w')";
-    [ "${_reply}" = 'n' ] && _notifyAndExitFn "$(cat <<EOF
-Snapshots were NOT purged, per user request. <br>
-${_exit_wizard_msg}
-EOF
-    )";
-
-    _cmd_list=( "${_rollbackBackendExe}" 'btrfsDeepClean' );
-    _triggerActionFn 'Purging all snapshots' 'Snapshot purge was successful.' \
-      'There was an issue purging snapshots' "${_cmd_list[@]}";
-    return
+    _cm2PromptUserFn "${_still_low_warn_msg}" "${_winTitle}" 's';
+    return;
   fi
-  ## . End Offer Deep Clean }
+  ## . End Warn Still Low }
 
   ## Begin Create Keeper Versions {
   # TODO: Revise logic to pull from list from config file populated by
@@ -762,7 +778,8 @@ EOF
   if [ -z "${_kversFullRunStr}" ]; then
     _run_msg="${_bodyTitle}: Internal error:<br>
 Unexpected empty running-kernel string (uname -r).<br>
-Please see your system administrator to fix.";
+Please see your system administrator to fix.<br>
+Click OK to exit.";
     _cm2PromptUserFn "${_run_msg}" "${_winTitle}" 'p';
     return 1;
   fi
@@ -841,26 +858,22 @@ Please see your system administrator to fix.";
     _no_purgeable_kernels_msg="There are no unused kernels to purge.";
     _no_purgeable_kernels_end_msg="Click OK to finish.";
     if [ "${_is_boot_low}" = 'y' ]; then
+      _no_purgeable_kernels_msg="$(cat <<EOF
+<p>There are no unused kernels to purge, as only <br>
+protected kernels are installed. If there is a kernel <br>
+you are NOT USING, you can purge it so the <code>/boot</code> <br>
+disk does not overfill and prevent the system <br>
+from booting.</p>
+EOF
+      )";
       if [ "${_isBtrfsYn}" = 'y' ]; then
-        _no_purgeable_kernels_msg="$(cat <<EOF
-There are no unused kernels to purge. However, <br>
-trimming snapshots and optimizing the boot disk <br>
-may free up space.
+        _no_purgeable_kernels_msg+="$(cat <<EOF
+ <p>Running a Quick Clean, which trims snapshots and <br>
+optimizes the disk, may also free up space.</p>
 EOF
         )";
-        _no_purgeable_kernels_end_msg="Trim snapshots and optimize now?";
+        _no_purgeable_kernels_end_msg="Run a Quick Clean now?";
       fi
-      _run_msg+="$(cat <<_EOW01
-
-
-<p>Disk space on <code>/boot</code> is low, but only protected <br>
-kernel are installed. If there is a kernel you <br>
-are NOT USING, we encourage you to purge it so <br>
-the <code>/boot</code> disk does not overfill and prevent the<br>
-system from booting.</p>
-
-_EOW01
-      )";
     fi
     _purge_msg="$(cat <<_EOW02
 ${_cm2HtmBeginStr}${_tableStr}
@@ -870,7 +883,7 @@ ${_browStr}Doc: <a style="color:#1d99f3" href="https://kfocus.org/wf/tools#kclea
 ${_browStr}${_run_msg}${_erowStr}
 
 ${_browStr}<h4 style="color:#f7941d">Packages to Keep</h4>${_erowStr}
-${_browStr}<code>${_keep_pkg_list_str}</code>${_erowStr}
+${_browStr}<code>${_keep_pkg_list_str%'<br>'}</code>${_erowStr}
 
 ${_browStr}<h4 style="color:#f7941d">Packages to Purge</h4>${_erowStr}
 ${_browStr}${_no_purgeable_kernels_msg}${_erowStr}
@@ -883,16 +896,18 @@ _EOW02
     if [ "${_isBtrfsYn}" = 'y' ] && [ "${_is_boot_low}" = 'y' ]; then
       _reply="$(_cm2PromptUserFn "${_purge_msg}" "${_winTitle}" 'w')";
       [ "${_reply}" = 'n' ] && _notifyAndExitFn "$(cat <<EOF
-Disk was NOT optimized, per user request. <br>
+Quick Clean was NOT performed, per user request. <br>
 ${_exit_wizard_msg}
 EOF
       )";
 
       _cmd_list=("${_kcleanSetExe}" 'optimize-disk' "${_filtered_purge_list[@]}");
-      _triggerActionFn 'Optimizing disk' 'Optimize was successful.' \
-        'There was an issue optimizing the disk' "${_cmd_list[@]}"
+      _triggerActionFn 'Quick Clean: Trim and optimize snapshots' \
+        'Quick Clean was successful.' \
+        'Quick Clean encountered an unknown issue and could not complete.' \
+        "${_cmd_list[@]}"
 
-      # Check if deep clean is needed
+      # Check if space is still low and warn user if so
       "${_kcleanExe}" '-d';
     else
       _cm2PromptUserFn "${_purge_msg}" "${_winTitle}" 'p';
@@ -943,10 +958,10 @@ EOF
     _cmd_list=("${_kcleanSetExe}" 'purge-pkgs' "${_filtered_purge_list[@]}");
   fi
   _triggerActionFn 'Cleaning up kernels' 'Purge was successful.' \
-    'There was an issue purging packages' "${_cmd_list[@]}"
+    'There was an issue purging packages.' "${_cmd_list[@]}"
   ## . End Purge packages }
 
-  # Check if deep clean is needed
+  # Check if space is still low and warn user if so
   [ "${_isBtrfsYn}" = 'y' ] && "${_kcleanExe}" '-d';
 }
 ## . END _mainFn }
@@ -957,7 +972,7 @@ declare _binName _binDir _baseDir _baseName _cStr \
   _kversFullPrefStr _kversFullRunStr _kc2RtestDebugStr \
   _isBtrfsYn _divisorInt _kernelUnitSizeInt _kernelUnitSizeBtrfsInt \
   _lowDiskSizeInt _multiInt _assignList _btrfsExe _rollbackSetExe \
-  _kcleanSetExe _kcleanExe _rollbackBackendExe _winTitle _bodyTitle \
+  _kcleanSetExe _kcleanExe _winTitle _bodyTitle \
   _browStr _erowStr _tableStr;
 
 _aptListStr='';
@@ -993,23 +1008,19 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _baseName="$(basename "${_binName}")" || exit 101;
   _importCommonFn;
 
-  # Get escalation exe
-  _escExe="$(_cm2GetEscExeFn)" || exit;
-
   _assignGlobalUiVarsFn;
-
+  _escExe="$(_cm2GetEscExeFn)" || exit;
   _kcleanExe="${_binName}";
+
   _assignList=(
     '_btrfsExe|/usr/bin/btrfs'
     "_kcleanSetExe|${_binDir}/kfocus-kclean-set"
     "_rollbackSetExe|${_binDir}/kfocus-rollback-set||optional"
-    "_rollbackBackendExe|${_binDir}/kfocus-rollback-backend||optional"
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2WarnStrFn 'ABORT: Required commands not found';
     exit 1;
   fi
-
   _mainFn "$@";
 fi
 ## . END Run main if script is not sourced }

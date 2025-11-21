@@ -7,16 +7,31 @@
 #
 # set -u is set in test harness
 #
+_echoExtraNvPkgsFn () {
+  cat << EOL
+cuda-drivers
+cuda-drivers-${_nvDriverVers}
+kfocus-nvidia
+kfocus-nvidia-edge
+kfocus-nvidia-pinning
+kfocus-nvidia-pinning-edge
+libxnvctrl0
+nvidia-driver-${_nvDriverSuffix}
+nvidia-modprobe
+nvidia-settings
+EOL
+}
+
 _checkNvidiaPinFn () {
-  declare _pkg_list _pkg_name _policy_str _mark_idx _candi_str;
+  declare _suffix _pkg_list _loop_pkg_name \
+    _loop_policy_str _loop_mark_idx _loop_candi_str;
 
   # Create package inspection list
   IFS=$'\n' read -r -d '' -a _pkg_list < <(
-    apt-cache depends nvidia-driver-535 \
+    apt-cache depends "nvidia-driver-${_nvDriverSuffix}" \
     | awk '/Depends|Recommends/ {print $2}' \
     | sed 's/[<>]//g' \
-    | cat - <(echo $'cuda-drivers-535\ncuda-drivers\nnvidia-driver-535') \
-    | cat - <(echo $'nvidia-modprobe\nnvidia-settings\nlibxnvctrl0') \
+    | cat - <(_echoExtraNvPkgsFn) \
     | sort -u
   );
 
@@ -29,38 +44,39 @@ _checkNvidiaPinFn () {
   true > "${_t00RunDir}/package-candidates";
 
   # Show all policies applied
-  for _pkg_name in "${_pkg_list[@]}"; do
-    _policy_str="$(apt-cache policy "${_pkg_name}")";
+  for _loop_pkg_name in "${_pkg_list[@]}"; do
+    _loop_policy_str="$(apt-cache policy "${_loop_pkg_name}")";
 
     # This replaces sed '/^\s*\*\*\*/q'; we wanted
     # to show 7 lines after the matching ***
-    _mark_idx="$(
-      echo "${_policy_str}" \
+    _loop_mark_idx="$(
+      echo "${_loop_policy_str}" \
       | grep -m 1 -n '^\s*\*\*\*\s' \
       | cut -f1 -d':'
     )";
-    _mark_idx="$(printf '%i' "${_mark_idx}")";
-    if [ "${_mark_idx}" -lt 5 ]; then
-      _mark_idx=5;
+    _loop_mark_idx="$(printf '%i' "${_loop_mark_idx}")";
+    if [ "${_loop_mark_idx}" -lt 5 ]; then
+      _loop_mark_idx=5;
     fi
-    (( _mark_idx+=7 ));
+    (( _loop_mark_idx+=7 ));
 
     # Output to package-policies
-    echo "${_policy_str}" | head -n"${_mark_idx}" \
+    echo "${_loop_policy_str}" | head -n"${_loop_mark_idx}" \
       >> "${_t00RunDir}/package-policies";
 
     # Output short-form package-candidates
-    _candi_str="$(echo "${_policy_str}" | grep 'Candidate')";
-    echo "${_pkg_name} ${_candi_str}" \
+    _loop_candi_str="$(echo "${_loop_policy_str}" | grep 'Candidate')";
+    echo "${_loop_pkg_name} ${_loop_candi_str}" \
       >> "${_t00RunDir}/package-candidates";
   done
 }
 ## . END _checkNvidiaPinn }
 
+declare _nvDriverVers _nvDriverSuffix _expectDir;
+
 ## BEGIN _runTestFn {
 _runTestFn () {
-  declare _check_str _return_int;
-
+  declare _return_int _check_str ;
   _return_int=0;
 
   # Use function from test harness: clear out run dir and check expect dir
@@ -71,14 +87,34 @@ _runTestFn () {
     return 0;
   fi
 
+  ## TODO: This is a bit of a hack. Better to define the kfocus-nvidia package
+  #   to expect (e.g. kfocus-nvidia-edge), then get the nvidia-driver package
+  #   depended on, then parse out the version. Then if that changes, this
+  #   will automatically update.
+  #
+  if [[ "$(_cm2EchoModelStrFn 'config_code')" =~ ^(m2g6|zrg1)$ ]]; then
+    _nvDriverVers='570'; _nvDriverSuffix='570-open';
+    _expectDir="${_t00ExpectDir}/edge";
+  else
+    _nvDriverVers='535'; _nvDriverSuffix='535';
+    _expectDir="${_t00ExpectDir}/base";
+  fi
+
+  if [ ! -d "${_expectDir}" ]; then
+    if ! mkdir -p "${_expectDir}"; then
+      _cm2ErrStrFn "Could not make dir ${_expectDir}";
+      return 1;
+    fi
+  fi
+
   _checkNvidiaPinFn;
 
   # shellcheck disable=SC2154
-  _check_str="$( diff -r --brief "${_t00ExpectDir}" "${_t00RunDir}" )";
+  _check_str="$(diff -r --brief "${_expectDir}" "${_t00RunDir}")";
 
   if [ -n "${_check_str}" ]; then
     _cm2EchoFn "FAIL: ${_check_str}";
-    meld "${_t00ExpectDir}" "${_t00RunDir}";
+    meld "${_expectDir}" "${_t00RunDir}";
     _return_int=1;
   else
     _cm2EchoFn 'OK  : Results match expected';

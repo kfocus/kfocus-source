@@ -1,14 +1,55 @@
-kfocus-rollback (24.04.6~beta20) noble; urgency=medium
+kfocus-rollback (24.04.11) noble; urgency=medium
 
-  [ Aaron Rainbolt ]
+  * kfocus-btrfs-watcher.service: Don't start unless snapshot setup is
+    complete (#5810)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Fri, 19 Sep 2025 14:28:03 -0500
+
+kfocus-rollback (24.04.10) noble; urgency=medium
+
+  * kfocus-btrfs-watcher: Prevent segfault during system startup (#5783)
+  * kfocus-rollback-backend: Add clarification to low root disk space warning
+    (#5783)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 03 Sep 2025 11:49:46 -0500
+
+kfocus-rollback (24.04.9) noble; urgency=medium
+
+  * etc_apt_apt.conf.d_100kfocus-rollback: Add post-install big data check
+    hook (#5636)
+  * kfocus-rollback-bin: Add warning for big data (#5636)
+  * Add BTRFS disk space monitoring (#5133)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 13 Aug 2025 10:49:48 -0500
+
+kfocus-rollback (24.04.8) noble; urgency=medium
+
+  * Improve help for "Free Up Diskspace" and "Automatic Snapshots" (#4534)
+  * Present help for "Automatic Snapshots" on "No Snapshots" view (#4534)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Sun, 13 Apr 2025 23:46:29 -0400
+
+kfocus-rollback (24.04.7) noble; urgency=medium
+
+  * Updated help on automatic snapshots (#4534)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Wed, 09 Apr 2025 22:21:26 -0400
+
+kfocus-rollback (24.04.6) noble; urgency=medium
+
   * Implement snapshot metadata and pinning (#4411)
-  * Rename kfocus-rollback-set to kfocus-rollback-backend (#4411)
-
-  [ Michael S. Mikowski ]
-  * Better describe time to wait to calc snapshot sizes (#4534)
+  * Rename kfocus-rollback-set to kfocus-rollback-backend, make
+    kfocus-rollback-set a safe wrapper (#4411)
   * Updated logging for rollback (#4534)
+  * Refactor extensively to improve reliability and safety (#4534)
+  * Rename launcher in Start Menu from System Rollback to System Rollback
+    Dashboard (#4534)
+  * kfocus-report-filefrag.c: Stop returning non-zero when opening a file
+    fails (#4534)
+  * kfocus-rollback-bin: Implement GUI for Rollback v2 (#4534)
+  * usr/share/applications/*: Update desktop files (#5190)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 05 Feb 2025 14:22:20 -0600
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 08 Apr 2025 10:04:26 -0500
 
 kfocus-rollback (24.04.5) noble; urgency=medium
 

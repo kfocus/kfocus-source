@@ -1,0 +1,14 @@
+[Unit]
+Description=KFocus-nvidia-edge before suspend
+Before=systemd-suspend.service
+Before=systemd-hibernate.service
+Before=nvidia-suspend.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/kfocus/bin/kfocus-nve-helper pre
+
+[Install]
+WantedBy=systemd-suspend.service
+WantedBy=systemd-hibernate.service
+WantedBy=nvidia-suspend.service

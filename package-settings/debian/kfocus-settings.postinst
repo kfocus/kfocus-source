@@ -222,7 +222,6 @@ fi
 ## . END Run kfocus-reset-effects to populate kfocus/kf5-settings
 
 ## BEGIN Set default SDDM theme
-#
 _sddmSetFile='/var/lib/kfocus/kfocus_sddm_theme_set'
 _sddmConfigFile='/etc/sddm.conf.d/kde_settings.conf'
 mkdir -p '/etc/sddm.conf.d';
@@ -268,6 +267,38 @@ if ! [ -e "${_sddmSetFile}" ]; then
   touch "${_sddmSetFile}";
 fi
 ## . END Set default SDDM theme
+
+## BEGIN Set DKMS autoinstall_all_kernels option
+_dkmsFrameworkConfFile='/etc/dkms/framework.conf';
+_dkmsAutoinstallStr='autoinstall_all_kernels="yes"';
+# shellcheck disable=SC2043,SC2034
+for _idx in 1; do
+  mkdir -p '/etc/dkms' || {
+    _msg='warn: |/etc/dkms| exists but is not a directory ';
+    _msg+='or a link to a directory';
+    1>&2 echo "${_msg}";
+    break;
+  }
+
+  if ! [ -e "${_dkmsFrameworkConfFile}" ]; then
+    echo "${_dkmsAutoinstallStr}" > "${_dkmsFrameworkConfFile}" \
+      || 1>&2 echo "warn: could not write |${_dkmsFrameworkConfFile}|";
+    break;
+  fi
+
+  if [ -f "${_dkmsFrameworkConfFile}" ]; then
+    if ! grep -q '^\s*autoinstall_all_kernels=' "${_dkmsFrameworkConfFile}";
+      then echo "${_dkmsAutoinstallStr}" >> "${_dkmsFrameworkConfFile}" \
+        || 1>&2 echo "warn: could not append |${_dkmsFrameworkConfFile}|";
+    fi
+    break;
+  fi
+
+  _msg="warn: |${_dkmsFrameworkConfFile}| exists but is not a file ";
+  _msg+="or a link to a file";
+  1>&2 echo "${_msg}";
+done
+## . END Set DKMS autoinstall_all_kernels option
 
 # Tag to allow some debhelper commands to inject relevant code
 #DEBHELPER#

@@ -21,6 +21,15 @@ if ! [ -f /etc/apt/preferences.d/kfocus-nvidia ]; then
   fi
 fi
 
+# https://download.nvidia.com/XFree86/
+#   Linux-x86_64/570.86.16/README/powermanagement.html
+_cm2SetMsgFn 'Disable /proc/driver/nvidia/suspend methods';
+deb-systemd-helper disable nvidia-hibernate.service;
+deb-systemd-helper disable nvidia-resume.service;
+deb-systemd-helper disable nvidia-suspend.service;
+deb-systemd-helper disable nvidia-suspend-then-hibernate.service;
+_cm2SucFn;
+
 # Set performance mode only on first install not upgrade
 case "${1:-}" in
   configure)

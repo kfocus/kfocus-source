@@ -1,3 +1,65 @@
+kfocus-power-bin (24.04.12) noble; urgency=medium
+
+  * kfocus-pstate: Revert pstate run-as-root delay from 5 to 3s (#5599)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Sun, 31 Aug 2025 02:06:27 -0400
+
+kfocus-power-bin (24.04.11) noble; urgency=medium
+
+  * kfocus-pstate, -set: Add drop file if GPU disabled (#5750)
+  * kfocus-pstate, -set: Add keyboard restore when called w/o params (#5750)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Wed, 20 Aug 2025 15:12:09 -0400
+
+kfocus-power-bin (24.04.10) noble; urgency=medium
+
+  * Adjust package file structure to convention for tests (#5644)
+  * kfocus-power-fan: Update messages for zrg1 (#5644)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 13 Aug 2025 10:48:58 -0500
+
+kfocus-power-bin (24.04.9) noble; urgency=medium
+
+  * kfocus-power-bin: Update messages for nxg3 (#5312)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Fri, 25 Jul 2025 15:44:16 -0400
+
+kfocus-power-bin (24.04.8) noble; urgency=medium
+
+  * kfocus-pstate: Improve guidance on screen refresh (#5591)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Sun, 29 Jun 2025 14:58:54 -0400
+
+kfocus-power-bin (24.04.7) noble; urgency=medium
+
+  * kfocus-pstate: Add guidance to lower screen refresh (#5591)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Sat, 28 Jun 2025 23:35:18 -0400
+
+kfocus-power-bin (24.04.6) noble; urgency=medium
+
+  * kfocus-power-set: Fix maximum CPU frequency displayed with 6.11 kernel
+    (#5245)
+  * kfocus-power-set: Fix CPU init issues on m2g5 (#5245)
+  * kfocus-power-set: Add alternate library and executable paths (#5422)
+  * kfocus-power-set: Output CPU model information (#5421)
+  * kfocus-power-set: Add frequency misreporting message for m2g6 (#5421)
+  * main.qml: Make header row of frequency profile table grey
+  * main.qml: Display CPU model information, frequency misreporting message
+    (#5421)
+  * main.qml: Add model label to fan profile header (#5421)
+  * kfocus-fan-set: Add fan curve info for m2g6 (#5425)
+  * kfocus-power-set: Flush gui cache files on upgrade (#5421)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 26 Jun 2025 15:25:52 -0500
+
+kfocus-power-bin (24.04.5) noble; urgency=medium
+
+  * usr/share/applications/*: Update desktop files (#5190)
+  * usr/lib/kfocus/bin/kfocus-fan-set: Add NXg3 support (#5302)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 08 Apr 2025 10:04:09 -0500
+
 kfocus-power-bin (24.04.4) noble; urgency=medium
 
   * kfocus-power-set: Clarify CPU init messages (#5033)

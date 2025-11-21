@@ -1,0 +1,20 @@
+#!/bin/bash
+set -e
+
+## BEGIN Declare common.2.source symbols {
+#  IMPORTED on 2022-03-23 EXCERPT from test-scripts/common.2.source
+#
+_cm2BlockMsg='';
+_cm2EchoFn    () { 1>&2 echo -e "$*"; }
+_cm2SetMsgFn  () { _cm2BlockMsg="$*"; _cm2EchoFn "== BEGIN : ${_cm2BlockMsg}"; }
+_cm2SucFn     () { _cm2EchoFn "== . END : OK   ${_cm2BlockMsg}\n\n"; }
+_cm2WarnFn    () { _cm2EchoFn "== . END : WARN Could not ${_cm2BlockMsg}..\n\n"; }
+_cm2WarnStrFn () { _cm2EchoFn "warn: ${*}"; }
+_cm2SucStrFn  () { _cm2EchoFn "ok  : ${*}"; }
+## . END Declare common.2.source symbols }
+
+_cm2SetMsgFn "Refresh package list"
+if apt-get update; then _cm2SucFn; else _cm2WarnFn; fi
+
+# Tag to allow some debhelper commands to inject relevant code
+#DEBHELPER#

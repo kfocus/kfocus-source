@@ -69,6 +69,39 @@ _promptAllUsersFn () {
 }
 ## . END _promptAllUsersFn }
 
+## BEGIN _cleanupDkmsFilesFn {
+# Purpose   : Clean up residual dkms files not supported by dkms 3.0.x.
+#
+_cleanupDkmsFilesFn () {
+  declare _dkms_vers _verify_str _rm_list _file;
+
+  # Determine installed dkms version
+  _dkms_vers="$(awk -F': ' '/^Version:/ {print $NF}' < <(dpkg --status dkms))";
+
+  # Bail if dkms version is not in the 3.0.x range
+  dpkg --compare-versions "${_dkms_vers}" ge '3.1.0' && return;
+  dpkg --compare-versions "${_dkms_vers}" lt '3.0.0' && return;
+
+  # Create a list of residual files to remove and dkms file status string
+  _rm_list=(
+    '/etc/dkms/framework.conf.d/autoinstall_all_kernels.conf'
+    '/etc/kernel/preinst.d/dkms'
+  );
+  _verify_str="$(dpkg --verify dkms)";
+
+  ## Begin Loop through the residual file list {
+  for _file in "${_rm_list[@]}"; do
+    # Skip this file if it does not exist
+    #   or if it has been modified from the original config
+    if [ ! -f "${_file}" ]; then continue; fi
+    if grep -q "..5...... c ${_file}" <<< "${_verify_str}"; then continue; fi
+
+    rm -f "${_file}";
+  done
+  ## . End Loop through the residual file list }
+}
+## . END _cleanupDkmsFilesFn }
+
 ## BEGIN _initCpuFn {
 # Purpose   : Initialize CPU for 2023+ systems
 # This is done here so CPU tweaks are available w/o GUI.
@@ -93,7 +126,7 @@ _initCpuFn () {
 #
 _manageSnapshotsOnBootFn () {
   declare _title _main_unalloc _main_min_unalloc _boot_unalloc \
-    _boot_min_unalloc _btrfs_status;
+    _boot_min_unalloc _btrfs_status _return_code;
   _title='Manage Snapshots On Boot';
 
   _cm2SetMsgFn "${_title}";
@@ -110,23 +143,35 @@ _manageSnapshotsOnBootFn () {
     _cm2WarnFn;
     return 1;
   fi
-  
+
+  # Reset seen bulk data directory file
+  rm -f "${_rollbackBulkLocationSeenFile}";
+
+  # Get unallocated and minimum unallocated byte count for main and boot FS
   _main_unalloc="$("${_rollbackBackendExe}" 'getMainUnallocSpace')";
   _main_min_unalloc="$("${_rollbackBackendExe}" 'getMainMinUnalloc')";
   _boot_unalloc="$("${_rollbackBackendExe}" 'getBootUnallocSpace')";
   _boot_min_unalloc="$("${_rollbackBackendExe}" 'getBootMinUnalloc')";
+
+  # Perform on-boot snapshot maintenance if space is sufficient
   if (( _main_unalloc > _main_min_unalloc )) \
     && (( _boot_unalloc > _boot_min_unalloc )); then
-    "${_rollbackBackendExe}" 'finalizeRestore'
-    if [ "$?" != '0' ] && [ "$?" != '1' ]; then
+    # Finalize a snapshot restore if one was restored on the last boot
+    "${_rollbackBackendExe}" 'finalizeRestore';
+    _return_code="$?"
+    if [ "${_return_code}" != '0' ] && [ "${_return_code}" != '1' ]; then
       _cm2WarnFn; return;
     fi
-    "${_rollbackBackendExe}" 'createSnapshot' 'Timed'
-    if [ "$?" != '0' ] && [ "$?" != '1' ]; then
+    # Create an automatic snapshot if enabled and enough time has passed
+    "${_rollbackBackendExe}" 'createSnapshot' 'Timed';
+    _return_code="$?"
+    if [ "${_return_code}" != '0' ] && [ "${_return_code}" != '1' ]; then
       _cm2WarnFn; return;
     fi
-    "${_rollbackBackendExe}" 'trimSnapshots'
-    if [ "$?" != '0' ] && [ "$?" != '1' ]; then
+    # Trim excess snapshots, if any exist
+    "${_rollbackBackendExe}" 'trimSnapshots';
+    _return_code="$?"
+    if [ "${_return_code}" != '0' ] && [ "${_return_code}" != '1' ]; then
       _cm2WarnFn; return;
     fi
     _cm2SucFn;
@@ -142,7 +187,7 @@ _manageSnapshotsOnBootFn () {
 #
 _maintainBtrfsFn () {
   declare _title _main_unalloc _main_min_unalloc _boot_unalloc \
-    _boot_min_unalloc;
+    _boot_min_unalloc _btrfs_status _return_code;
   _title='Maintain Snapshots';
 
   _cm2SetMsgFn "${_title}";
@@ -160,31 +205,36 @@ _maintainBtrfsFn () {
     return 1;
   fi
 
+  # Get unallocated and minimum unallocated byte count for main and boot FS
   _main_unalloc="$("${_rollbackBackendExe}" 'getMainUnallocSpace')";
   _main_min_unalloc="$("${_rollbackBackendExe}" 'getMainMinUnalloc')";
   _boot_unalloc="$("${_rollbackBackendExe}" 'getBootUnallocSpace')";
   _boot_min_unalloc="$("${_rollbackBackendExe}" 'getBootMinUnalloc')";
+
+  # Perform routine snapshot maintenance if space is sufficient
   if (( _main_unalloc > _main_min_unalloc )) \
     && (( _boot_unalloc > _boot_min_unalloc )); then
+    # Create an automatic snapshot if enabled and enough time has passed
     "${_rollbackBackendExe}" 'createSnapshot' 'Timed';
-    if [ "$?" != '0' ] && [ "$?" != '1' ]; then
+    _return_code="$?"
+    if [ "${_return_code}" != '0' ] && [ "${_return_code}" != '1' ]; then
       _cm2WarnFn; return;
     fi
+    # Trim excess snapshots, if any exist
     "${_rollbackBackendExe}" 'trimSnapshots';
-    if [ "$?" != '0' ] && [ "$?" != '1' ]; then
+    _return_code="$?"
+    if [ "${_return_code}" != '0' ] && [ "${_return_code}" != '1' ]; then
       _cm2WarnFn; return;
     fi
+    # Balance main and boot partitions if needed
     "${_rollbackBackendExe}" 'btrfsMaintain';
-    if [ "$?" != '0' ] && [ "$?" != '1' ]; then
+    _return_code="$?"
+    if [ "${_return_code}" != '0' ] && [ "${_return_code}" != '1' ]; then
       _cm2WarnFn; return;
     fi
     _cm2SucFn;
   else
-    if (( _main_unalloc <= _main_min_unalloc )); then
-      _promptAllUsersFn 'rollbackLowMainSpace' "${_lowDiskMsg}";
-    elif (( _boot_unalloc <= _boot_min_unalloc )); then
-      _promptAllUsersFn 'rollbackLowBootSpace' "${_lowBootMsg}";
-    fi
+    _cm2WarnStrFn 'Main or boot disk space low!';
     _cm2WarnFn;
   fi
 }
@@ -199,6 +249,7 @@ _mainFn () {
     case "${_opt_str}" in
     b) # Boot tasks
       _cm2EchoFn "== BEGIN :     ${_rootTitle}\n";
+      _cleanupDkmsFilesFn;
       _initCpuFn;
       _manageSnapshotsOnBootFn;
       _cm2EchoFn "\n==. END : OK   ${_rootTitle}\n\n";
@@ -215,10 +266,13 @@ _mainFn () {
 
 ## BEGIN Declare and assign global vars {
 #
-declare _binName _binDir _baseName _baseDir _rootTitle _assignList _lowDiskMsg;
+declare _binName _binDir _baseName _baseDir _rootTitle _assignList \
+  _rollbackBulkLocationSeenFile;
+
+_rollbackBulkLocationSeenFile='/var/lib/kfocus/rollback_bulk_seen';
 ## . END Declare and assign global vars }
 
-## BEGIN Run mainFn when script is NOT sourced {
+## BEGIN Run mainFn when the script is NOT sourced {
 #
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binName="$(  readlink -f "$0"       )" || exit 101;
@@ -243,44 +297,6 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _erowStr='</td></tr>';
   _tableStr='<table style="width:100%;margin-right:32px">';
 
-  _lowDiskMsg="$(cat <<EOF
-${_cm2HtmBeginStr}${_tableStr}
-${_browStr}<h3 style="color:#f7941d">Low Disk Space</h3>
-${_erowStr}
-
-${_browStr}FocusRx has detected that the system's disk space is<br>
-low. This could result in filesystem corruption if not corrected.<br>
-Snapshot maintenance has been paused until this is corrected.<br>
-<br>
-It is highly recommended that you delete large snapshots<br>
-using System Rollback. You may also need to delete excess files<br>
-or move them to other drives.<br>
-<br>
-You can access System Rollback by clicking <code>Start Menu &gt;<br>
-Kubuntu Focus Tools &gt; System Rollback</code>. Click "Show<br>
-Snapshot Sizes" when prompted to quickly find large snapshots.<br>
-${_cm2HtmEndStr}
-EOF
-  )";
-
-  _lowBootMsg="$(cat <<EOF
-${_cm2HtmBeginStr}${_tableStr}
-${_browStr}<h3 style="color:#f7941d">Low Boot Space</h3>
-${_erowStr}
-
-${_browStr}FocusRx has detected that the system's boot<br>
-filesystem is low on space. This could result in failure to<br>
-boot. Snapshot maintenance has been paused until this<br>
-is corrected.<br>
-<br>
-It is highly recommended that you run the Kernel Cleaner<br>
-utility. You can access the Kernel Cleaner by clicking <code>Start<br>
-Menu &gt; Kubuntu Focus Tools &gt; Kernel Cleaner</code>.
-${_cm2HtmEndStr}
-EOF
-  )";
-
   _mainFn "$@";
 fi
-## . END Run mainFn when script is NOT sourced }
-
+## . END Run mainFn when the script is NOT sourced }

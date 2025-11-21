@@ -1,0 +1,452 @@
+#!/bin/bash
+#
+# Copyright 2020-2025 MindShare Inc.
+# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
+#
+# Name   : kfocus-pstate
+# Purpose:
+#   Set Power Profile, Brightness, Frequency Profile, and Fan Profile based
+#   on the provided power state string (AC, Battery, LowBattery) or by the
+#   calculated power state if no string is provided. It may prompt the user
+#   to make decisions based on the target state.
+#
+# License: GPL v2
+# Run by : Power manager on switch to battery
+# Spec   : 1690, 2558, 3404, 4138
+# Test   : power-system-check.md
+#
+set -u;
+
+_echoHelpFn () {
+  cat 1>&2 <<_EOW00
+
+Usage: ${_baseName} [-h|-s <key>]
+   -h: This help message
+   -s: Specify power state AC | Battery | LowBattery
+
+_EOW00
+}
+
+## BEGIN _importCommonFn {
+# Imports: _cm2AssignExeVarsFn _cm2EchoModelStrFn _cm2ErrFn
+# _cm2KdiagExe _cm2SetMsgFn _cm2SucFn _cm2SucStrFn _cm2WarnFn
+# _cm2WarnStrFn
+#
+# Run ls-common-symbols.sh to get this list
+#
+_importCommonFn () {
+  declare _lib_file;
+  _lib_file="${_baseDir}/lib/common.2.source";
+  if [ -r "${_lib_file}" ]; then
+    # shellcheck source=../lib/common.2.source
+    source "${_lib_file}" || exit 202;
+  else
+    1>&2 echo "${_baseName}: ABORT - Cannot source lib |${_lib_file}|";
+    exit 202;
+  fi
+}
+## . END _importCommonFn }
+
+# shellcheck disable=SC2317
+_trapExitFn () {
+  1>&2 echo "${_baseName} was interrupted";
+  rm "${_lockFile}" || true;
+}
+
+_chkSetFlockFn () {
+  exec 211>"${_lockFile}" || exit 1;
+  if ! flock -n -e 211; then
+    1>&2 echo "Cannot get lock on ${_lockFile}";
+    exit 1;
+  fi
+  # Trap unexpected exits to clean up the lock file
+  trap _trapExitFn EXIT;
+}
+
+# Remove the lock file on exit
+# Use before common.2.source is imported.
+_exitEarlyFn () {
+  1>&2 echo 'An unexpected error has occurred';
+  exit 1;
+}
+
+_exitCleanFn () {
+  declare _exit_int="${1:-0}";
+  trap '' EXIT;
+  rm "${_lockFile}" || true;
+  exit "${_exit_int}";
+}
+
+# Escalate privileges if set
+_runEscFn () {
+  if [ -z "${_escExe}" ]; then
+    "$@"; return;
+  fi
+
+  "${_escExe}" "$@";
+}
+
+_setPowerProfileFn () {
+  declare _is_on_ac _target_key _msg _current_key \
+    _mode_list _line _bit_list _search_str _set_key;
+
+  if [ -z "${_profilesCtlExe}" ]; then
+    _cm2WarnStrFn 'Optional power control tool not found. Skipped.';
+    _cm2SucFn;
+    return;
+  fi
+
+  _is_on_ac="${1:-y}";
+
+  _msg='Set preferred mode for ';
+  if [ "${_is_on_ac}" = 'y' ]; then
+    _target_key='balanced';
+    _msg+='AC power';
+  else
+    _target_key='power-saver';
+    _msg+='Battery power';
+  fi
+  _cm2SetMsgFn "${_msg}";
+
+  _mode_list=();
+  while read -r _line; do
+    IFS=$' :\n' read -ra _bit_list <<<"${_line}";
+    if [ "${_bit_list[0]}" = '*' ]; then
+      _current_key="${_bit_list[1]}";
+      _bit_list=("${_bit_list[@]:1}");
+    fi
+    _mode_list+=("$(xargs <<<"${_bit_list[0]}")");
+  done < <("${_profilesCtlExe}" list | grep -Ev '^\s*$|^\s*Driver');
+
+  _search_str="$(printf '%s\n' "${_mode_list[@]}")";
+  if grep -Fxq "${_target_key}" <<<"${_search_str}"; then
+    _set_key="${_target_key}";
+  else
+    _cm2WarnStrFn "Target profile ${_target_key} not found. Skipped.";
+    _cm2SucFn;
+    return;
+  fi
+
+  if [ "${_set_key}" = "${_current_key}" ]; then
+    _cm2SucStrFn "Set key |${_set_key}| matches current.";
+    _cm2SucFn;
+    return;
+  fi
+
+  if "${_profilesCtlExe}" set "${_set_key}"; then
+    _cm2SucStrFn "Set profile to |${_set_key}|.";
+  else
+    _cm2WarnStrFn "Could not set profile |${_set_key}|. Skipped.";
+  fi
+  _cm2SucFn;
+}
+
+## BEGIN _mainFn {
+_mainFn () {
+  ## Begin Initialize {
+  declare _warn_dgpu_msg _ask_disable_msg _ask_reboot_msg \
+    _pstate_arg_str _is_resume_mode _opt_str _is_on_ac _pid_str \
+    _gpu_mode_str _nvidia_list_str;
+
+  _warn_dgpu_msg=$(
+    cat <<_EOH01
+<html>
+  <style>
+    table{width:100%;margin:0}
+    td{padding:4px 16px 4px 0;}
+    .prompt{text-align:center;padding:16px 0 8px 0;font-weight:800}
+  </style>
+  <h3 style="color:#1d99f3;text-align:center">GPU Power Warning</h3>
+  <table align="center">
+  <tr><td>The system is using the discrete GPU on battery power. <br>
+    This can cut battery life in half and introduce screen <br>
+    flicker. To avoid both conditions, switch to Intel GPU:
+  </td></tr>
+  <tr><td>
+    <ol style="margin:16px 32px;">
+      <li>Click the Nvidia Icon in the system tray.</li>
+      <li>Click 'Switch to Intel GPU...'</li>
+      <li>When asked, click 'Log Out' and enter password.</li>
+    </ol>
+  </td></tr>
+  <tr><td>To extend battery life even further, use System <br>
+    Settings to lower screen refresh to 60 Hz or less.
+  </tr></td>
+  <tr><td>To use the discrete GPU again:
+    <ol style="margin:16px 32px;">
+      <li>Click on the Intel icon in the system tray.</li>
+      <li>Select 'Switch to Nvidia GPU...'</li>
+      <li>When asked, click 'Log Out' and enter password.</li>
+    </ol>
+  </tr></td>
+  </table>
+</html>
+_EOH01
+  );
+
+  _ask_disable_msg=$(
+    cat <<_EOH02
+<html>
+  <style>
+    table{width:100%;margin:0}
+    td{padding:4px 16px 4px 0;}
+    .prompt{text-align:center;padding16px 0 8px 0;font-weight:800}
+  </style>
+  <h3 style="color:#1d99f3;text-align:center">GPU Power Warning</h3>
+  <table align="center">
+  <tr><td>The system is using the integrated GPU, but the discrete GPU<br>
+    (dGPU) is still powered-on.
+  </td></tr>
+  <tr><td>Would you like to power-down the dGPU to gain 1-2 more<br>
+    hours of battery life? A system reboot will be required to<br>
+    re-enable the dGPU.
+  </td></tr>
+  <tr><td><b>NOTE:</b> To extend battery life even further, use<br>
+    System Settings to lower screen refresh to 60 Hz or less.
+  </td></tr>
+  </table>
+</html>
+_EOH02
+  );
+
+  _ask_reboot_msg=$(
+    cat <<_EOH03
+<html>
+  <style>
+    table{width:100%;margin:0}
+    td{padding:4px 16px 4px 0;}
+    .prompt{text-align:center;padding16px 0 8px 0;font-weight:800}
+  </style>
+  <h3 style="color:#1d99f3;text-align:center">Discrete GPU Power Off</h3>
+  <table align="center">
+  <tr><td>Despite being set to use the discrete GPU, the system is<br>
+  only using the integrated GPU. In order to use the discrete<br>
+  GPU, the system must reboot.
+  </td></tr>
+  <tr><td>Do you wish to reboot now?
+  </td></tr>
+  </table>
+</html>
+_EOH03
+  );
+
+  # Set flock or exit on dup run
+  _chkSetFlockFn;
+  ## . End Initialize }
+
+  # Exit if missing kdialog (provided by common.2.source)
+  if [ -z "${_cm2KdiagExe}" ]; then
+    _cm2WarnStrFn 'ABORT: kdialog executable missing.';
+    _cm2ErrFn;
+  fi
+
+  # Check for power /battery, not mouse or kbd batteries
+  if ! grep -q '/battery' < <("${_upowerExe}" -e); then
+    _cm2EchoFn 'Exit: System does not appear to have battery.';
+    _exitCleanFn;
+  fi
+
+  ## Begin Process options {
+  _pstate_arg_str='';
+  while getopts 'hs:' _opt_str; do
+    case "${_opt_str}" in
+      h) _echoHelpFn; _exitCleanFn;;
+      s) _pstate_arg_str="${OPTARG:-}"; shift;;
+      *) _cm2WarnStrFn "Invalid option |${_opt_str}|";
+        _echoHelpFn; _exitCleanFn 1;;
+    esac
+  done
+  ## . End Process options }
+
+  # Set _is_on_ac flag
+  _is_on_ac='';
+  case "${_pstate_arg_str}" in
+    AC)         _is_on_ac='y';;
+    Battery)    _is_on_ac='n';;
+    LowBattery) _is_on_ac='n';;
+    '') true;;
+    *) _cm2ErrStrFn "Unsupported Power Mode |${_pstate_arg_str}|";
+      _cm2ErrStrFn 'Please specify AC, Battery, or LowBattery.';
+      _exitCleanFn 1;;
+  esac
+
+  # If _is_on_ac flag is not provided, pause and then calculate here
+  _is_resume_mode='n';
+  if [ -z "${_is_on_ac}" ]; then
+    _pid_str="$(ps -o args= $PPID)"; # TODO: Use ptree
+    _cm2WarnStrFn "Called without arguments from: ${_pid_str}";
+
+    # Pause to let udev catch up
+    sleep 3;
+    _is_on_ac="$(
+      ( "${_upowerExe}" -i '/org/freedesktop/UPower/devices/line_power_AC' \
+       | grep '^\s*online:' | awk '{print $2}' | cut -c1 ) || echo 'n'
+    )";
+    _is_resume_mode='y';
+  fi
+
+  # Invoke on-battery settings
+  if [ "${_is_on_ac}" = 'n' ]; then
+    _cm2SetMsgFn 'Set CPU power mode to Low on battery';
+    if _runEscFn "${_powerSetExe}" 'Low'; then
+      _cm2SucFn; else _cm2WarnFn;
+    fi
+
+    _cm2SetMsgFn 'Set writeback for battery use';
+    if _runEscFn "${_pstateSetExe}" 'writeback-battery'; then
+      _cm2SucFn; else _cm2WarnFn;
+    fi
+
+    # TODO 2024-03-25: Held because fan changes worry users
+    # _cm2SetMsgFn 'Set fan to Linear on battery';
+    # if [ -n "${_fanSetExe}" ] \
+    #   && _runEscFn "${_fanSetExe}" 'Linear'; then
+    #   _cm2SucFn; else _cm2WarnFn;
+    # fi
+
+  # Invoke on-AC settings
+  else
+    _cm2SetMsgFn 'Set CPU power mode to Normal on AC';
+    if _runEscFn "${_powerSetExe}" 'Normal'; then
+      _cm2SucFn; else _cm2WarnFn;
+    fi
+
+    _cm2SetMsgFn 'Set writeback for AC use';
+    if _runEscFn "${_pstateSetExe}" 'writeback-ac'; then
+      _cm2SucFn; else _cm2WarnFn;
+    fi
+
+    # TODO 2024-03-25: Held because fan changes worry users
+    # _cm2SetMsgFn 'Set fan to Soft on AC';
+    # if [ -n "${_fanSetExe}" ] \
+    #   && runEscFn "${_fanSetExe}" 'Soft'; then
+    #   _cm2SucFn; else _cm2WarnFn;
+    # fi
+  fi
+
+  # Set the system power profile if available
+  _setPowerProfileFn "${_is_on_ac}";
+
+  # Restore kbd to pre-resume state
+  if [ "${_is_resume_mode}" = 'y' ]; then
+    if [ -n "${_kbdColorSetExe}" ]; then
+      "${_escExe}" "${_kbdColorSetExe}" -K || true;
+    fi
+  fi
+
+  # Sniff gpu in use
+  _gpu_mode_str='intel';
+  if [ -n "${_primeExe}" ]; then
+    _gpu_mode_str="$("$_primeExe" query)";
+  else
+    _cm2WarnStrFn 'Please install nvidia-prime for maximum capability';
+  fi
+  _nvidia_list_str="$("${_lspciExe}" -m | grep -i 'nvidia')";
+
+  # Handle Nvidia mode
+  if [ "${_gpu_mode_str}" = 'nvidia' ] \
+    || [ "${_gpu_mode_str}" = 'on-demand' ]; then
+    if [ -z "${_nvidia_list_str}" ]; then
+      _cm2SetMsgFn 'Warn user if using iGPU when dGPU requested';
+      if [ "${_doGui}" = 'y' ]; then
+        if "${_cm2KdiagExe}" --warningyesno "${_ask_reboot_msg}"; then
+          "${_qdbusExe}" org.kde.Shutdown /Shutdown logoutAndReboot;
+        fi
+      fi
+      _cm2SucFn;
+    else
+      _cm2SetMsgFn 'Warn user if using dGPU on battery';
+      if [ "${_is_on_ac}" = 'n' ]; then
+        if [ "${_doGui}" = 'y' ]; then
+          "${_cm2KdiagExe}" --msgbox "${_warn_dgpu_msg}" &
+        fi
+        _cm2SucFn;
+      else
+        _cm2SucStrFn 'Using AC Power, no action needed';
+        _cm2SucFn;
+      fi
+    fi
+  fi
+
+  # Handle Intel mode
+  if [ "${_gpu_mode_str}" = 'intel' ]; then
+    if [ "${_is_on_ac}" = 'n' ]; then
+      _cm2SetMsgFn 'Give user option to disable dGPU when on battery';
+      if [ -n "${_nvidia_list_str}" ]; then
+        if [ "${_doGui}" = 'n' ]; then
+          if [ -f "${_disabledNvDropFile}" ]; then
+            _runEscFn "${_pstateSetExe}" 'disable-nvidia'
+          fi
+        elif "${_cm2KdiagExe}" --yesno "${_ask_disable_msg}"; then
+          # The following call creates the _disabledNvDropFile
+          if _runEscFn "${_pstateSetExe}" 'disable-nvidia'; then
+            _cm2SucStrFn 'Discrete GPU disable successfully.';
+            _cm2SucFn;
+          else
+            "${_cm2KdiagExe}" \
+              --error 'GPU was not disabled due to an error.' || true;
+            _cm2ErrFn;
+          fi
+        else
+          "${_cm2KdiagExe}" \
+            --msgbox 'Discrete GPU not disabled as requested.' || true;
+          _cm2SucFn;
+        fi
+      else
+        _cm2SucStrFn 'dGPU already off or nonexistent';
+        _cm2SucFn;
+      fi
+    fi
+  fi
+  _exitCleanFn;
+}
+## . END _mainFn }
+
+## BEGIN Declare and set global vars {
+declare _binName _binDir _baseName  _userName _doGui _lockFile \
+  _disabledNvDropFile _assignExeList _kbdColorSetExe _lspciExe \
+  _powerSetExe _primeExe _profilesCtlExe _pstateSetExe _qdbusExe \
+  _upowerExe _escExe;
+
+# Sync this with the kfocus-pstate-set value
+_disabledNvDropFile='/run/kfocus-disable-nv-onbat';
+## . END Declare and set global vars }
+
+## BEGIN Run main if the script is not sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(readlink -f "$0")"        || exit 101;
+  _binDir="$(dirname "${_binName}")"    || exit 101;
+  _baseDir="$(dirname "${_binDir}")"    || exit 101;
+  _baseName="$(basename "${_binName}")" || exit 101;
+
+  _userName="$(id -un)";
+
+  if [ "${XDG_SESSION_TYPE:-}" != 'x11' ] || [ "$(id -u)" = '0' ]; then
+    _doGui='n'; else _doGui='y';
+  fi
+  _lockFile="/tmp/${_baseName}-${_userName}.lock";
+
+  # Import libs and assign more global vars
+  _importCommonFn;
+  _assign_exe_list=(
+    # "_fanSetExe|${_binDir}/kfocus-fan-set||optional"
+    "_lspciExe|lspci"
+    "_powerSetExe|${_binDir}/kfocus-power-set"
+    "_pstateSetExe|${_binDir}/kfocus-pstate-set"
+    "_qdbusExe|qdbus"
+    "_upowerExe|upower"
+
+    "_kbdColorSetExe|${_binDir}/kfocus-kb-color-set||optional"
+    "_profilesCtlExe|powerprofilesctl||optional"
+    "_primeExe|prime-select||optional"
+  );
+  if ! _cm2AssignExeVarsFn "${_assign_exe_list[@]}"; then
+    _cm2ErrStrFn 'Required commands not found.';
+    _exitEarlyFn;
+  fi
+  _escExe="$(_cm2GetEscExeFn)" || exit 1;
+
+  _mainFn "$@";
+fi
+## . END Run main if the script is not sourced }
+

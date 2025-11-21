@@ -1,3 +1,73 @@
+kfocus-tools (24.04.13~beta1) noble; urgency=medium
+
+  * kfocus-recover-mount: Create disk mount script for recovery (#5806)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 05 Nov 2025 10:45:03 -0600
+
+kfocus-tools (24.04.12) noble; urgency=medium
+
+  * kfocus-kb-color-set: Improve bounds checking and fault tolerance (#5800)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Fri, 12 Sep 2025 22:15:56 -0400
+
+kfocus-tools (24.04.11) noble; urgency=medium
+
+  * kfocus-kb-color.postinst: Always enable kfocus-kb-save.service (#5750
+  * kfocus-kb-color: Always enable keyboard before editing color (#5599)
+  * kfocus-kb-color.prerm: Disable kfocus-kb-save.service only on remove (#5750)
+
+  [ Aaron Rainbolt ]
+  * kfocus-kb-color-set: Add support zonekb for 4-zone+lightbar kbds (#5599)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Sun, 31 Aug 2025 02:03:56 -0400
+
+kfocus-tools (24.04.10) noble; urgency=medium
+
+  * kfocus-kb-color.postinst: Use deb-systemd-helper (#5750)
+  * kfocus-kb-save.service: Save keyboard color on shutdown (#5750)
+  * kfocus-kb-color-set: Save modprobe file for std kbd (#5750)
+  * kfocus-kb-color-set: Revise behavior for suspend, power events (#5750)
+  * kfocus-kb-color-set: Add drop file to distinguish first color enable (#5750)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Wed, 20 Aug 2025 15:13:17 -0400
+
+kfocus-tools (24.04.9) noble; urgency=medium
+
+  * kfocus-kb-color-set: Improve enable toggle for restore (#5692)
+  * kfocus-conda: Turn off conda auto-activate right after install (#5651)
+  * kfocus-kb-color, kfocus-kb-color-set: Support zrg1 (#5651)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 13 Aug 2025 10:50:55 -0500
+
+kfocus-tools (24.04.8) noble; urgency=medium
+
+  * kfocus-conda: Fix minor typo.
+
+ -- Michael S. Mikowski <support@kfocus.org>  Sat, 28 Jun 2025 23:39:38 -0400
+
+kfocus-tools (24.04.7) noble; urgency=medium
+
+  * kfocus-conda: Fix Tensorflow installation logic for RTX 50-series GPUs
+    (#4121)
+  * kfocus-conda: Add gpu-benchmark in place of ai-benchmark (#4121)
+  * kfocus-conda: Improve PyTorch installation logic for RTX 50-series GPUs
+    (#4121)
+  * control: Add kfocus-tools-m2g6 metapackage (#5425)
+  * kfocus-conda: Add kfocus-nvidia-edge handling (#5313)
+  * kfocus-conda: Update Anaconda version (#4121)
+  * kfocus-conda: Update Python version (#4121)
+  * kfocus-conda: Add RTX 50-series NVIDIA GPU detection (#4121)
+  * kfocus-kb-color-set: Add lightbar color change support for m2g6 (#5413)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 26 Jun 2025 15:27:16 -0500
+
+kfocus-tools (24.04.6) noble; urgency=medium
+
+  * helper/usr/share/applications/*: Update desktop files (#5190)
+  * usr/lib/kfocus/bin/kfocus-kb-color: Add NXg3 support (#5302)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 08 Apr 2025 10:05:00 -0500
+
 kfocus-tools (24.04.5) noble; urgency=medium
 
   * Update kfocus-conda wording for unsupported systems (#5065)

@@ -2,6 +2,7 @@
 #define BACKENDENGINE_H
 
 #include <QObject>
+#include <QSettings>
 #include <QtQml/qqml.h>
 
 class BackendEngine : public QObject
@@ -21,6 +22,9 @@ class BackendEngine : public QObject
     Q_PROPERTY(bool postRestoreSubvolsMounted READ postRestoreSubvolsMounted NOTIFY postRestoreSubvolsMountedChanged)
     Q_PROPERTY(bool mainWorkingSubvolExists READ mainWorkingSubvolExists NOTIFY mainWorkingSubvolExistsChanged)
     Q_PROPERTY(bool bootWorkingSubvolExists READ bootWorkingSubvolExists NOTIFY bootWorkingSubvolExistsChanged)
+    Q_PROPERTY(bool snapshotSizeInfoPresent READ snapshotSizeInfoPresent NOTIFY snapshotSizeInfoPresentChanged)
+    Q_PROPERTY(QStringList bulkDataList READ bulkDataList NOTIFY bulkDataListChanged)
+    Q_PROPERTY(bool bulkDataWarningEnabled READ bulkDataWarningEnabled NOTIFY bulkDataWarningEnabledChanged)
     QML_ELEMENT
 
 public:
@@ -46,12 +50,17 @@ public:
     bool postRestoreSubvolsMounted();
     bool mainWorkingSubvolExists();
     bool bootWorkingSubvolExists();
+    bool snapshotSizeInfoPresent();
+    QStringList bulkDataList();
+    bool bulkDataWarningEnabled();
     Q_INVOKABLE int getSnapshotCount();
     Q_INVOKABLE QString getSnapshotInfo(int index, QString key);
     Q_INVOKABLE QString getFsData(QString fs, QString key);
     Q_INVOKABLE QString toBase64(QString val);
     Q_INVOKABLE bool isBackgroundRollbackRunning();
     Q_INVOKABLE void refreshSystemData(bool calcSize);
+    Q_INVOKABLE void enableBulkDataWarning();
+    Q_INVOKABLE void disableBulkDataWarning();
 
 signals:
     void inhibitCloseChanged();
@@ -63,13 +72,16 @@ signals:
     void postRestoreSubvolsMountedChanged();
     void mainWorkingSubvolExistsChanged();
     void bootWorkingSubvolExistsChanged();
+    void snapshotSizeInfoPresentChanged();
+    void bulkDataListChanged();
+    void bulkDataWarningEnabledChanged();
 
 private slots:
     void onSystemDataReady();
 
 private:
     QString fieldSeek(QStringList lines, QString searchStr, int field);
-    QString bytesToGib(quint64 val);
+    QString bytesToGib(quint64 val, bool keepShort);
 
     void loadGlobalInfo();
 
@@ -79,6 +91,7 @@ private:
     static QString m_rollbackBootWorkingDir;
     static QString m_pkexecExe;
     static QString m_systemdInhibitExe;
+
     static bool m_automaticSnapshotsEnabled;
     static QList<QMap<QString, QString>> *m_snapshotList;
     static QMap<QString, QString> *m_mainFsInfo;
@@ -90,6 +103,9 @@ private:
     static bool m_postRestoreSubvolsMounted;
     static bool m_mainWorkingSubvolExists;
     static bool m_bootWorkingSubvolExists;
+    static bool m_snapshotSizeInfoPresent;
+    static QStringList m_bulkDataList;
+    static bool m_bulkDataChecked;
 
     static QStringList m_snapshotIdList;
     static int m_snapshotIdIdx;
@@ -97,6 +113,8 @@ private:
     static quint64 m_mainMinUnalloc;
     static quint64 m_bootMinUnalloc;
     static bool m_updateInProgress;
+
+    static QSettings m_settings;
 };
 
 #endif // BACKENDENGINE_H

@@ -2,7 +2,7 @@ Source: kfocus-settings
 Section: x11
 Priority: optional
 Maintainer: Kubuntu Focus Developers <support@kfocus.org>
-Build-Depends: debhelper-compat (= 13), intltool
+Build-Depends: debhelper-compat (= 13), config-package-dev, intltool, plocate
 Standards-Version: 4.6.2
 
 Package: kfocus-settings
@@ -12,7 +12,7 @@ Depends: ${misc:Depends}, kfocus-main (>> 22.0.54),
          kfocus-power-bin,
          kfocus-wallpapers
 Recommends: plasma-desktop
-Description: default settings for the Kubuntu Focus laptop computers
+Description: Kubuntu Focus Default Settings
  This package contains the default settings used by the Kubuntu Focus.
  It sets the default sddm theme and the theme and layout for the
  default session.

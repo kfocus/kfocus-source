@@ -1,7 +1,8 @@
 #!/bin/bash
 #
-# Copyright 2019-2024 MindShare Inc.
-# Written for the Kubuntu Focus by Michael Mikowski
+# Copyright 2019-2025 MindShare Inc.
+# Written for Kubuntu Focus by:
+# Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
 #
 # Name    : kfocus-focusrx-set
 # Purpose : run-as-root options for kfocus-focusrx
@@ -12,7 +13,7 @@
 set -u;
 
 ## BEGIN _importCommonFn {
-# Purpose: Import common library with _cm2* symbols
+# Purpose: Import the common library with _cm2* symbols
 #
 _importCommonFn() {
   declare _lib_file;
@@ -50,8 +51,16 @@ _updatePkgsFn () {
 # IMPORTANT: dpkg-configure kfocus-hw runs update-initramfs, update-grub
 #
 _reconfigHwPkgFn () {
-  declare _str;
+  declare _symlink _str;
   _cm2SetMsgFn 'Adjust for hardware';
+
+  # Reset thunderbolt enable symlink (#5790)
+  _symlink='/etc/default/grub.d/10_kfocus-tbt.cfg';
+  if [ -f "${_symlink}" ] || [ -h "${_symlink}" ]; then
+    rm -rf "${_symlink}";
+  fi
+
+  # Then reconfigure
   if _str="$(dpkg-reconfigure kfocus-hw 2>&1)"; then
     _cm2SucFn; else _cm2WarnStrFn "${_str}"; _cm2WarnFn;
   fi
@@ -98,22 +107,57 @@ _purgeKbdIteFn () {
 }
 ## . END _purgeKbdIteFn }
 
+## BEGIN _getNvSeriesStrFn {
+# Purpose: Determine nvidia graphics card series
+#
+_getNvSeriesStrFn () {
+  declare _nv_line;
+  _nv_line=$(lspci |grep -i 'VGA compatible controller' |grep -i 'nvidia');
+
+  if grep -q 'RTX 20' <<< "${_nv_line}"; then
+    echo 'rtx20';
+  elif grep -q 'RTX 30' <<< "${_nv_line}"; then
+    echo 'rtx30';
+  # GN21 = RTX 4090
+  elif grep -qE '(RTX 40|GN21)' <<< "${_nv_line}"; then
+    echo 'rtx40';
+  elif grep -qE 'RTX 50' <<< "${_nv_line}"; then
+    echo 'rtx50';
+  else echo '';
+  fi
+}
+## . END _getNvSeriesStrFn }
+
 ## BEGIN _installNvidiaFn {
 # Purpose: Install kfocus nvidia packages.
 #   The caller must determine if this step is appropriate.
 #
 _installNvidiaFn () {
+  declare _dmi_hw_config_code _nv_pkg_suffix _nv_series_str;
+
+  # Use kfocus-nvidia-pinning-edge and kfocus-nvidia-edge for the latest hw
+  _dmi_hw_config_code="$(_cm2EchoModelStrFn 'config_code')";
+  _nv_pkg_suffix='';
+  if [[ "${_dmi_hw_config_code}" =~ ^(m2g6|zrg1)$ ]]; then
+    _nv_pkg_suffix='-edge';
+  else
+    _nv_series_str="$(_getNvSeriesStrFn)";
+    if [ "${_nv_series_str}" = 'rtx50' ]; then
+      _nv_pkg_suffix='-edge';
+    fi
+  fi
+
   _cm2SetMsgFn 'Install NVIDIA Packages';
-  if ! apt-get reinstall -y kfocus-nvidia-pinning; then
-    _cm2WarnStrFn 'Trouble installing nvidia-pinning.';
+  if ! apt-get reinstall -y "kfocus-nvidia-pinning${_nv_pkg_suffix}"; then
+    _cm2WarnStrFn "Trouble installing nvidia-pinning${_nv_pkg_suffix}.";
     _cm2WarnFn; return 1;
   fi
   if ! apt-get update; then
     _cm2WarnStrFn 'Trouble updating apt package list.';
     _cm2WarnFn; return 1;
   fi
-  if ! apt-get reinstall -y kfocus-nvidia; then
-    _cm2WarnStrFn 'Trouble installing kfocus-nvidia.';
+  if ! apt-get reinstall -y "kfocus-nvidia${_nv_pkg_suffix}"; then
+    _cm2WarnStrFn "Trouble installing kfocus-nvidia${_nv_pkg_suffix}.";
     _cm2WarnFn; return 1;
   fi
   _cm2SucFn;
@@ -145,35 +189,17 @@ _purgeRollbackFn () {
 ## . END _purgeRollbackFn }
 
 ## BEGIN _chkBiosUpdateFn {
-# Purpose: Return true if no bios upgrade needed, false otherwise
+# Purpose: Return true if no BIOS is upgrade needed
 #
 _chkBiosUpdateFn () {
-  declare _model_code _min_vers _dmi_exe _bios_vers;
-  _model_code="$(_cm2EchoModelStrFn 'code')"  || exit 0;
-
-  # Only support m2g4 check at this time
-  if [ "${_model_code}" != 'm2g4' ]; then
-    echo "${_model_code} BIOS update not needed";
-    exit 0;
-  fi
-
-  # Get dmidecode for bios version
-  if ! _cm2AssignExeVarsFn '_dmi_exe|dmidecode'; then
-    _cm2WarnStrFn 'ABORT: Required dmidecode not found. Run:';
-    _cm2WarnStrFn '  sudo apt install dmidecode';
-    exit 0;
-  fi
-
-  _min_vers='1.07.07MIN29';
-  _bios_vers="$( "${_dmi_exe}" -s 'bios-version' )" || exit 0;
-  if [ "${_bios_vers}" = "${_min_vers}" ] ||
-    _cm2TestVersFn "${_bios_vers}" "${_min_vers}"; then
-    echo "${_model_code} ${_bios_vers} vs. ${_min_vers}";
-    exit 0;
-  else
-    echo "${_model_code} ${_bios_vers} vs. ${_min_vers}";
+  declare _btool_check_str;
+  if [ -z "${_btoolExe}" ]; then exit 0; fi
+  _btool_check_str="$("${_btoolExe}" '-d')";
+  if [ "${_btool_check_str}" = 'dl_bios_greater_required_upgrade' ] \
+    || [ "${_btool_check_str}" = 'dl_bios_lesser_required_downgrade' ]; then
     exit 1;
   fi
+  exit 0;
 }
 ## . END _chkBiosUpdateFn }
 
@@ -183,10 +209,10 @@ _chkBiosUpdateFn () {
 #   fix-hw-config directive.
 #
 _chkHwConfigFn () {
-  declare _is_nv_system _do_force _reason_list _dmi_hw_config_code \
-    _dmi_hw_model_code _file_hw_config_code _file_hw_model_code \
-    _is_hw_reconfig _msg _tool_pkg_suffix _tool_pkg_name _lspci_exe \
-    _btrfs_status;
+  declare _btrfs_status _dmi_hw_config_code _dmi_hw_model_code \
+    _do_force _file_hw_config_code _file_hw_model_code _is_hw_reconfig \
+    _is_nv_system _msg _nv_pkg_suffix _reason_list \
+    _tool_pkg_name _tool_pkg_suffix _nv_series_str;
 
   _do_force='n';
   if [[ "${1:-}" =~ ^[Yy] ]]; then _do_force='y'; fi
@@ -215,11 +241,14 @@ _chkHwConfigFn () {
   # fi
 
   ## Begin Adjust tool suffix per config code {
-  # kfocus-tools-nxg1, kfocus-tools-other, kfocus-tools (#3424)
+  # kfocus-tools-m2g6, kfocus-tools-nxg1, kfocus-tools-other,
+  # kfocus-tools (#3424)
   _tool_pkg_suffix='';
   case "${_dmi_hw_config_code}" in
     default|generic|m2g4|m2g5|xeg2) _tool_pkg_suffix='';;
     nxg1) _tool_pkg_suffix='-nxg1';;
+    m2g6) _tool_pkg_suffix='-m2g6';;
+    zrg1) _tool_pkg_suffix='-m2g6';;
     ir14g1|ir1Xg2|other|*) _tool_pkg_suffix='-other';;
   esac
   _tool_pkg_name="kfocus-tools${_tool_pkg_suffix}";
@@ -238,8 +267,8 @@ _chkHwConfigFn () {
   fi
   ## . End Adjust tool suffix per config code }
 
-  ## Begin add or remove extra keyboard package {
-  if [ "${_dmi_hw_model_code}" = 'm2g5p' ]; then
+  ## Begin: Add or remove the extra keyboard package {
+  if [[ "${_dmi_hw_model_code}" =~ ^(m2g5p|zrg1) ]]; then
     if ! _cm2ChkInstalledPkgFn 'kfocus-keyboard-ite'; then
       _msg='install-kbd-ite;;';
       _msg+='Package kfocus-keyboard-ite needs to be installed.';
@@ -256,9 +285,9 @@ _chkHwConfigFn () {
       _reason_list+=( "${_msg}" );
     fi
   fi
-  ## . End add or remove extra keyboard package }
+  ## . End: Add or remove the extra keyboard package }
 
-  ## Begin Run lib updates iff hardware reconfig is flagged {
+  ## Begin: Run lib updates iff hardware reconfigure is flagged {
   #   do_force OR mismatched config-code triggers this.
   # Thus do_force is NOT guaranteed = 'y' for this block.
   #
@@ -266,17 +295,24 @@ _chkHwConfigFn () {
     _is_nv_system="$(_cm2EchoModelStrFn 'is_nv_sys')";
 
     # Supplemental check for Nvidia systems
-    if [ "${_is_nv_system}" != 'y' ]; then
-      _lspci_exe="$(command -v lspci || true)";
-      if [ -n "${_lspci_exe}" ] \
-        && grep -qi 'vga.*nvidia' < <("${_lspci_exe}"); then
+    _nv_pkg_suffix='';
+    if [ "${_is_nv_system}" = 'y' ]; then
+      if [[ "${_dmi_hw_config_code}" =~ ^(m2g6|zrg1)$ ]]; then
+        _nv_pkg_suffix='-edge';
+      fi
+    else
+      _nv_series_str="$(_getNvSeriesStrFn)";
+      if [ -n "${_nv_series_str}" ]; then
         _is_nv_system='y';
+        if [ "${_nv_series_str}" = 'rtx50' ]; then
+          _nv_pkg_suffix='-edge';
+        fi
       fi
     fi
 
     # Install nvidia libs
     if [ "${_is_nv_system}" = 'y' ]; then
-      if ! _cm2ChkInstalledPkgFn 'kfocus-nvidia'; then
+      if ! _cm2ChkInstalledPkgFn "kfocus-nvidia${_nv_pkg_suffix}"; then
         _msg='install-nvidia;;Nvidia libraries needs to be installed.';
         _reason_list+=( "${_msg}" );
       elif [ "${_do_force}" = 'y' ]; then
@@ -301,7 +337,7 @@ _chkHwConfigFn () {
       *) true;
     esac
   fi
-  ## . End Run lib updates iff hardware reconfig is flagged }
+  ## . End: Run lib updates iff hardware reconfigure is flagged }
 
   ## BEGIN Detect if kfocus-rollback should be removed {
   #
@@ -354,7 +390,7 @@ _fixHwConfigFn () {
   # Indicate post-install (finalize) setup is complete
   _model_code="$(_cm2EchoModelStrFn 'code')"    || return;
   mkdir -p "${_varLibDir}"                      || return;
-  # This is set only on post-install configure
+  # This is set only on post-install configuration
   echo "${_model_code}" > "${_hwModelCodeFile}" || true;
 }
 ## . END_fixHwConfigFn }
@@ -368,12 +404,26 @@ _prepareSnapshotFn () {
 ## . END _prepareSnapshotFn }
 
 ## BEGIN _clearRestoreFn {
-#
 _clearRestoreFn () {
   [ -z "${_rollbackBackendExe}" ] && return;
   "${_rollbackBackendExe}" 'clearRestore';
 }
 ## . END _clearRestoreFn }
+
+## BEGIN _setKeyCodesFn {
+# Purpose: Used to set keyboard codes per model.
+# Typically this is needed if a key code is undefined.
+#
+_setKeyCodesFn () {
+  declare _model_code;
+  _model_code="$(_cm2EchoModelStrFn 'code')" || return;
+
+  case "${_model_code}" in
+    zrg1|m2g5p) setkeycodes 6f 112 || true;;
+    *) true;;
+  esac
+}
+## . END _setKeyCodesFn }
 
 ## BEGIN _mainFn {
 _mainFn () {
@@ -386,6 +436,7 @@ _mainFn () {
     'fix-hw-config'   ) _fixHwConfigFn "${2:-}";;
     'prep-snapshot'   ) _prepareSnapshotFn;;
     'clear-restore'   ) _clearRestoreFn;;
+    'set-keycodes'    ) _setKeyCodesFn;;
     *) _cm2WarnStrFn "Unrecognized directive |${_arg_str}|";;
   esac
 }
@@ -393,14 +444,15 @@ _mainFn () {
 
 ## BEGIN Declare global variables {
 declare  _binName _binDir _baseName _assignList \
-  _focusRxVersExe _hwConfigCodeFile _hwModelCodeFile;
+  _focusRxVersExe _rollbackBackendExe _btoolExe _hwConfigCodeFile \
+  _hwModelCodeFile;
 
 _varLibDir='/var/lib/kfocus';
 _hwConfigCodeFile="${_varLibDir}/hw_config_code";
 _hwModelCodeFile="${_varLibDir}/hw_model_code";
 ## . END Declare global variables }
 
-## BEGIN Run main if script is not sourced {
+## BEGIN Run main if the script is not sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binName="$(  readlink -f "$0"        )" || exit 101;
   _binDir="$(   dirname  "${_binName}"  )" || exit 101;
@@ -411,6 +463,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _assignList=(
     "_focusRxVersExe|${_binDir}/kfocus-rx-version"
     "_rollbackBackendExe|${_binDir}/kfocus-rollback-backend||optional"
+    "_btoolExe|${_binDir}/kfocus-btool||optional"
   );
   if ! _cm2AssignExeVarsFn  "${_assignList[@]}"; then
     _cm2ErrStrFn 'Could not assign variable';
@@ -419,4 +472,4 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   _mainFn "$@";
 fi
-## . END Run main if script is not sourced }
+## . END Run main if the script is not sourced }

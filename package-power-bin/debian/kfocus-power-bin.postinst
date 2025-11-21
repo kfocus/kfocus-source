@@ -1,0 +1,45 @@
+#!/bin/bash
+#
+# Copyright 2025 MindShare Inc.
+# Written for the Kubuntu Focus by
+#   Michael Mikowski and Aaron Rainbolt
+set -e;
+
+## BEGIN Declare common.2.source symbols {
+#  IMPORT 2025-05-21 EXCERPT from common.2.source
+#   Symbols are renamed to avoid potential conflicts with imported lib.
+#
+_cmXBlockMsg='';
+_cmXEchoFn    () { echo 1>&2 -e "$*"; }
+_cmXSetMsgFn  () { _cmXBlockMsg="$*"; _cmXEchoFn "== BEGIN : ${_cmXBlockMsg}"; }
+_cmXSucFn     () { _cmXEchoFn "== . END : OK   ${_cmXBlockMsg}\n\n"; }
+_cmXSucStrFn  () { _cmXEchoFn "ok  : ${*}"; }
+_cmXWarnFn    () { _cmXEchoFn "== . END : WARN Could not ${_cmXBlockMsg}\n\n"; }
+_cmXWarnStrFn () { _cmXEchoFn "warn: ${*}"; }
+
+## BEGIN _flushCpuInitCacheFn {
+_flushCpuInitCacheFn () {
+  _cmXSetMsgFn 'Flush cpu power cache files';
+  declare _init_file _del_file;
+  # Remove cache files normally run on boot
+  for _init_file in kfocus-cpu-init kfocus-power-computed-table \
+    kfocus-power-pretty-computed-table; do
+    _del_file="/run/${_init_file}";
+    if [ -f "${_del_file}" ]; then
+      if rm "${_del_file}"; then
+        _cmXSucStrFn  "Delete |${_del_file}|.";
+      else
+        _cmXWarnStrFn "Could not delete |${_del_file}|";
+      fi
+    fi
+  done
+  _cmXSucFn;
+}
+## . END _flushCpuInitCacheFn }
+
+case "${1:-}" in
+  configure|upgrade) _flushCpuInitCacheFn;;
+  abort-upgrade|abort-remove|abort-deconfigure) true;;
+  *) _cmXWarnStrFn "Unhandled argument |${1:-}|";;
+esac
+#DEBHELPER#

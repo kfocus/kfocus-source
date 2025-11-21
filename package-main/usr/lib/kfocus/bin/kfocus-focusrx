@@ -1,10 +1,11 @@
 #!/bin/bash
 #
-# Copyright 2019-2024 MindShare Inc.
-# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
+# Copyright 2019-2025 MindShare Inc.
+# Written for Kubuntu Focus by:
+# Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
 #
 # Name    : kfocus-focusrx
-# Purpose : Prompt user to apply latest FocusRx System upgrade and other
+# Purpose : Prompt user to apply latest FocusRx System updates and other
 #         :   on-login checks and actions.
 # License : GPL v2
 # Run By  : Users
@@ -81,18 +82,18 @@ _exitCleanFn () {
 
 ## BEGIN _testNagCountFn {
  # Purpose: Read a _drop_file count.
- #   Increment that count and place in _drop_file.
+ #   Increment the counter and place in _drop_file.
  # Arguments: (positional)
  #  _mode          (required) "check" or "inc" nag counter.
  #  _file_name     (required) Drop file relative to $HOME/.config/)
- #  _max_nag_count (optional) Max times to nag. Default is _maxNagCount.
+ #  _max_nag_count (optional) Max times to nag. The default is _maxNagCount.
  # Returns:
  #   0: _view_count is less than _nag_count.
  #   1: _view_count is greater than or equal to _nag_count.
  #   2: Other error.
  #
 _testNagCountFn () {
-  declare _mode _file_name _max_count _drop_file _view_count _left_count;
+  declare _mode _file_name _max_count _drop_file _view_count _left_count _msg;
 
   _mode="${1:-}";
   _file_name="${2:-}";
@@ -103,8 +104,8 @@ _testNagCountFn () {
     return 2;
   fi
 
-  if ! [[ "${_mode}" =~ ^(check|inc)$ ]]; then
-    _cm2WarnStrFn 'Mode must be "check" or "inc".';
+  if ! [[ "${_mode}" =~ ^(check|inc|fill)$ ]]; then
+    _cm2WarnStrFn 'Mode must be "check", "inc", or "fill".';
     return 2;
   fi
 
@@ -122,18 +123,23 @@ _testNagCountFn () {
 
   case "${_mode}" in
     check)
-      _left_count=$(( _max_count - _view_count ));
-      if (( _left_count == 0 )); then
-        echo 'warning will not be shown again';
+      _left_count=$(( _max_count - _view_count - 1 ));
+      if (( _left_count <= 0 )); then
+        _msg='warning will not be shown again.';
       elif (( _left_count == 1 )); then
-        echo 'warning will be shown for one more login';
+        _msg='warning will be shown for one more login.';
       else
-        echo "warning will be shown for ${_left_count} more logins";
+        _msg="warning will be shown for ${_left_count} more logins.";
       fi
+      _msg+='<br>\nRunning <code>focusrx -f</code> will reset this counter';
+      echo -e "${_msg}";
       ;;
     inc)
       (( _view_count++ ));
       echo "${_view_count}" > "${_drop_file}" || true;
+      ;;
+    fill)
+      echo "${_max_count}" > "${_drop_file}" || true;
       ;;
     *)
       _cm2WarnStrFn 'Unexpected mode';
@@ -274,11 +280,10 @@ _EOH04
 ## . END _announceStartFn }
 
 ## BEGIN _chkUpdateBiosFn {
- # Purpose: Check BIOS for upgrade
+ # Purpose: Check BIOS for updates
  #
 _chkUpdateBiosFn () {
-  declare _win_title _nag_msg _cmd_list _check_msg \
-    _prompt_msg _do_run_btool;
+  declare _win_title _nag_msg _cmd_list _prompt_msg _do_run_btool;
 
   # Skip if required tool not installed.
   [ -z "${_btoolExe}" ] && return;
@@ -287,7 +292,7 @@ _chkUpdateBiosFn () {
   _cm2SetMsgFn "${_title}";
   _win_title="${_rootTitle}: ${_title} ";
 
-  if ! _nag_msg="$(_testNagCountFn 'check' 'kfocus-bios-count')"; then
+  if ! _nag_msg="$(_testNagCountFn 'check' 'kfocus-bios-count' 7)"; then
     _cm2SucStrFn 'View count limit reached.';
     _cm2SucFn;
     return;
@@ -296,8 +301,8 @@ _chkUpdateBiosFn () {
   _cmd_list=("${_escExe}" "${_focusRxSetExe}" 'chk-bios');
 
   # Skip if check succeeds (no bios update available)
-  if _check_msg="$("${_cmd_list[@]}")"; then
-    _cm2SucStrFn "${_check_msg}";
+  if "${_cmd_list[@]}"; then
+    _cm2SucStrFn 'Bios update not suggested';
     _cm2SucFn;
     return;
   fi
@@ -306,16 +311,17 @@ _chkUpdateBiosFn () {
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}${_title}</h3>
 
-${_cm2HtmPStr}We recommend you update this system's BIOS.<p>
+${_cm2HtmPStr}We STRONGLY recommend you update this system's <br>
+BIOS now using the Focus BIOS Tool.<p>
 
 ${_cm2HtmPStr}This will improve system stability and performance.<br>
-If you run the BIOS-update wizard now, you will need <br>
-about 10 minutes and an empty, 8+ GB USB drive.</p>
+You will need an empty 1+ GB USB drive and around <br>
+10 minutes.</p>
 
 ${_cm2HtmPStr}If you skip this prompt, this <br>
 ${_nag_msg}.</p>
 
-${_cm2HtmPStr}<b>Run the BIOS-update wizard NOW?</b></p>
+${_cm2HtmPStr}<b>Run the Focus BIOS Tool now?</b></p>
 ${_cm2HtmEndStr}
 _EOH05
   )";
@@ -325,8 +331,7 @@ _EOH05
   )"
 
   if [ "${_do_run_btool}" = 'n' ]; then
-    _cm2SucStrFn "${_check_msg}";
-    _cm2SucStrFn 'Skipped on user request';
+    _cm2SucStrFn 'BIOS update skipped on user request';
     _cm2SucFn;
     _testNagCountFn 'inc' 'kfocus-bios-count';
     return;
@@ -337,7 +342,7 @@ _EOH05
     _cmd_list+=( '_runXtermCmdFn' );
   fi
 
-  _cmd_list+=( "${_escExe}" "${_btoolExe}" );
+  _cmd_list+=( "${_escExe}" "${_btoolExe}" '-o' );
   if "${_cmd_list[@]}"; then
     _cm2SucFn; else _cm2WarnFn;
   fi
@@ -387,17 +392,197 @@ _chkOemMultiDiskFn () {
   fi
 
   # Use sudo here always, pkexec wrecks the GUI. We can do this here
-  # because the OEM user has password-less sudo.
+  # because the OEM user does not need a password for sudo.
   sudo -E "${_chainHelperExe}" 'quietExit';
 
   _cm2SucFn;
 }
 ## . END _chkOemMultiDiskFn }
 
+## BEGIN _chkNvPMizerFn {
+_chkNvPMizerFn () {
+  declare _title _param_key _tgt_idx _rc_file _sed_str;
+
+  # Skip if no exe, not the correct package, or not running nvidia
+  if [ -z "${_nvSettingsExe}" ] || [ -z "${_primeSelectExe}" ]; then return; fi
+  if ! _cm2ChkInstalledPkgFn 'kfocus-nvidia-edge'; then return; fi
+
+  _title='Set PowerMizerMode for kfocus-nvidia-edge';
+  _cm2SetMsgFn "${_title}";
+  if ! [[ "$("${_primeSelectExe}" query)" =~ ^(nvidia|on-demand) ]]; then
+    _cm2SucStrFn 'Skipped, display mode does not use framebuffer.';
+    _cm2SucFn;
+    return;
+  fi
+
+  # Declare values
+  _param_key='GPUPowerMizerMode';
+  _tgt_idx=1;
+
+  # TODO: Query like so. We do not currently use there appears to
+  #  be no performance benefit.
+  # _current_idx="$("${_nvSettingsExe}" -q "${_param_key}" -t)";
+  # Set value if needed
+  # if [ "${_current_idx:-}" = "${_tgt_idx}" ]; then
+  #   _cm2SucStrFn 'Skipped, parameter already set.';
+  #   _cm2SucFn;
+  #   return;
+  # fi
+
+  _rc_file="${HOME}/.nvidia-settings-rc";
+  if [ -f "${_rc_file}" ]; then
+    _sed_str="s/${_param_key}=[0-9]\$/${_param_key}=${_tgt_idx}/";
+    sed -i "${_sed_str}" "${_rc_file}" || true;
+  fi
+
+  if "${_nvSettingsExe}" -a "${_param_key}=${_tgt_idx}"; then
+    _cm2SucStrFn 'Parameter set as directed.';
+    _cm2SucFn;
+  else
+    _cm2WarnStrFn 'Parameter setting did not work.';
+    _cm2WarnFn;
+  fi
+}
+## . END _chkNvPMizerFn }
+
+## BEGIN _chkDispRefreshFn {
+_chkDispRefreshFn () {
+  declare _title _win_title _prompt_msg _kscreen_doctor_report \
+    _internal_disp_name _nag_name _init_nag_count _warn_nag_count;
+
+  # Skip if not on m2g6 or zrg1 or kscreen tool not installed
+  [[ "$(_cm2EchoModelStrFn 'config_code')" =~ ^(m2g6|zrg1)$ ]] || return;
+  [ -z "${_kscreenDoctorExe}" ] && return;
+
+  # Set tunables
+  _init_nag_count='1';
+  _warn_nag_count='4';
+  _nag_name='kfocus-disphz_count';
+
+  _title='Configure display refresh';
+  _cm2SetMsgFn "${_title}";
+  _win_title="${_rootTitle}: ${_title}";
+
+  # Calculate laptop display name
+  _kscreen_doctor_report="$("${_kscreenDoctorExe}" -o)";
+  _internal_disp_name="$(
+    ansi2txt <<< "${_kscreen_doctor_report}" \
+      | cut -d' ' -f3-5 \
+      | grep 'eDP.* enabled connected' \
+      | cut -d' ' -f1 \
+      | head -n1
+  )";
+  if [ -z "${_internal_disp_name}" ]; then
+    _cm2WarnStrFn 'Laptop display not found. Will try again next login.';
+    _cm2WarnFn;
+    return;
+  fi
+
+  ## Begin Handle initial run {
+  #  Always set display to 60 Hz
+  if _nag_msg="$(
+    _testNagCountFn 'check' "${_nag_name}" "${_init_nag_count}"
+  )"; then
+    if "${_kscreenDoctorExe}" "output.${_internal_disp_name}.mode.2560x1600@60";
+      then _testNagCountFn 'fill' "${_nag_name}" "${_init_nag_count}";
+      _cm2SucFn;
+    else
+      # Do not set the nag count and try again later
+      _cm2WarnStrFn 'Could not set screen mode. Will try again next login';
+      _cm2WarnFn;
+    fi
+    return;
+  fi
+  ## End Handle initial run }
+
+  ## Begin Handle 60 Hz refresh rate {
+  if grep " ${_internal_disp_name} " <<< "${_kscreen_doctor_report}" \
+    | grep -q '2560x1600@60\*'; then
+    _cm2SucStrFn 'Desired screen refresh already set.';
+    _cm2SucFn;
+    return;
+  fi
+  ## . End Handle 60 Hz refresh rate }
+
+  ## Begin Handle 240 Hz refresh rate {
+  if grep " ${_internal_disp_name} " <<< "${_kscreen_doctor_report}" \
+    | grep -q '2560x1600@240\*'; then
+
+    # Bail if nag count is met
+    if ! _nag_msg="$(
+      _testNagCountFn 'check' "${_nag_name}" "${_warn_nag_count}"
+    )"; then
+      _cm2SucStrFn 'View count limit reached.';
+      _cm2SucFn;
+      return;
+    fi
+
+    _prompt_msg="$(cat <<EOF
+${_cm2HtmBeginStr}
+${_cm2HtmH3Str}${_title}</h3>
+
+${_cm2HtmPStr}The laptop display's refresh rate is currently set to<br>
+240 Hz. Higher refresh rates consume substantial<br>
+bandwidth, which may make it more difficult to use<br>
+multiple displays. If you encounter issues, consider<br>
+reducing the laptop display refresh rate to 60 Hz.</p>
+
+${_cm2HtmPStr}You may change the refresh rate using <code>System<br>
+Settings &gt; Display and Monitor &gt; Display<br>
+Configuration &gt; Refresh Rate</code>.</p>${_cm2HtmEndStr}
+
+${_cm2HtmPStr}If you keep the panel at 240 Hz, this <br>
+${_nag_msg}.</p>
+EOF
+  )";
+    _cm2PromptUserFn "${_prompt_msg}" "${_win_title}";
+    _testNagCountFn 'inc' "${_nag_name}";
+    _cm2SucFn;
+    return;
+  fi
+  ## . End Handle 240 Hz refresh rate }
+
+  ## Begin Handle 300 Hz refresh rate {
+  #  This should not affect nag count and should always be fixed.
+  #  TODO: Should we reset nag count here?
+  if grep " ${_internal_disp_name} " <<< "${_kscreen_doctor_report}" \
+    | grep -q '2560x1600@300\*'; then
+    _prompt_msg="$(cat <<EOF
+${_cm2HtmBeginStr}
+${_cm2HtmH3Str}${_title}</h3>
+
+<p><b>Setting screen refresh rate to 240 Hz.</b></p>
+
+${_cm2HtmPStr}Laptop display refresh rates greater than 240 Hz are<br>
+unstable, unsupported, and may cause system crashes<br>
+or other undesirable behavior.</p>
+
+${_cm2HtmPStr}If you are using multiple monitors, you may wish to<br>
+further reduce the laptop display refresh rate to 60 Hz.<br>
+This provides more display bandwidth for external<br>
+displays.</p>
+
+${_cm2HtmPStr}You may change the refresh rate later using <code>System<br>
+Settings &gt; Display and Monitor &gt; Display<br>
+Configuration &gt; Refresh Rate</code>.</p>${_cm2HtmEndStr}
+EOF
+    )";
+    _cm2PromptUserFn "${_prompt_msg}" "${_win_title}";
+
+    if "${_kscreenDoctorExe}" \
+      "output.${_internal_disp_name}.mode.2560x1600@240"; then
+      _cm2SucFn;
+    else
+      _cm2WarnStrFn 'Could not set screen mode. Will try again next login';
+      _cm2WarnFn;
+    fi
+    return;
+  fi
+  ## . End Handle 300 Hz refresh rate }
+}
+## . END _chkDispRefreshFn }
+
 ## BEGIN _chkHwConfigFn {
-# _cm2PromptUserFn \
-#   'Restart the system for hardware mods to take effect' "${_baseName}" 'p';
-#
 _chkHwConfigFn () {
   declare _title _win_title _reason_str _prompt_msg _ans_str _output_str;
 
@@ -417,20 +602,20 @@ _chkHwConfigFn () {
     else
       _prompt_msg="$(cat << _EOH06
 ${_cm2HtmBeginStr}
-${_cm2HtmH3Str}SKIP ${_title}?</h3>
+${_cm2HtmH3Str}${_title}?</h3>
 
 ${_cm2HtmPStr}<b>The hardware signature already matches expected.</b><br>
 You can reconfigure for the hardware, but it takes <br>
 time and is usually not needed.</p>
 
-${_cm2HtmPStr}<b>SKIP reconfigure to hardware?</b><br></p>
+${_cm2HtmPStr}<b>${_title} now?</b><br></p>
 ${_cm2HtmEndStr}
 _EOH06
       )";
       _ans_str="$(
-        _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'a'
+        _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'A'
       )";
-      if [ "${_ans_str}" = 'n' ]; then
+      if [ "${_ans_str}" = 'y' ]; then
         _reason_str="$("${_escExe}" "${_focusRxSetExe}" 'force-hw-config')";
       fi
     fi
@@ -483,33 +668,45 @@ _EOH07
 
 ## BEGIN _chkRollbackPresence {
 # Purpose: Get rid of the kfocus-rollback icon in the panel if kfocus-rollback
-# is not installed
+# is not installed.
 #
 _chkRollbackPresence () {
-  if ! dpkg-query -s 'kfocus-rollback' 2>/dev/null; then
+  if ! _cm2ChkInstalledPkgFn 'kfocus-rollback'; then
     _cm2RunPlasmaScriptFn 'rmRollbackIcon.js';
   fi
 }
 ## . END _chkRollbackPresence }
 
+# TODO: Rename this to _chkRestoreKbdFn to reflect increased scope.
 ## BEGIN _chkKbdLedFn {
 # Purpose: Restore keyboard colors for specific models.
 # Important: Enable is set by kfocus-power-set which precedes this on sign-in.
-#   All non-m2g5p models use modprobe settings and are not affected.
+#   All non-m2g5p|zrg1 models use modprobe settings and are not affected.
 #
 _chkKbdLedFn () {
-  if [[ "$(_cm2EchoModelStrFn 'code')" =~ ^(m2g5p)$ ]]; then
+  declare _model_code;
+  _model_code="$(_cm2EchoModelStrFn 'code')";
+
+  if [[ "${_model_code}" =~ ^(m1|m2|zr) ]]; then
     if [ -x "${_kbdColorSetExe}" ]; then
-      "${_escExe}" "${_kbdColorSetExe}" -r || return 200;
+      _cm2SetMsgFn 'Restore keyboard colors';
+      if "${_escExe}" "${_kbdColorSetExe}" -K; then
+        _cm2SucFn; else _cm2WarnFn;
+      fi
     fi
+  fi
+
+  # Set keycodes
+  if [[ "${_model_code}" =~ ^(zrg1|m2g5p)$ ]]; then
+    "${_escExe}" "${_focusRxSetExe}" 'set-keycodes';
   fi
 }
 ## . END _chkKbdLedFn }
 
 ## BEGIN _chkXorgConfigFn {
 # Purpose: Warn if xorg.conf exists.
-# Offer to delete xorg.conf file.
-# User may opt out of future warnings.
+# Offer to delete the xorg.conf file.
+# The user may opt out of future warnings.
 #
 _chkXorgConfigFn () {
   declare _title _win_title _xorg_file _drop_file _explain_str \
@@ -563,7 +760,6 @@ _EOH12
   fi
 
   if [ -f "${_xorg_file}" ]; then
-    # DEBUG _cm2EchoFn "xorg.conf exists";
     if ! [ -f "${_drop_file}" ]; then
       _do_remove_file="$(
         _cm2PromptUserFn "${_warn_str}" "${_win_title}" 'a'
@@ -677,8 +873,6 @@ _EOH1
       _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'p';
     )";
 
-    _testNagCountFn 'inc' 'kfocus-ibus-count' 1
-
     if "${_fixIbusExe}" 'repair' 2>/dev/null; then
       _cm2PromptUserFn 'IBus configuration repaired.' "${_win_title}";
       _cm2SucStrFn 'IBus configuration repaired.';
@@ -689,6 +883,7 @@ _EOH1
     fi
   fi
 
+  _testNagCountFn 'fill' 'kfocus-ibus-count' 1;
   _cm2SucFn;
 }
 ## . END _checkIbusConfigFn }
@@ -703,7 +898,7 @@ _ensureCrontabFn () {
 
 ## BEGIN _runDropScriptsFn {
 # Summary : _runDropScriptsFn;
-# Purpose : Run fixup scripts in kfocus-focusrx.d in order of version.
+# Purpose : Run fixup scripts in kfocus-focusrx.d in order of versions.
 # Each file must be named like so:
 #   <semver>_<description>.sh
 #   1.2.1-3_check-install.sh
@@ -733,7 +928,7 @@ _runDropScriptsFn () {
     return 1;
   fi
 
-  # Build list of scripts
+  # Build a list of scripts
   # See https://www.baeldung.com/linux/reading-output-into-array
   IFS=$'\n' read -r -d '' -a _script_list < <(
    find ./ -mindepth 1 -maxdepth 1 -type f \
@@ -769,7 +964,7 @@ _runDropScriptsFn () {
       fi
     fi
 
-    # Semver is newer that system version: prompt and run
+    # Prompt and run if semver is newer than the system version
     if _cm2TestVersFn "${_loop_vers_str}" "${_sysVersStr}"; then
       # Always run source and let version number and doForce propagate
       if [ "${_loop_ext}" = 'source' ]; then
@@ -782,41 +977,42 @@ _runDropScriptsFn () {
         _cm2WarnStrFn "Skip unsupported file type: ${_loop_file}";
       fi
 
-    # Semver of script is older that system version: offer to run if doForce
+    # Semver of the script is older that system version.
+    # Offer to run if doForce flag is set.
     else
       # If the force flag is set, offer to run this drop script
       if [ "${_doForce}" = 'y' ]; then
 
-        # Always rerun source on force
+        # Always rerun a source on force
         if [ "${_loop_ext}" = 'source' ]; then
           _ans_str='n'
         # Prompt for runnable script
         else
           _prompt_msg="$(cat <<_EOH14
 ${_cm2HtmBeginStr}
-${_cm2HtmH3Str}SKIP Running ${_loop_name}?</h3>
+${_cm2HtmH3Str}Run ${_loop_name}?</h3>
 
 ${_loop_check_str}
 
 ${_cm2HtmPStr}This script was run on this system in the past. You may<br>
 run it again, but it can take time and is usually not required.</p>
 
-${_cm2HtmPStr}<b>SKIP running ${_loop_name}?</b><br></p>
+${_cm2HtmPStr}<b>Run ${_loop_name} now?</b><br></p>
 ${_cm2HtmEndStr}
 _EOH14
           )";
           _ans_str="$(
-            _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_loop_name}" 'a'
-           )";
+            _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_loop_name}" 'A'
+          )";
         fi
 
         # User has agreed to skip, so continue
-        if [ "${_ans_str}" = 'y' ]; then
+        if [ "${_ans_str}" = 'n' ]; then
           _cm2EchoFn "Skipping previously run ${_loop_name}";
           continue;
         fi
 
-      # Since force flag is NOT set, quietly skip this script
+      # Since the force flag is NOT set, quietly skip this script
       else
         _cm2EchoFn "Skipping previously run ${_loop_name}";
         continue;
@@ -865,22 +1061,22 @@ _EOH14
   ## . End: Update version string }
 
   ## Begin: Handle reboot if recommended {
-  if [ ${_do_reboot} = 'y' ]; then
+  if [ "${_do_reboot}" = 'y' ]; then
     _prompt_msg="$(cat <<_EOH15
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}REBOOT RECOMMENDED</h3>
 
 ${_cm2HtmPStr}You system has changed and a reboot is <b>RECOMMENDED</b>.<br>
 However, for safety, this is not the default action.<br><br>
-Continue <b>WITHOUT</b> rebooting?<br></p>
+Reboot now?<br></p>
 
 ${_cm2HtmEndStr}
 _EOH15
     )";
     _ans_str="$(
-      _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: SKIP Reboot?" 'a'
+      _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: Reboot?" 'A'
     )";
-    if [ "${_ans_str}" = 'n' ]; then
+    if [ "${_ans_str}" = 'y' ]; then
       "${_escExe}" systemctl reboot;
     fi
   ## . End: Handle reboot if recommended }
@@ -912,7 +1108,7 @@ _chkResetEffectsFn () {
 
   _prompt_msg="$(cat <<_EOH17b
 ${_cm2HtmBeginStr}
-${_cm2HtmH3Str}SKIP ${_title}?</h3>
+${_cm2HtmH3Str}Run ${_title}?</h3>
 
 ${_cm2HtmPStr}You can run kfocus-reset-effects <br>
 to reset effects and keyboard shortcuts, <br>
@@ -921,16 +1117,16 @@ associations to their defaults. This is usually <br>
 unnecessary unless some settings or shortcuts <br>
 are not behaving as desired.</p>
 
-${_cm2HtmPStr}<b>SKIP run kfocus-reset-effects?</b></p>
+${_cm2HtmPStr}<b>Run ${_title} now?</b></p>
 ${_cm2HtmEndStr}
 _EOH17b
   )";
 
   _ans_str="$(
-    _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'a'
+    _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'A'
   )";
 
-  if [ "${_ans_str}" = 'n' ]; then
+  if [ "${_ans_str}" = 'y' ]; then
     if "${_resetEffectsExe}"; then
       _cm2SucFn; else _cm2WarnFn;
     fi
@@ -967,7 +1163,7 @@ _EOH18
   )";
 
   _ans_str="$(
-    _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'a'
+    _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'A'
   )";
 
   if [ "${_ans_str}" = 'y' ]; then
@@ -991,12 +1187,12 @@ _postRollbackHandlerFn () {
 
   if [ "${_btrfs_status}" == 'SUPPORTED, AUTO' ] \
     || [ "${_btrfs_status}" == 'SUPPORTED, MANUAL' ]; then
-    # If drop file is found, run _rollbackExe, so it can use the contents
+    # If a drop file is found, run _rollbackExe, so it can use the contents
     #   of that file to display the name of the restored snapshot to the user.
     if [ -e "${_restoreCompleteFile}" ]; then
       "${_rollbackExe}" 'afterRestore';
 
-      # Remove drop file after completion
+      # Remove the drop file after completion
       "${_escExe}" "${_focusRxSetExe}" 'clear-restore';
     fi
   fi
@@ -1039,8 +1235,8 @@ _chkFirstrunFn () {
   # Skip if required tool not installed.
   [ -z "${_firstrunExe}" ] && return;
 
-  # Check if launched at login. 'plasma_session' is used by Plasma 5.24;
-  # 'systemd' in Plasma 5.27
+  # Check if launched at login: 'plasma_session' is used by Plasma 5.24
+  #   and 'systemd' by Plasma 5.27
   if [[ "${_parentCmdStr}" =~ ^(plasma_session|systemd) ]]; then
     "${_firstrunExe}";
   fi
@@ -1075,24 +1271,26 @@ _mainFn () {
   ## Begin Run focusrx steps {
   _cm2EchoFn "== BEGIN :      ${_rootTitle}\n";
   _announceStartFn;
-  _chkUpdateBiosFn;
+  _chkNvPMizerFn;       #5423
+  _chkDispRefreshFn;
   _chkBtrfsSetUpFn;
   _chkOemMultiDiskFn;
   _chkHwConfigFn;
   _chkRollbackPresence;
-  _chkKbdLedFn;      # Issue 3735
+  _chkKbdLedFn;         #3735
   _offerKfRollbackFn;
-  # _chkKernelPkgFn; # Disabled: See    66226a00c
-  # _chkNvidiaPkgFn; # Disabled: See    66226a00c
-  # _cleanupZoomFn;  # Disabled: Before 66226a00c
+  # _chkKernelPkgFn;    # Disabled: See 4423, 66226a00c
+  # _chkNvidiaPkgFn;    # Disabled: See 2928
+  # _cleanupZoomFn;     # Disabled: See 2146,2305
   _chkXorgConfigFn;
   _runKernelCleanFn;
   _chkIbusConfigFn;
   _ensureCrontabFn;
   _runDropScriptsFn;
-  # _chkExperRepoFn; # Disabled: See 66226a00c
+  # _chkExperRepoFn;    # Disabled: See 66226a00c
   _chkResetEffectsFn;
   _postRollbackHandlerFn;
+  _chkUpdateBiosFn;
   _announceEndFn;
   _cm2EchoFn "\n== . END : OK   ${_rootTitle}\n\n";
   ## . End Run focusrx steps }
@@ -1113,16 +1311,17 @@ declare _parentCmdStr _lookupList \
   _fixIbusExe _kcleanExe _resetEffectsExe _rollbackBackendExe \
   _rollbackSetExe _chainHelperExe _sysVersStr _userName _lockFile;
 
-_parentCmdStr="$(ps -o comm= $PPID)";
-# These domain names exist here only for the purposes of looking them up via
-# DNS to confirm if Internet is working. They are not connected to or
-# otherwise communicated with by FocusRx.
+_parentCmdStr="$(ps -o comm= "$PPID")";
+
+# These names are used only for DNS lookups as a means to confirm the internet
+# is working. FocusRx does not ping, connect to, or otherwise communicate with
+# these servers directly.
 _lookupList=( 'example.com' 'cloudflare.com' 'fastly.com' 'akamai.com' );
 _maxNagCount=6;
 _restoreCompleteFile='/var/lib/kfocus/rollback_restore_complete';
 ## . END Declare and assign global vars }
 
-## BEGIN Run main if script is not sourced {
+## BEGIN Run main if the script is not sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binName="$(  readlink -f "$0"       )" || exit 101;
   _binDir="$(   dirname  "${_binName}" )" || exit 101;
@@ -1133,7 +1332,6 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _importCommonFn;
   _escExe="$(_cm2GetEscExeFn)" || exit;
   _focusRxDropDir="${_binDir}/kfocus-focusrx.d";
-  _kbdColorSetExe="${_binDir}/kfocus-kb-color-set";
   _rootTitle='FocusRx';
   _userName="$(id -un)";
 
@@ -1143,14 +1341,18 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     "_focusRxVersExe|${_binDir}/kfocus-rx-version"
 
     "_btoolExe|${_binDir}/kfocus-btool||optional"
+    "_chainHelperExe|${_binDir}/kfocus-chain-helper-ui||optional"
     "_firstrunExe|${_binDir}/kfocus-firstrun-bin||optional"
     "_fixIbusExe|${_binDir}/kfocus-fix-ibus||optional"
+    "_kbdColorSetExe|${_binDir}/kfocus-kb-color-set||optional"
     "_kcleanExe|${_binDir}/kfocus-kclean||optional"
+    "_kscreenDoctorExe|/usr/bin/kscreen-doctor||optional"
+    "_nvSettingsExe|nvidia-settings||optional"
+    "_primeSelectExe|prime-select||optional"
     "_resetEffectsExe|${_binDir}/kfocus-reset-effects||optional"
-    "_rollbackExe|${_binDir}/kfocus-rollback||optional"
     "_rollbackBackendExe|${_binDir}/kfocus-rollback-backend||optional"
+    "_rollbackExe|${_binDir}/kfocus-rollback||optional"
     "_rollbackSetExe|${_binDir}/kfocus-rollback-set||optional"
-    "_chainHelperExe|${_binDir}/kfocus-chain-helper-ui||optional"
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2ErrStrFn 'Could not assign variables';
@@ -1160,4 +1362,4 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   _mainFn "$@";
 fi
-## . END Run main if script is not sourced }
+## . END Run main if the script is not sourced }

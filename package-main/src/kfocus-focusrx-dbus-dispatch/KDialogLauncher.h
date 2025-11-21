@@ -18,7 +18,8 @@ class KDialogLauncher : public QDBusAbstractAdaptor {
         Error,
         // Rollback-specific
         RollbackLowMainSpace,
-        RollbackLowBootSpace
+        RollbackLowBootSpace,
+        RollbackBulkDataWarn,
     };
 
 public:
@@ -30,14 +31,15 @@ public slots:
     void error(const QString &msg);
     void rollbackLowMainSpace(const QString &msg);
     void rollbackLowBootSpace(const QString &msg);
+    void rollbackBulkDataWarn(const QString &msg);
 
 private slots:
     void cleanupDialog();
     void cleanupSubproc();
 
 private:
-    QList<QProcess *> m_processList;
-    QList<KDialogType> m_typeList;
+    QList<QProcess *> m_kdialogProcessList;
+    QList<KDialogType> m_kdialogTypeList;
     void launchDialog(const KDialogType &type, const QString &msg);
 };
 #endif //KDIALOGLAUNCHER_H

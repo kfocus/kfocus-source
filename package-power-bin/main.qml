@@ -104,9 +104,11 @@ Kirigami.ApplicationWindow {
 
             Kirigami.Heading {
                 id: powerHeading
+                property string cpuid: ""
                 visible: false
-                text: 'Frequency Profile'
+                text: 'Frequency Profile (' + cpuid + ')'
                 level: 3
+                Layout.bottomMargin: PlasmaCore.Units.smallSpacing
             }
 
             GridLayout {
@@ -118,6 +120,7 @@ Kirigami.ApplicationWindow {
                 // Number of columns is set by the logic part
                 Layout.fillWidth: true
                 Repeater {
+                    id: freqRepeater
                     model: profilesModel
                     // Each cell of the grid is a rectangle; we have magic properties that are defined in the
                     // logic part, namely elementName, bold, elementColor, firstElementName
@@ -140,7 +143,7 @@ Kirigami.ApplicationWindow {
                             anchors.left: parent.left
                             anchors.leftMargin: 5
                         }
-                        color: selectedRow ? "gray" : elementColor
+                        color: isHeaderRow || selectedRow ? "gray" : elementColor
                         Layout.preferredWidth: (layout.width - Layout.rightMargin * grid.columns) / grid.columns
                         Layout.rightMargin: 2
                         Layout.preferredHeight: 30 * scaleRatio
@@ -165,15 +168,24 @@ Kirigami.ApplicationWindow {
             }
 
             Controls.Label {
-              id: powerLegend
-              visible: false
-              text: "psave = powersave, PERF = performance"
-              Layout.bottomMargin: PlasmaCore.Units.largeSpacing
+                id: powerLegend
+                visible: false
+                text: `psave = powersave, PERF = performance`
+            }
+
+            Kirigami.InlineMessage {
+                id: cpuInfoMessage
+                Layout.fillWidth: true
+                text: ""
+                visible: false
+                Layout.topMargin: PlasmaCore.Units.smallSpacing
             }
 
             Kirigami.Heading {
                 id: fanControlHeading
-                text: "Fan Profile"
+                property string modelid: ""
+                text: "Fan Profile (" + modelid + ")"
+                Layout.topMargin: PlasmaCore.Units.largeSpacing
                 level: 3
             }
 
@@ -251,17 +263,31 @@ Kirigami.ApplicationWindow {
             onStdoutChanged: {
                 let
                   is_freq_missing_msg = false,
-                  solve_msg = '';
-                stdout.split('\n').forEach(function (line, index) {
+                  solve_msg = '',
+                  stdout_arr = [];
+                stdout_arr = stdout.split('\n');
+                stdout_arr[0].split( ';' ).forEach(function (value, index) {
+                  if ( index === 0 ) {
+                    fanControlHeading.modelid = value;
+                  }
+                  else if ( index === 1 ) {
+                    powerHeading.cpuid = value;
+                  } else if ( index === 2 ) {
+                    if ( value !== '' ) {
+                      cpuInfoMessage.text = value;
+                      cpuInfoMessage.visible = true;
+                    }
+                  }
+                });
+                stdout_arr.splice(0, 1);
+                stdout_arr.forEach(function (line, index) {
                     if ( line === '' ) { return; }
                     if ( line.substring(0,5) === 'title' ) {
                         is_freq_missing_msg = true;
                         let
                           bit_list = line.split('|'),
-                          title_msg = bit_list[0].substring(6, bit_list[0].length),
                           body_msg = bit_list[1].substring(8, bit_list[1].length);
 
-                        powerHeading.text = title_msg;
                         powerHeading.visible = true;
                         solve_msg += body_msg;
                     }
@@ -286,7 +312,8 @@ Kirigami.ApplicationWindow {
                                    'bold'        : index === 0,
                                    'elementColor': subindex === 0
                                       ? profilesModel.gridColors.pop() : 'transparent',
-                                   'firstElementName': first_el_name
+                                   'firstElementName': first_el_name,
+                                   'isHeaderRow' : index === 0
                                 })
 
                                 // There are items in the table, display them

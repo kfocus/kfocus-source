@@ -2,6 +2,9 @@
   getApiVersion, screenGeometry, loadTemplate */
 /* Passes eslint 2024-05-03 */
 
+// TODO: Consider syncing code with
+// package-main/usr/lib/kfocus/plasma/script/createKfocusWidgets.js
+
 loadTemplate("org.kfocus.desktop.defaultPanel");
 
 // Given two points on a curve, return y at x (rounded)
@@ -39,8 +42,8 @@ var
       // Offset widget from edge
       widget_pady_num: 1,
       // Hack to make sure widget fits on 176 DPI
-      widget_h_px  : 994 + gridUnit / 4, 
-      widget_w_px  : 640  
+      widget_h_px  : 994 + gridUnit / 4,
+      widget_w_px  : 640
     },
     medium : {
       // Inverse scale with DPI: Icon height
@@ -122,7 +125,7 @@ function setLayoutFn () {
 
     widget_w_px, widget_w_num,
     widget_h_px, widget_padx_num, widget_pady_num,
-    widget_h_num, widget_x_num, widget_y_num, 
+    widget_h_num, widget_x_num, widget_y_num,
     layout_matrix;
 
   plasma_obj  = getApiVersion(1);

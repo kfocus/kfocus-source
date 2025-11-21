@@ -468,6 +468,9 @@ _audit_cm2ChkPkgFn () {
 # Purpose   : For all in arg list, assign value to global variable <name>
 #   If <type> = 'exe' (default), value is 'command -v <command>'
 #     if found and executable; otherwise ''.
+#     Multiple command paths may be supplied, delimited by a comma.
+#     This is useful if we want to try alternate paths.
+#     The first valid path is used.
 #   If <type> = 'filerw', value is <command> filepath if writable
 #   If <type> = 'filero', value is <command> filepath if readable
 #   If <required> = 'required' (default), a return status of 1 is provided
@@ -497,6 +500,13 @@ _audit_cm2AssignExeVarsFn () {
     'snuggle_bear      | exe    |          | 1 |'
     # Since cmd is not found sets as ''. Ret is 1 because required.
     'snuggle_bear      | exe    | required | 1 |'
+
+    # Find the second path, so returns 0
+    'snuggle_bear,/usr/bin/awk   | exe | required | 0 |/usr/bin/awk'
+    'pizzaX,pizzaY,/usr/bin/tr   | exe | required | 0 |/usr/bin/tr'
+    # No path works, so return 1
+    'pizzaX,pizzaY,/usr/bin/XXNO | exe | required | 1 |'
+
     # Since cmd is not found sets as ''. But ret is 0 since optional.
     'snuggle_bear      | exe    | optional | 0 |'
     'tr                | filero |          | 1 |'
@@ -728,6 +738,7 @@ Press OK to continue.';
 #           : OR via STDERR if in a terminal.
 # Arguments : $1 = Message string, $2 = Full Window Title, $3 = Query type
 #           :   'a' yesno prompt; default answer is 'y'
+#           :   'A' yesno prompt; default answer is 'n'
 #           :   'w' warningyesno prompt; default and is 'y'
 #           :   'p' Simple message box, prompt for return in terminal mode
 #           :   '*' Simple message box prompt, no pause in terminal mode
@@ -747,7 +758,7 @@ _audit_cm2PromptUserFn () {
 
   # TODO: Test whiptail mode!
 
-  _assert_table=( 'a|y' 'a|n' 'w|y' 'w|n' 'p|' );
+  _assert_table=( 'a|y' 'a|n' 'A|n' 'A|n' 'w|y' 'w|n' 'p|' );
   _exit_int=0;
   # shellcheck disable=SC2154
   _is_tty_save="${_cm2IsTty}";
@@ -763,7 +774,7 @@ _audit_cm2PromptUserFn () {
     for _loop_line in "${_assert_table[@]}"; do
       IFS='|' read -r -a _bit_list <<< "${_loop_line}";
       case "${_bit_list[0]}" in
-        a) _type_str='YesNo';;
+        [aA]) _type_str='YesNo';;
         w) _type_str='Warn';;
         p) _type_str='Msg';
            [ "${_is_tty}" = 'y' ] && _type_str+=' (prompt)';;

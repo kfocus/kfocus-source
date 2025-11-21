@@ -54,6 +54,8 @@ _chkCopyFile () {
 }
 
 _echoUsage () {
+  ## TODO: This shows kfocus-shrinkpdf while this is symlinked as shrinkpdf,
+  #    which is confusing.
   cat << _EOH
 Usage: ${_baseName} [-d DPI] INFILE [OUTFILE]
 

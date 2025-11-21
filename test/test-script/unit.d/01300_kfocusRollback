@@ -36,7 +36,7 @@ _overwriteWithMocksFn () {
   }
 
   # shellcheck disable=SC2317
-  _getManualSwitchStateBackendFn () {
+  _getManualSwitchStateFn () {
     echo "${_manualSwitchStateStr}";
   }
 
@@ -666,7 +666,7 @@ _runTestFn () {
     fi
     ## . End Check diffs }
       (( _assert_idx++ ));
-    
+
     # Make sure the next assert doesn't have garbage from the previous one in
     # the way
     if ! _t00ClearRunDirFn; then return 1; fi

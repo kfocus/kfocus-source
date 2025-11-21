@@ -1,0 +1,82 @@
+#!/bin/bash
+
+# shellcheck source=../kfocus-btool
+
+_minBiosVers='1.07.07MIN29';
+_availBiosVers='1.07.12MIN29';
+_biosDownloadUrl='https://f005.backblazeb2.com/file/kfocus-bios/m2g4_2022-12-08_PD5xPNP12_MIN29.efi.zip'
+_upgradeReasonMsg="$(cat <<EOF
+VERSION 1.07.12MIN29:
+  * Fixes stability issues that occurred with some RAM modules
+    in versions prior to 1.07.07MIN29.
+EOF
+)";
+_installStepsMsg="$(cat <<EOF
+Now that you have prepared the USB Drive, follow these steps to upgrade
+the BIOS. We recommend you print these steps for your reference.
+
+* Power off the target M2 GEN 4 laptop you wish to upgrade.
+
+* Plug the power adaptor and the freshly prepared Thumb Drive
+  into the laptop.
+
+* Boot the laptop. Tap F2 to get to the BIOS screen. If you see
+  the disk decrypt screen, the login screen, or the grub menu, you've
+  missed it. Power off and try again.
+
+* Select the top-center 'Boot Manager' option and then select
+  the USB Drive. Press return to boot.
+
+* The system will boot into a text interface with white and
+  colored text on a black background. At the prompt, type 'flash' and
+  press return to begin the upgrade process.
+
+* Let the upgrade process complete. This may take up to 5
+  minutes. DO NOT press the power button, DO NOT remove the USB Drive,
+  DO NOT unplug the power! The laptop will reboot by itself.
+
+* Run this tool on the upgraded system to confirm the BIOS
+  is up-to-date: 'sudo ${_baseName} -o'
+EOF
+)";
+
+# See ../kfocus-btool for available global variables
+# common.2.source functions are available
+_flashBiosFn () {
+  declare _msg;
+
+  _cm2EchoFn "Wipe and install to ${_targetUsbDev}";
+  # See https://superuser.com/questions/332252
+  {
+    echo 'o'; # Create a DOS partition table
+
+    echo 'n'; # Create a new partition
+    echo 'p'; # Select primary
+    echo '1'; # PartID 1
+    echo;     # Start sector (default)
+    echo;     # End sector (default)
+
+    echo 'a'; # Set bootable flag
+    echo 'c'; # Set DOS compatibility flag
+    echo 'w'; # Write changes to disk
+  } | fdisk -walways -Walways "${_targetUsbDev}"                 || return 1;
+
+  # Give the kernel time to refresh partition tables
+  sleep 1;
+
+  mkfs.fat -F32 "${_targetUsbDev}1"                              || return 1;
+  _usbTmpMountDir="${_tmpDir}/usbMount";
+  mkdir -p "${_usbTmpMountDir}"                                  || return 1;
+  mount "${_targetUsbDev}1" "${_usbTmpMountDir}"                 || return 1;
+  unzip -oP 'password' -d "${_usbTmpMountDir}" "${_tmpBiosFile}" || return 1;
+  if ! (
+    # Using 'exit' rather than return because we're in a subshell.
+    cd "${_usbTmpMountDir}"                                      || exit 1;
+    mkdir -p  'EFI/Insyde'                                       || exit 1;
+    chmod 775 'EFI/Insyde'                                       || exit 1;
+  ); then return 1; fi
+  sync "${_usbTmpMountDir}"                                      || return 1;
+  umount "${_usbTmpMountDir}"                                    || return 1;
+  _msg="${_baseName}: Wrote M2 GEN 4 ${_availBiosVers} BIOS to USB Device.";
+  _cm2EchoFn "${_msg}";
+}

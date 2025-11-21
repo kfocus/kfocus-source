@@ -25,6 +25,7 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    // Inhibit screen lock on live session, see (#5164)
     uid_t uid;
     struct passwd *pw;
     uid = geteuid();

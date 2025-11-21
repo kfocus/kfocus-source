@@ -17,12 +17,8 @@ Kirigami.ApplicationWindow {
             derivateSnapshotModelFn();
             fillPartitionHealthTableFn();
 
-            createSnapshotView.actionsEnabled = true;
-            optimizeDiskView.actionsEnabled   = true;
-            deleteSnapshotView.actionsEnabled = true;
-
             if ( !firstInitDone ) {
-                switchViewFn( snapshotView, snapshotView );
+                switchViewFn( snapshotView );
                 if ( backend.mainSpaceLow ) {
                     lowDiskOverlay.visible = true;
                 } else if ( backend.bootSpaceLow ) {
@@ -33,16 +29,16 @@ Kirigami.ApplicationWindow {
                 pageStack.push( mainPage );
                 firstInitDone = true;
             } else {
-                switchViewFn( sysRefreshSourceView, sysRefreshTargetView );
+                switchViewFn( sysRefreshTargetView );
             }
-
-            backend.inhibitClose = false;
+            resetUiStateFn()
         }
     }
 
     // == BEGIN Models ================================================
     // Set Global Properties
     property bool   firstInitDone            : false
+    property var    lastSetView
     property var    sysRefreshSourceView
     property var    sysRefreshTargetView
     property int    disabledSnapshotBarIndex : 0
@@ -50,6 +46,7 @@ Kirigami.ApplicationWindow {
     property string compareSourceIdStr       : ''
     property string compareTargetIdStr       : ''
     property string compareResultStr         : ''
+    property string authAttemptAction        : ''
     property string rollbackStr              : backend.pkexecExe
       + ' '
       + backend.rollbackBackendExe
@@ -102,7 +99,7 @@ Kirigami.ApplicationWindow {
 
         Kirigami.BasicListItem {
             font.family : "courier"
-            label       : date + ' ' + size
+            label       : date + ' ' + genSnapshotSizeStrFn(mainSize, bootSize)
             subtitle    : name
             icon        : getIconForReasonFn( reason )
             trailing    : Kirigami.Icon {
@@ -116,7 +113,7 @@ Kirigami.ApplicationWindow {
 
         Kirigami.BasicListItem {
             font.family : "courier"
-            label       : date + ' ' + size
+            label       : date + ' ' + genSnapshotSizeStrFn(mainSize, bootSize)
             subtitle    : name
             icon        : getIconForReasonFn( reason )
             trailing    : Kirigami.Icon {
@@ -134,14 +131,18 @@ Kirigami.ApplicationWindow {
     Component {
         id: globalHelpWindowComponent
         HelpWindow {
-            helpText: `<p>These are actions that do not pertain to a specific
-              snapshot.</p>
+            helpText: `<p>These are actions that do not pertain to a
+              specific snapshot.</p>
 
-              <p><b><font color="#f7941d">`
-              + automaticSnapshotsLabel
+              <p><b><font color="#f7941d">` + automaticSnapshotsLabel
               + `</font></b> - When enabled, take snapshots without
-              intervention before apt software changes; or at least once a
-              week.</p>
+              intervention before system (<code>APT</code>) software
+              changes, or at least once per week.</p>
+
+              <p><i>This option provides more frequent snapshots, but
+              requires additional oversight to avoid filling the root
+              (<code>/</code>) and boot (<code>/boot</code>)
+              filesystems.</i></p>
 
               <p><b><font color="#f7941d">` + calculateSnapshotSizesLabel
               + `</font></b> - Calculate and display the estimated space
@@ -149,37 +150,31 @@ Kirigami.ApplicationWindow {
               amount of space shown.</p>
 
               <p><b><font color="#f7941d">` + createSnapshotLabel
-              + `</font></b> - Immediately create a snapshot of the
-              current system state. This includes the /boot and root
-              filesystems. This snapshot can be restored later as needed.</p>
+              + `</font></b> - Create a snapshot of the current root
+              (<code>/</code>) and boot (<code>/boot</code>) filesystems.</p>
 
               <p><b><font color="#f7941d">` + optimizeDiskLabel
-              + `</font></b> - Delete all snapshots, defragment files as
-              needed, recover unreachable space, and consolidate data on the
-              boot disk. Use this to maximize available free space and improve
-              performance.</p>
-              `
+              + `</font></b> - Use Quick Clean to free up unallocated space.
+              Use Deep Clean to delete all snapshots, defragment files,
+              recover unreachable space, and consolidate data.</p>`
+
             helpTitle: 'Global Actions Help'
         }
     }
 
+    // System Rollback correlates
+    // same-point-in-time snapshots for both the root (<code>/</code>)
+    // and boot (<code>/boot</code>) filesystems. This helps ensure
+    // that rollback data is always consistent.</p>
     Component {
         id: partitionHealthHelpWindowComponent
         HelpWindow {
-            helpText: `<p>This table shows disk usage for the system
-              partitions that this tool may affect.</p>
+            helpText: `<p>These are health metrics of the partitions
+              used in snapshots.</p>
 
               <p><b><font color="#f7941d">Mount</font></b> -
-              The filesystem's mount point. System Rollback keeps snapshots
-              for both the root (<code>/</code>) and boot (<code>/boot</code>)
-              filesystems correlated so there are no data inconsistencies.</p>
-
-              <p><b><font color="#f7941d">Status</font></b> - Disk space
-              status. "<font color="#27ae60"><code>Good</code></font>" means
-              that disk space is sufficient.
-              "<font color="#da4453"><code>ALERT</code></font>" means that
-              disk space is low. Delete files or snapshots to free up disk
-              space.</p>
+              The filesystem mount point, either root (<code>/</code>)
+              or boot (<code>/boot</code>).</p>
 
               <p><b><font color="#f7941d">Size GiB</font></b> -
               Filesystem size, in gigabytes.</p>
@@ -187,9 +182,18 @@ Kirigami.ApplicationWindow {
               <p><b><font color="#f7941d">Remain GiB</font></b> -
               Remaining free space on the filesystem.</p>
 
-              <p><b><font color="#f7941d">Unalloc %</font></b> -
-              Percentage of unallocated space left on the filesystem.
-              Unallocated space should exceed 15% at all times.</p>`
+              <p><b><font color="#f7941d">Unalloc</font></b> -
+              Percentage of unallocated space available on the filesystem.
+              Root (<code>/</code>) unallocated space should always exceed
+              15%, and boot (<code>/boot</code>) should always exceed 25%.</p>
+
+              <p><b><font color="#f7941d">Status</font></b> - Disk space
+              status. "<font color="#27ae60"><code>Good</code></font>" means
+              that disk space is sufficient.
+              "<font color="#da4453"><code>ALERT</code></font>" means that
+              disk space is low. Delete files or snapshots to free up disk
+              space.</p>`
+
             helpTitle: 'Partition Health Help'
         }
     }
@@ -197,27 +201,29 @@ Kirigami.ApplicationWindow {
     Component {
         id: snapshotsHelpWindowComponent
         HelpWindow {
-            helpText: `<p>These are snapshot-specific view and edit
-              controls.</p>
+            helpText: `<p>These are actions for the selected snapshot.</p>
 
-              <p><b><font color="#f7941d">Restore</font></b> - Roll back
-              the system to the selected snapshot. The system will reboot
-              automatically during the restore process.</p>
+              <p><b><font color="#f7941d">Restore</font></b> -
+              Rollback the system to the selected snapshot. The
+              system reboots automatically during the restore process. Data in
+              the <code>/home</code> directory is unaffected.</p>
 
-              <p><b><font color="#f7941d">Compare With</font></b> -
-              Shows the difference between any two snapshots, or between a
-              snapshot and the current system state.</p>
+              <p><b><font color="#f7941d">Compare</font></b> -
+              Show the differences between the selected snapshot and
+              the current system state. Or compare to another snapshot.</p>
 
               <p><b><font color="#f7941d">Delete</font></b> -
               Remove the selected snapshot from the disk permanently.</p>
 
               <p><b><font color="#f7941d">Protect</font></b> -
-              Toggle protection on the selected snapshot. Older unprotected
-              snapshots may be automatically removed to reclaim disk space.</p>
+              Toggle protection on the selected snapshot. System Rollback may
+              automatically remove older, unprotected snapshots to reclaim
+              disk space.</p>
 
-              <p><b><font color="#f7941d">Edit</font></b> - Change
-              the name, description, or protction of the selected
+              <p><b><font color="#f7941d">Edit</font></b> -
+              Change the name, description, or protection of the selected
               snapshot.</p>`
+
             helpTitle: 'Snapshots Help'
         }
     }
@@ -356,7 +362,14 @@ Kirigami.ApplicationWindow {
                             Layout.fillWidth: true
                         }
                         Controls.Label {
-                            text: "Running a large database? See <a href=\"https://kfocus.org/wf/db#bkm_move_large_databases\">this advice</a>."
+                            text: backend.bulkDataList.length === 0
+                              ? 'Avoid big data on root FS. See '
+                              + '<a href="https://kfocus.org/wf/big-data.html">'
+                              + 'this advice</a>.'
+                              : '⚠️ <font color="#f7941d">Big data found on '
+                              + 'root.</font> '
+                              + '<a href="large-snapshot-warn">Learn to '
+                              + 'fix</a><font color=\"#f7941d\">.</font>'
                             enabled: !uiLocked
                             color            : uiLocked
                               ? Kirigami.Theme.disabledTextColor
@@ -364,7 +377,14 @@ Kirigami.ApplicationWindow {
                             linkColor        : uiLocked
                               ? Kirigami.Theme.disabledTextColor
                               : Kirigami.Theme.linkColor
-                            onLinkActivated: Qt.openUrlExternally(link)
+                            onLinkActivated : {
+                                if ( link === 'large-snapshot-warn' ) {
+                                    backend.enableBulkDataWarning();
+                                    bulkDataOverlay.visible = true;
+                                } else {
+                                    Qt.openUrlExternally(link);
+                                }
+                            }
                         }
                     }
 
@@ -407,30 +427,57 @@ Kirigami.ApplicationWindow {
                             }
                         }
 
-                        Controls.Button {
-                            Layout.bottomMargin   :
+                        Rectangle {
+                            Layout.bottomMargin    :
                               Kirigami.Units.gridUnit * 0.45
-                            text                  : createSnapshotLabel
-                            icon.name             : 'document-new'
-                            Layout.preferredWidth : (mainPage.width / 4)
+                            Layout.preferredWidth  : (mainPage.width / 4)
                               - Kirigami.Units.gridUnit * 0.36
-                            Layout.alignment      : Qt.AlignRight
-                            enabled               : !uiLocked
-                              && !backend.mainSpaceLow
-                              && !backend.bootSpaceLow
-                            onClicked             : {
-                                switchViewFn(
-                                  snapshotView, createSnapshotView
-                                )
+                            Layout.alignment       : Qt.AlignRight
+                            Layout.preferredHeight :
+                              createSnapshotButton.implicitHeight
+                            color                  :
+                              Kirigami.Theme.alternateBackgroundColor
+
+                            Controls.Button {
+                                id           : createSnapshotButton
+                                anchors.fill : parent
+                                text         : createSnapshotLabel
+                                icon.name    : 'document-new'
+                                enabled      : !uiLocked
+                                  && !backend.mainSpaceLow
+                                  && !backend.bootSpaceLow
+                                onClicked    : {
+                                    switchViewFn( createSnapshotView );
+                                }
+
+                                HoverHandler {
+                                    cursorShape: Qt.PointingHandCursor
+                                }
                             }
 
-                            HoverHandler {
-                                cursorShape: Qt.PointingHandCursor
+                            Rectangle {
+                                width   : createSnapshotButton.width
+                                height  : createSnapshotButton.height
+                                visible : backend.mainSpaceLow
+                                  || backend.bootSpaceLow
+                                opacity : 0
+
+                                HoverHandler {
+                                    id: createSnapshotDisableHover
+                                }
+
+                                Controls.ToolTip {
+                                    visible :
+                                      createSnapshotDisableHover.hovered
+                                    text    :
+                                      'Disk space low, cannot create snapshot'
+                                }
                             }
                         }
 
                         Controls.Button {
-                            text                  : calculateSnapshotSizesLabel
+                            text                  :
+                                calculateSnapshotSizesLabel
                             icon.name             : 'disk-quota'
                             Layout.preferredWidth : (mainPage.width / 4)
                               - Kirigami.Units.gridUnit * 0.36
@@ -441,7 +488,8 @@ Kirigami.ApplicationWindow {
                                 cursorShape: Qt.PointingHandCursor
                             }
 
-                            onClicked             : calculateSnapshotSizesFn();
+                            onClicked             :
+                                switchViewFn( calculateSnapshotView );
                         }
 
                         Controls.Button {
@@ -452,7 +500,7 @@ Kirigami.ApplicationWindow {
                             Layout.alignment      : Qt.AlignRight
                             enabled               : !uiLocked;
                             onClicked             : {
-                                switchViewFn( snapshotView, optimizeDiskView )
+                                switchViewFn( optimizeDiskView );
                             }
 
                             HoverHandler {
@@ -518,12 +566,12 @@ Kirigami.ApplicationWindow {
                         }
                         Controls.Button {
                             icon.name : 'view-refresh'
-                            text      : 'Refresh'
+                            text      : 'Refresh All'
                             enabled   : !uiLocked
                             onClicked : {
                                 sysRefreshSourceView = refreshSnapshotView;
                                 sysRefreshTargetView = snapshotView;
-                                switchViewFn( snapshotView, refreshSnapshotView );
+                                switchViewFn( refreshSnapshotView );
                                 refreshSystemDataFn( false );
                             }
                         }
@@ -537,12 +585,6 @@ Kirigami.ApplicationWindow {
 
                         Controls.Label {
                             text  : 'Mount'
-                            color : uiLocked
-                              ? Kirigami.Theme.disabledTextColor
-                              : Kirigami.Theme.textColor
-                        }
-                        Controls.Label {
-                            text  : 'Status'
                             color : uiLocked
                               ? Kirigami.Theme.disabledTextColor
                               : Kirigami.Theme.textColor
@@ -562,9 +604,16 @@ Kirigami.ApplicationWindow {
                               : Kirigami.Theme.textColor
                         }
                         Controls.Label {
-                            text             : 'Unalloc %'
+                            text             : 'Unalloc'
                             Layout.alignment : Qt.AlignRight
                             color            : uiLocked
+                              ? Kirigami.Theme.disabledTextColor
+                              : Kirigami.Theme.textColor
+                        }
+                        Controls.Label {
+                            text  : 'Status'
+                            Layout.alignment : Qt.AlignRight
+                            color : uiLocked
                               ? Kirigami.Theme.disabledTextColor
                               : Kirigami.Theme.textColor
                         }
@@ -577,16 +626,6 @@ Kirigami.ApplicationWindow {
                             color       : uiLocked
                               ? Kirigami.Theme.disabledTextColor
                               : Kirigami.Theme.textColor
-                        }
-                        Controls.Label {
-                            id          : mainPartStatusStr
-                            text        : ''
-                            font.family : 'courier'
-                            color : uiLocked
-                              ? Kirigami.Theme.disabledTextColor
-                              : text === 'Good'
-                                ? Kirigami.Theme.positiveTextColor
-                                : Kirigami.Theme.negativeTextColor
                         }
                         Controls.Label {
                             id               : mainPartSizeStr
@@ -615,6 +654,17 @@ Kirigami.ApplicationWindow {
                               ? Kirigami.Theme.disabledTextColor
                               : Kirigami.Theme.textColor
                         }
+                        Controls.Label {
+                            id          : mainPartStatusStr
+                            text        : ''
+                            font.family : 'courier'
+                            Layout.alignment : Qt.AlignRight
+                            color : uiLocked
+                              ? Kirigami.Theme.disabledTextColor
+                              : text === 'Good >15%'
+                                ? Kirigami.Theme.positiveTextColor
+                                : Kirigami.Theme.negativeTextColor
+                        }
 
                         // -----
 
@@ -624,16 +674,6 @@ Kirigami.ApplicationWindow {
                             color       : uiLocked
                               ? Kirigami.Theme.disabledTextColor
                               : Kirigami.Theme.textColor
-                        }
-                        Controls.Label {
-                            id          : bootPartStatusStr
-                            text        : ''
-                            font.family : 'courier'
-                            color       : uiLocked
-                              ? Kirigami.Theme.disabledTextColor
-                              : text === 'Good'
-                                ? Kirigami.Theme.positiveTextColor
-                                : Kirigami.Theme.negativeTextColor
                         }
                         Controls.Label {
                             id               : bootPartSizeStr
@@ -662,6 +702,17 @@ Kirigami.ApplicationWindow {
                               ? Kirigami.Theme.disabledTextColor
                               : Kirigami.Theme.textColor
                         }
+                        Controls.Label {
+                            id          : bootPartStatusStr
+                            text        : ''
+                            font.family : 'courier'
+                            Layout.alignment : Qt.AlignRight
+                            color       : uiLocked
+                              ? Kirigami.Theme.disabledTextColor
+                              : text === 'Good >25%'
+                                ? Kirigami.Theme.positiveTextColor
+                                : Kirigami.Theme.negativeTextColor
+                        }
                     }
                 }
             }
@@ -675,6 +726,20 @@ Kirigami.ApplicationWindow {
                         return Kirigami.Theme.alternateBackgroundColor;
                     } else {
                         return Kirigami.Theme.activeBackgroundColor;
+                    }
+                }
+
+                Controls.Label {
+                    text        : '               Size GiB:  / [/boot]'
+                    font.family : 'courier'
+                    visible     : backend.snapshotSizeInfoPresent
+                    color       : uiLocked
+                      ? Kirigami.Theme.disabledTextColor
+                      : Kirigami.Theme.textColor
+                    anchors {
+                        left         : parent.left
+                        bottom       : snapshotListView.top
+                        bottomMargin : Kirigami.Units.gridUnit * 0.20
                     }
                 }
 
@@ -799,10 +864,12 @@ Kirigami.ApplicationWindow {
                     id          : snapshotView
                     date        : snapshotModel.get(
                       snapshotBar.currentIndex).date
-                    dayofweek     : snapshotModel.get(
+                    dayofweek   : snapshotModel.get(
                       snapshotBar.currentIndex).dayofweek
-                    size        : snapshotModel.get(
-                      snapshotBar.currentIndex).size
+                    mainSize    : snapshotModel.get(
+                      snapshotBar.currentIndex).mainSize
+                    bootSize    : snapshotModel.get(
+                      snapshotBar.currentIndex).bootSize
                     name        : snapshotModel.get(
                       snapshotBar.currentIndex).name
                     reason      : snapshotModel.get(
@@ -821,7 +888,7 @@ Kirigami.ApplicationWindow {
                         prepRestoreSnapshotFn( snapshotBar.currentIndex );
                     }
                     onCompareClicked : {
-                        switchViewFn( snapshotView, compareSnapshotView );
+                        switchViewFn( compareSnapshotView );
                     }
                     onEditingChanged : {
                         disabledSnapshotBarIndex = snapshotBar.currentIndex;
@@ -841,26 +908,27 @@ Kirigami.ApplicationWindow {
                         let outputStr
                           = '<p>No snapshots exist. Create one '
                           + 'by clicking "' + createSnapshotLabel + '" '
-                          + 'above.</p>'
-                          + '<br>';
+                          + 'above.</p><br>';
                         if ( automaticSnapshotsSwitch.checked ) {
-                              outputStr
-                                += '<p>The system will automatically '
-                                + 'take snapshots periodically.</p>';
-                        } else {
-                              outputStr
-                                += '<p>If you would like snapshots '
-                                + 'to be taken automatically, switch on '
-                                + '<a href="enable-automatic-snapshots">'
-                                + 'automatic snapshots</a>.</p>';
+                          outputStr
+                            += '<p>' + automaticSnapshotsLabel + ' are '
+                            + 'enabled. The system will take snapshots '
+                            + 'without intervention before system '
+                            + '(<code>APT</code>) software changes, or at '
+                            + 'least once per week.<p>'
+
+                            + '<p><i>This option provides more frequent '
+                            + 'snapshots, but requires additional oversight '
+                            + 'to avoid filling the root (/) or boot (/boot) '
+                            + 'filesystems.</i></p>';
+                        }
+                        else {
+                          outputStr
+                            += '<p>' + automaticSnapshotsLabel + ' are '
+                            + 'disabled. The system will only take '
+                            + 'snapshots on your command.</p>';
                         }
                         return outputStr;
-                    }
-                    onLinkActivated : {
-                        if ( link === 'enable-automatic-snapshots' ) {
-                            automaticSnapshotsSwitch.checked = true
-                            switchAutomaticSnapshotsFn();
-                        }
                     }
                     visible         : false
                 }
@@ -879,7 +947,7 @@ Kirigami.ApplicationWindow {
 
                     onOkAction  : createSnapshotFn()
                     onCancelled : {
-                        switchViewFn( createSnapshotView, snapshotView );
+                        switchViewFn( snapshotView );
                     }
                 }
 
@@ -901,7 +969,7 @@ Kirigami.ApplicationWindow {
                       + '</p>'
 
                     onOkClicked : {
-                        switchViewFn( createSnapshotErrorView, snapshotView );
+                        switchViewFn( snapshotView );
                     }
                 }
 
@@ -940,14 +1008,6 @@ Kirigami.ApplicationWindow {
                       + 'ALL snapshots, including ALL PINNED SNAPSHOTS. This '
                       + 'cannot be undone.</font></b></p>'
 
-                      /*+ '<p><ul><li>Click "Quick Clean" to free up '
-                      + 'unallocated space in a few seconds. Existing '
-                      + 'snapshots are retained.</li><br><li>Click "Deep '
-                      + 'Clean" to free up as much space as possible. This '
-                      + 'typically takes 30-60 seconds. '
-                      + '<b><font color="#da4453">WARNING: This will delete '
-                      + 'ALL snapshots, including ALL PINNED SNAPSHOTS. This '
-                      + 'cannot be undone.</font></b></li></ul></p>'*/
                     acceptText       : 'Quick Clean'
                     acceptIcon       : 'edit-clear-all'
                     accept2Text      : 'Deep Clean'
@@ -958,7 +1018,7 @@ Kirigami.ApplicationWindow {
                     onOkAction    : balanceDiskFn()
                     onOk2Action   : optimizeDiskFn()
                     onCancelled   : {
-                        switchViewFn( optimizeDiskView, snapshotView );
+                        switchViewFn( snapshotView );
                     }
                 }
 
@@ -979,20 +1039,52 @@ Kirigami.ApplicationWindow {
                       + 'or reboot the system until this is finished!</font></b>'
                 }
 
+                ConfirmScreenItem {
+                    id               : calculateSnapshotView
+                    visible          : false
+                    infoText         : '<p>System Rollback is now ready to '
+                      + 'calculate snapshot sizes.</p>'
+                      + '<br>'
+                      + '<p>This calculation usually requires 10-20 seconds '
+                      + 'per snapshot. Therefore, if you have six snapshots, '
+                      + 'this calculation may require 60-120 seconds to '
+                      + 'finish.</p>'
+
+                    acceptText       : 'Calculate'
+                    acceptIcon       : 'disk-quota'
+
+                    onOkAction    : calculateSnapshotSizesFn();
+                    onCancelled   : {
+                        switchViewFn( snapshotView );
+                    }
+                }
+
                 WaitScreenItem {
                     id          : calculateSnapshotWaitView
                     visible     : false
                     headerText  : 'Calculating snapshot sizes...'
                     description : 'This calculation usually requires '
                       + '10-20 seconds per snapshot. Therefore, if you have '
-                      + '6 snapshots, the calculation may require 60-120 '
+                      + 'six snapshots, the calculation may require 60-120 '
                       + 'seconds to finish.'
                 }
 
                 WaitScreenItem {
                     id          : automaticSnapshotSwitchView
                     visible     : false
-                    headerText  : 'Toggling automatic snapshots...'
+                    headerText  : 'Toggling ' + automaticSnapshotsLabel + '...'
+                }
+
+                ErrorScreenItem {
+                    id          : automaticSnapshotSwitchFailedView
+                    visible     : false
+                    infoText    : '<p>System Rollback failed to toggle '
+                      + 'autonatic snapshotting. Please close and restart '
+                      + 'this tool and try again. If this issue persists, '
+                      + 'please contact your system administrator.</p>'
+                    onOkClicked : {
+                        switchViewFn( snapshotView );
+                    }
                 }
 
                 WaitScreenItem {
@@ -1017,7 +1109,7 @@ Kirigami.ApplicationWindow {
                         deleteSnapshotFn( snapshotBar.currentIndex );
                     }
                     onCancelled   : {
-                        switchViewFn( deleteSnapshotView, snapshotView );
+                        switchViewFn( snapshotView );
                     }
                 }
 
@@ -1038,7 +1130,7 @@ Kirigami.ApplicationWindow {
                       + 'this issue persists.</p>';
 
                     onOkClicked   : {
-                        switchViewFn( deleteSnapshotErrorView, snapshotView );
+                        switchViewFn( snapshotView );
                     }
                 }
 
@@ -1058,7 +1150,7 @@ Kirigami.ApplicationWindow {
                         restoreSnapshotFn( snapshotBar.currentIndex );
                     }
                     onCancelled   : {
-                        switchViewFn( restoreSnapshotView, snapshotView );
+                        switchViewFn( snapshotView );
                     }
                 }
 
@@ -1081,7 +1173,7 @@ Kirigami.ApplicationWindow {
                       + 'persists.</p>'
 
                     onOkClicked   : {
-                        switchViewFn( restoreSnapshotErrorView, snapshotView )
+                        switchViewFn( snapshotView );
                     }
                 }
 
@@ -1096,7 +1188,7 @@ Kirigami.ApplicationWindow {
                         );
                     }
                     onCancelled      : {
-                        switchViewFn( compareSnapshotView, snapshotView );
+                        switchViewFn( snapshotView );
                     }
                 }
 
@@ -1124,7 +1216,17 @@ Kirigami.ApplicationWindow {
                       + 'you may have failed to enter your password when '
                       + 'prompted.</p>'
                     onOkClicked : {
-                        switchViewFn( saveEditsFailedView, snapshotView );
+                        switchViewFn( snapshotView );
+                    }
+                }
+
+                ErrorScreenItem {
+                    id          : authFailedView
+                    visible     : false
+                    infoText    : '<p>' + authAttemptAction + ' was cancelled because valid authorization was not provided.</p>'
+                    onOkClicked : {
+                        resetUiStateFn()
+                        switchViewFn( snapshotView );
                     }
                 }
             }
@@ -1259,6 +1361,40 @@ Kirigami.ApplicationWindow {
                 Qt.quit();
             }
         }
+
+        OverlayAlertItem {
+            id: bulkDataOverlay
+            isVisible: ((backend.bulkDataList.length !== 0)
+              && (backend.bulkDataWarningEnabled))
+            mainIcon: 'dialog-warning'
+            headerText: 'Big Data Found on Root FS'
+            mainText: 'You have big data on the following locations of the '
+              + 'root filesystem:<br><ul>'
+              + genBulkDataListStrFn( backend.bulkDataList )
+              + '</ul><br>'
+              + 'This data will be included in snapshots. If left as-is, '
+              + 'big data apps, such as databases or containers, may cause '
+              + 'snapshots to rapidly grow in size during routine operation '
+              + 'and maintenance.<br>'
+              + '<br>'
+              + 'We strongly recommend you move this data to a mount point '
+              + 'that is not included in snapshots, such as /home. See '
+              + '<a href="https://kfocus.org/wf/big-data.html">'
+              + 'this advice</a> for guidance.'
+            primaryButtonText: 'Continue'
+            primaryButtonIcon: 'go-next-symbolic'
+            secondaryButtonText: 'Don\'t Show Again'
+            secondaryButtonIcon: 'go-next-skip'
+            showSecondaryButton: true
+
+            onPrimaryButtonClicked: {
+                bulkDataOverlay.visible = false;
+            }
+            onSecondaryButtonClicked: {
+                backend.disableBulkDataWarning();
+                bulkDataOverlay.visible = false;
+            }
+        }
     }
     // == . END Views =================================================
 
@@ -1266,8 +1402,12 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id          : createSnapshotEngine
         onAppExited : {
-            sysRefreshSourceView = createSnapshotWaitView
-            if ( exitCode === 0 || exitCode === 127 ) {
+            if ( exitCode === 127 ) {
+                switchViewFn( authFailedView );
+                return;
+            }
+            sysRefreshSourceView = createSnapshotWaitView;
+            if ( exitCode === 0 ) {
                 sysRefreshTargetView = snapshotView;
             } else if ( exitCode === 1 ) {
                 sysRefreshTargetView = createSnapshotErrorView;
@@ -1281,8 +1421,12 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id          : balanceDiskEngine
         onAppExited : {
+            if ( exitCode === 127 ) {
+                switchViewFn( authFailedView );
+                return;
+            }
             sysRefreshSourceView = balanceDiskWaitView;
-            if ( exitCode === 0 || exitCode === 127 ) {
+            if ( exitCode === 0 ) {
                 sysRefreshTargetView = snapshotView;
             } else {
                 sysRefreshTargetView = criticalErrorView;
@@ -1294,8 +1438,12 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id          : optimizeDiskEngine
         onAppExited : {
+            if ( exitCode === 127 ) {
+                switchViewFn( authFailedView );
+                return;
+            }
             sysRefreshSourceView = optimizeDiskWaitView;
-            if ( exitCode === 0 || exitCode === 127 ) {
+            if ( exitCode === 0 ) {
                 sysRefreshTargetView = snapshotView;
             } else {
                 sysRefreshTargetView = criticalErrorView;
@@ -1307,8 +1455,19 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id          : automaticSnapshotToggleEngine
         onAppExited : {
+            if ( exitCode === 127 ) {
+                switchViewFn( authFailedView );
+                automaticSnapshotsSwitch.checked = Qt.binding(function() {
+                    return backend.automaticSnapshotsEnabled;
+                });
+                return;
+            }
             sysRefreshSourceView = automaticSnapshotSwitchView;
-            sysRefreshTargetView = snapshotView;
+            if ( exitCode === 0 ) {
+                sysRefreshTargetView = snapshotView;
+            } else {
+                sysRefreshTargetView = automaticSnapshotSwitchFailedView;
+            }
             refreshSystemDataFn( false );
         }
     }
@@ -1316,8 +1475,12 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id          : deleteSnapshotEngine
         onAppExited : {
+            if ( exitCode === 127 ) {
+                switchViewFn( authFailedView );
+                return;
+            }
             sysRefreshSourceView = deleteSnapshotWaitView;
-            if ( exitCode === 0 || exitCode === 127 ) {
+            if ( exitCode === 0 ) {
                 sysRefreshTargetView = snapshotView;
             } else if ( exitCode === 1 ) {
                 sysRefreshTargetView = deleteSnapshotErrorView;
@@ -1334,11 +1497,11 @@ Kirigami.ApplicationWindow {
             if ( exitCode === 0 ) {
                 execSync( 'systemctl reboot -i' );
             } else if ( exitCode === 127 ) {
-                switchViewFn( restoreSnapshotWaitView, snapshotView );
+                switchViewFn( authFailedView );
             } else if ( exitCode === 1 ) {
-                switchViewFn( restoreSnapshotWaitView, restoreSnapshotErrorView );
+                switchViewFn( restoreSnapshotErrorView );
             } else {
-                switchViewFn( restoreSnapshotWaitView, criticalErrorView );
+                switchViewFn( criticalErrorView );
             }
             backend.inhibitClose = false;
             restoreSnapshotView.actionsEnabled = true;
@@ -1348,23 +1511,29 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id          : compareSnapshotsEngine
         onAppExited : {
-            let snapInfo
-              = snapshotModel.get(snapshotBar.currentIndex);
+            if ( exitCode === 127 ) {
+                switchViewFn( authFailedView );
+                return;
+            }
+            let snapInfo = snapshotModel.get(snapshotBar.currentIndex);
             let dupSnapInfo
-              = derivSnapshotModel.get(compareSnapshotView.compareIndex)
-            compareSourceIdStr
-              = snapInfo.date + ' - ' + snapInfo.name;
-            compareTargetIdStr
-              = dupSnapInfo.date + ' - ' + dupSnapInfo.name;
-            compareResultStr = stdout;
+              = derivSnapshotModel.get(compareSnapshotView.compareIndex);
+            compareSourceIdStr = snapInfo.date + ' - ' + snapInfo.name;
+            compareTargetIdStr = dupSnapInfo.date + ' - ' + dupSnapInfo.name;
+            compareResultStr   = stdout;
             showWindowFn( snapshotCompareWindowComponent );
-            switchViewFn( compareSnapshotWaitView, snapshotView );
+            switchViewFn( snapshotView );
         }
     }
 
     ShellEngine {
         id: saveEditsEngine
         onAppExited: {
+            if ( exitCode === 127 ) {
+                switchViewFn( authFailedView );
+                restoreSnapshotViewBindingsFn();
+                return;
+            }
             if ( exitCode === 0 ) {
                 snapshotModel.get(snapshotBar.currentIndex).name
                   = snapshotView.name;
@@ -1372,22 +1541,40 @@ Kirigami.ApplicationWindow {
                   = snapshotView.description;
                 snapshotModel.get(snapshotBar.currentIndex).pinned
                   = snapshotView.pinned;
-                restoreSnapshotViewBindingsFn();
-                snapshotView.saving  = false;
-                snapshotView.editing = false;
                 backend.inhibitClose = false;
-                derivateSnapshotModelFn(); // ensures that "Compare With" is properly updated in the event pinning was changed
-                switchViewFn( saveEditsWaitView, snapshotView );
-            } else {
+                // Ensure that "Compare" is properly updated in the event pinning was changed
+                derivateSnapshotModelFn();
+                resetUiStateFn();
                 restoreSnapshotViewBindingsFn();
+                switchViewFn( snapshotView );
+            } else {
                 sysRefreshSourceView = saveEditsWaitView;
                 sysRefreshTargetView = saveEditsFailedView;
-                snapshotView.saving  = false;
-                snapshotView.editing = false;
-                backend.inhibitClose = false;
+                resetUiStateFn();
+                restoreSnapshotViewBindingsFn();
                 refreshSystemDataFn( false );
             }
         }
+    }
+
+    function genSnapshotSizeStrFn( mainSize, bootSize ) {
+        if ( mainSize === '' || bootSize === '' ) {
+            return '';
+        }
+        let outStr = mainSize + ' [' + bootSize + ']';
+        let lenPad = 10 - outStr.length;
+        for (let i = 0; i < lenPad; i++) {
+           outStr = ' ' + outStr;
+        }
+        return outStr;
+    }
+
+    function genBulkDataListStrFn( bulkDataList ) {
+        let solve_str = '';
+        for ( let i = 0; i < bulkDataList.length; i++ ) {
+            solve_str += '<li>' + bulkDataList[i] + '</li>';
+        }
+        return solve_str;
     }
 
     function getIconForReasonFn( reason ) {
@@ -1404,25 +1591,23 @@ Kirigami.ApplicationWindow {
         return snapshotBar.count == 0 ? 'No Snapshots' : 'Snapshots';
     }
 
-    /*
-     * WARNING: Do NOT pass `this` as the first argument to switchViewFn! If
-     * you do so anywhere except in an object's inline signal handler, it
-     * will cause the program's window to vanish without actually terminating
-     * the program. (That's because `this` only exists in the context of the
-     * signal handler, not in the context of a function called by it.) Always
-     * explicitly reference both views to avoid this.
-     */
-    function switchViewFn( current_view, target_view ) {
+    function switchViewFn( target_view ) {
         // Preamble
         // Lock the peripheral UI elements for almost all views
         uiLocked = true;
         // Remove the contextual help button for almost all views
         mainAreaHelpButton.visible = false;
 
+        // See if we can switch to a routine that uses the last view
+        // instead of requiring hard-coded, prior knowledge of the view
+        // that is going to be replaced, which is very fragile.
+        console.log( 'DEBUG: Switching views ...');
+        if ( ! lastSetView ) { lastSetView = target_view; }
+
         // Handlers for current view
-        if ( current_view === snapshotView ) {
+        if ( lastSetView === snapshotView ) {
             if ( snapshotBar.count === 0 ) {
-                current_view = noSnapshotsView;
+                lastSetView = noSnapshotsView;
             }
         }
 
@@ -1454,18 +1639,20 @@ Kirigami.ApplicationWindow {
             mainAreaLabel.text = deleteSnapshotErrorLabel;
         } else if ( target_view === restoreSnapshotErrorView ) {
             mainAreaLabel.text = restoreSnapshotErrorLabel;
-        } else if ( target_view === calculateSnapshotWaitView ) {
+        } else if ( target_view === calculateSnapshotView ) {
             mainAreaLabel.text = calculateSnapshotSizesLabel;
         }
 
         // Switch view
-        current_view.visible = false;
+        lastSetView.visible = false;
         target_view.visible = true;
+        lastSetView = target_view;
     }
 
     function createSnapshotFn() {
         backend.inhibitClose = true;
-        switchViewFn( createSnapshotView, createSnapshotWaitView )
+        authAttemptAction = '"Take Snapshot"';
+        switchViewFn( createSnapshotWaitView );
         createSnapshotEngine.exec(
           rollbackStr + 'systemSnapshot "$(id -nu)"'
         );
@@ -1473,19 +1660,22 @@ Kirigami.ApplicationWindow {
 
     function balanceDiskFn() {
         backend.inhibitClose = true;
-        switchViewFn( optimizeDiskView, balanceDiskWaitView );
+        authAttemptAction = '"Quick Clean"';
+        switchViewFn( balanceDiskWaitView );
         balanceDiskEngine.exec( rollbackStr + 'btrfsMaintain' );
     }
 
     function optimizeDiskFn() {
         backend.inhibitClose = true;
-        switchViewFn( optimizeDiskView, optimizeDiskWaitView );
+        authAttemptAction = '"Deep Clean"';
+        switchViewFn( optimizeDiskWaitView );
         optimizeDiskEngine.exec( rollbackDeepCleanStr );
     }
 
     function switchAutomaticSnapshotsFn() {
         backend.inhibitClose = true;
-        switchViewFn( snapshotView, automaticSnapshotSwitchView );
+        authAttemptAction = '"Toggle ' + automaticSnapshotsLabel + '"';
+        switchViewFn( automaticSnapshotSwitchView );
         automaticSnapshotToggleEngine.exec(
           rollbackStr + 'setManualSwitchState '
             + (automaticSnapshotsSwitch.checked
@@ -1495,7 +1685,8 @@ Kirigami.ApplicationWindow {
     }
 
     function calculateSnapshotSizesFn() {
-        switchViewFn( snapshotView, calculateSnapshotWaitView );
+        authAttemptAction = '"Calculate Snapshot Sizes"';
+        switchViewFn( calculateSnapshotWaitView );
         sysRefreshSourceView = calculateSnapshotWaitView;
         sysRefreshTargetView = snapshotView;
         refreshSystemDataFn( true );
@@ -1508,12 +1699,13 @@ Kirigami.ApplicationWindow {
         deleteSnapshotErrorView.date   = snapshotModel.get(snapshot_idx).date;
         deleteSnapshotErrorView.name   = snapshotModel.get(snapshot_idx).name;
         deleteSnapshotErrorView.reason = snapshotModel.get(snapshot_idx).reason;
-        switchViewFn( snapshotView, deleteSnapshotView );
+        switchViewFn( deleteSnapshotView );
     }
 
     function deleteSnapshotFn( snapshot_idx ) {
         backend.inhibitClose = true;
-        switchViewFn( deleteSnapshotView, deleteSnapshotWaitView );
+        authAttemptAction = '"Delete Snapshot"';
+        switchViewFn( deleteSnapshotWaitView );
         deleteSnapshotEngine.exec(
           rollbackStr
             + 'deleteSnapshot '
@@ -1528,12 +1720,13 @@ Kirigami.ApplicationWindow {
         restoreSnapshotErrorView.reason = snapshotModel.get(snapshot_idx).reason;
         restoreSnapshotErrorView.date   = snapshotModel.get(snapshot_idx).date;
         restoreSnapshotErrorView.name   = snapshotModel.get(snapshot_idx).name;
-        switchViewFn( snapshotView, restoreSnapshotView );
+        switchViewFn( restoreSnapshotView );
     }
 
     function restoreSnapshotFn( snapshot_idx ) {
         backend.inhibitClose = true;
-        switchViewFn( restoreSnapshotView, restoreSnapshotWaitView );
+        authAttemptAction = '"Restore Snapshot"';
+        switchViewFn( restoreSnapshotWaitView );
         restoreSnapshotEngine.exec(
           rollbackStr
             + 'restoreSnapshot '
@@ -1542,6 +1735,7 @@ Kirigami.ApplicationWindow {
     }
 
     function compareSnapshotsFn( source_idx, target_idx ) {
+        authAttemptAction = '"Compare Snapshots"';
         compareSnapshotsEngine.exec(
           rollbackStr + "compareState '"
             + snapshotModel.get(source_idx).stateDir
@@ -1550,15 +1744,16 @@ Kirigami.ApplicationWindow {
             + "'"
         );
         if (compareSnapshotView.visible) {
-            switchViewFn( compareSnapshotView, compareSnapshotWaitView );
+            switchViewFn( compareSnapshotWaitView );
         } else {
-            switchViewFn( snapshotView, compareSnapshotWaitView );
+            switchViewFn( compareSnapshotWaitView );
         }
     }
 
     function saveSnapshotEditsFn( snapshot_idx ) {
         backend.inhibitClose = true;
-        switchViewFn( snapshotView, saveEditsWaitView );
+        authAttemptAction = '"Save Changes"';
+        switchViewFn( saveEditsWaitView );
         let snapInfo = snapshotModel.get(snapshot_idx);
         saveEditsEngine.exec(
           rollbackStr
@@ -1593,8 +1788,8 @@ Kirigami.ApplicationWindow {
         window.show();
     }
 
-    function refreshSystemDataFn( calc_size ) {
-        backend.refreshSystemData( calc_size );
+    function refreshSystemDataFn( do_calc_size ) {
+        backend.refreshSystemData( do_calc_size );
     }
 
     function populateSnapshotModelFn() {
@@ -1609,7 +1804,8 @@ Kirigami.ApplicationWindow {
                 pinned      : backend.getSnapshotInfo(i, 'pinned') === 'true'
                   ? true
                   : false,
-                size        : backend.getSnapshotInfo(i, 'size'),
+                mainSize    : backend.getSnapshotInfo(i, 'mainSize'),
+                bootSize    : backend.getSnapshotInfo(i, 'bootSize'),
                 stateDir    : backend.getSnapshotInfo(i, 'stateDir'),
                 id          : backend.getSnapshotInfo(i, 'id')
             });
@@ -1655,6 +1851,16 @@ Kirigami.ApplicationWindow {
         bootPartSizeStr.text    = backend.getFsData('boot', 'size');
         bootPartRemainStr.text  = backend.getFsData('boot', 'remain');
         bootPartUnallocStr.text = backend.getFsData('boot', 'unalloc');
+    }
+
+    function resetUiStateFn() {
+        calculateSnapshotView.actionsEnabled = true;
+        createSnapshotView.actionsEnabled    = true;
+        deleteSnapshotView.actionsEnabled    = true;
+        optimizeDiskView.actionsEnabled      = true;
+        snapshotView.editing = false;
+        snapshotView.saving  = false;
+        backend.inhibitClose = false;
     }
 
     // Kick-off rendering on completion

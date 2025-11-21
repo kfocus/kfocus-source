@@ -79,13 +79,16 @@ _EOT
     _powerSetExe _primeExe _profilesCtlExe _pstateSetExe _qdbusExe \
     _upowerExe _userName;
 
-  _user_name="$(id -un)";
-
   _baseName='kfocus-pstate';
-  _lockFile="/tmp/${_user_name}-kfocus-pstate.lock";
+  _doGui='y';
+  _userName="$(id -un)";
+  _lockFile="/tmp/${_baseName}-${_userName}.lock";
 
   _cm2KdiagExe='_cm2KdiagExeFn';
   _escExe='';
+  # TODO: Mock this
+  # _kbdColorSetExe="${_t00TopDir}/package-tools/usr/lib/kfocus/bin/kfocus-kb-color-set";
+  _kbdColorSetExe='';
   _lspciExe='_lspciExeFn';
   _powerSetExe='_powerSetExeFn';
   _primeExe='_primeExeFn';
@@ -94,8 +97,8 @@ _EOT
   _qdbusExe='_qdbusExeFn';
   _upowerExe='_upowerExeFn';
 
-  # shellcheck source=../../../package-power-bin/helper/usr/lib/kfocus/bin/kfocus-pstate
-  source "${_t00TopDir}/package-power-bin/helper/usr/lib/kfocus/bin/kfocus-pstate";
+  # shellcheck source=../../../package-power-bin/usr/lib/kfocus/bin/kfocus-pstate
+  source "${_t00TopDir}/package-power-bin/usr/lib/kfocus/bin/kfocus-pstate";
 }
 ## . END _setMocksFn }
 

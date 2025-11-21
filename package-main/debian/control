@@ -13,6 +13,7 @@ Architecture: any
 Pre-Depends:  kfocus-apt-source
 Depends:      ${misc:Depends}, ${shlibs:Depends},
               build-essential (>= 12.4),
+              colorized-logs,
               cpufrequtils,
               curl,
               dmidecode (>= 3.1-1),
@@ -23,8 +24,10 @@ Depends:      ${misc:Depends}, ${shlibs:Depends},
               kfocus-hw,
               kfocus-settings,
               kfocus-wallpapers,
+              libspa-0.2-libcamera,
               linux-kfocus-24.04-kfocus,
               linux-tools-kfocus-24.04-kfocus,
+              pipewire-alsa,
               policykit-1,
               python3-pip,
               rsync (>= 3.1.2),
@@ -33,7 +36,7 @@ Recommends:   backintime-qt,
               kfocus-meta,
               kfocus-power-bin,
               kfocus-qwe,
-              kfocus-tools-other | kfocus-tools | kfocus-tools-nxg1,
+              kfocus-tools-other | kfocus-tools | kfocus-tools-nxg1 | kfocus-tools-m2g6,
               kio-admin,
               memtest86+,
               vlc,
@@ -41,10 +44,10 @@ Recommends:   backintime-qt,
               xserver-xorg-input-synaptics
 Conflicts:    kfocus-rest (<< ${binary:Version})
 Replaces:     kfocus-rest (<< ${binary:Version})
-Description:  Kubuntu Focus Hardware Optimizations
- This package provides hardware optimizations and requirements
- for Kubuntu Focus computers. This also includes the Welcome
- Wizard and FocusRx.
+Description:  Kubuntu Focus System Integration
+ This package provides hardware integration and optimizations
+ for Kubuntu Focus computers. This includes Kubuntu Focus
+ Tools like the Welcome Wizard, System Rollback, and FocusRx.
 
 # Replacements 2024-04-11
 # exfat-utils => exfatprogs

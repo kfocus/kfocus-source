@@ -1,6 +1,7 @@
 [Appearance]
+BoldIntense=false
 ColorScheme=kfocus-black
-Font=Noto Mono
+Font=Ubuntu Mono,12,-1,5,50,0,0,0,0,0
 LineSpacing=3
 
 [Cursor Options]
@@ -14,4 +15,5 @@ Parent=FALLBACK/
 TerminalMargin=3
 
 [Scrolling]
+HighlightScrolledLines=false
 HistorySize=10000

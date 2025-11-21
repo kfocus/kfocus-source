@@ -4,10 +4,7 @@
 #include "backendengine.h"
 #include "shellengine.h"
 
-BackendEngine::BackendEngine()
-{
-
-}
+BackendEngine::BackendEngine() { }
 
 QString BackendEngine::rollbackBackendExe() {
     return m_rollbackBackendExe;
@@ -95,6 +92,24 @@ bool BackendEngine::bootWorkingSubvolExists() {
     return m_bootWorkingSubvolExists;
 }
 
+bool BackendEngine::snapshotSizeInfoPresent() {
+    return m_snapshotSizeInfoPresent;
+}
+
+QStringList BackendEngine::bulkDataList() {
+    return m_bulkDataList;
+}
+
+bool BackendEngine::bulkDataWarningEnabled() {
+    m_settings.beginGroup("kfocus-rollback");
+    QString val = m_settings.value("bulkDataWarningEnabled", "true").toString();
+    m_settings.endGroup();
+    if (val == "true") {
+        return true;
+    }
+    return false;
+}
+
 int BackendEngine::getSnapshotCount() {
     return m_snapshotList->length();
 }
@@ -138,10 +153,15 @@ QString BackendEngine::fieldSeek(QStringList lines, QString searchStr, int field
     return "";
 }
 
-QString BackendEngine::bytesToGib(quint64 val) {
+QString BackendEngine::bytesToGib(quint64 val, bool keepShort) {
     double gibSize = (((static_cast<double>(val) / 1024) / 1024) / 1024);
     gibSize = qRound(gibSize * 100.0) / 100.0;
-    QString gibSizeStr = QString::number(gibSize, 'f', 1) + " GiB";
+    QString gibSizeStr;
+    if (gibSize >= 100 && keepShort) {
+        gibSizeStr = QString::number(gibSize, 'f', 0);
+    } else {
+        gibSizeStr = QString::number(gibSize, 'f', 1);
+    }
     return gibSizeStr;
 }
 
@@ -250,7 +270,7 @@ void BackendEngine::onSystemDataReady() {
     // Get raw data from the ShellEngine
     QString snapshotItem = m_snapshotIdList.at(m_snapshotIdIdx);
     QStringList snapshotMetadataList = execEngine->stdout().split('\n');
-    if (snapshotMetadataList.count() < 5 || snapshotMetadataList.at(0) == "Invalid mode specified.") {
+    if (snapshotMetadataList.count() < 6 || snapshotMetadataList.at(0) == "Invalid mode specified.") {
         qWarning() << "Snapshot metadata unsupported - incompatible BTRFS status hit?";
         return;
     }
@@ -259,7 +279,8 @@ void BackendEngine::onSystemDataReady() {
     QString metaSnapshotDesc = snapshotMetadataList.at(1);
     QString metaSnapshotPinned = snapshotMetadataList.at(2);
     QString metaSnapshotReason = snapshotMetadataList.at(3);
-    QString metaSnapshotSize = snapshotMetadataList.at(4);
+    QString metaMainSnapshotSize = snapshotMetadataList.at(4);
+    QString metaBootSnapshotSize = snapshotMetadataList.at(5);
 
     // Parse trivial snapshot info
     QString snapshotReason = metaSnapshotReason.trimmed();
@@ -273,16 +294,19 @@ void BackendEngine::onSystemDataReady() {
     QString snapshotId = snapshotItem;
 
     // Parse snapshot size
-    quint64 snapshotIntSize = metaSnapshotSize.toULongLong();
-    QString snapshotSize;
-    if (metaSnapshotSize == "") {
-        snapshotSize = "";
+    quint64 mainSnapshotIntSize = metaMainSnapshotSize.toULongLong();
+    quint64 bootSnapshotIntSize = metaBootSnapshotSize.toULongLong();
+    QString mainSnapshotSize;
+    QString bootSnapshotSize;
+    if (metaMainSnapshotSize == "") {
+        mainSnapshotSize = "";
     } else {
-        snapshotSize = bytesToGib(snapshotIntSize);
-        int snapshotSizeLenPad = 10 - snapshotSize.count();
-        for (int i = 0; i < snapshotSizeLenPad; i++) {
-            snapshotSize.insert(0, ' ');
-        }
+        mainSnapshotSize = bytesToGib(mainSnapshotIntSize, true);
+    }
+    if (metaBootSnapshotSize == "") {
+        bootSnapshotSize = "";
+    } else {
+        bootSnapshotSize = bytesToGib(bootSnapshotIntSize, true);
     }
 
     // Parse snapshot date (this mangles the snapshotItem string so we have to do it last)
@@ -299,7 +323,8 @@ void BackendEngine::onSystemDataReady() {
         { "pinned", snapshotPinned },
         { "stateDir", snapshotStateDir },
         { "id", snapshotId },
-        { "size", snapshotSize },
+        { "mainSize", mainSnapshotSize },
+        { "bootSize", bootSnapshotSize},
         { "date", snapshotDate },
         { "dayofweek", snapshotDayOfWeek }
     }));
@@ -347,17 +372,18 @@ void BackendEngine::loadGlobalInfo() {
             quint64 btrfsMainRawUnalloc = fieldSeek(btrfsMainRawReport, "Device unallocated:", 2).toULongLong();
             double btrfsMainUnalloc = qRound((static_cast<double>(btrfsMainRawUnalloc) / static_cast<double>(btrfsMainRawSize)) * 10000.0) / 100.0;
             QString btrfsMainStatus;
+            // NOTE: 15% is hardcoded in the backend.
             if (btrfsMainRawUnalloc > m_mainMinUnalloc) {
-                btrfsMainStatus = "Good";
+                btrfsMainStatus = "Good >15%";
                 m_mainSpaceLow = false;
                 mainSpaceLowChanged();
             } else {
-                btrfsMainStatus = "ALERT";
+                btrfsMainStatus = "ALERT <15%";
                 m_mainSpaceLow = true;
                 mainSpaceLowChanged();
             }
-            QString btrfsMainSize = bytesToGib(btrfsMainRawSize);
-            QString btrfsMainRemain = bytesToGib(btrfsMainRawRemain);
+            QString btrfsMainSize = bytesToGib(btrfsMainRawSize, false);
+            QString btrfsMainRemain = bytesToGib(btrfsMainRawRemain, false);
 
             // Get boot FS space consumption info
             quint64 btrfsBootRawSize = fieldSeek(btrfsBootRawReport, "Device size:", 2).toULongLong();
@@ -365,17 +391,18 @@ void BackendEngine::loadGlobalInfo() {
             quint64 btrfsBootRawUnalloc = fieldSeek(btrfsBootRawReport, "Device unallocated:", 2).toULongLong();
             double btrfsBootUnalloc = qRound((static_cast<double>(btrfsBootRawUnalloc) / static_cast<double>(btrfsBootRawSize)) * 10000.0) / 100.0;
             QString btrfsBootStatus;
+            // NOTE: 25% is hardcoded in the backend.
             if (btrfsBootRawUnalloc > m_bootMinUnalloc) {
-                btrfsBootStatus = "Good";
+                btrfsBootStatus = "Good >25%";
                 m_bootSpaceLow = false;
                 bootSpaceLowChanged();
             } else {
-                btrfsBootStatus = "ALERT";
+                btrfsBootStatus = "ALERT <25%";
                 m_bootSpaceLow = true;
                 bootSpaceLowChanged();
             }
-            QString btrfsBootSize = bytesToGib(btrfsBootRawSize);
-            QString btrfsBootRemain = bytesToGib(btrfsBootRawRemain);
+            QString btrfsBootSize = bytesToGib(btrfsBootRawSize, false);
+            QString btrfsBootRemain = bytesToGib(btrfsBootRawRemain, false);
 
             // Load all the info into the fs info objects
             m_mainFsInfo->clear();
@@ -396,10 +423,35 @@ void BackendEngine::loadGlobalInfo() {
             }));
 
             execEngine->deleteLater();
+            m_snapshotSizeInfoPresent = m_calcSize;
+            snapshotSizeInfoPresentChanged();
+
+            if (!m_bulkDataChecked) {
+                m_bulkDataList.clear();
+                execEngine->execSync("pkexec " + m_rollbackSetExe + " getBulkDirList");
+                m_bulkDataList.append(execEngine->stdout().split('\n', Qt::SkipEmptyParts));
+                bulkDataListChanged();
+                m_bulkDataChecked = true;
+            }
+
             systemDataLoaded();
             m_updateInProgress = false;
         });
         execEngine->exec(m_pkexecExe + ' ' + m_rollbackSetExe + " getBootMinUnalloc");
     });
     execEngine->exec(m_pkexecExe + ' ' + m_rollbackSetExe + " getMainMinUnalloc");
+}
+
+void BackendEngine::enableBulkDataWarning() {
+    m_settings.beginGroup("kfocus-rollback");
+    m_settings.setValue("bulkDataWarningEnabled", "true");
+    m_settings.endGroup();
+    bulkDataWarningEnabledChanged();
+}
+
+void BackendEngine::disableBulkDataWarning() {
+    m_settings.beginGroup("kfocus-rollback");
+    m_settings.setValue("bulkDataWarningEnabled", "false");
+    m_settings.endGroup();
+    bulkDataWarningEnabledChanged();
 }

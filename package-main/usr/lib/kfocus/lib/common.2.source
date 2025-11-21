@@ -1,6 +1,7 @@
 #!/bin/bash
+#bashsupport disable=BP1001
 #
-# Copyright 2019-2024 MindShare Inc.
+# Copyright 2019-2025 MindShare Inc.
 # Written for the Kubuntu Focus by:
 #  * Michael Mikowski
 #  * Erich Eickmeyer
@@ -186,7 +187,7 @@ _cm2AskExitFn () {
   _exit_str="${2:-}";
 
   if [ -z "${_exit_str}" ]; then
-    _exit_str='Press <return> to finish';
+    _exit_str='Press [ Enter ] to finish';
   fi
 
   _cm2NechoFn "${_exit_str} ";
@@ -283,7 +284,7 @@ _cm2CalcModelCodeFn () {
   if [ -f "${_cm2DmiProductNameFile}" ]; then
     _dmi_name="$(_cm2CatStripEchoFn "${_cm2DmiProductNameFile}")";
 
-    # Use ${var,,} syntax to convert to lowercase
+    # Use double-comma syntax to convert to lowercase
     if [[ "${_dmi_name,,}" =~ ^iridium.*$ ]]; then
       # Ex: LCS14-12i5, LCS16-13i7G
       _dmi_name="$(_cm2CatStripEchoFn "${_cm2DmiProductSkuFile}")";
@@ -298,6 +299,8 @@ _cm2CalcModelCodeFn () {
     LCS14-13i*)       _code='ir14g2';;
     LCS14-12i*)       _code='ir14g1';;
     X370SN*)          _code='m2g5p';;
+    X58xWNx*)         _code='zrg1';;
+    X56xWNx*)         _code='m2g6';;
     PD5x_7xSNC_*)     _code='m2g5';;
     PD5x_7xPNP_*)     _code='m2g4';;
     PC5x_7xHP_HR_HS*) _code='m2g3';;
@@ -309,6 +312,7 @@ _cm2CalcModelCodeFn () {
     NUC11PAHi*)       _code='nxg1';;
     NUC12WSHi*)       _code='nxg2';;
     NUC12WSH-B*)      _code='nxg2';;
+    NUC15CRKU[357]*)  _code='nxg3';;
     other|*)          _code='other';;
   esac;
 
@@ -425,13 +429,13 @@ _cm2EchoInstalledVersFn () {
 }
 
 _cm2AssignExeVarsFn () {
-  declare _var_list _line_str _bit_list _var_name \
-    _cmd_name _type _solve_str _return_int _required_key;
+  declare _var_list _line_str _bit_list _var_name _cmd_str \
+    _cmd_list _cmd_name _type _solve_str _return_int _required_key;
 
   _var_list=("$@");
   _return_int=0;
 
-  ## Begin: Iterate over variable list {
+  ## Begin: Iterate over the variable list {
   for _line_str in "${_var_list[@]}"; do
     IFS='|' read -r -a _bit_list <<< "${_line_str}";
     if (( "${#_bit_list[@]}" < 2 || ${#_bit_list[@]} > 4 )); then
@@ -440,35 +444,49 @@ _cm2AssignExeVarsFn () {
       continue;
     fi
     _var_name="${_bit_list[0]}";
-    _cmd_name="${_bit_list[1]}";
+    _cmd_str="${_bit_list[1]}";
     _type="${_bit_list[2]:-exe}";
     _required_key="${_bit_list[3]:-required}";
+    IFS=',' read -r -a _cmd_list <<< "${_cmd_str:-}";
 
     # Handle file assignment
     case "${_type}" in
       'exe')
-        _solve_str="$(command -v "${_cmd_name}" || true)";
-        if [ -z "${_solve_str}" ] || [ ! -x "${_solve_str}" ]; then
-          _cm2WarnStrFn "Command |${_cmd_name}| NOT EXECUTABLE as |${_solve_str}|";
+        for _cmd_name in "${_cmd_list[@]}"; do
+          _solve_str="$(command -v "${_cmd_name}" || true)";
+          if [ -z "${_solve_str}" ]; then
+            _cm2WarnStrFn "Command name is empty, skipped.";
+            _solve_str='';
+            continue;
+          fi
+          if [ ! -x "${_solve_str}" ]; then
+            _cm2WarnStrFn "Path ${_solve_str} not executable, skipped.";
+            _solve_str='';
+            continue;
+          fi
+          break;
+        done
+        if [ -z "${_solve_str}" ]; then
+          _cm2WarnStrFn "No executable found for |${_var_name}|";
           _solve_str='';
           [ "${_required_key}" = 'required' ] && _return_int=1;
         fi
         ;;
       'filero')
-        if [ -r "${_cmd_name}" ]; then
-          _solve_str="${_cmd_name}";
+        if [ -r "${_cmd_str}" ]; then
+          _solve_str="${_cmd_str}";
         else
           _solve_str='';
-          _cm2WarnStrFn "File |${_cmd_name}| not readable";
+          _cm2WarnStrFn "File |${_cmd_str}| not readable";
           [ "${_required_key}" = 'required' ] && _return_int=1;
         fi
         ;;
       'filerw')
-        if [ -r "${_cmd_name}" ] && [ -w "${_cmd_name}" ]; then
-          _solve_str="${_cmd_name}";
+        if [ -r "${_cmd_str}" ] && [ -w "${_cmd_str}" ]; then
+          _solve_str="${_cmd_str}";
         else
           _solve_str='';
-          _cm2WarnStrFn "File |${_cmd_name}| not read-writable";
+          _cm2WarnStrFn "File |${_cmd_str}| not read-writable";
           [ "${_required_key}" = 'required' ] && _return_int=1;
         fi
         ;;
@@ -482,7 +500,7 @@ _cm2AssignExeVarsFn () {
     printf -v "${_var_name}" '%s' "${_solve_str}";
     # TODO: This may be desirable: export "${_var_name}";
   done
-  ## . End: iterate over variable list }
+  ## . End: iterate over the variable list }
 
   return "${_return_int}";
 }
@@ -505,7 +523,7 @@ _cm2StripTagsFn () {
   )";
 
   case "${_do_strip_last}" in
-    # Remove last line of text if directed
+    # Remove the last line of text if directed
     y) _line_count="$(echo "${_strip_str}" | wc -l)";
       if (( _line_count > 1 )); then
         _strip_str="$(echo "${_strip_str}" | sed '$d')";
@@ -515,7 +533,7 @@ _cm2StripTagsFn () {
     # If 'w' is specified, do not modify the string
     w) true;;
 
-    # Remove last question mark if directed (default)
+    # Remove the last question mark if directed (default)
     *) _strip_str="$(echo "${_strip_str}" | sed '$ s|\?\s*$||g')";;
   esac
 
@@ -525,7 +543,7 @@ _cm2StripTagsFn () {
 _cm2PromptUserFn () {
   declare _icon_key _opt_str _prompt_str _window_title _query_type \
     _cmd_list _ans_str _key_list _val_list _default_option_str _params_list \
-    _params_idx _cycle_idx;
+    _params_idx _cycle_idx _default_key;
 
   _icon_key='kfocus-bug-rx';
   local OPTIND=1;
@@ -556,12 +574,13 @@ _cm2PromptUserFn () {
     # These arguments *must* be inserted before the actual '--yesno' argument
     # below, or KDialog glitches badly (at least on Kubuntu 24.04).
     case "${_query_type}" in
+      'A') _cmd_list+=('--yes-label=No' '--no-label=Yes');;
       'o') _cmd_list+=('--yes-label=OK' '--no-label=Cancel');;
       'm') _cmd_list+=('--yes-label=OK' '--no-label=More Info');;
     esac
 
     case "${_query_type}" in
-      [aom]) _cmd_list+=('--yesno');;
+      [Aaom]) _cmd_list+=('--yesno');;
       w) _cmd_list+=('--warningyesno');;
       s) _cmd_list+=('--sorry');;
       e) _cmd_list+=('--error');;
@@ -619,6 +638,9 @@ _cm2PromptUserFn () {
           break;
         fi
       done
+    # Handle inverted Yes and No labels
+    elif [ "${_query_type}" = 'A' ]; then
+      if "${_cmd_list[@]}"; then _ans_str='n'; else _ans_str='y'; fi
     else
       if "${_cmd_list[@]}"; then _ans_str='y'; else _ans_str='n'; fi
     fi
@@ -627,15 +649,17 @@ _cm2PromptUserFn () {
   else
     if [ "${_cm2CliType}" = 'cli' ]; then
       case "${_query_type}" in
-      [aw])
+      [Aaw])
+        _default_key='y';
+        [ "${_query_type}" = 'A' ] && _default_key='n';
         _prompt_str="$(_cm2StripTagsFn "${_prompt_str}")";
-        _cmd_list=('_cm2ReadPromptYnFn' "${_prompt_str}" 'y');
+        _cmd_list=('_cm2ReadPromptYnFn' "${_prompt_str}" "${_default_key}");
         ;;
       p)
         # bashsupport disable=BP2002
         _prompt_str="$(_cm2StripTagsFn "${_prompt_str}" 'y')";
         _cm2EchoFn "${_prompt_str}\n";
-        _cmd_list=('read' '-rp' 'Press <return> to continue. ');
+        _cmd_list=('read' '-rp' 'Press [ Enter ] to continue. ');
         ;;
       [rd])
         # TODO 2024-04-10 warm mmikowski: Add radio list method
@@ -662,12 +686,13 @@ _cm2PromptUserFn () {
       );
 
       case "${_query_type}" in
-        [aomw]) _cmd_list+=('--yesno') ;;
+        [Aaomw]) _cmd_list+=('--yesno') ;;
         [rd]) _cmd_list+=('--radiolist') ;;
         *) _cmd_list+=('--msgbox') ;;
       esac
 
       case "${_query_type}" in
+        'A') _cmd_list+=('--defaultno');;
         'o') _cmd_list+=('--yes-button=OK' '--no-button=Cancel');;
         'm') _cmd_list+=('--yes-button=OK' '--no-button=More Info');;
       esac
@@ -675,8 +700,8 @@ _cm2PromptUserFn () {
       _prompt_str="$(_cm2StripTagsFn "${_prompt_str}" 'w')";
       _prompt_str="$(fmt <<< "${_prompt_str}")";
 
-      # whiptail accepts arguments for setting window and list sizes, but we
-      # want all of these to be automatically set as appropriate. To do that
+      # Whiptail accepts arguments for setting window and list sizes, but we
+      # want all of these to be automatically set as appropriate. To do that,
       # we set the various size arguments to 0 as necessary, thus the strange
       # 0s here.
       _cmd_list+=("${_prompt_str}" '0' '0' );
@@ -697,7 +722,7 @@ _cm2PromptUserFn () {
     fi
   fi
 
-  if [[ "${_query_type}" =~ [aomwrd] ]]; then
+  if [[ "${_query_type}" =~ [Aaomwrd] ]]; then
     echo "${_ans_str}";
   fi
 }
@@ -768,7 +793,7 @@ _cm2SetIsTtyFn () {
   export _cm2IsTty;
 }
 
-## BEGIN Execute on source {
+## BEGIN Execute when sourced {
 # Get args
 _cm2Arg01="${1:-}";
 _cm2Arg02="${2:-}";
@@ -782,6 +807,8 @@ _cm2ModelTable=(
   'ir16g2|ir1Xg2|Ir16 GEN 2|n|n'
   'ir14g2|ir1Xg2|Ir14 GEN 2|n|n'
   'ir14g1|ir14g1|Ir14 GEN 1|n|n'
+  'zrg1|zrg1|Zr GEN 1|y|y'
+  'm2g6|m2g6|M2 GEN 6|y|y'
   'm2g5p|m2g5|M2 GEN 5|y|y'
   'm2g5|m2g5|M2 GEN 5|y|y'
   'm2g4|m2g4|M2 GEN 4|y|y'
@@ -793,6 +820,7 @@ _cm2ModelTable=(
   'xeg2|xeg2|XE GEN 2|n|n'
   'nxg1|nxg1|NX GEN 1|n|n'
   'nxg2|nxg1|NX GEN 2|n|n'
+  'nxg3|nxg1|NX GEN 3|n|n'
   'other|other|other|n|n'
 );
 
@@ -829,7 +857,7 @@ _cm2RmExe='/bin/rm';
 _cm2WhiptailExe="$(command -v whiptail || true)";
 
 # Export Strings
-# shellcheck disable=2090 # Disable complaining about html vars
+# shellcheck disable=2090 # Disable complaining about HTML vars
 export _cm2Arg01 _cm2Arg02 _cm2BlockMsg _cm2HtmBeginStr _cm2HtmEndStr      \
   _cm2HtmH3Str _cm2HtmPStr _cm2IsTty _cm2KdiagExe _cm2ModelCode _cm2RmExe  \
   _cm2CliType _cm2WhiptailExe _cm2LogExe _cm2LogIdxMap _cm2LogLevelIdx     \
@@ -846,5 +874,5 @@ export -f _cm2AskExitFn _cm2AssignExeVarsFn _cm2CatStripEchoFn               \
   _cm2StripTagsFn _cm2SucFn _cm2SucStrFn _cm2TestVersFn _cm2TrapErrorFn      \
   _cm2TrapExitFn _cm2TrapInterruptFn _cm2WarnFn _cm2WarnStrFn _cm2SetIsTtyFn \
   _cm2SetCliTypeFn _cm2SetLogLevelFn _cm2SetLogTagFn _cm2LogFn;
-## . END Execute on source }
+## . END Execute when sourced }
 

@@ -1,0 +1,114 @@
+#!/bin/bash
+
+# shellcheck source=../kfocus-btool
+_minBiosVers='1.07.07S3min29';
+_availBiosVers='1.07.07S3min29';
+_biosDownloadUrl='https://f005.backblazeb2.com/file/kfocus-bios/m2g6_2025-08-12_X56xWNx_07S3min29.efi.zip';
+_upgradeReasonMsg="$(cat <<'EOF'
+BIOS VERSION 1.07.07S3MIN29
+
+  * Enables full keyboard and lightbar color control.
+  * Enables S3 deep sleep mode. This results in a more complete suspend
+    that uses less battery, stops the fans immediately, and extinguishes
+    the power button LED. Open the laptop lid or press the power
+    button to resume from deep sleep.
+  * Passes all 498 KFocus KPCs 2025-08-14, log f15052b8.
+
+EOF
+)";
+
+_installStepsMsg="$(cat <<EOF
+Instructions for BIOS 1.07.07S3MIN29
+
+Now that we have prepared the USB drive, follow these steps to update
+the BIOS. We recommend you print these instructions and then mark each
+step off as you complete it.
+
+  * [ ] Power off the M2 GEN 6 laptop you wish to update.
+
+  * [ ] Plug the power cable into the laptop. Also, insert the freshly
+    prepared USB drive into a USB-A port of the laptop.
+
+  * [ ] Boot the laptop and tap F7 to get to the BIOS 'Boot Manager'
+    screen. If you see the disk decrypt screen, the login screen, or the
+    grub menu, you've missed it. Power off and try again.
+
+  * [ ] In the BIOS 'Boot Manager' option, press the down arrow to
+    select the USB drive. Then press [ Enter ] to boot this drive.
+
+  * [ ] The BIOS updater will boot into a text interface with white and
+    colored text on a black background. Wait for the 5-second timer to
+    expire. Next, a second screen should appear that prompts you to "type
+    flash to start BIOS update." Type 'flash' and press [ Enter ] to
+    begin the update process.
+
+  * [ ] During the update process, the laptop will show multiple
+    progress bars while loading firmware. It will then reboot to a black
+    screen with red and white text and a single progress bar. Once the
+    progress bar completes, the laptop will reboot 2-3 more times until
+    it boots into the default OS, typically Kubuntu.
+
+    DO NOT INTERRUPT THIS UPDATE PROCESS! DO NOT press the power button.
+    DO NOT remove the USB drive. DO NOT unplug the power cable. Only after
+    the system reboots into the Kubuntu OS or it remains turned off
+    for more than four minutes should you consider any of these actions.
+
+  * [ ] The first boot after the update will take longer, and you may
+    need to boot twice. Once you have signed in, you should notice that
+    the keyboard LEDs remain uniform when you switch colors. Also,
+    suspending the system (Start Menu > Sleep) should extinguish the power
+    button LED, turn off the fans promptly, and use less idle power.
+
+  * [ ] If desired, run 'sudo ${_baseName} -o' in a terminal to confirm
+    the BIOS is up to date.
+
+End of instructions.
+EOF
+)";
+
+_flashBiosFn () {
+  declare _tgt_usb_part_dev _fatlabel_exe;
+  _cm2EchoFn "Wipe and install to ${_targetUsbDev}";
+  # See https://superuser.com/questions/332252
+  {
+    echo 'o'; # Create a DOS partition table
+
+    echo 'n'; # Create a new partition
+    echo 'p'; # Create a primary partition
+    echo '1'; # Partition 1
+    echo;     # Start sector (default)
+    echo;     # End sector (default)
+
+    echo 'a'; # Set bootable flag
+    echo 'c'; # Set DOS compatibility flag
+    echo 'w'; # Write partition table to disk
+  } | fdisk -walways -Walways "${_targetUsbDev}"         || return 1;
+
+  # Give the kernel time to refresh partition tables
+  sleep 1;
+
+  # Make sure we have a sane dev path
+  [[ "${_targetUsbDev}" =~ ^/dev/sd ]]                   || return 1;
+  _tgt_usb_part_dev="${_targetUsbDev}1";
+  mkfs.fat -F32 "${_tgt_usb_part_dev}"                   || return 1;
+
+  _fatlabel_exe="$(command -v 'fatlabel' || true)";
+  if [ -n "${_fatlabel_exe}" ]; then
+    "${_fatlabel_exe}" "${_tgt_usb_part_dev}" 'M2G6BIOS7S3' || true;
+    partprobe "${_targetUsbDev}" || true;
+  fi
+
+  _usbTmpMountDir="${_tmpDir}/usbMount";
+  mkdir -p "${_usbTmpMountDir}"                          || return 1;
+  mount "${_tgt_usb_part_dev}" "${_usbTmpMountDir}"   || return 1;
+  mountpoint "${_usbTmpMountDir}"                        || return 1;
+
+  cd "${_tmpDir}"                                        || return 1;
+  unzip -oP 'password' "${_tmpBiosFile}"                 || return 1;
+  mv "${_tmpDir}"/X56xWNx_07S3min29.efi/* \
+    "${_usbTmpMountDir}/"                                || return 1;
+
+  sleep 1;
+  sync "${_usbTmpMountDir}"                              || return 1;
+  umount "${_usbTmpMountDir}"                            || return 1;
+}

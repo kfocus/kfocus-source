@@ -1,0 +1,38 @@
+#!/bin/bash
+# Implements #5339
+
+_updatedb_str="$(cat -)";
+
+# Keep escaped quotes from breaking the path insertion later on.
+_updatedb_str="$(sed 's/\\"/XXX_ESCQUO_XXX/g' <<< "${_updatedb_str}")";
+
+_prunepaths_str="$(grep 'PRUNEPATHS=' <<< "${_updatedb_str}")";
+_is_changed='n';
+
+_updatedb_str="$(
+  sed 's|^\(.*PRUNE_BIND_MOUNTS="yes".*\)$|# \1 # Default\nPRUNE_BIND_MOUNTS="no"|' <<< "${_updatedb_str}";
+)";
+
+if ! grep -q 'PRUNEPATHS=".*btrfs_main' <<< "${_updatedb_str}"; then
+  _updatedb_str="$(
+    sed 's|\(PRUNEPATHS="[^"]*\)"|\1 /btrfs_main"|' <<< "${_updatedb_str}";
+  )";
+  _is_changed='y';
+fi
+if ! grep -q 'PRUNEPATHS=".*btrfs_boot' <<< "${_updatedb_str}"; then
+  _updatedb_str="$(
+    sed 's|\(PRUNEPATHS="[^"]*\)"|\1 /btrfs_boot"|' <<< "${_updatedb_str}";
+  )";
+  _is_changed='y';
+fi
+if [ "${_is_changed}" = 'y' ]; then
+  _default_str="$(sed 's/\(.*\)$/# \1 # Default/' <<< "${_prunepaths_str}")";
+  _updatedb_str="$(
+    sed '/^.*PRUNEPATHS=/i '"${_default_str}" <<< "${_updatedb_str}";
+  )";
+fi
+
+# Untransform the escaped quotes.
+_updatedb_str="$(sed 's/XXX_ESCQUO_XXX/\\"/g' <<< "${_updatedb_str}")";
+
+echo "${_updatedb_str}";

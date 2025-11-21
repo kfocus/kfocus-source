@@ -6,8 +6,9 @@ import org.kde.kirigami 2.20 as Kirigami
 RowLayout {
     // Public
     property string date        : ''
-    property string dayofweek     : ''
-    property string size        : ''
+    property string dayofweek   : ''
+    property string mainSize    : ''
+    property string bootSize    : ''
     property string reason      : ''
     property string name        : ''
     property string description : ''
@@ -96,7 +97,9 @@ RowLayout {
                 Layout.topMargin: Kirigami.Units.gridUnit * 0.15
                 Kirigami.Heading {
                     Layout.alignment : Qt.AlignVCenter | Qt.AlignRight
-                    text             : size
+                    text             : mainSize !== '' && bootSize != ''
+                      ? mainSize + ' [' + bootSize + ']'
+                      : ''
                     level            : 2
                 }
 
@@ -116,6 +119,7 @@ RowLayout {
 
             text                : name
             font.family         : 'courier'
+            maximumLength       : 40
             readOnly            : !editing
             color               : editing
               ? Kirigami.Theme.textColor
@@ -145,34 +149,40 @@ RowLayout {
             }
         }
 
-        Controls.TextArea {
-            id                   : descField
-            Layout.alignment     : Qt.AlignTop
-            Layout.fillWidth     : true
-            Layout.fillHeight    : true
+        Controls.ScrollView {
+            Layout.alignment  : Qt.AlignTop
+            Layout.fillWidth  : true
+            Layout.fillHeight : true
 
-            placeholderText      : '<p><i>Press the "Edit" button to:</i></p>'
-              + '<br>'
-              + '<p><i>* Rename the Snapshot</i><br>'
-              + '<i>* Change this description</i><br>'
-              + '<i>* Protect the Snapshot</i></p>'
-            text                 : description
-            font.family          : 'courier'
-            wrapMode             : Text.WordWrap
-            readOnly             : !editing
-            color                : editing
-              ? Kirigami.Theme.textColor
-              : Kirigami.Theme.disabledTextColor
+            Controls.TextArea {
+                id                   : descField
+                placeholderText      : ''
+                  + '<p><i>Press the "Edit" button to:</i></p><br>'
+                  + '<p><i>* Change the name.</i><br></p>'
+                  + '<p><i>* Add a description here<br>'
+                  + ' &nbsp; (up to 1024 characters).</i><br></p>'
+                  + '<p><i>* Protect the snapshot.</i></p>'
+                  ;
+                text                 : description
+                font.family          : 'courier'
+                // Text.Wrap tries to wrap on word boundaries.
+                // Unlike Text.WordWrap, it will break words if needed.
+                wrapMode             : Text.Wrap
+                readOnly             : !editing
+                color                : editing
+                  ? Kirigami.Theme.textColor
+                  : Kirigami.Theme.disabledTextColor
 
-            activeFocusOnPress   : true
-            activeFocusOnTab     : true
-            onActiveFocusChanged : {
-                if (activeFocus) {
-                    focusedBox = this;
+                activeFocusOnPress   : true
+                activeFocusOnTab     : true
+                onActiveFocusChanged : {
+                    if (activeFocus) {
+                        focusedBox = this;
+                    }
                 }
             }
 
-            background           : Rectangle {
+            background       : Rectangle {
                 id           : descFieldBackground
                 color        : editing
                   ? Kirigami.Theme.backgroundColor
@@ -195,18 +205,43 @@ RowLayout {
     ColumnLayout {
         Layout.leftMargin : Kirigami.Units.gridUnit * 0.45
 
-        Controls.Button {
-            id                    : restoreButton
-            Layout.alignment      : Qt.AlignTop
-            Layout.preferredWidth : Kirigami.Units.gridUnit * 7.5
-            Layout.bottomMargin   : Kirigami.Units.gridUnit * 0.5
-            text                  : 'Restore'
-            icon.name             : 'edit-undo-symbolic'
-            onClicked             : restoreClicked()
-            enabled               : !editing && !diskLow
+        Rectangle{
+            Layout.alignment       : Qt.AlignTop
+            Layout.preferredWidth  : Kirigami.Units.gridUnit * 7.5
+            Layout.bottomMargin    : Kirigami.Units.gridUnit * 0.5
+            Layout.preferredHeight : restoreButton.implicitHeight
+            color                  :
+              Kirigami.Theme.activeBackgroundColor
 
-            HoverHandler {
-                cursorShape : Qt.PointingHandCursor
+            Controls.Button {
+                id           : restoreButton
+                anchors.fill : parent
+                text         : 'Restore'
+                icon.name    : 'edit-undo-symbolic'
+                onClicked    : restoreClicked()
+                enabled      : !editing && !diskLow
+
+                HoverHandler {
+                    cursorShape : Qt.PointingHandCursor
+                }
+            }
+
+            Rectangle {
+                width   : restoreButton.width
+                height  : restoreButton.height
+                visible : diskLow
+                opacity : 0
+
+                HoverHandler {
+                    id: restoreDisableHover
+                }
+
+                Controls.ToolTip {
+                    visible :
+                      restoreDisableHover.hovered
+                    text    :
+                      'Disk space low, cannot restore snapshot'
+                }
             }
         }
 
@@ -215,7 +250,7 @@ RowLayout {
             Layout.alignment      : Qt.AlignTop
             Layout.preferredWidth : Kirigami.Units.gridUnit * 7.5
             Layout.bottomMargin   : Kirigami.Units.gridUnit * 0.5
-            text                  : 'Compare With'
+            text                  : 'Compare'
             icon.name             : 'document-duplicate'
             onClicked             : compareClicked()
             enabled               : !editing
@@ -225,18 +260,43 @@ RowLayout {
             }
         }
 
-        Controls.Button {
-            id                    : deleteButton
-            Layout.alignment      : Qt.AlignTop
-            Layout.preferredWidth : Kirigami.Units.gridUnit * 7.5
-            Layout.bottomMargin   : Kirigami.Units.gridUnit * 0.5
-            text                  : 'Delete'
-            icon.name             : 'edit-delete-remove'
-            onClicked             : deleteClicked()
-            enabled               : !editing && !pinned
+        Rectangle {
+            Layout.alignment       : Qt.AlignTop
+            Layout.preferredWidth  : Kirigami.Units.gridUnit * 7.5
+            Layout.bottomMargin    : Kirigami.Units.gridUnit * 0.5
+            Layout.preferredHeight : deleteButton.implicitHeight
+            color                  :
+              Kirigami.Theme.activeBackgroundColor
 
-            HoverHandler {
-                cursorShape : Qt.PointingHandCursor
+            Controls.Button {
+                id           : deleteButton
+                anchors.fill : parent
+                text         : 'Delete'
+                icon.name    : 'edit-delete-remove'
+                onClicked    : deleteClicked()
+                enabled      : !editing && !pinned
+
+                HoverHandler {
+                    cursorShape : Qt.PointingHandCursor
+                }
+            }
+
+            Rectangle {
+                width   : deleteButton.width
+                height  : deleteButton.height
+                visible : pinned
+                opacity : 0
+
+                HoverHandler {
+                    id: deleteDisableHover
+                }
+
+                Controls.ToolTip {
+                    visible :
+                      deleteDisableHover.hovered
+                    text    :
+                      'Cannot delete protected snapshot'
+                }
             }
         }
 
@@ -307,7 +367,8 @@ RowLayout {
                 } else {
                     name = nameField.text;
                 }
-                description       = descField.text;
+                // Limit to a max of 1024 characters
+                description       = descField.text.substr(0,1024);
                 pinned            = pinSwitch.checked;
                 nameField.text    = Qt.binding(function() { return name; });
                 descField.text    = Qt.binding(function() {

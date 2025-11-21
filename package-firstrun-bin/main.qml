@@ -21,7 +21,7 @@ Kirigami.ApplicationWindow {
     property bool firstRun                      : true
     property var interImageList                 : []
     property var defaultCryptList               : []
-    property string cryptChangeMode             : ""
+    property string cryptChangeMode             : ''
     property int cryptDiskChangeCount           : 0
     property string pageTitleText               : ''
     property string pageTitleImage              : ''
@@ -30,6 +30,16 @@ Kirigami.ApplicationWindow {
     property string liveUsbWarnStr              : '<b>This step is '
         + 'not available in a live USB session</b>. Please '
         + 'install to a system disk to run this step.'
+    property string modelCode                   : ''
+    property string modelLabel                  : ''
+    property var faqModelMap                    : ({
+      ir14g2 : 'bkm_ir1x_faq',
+      ir16g2 : 'bkm_ir1x_faq',  m2g6 : 'bkm_m2g6_faq',
+      nxg3   : 'bkm_nx_faq',    zrg1 : 'bkm_zrg1_faq'
+    })
+    property var imageModelMatrix               : ({
+      frontpage: { ir16g2: true, m2g6: true, nxg3: true, zrg1: true }
+    })
 
     property string ding01Str : '<font size="5">\u2776</font>&nbsp;'
     property string ding02Str : '<font size="5">\u2777</font>&nbsp;'
@@ -508,7 +518,7 @@ Kirigami.ApplicationWindow {
             }
             width : Kirigami.Units.gridUnit * 15
 
-            text  : '<b>Once you are finished,</b> please return here and '
+            text  : '<b>Once you are finished</b>, please return here and '
                   + 'click “Continue” to proceed to the next step.'
             wrapMode: Text.WordWrap
         }
@@ -779,12 +789,12 @@ Kirigami.ApplicationWindow {
         }
     }
 
-    function getThemedImageFn (icon_name, file_type) {
-        if ( Kirigami.Theme.textColor.hsvValue < 0.5 ) {
-            return 'qrc:/assets/images/' + icon_name + '_light.' + file_type;
-        } else {
-            return 'qrc:/assets/images/' + icon_name + '_dark.' + file_type;
-        }
+    function getThemedImageFn (image_id, file_type) {
+        var light_dark_str = ( Kirigami.Theme.textColor.hsvValue < 0.5 )
+            ? '_light' : '_dark';
+        var image_name = getModelImageNameFn( image_id );
+        return 'qrc:/assets/images/' + image_name
+            + light_dark_str + '.' + file_type;
     }
 
     function getThemedColorFn (color_name) {
@@ -792,10 +802,42 @@ Kirigami.ApplicationWindow {
             return color_name;
         } else {
             switch( color_name ) {
-            case 'green':
-                return 'lightgreen';
+            case 'green': return 'lightgreen';
             }
-         }
+        }
+    }
+
+    function getModelSpecificStringFn (string_id) {
+        switch ( string_id ) {
+        case 'welcome':
+            if ( modelCode === 'other' ) {
+                return 'Welcome to Kubuntu Focus!';
+            } else {
+                return 'Welcome to the Kubuntu Focus ' + modelLabel + '!';
+            }
+            break;
+        }
+        return '';
+    }
+
+
+    function getModelImageNameFn (image_id) {
+      var image_name;
+
+      // If we have an entry for this image_id...
+      if ( imageModelMatrix[ image_id ] ) {
+        if ( imageModelMatrix[ image_id ][ modelCode ] ) {
+          image_name = image_id + '_' + modelCode;
+        }
+        else {
+          image_name = image_id + '_generic';
+        }
+      }
+      // If we have NO entry for this image_id, set to <image_id>
+      else {
+        image_name = image_id;
+      }
+      return image_name;
     }
 
     function setCheckMarkFn () {
@@ -820,7 +862,6 @@ Kirigami.ApplicationWindow {
         enabledSidebar.currentIndex--;
         switchPageFn(getCurrentPageIdFn());
     }
-
 
     function populateCheckboxesFn () {
         const check_map = stateMatrix.check_map;
@@ -880,21 +921,41 @@ Kirigami.ApplicationWindow {
         case 'introductionItem':
             pageTitleText     = 'Introduction';
             frontImage.source = getThemedImageFn( 'frontpage', 'webp' );
-            frontHeading.text = 'Welcome To The Kubuntu Focus!';
+            frontHeading.text = getModelSpecificStringFn( 'welcome' );
             frontText.text
-              = '<p><b>This Welcome Wizard helps you get '
-              + 'started as quickly as possible</b>. We have included '
-              + 'many tools we feel most developers should '
-              + 'consider.<br></p>'
-
-              + '<p><b>This is not an endorsement of any product,</b> and '
-              + 'the Focus Team is not compensated in any way for '
-              + 'these suggestions. You may always run this wizard '
-              + 'later using Start Menu &gt; Kubuntu Focus Tools &gt; '
-              + 'Welcome Wizard or visit '
-              + 'the <a href="https://kfocus.org/wf/tools#wizard">'
-              + 'documentation.</a></p>'
+              = '<p><b>This Welcome Wizard is meant to help you get started '
+              + 'quickly</b>. Each step helps you select tools and '
+              + 'settings that best fit your workflow.'
               ;
+
+            if ( faqModelMap[ modelCode ] ) {
+                frontText.text
+                  += ' You can view frequently asked questions about the '
+                  + modelLabel
+                  + ' <a href="https://kfocus.org/wf/help.html#'
+                  + faqModelMap[ modelCode ]
+                  + '">here</a>.'
+                  ;
+            }
+            else {
+                frontText.text
+                  += ' You can view frequently asked questions '
+                  + 'for this and other models '
+                  + '<a href="https://kfocus.org/wf/help.html">here</a>.'
+                  ;
+            }
+            frontText.text += '<br></p>';
+
+            frontText.text
+              +='<p><b>To help keep your system current and secure</b>, '
+              + 'update the software regularly as described '
+              + '<a href="https://kfocus.org/wf/update.html">here</a>. '
+              + 'You may always revisit this wizard later using Start Menu '
+              + '&gt; Kubuntu Focus Tools &gt; Welcome Wizard.</p>'
+              ;
+              // You can visit the docs
+              // <a href="https://kfocus.org/wf/tools#wizard">'
+              // here.</a></p>';
             actionName        = 'nextPage';
             regenUiFn( frontTemplatePage, true );
             break;
@@ -1279,7 +1340,7 @@ Kirigami.ApplicationWindow {
             topHeading.text
               = 'Install MS Fonts, VirtualBox Extensions, and More';
             primaryText.text
-              = '<p><b>Some software is restricted,</b> '
+              = '<p><b>Some software is restricted</b>, '
               + 'meaning you have to approve certain agreements before '
               + 'you install it. We recommend you at least install the '
               + 'MS fonts to assist in compatibility. If you use '
@@ -1317,7 +1378,7 @@ Kirigami.ApplicationWindow {
               + 'installation. Please enter your password to '
               + 'proceed.<br></p>'
 
-              + '<p>' + ding02Str + '<b>As you follow the steps,</b> '
+              + '<p>' + ding02Str + '<b>As you follow the steps</b>, '
               + 'you will be prompted to accept license terms. If you do not '
               + 'agree with the terms for a particular software '
               + 'component, you may skip installing it.</p>'
@@ -1346,12 +1407,11 @@ Kirigami.ApplicationWindow {
               = '<p><b>The System Rollback tool</b> snapshots and restores '
               + 'system files upon request, allowing you to quickly recover '
               + 'from failed upgrades, kernel issues, and other OS problems. '
-              + 'If desired, it can automatically take snapshots both '
-              + 'periodically and before software updates, however '
-              + '<b>automatic snapshots are not enabled by '
-              + 'default.</b><br></p>'
+              + 'It can automatically take snapshots both '
+              + 'periodically and before software updates, although this '
+              + 'is not enabled by default.<br></p>'
 
-              + '<p><b>System Rollback does not snapshot files in /home.</b> '
+              + '<p><b>System Rollback does not snapshot files in /home</b>. '
               + 'For more info, see the '
               + '<a href="https://kfocus.org/wf/tools#rollback">Tools Guided '
               + 'Solution.</a></p>'
@@ -1374,32 +1434,34 @@ Kirigami.ApplicationWindow {
             headerHighlightRect.color = '#27ae60';
             interTopHeading.text      = 'Proceed with System Rollback...';
             instructionsText.text
-              = '<p>' + ding01Str + '<b>To enable automatic snapshots</b>, '
-              + 'switch the <b>Automatic Snapshots</b> switch on.<br></p>'
+              = '<p>' + ding01Str + '<b>Click on the System Rollback '
+              + 'Dashboard</b> icon to start the app. Use this to '
+              + 'create and manage snapshots at any time.<br></p>'
 
-              + '<p>' + ding02Str + '<b>The rollback quick launch icon</b> '
-              + 'will immediately display the System Rollback app. You can '
-              + 'create snapshots here at any time.<br></p>'
+              + '<p>' + ding02Str + '<b>Click on Create New Snapshot</b> '
+              + 'in the top-left panel. After providing your password, '
+              + 'a new snapshot should appear in the snapshot list.'
+              + '<br></p>'
 
-              + '<p>' + ding03Str + '<b>To restore a snapshot</b>, select '
-              + 'the snapshot to restore, then click <b>Restore</b>. The '
-              + 'system will reboot.<br></p>'
+              + '<p>' + ding03Str + '<b>Click on Edit</b> in the '
+              + 'bottom-right panel to change the name and description, '
+              + 'then click <b>Save</b>.<br></p>'
 
               + '<p><b>See more in the</b> '
-              + '<a href="https://kfocus.org/wf/tools#rollback">Tools Guided '
-              + 'Solution.</a></p>'
+              + '<a href="https://kfocus.org/wf/rollback">System '
+              + 'Rollback</a> Guided Solution.</a></p>'
               ;
+
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
             interImageList = [
-              'rollback-autosnapshot.webp',
-              'rollback-systray.svg',
-              'rollback-restore.webp'
+              'rollback-systray.webp',
+              'rollback-create.webp',
+              'rollback-edit.webp'
             ];
             actionName = 'nextPage';
             regenUiFn( interTemplatePage, false );
             break;
-
 
         case 'fileBackupItem':
             initPageFn([
@@ -1443,7 +1505,7 @@ Kirigami.ApplicationWindow {
             interTopHeading.text      = 'Proceed with BackInTime...';
             instructionsText.text
               = '<p>' + ding01Str + '<b>If BackInTime is not '
-              + 'installed,</b> you will be asked to install it, and '
+              + 'installed</b>, you will be asked to install it, and '
               + 'will need to provide your password to do so. ' + ding02Str
               + '<b>Once installed, the BackInTime app</b> should appear as '
               + 'shown.<br></p>'
@@ -1519,7 +1581,7 @@ Kirigami.ApplicationWindow {
               + 'you will be asked to install it, and will need to provide '
               + 'your password to do so.<br></p>'
 
-              + '<p>' + ding02Str + '<b>Once installed,</b> you may need to '
+              + '<p>' + ding02Str + '<b>Once installed</b>, you may need to '
               + 'click on the icon in the system tray as shown.<br></p>'
 
               + '<p>' + ding03Str + '<b>The main window should then '
@@ -1589,7 +1651,7 @@ Kirigami.ApplicationWindow {
             interTopHeading.text      = 'Proceed with Thunderbird...';
             instructionsText.text
               = '<p>' + ding01Str
-              + '<b>If Thunderbird is not installed,</b> you will be '
+              + '<b>If Thunderbird is not installed</b>, you will be '
               + 'asked to install it, and will need to provide your password '
               + 'to do so.<br></p>'
 
@@ -1663,12 +1725,12 @@ Kirigami.ApplicationWindow {
             interTopHeading.text      = 'Proceed with Dropbox...';
             instructionsText.text
               = '<p>' + ding01Str
-              + '<b>If Dropbox is not installed,</b> you will be asked to '
+              + '<b>If Dropbox is not installed</b>, you will be asked to '
               + 'install it, and will need to provide your password to do '
               + 'so.<br></p>'
 
               + '<p>' + ding02Str
-              + '<b>Once installed,</b> you may need to click on the icon '
+              + '<b>Once installed</b>, you may need to click on the icon '
               + 'in the system tray as shown.<br></p>'
 
               + '<p>' + ding03Str
@@ -1737,12 +1799,12 @@ Kirigami.ApplicationWindow {
             interTopHeading.text      = 'Proceed with Insync...';
             instructionsText.text
               = '<p>' + ding01Str
-              + '<b>If Insync is not installed,</b> you will be asked to '
+              + '<b>If Insync is not installed</b>, you will be asked to '
               + 'install it, and will need to provide your password to do '
               + 'so.<br></p>'
 
               + '<p>' + ding02Str
-              + '<b>When you first start Insync,</b> you will be shown '
+              + '<b>When you first start Insync</b>, you will be shown '
               + 'account options. Select your drive type to proceed.<br></p>'
 
               + '<p>' + ding03Str
@@ -1808,13 +1870,13 @@ Kirigami.ApplicationWindow {
             interTopHeading.text      = 'Proceed with JetBrains Toolbox...';
             instructionsText.text
               = '<p>' + ding01Str
-              + '<b>If JetBrains Toolbox is not installed,</b> you will '
+              + '<b>If JetBrains Toolbox is not installed</b>, you will '
               + 'be asked to install it, and will need to provide your '
               + 'password to do so.<br></p>'
 
               + '<p>' + ding02Str
               + '<b>If you’re launching the Toolbox for the first '
-              + 'time,</b> you will be asked to configure it and accept the '
+              + 'time</b>, you will be asked to configure it and accept the '
               + 'JetBrains User Agreement. It may take up to 30 seconds for '
               + 'the Toolbox to launch.<br></p>'
 
@@ -1878,7 +1940,7 @@ Kirigami.ApplicationWindow {
               + 'interface.<br></p>'
 
               + '<p>' + ding02Str
-              + '<b>Pick one of the preinstalled avatars,</b> or click '
+              + '<b>Pick one of the preinstalled avatars</b>, or click '
               + '“Choose File” to use a custom avatar.<br></p>'
               // TODO: Specify image type and size?
 
@@ -1908,7 +1970,7 @@ Kirigami.ApplicationWindow {
             topImage.source = imgDir + 'kfocus_bug_apps.svg';
             topHeading.text = 'Find and Install Apps Quickly';
             primaryText.text
-              = '<p><b>The Curated Apps Page lists recommended apps </b> '
+              = '<p><b>The Curated Apps Page lists recommended apps</b> '
               + 'that work well with Kubuntu Focus systems. Click on an '
               + 'icon to launch an app. If it is not installed, the system '
               + 'will install the repository and the package before '
@@ -1985,10 +2047,10 @@ Kirigami.ApplicationWindow {
               + 'checkmark. Click the “Clear Checkmarks” button below to '
               + 'reset them.<br></p>'
 
-              + '<p><b>To get more help,</b> click Start Menu &gt; Kubuntu Focus '
+              + '<p><b>To get more help</b>, click Start Menu &gt; Kubuntu Focus '
               + 'Tools &gt; Help.<br></p>'
 
-              + '<p><b>To run this wizard again,</b> click Start Menu &gt; '
+              + '<p><b>To run this wizard again</b>, click Start Menu &gt; '
               + 'Kubuntu Focus Tools &gt; Welcome Wizard.</p>'
               ;
             actionButton.text      = 'Finish';
@@ -1998,7 +2060,6 @@ Kirigami.ApplicationWindow {
             break;
         }
     }
-
 
     function storeStateMatrixFn () {
         let serial_str;
@@ -2234,7 +2295,7 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'launchBackInTime':
-            exeRun.exec( systemDataMap.binDir + '/kfocus-mime -k backintime' );
+            exeRun.exec( systemDataMap.binDir + '/kfocus-mime -kf backintime' );
             switchPageFn( 'fileBackupLaunchedItem' );
             break;
 
@@ -2301,6 +2362,18 @@ Kirigami.ApplicationWindow {
         if ( systemDataMap.rollbackCmd === '' ) {
           removeSidebarItemFn( 'systemRollbackItem' );
         }
+
+        exeRun.execSync( 'source /usr/lib/kfocus/lib/common.2.source;'
+          + ' _cm2EchoModelStrFn \'code\''
+        );
+        modelCode = exeRun.stdout.trim();
+        // DEBUG console.log(modelCode);
+
+        exeRun.execSync( 'source /usr/lib/kfocus/lib/common.2.source;'
+          + ' _cm2EchoModelStrFn \'label\''
+        );
+        modelLabel = exeRun.stdout.trim();
+        // DEBUG console.log(modelLabel);
 
         startPageIdx = findSidebarItemFn( systemDataMap.startPage );
         if ( startPageIdx === -1 ) {

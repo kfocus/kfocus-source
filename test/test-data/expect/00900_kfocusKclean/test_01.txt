@@ -4,12 +4,6 @@ Doc: https://kfocus.org/wf/tools#kclean
 2 kernels are installed.
 Check forced: /boot space is low (139 of 705 MB).
 
-Disk space on /boot is low, but only protected 
-kernel are installed. If there is a kernel you 
-are NOT USING, we encourage you to purge it so 
-the /boot disk does not overfill and prevent the
-system from booting.
-
 Packages to Keep
 linux-headers-6.2.0-35-generic
 linux-headers-6.5.0-14-generic
@@ -27,7 +21,11 @@ linux-tools-6.2.0-35-generic
 linux-tools-6.5.0-14-generic
 
 Packages to Purge
-There are no unused kernels to purge.
+There are no unused kernels to purge, as only 
+protected kernels are installed. If there is a kernel 
+you are NOT USING, you can purge it so the /boot 
+disk does not overfill and prevent the system 
+from booting.
 
 Press <return> to continue.
 
@@ -60,5 +58,5 @@ Do Force Flag?        : n
 Is /boot low?         : y
 Do Check Triggered?   : y
 Check Message         : 2 kernels are installed.<br>
-Check forced: /boot space is low (139 of 705 MB).
+Check forced: <span style="color:#da4453">/boot space is low (139 of 705 MB).</span>
 === . END Diagnostics ============

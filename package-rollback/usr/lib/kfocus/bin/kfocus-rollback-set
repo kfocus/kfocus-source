@@ -138,10 +138,12 @@ _mainFn () {
   case "${_mode_str}" in
     'checkEchoLockDir')        _dispatchFn 'checkEchoLockDir';;
     'checkBootUnallocSpace')   _dispatchFn 'checkBootUnallocSpace';;
+    'checkBulkDirs')           _dispatchFn 'checkBulkDirs';;
     'checkMainUnallocSpace')   _dispatchFn 'checkMainUnallocSpace';;
     'getBaseSnapshotMetadata') _dispatchFn 'getBaseSnapshotMetadata' "${1}";;
     'getBootMinUnalloc')       _dispatchFn 'getBootMinUnalloc';;
     'getBootUnallocSpace')     _dispatchFn 'getBootUnallocSpace';;
+    'getBulkDirList')          _dispatchFn 'getBulkDirList';;
     'getBtrfsStatus')          _dispatchFn 'getBtrfsStatus';;
     'getFullSnapshotMetadata') _dispatchFn 'getFullSnapshotMetadata' "${1}";;
     'getMainMinUnalloc')       _dispatchFn 'getMainMinUnalloc';;

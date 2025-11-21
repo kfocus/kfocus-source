@@ -1,7 +1,8 @@
 #!/bin/bash
 #
-# Copyright 2020-2024 MindShare Inc.
-# Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
+# Copyright 2020-2025 MindShare Inc.
+# Written for Kubuntu Focus by:
+# Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
 #
 # Name    : kfocus-kb-color
 # Purpose : GUI to change keyboard LED settings
@@ -57,6 +58,7 @@ _mainFn () {
   case "${_model_code}" in
     m1g1) true;;
     m2g*) true;;
+    zrg*) true;;
     xeg*|ir14*|ir16*)
       if [[ "${_model_code}" =~ ^xeg.*$ ]]; then
         _key_str='Fn + F4';
@@ -74,7 +76,7 @@ ${_key_str} to increase or decrease the effect.<br></p>
 </body></html>
 EOE
       )";;
-    nxg1) _prompt_msg="$(cat <<EOE
+    nx*) _prompt_msg="$(cat <<EOE
 <html><head>${_cssStyleStr}</head><body>
 <h3>Keyboard Color Settings</h3>
 ${_cm2HtmPStr}This <b>Kubuntu Focus ${_model_label}</b> system does <br>
@@ -119,6 +121,7 @@ EOE
   ## . End Get keyboard string }
 
   ## Begin Handle selection loop {
+  pkexec "${_setKbdExe}" -E 1 || true; # Always enable
   while true; do
     _kbd_stat_str="$(pkexec "${_setKbdExe}" -l)"
     IFS=';' read -r -a _kbd_stat_list <<< "${_kbd_stat_str}";
@@ -157,7 +160,7 @@ EOH
 
     if [ "${#_change_list[@]}" -eq 0 ]; then exit 0; fi
 
-    ## Begin Handle change list
+    ## Begin Handle the change list
     for _loop_line in "${_change_list[@]}"; do
       _loop_line="${_loop_line//\"/}";
       _bright_default_str="${_color_bright_str}0%";
@@ -190,7 +193,7 @@ EOH
     if [ -z "${_read_bright_str}" ]; then
       _read_bright_str="${_color_bright_str}"; fi
     if [ -z "${_read_hex_str}"  ]; then _read_hex_str="${_color_hex_str}"; fi
-    pkexec "${_setKbdExe}" -s "${_read_bright_str};${_read_hex_str}";
+    pkexec "${_setKbdExe}" -s "${_read_bright_str};${_read_hex_str};1";
   done
   ## . End Handle selection loop }
 }
@@ -201,7 +204,7 @@ declare _binName _binDir _baseDir _baseName \
   _assignList _setKbdExe;
 ## . END declare global vars
 
-## BEGIN Run main if script is not sourced {
+## BEGIN Run main if the script is not sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binName="$(  readlink -f "$0"       )" || exit 101;
   _binDir="$(   dirname  "${_binName}" )" || exit 101;
@@ -216,4 +219,4 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   fi
   _mainFn "$@";
 fi
-## . END Run main if script is not sourced }
+## . END Run main if the script is not sourced }

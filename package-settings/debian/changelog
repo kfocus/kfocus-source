@@ -1,16 +1,65 @@
-kfocus-settings (24.04.7~beta1) noble; urgency=medium
+kfocus-settings (24.04.13~beta2) noble; urgency=medium
 
-  [ Michael S. Mikowski]
+  * kfocus-settings.postinst: Improve code safety (#6049)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 19 Nov 2025 15:47:04 -0600
+
+kfocus-settings (24.04.13~beta1) noble; urgency=medium
+
+  * kfocus-settings.postinst: Add config so DKMS builds drivers
+    for all kernels (#6049)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 17 Nov 2025 15:47:48 -0600
+
+kfocus-settings (24.04.12) noble; urgency=medium
+
+  * skel/.vimrc: Add settings for vimdiff default mode
+  * skel/.vimrc: Remove /tmp .swp storage to retain through boots
+
+ -- Michael S. Mikowski <support@kfocus.org>  Wed, 17 Sep 2025 21:01:52 -0400
+
+kfocus-settings (24.04.11) noble; urgency=medium
+
+  * google-chrome/default/Preferences: Default to QT theming
+  * kfocus-black.profile: Unset reverse highlighting
+
+ -- Michael S. Mikowski <support@kfocus.org>  Sun, 31 Aug 2025 02:02:35 -0400
+
+kfocus-settings (24.04.10) noble; urgency=medium
+
+  * konsole/kfocus-black.profile: Switch to ubuntu mono (#5423)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 13 Aug 2025 10:50:31 -0500
+
+kfocus-settings (24.04.9) noble; urgency=medium
+
+  [ Aaron Rainbolt ]
+  * Add plocate as a build dependency (#5339)
+  * Adjust updatedb configuration to index BTRFS (#5339)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Fri, 04 Jul 2025 11:41:58 -0400
+
+kfocus-settings (24.04.8) noble; urgency=medium
+
+  * konsole/kfocus-black.profile: HighlightScrolledLines=false (#5423)
+  * skel/.vimrc: Remove redundant comment (#5423)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 26 Jun 2025 15:26:46 -0500
+
+kfocus-settings (24.04.7) noble; urgency=medium
+
   * Add enhancements to vimrc file (#5063)
     * Add notes on jumping between matching HTML tags
     * Strip trailing space on save
     * Add `;kk` shortcut for clearing checkboxes
+    * Change ;f behavior to toggle line numbers, remove ;ff
     * Change shift width, tab stop, and indent expr for HTML and Markdown
       files
+    * Add additional languages to markdown_fenced_languages
     * Add wrapping shortcut for vimdiff
     * Allow regex matches to use more memory
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 10 Feb 2025 10:08:18 -0600
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 08 Apr 2025 10:04:43 -0500
 
 kfocus-settings (24.04.6) noble; urgency=medium
 
