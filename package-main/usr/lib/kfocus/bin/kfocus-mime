@@ -169,6 +169,23 @@ _urlDecodeFn () {
   echo "${_url_str}";
 }
 
+## BEGIN _aptGetInstallUnattended {
+_aptGetInstallUnattended() {
+  # TODO: Capture unsuccessful install. This might be done here, although
+  #   callers may be better equipped to report on failure. The return code
+  #   will be set by the exit code of this call.
+  #
+  # TODO: Consider detecting and warning about conffile conflicts after
+  #   installation is complete.
+  DEBIAN_FRONTEND='noninteractive' \
+    apt-get \
+    -o Dpkg::Options::='--force-confdef' \
+    -o Dpkg::Options::='--force-confold' \
+    -q -y install \
+    "$@";
+}
+## . END _aptGetInstallUnattended }
+
 ## BEGIN deb-get functions {
 # These functions are taken directly from the deb-get project with the
 # intention of contributing to it and making it our pkexec backend.
@@ -442,7 +459,7 @@ function update_apt() {
 function install_apt() {
   if [ -n "${GPG_KEY_ID}" ] || [ -n "${GPG_KEY_URL}" ]; then
     if [ ! -d /usr/share/keyrings ]; then
-      mkdir -p /usr/share/keyrings 2>/dev/null
+      mkdir -p /usr/share/keyrings 2>/dev/null;
     fi
   fi
 
@@ -462,13 +479,13 @@ function install_apt() {
 
   ## TODO: https://superuser.com/questions/1641291
   echo -e "${APT_REPO_URL}" > "/etc/apt/sources.list.d/${APT_LIST_NAME}.list";
-  update_apt
+  update_apt;
 
   # Install all packages as a group
   if (( "${#APT_EXTRA_PKGLIST[@]}" > 0 )); then
-    apt-get -q -y install "${APP}" "${APT_EXTRA_PKGLIST[@]}";
+    _aptGetInstallUnattended "${APP}" "${APT_EXTRA_PKGLIST[@]}";
   else
-    apt-get -q -y install "${APP}";
+    _aptGetInstallUnattended "${APP}";
   fi
 }
 function _isUserInActiveGroupFn () {
@@ -521,7 +538,7 @@ function install_deb() {
 
   if ! _cm2ChkInstalledPkgFn "${APP}"; then
     download_deb "${URL}"
-    apt-get -q -y install "${CACHE_DIR}/${FILE}"
+    _aptGetInstallUnattended "${CACHE_DIR}/${FILE}"
   fi
   if [ -f "${CACHE_DIR}/${FILE}" ]; then
     rm "${CACHE_DIR}/${FILE}" 2>/dev/null
@@ -531,7 +548,7 @@ function install_ppa() {
   if apt-add-repository -y --no-update "${PPA}"; then
     update_apt
     if ! _cm2ChkInstalledPkgFn "${APP}"; then
-      apt-get -q -y install "${APP}"
+      _aptGetInstallUnattended "${APP}"
     fi
   else
     # Remove repo if something when wrong
@@ -624,7 +641,7 @@ _installPkgFn () {
 
   # Install if already found in repo
   if _cm2ChkPkgFn "${_pkg_name}"; then
-    apt-get install -q -y "${_pkg_name}";
+    _aptGetInstallUnattended "${_pkg_name}";
     return;
   fi
 
