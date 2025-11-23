@@ -20,11 +20,34 @@ Recommends:   kfocus-conda,
               kfocus-tbt,
               kfocus-vidsync,
               kfocus-recover-mount
-Breaks:       kfocus-tools-m2g6,
+Breaks:       kfocus-eth-yt6801,
+              kfocus-tools-ir1xg3,
+              kfocus-tools-m2g6,
               kfocus-tools-nxg1,
               kfocus-tools-other
 Description:  Kubuntu Focus Tools Metapackage
  This metapackage installs the Kubuntu Focus tools.
+
+Package:      kfocus-tools-ir1xg3
+Architecture: all
+Depends:      ${misc:Depends}
+Recommends:   kfocus-eth-yt6801,
+              kfocus-conda,
+              kfocus-kb-color,
+              kfocus-pick-gcc,
+              kfocus-power-bin,
+              kfocus-tbt,
+              kfocus-vidsync,
+              kfocus-recover-mount
+Breaks:       kfocus-power-fan,
+              kfocus-keyboard,
+              kfocus-tools-m2g6,
+              kfocus-tools-nxg1,
+              kfocus-tools-other,
+              kfocus-tools
+Description:  Kubuntu Focus Tools - ir1xg3 Metapackage
+ This metapackage installs the Kubuntu Focus tools
+ for the Ir1X GEN 3 laptops.
 
 Package:      kfocus-tools-m2g6
 Architecture: all
@@ -37,7 +60,9 @@ Recommends:   kfocus-conda,
               kfocus-tbt,
               kfocus-vidsync,
               kfocus-recover-mount
-Breaks:       kfocus-power-fan,
+Breaks:       kfocus-eth-yt6801,
+              kfocus-power-fan,
+              kfocus-tools-ir1xg3,
               kfocus-tools-nxg1,
               kfocus-tools-other,
               kfocus-tools
@@ -55,8 +80,10 @@ Recommends:   kfocus-conda,
               kfocus-tbt,
               kfocus-vidsync,
               kfocus-recover-mount
-Breaks:       kfocus-power-fan,
+Breaks:       kfocus-eth-yt6801,
+              kfocus-power-fan,
               kfocus-keyboard,
+              kfocus-tools-ir1xg3,
               kfocus-tools-m2g6,
               kfocus-tools-other,
               kfocus-tools
@@ -74,8 +101,10 @@ Recommends:   kfocus-conda,
               kfocus-tbt,
               kfocus-vidsync,
               kfocus-recover-mount
-Breaks:       kfocus-power-fan,
+Breaks:       kfocus-eth-yt6801,
+              kfocus-power-fan,
               kfocus-keyboard,
+              kfocus-tools-ir1xg3,
               kfocus-tools-m2g6,
               kfocus-tools-nxg1,
               kfocus-tools

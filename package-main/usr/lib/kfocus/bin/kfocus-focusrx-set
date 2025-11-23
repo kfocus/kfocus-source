@@ -224,9 +224,17 @@ _chkHwConfigFn () {
   _file_hw_config_code="$( cat "${_hwConfigCodeFile}" || echo '' )";
   _file_hw_model_code="$(  cat "${_hwModelCodeFile}"  || echo '' )";
 
-  if [ "${_file_hw_config_code}" != "${_dmi_hw_config_code}" ]; then
-    _msg='reconfig-hw;;Hardware signature does not match expected: ';
-    _msg+="${_file_hw_config_code} != ${_dmi_hw_config_code}";
+  # Flag as hw reconfig if hw_config_code does not match
+  if [ "${_dmi_hw_config_code}" != "${_file_hw_config_code}" ]; then
+    _msg='reconfig-hw;;Found hardware signature does not match expected: ';
+    _msg+="${_dmi_hw_config_code} != ${_file_hw_config_code}";
+    _reason_list+=( "${_msg}" );
+    _is_hw_reconfig='y';
+  # Flag as hw reconfig if hw_model_code does not match
+  # This forces changes like model hints reset and dpi
+  elif [ "${_dmi_hw_model_code}" != "${_file_hw_model_code}" ]; then
+    _msg='reconfig-hw;;Found model signature does not match expected: ';
+    _msg+="${_dmi_hw_model_code} != ${_file_hw_model_code}";
     _reason_list+=( "${_msg}" );
     _is_hw_reconfig='y';
   elif [ "${_do_force}" = 'y' ]; then
@@ -235,20 +243,16 @@ _chkHwConfigFn () {
     _is_hw_reconfig='y';
   fi
 
-  # TODO Flag as hw reconfig if hw_model_code does not match
-  # if [ "${_file_hw_model_code}" != "${_dmi_hw_model_code}" ]; then
-  #   _is_hw_reconfig='y';
-  # fi
-
   ## Begin Adjust tool suffix per config code {
   # kfocus-tools-m2g6, kfocus-tools-nxg1, kfocus-tools-other,
   # kfocus-tools (#3424)
   _tool_pkg_suffix='';
   case "${_dmi_hw_config_code}" in
     default|generic|m2g4|m2g5|xeg2) _tool_pkg_suffix='';;
-    nxg1) _tool_pkg_suffix='-nxg1';;
-    m2g6) _tool_pkg_suffix='-m2g6';;
-    zrg1) _tool_pkg_suffix='-m2g6';;
+    nxg1)   _tool_pkg_suffix='-nxg1';;
+    m2g6)   _tool_pkg_suffix='-m2g6';;
+    zrg1)   _tool_pkg_suffix='-m2g6';;
+    ir1Xg3) _tool_pkg_suffix='-ir1xg3';;
     ir14g1|ir1Xg2|other|*) _tool_pkg_suffix='-other';;
   esac
   _tool_pkg_name="kfocus-tools${_tool_pkg_suffix}";

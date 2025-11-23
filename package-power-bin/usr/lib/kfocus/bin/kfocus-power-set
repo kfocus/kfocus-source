@@ -36,7 +36,7 @@ _freqMisreportTable=(
 ## BEGIN _importCommonFn {
 # Summary   : _importCommonFn
 # Purpose   : Load common routines, prefer relative dir
-#           : Run ls-common-symbols.sh to get list of symbols used here.
+#           : Run ls-common-symbols.sh to get the list of symbols used here.
 # Example   : _importCommonFn;
 # Arguments : none
 # Globals   : Package vars _baseDir _baseName
@@ -88,7 +88,7 @@ _printMaxIntFn () {
   if [ -n "${_calc_str}" ]; then
     _printIntFn "$(bc <<< "${_calc_str}")";
   else
-    _cm2WarnStrFn 'No up or down ratio given.';
+    _cm2WarnStrFn 'No up or down ratio is provided.';
     _printIntFn "${_hw_base_int}";
   fi
 }
@@ -253,13 +253,13 @@ _chkInitCpuFn () {
 
   # Skip if not the m2g5 or m2g5p model (both share config_code m2g5)
   if [ "$(_cm2EchoModelStrFn 'config_code')" != 'm2g5' ]; then
-    touch "${_cpuDropFile}" || _cm2WarnStrFn 'Could not add drop file';
+    touch "${_cpuDropFile}" || _cm2WarnStrFn 'Could not add a drop file';
     return 0;
   fi
 
   # Enable turbo boost, this takes about 16 seconds on the m2g5 but could take
   # longer in theory.
-  # 21 = 8th fibonacci number, max total delay time = 54 seconds
+  # 21 is the 8th fibonacci number, max total delay time = 54 seconds
   while (( _delay_int <= 21 )); do
     if _setNoTurboFn 0; then
       break;
@@ -297,7 +297,7 @@ _chkInitCpuFn () {
     _cm2WarnStrFn 'Could NOT set pstate flag to |passive|';
     _success_flag='n';
   else
-    # Set default governor on all cores
+    # Set the default governor on all cores
     _proc_count="$("${_nprocExe}")";
 
     for (( _proc_idx=0; _proc_idx < "${_proc_count}"; _proc_idx++ )); do
@@ -309,7 +309,7 @@ _chkInitCpuFn () {
   fi
 
   if [ "${_success_flag}" = 'y' ]; then
-    touch "${_cpuDropFile}" || _cm2WarnStrFn 'Could not add drop file';
+    touch "${_cpuDropFile}" || _cm2WarnStrFn 'Could not add a drop file';
     _cm2SucFn;
   else
     _cm2WarnFn;
@@ -440,7 +440,7 @@ _calcPrettyOptionsFn() {
 
   _orig_computed_table_str="${1:-}";
   [ -z "${_orig_computed_table_str}" ] && {
-    _cm2ErrStrFn 'No orig computed table str provided';
+    _cm2ErrStrFn 'The original computed table string was not provided';
     return 1;
   }
 
@@ -601,7 +601,7 @@ _computedTableFile='/run/kfocus-power-computed-table';
 _prettyComputedTableFile='/run/kfocus-power-pretty-computed-table';
 ## . END Declare and assign global vars }
 
-## BEGIN Run main if script is not sourced {
+## BEGIN Run main if the script is not sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binName="$(readlink -f "$0")"        || exit 101;
   _binDir="$(dirname "${_binName}")"    || exit 101;
@@ -623,4 +623,4 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   _mainFn "$@"; # >> /tmp/kfocus-power-set-debug.txt 2>&1
 fi
-## . END Run main if script is not sourced }
+## . END Run main if the script is not sourced }

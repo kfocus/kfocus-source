@@ -12,7 +12,7 @@ _echoFormatFn   () { printf '  %-4.4s : %-14.14s %-2.2s %-14.14s ' "$@"; }
 #
 # STRINGS
 #   _cm2KdiagExe     : Kdialog command string; '' if not found
-#   _cm2IsTty        : 'y' or 'n' if tty session
+#   _cm2IsTty        : 'y' or 'n' if this is a tty session
 #
 #   _cm2HtmBeginStr  : <html><body>
 #   _cm2HtmEndStr    : </body></html>
@@ -27,8 +27,8 @@ _echoFormatFn   () { printf '  %-4.4s : %-14.14s %-2.2s %-14.14s ' "$@"; }
 # KEY
 # <key>[-][A] <methodName> : <description>
 #   key            = key for test
-#   [_]            = if present, see key below for additional docs
-#   [A]            = if present, see test below
+#   [_]            = if present, see the key below for additional docs
+#   [A]            = if present, see the test below
 #   <methodName>   = Name of method
 #   <description>  = Short description of method
 #
@@ -76,7 +76,7 @@ _echoFormatFn   () { printf '  %-4.4s : %-14.14s %-2.2s %-14.14s ' "$@"; }
 # Example   : _cm2ErrFn;
 # Arguments : none
 # Globals   : Package symbol _cm2BlockMsg
-# Outputs   : Prints block end message to STDERR
+# Outputs   : Prints a block end message to STDERR
 # Returns   : none
 ## . END _cm2ErrFn }
 
@@ -143,18 +143,18 @@ _audit_cm2EchoStackFn () {
 # Globals   : Package symbols _cm2IsTty, _cm2PromptUserFn
 # Outputs   : 'sudo' or 'pkexec' to STDOUT
 #           : User prompt in tty mode uses STDERR
-# Returns   : 0 on success. 1 if requesting sudo but user has no sudo rights
+# Returns   : 0 on success, 1 if the user does not have sudo right.
 ## . END _cm2GetEscExeFn }
 
 # 0g_
 ## BEGIN _cm2AskExitFn {
 # Summary   : _cm2AskExitFn <exit_int> <exit_prompt>
 # Purpose   : Provide standard means to request exit with value.
-# Example   : _cm2AskExitFn 0 'Process complete. Press return to exit.';
+# Example   : _cm2AskExitFn 0 'Process is complete. Press return to exit.';
 # Arguments : $1 = exit integer. $2 = exit_prompt or '' for default.
 # Globals   : Package symbols _cm2NechoFn, _cm2EchoFn
 # Outputs   : Prompt is presented in STDERR, input is STDIN
-# Returns   : 'exit' with provided integer
+# Returns   : 'exit' with the provided integer
 ## . END _cm2AskExitFn }
 
 # 0h_
@@ -165,7 +165,7 @@ _audit_cm2EchoStackFn () {
 # Arguments : none
 # Globals   : Package symbols _cm2EchoFn, _cm2ReadPromptYnFn
 # Outputs   : Prompts to STDERR, input is STDIN
-# Returns   : 'exit 98' if exit is approved by user
+# Returns   : 98 if the user approved the exit
 ## . END _cm2InterruptFn }
 
 # 0i_
@@ -229,7 +229,7 @@ _audit_cm2EchoStackFn () {
 # Purpose   : Return the ${_search_key} value for host system model
 # Example   : _cm2EchoModelStrFn 'is_nv_sys'
 # Arguments : $1 = field_key
-#           : See header in _cm2ModelTable for list of fields.
+#           : See header in _cm2ModelTable for a list of fields.
 # Globals   : Package symbols _cm2ModelHeadList, _cm2ModelLine,
 #           :   _cm2MakeModelHeadListFn, _cm2CalcModelLineFn,
 #           :   _cm2WarnStrFn
@@ -270,6 +270,7 @@ _audit_cm2EchoModelStrFn () {
     'iridium|ir14g1|n|ir14g1|LCS14-12i12345'
     'iridium|ir14g2|n|ir1Xg2|LCS14-13i'
     'iridium|ir16g2|n|ir1Xg2|LCS16-13i'
+    'iridium|ir14g3|n|ir1Xg3|LCS14-15u'
   );
 
   # Mock dmi files
@@ -304,8 +305,8 @@ _audit_cm2EchoModelStrFn () {
 
     _col_idx=1;
     for _col_key in code is_nv_sys config_code; do
-      _expect_str="${_bit_list[${_col_idx}]}";
-      _calc_str="$(_cm2EchoModelStrFn ${_col_key})";
+      _expect_str="${_bit_list["${_col_idx}"]}";
+      _calc_str="$(_cm2EchoModelStrFn "${_col_key}")";
       if [ "${_expect_str}" = "${_calc_str}"  ]; then
         printf '  ok   : Col key | %-12.12s | matches | %-12.12s |\n' \
           "${_col_key}" "${_expect_str}";
@@ -348,7 +349,7 @@ _audit_cm2EchoModelStrFn () {
 # Returns   : none
 # WARNING   : Only use this if exe name is unique. Otherwise, false
 #   positives can occur. If you must absolutely ensure there is no dup
-#   process, create a lock file (see flock in kfocus-pstate).
+#   process, create a lock file (see "flock" in kfocus-pstate).
 ## . END _cm2ChkDupRunFn }
 
 # 0p_A
@@ -465,7 +466,7 @@ _audit_cm2ChkPkgFn () {
 # 0s_
 ## BEGIN _cm2AssignExeVarsFn {
 # Summary   : _cm2AssignExeVarsFn '<name>|<command>[|<type>|<required>', ...
-# Purpose   : For all in arg list, assign value to global variable <name>
+# Purpose   : For all in the arg list, assign value to global variable <name>
 #   If <type> = 'exe' (default), value is 'command -v <command>'
 #     if found and executable; otherwise ''.
 #     Multiple command paths may be supplied, delimited by a comma.
@@ -501,13 +502,13 @@ _audit_cm2AssignExeVarsFn () {
     # Since cmd is not found sets as ''. Ret is 1 because required.
     'snuggle_bear      | exe    | required | 1 |'
 
-    # Find the second path, so returns 0
+    # Find the second path, so returns 0.
     'snuggle_bear,/usr/bin/awk   | exe | required | 0 |/usr/bin/awk'
     'pizzaX,pizzaY,/usr/bin/tr   | exe | required | 0 |/usr/bin/tr'
     # No path works, so return 1
     'pizzaX,pizzaY,/usr/bin/XXNO | exe | required | 1 |'
 
-    # Since cmd is not found sets as ''. But ret is 0 since optional.
+    # Since cmd is not found sets as ''. Ret is 0 because optional.
     'snuggle_bear      | exe    | optional | 0 |'
     'tr                | filero |          | 1 |'
     '/usr/bin/tr       | filero |          | 0 |/usr/bin/tr'
@@ -515,7 +516,7 @@ _audit_cm2AssignExeVarsFn () {
     '/etc/lsb-release  | filero |          | 0 |/etc/lsb-release'
     '/etc/lsb-release  | filerw |          | 1 |'
     '/etc/lsb-release  | unreal |          | 1 |'
-    # Since file is not rw, sets as ''. But ret is 0 since optional.
+    # Since the file is not rw, sets as ''. Ret is 0 because optional.
     '/etc/lsb-release  | filerw | optional | 0 |'
     # Since the type is not known, this should always return 1
     '/etc/lsb-release  | unreal | optional | 1 |'
@@ -608,7 +609,7 @@ _audit_cm2AssignExeVarsFn () {
 #        can be removed and replaced line like
 #        'Press <return> to continue' when converted to CLI.
 #        This is used with the 'p' option in cm2PromptUserFn.
-#     w) Leave the string along (without changes)
+#     w) Leave the string alone (without changes)
 #     n) (default) Same as w, except remove trailing '?'
 #
 # Example   : _cm2StripTagsFn "${_prompt_html}";
@@ -768,7 +769,7 @@ _audit_cm2PromptUserFn () {
     if [ "${_is_tty}" = 'n' ]; then
       printf '  %-.72s\n\n' 'Please answer in GUI'
     else
-      printf '  %-.72s\n\n' 'Please answer in terminal'
+      printf '  %-.72s\n\n' 'Please answer in the terminal'
     fi
 
     for _loop_line in "${_assert_table[@]}"; do
@@ -784,7 +785,7 @@ _audit_cm2PromptUserFn () {
       if [ "${_is_tty}" = 'y' ]; then
         _prompt_str="Confirm ${_type_str}. <br>";
       else
-        _prompt_str="Confirm query and title ${_type_str}. <br>";
+        _prompt_str="Confirm the query and title |${_type_str}|. <br>";
       fi
       if [ -n "${_bit_list[1]:-}" ]; then
         if [ "${_bit_list[1]}" = 'y' ]; then
