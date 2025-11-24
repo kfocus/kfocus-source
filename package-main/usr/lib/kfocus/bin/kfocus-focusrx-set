@@ -373,7 +373,7 @@ _fixHwConfigFn () {
   IFS='|' read -r -a _reason_list <<< "${_reason_str}";
 
   if ! _updatePkgsFn; then
-    _cm2ErrStrFn 'Abort fixHwConfig: Could not update packages.';
+    echo 'Abort: Could not update kfocus packages.';
     return 1;
   fi
 
@@ -393,15 +393,15 @@ _fixHwConfigFn () {
         ;;
     esac
     if ! "${_cmd_list[@]}"; then
-      _cm2ErrStrFn 'Abort fixHwConfig: Could not complete step:';
-      _cm2ErrStrFn "  Trouble with |${_loop_line}| ${_cmd_list[*]}|";
+      echo 'Abort: Could not complete step:';
+      echo "  Trouble with |${_loop_line}| ${_cmd_list[*]}|";
       return 1;
     fi
   done
 
   # Indicate post-install (finalize) setup is complete
-  _model_code="$(_cm2EchoModelStrFn 'code')"    || return 1;
-  mkdir -p "${_varLibDir}"                      || return 1;
+  _model_code="$(_cm2EchoModelStrFn 'code')" || return 1;
+  mkdir -p "${_varLibDir}"                   || return 1;
   # This is set only on post-install configuration
   echo "${_model_code}" > "${_hwModelCodeFile}" || true;
 }
@@ -439,13 +439,18 @@ _setKeyCodesFn () {
 
 ## BEGIN _mainFn {
 _mainFn () {
-  declare _arg_str;
+  declare _arg_str _report_str;
   _arg_str="${1:-}";
   case "${_arg_str}" in
     'chk-bios'        ) _chkBiosUpdateFn;;
     'chk-hw-config'   ) _chkHwConfigFn;;
     'force-hw-config' ) _chkHwConfigFn 'y';;
-    'fix-hw-config'   ) _fixHwConfigFn "${2:-}";;
+    'fix-hw-config'   ) 
+      if ! _report_str="$(_fixHwConfigFn "${2:-}")"; then
+        echo "${_report_str:-Undeclared error}";
+        exit 1;
+       fi
+       ;;
     'prep-snapshot'   ) _prepareSnapshotFn;;
     'clear-restore'   ) _clearRestoreFn;;
     'set-keycodes'    ) _setKeyCodesFn;;

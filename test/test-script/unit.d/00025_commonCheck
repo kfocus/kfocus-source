@@ -305,7 +305,7 @@ _audit_cm2EchoModelStrFn () {
 
     _col_idx=1;
     for _col_key in code is_nv_sys config_code; do
-      _expect_str="${_bit_list["${_col_idx}"]}";
+      _expect_str="${_bit_list[${_col_idx}]}";
       _calc_str="$(_cm2EchoModelStrFn "${_col_key}")";
       if [ "${_expect_str}" = "${_calc_str}"  ]; then
         printf '  ok   : Col key | %-12.12s | matches | %-12.12s |\n' \
