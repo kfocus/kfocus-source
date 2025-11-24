@@ -42,6 +42,7 @@ _updatePkgsFn () {
     fi
   fi
   _cm2WarnFn;
+  return 1;
 }
 ## . END _updatePkgsFn }
 
@@ -364,13 +365,18 @@ _chkHwConfigFn () {
 #          On completion, writes the model code to a kfocus file.
 #
 _fixHwConfigFn () {
-  declare _reason_str _reason_list _loop_line _bit_list _cmd_list _model_code;
+  declare _reason_str _reason_list _loop_line \
+    _bit_list _cmd_list _model_code;
 
   _reason_str="${1:-}";
   if [ -z "${_reason_str}" ]; then return 0; fi
-
   IFS='|' read -r -a _reason_list <<< "${_reason_str}";
-  _updatePkgsFn;
+
+  if ! _updatePkgsFn; then
+    _cm2ErrStrFn 'Abort fixHwConfig: Could not update packages.';
+    return 1;
+  fi
+
   for _loop_line in "${_reason_list[@]}"; do
     IFS=';' read -r -a _bit_list <<< "${_loop_line}";
     case "${_bit_list[0]}" in
@@ -387,13 +393,15 @@ _fixHwConfigFn () {
         ;;
     esac
     if ! "${_cmd_list[@]}"; then
-      _cm2WarnStrFn "Trouble with step |${_loop_line}| |${_cmd_list[*]}|";
+      _cm2ErrStrFn 'Abort fixHwConfig: Could not complete step:';
+      _cm2ErrStrFn "  Trouble with |${_loop_line}| ${_cmd_list[*]}|";
+      return 1;
     fi
   done
 
   # Indicate post-install (finalize) setup is complete
-  _model_code="$(_cm2EchoModelStrFn 'code')"    || return;
-  mkdir -p "${_varLibDir}"                      || return;
+  _model_code="$(_cm2EchoModelStrFn 'code')"    || return 1;
+  mkdir -p "${_varLibDir}"                      || return 1;
   # This is set only on post-install configuration
   echo "${_model_code}" > "${_hwModelCodeFile}" || true;
 }

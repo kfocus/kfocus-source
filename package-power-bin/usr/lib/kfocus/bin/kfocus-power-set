@@ -257,9 +257,9 @@ _chkInitCpuFn () {
     return 0;
   fi
 
-  # Enable turbo boost, this takes about 16 seconds on the m2g5 but could take
-  # longer in theory.
-  # 21 is the 8th fibonacci number, max total delay time = 54 seconds
+  # Enable turbo boost, this takes about 16 seconds on the m2g5 but
+  # could take longer in theory. The 8th fibonacci number is 21, so
+  # max total delay time is 54 seconds.
   while (( _delay_int <= 21 )); do
     if _setNoTurboFn 0; then
       break;
@@ -376,18 +376,21 @@ _calcOptionsFn () {
       | awk -F':' '{ print $2 }' \
       | sed 's/^ *//; s/(\(R\|TM\))//g'
   )";
-  _misreport_warn_str="";
-  _normal_cpu_freq="";
-  _low_cpu_freq="";
+  _misreport_warn_str='';
+  _normal_cpu_freq='';
+  _low_cpu_freq='';
   _return_val='0';
 
-  for _freq_misreport_line in "${_freqMisreportTable[@]}"; do
-    IFS=';' read -r -a _bit_list <<< "${_freq_misreport_line}";
-    _freq_misreport_cpuid="${_bit_list[0]}";
-    if [ "${_cpu_str}" = "${_freq_misreport_cpuid}" ]; then
-      _misreport_warn_str="${_bit_list[1]}";
-    fi
-  done
+  # Do not warn for ir1Xg3 as these have no issue
+  if [ "$(_cm2EchoModelStrFn 'config_code')" != 'ir1Xg3' ]; then
+    for _freq_misreport_line in "${_freqMisreportTable[@]}"; do
+      IFS=';' read -r -a _bit_list <<< "${_freq_misreport_line}";
+      _freq_misreport_cpuid="${_bit_list[0]}";
+      if [ "${_cpu_str}" = "${_freq_misreport_cpuid}" ]; then
+        _misreport_warn_str="${_bit_list[1]}";
+      fi
+    done
+  fi
   _out_list+=(
     "$(_cm2EchoModelStrFn 'label');${_cpu_str};${_misreport_warn_str}"
   );
