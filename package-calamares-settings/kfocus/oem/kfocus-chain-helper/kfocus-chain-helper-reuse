@@ -5,10 +5,10 @@
 # Written for the Kubuntu Focus by M. Mikowski and A. Rainbolt.
 #
 # Name     : kfocus-chain-helper-reuse
-# Summary  : kfocus-chain-helper-reuse <target_mount_point_path>
-#              <target_disk_path> [<old_luks_passphrase>]
-# Purpose  : Reuses an existing secondary disk and sets it up.
-# Example  : kfocus-chain-helper-reuse /home /dev/nvme1n1 passphrase
+# Summary  : kfocus-chain-helper-reuse <mount_point_type>
+#              <target_partition_path> [<old_luks_passphrase>]
+# Purpose  : Reuses an existing extra partition and sets it up.
+# Example  : kfocus-chain-helper-reuse home /dev/nvme1n1p1 passphrase
 # License  : GPLv2
 # Run By   : kfocus-chain-helper-ui
 # Spec     : 4574
@@ -55,49 +55,59 @@ _echoDebugFn () {
 }
 ## . END _echoDebugFn }
 
+## BEGIN _getDataPartPathFn {
+_getDataPartPathFn () {
+  declare _line _mount_path _return_path _found_avail_path _part_idx;
+
+  _return_path='/srv/data'
+  _part_idx='1';
+
+  while true; do
+    _found_avail_path='y';
+    while read -r _line; do
+      _mount_path="$(awk '{print $2}' <<< "${_line}")";
+      if [ "${_mount_path}" = "${_return_path}" ]; then
+        _found_avail_path='n';
+        break;
+      fi
+    done < /etc/fstab;
+
+    if [ "${_found_avail_path}" = 'y' ]; then
+      break;
+    fi
+    (( _part_idx++ )) || true;
+    _return_path="/srv/data${_part_idx}";
+  done
+
+  echo "${_return_path}";
+}
+## . END _getDataPartPathFn }
+
 ## BEGIN _mainFn {
 _mainFn () {
-  declare _target_mount_point _disk_tgt _crypt_passphrase_str _disk_tgt \
-    _part_tgt _crypt_tgt _key_tgt _part_top _mount_dev _mount_src _uuid \
-    _luks_dump_str _key_capacity _key_size_list _key_size _key_size_idx;
+  declare _target_mount_type _crypt_passphrase_str _part_tgt _crypt_tgt \
+    _key_tgt _mount_dev _mount_src _fstab_uuid_str _luks_dump_str \
+    _key_capacity _key_size_list _key_size _key_size_idx _target_mount_point \
+    _part_uuid;
 
   _key_size=0;
 
   # Determine useful paths and names
-  _target_mount_point="${1:-}";
-  [ -z "${_target_mount_point}" ] && exit 1;
-  _disk_tgt="${2:-}";
-  [ -z "${_disk_tgt}" ] && exit 1;
+  _target_mount_type="${1:-}";
+  [ -z "${_target_mount_type}" ] && exit 1;
+  _part_tgt="${2:-}";
+  [ -z "${_part_tgt}" ] && exit 1;
   _crypt_passphrase_str="${3:-}";
-  if [[ "${_disk_tgt}" =~ ^/dev/nvme ]]; then
-    _part_tgt="${_disk_tgt}p1";
-  else
-    _part_tgt="${_disk_tgt}1";
+  _part_uuid="$(blkid -s UUID -o value "${_part_tgt}")";
+  [ -z "${_part_uuid}" ] && exit 1;
+  _crypt_tgt="luks-${_part_uuid}";
+  _key_tgt="luks-key-${_part_uuid}";
+
+  _echoDebugFn   "_part_tgt  : ${_part_tgt}";
+  if [ -n "${_crypt_passphrase_str}" ]; then
+    _echoDebugFn "_crypt_tgt : ${_crypt_tgt}";
+    _echoDebugFn "_key_tgt   : ${_key_tgt}";
   fi
-  _part_top="$(basename "${_part_tgt}")";
-  _crypt_tgt="${_part_top}_crypt";
-  _key_tgt="luks-key-${_part_top}";
-
-  _echoDebugFn "_disk_tgt  : ${_disk_tgt}";
-  _echoDebugFn "_part_tgt  : ${_part_tgt}";
-  _echoDebugFn "_crypt_tgt : ${_crypt_tgt}";
-  _echoDebugFn "_key_tgt   : ${_key_tgt}";
-
-  # Unmount everything on the target disk
-  #
-  # Commented out because the UI script shouldn't let the user select a disk
-  # with anything mounted anyway.
-  #
-  # declare _umount_list _umount_idx;
-  # readarray -t _umount_list < <(ls ${_disk_tgt}*);
-  # for (( _umount_idx=0; _umount_idx < ${#_umount_list[@]}; \
-  #   _umount_idx++ )); do
-  #   if [ "${_umount_list[_umount_idx]}" != "${_disk_tgt}" ]; then
-  #     if grep -q "${_umount_list[_umount_idx]}" < <(cat '/proc/mounts'); then
-  #       umount "${_umount_list[_umount_idx]}" || exit 1;
-  #     fi
-  #   fi
-  # done
 
   if [ -n "${_crypt_passphrase_str}" ]; then
     # Make sure there's room for a new key
@@ -139,22 +149,26 @@ _mainFn () {
     _mount_dev="${_part_tgt}";
   fi
 
-  # Determine partition UUID
-  _uuid="UUID=$(blkid | grep "^${_part_tgt}" | sed 's/^.*: [A-Z]*UUID="\([^"]\+\)".*$/\1/')";
-  [ -z "${_uuid}" ] && exit 3;
+  # Determine target mount point
+  if [ "${_target_mount_type}" = 'home' ]; then
+    _target_mount_point='/home';
+  else # "${_target_mount_point}" = 'data'
+    _target_mount_point="$(_getDataPartPathFn)";
+  fi
 
   # Configure the disk to mount at boot
+  _fstab_uuid_str="UUID=${_part_uuid}";
   if [ -n "${_crypt_passphrase_str}" ]; then
     _mount_src="${_mount_dev}";
-    echo "${_crypt_tgt} ${_uuid} /root/.${_key_tgt} luks,discard" \
+    echo "${_crypt_tgt} ${_fstab_uuid_str} /root/.${_key_tgt} luks,discard" \
       >> /etc/crypttab || exit 3;
   else
-    _mount_src="${_uuid}";
+    _mount_src="${_fstab_uuid_str}";
   fi
   echo -e "# KFOCUS ${_target_mount_point} is on ${_mount_dev}\n${_mount_src} ${_target_mount_point} ext4 defaults 0 2" >> /etc/fstab || exit 3;
 
   # Move the home directory if needed
-  if [ "${_target_mount_point}" = '/home' ]; then
+  if [ "${_target_mount_type}" = 'home' ]; then
     # Unmount in preparation to move
     umount '/home' || exit 3;
 
@@ -163,16 +177,16 @@ _mainFn () {
     # "${_btrfsExe}" subvolume delete '/btrfs_main/@home' || exit 3;
 
     # Comment out the old /home mount line in fstab
-    sed -i 's|^\(.*/home.*btrfs.*subvol=/@home.*\)$|# KFOCUS Replaced /home btrfs with secondary disk\n# \1|' /etc/fstab || exit 3;
+    sed -i 's|^\(.*/home.*btrfs.*subvol=/@home.*\)$|# KFOCUS Replaced /home btrfs with extra disk\n# \1|' /etc/fstab || exit 3;
     # Re-parse fstab
     systemctl daemon-reload;
     # Remount /home
     mount '/home' || exit 3;
 
-  # Otherwise make sure /srv/data actually exists
+  # Otherwise make sure the data partition actually exists
   else
-    mkdir -p '/srv/data';
-    mount '/srv/data' || exit 3;
+    mkdir -p "${_target_mount_point}";
+    mount "${_target_mount_point}" || exit 3;
   fi
 }
 ## . END _mainFn }
