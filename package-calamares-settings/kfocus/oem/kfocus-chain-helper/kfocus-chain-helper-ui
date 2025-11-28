@@ -895,8 +895,10 @@ _mainFn () {
   _setup_opt_list=();
   if ! _isHomeSetUpFn; then
     _setup_opt_list+=( 'home' 'Set up as a HOME disk (/home)' 'on' );
+    _setup_opt_list+=( 'data' 'Set up as a DATA disk (/srv/data*)' 'off' );
+  else
+    _setup_opt_list+=( 'data' 'Set up as a DATA disk (/srv/data*)' 'on' );
   fi
-  _setup_opt_list+=( 'data' 'Set up as a DATA disk (/srv/data*)' 'off' );
   _chooseMountMsg="${_chooseMountMsg/XXX_SELECTED_PART_XXX/${_selected_part}}";
   _target_mount_type="$(_cm2PromptUserFn "${_chooseMountMsg}" \
     "${_winTitle}" 'd' "${_setup_opt_list[@]}")";
@@ -939,10 +941,10 @@ _mainFn () {
   # Prompt for authorization and call disk preparation script
   if [ "${_full_prepare_yn}" = 'y' ]; then
     if [ -n "${_disk_str}" ]; then
-      _cm2RunLongCmdFn 'Preparing disk...' "${_fullPrepareDiskExe}" \
+      _cm2RunLongCmdFn 'Preparing disk' "${_fullPrepareDiskExe}" \
         "${_target_mount_type}" "${_luks_yn}" 'format_disk' "${_selected_part}";
     else
-      _cm2RunLongCmdFn 'Preparing disk...' "${_fullPrepareDiskExe}" \
+      _cm2RunLongCmdFn 'Preparing disk' "${_fullPrepareDiskExe}" \
         "${_target_mount_type}" "${_luks_yn}" 'format_part' "${_selected_part}";
     fi
     _exit_code="$?";
@@ -959,7 +961,7 @@ _mainFn () {
     esac
   else
     if [ "${_encrypted_yn}" = 'n' ]; then
-      _cm2RunLongCmdFn 'Preparing disk...' "${_reuseDiskExe}" \
+      _cm2RunLongCmdFn 'Preparing disk' "${_reuseDiskExe}" \
         "${_target_mount_type}" "${_selected_part}";
       _exit_code="$?";
       case "${_exit_code}" in
@@ -977,7 +979,7 @@ _mainFn () {
           ;;
       esac
     else
-      _cm2RunLongCmdFn 'Preparing disk...' "${_reuseDiskExe}" \
+      _cm2RunLongCmdFn 'Preparing disk' "${_reuseDiskExe}" \
         "${_target_mount_type}" "${_selected_part}" "${_crypt_passphrase_str}";
       _exit_code="$?";
       case "${_exit_code}" in
