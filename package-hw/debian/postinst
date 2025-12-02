@@ -201,8 +201,8 @@ _handle_ir1Xg3Fn () {
   _symlinkTable+=(
     # Add   bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
-    # Clear boot params
-    '/etc/default/grub.d/kfocus.cfg|'
+    # Add   boot params to use deep sleep
+    '/etc/default/grub.d/kfocus.cfg|/usr/lib/kfocus/conf/ir1xg3-etc_default_grub.d_kfocus.cfg'
     # Clear initramfs config
     '/etc/initramfs-tools/conf.d/kfocus.conf|'
     # Clear any general module configs such as sound, nv-power, sound-pop fix
