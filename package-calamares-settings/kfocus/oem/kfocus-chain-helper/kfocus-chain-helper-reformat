@@ -85,9 +85,9 @@ _getDataPartPathFn () {
 
 ## BEGIN _mainFn {
 _mainFn () {
-  declare _target_mount_type _luks_yn _disk_tgt _part_tgt _crypt_tgt \
-    _key_tgt _default_str _mount_dev _mount_src _fstab_uuid_str _format_mode \
-    _target_mount_point _part_uuid;
+  declare _target_mount_type _luks_yn _disk_tgt _part_tgt _part_num \
+    _crypt_tgt _key_tgt _default_str _mount_dev _mount_src _fstab_uuid_str \
+    _format_mode _target_mount_point _part_uuid _part_label;
 
   # Determine useful paths and names
   _target_mount_type="${1:-}";
@@ -107,6 +107,8 @@ _mainFn () {
   else
     _disk_tgt="${_part_tgt%p*}";
   fi
+  [[ "${_part_tgt}" =~ ^/dev/.*[^0-9]([0-9]+) ]] || exit 1;
+  _part_num="${BASH_REMATCH[1]}";
   _default_str="$(xxd -r -p <<< '6b7562756e74750a')";
 
   _echoDebugFn   "_disk_tgt  : ${_disk_tgt}";
@@ -145,6 +147,11 @@ _mainFn () {
   else # "${_target_mount_point}" = 'data'
     _target_mount_point="$(_getDataPartPathFn)";
   fi
+
+  # Label the partition
+  _part_label="kfocus_$(basename "${_target_mount_point}")";
+  sfdisk --part-label "${_disk_tgt}" "${_part_num}" "${_part_label}" \
+    || exit 1;
 
   # Configure the disk to mount at boot
   _fstab_uuid_str="UUID=${_part_uuid}";
