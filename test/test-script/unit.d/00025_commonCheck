@@ -1,6 +1,4 @@
-#!/bin/bash
-# Docs last updated 2023-01-08
-
+# This code is designed to be source by runUnitTests.
 ## BEGIN Scrub beginning and trailing whitespace
 # Works like sed 's/^\s\+//' <<< "$*" | sed 's/\s\+//';
 _echoScrubStrFn () { xargs <<< "$*"; }
@@ -603,7 +601,7 @@ _audit_cm2AssignExeVarsFn () {
 #   * Remove any <tag> or </tag> (but retain content)
 #   * Convert HTML entities &lt; and &gt; to < and >.
 #   * Remove leading and trailing new lines
-#   * If _do_strip_last to
+#   * _do_strip_last options are as follows:
 #     y) If more than one line, remove the last line.
 #        This is so final lines like 'Press OK to continue'
 #        can be removed and replaced line like
