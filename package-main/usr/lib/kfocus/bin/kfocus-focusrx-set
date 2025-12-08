@@ -423,7 +423,7 @@ _clearRestoreFn () {
 
 ## BEGIN _setKeyCodesFn {
 # Purpose: Used to set keyboard codes per model.
-# Typically this is needed if a key code is undefined.
+# Typically, this is needed if a key code is undefined.
 #
 _setKeyCodesFn () {
   declare _model_code;
@@ -444,7 +444,7 @@ _mainFn () {
     'chk-bios'        ) _chkBiosUpdateFn;;
     'chk-hw-config'   ) _chkHwConfigFn;;
     'force-hw-config' ) _chkHwConfigFn 'y';;
-    'fix-hw-config'   ) 
+    'fix-hw-config'   )
       if ! _report_str="$(_fixHwConfigFn "${2:-}")"; then
         # Echo stdout for UI display
         echo "${_report_str:-Undeclared error}";
