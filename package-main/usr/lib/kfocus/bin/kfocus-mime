@@ -389,7 +389,7 @@ function _readPkgRepoInfoFn () {
     ARCHS_SUPPORTED METHOD EULA SNAP_PKG_NAME URL VERSION_INSTALLED \
     VERSION_PUBLISHED PRETTY_NAME WEBSITE CUSTOM_FUNC_NAME;
 
-  CACHE_DIR='/var/cache/deb-get'
+  CACHE_DIR='/var/cache/deb-get';
 
   # shellcheck disable=SC2076
   if [[ ! " ${_pkgNameList[*]} " =~ " ${_pkg_name} " ]]; then
@@ -559,13 +559,13 @@ function install_ppa() {
 
 ## BEGIN _installDisplaylinkDriverFn {
 _installDisplaylinkDriverFn() {
-  declare _url
+  declare _url;
 
   _url='https://www.synaptics.com/sites/default/files/Ubuntu/pool';
   _url+='/stable/main/all/synaptics-repository-keyring.deb';
-  install_deb "${_url}"
-  update_apt
-  install_apt
+  install_deb "${_url}";
+  update_apt;
+  install_apt;
 }
 ## . END _installDisplaylinkDriverFn }
 
@@ -589,12 +589,7 @@ _echoInstallPromptMsgFn () {
   # TODO 2022-05-05 TEPID msm: Verify package comes from desired upstream repo
   _readPkgRepoInfoFn "${_pkg_name}";
 
-  if _cm2ChkPkgFn "${_pkg_name}"; then
-    echo -e "\n'${_descr_str}' is available ";
-    echo -e "but it is not installed."
-    echo -e "\nInstall and start now?\n";
-    return 0;
-  elif [ "${METHOD:-}" = 'custom' ]; then
+  if _cm2ChkPkgFn "${_pkg_name}" || [ "${METHOD:-}" = 'custom' ]; then
     echo -e "\n'${_descr_str}' is available ";
     echo -e "but it is not installed.";
     echo -e "\nInstall and start now?\n";

@@ -33,13 +33,12 @@ _importCommonFn() {
 #
 _updatePkgsFn () {
   _cm2SetMsgFn 'Update and upgrade kfocus packages';
-  if apt-get update; then
-    if yes 2>/dev/null \
-      | apt-get install -y --only-upgrade 'kfocus*';
-    then
-      _cm2SucFn;
-      return;
-    fi
+  apt-get update || true;
+  if yes 2>/dev/null \
+    | apt-get install -y --only-upgrade 'kfocus*';
+  then
+    _cm2SucFn;
+    return;
   fi
   _cm2WarnFn;
   return 1;
@@ -63,7 +62,7 @@ _reconfigHwPkgFn () {
 
   # Then reconfigure
   if _str="$(dpkg-reconfigure kfocus-hw 2>&1)"; then
-    _cm2SucFn; else _cm2WarnStrFn "${_str}"; _cm2WarnFn;
+    _cm2SucFn; else _cm2WarnStrFn "${_str}"; _cm2WarnFn; return 1;
   fi
 }
 ## . END _reconfigHwPkgFn }
@@ -77,7 +76,7 @@ _installToolsPkgFn () {
   _tools_pkg="${1:-}";
   _cm2SetMsgFn "Install Tools Package ${_tools_pkg}";
   if ! [[ "${_tools_pkg}" =~ ^kfocus-tools ]]; then
-    _cm2WarnStrFn; return 1;
+    _cm2WarnFn; return 1;
   fi
 
   if apt-get reinstall -y "${_tools_pkg}"; then
@@ -155,7 +154,6 @@ _installNvidiaFn () {
   fi
   if ! apt-get update; then
     _cm2WarnStrFn 'Trouble updating apt package list.';
-    _cm2WarnFn; return 1;
   fi
   if ! apt-get reinstall -y "kfocus-nvidia${_nv_pkg_suffix}"; then
     _cm2WarnStrFn "Trouble installing kfocus-nvidia${_nv_pkg_suffix}.";
@@ -363,6 +361,7 @@ _chkHwConfigFn () {
 ## BEGIN _fixHwConfigFn {
 # Purpose: Loop through hardware config steps and execute as needed.
 #          On completion, writes the model code to a kfocus file.
+# Output : stdout is a message intended for UI.
 #
 _fixHwConfigFn () {
   declare _reason_str _reason_list _loop_line \
@@ -424,7 +423,7 @@ _clearRestoreFn () {
 
 ## BEGIN _setKeyCodesFn {
 # Purpose: Used to set keyboard codes per model.
-# Typically this is needed if a key code is undefined.
+# Typically, this is needed if a key code is undefined.
 #
 _setKeyCodesFn () {
   declare _model_code;
@@ -445,8 +444,9 @@ _mainFn () {
     'chk-bios'        ) _chkBiosUpdateFn;;
     'chk-hw-config'   ) _chkHwConfigFn;;
     'force-hw-config' ) _chkHwConfigFn 'y';;
-    'fix-hw-config'   ) 
+    'fix-hw-config'   )
       if ! _report_str="$(_fixHwConfigFn "${2:-}")"; then
+        # Echo stdout for UI display
         echo "${_report_str:-Undeclared error}";
         exit 1;
        fi
