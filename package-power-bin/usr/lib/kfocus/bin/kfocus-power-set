@@ -27,6 +27,7 @@ _optionTable=(
   # 'Frugal;X;.666666666;powersave;1;0'
 );
 
+# TODO: Add all remaining frequency tables here
 declare -A _freqCanonicalTable;
 _freqCanonicalTable["Intel Core i9-14900HX"]="$(cat <<EOF
 High;5800000;4100000;
@@ -80,25 +81,33 @@ _importCommonFn () {
 ## . END _importCommonFn }
 
 _checkSetFlockFn () {
+  declare _did_get_lock _idx;
+
+  _did_get_lock='n;'
   if ! [ -e "${_currentModeFile}" ]; then
     install -m 644 /dev/null "${_currentModeFile}" || {
       _logWrapFn 'err' "Could not install |${_currentModeFile}|!";
       return 2;
     }
   fi
+
   exec 211>>"${_currentModeFile}" || {
     _logWrapFn 'err' 'Lock file permission denied!';
     return 2;
   };
-  while true; do
-    if ! flock -n -e 211; then
-      #_logWrapFn 'info' "Cannot get lock on |${_currentModeFile}|!";
-      #return 1;
-      sleep 1;
-    else
+  for (( _idx=0; _idx < 11; _idx++ )); do
+    if flock -n -e 211; then
+      _did_get_lock='y';
       break;
+    elif (( _idx < 10 )); then
+      sleep 1;
     fi
   done
+
+  if [ "${_did_get_lock}" = 'n' ]; then
+    _cm2WarnStrFn 'Could not get lock file after ten seconds!'
+    return 1;
+  fi
 }
 
 _printIntFn () { printf '%.0f' "$*"; }
@@ -200,7 +209,7 @@ _scanFn () {
     _gov_key _noturbo_int _kbdled_int _avail_gov_list _proc_count       \
     _proc_idx _set_max_int _hw_freq_list _hw_min_int _hw_max_int        \
     _hw_base_file _hw_base_int _param_list _solve_line _current_max_int \
-    _current_ecore_max_int _psave_key _regen_solve_line;
+    _current_ecore_max_int _psave_key;
 
   _match_line="${1:-}";
   _mode_key="${2:-}";
@@ -265,11 +274,9 @@ _scanFn () {
 
     if [ "${_mode_key}" = 'read' ]; then
       if [ "${_hasEcores}" = 'y' ]; then
-        _regen_solve_line='n';
         if _intInRangeFn "${_proc_idx}" "${_pcoreRange[@]}"; then
           if (( _set_max_int > _current_max_int )); then
             _current_max_int="${_set_max_int}";
-            _regen_solve_line='y';
           fi
         else
           if ! _intInRangeFn "${_proc_idx}" "${_ecoreRange[@]}"; then
@@ -277,21 +284,11 @@ _scanFn () {
           fi
           if (( _set_max_int > _current_ecore_max_int )); then
             _current_ecore_max_int="${_set_max_int}";
-            _regen_solve_line='y';
           fi
-        fi
-        if [ "${_regen_solve_line}" = 'y' ] \
-          && [ "${_current_max_int}" != '0' ] \
-          && [ "${_current_ecore_max_int}" != '0' ]; then
-          _solve_line="${_label};";
-          _solve_line+="${_current_max_int}|${_current_ecore_max_int};";
-          _solve_line+="${_gov_key};${_noturbo_int};${_kbdled_int};";
         fi
       else
         if (( _set_max_int > _current_max_int )); then
           _current_max_int="${_set_max_int}";
-          _solve_line="${_label};${_current_max_int};${_gov_key};";
-          _solve_line+="${_noturbo_int};${_kbdled_int};";
         fi
       fi
     elif [ "${_mode_key}" = 'set' ]; then
@@ -316,6 +313,13 @@ _scanFn () {
   done
 
   if [ "${_mode_key}" = 'read' ]; then
+    if [ "${_hasEcores}" = 'y' ]; then
+      _solve_line="${_label};${_current_max_int}|${_current_ecore_max_int};";
+      _solve_line+="${_gov_key};${_noturbo_int};${_kbdled_int};";
+    else
+      _solve_line="${_label};${_current_max_int};${_gov_key};";
+      _solve_line+="${_noturbo_int};${_kbdled_int};";
+    fi
     echo "${_solve_line}";
   fi
 }
@@ -451,7 +455,8 @@ _setModeFn () {
 
 _calcCanonicalFreqsFn() {
   declare _canonical_table_str _canonical_table_list _out_list _opt_line \
-    _opt_parts _canonical_line _canonical_match_line _canonical_parts;
+    _opt_parts _canonical_line _canonical_match_line _canonical_parts \
+    _out_str;
 
   _canonical_table_str="${1:-}";
   [ -z "${_canonical_table_str}" ] && return 1;
@@ -478,13 +483,14 @@ _calcCanonicalFreqsFn() {
 
     IFS=';' read -r -a _canonical_parts <<< "${_canonical_match_line}";
     if [ "${#_canonical_parts[@]}" = '3' ]; then
-      _out_list+=(
-        "${_opt_parts[0]};${_canonical_parts[1]}|${_canonical_parts[2]};${_opt_parts[3]};${_opt_parts[4]};${_opt_parts[5]};"
-      )
+      _out_str="${_opt_parts[0]};";
+      _out_str+="${_canonical_parts[1]}|${_canonical_parts[2]};";
+      _out_str+="${_opt_parts[3]};${_opt_parts[4]};${_opt_parts[5]};";
+      _out_list+=( "${_out_str}" );
     else
-      _out_list+=(
-        "${_opt_parts[0]};${_canonical_parts[1]};${_opt_parts[3]};${_opt_parts[4]};${_opt_parts[5]};"
-      )
+      _out_str="${_opt_parts[0]};${_canonical_parts[1]};${_opt_parts[3]};";
+      _out_str+="${_opt_parts[4]};${_opt_parts[5]};";
+      _out_list+=( "${_out_str}" );
     fi
   done
 
@@ -720,7 +726,7 @@ _mainFn () {
     '-r') _readModeFn;;
     '-i') true;; # does CPU init only, and that's already done
       '') _cm2ErrStrFn 'Argument or flag required'; exit 1;;
-       *) _checkSetFlockFn; _setModeFn "${_arg_str}";;
+       *) _checkSetFlockFn || exit "$?"; _setModeFn "${_arg_str}";;
   esac
 }
 

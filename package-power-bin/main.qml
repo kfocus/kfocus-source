@@ -43,27 +43,40 @@ Kirigami.ApplicationWindow {
                 Layout.fillWidth: true
             }
 
-            RowLayout {
+            Rectangle {
                 visible: plasmaProfilesSlider.visible
-                spacing: 0
                 Layout.fillWidth: true
+                Layout.preferredHeight: childrenRect.height
+                Layout.bottomMargin: PlasmaCore.Units.largeSpacing
+                color: "transparent"
 
                 Controls.Label {
                     // DEBUG + scaleRatio.toFixed(3)
                     text: '🔋 Powersave'
+                    anchors {
+                        left: parent.left
+                        top: parent.top
+                    }
                 }
 
                 Controls.Label {
-                    Layout.fillWidth: true
                     horizontalAlignment: Text.AlignHCenter
                     text: '⚖️ Balanced'
+                    anchors {
+                        left: parent.left
+                        right: parent.right
+                        top: parent.top
+                    }
                 }
 
                 Controls.Label {
                     // DEBUG + scaleMap.spread_num.toFixed(3)
                     text: 'Performance ⚡'
+                    anchors {
+                        right: parent.right
+                        top: parent.top
+                    }
                 }
-                Layout.bottomMargin: PlasmaCore.Units.largeSpacing
             }
 
             Kirigami.Heading {
@@ -155,9 +168,9 @@ Kirigami.ApplicationWindow {
                         }
                         color: isHeaderRow || selectedRow ? "gray" : elementColor
                         // Column size ratio is controlled by the subindex ternary
-                        Layout.preferredWidth: (layout.width - Layout.rightMargin * grid.columns)
-                          * (subindex == 0 ? 0.25 : subindex == 1 ? 0.30 : 0.45 / (grid.columns - 2))
                         Layout.rightMargin: 2
+                        Layout.preferredWidth: (layout.width - (Layout.rightMargin * grid.columns * 2))
+                            * (subindex == 0 ? 0.25 : subindex == 1 ? 0.30 : 0.45 / (grid.columns - 2))
                         Layout.preferredHeight: 30 * scaleRatio
                         Controls.Label {
                             anchors.top: parent.top
@@ -184,6 +197,8 @@ Kirigami.ApplicationWindow {
                 id: cpuTypeLegend
                 visible: false
                 text: `P = perf core, E = efficient core`
+                // Default margin is too large, tighten things up with a
+                // negative margin
                 Layout.bottomMargin: 0 - PlasmaCore.Units.smallSpacing
             }
 
@@ -352,15 +367,7 @@ Kirigami.ApplicationWindow {
         ShellEngine {
             id: altProfilesChecker
             onStdoutChanged: {
-                const chkCustomRegex = /^\s*custom/i
-                const chkUnknownRegex = /^\s*unknown/i
-                const trimmedStdout = stdout.trim();
-                if (trimmedStdout !== ''
-                    && ! chkCustomRegex.test( trimmedStdout )
-                    && ! chkUnknownRegex.test( trimmedStdout )
-                ) {
-                    profilesModel.selectedProfile = trimmedStdout
-                }
+                updateSelectedFreqProfile( stdout );
             }
         }
 
@@ -368,15 +375,7 @@ Kirigami.ApplicationWindow {
             id: profileChanger
             onStdoutChanged: {
                 freqChangeProcCount -= 1;
-                const chkCustomRegex = /^\s*custom/i
-                const chkUnknownRegex = /^\s*unknown/i
-                const trimmedStdout = stdout.trim();
-                if (trimmedStdout !== ''
-                    && ! chkCustomRegex.test( trimmedStdout )
-                    && ! chkUnknownRegex.test( trimmedStdout )
-                ) {
-                    profilesModel.selectedProfile = trimmedStdout
-                }
+                updateSelectedFreqProfile( stdout );
             }
         }
 
@@ -611,6 +610,16 @@ Kirigami.ApplicationWindow {
         descr_str = fanProfilesModel.profileDescriptions[fanSlider.value] || '';
         if ( ! descr_str ) { return '' }
         return label + ': ' + descr_str.toLowerCase();
+    }
+
+    function updateSelectedFreqProfile ( stdout ) {
+        const chkUnknownRegex = /^\s*(?:custom|unknown)/i
+        const trimmedStdout = stdout.trim();
+        if (trimmedStdout !== ''
+            && ! chkUnknownRegex.test( trimmedStdout )
+        ) {
+            profilesModel.selectedProfile = trimmedStdout
+        }
     }
 
     // BEGIN Utilities
