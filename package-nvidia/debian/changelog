@@ -1,37 +1,13 @@
-kfocus-nvidia (24.04.8~beta5) noble; urgency=medium
+kfocus-nvidia (24.04.8) noble; urgency=medium
 
-  * Adjust rules to exclude beta sections from pinning on release packages (#6012)
-  * Exclude testing repo from pinning for this beta (#6012)
-
- -- Michael S. Mikowski <support@kfocus.org>  Fri, 05 Dec 2025 13:30:20 -0500
-
-kfocus-nvidia (24.04.8~beta4) noble; urgency=medium
-
-  * nvidia-pinning-edge: Revert to 570.169.* packages (#6012)
-
- -- Michael S. Mikowski <support@kfocus.org>  Tue, 02 Dec 2025 13:46:44 -0500
-
-kfocus-nvidia (24.04.8~beta3) noble; urgency=medium
-
+  [ Michael S. Mikowski ]
   * nvidia-pinning-edge: cuda-driver => cuda-drivers (#6012)
+  * Adjust rules to exclude beta, alpha sections from pinning on released
+    packages (#6012)
+  * Retained 570.169 packages as later versions (570.195, 580.95) conflicted
+    with hardware (#6012)
 
- -- Michael S. Mikowski <support@kfocus.org>  Sat, 29 Nov 2025 12:25:00 -0500
-
-kfocus-nvidia (24.04.8~beta2) noble; urgency=medium
-
-  * nvidia-pinning-edge: Update to 570.195.* packages (#6012)
-  * etc_modprobe.d_kfocus-nvidia-edge.conf: Restored kernel option
-    nvidia-modeset vblank_sem_control=0 after tests (#6012)
-
- -- Michael S. Mikowski <support@kfocus.org>  Wed, 05 Nov 2025 19:53:52 -0500
-
-kfocus-nvidia (24.04.8~beta1) noble; urgency=medium
-
-  * nvidia-pinning-edge: Update to 570.195.* packages (#6012)
-  * etc_modprobe.d_kfocus-nvidia-edge.conf: Remove option
-    nvidia-modeset vblank_sem_control=0 to test if still required (#6012)
-
- -- Michael S. Mikowski <support@kfocus.org>  Wed, 05 Nov 2025 12:51:17 -0500
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 08 Dec 2025 18:14:02 -0600
 
 kfocus-nvidia (24.04.7) noble; urgency=medium
 
