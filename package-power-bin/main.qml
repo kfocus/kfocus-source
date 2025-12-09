@@ -6,6 +6,10 @@ import org.kde.kirigami 2.13 as Kirigami
 import org.kde.plasma.core 2.1 as PlasmaCore
 import shellengine 1.0
 
+// TODO: Consider adding locking to the frontend to avoid multiple concurrent windows running in the same session.
+// TODO: Lock the frequency profile table when a change is in progress.
+// TODO: Don't make frequency profile reads unintentionally trigger a frequency profile write.
+
 Kirigami.ApplicationWindow {
     id: root
     title: "Kubuntu Focus"
@@ -61,7 +65,7 @@ Kirigami.ApplicationWindow {
 
                 Controls.Label {
                     horizontalAlignment: Text.AlignHCenter
-                    text: '⚖️ Balanced'
+                    text: 'Balanced'
                     anchors {
                         left: parent.left
                         right: parent.right
@@ -139,6 +143,7 @@ Kirigami.ApplicationWindow {
                 visible: false
                 columnSpacing: Math.round( scaleRatio )
                 rowSpacing: Math.round( 3 * scaleRatio )
+                Layout.bottomMargin: Kirigami.Units.smallSpacing
 
                 // Number of columns is set by the logic part
                 Layout.fillWidth: true
@@ -150,6 +155,7 @@ Kirigami.ApplicationWindow {
                     Rectangle {
                         property bool firstElement: elementColor !== 'transparent'
                         property bool selectedRow: !firstElement && firstElementName === profilesModel.selectedProfile
+                        property bool bold: isHeaderRow || firstElement || selectedRow
                         Controls.RadioButton {
                             id: radioButton
                             visible: firstElement
@@ -172,14 +178,22 @@ Kirigami.ApplicationWindow {
                         Layout.preferredWidth: (layout.width - (Layout.rightMargin * grid.columns * 2))
                             * (subindex == 0 ? 0.25 : subindex == 1 ? 0.30 : 0.45 / (grid.columns - 2))
                         Layout.preferredHeight: 30 * scaleRatio
+                        radius: Kirigami.Units.gridUnit / 6
                         Controls.Label {
                             anchors.top: parent.top
                             anchors.bottom: parent.bottom
                             anchors.left: firstElement ? radioButton.right : parent.left
                             anchors.right: parent.right
                             anchors.leftMargin: firstElement ? 3 : 20
-                            font.family: bold ? 'Noto Sans' : 'Noto Mono'
-                            text: bold ? '<b>' + elementName + '</b>' : elementName
+                            font.family: isHeaderRow || firstElement ? 'Noto Sans' : 'Courier'
+                            text: {
+                                let elementText = elementName;
+                                if ( bold ) {
+                                    elementText = elementText.replace(' ', '&nbsp;');
+                                    elementText = '<b><font color="white">' + elementText + '</font></b>';
+                                }
+                                return elementText;
+                            }
                         }
                     }
                 }
@@ -205,6 +219,7 @@ Kirigami.ApplicationWindow {
             Controls.Label {
                 id: powerLegend
                 visible: false
+                font.family: 'Noto Sans'
                 text: `psave = powersave, PERF = performance`
             }
 
@@ -339,7 +354,7 @@ Kirigami.ApplicationWindow {
                             if (profilesModel.validIndexes.includes( subindex )) {
                                profilesModel.append({
                                    'elementName' : value,
-                                   'bold'        : index === 0,
+                                   'rowIndex'    : index,
                                    'elementColor': subindex === 0
                                       ? profilesModel.gridColors.pop() : 'transparent',
                                    'subindex': subindex,
@@ -666,7 +681,7 @@ Kirigami.ApplicationWindow {
     readonly property var profiles: ['power-saver', 'balanced', 'performance']
     readonly property var binDir: Qt.application.arguments[1] || '/usr/lib/kfocus/bin'
     readonly property int activeProfileIndex: root.profiles.indexOf(root.activeProfile)
-    readonly property int pollingMs: 5000
+    readonly property int pollingMs: 2000
     readonly property var scaleMap: calcScaleRatioFn()
     readonly property real scaleRatio: scaleMap.scale_ratio
     property bool doSkipNextFreqPoll: false
@@ -676,4 +691,3 @@ Kirigami.ApplicationWindow {
     readonly property int baseHeight: 570
     // . END Global Properties
 }
-

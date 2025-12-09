@@ -12,39 +12,54 @@
 #
 set -u;
 
-_optionHeader='Name;Freq (GHz);Mode;Turbo;LEDs'
+_optionHeader='Name;Frequency GHz;Mode;Turbo;LEDs;';
 
 _optionTable=(
   # _label;up_ratio;down_ratio;gov_key;noturbo_int;kbdled_int
-  'High;1;X;performance;0;1'
-  'Normal;1;X;powersave;0;1'
-  'Studio;0;X;performance;1;1'
-  'Low;X;1;powersave;1;0'
-  'Minimal;X;.5;powersave;1;0'
+  'High;1;X;performance;0;1;'
+  'Normal;1;X;powersave;0;1;'
+  'Studio;0;X;performance;1;1;'
+  'Low;X;1;powersave;1;0;'
+  'Minimal;X;.5;powersave;1;0;'
 
   # These can be added back if desired
-  # 'Medium;.5;X;powersave;0;1'
-  # 'Frugal;X;.666666666;powersave;1;0'
+  # 'Medium;.5;X;powersave;0;1;'
+  # 'Frugal;X;.666666666;powersave;1;0;'
 );
 
 # TODO: Add all remaining frequency tables here
-declare -A _freqCanonicalTable;
-_freqCanonicalTable["Intel Core i9-14900HX"]="$(cat <<EOF
-High;5800000;4100000;
-Normal;5800000;4100000;
-Studio;2200000;1600000;
-Low;2200000;1600000;
-Minimal;1500000;1200000;
-EOF
-)";
-_freqCanonicalTable["11th Gen Intel Core i5-1135G7 @ 2.40GHz"]="$(cat <<EOF
-High;4200000;
+declare -A _freqCanonicalMap;
+_freqCanonicalMap['Intel Core i9-14900HX']='High;5800000|4100000;
+Normal;5800000|4100000;
+Studio;2200000|1600000;
+Low;2200000|1600000;
+Minimal;1500000|1200000;';
+_freqCanonicalMap['11th Gen Intel Core i5-1135G7 @ 2.40GHz']='High;4200000;
 Normal;4200000;
 Studio;2400000;
 Low;2400000;
-Minimal;1400000;
-EOF
-)";
+Minimal;1400000;';
+# TODO: Ensure minimum freq for Core Ultra 9 275HX is 800 MHz, otherwise
+#   minimal values will be wrong
+_freqCanonicalMap['Intel Core Ultra 9 275HX']='High;5400000|4600000;
+Normal;5400000|4600000;
+Studio;2700000|2100000;
+Low;2700000|2100000;
+Minimal;1750000|1450000;';
+# TODO: Ensure minimum freq for Core Ultra 7 255H is 700 MHz, otherwise
+#   minimal values will be wrong
+_freqCanonicalMap['Intel Core Ultra 7 255H']='High;5100000|4400000;
+Normal;5100000|4400000;
+Studio;2000000|1500000;
+Low;2000000|1500000;
+Minimal;1350000|1100000;';
+# TODO: Ensure minimum freq for Core Ultra 5 225H is 700 MHz, otherwise
+#   minimal values will be wrong
+_freqCanonicalMap['Intel Core Ultra 5 225H']='High;4900000|4300000;
+Normal;4900000|4300000;
+Studio;1700000|1300000;
+Low;1700000|1300000;
+Minimal;1200000|1000000;';
 
 ## BEGIN _importCommonFn {
 # Summary   : _importCommonFn
@@ -209,7 +224,7 @@ _scanFn () {
     _gov_key _noturbo_int _kbdled_int _avail_gov_list _proc_count       \
     _proc_idx _set_max_int _hw_freq_list _hw_min_int _hw_max_int        \
     _hw_base_file _hw_base_int _param_list _solve_line _current_max_int \
-    _current_ecore_max_int _psave_key;
+    _current_ecore_max_int _psave_key _msg;
 
   _match_line="${1:-}";
   _mode_key="${2:-}";
@@ -274,13 +289,15 @@ _scanFn () {
 
     if [ "${_mode_key}" = 'read' ]; then
       if [ "${_hasEcores}" = 'y' ]; then
-        if _intInRangeFn "${_proc_idx}" "${_pcoreRange[@]}"; then
+        if _intInRangeFn "${_proc_idx}" "${_pcoreRangeList[@]}"; then
           if (( _set_max_int > _current_max_int )); then
             _current_max_int="${_set_max_int}";
           fi
         else
-          if ! _intInRangeFn "${_proc_idx}" "${_ecoreRange[@]}"; then
-            _cm2WarnStrFn "CPU |${_proc_idx}| not in P-core or E-core range!";
+          if ! _intInRangeFn "${_proc_idx}" "${_ecoreRangeList[@]}"; then
+            _msg="CPU |${_proc_idx}| not in P-core or E-core range, ";
+            _msg+="treating as E core.";
+            _cm2WarnStrFn "${_msg}";
           fi
           if (( _set_max_int > _current_ecore_max_int )); then
             _current_ecore_max_int="${_set_max_int}";
@@ -449,7 +466,6 @@ _setModeFn () {
   fi
 
   _scanFn "${_match_line}" 'set';
-
   echo "${_arg_str}" > "${_currentModeFile}";
 }
 
@@ -467,7 +483,7 @@ _calcCanonicalFreqsFn() {
   for _opt_line in "${_optionTable[@]}"; do
     IFS=';' read -r -a _opt_parts <<< "${_opt_line}";
 
-    _canonical_match_line=""
+    _canonical_match_line='';
     for _canonical_line in "${_canonical_table_list[@]}"; do
       if [[ "${_canonical_line}" =~ ^${_opt_parts[0]} ]]; then
         _canonical_match_line="${_canonical_line}";
@@ -482,16 +498,9 @@ _calcCanonicalFreqsFn() {
     fi
 
     IFS=';' read -r -a _canonical_parts <<< "${_canonical_match_line}";
-    if [ "${#_canonical_parts[@]}" = '3' ]; then
-      _out_str="${_opt_parts[0]};";
-      _out_str+="${_canonical_parts[1]}|${_canonical_parts[2]};";
-      _out_str+="${_opt_parts[3]};${_opt_parts[4]};${_opt_parts[5]};";
-      _out_list+=( "${_out_str}" );
-    else
-      _out_str="${_opt_parts[0]};${_canonical_parts[1]};${_opt_parts[3]};";
-      _out_str+="${_opt_parts[4]};${_opt_parts[5]};";
-      _out_list+=( "${_out_str}" );
-    fi
+    _out_str="${_opt_parts[0]};${_canonical_parts[1]};${_opt_parts[3]};";
+    _out_str+="${_opt_parts[4]};${_opt_parts[5]};";
+    _out_list+=( "${_out_str}" );
   done
 
   if [ "${#_out_list[@]}" = '0' ]; then
@@ -503,7 +512,7 @@ _calcCanonicalFreqsFn() {
 
 _calcOptionsFn () {
   declare _opt_line _out_list _out_str _title _model_msg _normal_cpu_freq \
-    _low_cpu_freq _opt_parts _out_parts _cpu_str _bit_list _return_val \
+    _low_cpu_freq _opt_parts _out_parts _cpu_str _return_val \
     _canonical_table_str _canonical_freqs_list;
 
   _out_list=();
@@ -517,18 +526,16 @@ _calcOptionsFn () {
   _normal_cpu_freq='';
   _low_cpu_freq='';
   _return_val='0';
-  _canonical_table_str="${_freqCanonicalTable["${_cpu_str}"]:-}"
+  _canonical_table_str="${_freqCanonicalMap["${_cpu_str}"]:-}";
 
   _out_list+=( "$(_cm2EchoModelStrFn 'label');${_cpu_str};${_hasEcores};" );
 
   for _opt_line in "${_optionTable[@]}"; do
-    if [ -n "${_canonical_table_str}" ]; then
-      # Calculate frequencies for normal and low modes even if a hardcoded
-      # table exists, for checking turbo boost
-      if ! [[ "${_opt_line}" =~ ^Normal\; ]] \
-        && ! [[ "${_opt_line}" =~ ^Low\; ]]; then
-        continue;
-      fi
+    # Calculate frequencies for normal and low modes even if a hardcoded
+    #   table exists, for checking turbo boost
+    if [ -n "${_canonical_table_str}" ] \
+      && ! [[ "${_opt_line}" =~ ^(Normal|Low)\; ]]; then
+      continue;
     fi
     _out_str="$(_scanFn "${_opt_line}" 'read' )";
     if [[ "${_out_str:-}" =~ ^[[:space:]]*$ ]]; then
@@ -548,9 +555,8 @@ _calcOptionsFn () {
     fi
   done
 
-  if [ -n "${_normal_cpu_freq}" ] \
-    && [ -n "${_low_cpu_freq}" ] \
-    && [ "${_normal_cpu_freq}" == "${_low_cpu_freq}" ]; then
+  # This occurs when Turbo Boost is disabled on kernels >= 6.11
+  if [ "${_normal_cpu_freq:-}" = "${_low_cpu_freq:-}" ]; then
     _cm2ErrStrFn \
       'CPU init failed, max CPU freq for normal and low power profiles are the same!';
   fi
@@ -677,6 +683,8 @@ _printOptionsFn () {
 }
 ## . END _printOptionsFn }
 
+## TODO: Pick up review here
+
 ## BEGIN _readModeFn {
 _readModeFn () {
   declare _current_mode_str _opt_line _msg;
@@ -707,8 +715,8 @@ _readModeFn () {
 _chkEcoresFn () {
   if [ -f "${_pcoreRangeFile}" ] && [ -f "${_ecoreRangeFile}" ]; then
     _hasEcores='y';
-    IFS='-' read -r -a _pcoreRange <<< "$(cat "${_pcoreRangeFile}")";
-    IFS='-' read -r -a _ecoreRange <<< "$(cat "${_ecoreRangeFile}")";
+    IFS='-' read -r -a _pcoreRangeList <<< "$(cat "${_pcoreRangeFile}")";
+    IFS='-' read -r -a _ecoreRangeList <<< "$(cat "${_ecoreRangeFile}")";
   fi
 }
 ## . END _chkEcoresFn }
@@ -747,8 +755,8 @@ _currentModeFile='/run/kfocus-power-current-mode';
 _pcoreRangeFile='/sys/bus/event_source/devices/cpu_core/cpus';
 _ecoreRangeFile='/sys/bus/event_source/devices/cpu_atom/cpus';
 _hasEcores='n';
-_pcoreRange=();
-_ecoreRange=();
+_pcoreRangeList=();
+_ecoreRangeList=();
 ## . END Declare and assign global vars }
 
 ## BEGIN Run main if the script is not sourced {

@@ -1,3 +1,15 @@
+kfocus-power-bin (24.04.14~beta1) noble; urgency=medium
+
+  * kfocus-power-set: Use hardcoded frequency tables for known CPU
+    models (#6069)
+  * kfocus-power-set: Use write locking to avoid multiple-write
+    conflicts (#6069)
+  * kfocus-power-set: Calculate and display P and E core frequencies
+    separately on asymmetric-core systems (#6069)
+  * main.qml: UX improvements (#6069)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 09 Dec 2025 15:33:29 -0600
+
 kfocus-power-bin (24.04.13) noble; urgency=medium
 
   [ Michael S. Mikowski ]
