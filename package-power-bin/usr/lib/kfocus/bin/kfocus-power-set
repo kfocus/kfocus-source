@@ -12,6 +12,8 @@
 #
 set -u;
 
+# TODO: Add standard documentation headers to all functions
+
 _optionHeader='Name;Frequency GHz;Mode;Turbo;LEDs;';
 
 _optionTable=(
@@ -223,8 +225,8 @@ _scanFn () {
   declare _match_line _mode_key _bit_list _label _up_ratio _down_ratio  \
     _gov_key _noturbo_int _kbdled_int _avail_gov_list _proc_count       \
     _proc_idx _set_max_int _hw_freq_list _hw_min_int _hw_max_int        \
-    _hw_base_file _hw_base_int _param_list _solve_line _current_max_int \
-    _current_ecore_max_int _psave_key _msg;
+    _hw_base_file _hw_base_int _param_list _solve_line \
+    _current_pcore_max_int _current_ecore_max_int _psave_key _msg;
 
   _match_line="${1:-}";
   _mode_key="${2:-}";
@@ -262,7 +264,7 @@ _scanFn () {
   esac;
 
   _proc_count="$("${_nprocExe}")";
-  _current_max_int=0;
+  _current_pcore_max_int=0;
   _current_ecore_max_int=0;
   _solve_line='';
 
@@ -287,11 +289,13 @@ _scanFn () {
     );
     _set_max_int="$(_printMaxIntFn "${_param_list[@]}")";
 
+    # `_scanFn 'read'` is typically called only if we don't have a canonical
+    #   frequency table defined for the CPU in use.
     if [ "${_mode_key}" = 'read' ]; then
-      if [ "${_hasEcores}" = 'y' ]; then
+      if [ "${_isHybridCpu}" = 'y' ]; then
         if _intInRangeFn "${_proc_idx}" "${_pcoreRangeList[@]}"; then
-          if (( _set_max_int > _current_max_int )); then
-            _current_max_int="${_set_max_int}";
+          if (( _set_max_int > _current_pcore_max_int )); then
+            _current_pcore_max_int="${_set_max_int}";
           fi
         else
           if ! _intInRangeFn "${_proc_idx}" "${_ecoreRangeList[@]}"; then
@@ -304,8 +308,8 @@ _scanFn () {
           fi
         fi
       else
-        if (( _set_max_int > _current_max_int )); then
-          _current_max_int="${_set_max_int}";
+        if (( _set_max_int > _current_pcore_max_int )); then
+          _current_pcore_max_int="${_set_max_int}";
         fi
       fi
     elif [ "${_mode_key}" = 'set' ]; then
@@ -330,11 +334,12 @@ _scanFn () {
   done
 
   if [ "${_mode_key}" = 'read' ]; then
-    if [ "${_hasEcores}" = 'y' ]; then
-      _solve_line="${_label};${_current_max_int}|${_current_ecore_max_int};";
+    if [ "${_isHybridCpu}" = 'y' ]; then
+      _solve_line="${_label};";
+      _solve_line+="${_current_pcore_max_int}|${_current_ecore_max_int};";
       _solve_line+="${_gov_key};${_noturbo_int};${_kbdled_int};";
     else
-      _solve_line="${_label};${_current_max_int};${_gov_key};";
+      _solve_line="${_label};${_current_pcore_max_int};${_gov_key};";
       _solve_line+="${_noturbo_int};${_kbdled_int};";
     fi
     echo "${_solve_line}";
@@ -528,7 +533,7 @@ _calcOptionsFn () {
   _return_val='0';
   _canonical_table_str="${_freqCanonicalMap["${_cpu_str}"]:-}";
 
-  _out_list+=( "$(_cm2EchoModelStrFn 'label');${_cpu_str};${_hasEcores};" );
+  _out_list+=( "$(_cm2EchoModelStrFn 'label');${_cpu_str};${_isHybridCpu};" );
 
   for _opt_line in "${_optionTable[@]}"; do
     # Calculate frequencies for normal and low modes even if a hardcoded
@@ -641,7 +646,7 @@ _calcPrettyOptionsFn() {
       _leds='Off'; else _leds='On';
     fi
 
-    if [ "${_hasEcores}" = 'y' ]; then
+    if [ "${_isHybridCpu}" = 'y' ]; then
       IFS='|' read -r -a _freq_parts <<< "${_frequency}";
       _pcore_freq="$(bc <<< "scale=2; ${_freq_parts[0]} / 1000000")";
       _ecore_freq="$(bc <<< "scale=2; ${_freq_parts[1]} / 1000000")";
@@ -683,12 +688,12 @@ _printOptionsFn () {
 }
 ## . END _printOptionsFn }
 
-## TODO: Pick up review here
-
 ## BEGIN _readModeFn {
+#
 _readModeFn () {
   declare _current_mode_str _opt_line _msg;
 
+  # TODO: Consider setting the mode to "Normal" if no mode is found
   if ! [ -f "${_currentModeFile}" ]; then
     _cm2WarnStrFn 'Current mode file does not exist!';
     echo 'Unknown';
@@ -703,7 +708,7 @@ _readModeFn () {
     fi
   done
 
-  _msg="Unsupported mode |${_current_mode_str}| read from "
+  _msg="Unsupported mode |${_current_mode_str}| read from ";
   _msg+="|${_currentModeFile}|!";
   _cm2WarnStrFn "${_msg}";
   echo 'Unknown';
@@ -711,21 +716,21 @@ _readModeFn () {
 }
 ## . END _readModeFn }
 
-## BEGIN _chkEcoresFn {
-_chkEcoresFn () {
+## BEGIN _chkIfHybridCpuFn {
+_chkIfHybridCpuFn () {
   if [ -f "${_pcoreRangeFile}" ] && [ -f "${_ecoreRangeFile}" ]; then
-    _hasEcores='y';
+    _isHybridCpu='y';
     IFS='-' read -r -a _pcoreRangeList <<< "$(cat "${_pcoreRangeFile}")";
     IFS='-' read -r -a _ecoreRangeList <<< "$(cat "${_ecoreRangeFile}")";
   fi
 }
-## . END _chkEcoresFn }
+## . END _chkIfHybridCpuFn }
 
 _mainFn () {
   declare _arg_str;
   _arg_str="${1:-}";
 
-  _chkEcoresFn;
+  _chkIfHybridCpuFn;
   _chkInitCpuFn; # Set CPUFreq for 2023+ CPUs
   _calcWriteOptionFilesFn;
   case "${_arg_str}" in
@@ -734,7 +739,10 @@ _mainFn () {
     '-r') _readModeFn;;
     '-i') true;; # does CPU init only, and that's already done
       '') _cm2ErrStrFn 'Argument or flag required'; exit 1;;
-       *) _checkSetFlockFn || exit "$?"; _setModeFn "${_arg_str}";;
+       *)
+         _checkSetFlockFn || exit "$?";
+         _setModeFn "${_arg_str}";
+         ;;
   esac
 }
 
@@ -742,7 +750,7 @@ _mainFn () {
 declare _binName _binDir _baseDir _baseName _rootDir \
   _cpuDropFile _noTurboFile _cpuStatusFile _altPsaveKey \
   _cpufreqSetExe _cpufreqInfoExe _nprocExe _kbdColorSetExe \
-  _currentModeFile _pcoreRangeFile _ecoreRangeFile _hasEcores;
+  _currentModeFile _pcoreRangeFile _ecoreRangeFile _isHybridCpu;
 
 _rootDir='';
 _cpuDropFile='/run/kfocus-cpu-init';
@@ -754,7 +762,7 @@ _prettyComputedTableFile='/run/kfocus-power-pretty-computed-table';
 _currentModeFile='/run/kfocus-power-current-mode';
 _pcoreRangeFile='/sys/bus/event_source/devices/cpu_core/cpus';
 _ecoreRangeFile='/sys/bus/event_source/devices/cpu_atom/cpus';
-_hasEcores='n';
+_isHybridCpu='n';
 _pcoreRangeList=();
 _ecoreRangeList=();
 ## . END Declare and assign global vars }

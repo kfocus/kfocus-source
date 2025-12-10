@@ -52,7 +52,7 @@ Kirigami.ApplicationWindow {
                 Layout.fillWidth: true
                 Layout.preferredHeight: childrenRect.height
                 Layout.bottomMargin: PlasmaCore.Units.largeSpacing
-                color: "transparent"
+                color: 'transparent'
 
                 Controls.Label {
                     // DEBUG + scaleRatio.toFixed(3)
@@ -124,7 +124,7 @@ Kirigami.ApplicationWindow {
             RowLayout {
                 Kirigami.Heading {
                     id: powerHeading
-                    property string cpuid: ""
+                    property string cpuid: ''
                     visible: false
                     text: 'Frequency Profile (' + cpuid + ')'
                     level: 3
@@ -210,7 +210,7 @@ Kirigami.ApplicationWindow {
             Controls.Label {
                 id: cpuTypeLegend
                 visible: false
-                text: `P = perf core, E = efficient core`
+                text: 'P = perf core, E = efficient core'
                 // Default margin is too large, tighten things up with a
                 // negative margin
                 Layout.bottomMargin: 0 - PlasmaCore.Units.smallSpacing
@@ -219,8 +219,7 @@ Kirigami.ApplicationWindow {
             Controls.Label {
                 id: powerLegend
                 visible: false
-                font.family: 'Noto Sans'
-                text: `psave = powersave, PERF = performance`
+                text: 'psave = powersave, PERF = performance'
             }
 
             Kirigami.Heading {
@@ -292,7 +291,7 @@ Kirigami.ApplicationWindow {
             property var gridColors: ['transparent', '#F63114', '#F7941E',
               '#33cc33', '#3caae4', '#0085be'].reverse()
             onSelectedProfileChanged: {
-                freqChangeProcCount += 1;
+                freqChangeProcCount += 1;
                 profileChanger.exec(
                     'pkexec ' + binDir + '/kfocus-power-set ' + selectedProfile
                 );
@@ -318,7 +317,7 @@ Kirigami.ApplicationWindow {
                     // CPU model
                     powerHeading.cpuid = value;
                   } else if ( index === 2 ) {
-                    // Has E-cores?
+                    // Is hybrid CPU?
                     if ( value === 'y' ) {
                       cpuTypeLegend.visible = true;
                     }
