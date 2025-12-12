@@ -12,56 +12,44 @@
 #
 set -u;
 
-# TODO: Add standard documentation headers to all functions
-
 _optionHeader='Name;Frequency GHz;Mode;Turbo;LEDs;';
 
 _optionTable=(
   # _label;up_ratio;down_ratio;gov_key;noturbo_int;kbdled_int
+  # One of 'up_ratio' or 'down_ratio' MUST be set to 'X', and the other must
+  # be set to a value between 0 and 1 inclusive.
   'High;1;X;performance;0;1;'
   'Normal;1;X;powersave;0;1;'
   'Studio;0;X;performance;1;1;'
   'Low;X;1;powersave;1;0;'
   'Minimal;X;.5;powersave;1;0;'
 
-  # These can be added back if desired
+  # These can be added back if desired. They must also be added to the
+  # canonical map below.
   # 'Medium;.5;X;powersave;0;1;'
   # 'Frugal;X;.666666666;powersave;1;0;'
 );
 
-# TODO: Add all remaining frequency tables here
 declare -A _freqCanonicalMap;
-_freqCanonicalMap['Intel Core i9-14900HX']='High;5800000|4100000;
-Normal;5800000|4100000;
-Studio;2200000|1600000;
-Low;2200000|1600000;
-Minimal;1500000|1200000;';
-_freqCanonicalMap['11th Gen Intel Core i5-1135G7 @ 2.40GHz']='High;4200000;
-Normal;4200000;
-Studio;2400000;
-Low;2400000;
-Minimal;1400000;';
-# TODO: Ensure minimum freq for Core Ultra 9 275HX is 800 MHz, otherwise
-#   minimal values will be wrong
+# We hand calculate the "Minimal" frequencies below using _printMaxIntFn. For
+# example, the Ultra 9 275 HX values were generated using these calls:
+#   _printMaxIntFn '2700000' '800000' '5400000' 'X' '.5'
+#   _printMaxIntFn '2100000' '800000' '4600000' 'X' '.5'
 _freqCanonicalMap['Intel Core Ultra 9 275HX']='High;5400000|4600000;
 Normal;5400000|4600000;
 Studio;2700000|2100000;
 Low;2700000|2100000;
 Minimal;1750000|1450000;';
-# TODO: Ensure minimum freq for Core Ultra 7 255H is 700 MHz, otherwise
-#   minimal values will be wrong
 _freqCanonicalMap['Intel Core Ultra 7 255H']='High;5100000|4400000;
 Normal;5100000|4400000;
 Studio;2000000|1500000;
 Low;2000000|1500000;
-Minimal;1350000|1100000;';
-# TODO: Ensure minimum freq for Core Ultra 5 225H is 700 MHz, otherwise
-#   minimal values will be wrong
+Minimal;1200000|950000;';
 _freqCanonicalMap['Intel Core Ultra 5 225H']='High;4900000|4300000;
 Normal;4900000|4300000;
 Studio;1700000|1300000;
 Low;1700000|1300000;
-Minimal;1200000|1000000;';
+Minimal;1050000|850000;';
 
 ## BEGIN _importCommonFn {
 # Summary   : _importCommonFn
@@ -97,6 +85,15 @@ _importCommonFn () {
 }
 ## . END _importCommonFn }
 
+## BEGIN _checkSetFlockFn {
+# Summary   : _checkSetFlockFn
+# Purpose   : Ensure the "current mode file" exists, and lock it
+# Example   : _checkSetFlockFn
+# Arguments : none
+# Globals   : _currentModeFile
+# Outputs   : none
+# Returns   : 0 on success, 1 if the lock cannot be grabbed after ten seconds
+#
 _checkSetFlockFn () {
   declare _did_get_lock _idx;
 
@@ -126,8 +123,38 @@ _checkSetFlockFn () {
     return 1;
   fi
 }
+## . END _checkSetFlockFn }
 
-_printIntFn () { printf '%.0f' "$*"; }
+## BEGIN _printIntFn {
+_printIntFn () {
+  printf '%.0f' "$*";
+}
+## . END _printIntFn }
+
+## BEGIN _printMaxIntFn {
+# Summary   : _printMaxIntFn <hw_base_int> <hw_min_int> <hw_max_int>
+#   <up_ratio> <down_ratio>
+# Purpose   : Calculate the set frequency limit for a CPU core
+# Example   : _printMaxIntFn 22000000 800000 5800000 X .5
+# Arguments :
+#   hw_base_int - CPU core base frequency.
+#   hw_min_int  - CPU core minimum frequency.
+#   hw_max_int  - CPU core maximum frequency.
+#   up_ratio    - A value between 0 and 1 inclusive. Specifies what percentage
+#     of the frequency between the base and max frequencies should be added to
+#     the base frequency to obtain the set frequency. Set to 'X' if the set
+#     frequency should be lower than the base frequency.
+#   down_ratio  - A value between 0 and 1 inclusive. Specifies what percentage
+#     of the frequency between the min and base frequencies should be added to
+#     the min frequency to obtain the set frequency. Set to 'X' if the set
+#     frequency should be higher than the base frequency.
+#   This is an internal routine. We always expect one of 'up_ratio' or
+#   'down_ratio' will be set to 'X', and that the values are in the specified
+#   range.
+# Globals   : none
+# Outputs   : An integer representing the set frequency
+# Returns   : none
+#
 _printMaxIntFn () {
   declare _hw_base_int _hw_min_int _hw_max_int _up_ratio \
     _down_ratio _calc_str;
@@ -152,7 +179,18 @@ _printMaxIntFn () {
     _printIntFn "${_hw_base_int}";
   fi
 }
+## . END _printMaxIntFn }
 
+## BEGIN _setNoTurboFn {
+# Summary   : _setNoTurboFn <int>
+# Purpose   : Enable or disable Turbo Boost
+# Example   : _setNoTurboFn 0
+# Arguments :
+#   int - 1 to disable Turbo Boost, 0 to enable it
+# Globals   : _noTurboFile
+# Outputs   : none
+# Returns   : 0 on success, 1 on failure
+#
 _setNoTurboFn () {
   declare _int;
   _int="$1";
@@ -171,7 +209,18 @@ _setNoTurboFn () {
   fi
   return 0;
 }
+## . END _setNoTurboFn }
 
+## BEGIN _readNoTurboFn {
+# Summary   : _readNoTurboFn
+# Purpose   : Detect if Turbo Boost is enabled or disabled
+# Example   : _readNoTurboFn
+# Arguments : none
+# Globals   : _noTurboFile
+# Outputs   : 0 if Turbo Boost is enabled, 1 if it is disabled, nothing if
+#   _noTurboFile cannot be read
+# Returns   : none
+#
 _readNoTurboFn () {
   declare _noturbo_int;
 
@@ -187,7 +236,18 @@ _readNoTurboFn () {
     echo '';
   fi
 }
+## . END _readNoTurboFn }
 
+## BEGIN _setKbdEnableFn {
+# Summary   : _setKbdEnableFn <int>
+# Purpose   : Enable or disable keyboard LEDs
+# Example   : _setKbdEnableFn 1
+# Arguments :
+#   int - 1 to enable keyboard LEDs, 0 to disable them
+# Globals   : _kbdColorSetExe
+# Outputs   : Same as `kfocus-kb-color-set -E <int>`, if anything
+# Returns   : 0 unless _kbdColorSetExe exits non-zero
+#
 _setKbdEnableFn () {
   # Only if tool found
   if [ -x "${_kbdColorSetExe}" ]; then
@@ -197,7 +257,21 @@ _setKbdEnableFn () {
     fi
   fi
 }
+## . END _setKbdEnableFn }
 
+## BEGIN _intInRangeFn {
+# Summary   : _intInRangeFn <current_int> <range_bottom_int> <range_top_int>
+# Purpose   : Check if an integer is within a specified range
+# Example   : _intInRangeFn 3 0 8
+# Arguments :
+#   current_int      - The integer to check.
+#   range_bottom_int - The inclusive lower bound of the range.
+#   range_top_int    - The inclusive upper bound of the range.
+# Globals   : none
+# Outputs   : none
+# Returns   : 0 if current_int is within the range, 1 if current_int is out of
+#   range, 2 if arguments are missing
+#
 _intInRangeFn () {
   declare _current_int _range_bottom_int _range_top_int;
 
@@ -220,7 +294,27 @@ _intInRangeFn () {
   fi
   return 1;
 }
+## . END _intInRangeFn }
 
+## BEGIN _scanFn {
+# Summary   : _scanFn <match_line> <mode_key>
+# Purpose   : Read and calculate frequency profile details for display to
+#   the end user, or set the CPU to the desired frequency profile
+# Example   : _scanFn 'Normal;1;X;powersave;0;1;' 'set'
+# Arguments :
+#   match_line - A line from _optionTable corresponding to the frequency
+#     profile to calculate or set.
+#   mode_key   - 'read' to calculate and output frequency profile details,
+#     'set' to set the CPU to a frequency profile.
+# Globals   : _cpufreqInfoExe, _altPsaveKey, _nprocExe, _rootDir,
+#   _isHybridCpu, _pcoreRangeList, _ecoreRangeList
+# Outputs   : In 'read' mode, outputs a string containing the
+#   following fields:
+#     profile_label;p_core_freq[|e_core_freq];governor_key;noturbo_int;kbdled_int;
+#   E-core freq will be omitted for non-hybrid CPUs.
+#   In 'set' mode, outputs nothing.
+# Returns   : 0 on success, 1 if an invalid argument is provided
+#
 _scanFn () {
   declare _match_line _mode_key _bit_list _label _up_ratio _down_ratio  \
     _gov_key _noturbo_int _kbdled_int _avail_gov_list _proc_count       \
@@ -345,7 +439,19 @@ _scanFn () {
     echo "${_solve_line}";
   fi
 }
+## . END _scanFn }
 
+## BEGIN _chkInitCpuFn {
+# Summary   : _chkInitCpuFn
+# Purpose   : Initialize the CPU if needed. Creates a drop file
+#   at _cpuDropFile, which is cleared on each reboot.
+# Example   : _chkInitCpuFn
+# Arguments : none
+# Globals   : _cpuDropFile, _cpuStatusFile, _nprocExe,
+#   _cpufreqSetExe, _altPsaveKey
+# Outputs   : none
+# Returns   : none
+#
 _chkInitCpuFn () {
   declare _success_flag _delay_int _delay_fib_one_int _delay_fib_two_int \
     _proc_count _proc_idx;
@@ -425,7 +531,19 @@ _chkInitCpuFn () {
     _cm2WarnFn;
   fi
 }
+## . END _chkInitCpuFn }
 
+## BEGIN _calcWriteOptionFilesFn {
+# Summary   : _calcWriteOptionFilesFn
+# Purpose   : Calculate and write cached frequency profile computed table
+#   files: _computedTableFile and _prettyComputedTableFile. These are cleared
+#   on each reboot.
+# Example   : _calcWriteOptionFilesFn
+# Arguments : none
+# Globals   : _computedTableFile, _prettyComputedTableFile
+# Outputs   : none
+# Returns   : none
+#
 _calcWriteOptionFilesFn () {
   declare _computed_table_str _pretty_computed_table_str;
 
@@ -447,7 +565,21 @@ _calcWriteOptionFilesFn () {
   echo "${_pretty_computed_table_str}" > "${_prettyComputedTableFile}";
   _cm2SucFn;
 }
+## . END _calcWriteOptionFilesFn }
 
+## BEGIN _setModeFn {
+# Summary   : _setModeFn <arg_str>
+# Purpose   : Set the CPU to a frequency profile, and record the set profile
+#   at _currentModeFile so it can be retrieved later. _currentModeFile is
+#   cleared on each reboot.
+# Example   : _setModeFn 'Normal'
+# Arguments : arg_str - The label of the frequency profile to set. See
+#   _optionTable for a list of valid frequency profile labels.
+# Globals   : _optionTable, _currentModeFile
+# Outputs   : none
+# Returns   : 0 on success, 1 if the specified frequency profile is invalid or
+#   _currentModeFile cannot be written
+#
 _setModeFn () {
   declare _arg_str _mode_list _opt_line _match_line _key;
 
@@ -465,15 +597,31 @@ _setModeFn () {
   done
 
   if [ -z "${_match_line}" ]; then
-    _cm2ErrStrFn "Mode |${_arg_str}| not supported. Abort.";
+    _cm2WarnStrFn "Mode |${_arg_str}| not supported!";
     ( IFS='|'; _cm2EchoFn "  ${_mode_list[*]}" );
     return 1;
   fi
 
   _scanFn "${_match_line}" 'set';
-  echo "${_arg_str}" > "${_currentModeFile}";
+  echo "${_arg_str}" > "${_currentModeFile}" || {
+    _cm2WarnStrFn "Cannot write to |${_currentModeFile}|!";
+    return 1;
+  };
 }
+## . END _setModeFn }
 
+## BEGIN _calcCanonicalFreqsFn {
+# Summary   : _calcCanonicalFreqsFn <canonical_table_str>
+# Purpose   : Calculate frequency profile details for display to the end user,
+#   using a hardcoded frequency table as input
+# Example   : _calcCanonicalFreqsFn
+#   "${_freqCanonicalMap['Intel Core Ultra 9 275HX']}"
+# Arguments : canonical_table_str - One of the tables contained
+#   in _freqCanonicalMap
+# Globals   : _optionTable
+# Outputs   : A table, with each line formatted the same as _scanFn output
+# Returns   : 0 on success, 1 on failure
+#
 _calcCanonicalFreqsFn() {
   declare _canonical_table_str _canonical_table_list _out_list _opt_line \
     _opt_parts _canonical_line _canonical_match_line _canonical_parts \
@@ -514,7 +662,25 @@ _calcCanonicalFreqsFn() {
   fi
   printf '%s\n' "${_out_list[@]}";
 }
+## . END _calcCanonicalFreqsFn }
 
+## BEGIN _calcOptionsFn {
+# Summary   : _calcOptionsFn
+# Purpose   : Use _optionTable to calculate a table of frequencies using
+#   frequency limits provided by _freqCanonicalMap, or if those are not
+#   available, read from sysfs registers.
+# Example   : _calcOptionsFn
+# Arguments : none
+# Globals   : _freqCanonicalMap, _isHybridCpu, _optionTable, _cm2HtmPStr
+# Outputs   :
+#   A table, with the first line formatted as:
+#     system_model;cpu_model;is_hybrid_cpu;
+#   Each subsequent line is formatted the same way as _scanFn output. These
+#   lines are machine-readable and are not intended for display to the
+#   end-user. If frequency profiles cannot be calculated, outputs a message
+#   for display to the end user instead.
+# Returns   : 0 on success, 1 if frequency profiles cannot be calculated
+#
 _calcOptionsFn () {
   declare _opt_line _out_list _out_str _title _model_msg _normal_cpu_freq \
     _low_cpu_freq _opt_parts _out_parts _cpu_str _return_val \
@@ -588,14 +754,30 @@ EOH
   if [ -n "${_normal_cpu_freq}" ] \
     && [ -n "${_low_cpu_freq}" ] \
     && [ "${_normal_cpu_freq}" == "${_low_cpu_freq}" ]; then
-    _cm2ErrStrFn \
-      'CPU init failed, max CPU freq for normal and low power profiles are the same!';
+    _cm2WarnStrFn 'Possible CPU init failure, max freq == base freq!';
   fi
 
   ( IFS=$'\n'; echo "${_out_list[*]}" );
   return "${_return_val}";
 }
+## . END _calcOptionsFn }
 
+## BEGIN _calcPrettyOptionsFn {
+# Summary   : _calcPrettyOptionsFn <orig_computed_table_str>
+# Purpose   : Calculate a table with human-readable values from the table of
+#   frequency profile details output by _calcOptionsFn. This is for use by the
+#   graphical frontend.
+# Example   : _calcPrettyOptionsFn "${_computed_table_str}";
+# Arguments : orig_computed_table_str - The verbatim string output of
+#   _calcOptionsFn.
+# Globals   : _optionHeader, _isHybridCpu
+# Outputs   : A table, with the first line formatted the same as the first
+#   line of _calcOptionsFn output. The second line is the contents of
+#   _optionHeader, minus the 'LEDs;' field if the system does not support
+#   keyboard LEDs. The subsequent lines have the following fields:
+#     profile_label;frequency_details;governor_key;noturbo_onoff;[leds_onoff;]
+# Returns   : 0 on success, 1 if orig_computed_table_str is not provided
+#
 _calcPrettyOptionsFn() {
   declare _orig_computed_table_str _bit_list _label _frequency _governor \
     _turbo _leds _header_line _orig_computed_table _out_computed_table_str \
@@ -664,7 +846,20 @@ _calcPrettyOptionsFn() {
 
   echo "${_out_computed_table_str}";
 }
+## . END _calcPrettyOptionsFn }
 
+## BEGIN _printOptionsFn {
+# Summary   : _printOptionsFn <mode_str>
+# Purpose   : Output the contents of one of the computed frequency
+#   profile tables
+# Example   : _printOptionsFn x
+# Arguments : mode_str - 'p' to print the machine-readable computed table
+#   file, 'x' to print the human-readable file
+# Globals   : _computedTableFile, _prettyComputedTableFile
+# Outputs   : The contents of the requested table.
+# Returns   : 0 on success, 1 if the value of mode_str is not recognized or
+#   either of the cache files do not exist
+#
 _printOptionsFn () {
   declare _mode_str;
 
@@ -689,6 +884,16 @@ _printOptionsFn () {
 ## . END _printOptionsFn }
 
 ## BEGIN _readModeFn {
+# Summary   : _readModeFn
+# Purpose   : Read the label of the current frequency profile. These are found
+#   in _optionTable, and examples include 'High','Normal', and 'Low'.
+# Example   : _readModeFn
+# Arguments : none
+# Globals   : _currentModeFile, _optionTable
+# Outputs   : One of the frequency profile labels from _optionTable, or the
+#   special value 'Unknown' if the last set frequency profile is not
+#   recognized or _currentModeFile does not exist.
+# Returns   : none
 #
 _readModeFn () {
   declare _current_mode_str _opt_line _msg;
@@ -717,7 +922,17 @@ _readModeFn () {
 ## . END _readModeFn }
 
 ## BEGIN _chkIfHybridCpuFn {
+# Summary   : _chkIfHybridCpuFn
+# Purpose   : Determine if the system CPU is hybrid-core, and record which
+#   cores are P-cores and which are E-cores if so.
+# Example   : _chkIfHybridCpuFn
+# Arguments : none
+# Globals   : _isHybridCpu, _pcoreRangeList, _ecoreRangeList
+# Outputs   : none
+# Returns   : none
+#
 _chkIfHybridCpuFn () {
+  _isHybridCpu='n';
   if [ -f "${_pcoreRangeFile}" ] && [ -f "${_ecoreRangeFile}" ]; then
     _isHybridCpu='y';
     IFS='-' read -r -a _pcoreRangeList <<< "$(cat "${_pcoreRangeFile}")";
@@ -726,6 +941,7 @@ _chkIfHybridCpuFn () {
 }
 ## . END _chkIfHybridCpuFn }
 
+## BEGIN _mainFn {
 _mainFn () {
   declare _arg_str;
   _arg_str="${1:-}";
@@ -745,6 +961,7 @@ _mainFn () {
          ;;
   esac
 }
+## . END _mainFn }
 
 ## BEGIN Declare and assign global vars {
 declare _binName _binDir _baseDir _baseName _rootDir \
