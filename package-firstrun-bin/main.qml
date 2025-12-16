@@ -956,7 +956,7 @@ Kirigami.ApplicationWindow {
                 frontText.text
                   += ' You can view frequently asked questions '
                   + 'for this and other models '
-                  + '<a href="https://kfocus.org/wf/help.html">here</a>.'
+                  + '<a href="https://kfocus.org/wf/help.html#bkm_general_faq">here</a>.'
                   ;
             }
             frontText.text += '<br></p>';
