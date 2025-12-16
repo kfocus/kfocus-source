@@ -2,10 +2,20 @@
 
 include /usr/share/dpkg/pkg-info.mk
 
+IS_RELEASE=1
+ifeq ($(findstring beta,$(DEB_VERSION)), beta)
+	IS_RELEASE=0
+endif
+ifeq ($(findstring alpha,$(DEB_VERSION)), alpha)
+	IS_RELEASE=0
+endif
+
 %:
 	dh $@
 
 override_dh_auto_build:
 	sed 's/XXX_PKG_VER_XXX/$(DEB_VERSION)/' kfocus-nvidia-pinning.in > kfocus-nvidia-pinning
 	sed 's/XXX_PKG_VER_XXX/$(DEB_VERSION)/' kfocus-nvidia-pinning-edge.in > kfocus-nvidia-pinning-edge
+	if [ '$(IS_RELEASE)' = 1 ]; then sed -i '/^## BEGIN BETA SECTION/,/^## \. END BETA SECTION/d' kfocus-nvidia-pinning; fi
+	if [ '$(IS_RELEASE)' = 1 ]; then sed -i '/^## BEGIN BETA SECTION/,/^## \. END BETA SECTION/d' kfocus-nvidia-pinning-edge; fi
 	dh_auto_build

@@ -12,31 +12,49 @@
 #
 set -u;
 
-_optionHeader='Name;Freq;Mode;Turbo;LEDs'
+_optionHeader='Name;Frequency GHz;Mode;Turbo;LEDs;';
 
 _optionTable=(
   # _label;up_ratio;down_ratio;gov_key;noturbo_int;kbdled_int
-  'High;1;X;performance;0;1'
-  'Normal;1;X;powersave;0;1'
-  'Studio;0;X;performance;1;1'
-  'Low;X;1;powersave;1;0'
-  'Minimal;X;.5;powersave;1;0'
+  # One of 'up_ratio' or 'down_ratio' MUST be set to 'X', and the other must
+  # be set to a value between 0 and 1 inclusive.
+  'High;1;X;performance;0;1;'
+  'Normal;1;X;powersave;0;1;'
+  'Studio;0;X;performance;1;1;'
+  'Low;X;1;powersave;1;0;'
+  'Minimal;X;.5;powersave;1;0;'
 
-  # These can be added back if desired
-  # 'Medium;.5;X;powersave;0;1'
-  # 'Frugal;X;.666666666;powersave;1;0'
+  # These can be added back if desired. They must also be added to the
+  # canonical map below.
+  # 'Medium;.5;X;powersave;0;1;'
+  # 'Frugal;X;.666666666;powersave;1;0;'
 );
 
-_freqMisreportTable=(
-  'Intel Core Ultra 5 225H;This CPU over-reports frequency. Performance is unaffected. Actual base/turbo values of 1.7/4.9 can be verified in the system monitor.'
-  'Intel Core Ultra 7 255H;This CPU over-reports frequency. Performance is unaffected. Actual base/turbo values of 2.0/5.1 can be verified in the system monitor.'
-  'Intel Core Ultra 9 275HX;This CPU under-reports frequency. Performance is unaffected. Actual base/turbo values of 2.7/5.4 can be verified in the system monitor.'
-);
+declare -A _freqCanonicalMap;
+# We hand calculate the "Minimal" frequencies below using _printMaxIntFn. For
+# example, the Ultra 9 275 HX values were generated using these calls:
+#   _printMaxIntFn '2700000' '800000' '5400000' 'X' '.5'
+#   _printMaxIntFn '2100000' '800000' '4600000' 'X' '.5'
+_freqCanonicalMap['Intel Core Ultra 9 275HX']='High;5400000|4600000;
+Normal;5400000|4600000;
+Studio;2700000|2100000;
+Low;2700000|2100000;
+Minimal;1750000|1450000;';
+_freqCanonicalMap['Intel Core Ultra 7 255H']='High;5100000|4400000;
+Normal;5100000|4400000;
+Studio;2000000|1500000;
+Low;2000000|1500000;
+Minimal;1200000|950000;';
+_freqCanonicalMap['Intel Core Ultra 5 225H']='High;4900000|4300000;
+Normal;4900000|4300000;
+Studio;1700000|1300000;
+Low;1700000|1300000;
+Minimal;1050000|850000;';
 
 ## BEGIN _importCommonFn {
 # Summary   : _importCommonFn
 # Purpose   : Load common routines, prefer relative dir
-#           : Run ls-common-symbols.sh to get list of symbols used here.
+#           : Run ls-common-symbols.sh to get the list of symbols used here.
 # Example   : _importCommonFn;
 # Arguments : none
 # Globals   : Package vars _baseDir _baseName
@@ -67,7 +85,76 @@ _importCommonFn () {
 }
 ## . END _importCommonFn }
 
-_printIntFn () { printf '%.0f' "$*"; }
+## BEGIN _checkSetFlockFn {
+# Summary   : _checkSetFlockFn
+# Purpose   : Ensure the "current mode file" exists, and lock it
+# Example   : _checkSetFlockFn
+# Arguments : none
+# Globals   : _currentModeFile
+# Outputs   : none
+# Returns   : 0 on success, 1 if the lock cannot be grabbed after ten seconds
+#
+_checkSetFlockFn () {
+  declare _did_get_lock _idx;
+
+  _did_get_lock='n;'
+  if ! [ -e "${_currentModeFile}" ]; then
+    install -m 644 /dev/null "${_currentModeFile}" || {
+      _logWrapFn 'err' "Could not install |${_currentModeFile}|!";
+      return 2;
+    }
+  fi
+
+  exec 211>>"${_currentModeFile}" || {
+    _logWrapFn 'err' 'Lock file permission denied!';
+    return 2;
+  };
+  for (( _idx=0; _idx < 11; _idx++ )); do
+    if flock -n -e 211; then
+      _did_get_lock='y';
+      break;
+    elif (( _idx < 10 )); then
+      sleep 1;
+    fi
+  done
+
+  if [ "${_did_get_lock}" = 'n' ]; then
+    _cm2WarnStrFn 'Could not get lock file after ten seconds!'
+    return 1;
+  fi
+}
+## . END _checkSetFlockFn }
+
+## BEGIN _printIntFn {
+_printIntFn () {
+  printf '%.0f' "$*";
+}
+## . END _printIntFn }
+
+## BEGIN _printMaxIntFn {
+# Summary   : _printMaxIntFn <hw_base_int> <hw_min_int> <hw_max_int>
+#   <up_ratio> <down_ratio>
+# Purpose   : Calculate the set frequency limit for a CPU core
+# Example   : _printMaxIntFn 22000000 800000 5800000 X .5
+# Arguments :
+#   hw_base_int - CPU core base frequency.
+#   hw_min_int  - CPU core minimum frequency.
+#   hw_max_int  - CPU core maximum frequency.
+#   up_ratio    - A value between 0 and 1 inclusive. Specifies what percentage
+#     of the frequency between the base and max frequencies should be added to
+#     the base frequency to obtain the set frequency. Set to 'X' if the set
+#     frequency should be lower than the base frequency.
+#   down_ratio  - A value between 0 and 1 inclusive. Specifies what percentage
+#     of the frequency between the min and base frequencies should be added to
+#     the min frequency to obtain the set frequency. Set to 'X' if the set
+#     frequency should be higher than the base frequency.
+#   This is an internal routine. We always expect one of 'up_ratio' or
+#   'down_ratio' will be set to 'X', and that the values are in the specified
+#   range.
+# Globals   : none
+# Outputs   : An integer representing the set frequency
+# Returns   : none
+#
 _printMaxIntFn () {
   declare _hw_base_int _hw_min_int _hw_max_int _up_ratio \
     _down_ratio _calc_str;
@@ -88,11 +175,22 @@ _printMaxIntFn () {
   if [ -n "${_calc_str}" ]; then
     _printIntFn "$(bc <<< "${_calc_str}")";
   else
-    _cm2WarnStrFn 'No up or down ratio given.';
+    _cm2WarnStrFn 'No up or down ratio is provided.';
     _printIntFn "${_hw_base_int}";
   fi
 }
+## . END _printMaxIntFn }
 
+## BEGIN _setNoTurboFn {
+# Summary   : _setNoTurboFn <int>
+# Purpose   : Enable or disable Turbo Boost
+# Example   : _setNoTurboFn 0
+# Arguments :
+#   int - 1 to disable Turbo Boost, 0 to enable it
+# Globals   : _noTurboFile
+# Outputs   : none
+# Returns   : 0 on success, 1 on failure
+#
 _setNoTurboFn () {
   declare _int;
   _int="$1";
@@ -111,7 +209,18 @@ _setNoTurboFn () {
   fi
   return 0;
 }
+## . END _setNoTurboFn }
 
+## BEGIN _readNoTurboFn {
+# Summary   : _readNoTurboFn
+# Purpose   : Detect if Turbo Boost is enabled or disabled
+# Example   : _readNoTurboFn
+# Arguments : none
+# Globals   : _noTurboFile
+# Outputs   : 0 if Turbo Boost is enabled, 1 if it is disabled, nothing if
+#   _noTurboFile cannot be read
+# Returns   : none
+#
 _readNoTurboFn () {
   declare _noturbo_int;
 
@@ -127,7 +236,18 @@ _readNoTurboFn () {
     echo '';
   fi
 }
+## . END _readNoTurboFn }
 
+## BEGIN _setKbdEnableFn {
+# Summary   : _setKbdEnableFn <int>
+# Purpose   : Enable or disable keyboard LEDs
+# Example   : _setKbdEnableFn 1
+# Arguments :
+#   int - 1 to enable keyboard LEDs, 0 to disable them
+# Globals   : _kbdColorSetExe
+# Outputs   : Same as `kfocus-kb-color-set -E <int>`, if anything
+# Returns   : 0 unless _kbdColorSetExe exits non-zero
+#
 _setKbdEnableFn () {
   # Only if tool found
   if [ -x "${_kbdColorSetExe}" ]; then
@@ -137,13 +257,70 @@ _setKbdEnableFn () {
     fi
   fi
 }
+## . END _setKbdEnableFn }
 
+## BEGIN _intInRangeFn {
+# Summary   : _intInRangeFn <current_int> <range_bottom_int> <range_top_int>
+# Purpose   : Check if an integer is within a specified range
+# Example   : _intInRangeFn 3 0 8
+# Arguments :
+#   current_int      - The integer to check.
+#   range_bottom_int - The inclusive lower bound of the range.
+#   range_top_int    - The inclusive upper bound of the range.
+# Globals   : none
+# Outputs   : none
+# Returns   : 0 if current_int is within the range, 1 if current_int is out of
+#   range, 2 if arguments are missing
+#
+_intInRangeFn () {
+  declare _current_int _range_bottom_int _range_top_int;
+
+  _current_int="${1:-}";
+  _range_bottom_int="${2:-}";
+  _range_top_int="${3:-}";
+  if [ -z "${_current_int}" ] \
+    || [ -z "${_range_bottom_int}" ] \
+    || [ -z "${_range_top_int}" ]; then
+    _cm2ErrStrFn 'Missing arguments to _intInRangeFn!';
+    return 2;
+  fi
+
+  _current_int="$(_cm2EchoIntFn "${_current_int}")";
+  _range_bottom_int="$(_cm2EchoIntFn "${_range_bottom_int}")";
+  _range_top_int="$(_cm2EchoIntFn "${_range_top_int}")";
+  if (( _current_int >= _range_bottom_int )) \
+    && (( _current_int <= _range_top_int )); then
+    return 0;
+  fi
+  return 1;
+}
+## . END _intInRangeFn }
+
+## BEGIN _scanFn {
+# Summary   : _scanFn <match_line> <mode_key>
+# Purpose   : Read and calculate frequency profile details for display to
+#   the end user, or set the CPU to the desired frequency profile
+# Example   : _scanFn 'Normal;1;X;powersave;0;1;' 'set'
+# Arguments :
+#   match_line - A line from _optionTable corresponding to the frequency
+#     profile to calculate or set.
+#   mode_key   - 'read' to calculate and output frequency profile details,
+#     'set' to set the CPU to a frequency profile.
+# Globals   : _cpufreqInfoExe, _altPsaveKey, _nprocExe, _rootDir,
+#   _isHybridCpu, _pcoreRangeList, _ecoreRangeList
+# Outputs   : In 'read' mode, outputs a string containing the
+#   following fields:
+#     profile_label;p_core_freq[|e_core_freq];governor_key;noturbo_int;kbdled_int;
+#   E-core freq will be omitted for non-hybrid CPUs.
+#   In 'set' mode, outputs nothing.
+# Returns   : 0 on success, 1 if an invalid argument is provided
+#
 _scanFn () {
-  declare _match_line _mode_key _bit_list _label _up_ratio _down_ratio \
-    _gov_key _noturbo_int _kbdled_int _avail_gov_list _proc_count      \
-    _proc_idx _set_max_int _hw_freq_list _hw_min_int _hw_max_int       \
-    _hw_base_file _hw_base_int _param_list _solve_line _prior_max_int  \
-    _psave_key;
+  declare _match_line _mode_key _bit_list _label _up_ratio _down_ratio  \
+    _gov_key _noturbo_int _kbdled_int _avail_gov_list _proc_count       \
+    _proc_idx _set_max_int _hw_freq_list _hw_min_int _hw_max_int        \
+    _hw_base_file _hw_base_int _param_list _solve_line \
+    _current_pcore_max_int _current_ecore_max_int _psave_key _msg;
 
   _match_line="${1:-}";
   _mode_key="${2:-}";
@@ -181,15 +358,17 @@ _scanFn () {
   esac;
 
   _proc_count="$("${_nprocExe}")";
-  _prior_max_int=0;
+  _current_pcore_max_int=0;
+  _current_ecore_max_int=0;
   _solve_line='';
+
   for (( _proc_idx=0; _proc_idx < "${_proc_count}"; _proc_idx++ )); do
     _set_max_int='';
     read -r -a _hw_freq_list \
       < <("${_cpufreqInfoExe}" -c "${_proc_idx}" -l);
     if [ "${#_hw_freq_list[@]}" = 0 ]; then continue; fi
-    _hw_min_int="$( _printIntFn "${_hw_freq_list[0]}")";
-    _hw_max_int="$( _printIntFn "${_hw_freq_list[1]}")";
+    _hw_min_int="$(_printIntFn "${_hw_freq_list[0]}")";
+    _hw_max_int="$(_printIntFn "${_hw_freq_list[1]}")";
 
     _hw_base_file="${_rootDir}/sys/devices/system/cpu/cpu";
     _hw_base_file+="${_proc_idx}/cpufreq/base_frequency";
@@ -204,11 +383,28 @@ _scanFn () {
     );
     _set_max_int="$(_printMaxIntFn "${_param_list[@]}")";
 
+    # `_scanFn 'read'` is typically called only if we don't have a canonical
+    #   frequency table defined for the CPU in use.
     if [ "${_mode_key}" = 'read' ]; then
-      if (( _set_max_int > _prior_max_int )); then
-        _solve_line="${_label};${_set_max_int};${_gov_key};${_noturbo_int};";
-        _solve_line+="${_kbdled_int};";
-        _prior_max_int="${_set_max_int}";
+      if [ "${_isHybridCpu}" = 'y' ]; then
+        if _intInRangeFn "${_proc_idx}" "${_pcoreRangeList[@]}"; then
+          if (( _set_max_int > _current_pcore_max_int )); then
+            _current_pcore_max_int="${_set_max_int}";
+          fi
+        else
+          if ! _intInRangeFn "${_proc_idx}" "${_ecoreRangeList[@]}"; then
+            _msg="CPU |${_proc_idx}| not in P-core or E-core range, ";
+            _msg+="treating as E core.";
+            _cm2WarnStrFn "${_msg}";
+          fi
+          if (( _set_max_int > _current_ecore_max_int )); then
+            _current_ecore_max_int="${_set_max_int}";
+          fi
+        fi
+      else
+        if (( _set_max_int > _current_pcore_max_int )); then
+          _current_pcore_max_int="${_set_max_int}";
+        fi
       fi
     elif [ "${_mode_key}" = 'set' ]; then
       if [ "${_gov_key}" = "powersave" ]; then
@@ -232,10 +428,30 @@ _scanFn () {
   done
 
   if [ "${_mode_key}" = 'read' ]; then
+    if [ "${_isHybridCpu}" = 'y' ]; then
+      _solve_line="${_label};";
+      _solve_line+="${_current_pcore_max_int}|${_current_ecore_max_int};";
+      _solve_line+="${_gov_key};${_noturbo_int};${_kbdled_int};";
+    else
+      _solve_line="${_label};${_current_pcore_max_int};${_gov_key};";
+      _solve_line+="${_noturbo_int};${_kbdled_int};";
+    fi
     echo "${_solve_line}";
   fi
 }
+## . END _scanFn }
 
+## BEGIN _chkInitCpuFn {
+# Summary   : _chkInitCpuFn
+# Purpose   : Initialize the CPU if needed. Creates a drop file
+#   at _cpuDropFile, which is cleared on each reboot.
+# Example   : _chkInitCpuFn
+# Arguments : none
+# Globals   : _cpuDropFile, _cpuStatusFile, _nprocExe,
+#   _cpufreqSetExe, _altPsaveKey
+# Outputs   : none
+# Returns   : none
+#
 _chkInitCpuFn () {
   declare _success_flag _delay_int _delay_fib_one_int _delay_fib_two_int \
     _proc_count _proc_idx;
@@ -253,13 +469,13 @@ _chkInitCpuFn () {
 
   # Skip if not the m2g5 or m2g5p model (both share config_code m2g5)
   if [ "$(_cm2EchoModelStrFn 'config_code')" != 'm2g5' ]; then
-    touch "${_cpuDropFile}" || _cm2WarnStrFn 'Could not add drop file';
+    touch "${_cpuDropFile}" || _cm2WarnStrFn 'Could not add a drop file';
     return 0;
   fi
 
-  # Enable turbo boost, this takes about 16 seconds on the m2g5 but could take
-  # longer in theory.
-  # 21 = 8th fibonacci number, max total delay time = 54 seconds
+  # Enable turbo boost, this takes about 16 seconds on the m2g5 but
+  # could take longer in theory. The 8th fibonacci number is 21, so
+  # max total delay time is 54 seconds.
   while (( _delay_int <= 21 )); do
     if _setNoTurboFn 0; then
       break;
@@ -297,7 +513,7 @@ _chkInitCpuFn () {
     _cm2WarnStrFn 'Could NOT set pstate flag to |passive|';
     _success_flag='n';
   else
-    # Set default governor on all cores
+    # Set the default governor on all cores
     _proc_count="$("${_nprocExe}")";
 
     for (( _proc_idx=0; _proc_idx < "${_proc_count}"; _proc_idx++ )); do
@@ -309,13 +525,25 @@ _chkInitCpuFn () {
   fi
 
   if [ "${_success_flag}" = 'y' ]; then
-    touch "${_cpuDropFile}" || _cm2WarnStrFn 'Could not add drop file';
+    touch "${_cpuDropFile}" || _cm2WarnStrFn 'Could not add a drop file';
     _cm2SucFn;
   else
     _cm2WarnFn;
   fi
 }
+## . END _chkInitCpuFn }
 
+## BEGIN _calcWriteOptionFilesFn {
+# Summary   : _calcWriteOptionFilesFn
+# Purpose   : Calculate and write cached frequency profile computed table
+#   files: _computedTableFile and _prettyComputedTableFile. These are cleared
+#   on each reboot.
+# Example   : _calcWriteOptionFilesFn
+# Arguments : none
+# Globals   : _computedTableFile, _prettyComputedTableFile
+# Outputs   : none
+# Returns   : none
+#
 _calcWriteOptionFilesFn () {
   declare _computed_table_str _pretty_computed_table_str;
 
@@ -337,7 +565,21 @@ _calcWriteOptionFilesFn () {
   echo "${_pretty_computed_table_str}" > "${_prettyComputedTableFile}";
   _cm2SucFn;
 }
+## . END _calcWriteOptionFilesFn }
 
+## BEGIN _setModeFn {
+# Summary   : _setModeFn <arg_str>
+# Purpose   : Set the CPU to a frequency profile, and record the set profile
+#   at _currentModeFile so it can be retrieved later. _currentModeFile is
+#   cleared on each reboot.
+# Example   : _setModeFn 'Normal'
+# Arguments : arg_str - The label of the frequency profile to set. See
+#   _optionTable for a list of valid frequency profile labels.
+# Globals   : _optionTable, _currentModeFile
+# Outputs   : none
+# Returns   : 0 on success, 1 if the specified frequency profile is invalid or
+#   _currentModeFile cannot be written
+#
 _setModeFn () {
   declare _arg_str _mode_list _opt_line _match_line _key;
 
@@ -355,18 +597,94 @@ _setModeFn () {
   done
 
   if [ -z "${_match_line}" ]; then
-    _cm2ErrStrFn "Mode |${_arg_str}| not supported. Abort.";
+    _cm2WarnStrFn "Mode |${_arg_str}| not supported!";
     ( IFS='|'; _cm2EchoFn "  ${_mode_list[*]}" );
     return 1;
   fi
 
   _scanFn "${_match_line}" 'set';
+  echo "${_arg_str}" > "${_currentModeFile}" || {
+    _cm2WarnStrFn "Cannot write to |${_currentModeFile}|!";
+    return 1;
+  };
 }
+## . END _setModeFn }
 
+## BEGIN _calcCanonicalFreqsFn {
+# Summary   : _calcCanonicalFreqsFn <canonical_table_str>
+# Purpose   : Calculate frequency profile details for display to the end user,
+#   using a hardcoded frequency table as input
+# Example   : _calcCanonicalFreqsFn
+#   "${_freqCanonicalMap['Intel Core Ultra 9 275HX']}"
+# Arguments : canonical_table_str - One of the tables contained
+#   in _freqCanonicalMap
+# Globals   : _optionTable
+# Outputs   : A table, with each line formatted the same as _scanFn output
+# Returns   : 0 on success, 1 on failure
+#
+_calcCanonicalFreqsFn() {
+  declare _canonical_table_str _canonical_table_list _out_list _opt_line \
+    _opt_parts _canonical_line _canonical_match_line _canonical_parts \
+    _out_str;
+
+  _canonical_table_str="${1:-}";
+  [ -z "${_canonical_table_str}" ] && return 1;
+
+  readarray -t _canonical_table_list <<< "${_canonical_table_str}";
+  _out_list=();
+
+  for _opt_line in "${_optionTable[@]}"; do
+    IFS=';' read -r -a _opt_parts <<< "${_opt_line}";
+
+    _canonical_match_line='';
+    for _canonical_line in "${_canonical_table_list[@]}"; do
+      if [[ "${_canonical_line}" =~ ^${_opt_parts[0]} ]]; then
+        _canonical_match_line="${_canonical_line}";
+        break;
+      fi
+    done
+
+    if [ -z "${_canonical_match_line}" ]; then
+      _cm2ErrStrFn \
+        "No canonical frequency match for option line |${_opt_line}|!"
+      return 1;
+    fi
+
+    IFS=';' read -r -a _canonical_parts <<< "${_canonical_match_line}";
+    _out_str="${_opt_parts[0]};${_canonical_parts[1]};${_opt_parts[3]};";
+    _out_str+="${_opt_parts[4]};${_opt_parts[5]};";
+    _out_list+=( "${_out_str}" );
+  done
+
+  if [ "${#_out_list[@]}" = '0' ]; then
+    _cm2ErrStrFn 'Could not calculate canonical freq table!'
+    return 1;
+  fi
+  printf '%s\n' "${_out_list[@]}";
+}
+## . END _calcCanonicalFreqsFn }
+
+## BEGIN _calcOptionsFn {
+# Summary   : _calcOptionsFn
+# Purpose   : Use _optionTable to calculate a table of frequencies using
+#   frequency limits provided by _freqCanonicalMap, or if those are not
+#   available, read from sysfs registers.
+# Example   : _calcOptionsFn
+# Arguments : none
+# Globals   : _freqCanonicalMap, _isHybridCpu, _optionTable, _cm2HtmPStr
+# Outputs   :
+#   A table, with the first line formatted as:
+#     system_model;cpu_model;is_hybrid_cpu;
+#   Each subsequent line is formatted the same way as _scanFn output. These
+#   lines are machine-readable and are not intended for display to the
+#   end-user. If frequency profiles cannot be calculated, outputs a message
+#   for display to the end user instead.
+# Returns   : 0 on success, 1 if frequency profiles cannot be calculated
+#
 _calcOptionsFn () {
   declare _opt_line _out_list _out_str _title _model_msg _normal_cpu_freq \
-    _low_cpu_freq _opt_parts _out_parts _cpu_str _freq_misreport_line \
-    _bit_list _freq_misreport_cpuid _misreport_warn_str _return_val;
+    _low_cpu_freq _opt_parts _out_parts _cpu_str _return_val \
+    _canonical_table_str _canonical_freqs_list;
 
   _out_list=();
   _cpu_str="$(
@@ -376,28 +694,27 @@ _calcOptionsFn () {
       | awk -F':' '{ print $2 }' \
       | sed 's/^ *//; s/(\(R\|TM\))//g'
   )";
-  _misreport_warn_str="";
-  _normal_cpu_freq="";
-  _low_cpu_freq="";
+  _normal_cpu_freq='';
+  _low_cpu_freq='';
   _return_val='0';
+  _canonical_table_str="${_freqCanonicalMap["${_cpu_str}"]:-}";
 
-  for _freq_misreport_line in "${_freqMisreportTable[@]}"; do
-    IFS=';' read -r -a _bit_list <<< "${_freq_misreport_line}";
-    _freq_misreport_cpuid="${_bit_list[0]}";
-    if [ "${_cpu_str}" = "${_freq_misreport_cpuid}" ]; then
-      _misreport_warn_str="${_bit_list[1]}";
-    fi
-  done
-  _out_list+=(
-    "$(_cm2EchoModelStrFn 'label');${_cpu_str};${_misreport_warn_str}"
-  );
+  _out_list+=( "$(_cm2EchoModelStrFn 'label');${_cpu_str};${_isHybridCpu};" );
 
   for _opt_line in "${_optionTable[@]}"; do
+    # Calculate frequencies for normal and low modes even if a hardcoded
+    #   table exists, for checking turbo boost
+    if [ -n "${_canonical_table_str}" ] \
+      && ! [[ "${_opt_line}" =~ ^(Normal|Low)\; ]]; then
+      continue;
+    fi
     _out_str="$(_scanFn "${_opt_line}" 'read' )";
     if [[ "${_out_str:-}" =~ ^[[:space:]]*$ ]]; then
       continue;
     else
-      _out_list+=( "${_out_str}" );
+      if [ -z "${_canonical_table_str}" ]; then
+        _out_list+=( "${_out_str}" );
+      fi
       IFS=';' read -r -a _opt_parts <<< "${_opt_line}";
       if [ "${_opt_parts[0]}" = 'Normal' ]; then
         IFS=';' read -r -a _out_parts <<< "${_out_str}";
@@ -408,6 +725,18 @@ _calcOptionsFn () {
       fi
     fi
   done
+
+  # This occurs when Turbo Boost is disabled on kernels >= 6.11
+  if [ "${_normal_cpu_freq:-}" = "${_low_cpu_freq:-}" ]; then
+    _cm2ErrStrFn \
+      'CPU init failed, max CPU freq for normal and low power profiles are the same!';
+  fi
+
+  if [ -n "${_canonical_table_str}" ]; then
+    readarray -t _canonical_freqs_list <<< "$(_calcCanonicalFreqsFn \
+      "${_canonical_table_str}")";
+    _out_list+=( "${_canonical_freqs_list[@]}" );
+  fi
 
   ## TODO 2023-03-27 Add per-cpu messages where appropriate
   if [ "${#_out_list[@]}" = '1' ]; then
@@ -425,22 +754,38 @@ EOH
   if [ -n "${_normal_cpu_freq}" ] \
     && [ -n "${_low_cpu_freq}" ] \
     && [ "${_normal_cpu_freq}" == "${_low_cpu_freq}" ]; then
-    _cm2ErrStrFn \
-      'CPU init failed, max CPU freq for normal and low power profiles are the same!';
+    _cm2WarnStrFn 'Possible CPU init failure, max freq == base freq!';
   fi
 
   ( IFS=$'\n'; echo "${_out_list[*]}" );
   return "${_return_val}";
 }
+## . END _calcOptionsFn }
 
+## BEGIN _calcPrettyOptionsFn {
+# Summary   : _calcPrettyOptionsFn <orig_computed_table_str>
+# Purpose   : Calculate a table with human-readable values from the table of
+#   frequency profile details output by _calcOptionsFn. This is for use by the
+#   graphical frontend.
+# Example   : _calcPrettyOptionsFn "${_computed_table_str}";
+# Arguments : orig_computed_table_str - The verbatim string output of
+#   _calcOptionsFn.
+# Globals   : _optionHeader, _isHybridCpu
+# Outputs   : A table, with the first line formatted the same as the first
+#   line of _calcOptionsFn output. The second line is the contents of
+#   _optionHeader, minus the 'LEDs;' field if the system does not support
+#   keyboard LEDs. The subsequent lines have the following fields:
+#     profile_label;frequency_details;governor_key;noturbo_onoff;[leds_onoff;]
+# Returns   : 0 on success, 1 if orig_computed_table_str is not provided
+#
 _calcPrettyOptionsFn() {
   declare _orig_computed_table_str _bit_list _label _frequency _governor \
     _turbo _leds _header_line _orig_computed_table _out_computed_table_str \
-    _idx _line;
+    _idx _line _freq_parts _pcore_freq _ecore_freq;
 
   _orig_computed_table_str="${1:-}";
   [ -z "${_orig_computed_table_str}" ] && {
-    _cm2ErrStrFn 'No orig computed table str provided';
+    _cm2ErrStrFn 'The original computed table string was not provided';
     return 1;
   }
 
@@ -482,7 +827,15 @@ _calcPrettyOptionsFn() {
     if [ "${_leds}" = '0' ]; then
       _leds='Off'; else _leds='On';
     fi
-    _frequency="$(bc <<< "scale=2; ${_frequency} / 1000000") GHz";
+
+    if [ "${_isHybridCpu}" = 'y' ]; then
+      IFS='|' read -r -a _freq_parts <<< "${_frequency}";
+      _pcore_freq="$(bc <<< "scale=2; ${_freq_parts[0]} / 1000000")";
+      _ecore_freq="$(bc <<< "scale=2; ${_freq_parts[1]} / 1000000")";
+      _frequency="P${_pcore_freq}  E${_ecore_freq}";
+    else
+      _frequency="$(bc <<< "scale=2; ${_frequency} / 1000000")";
+    fi
 
     _line="${_label};${_frequency};${_governor};${_turbo};";
     if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
@@ -493,7 +846,20 @@ _calcPrettyOptionsFn() {
 
   echo "${_out_computed_table_str}";
 }
+## . END _calcPrettyOptionsFn }
 
+## BEGIN _printOptionsFn {
+# Summary   : _printOptionsFn <mode_str>
+# Purpose   : Output the contents of one of the computed frequency
+#   profile tables
+# Example   : _printOptionsFn x
+# Arguments : mode_str - 'p' to print the machine-readable computed table
+#   file, 'x' to print the human-readable file
+# Globals   : _computedTableFile, _prettyComputedTableFile
+# Outputs   : The contents of the requested table.
+# Returns   : 0 on success, 1 if the value of mode_str is not recognized or
+#   either of the cache files do not exist
+#
 _printOptionsFn () {
   declare _mode_str;
 
@@ -518,63 +884,69 @@ _printOptionsFn () {
 ## . END _printOptionsFn }
 
 ## BEGIN _readModeFn {
-# Returned from _scanFn <line> 'read':
-#   _label;_set_max_int;_gov_key;noturbo_int;kbdled_int
-# Fields to match from policy:
-#   _set_max_int;_gov_key;noturbo_int
+# Summary   : _readModeFn
+# Purpose   : Read the label of the current frequency profile. These are found
+#   in _optionTable, and examples include 'High','Normal', and 'Low'.
+# Example   : _readModeFn
+# Arguments : none
+# Globals   : _currentModeFile, _optionTable
+# Outputs   : One of the frequency profile labels from _optionTable, or the
+#   special value 'Unknown' if the last set frequency profile is not
+#   recognized or _currentModeFile does not exist.
+# Returns   : none
 #
 _readModeFn () {
-  declare _noturbo_int _scan_int _gov_key _proc_count _proc_idx _policy_str \
-  _policy_list _search_line _opt_line _read_line _bit_list _max_ghz_num;
+  declare _current_mode_str _opt_line _msg;
 
-  _noturbo_int="$(_readNoTurboFn)";
-  _scan_int=0;
-  _gov_key='';
-  _proc_count="$("${_nprocExe}")";
+  # TODO: Consider setting the mode to "Normal" if no mode is found
+  if ! [ -f "${_currentModeFile}" ]; then
+    _cm2WarnStrFn 'Current mode file does not exist!';
+    echo 'Unknown';
+    return 0;
+  fi
 
-  for (( _proc_idx=0; _proc_idx < "${_proc_count}"; _proc_idx++ )); do
-    _policy_str="$("${_cpufreqInfoExe}" -c "${_proc_idx}" -p)";
-    if [ -z "${_policy_str}" ]; then continue; fi
-    read -r -d '' -a _policy_list <<<"${_policy_str}";
-    if (( _policy_list[1] > _scan_int )); then
-      _scan_int="${_policy_list[1]}";
-      _gov_key="${_policy_list[2]}";
-
-      # Hack to match when cpu in passive mode
-      _search_line="${_scan_int}";
-      if [ "${_gov_key}" = "${_altPsaveKey}" ]; then
-        _search_line+=' powersave';
-      else
-        _search_line+=" ${_gov_key}";
-      fi
-      if [ -n "${_noturbo_int}" ]; then
-        _search_line+=" ${_noturbo_int}";
-      fi
-    fi
-  done
-
-  if [ -z "${_search_line:-}" ]; then return 1; fi
-
+  _current_mode_str="$(cat "${_currentModeFile}")";
   for _opt_line in "${_optionTable[@]}"; do
-    _read_line="$(_scanFn "${_opt_line}" 'read')";
-    IFS=';' read -r -d '' -a _bit_list < <(echo -n "${_read_line}");
-    if [ "${_bit_list[*]:1:3}" = "${_search_line}" ]; then
-      echo "${_bit_list[0]}";
+    if [[ "${_opt_line}" =~ ^${_current_mode_str}\; ]]; then
+      echo "${_current_mode_str}";
       return 0;
     fi
   done
 
-  # Fallthrough
-  _max_ghz_num="$(bc <<< "${_scan_int}*.000001")";
-  _max_ghz_num="$(printf '%.2f' "${_max_ghz_num}")";
-  echo "Custom (${_max_ghz_num} GHz ${_gov_key})";
+  _msg="Unsupported mode |${_current_mode_str}| read from ";
+  _msg+="|${_currentModeFile}|!";
+  _cm2WarnStrFn "${_msg}";
+  echo 'Unknown';
+  return 0;
 }
 ## . END _readModeFn }
 
+## BEGIN _chkIfHybridCpuFn {
+# Summary   : _chkIfHybridCpuFn
+# Purpose   : Determine if the system CPU is hybrid-core, and record which
+#   cores are P-cores and which are E-cores if so.
+# Example   : _chkIfHybridCpuFn
+# Arguments : none
+# Globals   : _isHybridCpu, _pcoreRangeList, _ecoreRangeList
+# Outputs   : none
+# Returns   : none
+#
+_chkIfHybridCpuFn () {
+  _isHybridCpu='n';
+  if [ -f "${_pcoreRangeFile}" ] && [ -f "${_ecoreRangeFile}" ]; then
+    _isHybridCpu='y';
+    IFS='-' read -r -a _pcoreRangeList <<< "$(cat "${_pcoreRangeFile}")";
+    IFS='-' read -r -a _ecoreRangeList <<< "$(cat "${_ecoreRangeFile}")";
+  fi
+}
+## . END _chkIfHybridCpuFn }
+
+## BEGIN _mainFn {
 _mainFn () {
   declare _arg_str;
   _arg_str="${1:-}";
 
+  _chkIfHybridCpuFn;
   _chkInitCpuFn; # Set CPUFreq for 2023+ CPUs
   _calcWriteOptionFilesFn;
   case "${_arg_str}" in
@@ -583,14 +955,19 @@ _mainFn () {
     '-r') _readModeFn;;
     '-i') true;; # does CPU init only, and that's already done
       '') _cm2ErrStrFn 'Argument or flag required'; exit 1;;
-       *) _setModeFn "${_arg_str}";
+       *)
+         _checkSetFlockFn || exit "$?";
+         _setModeFn "${_arg_str}";
+         ;;
   esac
 }
+## . END _mainFn }
 
 ## BEGIN Declare and assign global vars {
 declare _binName _binDir _baseDir _baseName _rootDir \
   _cpuDropFile _noTurboFile _cpuStatusFile _altPsaveKey \
-  _cpufreqSetExe _cpufreqInfoExe _nprocExe _kbdColorSetExe;
+  _cpufreqSetExe _cpufreqInfoExe _nprocExe _kbdColorSetExe \
+  _currentModeFile _pcoreRangeFile _ecoreRangeFile _isHybridCpu;
 
 _rootDir='';
 _cpuDropFile='/run/kfocus-cpu-init';
@@ -599,9 +976,15 @@ _cpuStatusFile='/sys/devices/system/cpu/intel_pstate/status';
 _altPsaveKey='ondemand'; # schedutil has lower gb5 scores
 _computedTableFile='/run/kfocus-power-computed-table';
 _prettyComputedTableFile='/run/kfocus-power-pretty-computed-table';
+_currentModeFile='/run/kfocus-power-current-mode';
+_pcoreRangeFile='/sys/bus/event_source/devices/cpu_core/cpus';
+_ecoreRangeFile='/sys/bus/event_source/devices/cpu_atom/cpus';
+_isHybridCpu='n';
+_pcoreRangeList=();
+_ecoreRangeList=();
 ## . END Declare and assign global vars }
 
-## BEGIN Run main if script is not sourced {
+## BEGIN Run main if the script is not sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binName="$(readlink -f "$0")"        || exit 101;
   _binDir="$(dirname "${_binName}")"    || exit 101;
@@ -623,4 +1006,4 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   _mainFn "$@"; # >> /tmp/kfocus-power-set-debug.txt 2>&1
 fi
-## . END Run main if script is not sourced }
+## . END Run main if the script is not sourced }

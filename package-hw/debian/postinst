@@ -64,94 +64,104 @@ _supplementXdgConfigsFn () {
 _handle_defaultFn () {
   # target |  source | do_file_backup
   _symlinkTable+=(
+    # Clear bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|'
+    # Add   boot params
     '/etc/default/grub.d/kfocus.cfg|/usr/lib/kfocus/conf/dflt-etc_default_grub.d_kfocus.cfg'
+    # Clear initramfs config
     '/etc/initramfs-tools/conf.d/kfocus.conf|'
+    # Add   general module configs such as sound, nv-power
     '/etc/modprobe.d/kfocus.conf|/usr/lib/kfocus/conf/m2g4-dflt_etc_modprobe.d_kfocus.conf'
-    # Load keyboard fan modules
+    # Add   a list of modules to load on boot such as keyboard, fan on M/XE
     '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
-    # xhci enable/disable on sleep
+    # Add   a sleep script which toggles xhci and pstate management
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
+    # Clear any model-specific trackpad config
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
+    # Clear any DPI file; this is superseded by _supplementXdgConfigsFn
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
+    # Clear any config for TLP, which is deprecated.
     '/etc/tlp.d/kfocus.conf|'
   );
 }
+
 # hw_config_code 'generic' handles model xeg1.
 #   DPI scale set by _supplementXdgConfigsFn (none at time of writing).
 # shellcheck disable=SC2317,SC2329
 #
 _handle_genericFn () {
   _symlinkTable+=(
-    # Normal tty fonts
+    # Clear bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|'
-    # Boot parameters
+    # Clear boot params
     '/etc/default/grub.d/kfocus.cfg|'
-    # Initramfs config
+    # Clear initramfs config
     '/etc/initramfs-tools/conf.d/kfocus.conf|'
-    # Sound, nv power
+    # Clear any general module configs such as sound, nv-power, sound-pop fix
     '/etc/modprobe.d/kfocus.conf|'
-    # Load keyboard fan modules
+    # Add   a list of modules to load on boot such as keyboard, fan on M/XE
     '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
-    # xhci enable/disable on sleep
+    # Clear a sleep script which toggles xhci and pstate management
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
-    # Trackpad config
+    # Clear any model-specific trackpad config
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
-    # DPI scale symlink removed; Deprecated by _supplementXdgConfigsFn.
+    # Clear any DPI file; this is superseded by _supplementXdgConfigsFn
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
-    # Remove old TLP config
+    # Clear any config for TLP, which is deprecated.
     '/etc/tlp.d/kfocus.conf|'
   );
 }
+
 # hw_config_code 'xeg2' handles model xeg2.
 #   DPI scale set by _supplementXdgConfigsFn (none at time of writing).
 # shellcheck disable=SC2317,SC2329
 #
 _handle_xeg2Fn () {
   _symlinkTable+=(
-    # Normal tty fonts
+    # Clear bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|'
-    # Boot parameters
+    # Add   boot params for to minimize flicker
     '/etc/default/grub.d/kfocus.cfg|/usr/lib/kfocus/conf/m2g4-etc_default_grub.d_kfocus.cfg'
-    # Initramfs config
+    # Clear initramfs config
     '/etc/initramfs-tools/conf.d/kfocus.conf|'
-    # Sound, nv power
+    # Clear any general module configs such as sound, nv-power, sound-pop fix
     '/etc/modprobe.d/kfocus.conf|'
-    # Load keyboard fan modules
+    # Add   a list of modules to load on boot such as keyboard, fan on M/XE
     '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
-    # xhci enable/disable on sleep
+    # Add   a sleep script which toggles xhci and pstate management
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
-    # Trackpad config
+    # Clear any model-specific trackpad config
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
-    # DPI scale symlink removed; Deprecated by _supplementXdgConfigsFn.
+    # Clear any DPI file; this is superseded by _supplementXdgConfigsFn
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
-    # Remove old TLP config
+    # Clear any config for TLP, which is deprecated.
     '/etc/tlp.d/kfocus.conf|'
   );
 }
+
 # hw_config_code 'ir14g1' handles model ir14g1
 #   DPI scale set by _supplementXdgConfigsFn (120 at time of writing).
 # shellcheck disable=SC2317,SC2329
 #
 _handle_ir14g1Fn () {
   _symlinkTable+=(
-    # Bigger tty fonts
+    # Add   bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
-    # Add params to minimize flicker and logs
+    # Add   boot params to minimize flicker
     '/etc/default/grub.d/kfocus.cfg|/usr/lib/kfocus/conf/ir14g1-etc_default_grub.d_kfocus.cfg'
-    # Minimize initrd accommodate GPU libs
+    # Add   No-op config that was once used to minimize intramfs size
     '/etc/initramfs-tools/conf.d/kfocus.conf|/usr/lib/kfocus/conf/nxg1-etc_initramfs-tools_conf.d_kfocus.conf'
-    # Remove sound-pop fix
+    # Clear any general module configs such as sound, nv-power, sound-pop fix
     '/etc/modprobe.d/kfocus.conf|'
-    # No kernel modules (used for keyboard on M and Xe series)
+    # Clear a list of modules to load on boot such as keyboard, fan on M/XE
     '/etc/modules-load.d/kfocus.conf|'
-    # No xhci enable/disable on sleep (not needed here)
+    # Clear a sleep script which toggles xhci and pstate management
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
-    # Select trackpad driver
+    # Add   a model-specific trackpad config
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|/usr/lib/kfocus/conf/ir14g1-usr_share_X11_xorg.conf.d_80-kfocus.conf'
-    # DPI scale symlink removed; Deprecated by _supplementXdgConfigsFn.
+    # Clear any DPI file; this is superseded by _supplementXdgConfigsFn
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
-    # Remove old TLP config
+    # Clear any config for TLP, which is deprecated.
     '/etc/tlp.d/kfocus.conf|'
   );
 }
@@ -162,23 +172,50 @@ _handle_ir14g1Fn () {
 #
 _handle_ir1Xg2Fn () {
   _symlinkTable+=(
-    # Bigger tty fonts
+    # Add   bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
-    # Add params to minimize flicker and logs, improve single-core speed
+    # Add   boot params to minimize flicker
     '/etc/default/grub.d/kfocus.cfg|/usr/lib/kfocus/conf/ir1xg2-etc_default_grub.d_kfocus.cfg'
-    # Minimize initrd accommodate GPU libs
+    # Add   No-op config that was once used to minimize intramfs size
     '/etc/initramfs-tools/conf.d/kfocus.conf|/usr/lib/kfocus/conf/nxg1-etc_initramfs-tools_conf.d_kfocus.conf'
-    # Remove sound-pop fix
+    # Clear any general module configs such as sound, nv-power, sound-pop fix
     '/etc/modprobe.d/kfocus.conf|'
-    # No kernel modules (used for keyboard on M and Xe series)
+    # Clear a list of modules to load on boot such as keyboard, fan on M/XE
     '/etc/modules-load.d/kfocus.conf|'
-    # No xhci enable/disable on sleep (not needed here)
+    # Clear a sleep script which toggles xhci and pstate management
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
-    # Select trackpad driver
+    # Add   a model-specific trackpad config
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|/usr/lib/kfocus/conf/ir14g1-usr_share_X11_xorg.conf.d_80-kfocus.conf'
-    # DPI scale symlink removed; Deprecated by _supplementXdgConfigsFn.
+    # Clear any DPI file; this is superseded by _supplementXdgConfigsFn
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
-    # Remove old TLP config
+    # Clear any config for TLP, which is deprecated.
+    '/etc/tlp.d/kfocus.conf|'
+  );
+}
+
+# hw_config_code 'ir1Xg3' handles model ir14g3, possibly ir15g3
+#   DPI scale set by _supplementXdgConfigsFn (144 at time of writing).
+# shellcheck disable=SC2317,SC2329
+#
+_handle_ir1Xg3Fn () {
+  _symlinkTable+=(
+    # Add   bigger tty fonts for the HiDPI screen
+    '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
+    # Add   boot params to use deep sleep
+    '/etc/default/grub.d/kfocus.cfg|/usr/lib/kfocus/conf/ir1xg3-etc_default_grub.d_kfocus.cfg'
+    # Clear initramfs config
+    '/etc/initramfs-tools/conf.d/kfocus.conf|'
+    # Clear any general module configs such as sound, nv-power, sound-pop fix
+    '/etc/modprobe.d/kfocus.conf|'
+    # Clear a list of modules to load on boot such as keyboard, fan on M/XE
+    '/etc/modules-load.d/kfocus.conf|'
+    # Clear a sleep script which toggles xhci and pstate management
+    '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
+    # Add   a model-specific trackpad config
+    '/usr/share/X11/xorg.conf.d/80-kfocus.conf|/usr/lib/kfocus/conf/ir1xg3-usr_share_X11_xorg.conf.d_80-kfocus.conf'
+    # Clear any DPI file; this is superseded by _supplementXdgConfigsFn
+    '/usr/share/kfocus/kf5-settings/kcmfonts|'
+    # Clear any config for TLP, which is deprecated.
     '/etc/tlp.d/kfocus.conf|'
   );
 }
@@ -193,28 +230,27 @@ _handle_m2g4Fn () {
       systemd-backlight@backlight:nvidia_0.service >/dev/null;
   fi
   _symlinkTable+=(
-    # Bigger tty fonts
+    # Add   bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
-    # Boot parameters
+    # Add   boot params for m2g4
     '/etc/default/grub.d/kfocus.cfg|/usr/lib/kfocus/conf/m2g4-etc_default_grub.d_kfocus.cfg'
-    # Initramfs config
+    # Clear initramfs config
     '/etc/initramfs-tools/conf.d/kfocus.conf|'
-    # Sound, nv power
+    # Add   general module configs such as sound, nv-power
     '/etc/modprobe.d/kfocus.conf|/usr/lib/kfocus/conf/m2g4-dflt_etc_modprobe.d_kfocus.conf'
-    # Load keyboard
+    # Add   a list of modules to load on boot such as keyboard, fan on M/XE
     '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
-    # xhci enable/disable on sleep
+    # Add a sleep script which toggles xhci and pstate management
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
-    # Trackpad config
+    # Add   a model-specific trackpad config
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|/usr/lib/kfocus/conf/m2g4-usr_share_X11_xorg.conf.d_80-kfocus.conf'
-    # DPI scale symlink removed; Deprecated by _supplementXdgConfigsFn.
+    # Clear any DPI file; this is superseded by _supplementXdgConfigsFn
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
-    # Remove old TLP config
+    # Clear any config for TLP, which is deprecated.
     '/etc/tlp.d/kfocus.conf|'
   );
-  # Deprecated by _supplementXdgConfigsFn
-  # _setScaleFactorFn '';
 }
+
 # hw_config_code 'm2g5' handles hw_model_codes m2g5, m2g5p, m2g5p1 (barlow ridge TB)
 # shellcheck disable=SC2317,SC2329
 #
@@ -225,23 +261,23 @@ _handle_m2g5Fn () {
       systemd-backlight@backlight:nvidia_0.service >/dev/null;
   fi
   _symlinkTable+=(
-    # Bigger tty fonts
+    # Add   bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
-    # Boot parameters
+    # Add   boot params for m2g5
     '/etc/default/grub.d/kfocus.cfg|/usr/lib/kfocus/conf/m2g5-etc_default_grub.d_kfocus.cfg'
-    # Initramfs config
+    # Clear initramfs config
     '/etc/initramfs-tools/conf.d/kfocus.conf|'
-    # Sound, nv power
+    # Add   general module configs such as sound, nv-power
     '/etc/modprobe.d/kfocus.conf|/usr/lib/kfocus/conf/m2g5-etc_modprobe.d_kfocus.conf'
-    # Load keyboard
+    # Add   a list of modules to load on boot such as keyboard, fan on M/XE
     '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
-    # xhci enable/disable on sleep
+    # Add   a sleep script which toggles xhci and pstate management
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
-    # Select Trackpad config and driver
+    # Add   a model-specific trackpad config
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|/usr/lib/kfocus/conf/m2g5-usr_share_X11_xorg.conf.d_80-kfocus.conf'
-    # DPI Scale Symlink removed; Deprecated by _supplementXdgConfigsFn.
+    # Clear any DPI file; this is superseded by _supplementXdgConfigsFn
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
-    # Remove old TLP config
+    # Clear any config for TLP, which is deprecated.
     '/etc/tlp.d/kfocus.conf|'
   );
 
@@ -270,23 +306,23 @@ _handle_zrg1Fn () {
       systemd-backlight@backlight:nvidia_0.service >/dev/null;
   fi
   _symlinkTable+=(
-    # Bigger tty fonts
+    # Add   bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
-    # Boot parameters
+    # Add   boot params
     '/etc/default/grub.d/kfocus.cfg|/usr/lib/kfocus/conf/m2g6-etc_default_grub.d_kfocus.cfg'
-    # Initramfs config
+    # Clear initramfs config
     '/etc/initramfs-tools/conf.d/kfocus.conf|'
-    # Sound
+    # Add   general module configs such as sound, nv-power
     '/etc/modprobe.d/kfocus.conf|/usr/lib/kfocus/conf/m2g6-etc_modprobe.d_kfocus.conf'
-    # Load keyboard
+    # Add   a list of modules to load on boot such as keyboard, fan on M/XE
     '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
-    # xhci enable/disable on sleep
+    # Add   a sleep script which toggles xhci and pstate management
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
-    # Select Trackpad config and driver
+    # Add   a model-specific trackpad config
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|/usr/lib/kfocus/conf/zrg1-usr_share_X11_xorg.conf.d_80-kfocus.conf'
-    # DPI Scale Symlink removed; Deprecated by _supplementXdgConfigsFn.
+    # Clear any DPI file; this is superseded by _supplementXdgConfigsFn
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
-    # Remove old TLP config
+    # Clear any config for TLP, which is deprecated.
     '/etc/tlp.d/kfocus.conf|'
   );
 }
@@ -299,23 +335,23 @@ _handle_m2g6Fn () {
       systemd-backlight@backlight:nvidia_0.service >/dev/null;
   fi
   _symlinkTable+=(
-    # Bigger tty fonts
+    # Add   bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
-    # Boot parameters
+    # Add   boot params
     '/etc/default/grub.d/kfocus.cfg|/usr/lib/kfocus/conf/m2g6-etc_default_grub.d_kfocus.cfg'
-    # Initramfs config
+    # Clear initramfs config
     '/etc/initramfs-tools/conf.d/kfocus.conf|'
-    # Sound, nv power
+    # Add   general module configs such as sound, nv-power
     '/etc/modprobe.d/kfocus.conf|/usr/lib/kfocus/conf/m2g6-etc_modprobe.d_kfocus.conf'
-    # Load keyboard
+    # Add   a list of modules to load on boot such as keyboard, fan on M/XE
     '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
-    # xhci enable/disable on sleep
+    # Add   a sleep script which toggles xhci and pstate management
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
-    # Select Trackpad config and driver
+    # Add   a model-specific trackpad config
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|/usr/lib/kfocus/conf/m2g6-usr_share_X11_xorg.conf.d_80-kfocus.conf'
-    # DPI Scale Symlink removed; Deprecated by _supplementXdgConfigsFn.
+    # Clear any DPI file; this is superseded by _supplementXdgConfigsFn
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
-    # Remove old TLP config
+    # Clear any config for TLP, which is deprecated.
     '/etc/tlp.d/kfocus.conf|'
   );
 }
@@ -324,42 +360,50 @@ _handle_m2g6Fn () {
 #
 _handle_nxg1Fn () {
   _symlinkTable+=(
+    # Clear bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|'
-    # Add param to prevent intel flicker
+    # Add   boot param to prevent flicker
     '/etc/default/grub.d/kfocus.cfg|/usr/lib/kfocus/conf/nxg1-etc_default_grub.d_kfocus.cfg'
-    # Minimize initrd on NX to accommodate GPU libs
+    # Add   No-op config that was once used to minimize intramfs size
     '/etc/initramfs-tools/conf.d/kfocus.conf|/usr/lib/kfocus/conf/nxg1-etc_initramfs-tools_conf.d_kfocus.conf'
-    # no sound-pop
+    # Add   general module configs such as sound, nv-power, sound-pop
     '/etc/modprobe.d/kfocus.conf|/usr/lib/kfocus/conf/nxg1-etc_modprobe.d_kfocus.conf'
+    # Clear a list of modules to load on boot such as keyboard, fan on M/XE
     '/etc/modules-load.d/kfocus.conf|'
+    # Clear a sleep script which toggles xhci and pstate management
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
+    # Clear any model-specific trackpad config
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
-    # DPI scale symlink removed; Deprecated by _supplementXdgConfigsFn.
+    # Clear any DPI file; this is superseded by _supplementXdgConfigsFn
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
+    # Clear any config for TLP, which is deprecated.
     '/etc/tlp.d/kfocus.conf|'
   );
-  # Deprecated by _supplementXdgConfigsFn
-  # _setScaleFactorFn '';
 }
 # hw_config_code 'other' handles unrecognized hw_model_codes
 # shellcheck disable=SC2317,SC2329
 #
 _handle_otherFn () {
   _symlinkTable+=(
+    # Clear bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|'
+    # Clear boot params
     '/etc/default/grub.d/kfocus.cfg|'
+    # Clear initramfs config
     '/etc/initramfs-tools/conf.d/kfocus.conf|'
-    # no sound-pop
+    # Add   general module config to remove sound-pop
     '/etc/modprobe.d/kfocus.conf|/usr/lib/kfocus/conf/nxg1-etc_modprobe.d_kfocus.conf'
+    # Clear a list of modules to load on boot such as keyboard, fan on M/XE
     '/etc/modules-load.d/kfocus.conf|'
+    # Clear a sleep script which toggles xhci and pstate management
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
+    # Clear any model-specific trackpad config
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
-    # DPI scale symlink removed; Deprecated by _supplementXdgConfigsFn.
+    # Clear any DPI file; this is superseded by _supplementXdgConfigsFn
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
+    # Clear any config for TLP, which is deprecated.
     '/etc/tlp.d/kfocus.conf|'
   );
-  # Deprecated by _supplementXdgConfigsFn
-  # _setScaleFactorFn '';
 }
 
 _cleanupGrubFileFn () {
@@ -367,11 +411,12 @@ _cleanupGrubFileFn () {
   _cmXSetMsgFn 'Clean up grub file';
 
   _grub_file='/etc/default/grub';
-  _grub_line="$(grep -E '^\s*GRUB_CMDLINE_LINUX_DEFAULT="' ${_grub_file} \
-    | tail -n1 )";
+  _grub_line="$(
+    grep -E '^\s*GRUB_CMDLINE_LINUX_DEFAULT="' "${_grub_file}" | tail -n1
+  )";
 
   if [ -z "${_grub_line}" ]; then
-    _cmXWarnStrFn "grub line from file ${_grub_file} not found";
+    _cmXWarnStrFn "Grub line was not found in |${_grub_file}|.";
     return;
   fi
 
@@ -585,10 +630,10 @@ _configFn () {
   # Set up symlinks
   _setupSymlinkTableFn;
 
-  # Run kfocus-reset-effects on XDG_CONFIG_DIR
+  # Run kfocus-reset-effects on XDG_CONFIG_DIR per MODEL
   _supplementXdgConfigsFn;
 
-  # Link hints per model
+  # Link hints per MODEL
   _setupModelHintsFn "${_model_code}";
 
   # Execute commands to set up boot

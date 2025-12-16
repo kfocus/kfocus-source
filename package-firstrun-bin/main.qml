@@ -33,9 +33,24 @@ Kirigami.ApplicationWindow {
     property string modelCode                   : ''
     property string modelLabel                  : ''
     property var faqModelMap                    : ({
+      ir14g3 : 'bkm_ir1x_faq',
+      ir16g2 : 'bkm_ir1x_faq',
       ir14g2 : 'bkm_ir1x_faq',
-      ir16g2 : 'bkm_ir1x_faq',  m2g6 : 'bkm_m2g6_faq',
-      nxg3   : 'bkm_nx_faq',    zrg1 : 'bkm_zrg1_faq'
+      ir14g1 : 'bkm_ir1x_faq',
+      zrg1   : 'bkm_zrg1_faq',
+      m2g6   : 'bkm_m2g6_faq',
+      m2g5p  : 'bkm_m2_faq',
+      m2g5   : 'bkm_m2_faq',
+      m2g4   : 'bkm_m2_faq',
+      m2g3   : 'bkm_m2_faq',
+      m2g2   : 'bkm_m2_faq',
+      m2g1   : 'bkm_m2_faq',
+      m1g1   : 'bkm_m2_faq',
+      xeg2   : 'bkm_xe_faq',
+      xeg1   : 'bkm_xe_faq',
+      nxg3   : 'bkm_nx_faq',
+      nxg2   : 'bkm_nx_faq',
+      nxg1   : 'bkm_nx_faq'
     })
     property var imageModelMatrix               : ({
       frontpage: { ir16g2: true, m2g6: true, nxg3: true, zrg1: true }
@@ -941,7 +956,7 @@ Kirigami.ApplicationWindow {
                 frontText.text
                   += ' You can view frequently asked questions '
                   + 'for this and other models '
-                  + '<a href="https://kfocus.org/wf/help.html">here</a>.'
+                  + '<a href="https://kfocus.org/wf/help.html#bkm_general_faq">here</a>.'
                   ;
             }
             frontText.text += '<br></p>';

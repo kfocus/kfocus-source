@@ -33,15 +33,15 @@ _importCommonFn() {
 #
 _updatePkgsFn () {
   _cm2SetMsgFn 'Update and upgrade kfocus packages';
-  if apt-get update; then
-    if yes 2>/dev/null \
-      | apt-get install -y --only-upgrade 'kfocus*';
-    then
-      _cm2SucFn;
-      return;
-    fi
+  apt-get update || true;
+  if yes 2>/dev/null \
+    | apt-get install -y --only-upgrade 'kfocus*';
+  then
+    _cm2SucFn;
+    return;
   fi
   _cm2WarnFn;
+  return 1;
 }
 ## . END _updatePkgsFn }
 
@@ -62,7 +62,7 @@ _reconfigHwPkgFn () {
 
   # Then reconfigure
   if _str="$(dpkg-reconfigure kfocus-hw 2>&1)"; then
-    _cm2SucFn; else _cm2WarnStrFn "${_str}"; _cm2WarnFn;
+    _cm2SucFn; else _cm2WarnStrFn "${_str}"; _cm2WarnFn; return 1;
   fi
 }
 ## . END _reconfigHwPkgFn }
@@ -76,7 +76,7 @@ _installToolsPkgFn () {
   _tools_pkg="${1:-}";
   _cm2SetMsgFn "Install Tools Package ${_tools_pkg}";
   if ! [[ "${_tools_pkg}" =~ ^kfocus-tools ]]; then
-    _cm2WarnStrFn; return 1;
+    _cm2WarnFn; return 1;
   fi
 
   if apt-get reinstall -y "${_tools_pkg}"; then
@@ -154,7 +154,6 @@ _installNvidiaFn () {
   fi
   if ! apt-get update; then
     _cm2WarnStrFn 'Trouble updating apt package list.';
-    _cm2WarnFn; return 1;
   fi
   if ! apt-get reinstall -y "kfocus-nvidia${_nv_pkg_suffix}"; then
     _cm2WarnStrFn "Trouble installing kfocus-nvidia${_nv_pkg_suffix}.";
@@ -224,9 +223,17 @@ _chkHwConfigFn () {
   _file_hw_config_code="$( cat "${_hwConfigCodeFile}" || echo '' )";
   _file_hw_model_code="$(  cat "${_hwModelCodeFile}"  || echo '' )";
 
-  if [ "${_file_hw_config_code}" != "${_dmi_hw_config_code}" ]; then
-    _msg='reconfig-hw;;Hardware signature does not match expected: ';
-    _msg+="${_file_hw_config_code} != ${_dmi_hw_config_code}";
+  # Flag as hw reconfig if hw_config_code does not match
+  if [ "${_dmi_hw_config_code}" != "${_file_hw_config_code}" ]; then
+    _msg='reconfig-hw;;Found hardware signature does not match expected: ';
+    _msg+="${_dmi_hw_config_code} != ${_file_hw_config_code}";
+    _reason_list+=( "${_msg}" );
+    _is_hw_reconfig='y';
+  # Flag as hw reconfig if hw_model_code does not match
+  # This forces changes like model hints reset and dpi
+  elif [ "${_dmi_hw_model_code}" != "${_file_hw_model_code}" ]; then
+    _msg='reconfig-hw;;Found model signature does not match expected: ';
+    _msg+="${_dmi_hw_model_code} != ${_file_hw_model_code}";
     _reason_list+=( "${_msg}" );
     _is_hw_reconfig='y';
   elif [ "${_do_force}" = 'y' ]; then
@@ -235,20 +242,16 @@ _chkHwConfigFn () {
     _is_hw_reconfig='y';
   fi
 
-  # TODO Flag as hw reconfig if hw_model_code does not match
-  # if [ "${_file_hw_model_code}" != "${_dmi_hw_model_code}" ]; then
-  #   _is_hw_reconfig='y';
-  # fi
-
   ## Begin Adjust tool suffix per config code {
   # kfocus-tools-m2g6, kfocus-tools-nxg1, kfocus-tools-other,
   # kfocus-tools (#3424)
   _tool_pkg_suffix='';
   case "${_dmi_hw_config_code}" in
     default|generic|m2g4|m2g5|xeg2) _tool_pkg_suffix='';;
-    nxg1) _tool_pkg_suffix='-nxg1';;
-    m2g6) _tool_pkg_suffix='-m2g6';;
-    zrg1) _tool_pkg_suffix='-m2g6';;
+    nxg1)   _tool_pkg_suffix='-nxg1';;
+    m2g6)   _tool_pkg_suffix='-m2g6';;
+    zrg1)   _tool_pkg_suffix='-m2g6';;
+    ir1Xg3) _tool_pkg_suffix='-ir1xg3';;
     ir14g1|ir1Xg2|other|*) _tool_pkg_suffix='-other';;
   esac
   _tool_pkg_name="kfocus-tools${_tool_pkg_suffix}";
@@ -358,15 +361,21 @@ _chkHwConfigFn () {
 ## BEGIN _fixHwConfigFn {
 # Purpose: Loop through hardware config steps and execute as needed.
 #          On completion, writes the model code to a kfocus file.
+# Output : stdout is a message intended for UI.
 #
 _fixHwConfigFn () {
-  declare _reason_str _reason_list _loop_line _bit_list _cmd_list _model_code;
+  declare _reason_str _reason_list _loop_line \
+    _bit_list _cmd_list _model_code;
 
   _reason_str="${1:-}";
   if [ -z "${_reason_str}" ]; then return 0; fi
-
   IFS='|' read -r -a _reason_list <<< "${_reason_str}";
-  _updatePkgsFn;
+
+  if ! _updatePkgsFn; then
+    echo 'Abort: Could not update kfocus packages.';
+    return 1;
+  fi
+
   for _loop_line in "${_reason_list[@]}"; do
     IFS=';' read -r -a _bit_list <<< "${_loop_line}";
     case "${_bit_list[0]}" in
@@ -383,13 +392,15 @@ _fixHwConfigFn () {
         ;;
     esac
     if ! "${_cmd_list[@]}"; then
-      _cm2WarnStrFn "Trouble with step |${_loop_line}| |${_cmd_list[*]}|";
+      echo 'Abort: Could not complete step:';
+      echo "  Trouble with |${_loop_line}| ${_cmd_list[*]}|";
+      return 1;
     fi
   done
 
   # Indicate post-install (finalize) setup is complete
-  _model_code="$(_cm2EchoModelStrFn 'code')"    || return;
-  mkdir -p "${_varLibDir}"                      || return;
+  _model_code="$(_cm2EchoModelStrFn 'code')" || return 1;
+  mkdir -p "${_varLibDir}"                   || return 1;
   # This is set only on post-install configuration
   echo "${_model_code}" > "${_hwModelCodeFile}" || true;
 }
@@ -412,7 +423,7 @@ _clearRestoreFn () {
 
 ## BEGIN _setKeyCodesFn {
 # Purpose: Used to set keyboard codes per model.
-# Typically this is needed if a key code is undefined.
+# Typically, this is needed if a key code is undefined.
 #
 _setKeyCodesFn () {
   declare _model_code;
@@ -427,13 +438,19 @@ _setKeyCodesFn () {
 
 ## BEGIN _mainFn {
 _mainFn () {
-  declare _arg_str;
+  declare _arg_str _report_str;
   _arg_str="${1:-}";
   case "${_arg_str}" in
     'chk-bios'        ) _chkBiosUpdateFn;;
     'chk-hw-config'   ) _chkHwConfigFn;;
     'force-hw-config' ) _chkHwConfigFn 'y';;
-    'fix-hw-config'   ) _fixHwConfigFn "${2:-}";;
+    'fix-hw-config'   )
+      if ! _report_str="$(_fixHwConfigFn "${2:-}")"; then
+        # Echo stdout for UI display
+        echo "${_report_str:-Undeclared error}";
+        exit 1;
+       fi
+       ;;
     'prep-snapshot'   ) _prepareSnapshotFn;;
     'clear-restore'   ) _clearRestoreFn;;
     'set-keycodes'    ) _setKeyCodesFn;;
