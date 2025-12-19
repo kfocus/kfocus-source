@@ -6,6 +6,10 @@ import org.kde.kirigami 2.13 as Kirigami
 import org.kde.plasma.core 2.1 as PlasmaCore
 import shellengine 1.0
 
+// TODO: Consider adding locking to the frontend to avoid multiple concurrent windows running in the same session.
+// TODO: Lock the frequency profile table when a change is in progress.
+// TODO: Don't make frequency profile reads unintentionally trigger a frequency profile write.
+
 Kirigami.ApplicationWindow {
     id: root
     title: "Kubuntu Focus"
@@ -43,25 +47,40 @@ Kirigami.ApplicationWindow {
                 Layout.fillWidth: true
             }
 
-            RowLayout {
+            Rectangle {
                 visible: plasmaProfilesSlider.visible
-                spacing: 0
                 Layout.fillWidth: true
+                Layout.preferredHeight: childrenRect.height
+                Layout.bottomMargin: PlasmaCore.Units.largeSpacing
+                color: 'transparent'
 
                 Controls.Label {
                     // DEBUG + scaleRatio.toFixed(3)
                     text: '🔋 Powersave'
+                    anchors {
+                        left: parent.left
+                        top: parent.top
+                    }
                 }
 
-                Item {
-                    Layout.fillWidth: true
+                Controls.Label {
+                    horizontalAlignment: Text.AlignHCenter
+                    text: 'Balanced'
+                    anchors {
+                        left: parent.left
+                        right: parent.right
+                        top: parent.top
+                    }
                 }
 
                 Controls.Label {
                     // DEBUG + scaleMap.spread_num.toFixed(3)
                     text: 'Performance ⚡'
+                    anchors {
+                        right: parent.right
+                        top: parent.top
+                    }
                 }
-                Layout.bottomMargin: PlasmaCore.Units.largeSpacing
             }
 
             Kirigami.Heading {
@@ -102,13 +121,21 @@ Kirigami.ApplicationWindow {
                 Layout.bottomMargin: PlasmaCore.Units.largeSpacing
             }
 
-            Kirigami.Heading {
-                id: powerHeading
-                property string cpuid: ""
-                visible: false
-                text: 'Frequency Profile (' + cpuid + ')'
-                level: 3
-                Layout.bottomMargin: PlasmaCore.Units.smallSpacing
+            RowLayout {
+                Kirigami.Heading {
+                    id: powerHeading
+                    property string cpuid: ''
+                    visible: false
+                    text: 'Frequency Profile (' + cpuid + ')'
+                    level: 3
+                    Layout.bottomMargin: PlasmaCore.Units.smallSpacing
+                }
+                Controls.BusyIndicator {
+                    id: powerChangeSpinner
+                    Layout.preferredWidth: Kirigami.Units.gridUnit
+                    Layout.preferredHeight: Kirigami.Units.gridUnit
+                    visible: freqChangeProcCount > 0
+                }
             }
 
             GridLayout {
@@ -116,6 +143,7 @@ Kirigami.ApplicationWindow {
                 visible: false
                 columnSpacing: Math.round( scaleRatio )
                 rowSpacing: Math.round( 3 * scaleRatio )
+                Layout.bottomMargin: Kirigami.Units.smallSpacing
 
                 // Number of columns is set by the logic part
                 Layout.fillWidth: true
@@ -127,6 +155,7 @@ Kirigami.ApplicationWindow {
                     Rectangle {
                         property bool firstElement: elementColor !== 'transparent'
                         property bool selectedRow: !firstElement && firstElementName === profilesModel.selectedProfile
+                        property bool bold: isHeaderRow || firstElement || selectedRow
                         Controls.RadioButton {
                             id: radioButton
                             visible: firstElement
@@ -144,16 +173,27 @@ Kirigami.ApplicationWindow {
                             anchors.leftMargin: 5
                         }
                         color: isHeaderRow || selectedRow ? "gray" : elementColor
-                        Layout.preferredWidth: (layout.width - Layout.rightMargin * grid.columns) / grid.columns
+                        // Column size ratio is controlled by the subindex ternary
                         Layout.rightMargin: 2
+                        Layout.preferredWidth: (layout.width - (Layout.rightMargin * grid.columns * 2))
+                            * (subindex == 0 ? 0.25 : subindex == 1 ? 0.30 : 0.45 / (grid.columns - 2))
                         Layout.preferredHeight: 30 * scaleRatio
+                        radius: Kirigami.Units.gridUnit / 6
                         Controls.Label {
                             anchors.top: parent.top
                             anchors.bottom: parent.bottom
                             anchors.left: firstElement ? radioButton.right : parent.left
                             anchors.right: parent.right
                             anchors.leftMargin: firstElement ? 3 : 20
-                            text: bold ? '<b>' + elementName + '</b>' : elementName
+                            font.family: isHeaderRow || firstElement ? 'Noto Sans' : 'Courier'
+                            text: {
+                                let elementText = elementName;
+                                if ( bold ) {
+                                    elementText = elementText.replace(' ', '&nbsp;');
+                                    elementText = '<b><font color="white">' + elementText + '</font></b>';
+                                }
+                                return elementText;
+                            }
                         }
                     }
                 }
@@ -168,17 +208,18 @@ Kirigami.ApplicationWindow {
             }
 
             Controls.Label {
-                id: powerLegend
+                id: cpuTypeLegend
                 visible: false
-                text: `psave = powersave, PERF = performance`
+                text: 'P = perf core, E = efficient core'
+                // Default margin is too large, tighten things up with a
+                // negative margin
+                Layout.bottomMargin: 0 - PlasmaCore.Units.smallSpacing
             }
 
-            Kirigami.InlineMessage {
-                id: cpuInfoMessage
-                Layout.fillWidth: true
-                text: ""
+            Controls.Label {
+                id: powerLegend
                 visible: false
-                Layout.topMargin: PlasmaCore.Units.smallSpacing
+                text: 'psave = powersave, PERF = performance'
             }
 
             Kirigami.Heading {
@@ -248,9 +289,10 @@ Kirigami.ApplicationWindow {
             //  '#E4A714', '#8EB519', '#33cc33', '#39ceba', '#3caae4', '#007dc6',
             //  '#006091'].reverse()
             property var gridColors: ['transparent', '#F63114', '#F7941E',
-              '#33cc33', '#3caae4', '#006091'].reverse()
+              '#33cc33', '#3caae4', '#0085be'].reverse()
             onSelectedProfileChanged: {
-                altProfilesChecker.exec(
+                freqChangeProcCount += 1;
+                profileChanger.exec(
                     'pkexec ' + binDir + '/kfocus-power-set ' + selectedProfile
                 );
                 doSkipNextFreqPoll = true;
@@ -268,14 +310,16 @@ Kirigami.ApplicationWindow {
                 stdout_arr = stdout.split('\n');
                 stdout_arr[0].split( ';' ).forEach(function (value, index) {
                   if ( index === 0 ) {
+                    // System model
                     fanControlHeading.modelid = value;
                   }
                   else if ( index === 1 ) {
+                    // CPU model
                     powerHeading.cpuid = value;
                   } else if ( index === 2 ) {
-                    if ( value !== '' ) {
-                      cpuInfoMessage.text = value;
-                      cpuInfoMessage.visible = true;
+                    // Is hybrid CPU?
+                    if ( value === 'y' ) {
+                      cpuTypeLegend.visible = true;
                     }
                   }
                 });
@@ -309,9 +353,10 @@ Kirigami.ApplicationWindow {
                             if (profilesModel.validIndexes.includes( subindex )) {
                                profilesModel.append({
                                    'elementName' : value,
-                                   'bold'        : index === 0,
+                                   'rowIndex'    : index,
                                    'elementColor': subindex === 0
                                       ? profilesModel.gridColors.pop() : 'transparent',
+                                   'subindex': subindex,
                                    'firstElementName': first_el_name,
                                    'isHeaderRow' : index === 0
                                 })
@@ -336,13 +381,15 @@ Kirigami.ApplicationWindow {
         ShellEngine {
             id: altProfilesChecker
             onStdoutChanged: {
-                const chkCustomRegex = /^\s*custom/i
-                const trimmedStdout = stdout.trim();
-                if (trimmedStdout !== ''
-                    && ! chkCustomRegex.test( trimmedStdout )
-                ) {
-                    profilesModel.selectedProfile = trimmedStdout
-                }
+                updateSelectedFreqProfile( stdout );
+            }
+        }
+
+        ShellEngine {
+            id: profileChanger
+            onStdoutChanged: {
+                freqChangeProcCount -= 1;
+                updateSelectedFreqProfile( stdout );
             }
         }
 
@@ -579,6 +626,16 @@ Kirigami.ApplicationWindow {
         return label + ': ' + descr_str.toLowerCase();
     }
 
+    function updateSelectedFreqProfile ( stdout ) {
+        const chkUnknownRegex = /^\s*(?:custom|unknown)/i
+        const trimmedStdout = stdout.trim();
+        if (trimmedStdout !== ''
+            && ! chkUnknownRegex.test( trimmedStdout )
+        ) {
+            profilesModel.selectedProfile = trimmedStdout
+        }
+    }
+
     // BEGIN Utilities
     function readStructFn ( arg_obj, arg_key_list, arg_alt_data ) {
         let key_count, point_obj, idx, key, val_data;
@@ -623,13 +680,13 @@ Kirigami.ApplicationWindow {
     readonly property var profiles: ['power-saver', 'balanced', 'performance']
     readonly property var binDir: Qt.application.arguments[1] || '/usr/lib/kfocus/bin'
     readonly property int activeProfileIndex: root.profiles.indexOf(root.activeProfile)
-    readonly property int pollingMs: 5000
+    readonly property int pollingMs: 2000
     readonly property var scaleMap: calcScaleRatioFn()
     readonly property real scaleRatio: scaleMap.scale_ratio
     property bool doSkipNextFreqPoll: false
+    property int freqChangeProcCount: 0
 
     readonly property int baseWidth: 500
     readonly property int baseHeight: 570
     // . END Global Properties
 }
-

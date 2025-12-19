@@ -21,7 +21,7 @@ _cm2WarnStrFn () { _cm2EchoFn "warn: ${*}"; }
 
 ## BEGIN _installReposFn {
 _installReposFn () {
-  declare _repo_dir _pref_dir _kfocus_dir \
+  declare _repo_dir _pref_dir _kfocus_dir _nodejs_pin_file _nsolid_pin_file \
     _ppa_table _line _bit_list _bit_file _bit_min_date _bit_ppa_str \
     _bit_ppa_name _fq_bit_file _file_mtime _file_mdate _src_dir _top_msg;
 
@@ -31,32 +31,30 @@ _installReposFn () {
 
   ##
   if [ -e "${_repo_dir}/kfocus-recommended.list" ]; then
-    _cm2SetMsgFn 'Remove deprecated kfocus-recommended.list';
+    _cm2SetMsgFn 'Remove the deprecated kfocus-recommended.list';
     if "${_cm2RmExe}" "${_repo_dir}/kfocus-recommended.list"; then
       _cm2SucFn; else _cm2WarnFn;
     fi
   fi
 
-  ## Preserved for reference
-  #    _pin_str=$(cat << EOF3
-  #  #x WARNING! THIS IS A MACHINE GENERATED FILE.
-  #  #x DO NOT EDIT AS CHANGES WILL BE OVERWRITTEN BY FUTURE UPDATES.
-  #  #x LAST UPDATE 2022-05-10 FOR JAMMY
-  #
-  #  Package: tuxedo-keyboard
-  #  Pin: origin "deb.tuxedocomputers.com"
-  #  Pin-Priority: 500
-  #
-  #  Package: *
-  #  Pin: origin "deb.tuxedocomputers.com"
-  #  Pin-Priority: -1
-  #  EOF3
-  #    );
-  #
-  #  _cm2SetMsgFn 'Create or overwrite package pinning';
-  #  if echo "${_pin_str}" > "${_pref_dir}"/kfocus-package-pinning; then
-  #    _cm2SucFn; else _cm2WarnFn;
-  #  fi
+  # Add nodejs 20.x pins only once; these are set up by the script
+  _nodejs_pin_file="${_pref_dir}/nodejs";
+  if [ ! -e "${_nodejs_pin_file}" ]; then
+    echo '# Provided by nodejs script:
+# curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+Package: nodejs
+Pin: origin deb.nodesource.com
+Pin-Priority: 600' > "${_nodejs_pin_file}" || true;
+  fi
+  _nsolid_pin_file="${_pref_dir}/nsolid";
+  if [ ! -e "${_nsolid_pin_file}" ]; then
+    echo '# Provided by nodejs script:
+# curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+Package: nsolid
+Pin: origin deb.nodesource.com
+Pin-Priority: 600' > "${_nsolid_pin_file}" || true;
+  fi
+
   ##
   _cm2SetMsgFn 'Create or overwrite repo list files';
   _src_dir="${_kfocus_dir}/sources.list.d";
@@ -75,17 +73,15 @@ _installReposFn () {
   "${_cm2RmExe}" -rf "${_kfocus_dir}/sources.list.d" || true;
 
   ##
-  _top_msg='Add recommended 3rd-party repos';
+  _top_msg='Add recommended 3rd-party ppa repos';
   _cm2SetMsgFn "${_top_msg}";
 
-  # TODO: When ubuntu studio backports becomes available, we can add it
-  #   to the backports. As of 2024-06-02, no release file existed so this
-  #   results in warning during installation and an apt error on all
-  #   subsequent updates. Here is the config line to add to _ppa_table:
+  # We considered adding ubuntu-studio backports, but decided against for stability.
+  # If desired, here is the config line to add to _ppa_table:
   # 'ubuntustudio-ppa-ubuntu-backports-noble.list|2024-05-31
   #   |ppa:ubuntustudio-ppa/backports|Ubuntu Studio Backports'
-  _ppa_table=(    
-    'kubuntu-ppa-ubuntu-backports-jammy.list|2022-04-02|ppa:kubuntu-ppa/backports|Kubuntu Backports'
+  _ppa_table=(
+    'kubuntu-ppa-ubuntu-backports-noble.list|2024-04-11|ppa:kubuntu-ppa/backports|Kubuntu Backports'
     'mozilla-team-noble.list|2024-04-11|ppa:mozillateam/ppa|Mozilla Team'
     'phoerious-ubuntu-keepassxc-noble.list|2024-04-07|ppa:phoerious/keepassxc|KeePassXC'
   );
@@ -98,7 +94,7 @@ _installReposFn () {
     _bit_ppa_name="${_bit_list[3]}";
     _fq_bit_file="${_repo_dir}/${_bit_file}";
 
-    # Print debug
+    # Debug output
     # _cm2EchoFn '_bit_file|_bit_min_date|_bit_ppa_str|_bit_ppa_name|_fq_bit_file';
     # _cm2EchoFn "${_bit_file}|${_bit_min_date}|${_bit_ppa_str}|${_bit_ppa_name}|${_fq_bit_file}";
 
@@ -114,13 +110,14 @@ _installReposFn () {
       else
         _cm2SetMsgFn "Updating ${_bit_ppa_name} PPA per date check:";
         _cm2EchoFn "File |${_fq_bit_file}| modification date |${_file_mdate}|";
-        _cm2EchoFn "  is before minimum allowed date |${_bit_min_date}|.";
+        _cm2EchoFn "  is before the minimum date |${_bit_min_date}|.";
       fi
       if add-apt-repository -ny "${_bit_ppa_str}"; then
         _cm2SucFn; else _cm2WarnFn;
       fi
     fi
   done
+
   _cm2BlockMsg="${_top_msg}";
   _cm2SucFn;
 }
@@ -128,14 +125,6 @@ _installReposFn () {
 
 ## BEGIN _addTrustedKeysFn {
 # Purpose: Add trusted keys
-# Deprecated: dearmor keys (convert asc to gpg)
-#    for _key in *; do
-#      gpg --dearmor "${_key}"
-#    done
-# Deprecated: use apt-key
-#    if apt-key add "${_kfocus_dir}/trusted-keys"; then
-#      _cm2SucFn; else _cm2WarnFn && return;
-#    fi
 #
 _addTrustedKeysFn () {
   declare _return_int _kfocus_dir _key_dir _block_idx;
@@ -224,12 +213,10 @@ _addGcloudSdkKeyFn () {
 ## BEGIN _rmObsoleteReposFn {
 _rmObsoleteReposFn () {
   true;
-#  if [ -e /etc/apt/sources.list.d/tuxedocomputers.list ]; then
-#    "${_cm2RmExe}" /etc/apt/sources.list.d/tuxedocomputers.list
-#  fi
-#  if [ -e /etc/apt/preferences.d/kfocus-package-pinning ]; then
-#    "${_cm2RmExe}" /etc/apt/preferences.d/kfocus-package-pinning
-#  fi
+  # Prior example:
+  # if [ -e /etc/apt/preferences.d/kfocus-package-pinning ]; then
+  #   "${_cm2RmExe}" /etc/apt/preferences.d/kfocus-package-pinning
+  # fi
 }
 ## . END _rmObsoleteReposFn }
 
