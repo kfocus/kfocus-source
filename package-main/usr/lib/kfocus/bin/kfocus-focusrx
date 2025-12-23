@@ -47,16 +47,21 @@ _importCommonFn () {
  # Purpose: Read a _drop_file count.
  #   Increment the counter and place in _drop_file.
  # Arguments: (positional)
- #  _mode          (required) "check" or "inc" nag counter.
+ #  _mode :(required) check|clear|fill|inc nag counter.
+ #    check : return msg and 0 if view_count < max_count
+ #    clear : reset nag to 0
+ #    fill  : set nag to max_count
+ #    inc   : increment nag view_count
  #  _file_name     (required) Drop file relative to $HOME/.config/)
  #  _max_nag_count (optional) Max times to nag. The default is _maxNagCount.
  # Returns:
- #   0: _view_count is less than _nag_count.
- #   1: _view_count is greater than or equal to _nag_count.
+ #   0: _view_count on 'check' is less than _nag_count.
+ #   1: _view_count on 'check' is greater than or equal to _nag_count.
  #   2: Other error.
  #
 _testNagCountFn () {
-  declare _mode _file_name _max_count _drop_file _view_count _left_count _msg;
+  declare _mode _file_name _max_count _drop_file \
+    _view_count _left_count _ret_int;
 
   _mode="${1:-}";
   _file_name="${2:-}";
@@ -64,11 +69,6 @@ _testNagCountFn () {
 
   if [ -z "${_file_name}" ]; then
     _cm2WarnStrFn 'No file name provided';
-    return 2;
-  fi
-
-  if ! [[ "${_mode}" =~ ^(check|inc|fill)$ ]]; then
-    _cm2WarnStrFn 'Mode must be "check", "inc", or "fill".';
     return 2;
   fi
 
@@ -80,35 +80,42 @@ _testNagCountFn () {
 
   if [ "${_doForce}" = 'y' ]; then
     _view_count=0;
-  elif (( _view_count >= "${_max_count}" )); then
-    return 1;
   fi
 
+  _ret_int=0;
   case "${_mode}" in
     check)
       _left_count=$(( _max_count - _view_count - 1 ));
       if (( _left_count <= 0 )); then
-        _msg='warning will not be shown again.';
+        echo 'warning will not be shown again.';
+        _ret_int=1;
       elif (( _left_count == 1 )); then
-        _msg='warning will be shown for one more login.';
+        echo 'warning will be shown for one more login.';
       else
-        _msg="warning will be shown for ${_left_count} more logins.";
+        echo "warning will be shown for ${_left_count} more logins.";
       fi
-      _msg+='<br>\nRunning <code>focusrx -f</code> will reset this counter';
-      echo -e "${_msg}";
       ;;
-    inc)
-      (( _view_count++ ));
+    clear) 
+      _view_count=0;
       echo "${_view_count}" > "${_drop_file}" || true;
       ;;
-    fill)
-      echo "${_max_count}" > "${_drop_file}" || true;
+    fill) 
+      _view_count="${_max_count}";
+      echo "${_view_count}" > "${_drop_file}" || true;
+      ;;
+    inc)
+      _left_count=$(( _max_count - _view_count - 1 ));
+      if (( _left_count > 0 )); then 
+        (( _view_count++ )) || true;
+        echo "${_view_count}" > "${_drop_file}" || true;
+      fi
       ;;
     *)
-      _cm2WarnStrFn 'Unexpected mode';
-      return 2;
+      _cm2WarnStrFn 'Mode must be check, clear, fill, or inc.'; 
+      _ret_int=2;
       ;;
   esac
+  return "${_ret_int}";
 }
 ## . END _testNagCountFn }
 
@@ -364,7 +371,7 @@ _chkOemMultiDiskFn () {
 
 ## BEGIN _chkNvPMizerFn {
 _chkNvPMizerFn () {
-  declare _title _param_key _tgt_idx _rc_file _sed_str;
+  declare _title _param_key _tgt_idx _current_idx _rc_file _sed_str;
 
   # Skip if no exe, not the correct package, or not running nvidia
   if [ -z "${_nvSettingsExe}" ] || [ -z "${_primeSelectExe}" ]; then return; fi
@@ -382,15 +389,14 @@ _chkNvPMizerFn () {
   _param_key='GPUPowerMizerMode';
   _tgt_idx=1;
 
-  # TODO: Query like so. We do not currently use there appears to
-  #  be no performance benefit.
-  # _current_idx="$("${_nvSettingsExe}" -q "${_param_key}" -t)";
-  # Set value if needed
-  # if [ "${_current_idx:-}" = "${_tgt_idx}" ]; then
-  #   _cm2SucStrFn 'Skipped, parameter already set.';
-  #   _cm2SucFn;
-  #   return;
-  # fi
+  # We query first to see if there is a change required since
+  #   the script now sleeps to let the display catch up.
+  _current_idx="$("${_nvSettingsExe}" -q "${_param_key}" -t)";
+  if [ "${_current_idx:-}" = "${_tgt_idx}" ]; then
+    _cm2SucStrFn 'Skipped, parameter already set.';
+    _cm2SucFn;
+    return;
+  fi
 
   _rc_file="${HOME}/.nvidia-settings-rc";
   if [ -f "${_rc_file}" ]; then
@@ -400,6 +406,8 @@ _chkNvPMizerFn () {
 
   if "${_nvSettingsExe}" -a "${_param_key}=${_tgt_idx}"; then
     _cm2SucStrFn 'Parameter set as directed.';
+    # Sleep so kscreendoctor can initialize after change
+    sleep 2;
     _cm2SucFn;
   else
     _cm2WarnStrFn 'Parameter setting did not work.';
@@ -411,14 +419,13 @@ _chkNvPMizerFn () {
 ## BEGIN _chkDispRefreshFn {
 _chkDispRefreshFn () {
   declare _title _win_title _prompt_msg _kscreen_doctor_report \
-    _internal_disp_name _nag_name _init_nag_count _warn_nag_count;
+    _internal_disp_name _nag_name _warn_nag_count;
 
   # Skip if not on m2g6 or zrg1 or kscreen tool not installed
   [[ "$(_cm2EchoModelStrFn 'config_code')" =~ ^(m2g6|zrg1)$ ]] || return;
   [ -z "${_kscreenDoctorExe}" ] && return;
 
   # Set tunables
-  _init_nag_count='1';
   _warn_nag_count='4';
   _nag_name='kfocus-disphz_count';
 
@@ -441,13 +448,13 @@ _chkDispRefreshFn () {
     return;
   fi
 
-  ## Begin Handle initial run {
-  #  Always set display to 60 Hz
-  if _nag_msg="$(
-    _testNagCountFn 'check' "${_nag_name}" "${_init_nag_count}"
-  )"; then
-    if "${_kscreenDoctorExe}" "output.${_internal_disp_name}.mode.2560x1600@60";
-      then _testNagCountFn 'fill' "${_nag_name}" "${_init_nag_count}";
+  ## Begin Handle nag count < 1 {
+  #  This is typically first-time run only. 
+  if _nag_msg="$(_testNagCountFn 'check' "${_nag_name}" 1)"; then
+    # Always try to set display to 60 Hz
+    if "${_kscreenDoctorExe}" \
+      "output.${_internal_disp_name}.mode.2560x1600@60";
+      then _testNagCountFn 'fill' "${_nag_name}" 1;
       _cm2SucFn;
     else
       # Do not set the nag count and try again later
@@ -456,12 +463,12 @@ _chkDispRefreshFn () {
     fi
     return;
   fi
-  ## End Handle initial run }
+  ## End Handle nag_count < 1 }
 
   ## Begin Handle 60 Hz refresh rate {
   if grep " ${_internal_disp_name} " <<< "${_kscreen_doctor_report}" \
     | grep -q '2560x1600@60\*'; then
-    _cm2SucStrFn 'Desired screen refresh already set.';
+    _cm2SucStrFn 'Preferred screen refresh already set.';
     _cm2SucFn;
     return;
   fi
@@ -539,6 +546,8 @@ EOF
       _cm2WarnStrFn 'Could not set screen mode. Will try again next login';
       _cm2WarnFn;
     fi
+    ## BETA test: Reset nag for 240 Hz
+    _testNagCountFn 'fill' "${_nag_name}" '1';
     return;
   fi
   ## . End Handle 300 Hz refresh rate }
