@@ -2,41 +2,80 @@
 #
 # Enables OEM installation mode in Calamares.
 
-if [ -e '/etc/calamares/OEM_MODE_ACTIVATED' ]; then
-  export BROWSER='sudo -H -u kubuntu firefox'
+_oemActiveFile='/etc/calamares/OEM_MODE_ACTIVATED';
+
+if [ -f "${_oemActiveFile}" ]; then
+  _oem_mode="$(cat "${_oemActiveFile}")";
+  _msg="$(cat <<EOL
+<h3 style="text-align: center; color: #f7941d">Kubuntu Focus OEM Installer</h3>
+
+<p><b>The OEM installer was previously launched and the &quot;${_oem_mode}&quot; <br>
+mode selected.</b> The installer will now launch in this mode again. To <br>
+select a different mode, reboot the system and launch the OEM <br>
+installer again.<br>
+EOL
+  )";
+  _continue_label="Continue in \"${_oem_mode}\" mode";
+  if ! kdialog --warningcontinuecancel "${_msg}" \
+    --continue-label "${_continue_label}"; then
+    exit 0;
+  fi
+
+  if [ "${_oem_mode}" = 'Partition, then install' ]; then
+    su -p kubuntu -c partitionmanager;
+  fi
+
+  export BROWSER='sudo -H -u kubuntu firefox';
   calamares -D8;
   exit;
+elif [ -e "${_oemActiveFile}" ]; then
+  # Something other than a file exists here, bail out
+  _msg="$(cat <<EOL
+${_oemActiveFile} exists, but is not a file! Bailing out.
+EOL
+  )";
+  kdialog --sorry "${_msg}";
+  exit 1
 fi
 
 _msg="$(cat <<EOL
-<p>You are about to install the OS in OEM mode. This will prepare the <br>
+<h3 style="text-align: center; color: #f7941d">Kubuntu Focus OEM Installer</h3>
+
+<p><b>You are about to install the OS in OEM mode.</b> This will prepare the <br>
 system for distribution to an end user, providing them with an account <br>
 setup wizard. This is useful if you are reinstalling the OS on a Kubuntu <br>
-Focus system, preparing a system for someone else, or installing onto a <br>
-system with multiple disks.</p>
+Focus system, preparing a system for someone else, or installing onto <br>
+a system with multiple disks.</p>
+
+<p>After installation, the included Multi-Disk Configuration Tool (MDCT) <br>
+will help you set up any secondary disks or partitions.</p>
 
 <p>Three different install methods are provided:</p>
 
-<ul><li>Standard: Usual installation mode. Use if you want the main <br>
-system disk to be dedicated to the root and boot partitions.</li>
-<li>500 GB install: Same as Standard, but limits the size of the root <br>
+<ul>
+<li><b>Standard</b>: This is the normal installation mode. Use if you want <br>
+the entire system disk to be dedicated to the root and boot <br>
+partitions.</li>
+
+<li><b>500 GB install</b>: Same as Standard, but limits the size of the root <br>
 partition to 500 GB and allocates any remaining space on the <br>
-main system disk to an unformatted partition. The multi-disk <br>
-configuration tool can then be used to configure this unformatted <br>
-space as a home or data partition. Only use this mode if you are <br>
-wiping the main system disk entirely.</li>
-<li>Partition, then install: Launches KDE Partition Manager before <br>
+system disk to a secondary partition. The MDCT will help you <br>
+format and use this partition. <b style="color: #da4453">IMPORTANT: This will select <br>
+the "Erase disk" option by default.</b></li>
+
+<li><b>Partition, then install</b>: Launches KDE Partition Manager before <br>
 launching the installer in Standard mode. This gives you the <br>
-opportunity to delete the boot and root partitions of an old <br>
+opportunity to delete the main and boot partitions of an old <br>
 installation while preserving a home or data partition on the same <br>
 disk. Use this mode if you are reinstalling Kubuntu and want to <br>
-preserve a home or data partition.</li></ul>
+preserve a home or data partition on the system disk.</li>
+</ul>
 
-<p>It is fine to enable encryption or disable the creation of a swap file if <br>
-desired. See <br>
+<p>You can enable encryption or disable the creation of a swap file if <br>
+desired. Right-click and copy the following link into a browser to <br>
+learn more: <br>
 <a
-href="https://kfocus.org/wf/reinstall.html#bkm_multi_disk_configuration">https://kfocus.org/wf/reinstall.html#bkm_multi_disk_configuration</a> <br>
-for more information.</p>
+href="https://kfocus.org/wf/reinstall.html#bkm_multi_disk_configuration">https://kfocus.org/wf/reinstall.html#bkm_multi_disk_configuration</a></p>
 
 <p>Select the desired install method, then click "OK" to continue.</p>
 EOL
@@ -51,11 +90,15 @@ case "${_ans}" in
     true;
     ;;
   '500 GB install')
+    # Restrict root partition size to 500 GB
     sed -i 's/size: 100%/size: 500G/' /etc/calamares/modules/partition.conf
-    sed -i "/size: 500G$/a \ \ \ \ - name: 'kfocus_data'\n      filesystem: unformatted\n      size: 100%" /etc/calamares/modules/partition.conf
+    # Allocate the rest of the main disk to a secondary partition
+    sed -i "/size: 500G$/a \ \ \ \ - name: 'kfocus_data'\n      filesystem: unformatted\n      noEncrypt: true\n      size: 100%" /etc/calamares/modules/partition.conf
+    # Select "Erase disk" by default and disallow manual partitioning
+    sed -i "/initialSwapChoice: file/a initialPartitioningChoice: erase\nallowManualPartitioning: false" /etc/calamares/modules/partition.conf
     ;;
   'Partition, then install')
-    partitionmanager;
+    su -p kubuntu -c partitionmanager;
     ;;
   *)
     kdialog --msgbox "The OEM installation process has been cancelled.";
@@ -82,12 +125,12 @@ sed -i "/- packages$/a \ \ - shellprocess@oemprep" /etc/calamares/settings.conf;
 # Fix OEM UID
 sed -i "/- shellprocess@oemprep$/a \ \ - shellprocess@fix-oem-uid" /etc/calamares/settings.conf;
 
-# Force the user of an OEM configuration user
+# Force the use of an OEM configuration user
 cp /etc/calamares/modules/users.conf.oem /etc/calamares/modules/users.conf;
 
 # Drop a file so that it can be seen that OEM installation mode is already
-# active
-touch /etc/calamares/OEM_MODE_ACTIVATED;
+# active, save the selected mode from earlier
+echo "${_ans}" > "${_oemActiveFile}";
 
 # Launch Calamares
 export BROWSER='sudo -H -u kubuntu firefox'

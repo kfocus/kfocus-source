@@ -53,9 +53,9 @@ _assignUiStringsFn () {
   declare _table_str _brow_lp_str _brow_rp_str _erow_str _left_header_str \
     _center_header_str;
 
-  _table_str='<table style="width:100%;margin-right:2em">';
-  _brow_lp_str='<tr><td style="padding:0.5em 0 0.5em 2em">';
-  _brow_rp_str='<tr><td style="padding:0.5em 2em 0.5em 0">';
+  _table_str='<table style="width:100%;margin-right:32px">';
+  _brow_lp_str='<tr><td style="padding:8px 0 8px 32px">';
+  _brow_rp_str='<tr><td style="padding:8px 32px 8px 0">';
   _erow_str='</td></tr>';
   _left_header_str='<h3 style="color:#f7941d">';
   _center_header_str='<h3 style="color:#f7941d;text-align:center">';
@@ -65,7 +65,7 @@ _assignUiStringsFn () {
   _setupExtraPartMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}
 <style type="text/css">
-td { padding: 0 0.5em; }
+td { padding: 0 8px; }
 </style>
 ${_table_str}
 ${_brow_rp_str}${_center_header_str}Set Up Extra Partition?</h3>${_erow_str}
@@ -249,7 +249,7 @@ EOF
   _confirmOverviewMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}
 <style type="text/css">
-td { padding: 0 0.5em; }
+td { padding: 0 8px; }
 </style>
 ${_table_str}
 ${_brow_rp_str}${_left_header_str}Config Overview</h3>${_erow_str}
@@ -894,10 +894,10 @@ _mainFn () {
   # Prompt for extra partition type
   _setup_opt_list=();
   if ! _isHomeSetUpFn; then
-    _setup_opt_list+=( 'home' 'Set up as a HOME disk (/home)' 'on' );
-    _setup_opt_list+=( 'data' 'Set up as a DATA disk (/srv/data*)' 'off' );
+    _setup_opt_list+=( 'home' 'Set up as a HOME partition (/home)' 'on' );
+    _setup_opt_list+=( 'data' 'Set up as a DATA partition (/srv/data*)' 'off' );
   else
-    _setup_opt_list+=( 'data' 'Set up as a DATA disk (/srv/data*)' 'on' );
+    _setup_opt_list+=( 'data' 'Set up as a DATA partition (/srv/data*)' 'on' );
   fi
   _chooseMountMsg="${_chooseMountMsg/XXX_SELECTED_PART_XXX/${_selected_part}}";
   _target_mount_type="$(_cm2PromptUserFn "${_chooseMountMsg}" \
