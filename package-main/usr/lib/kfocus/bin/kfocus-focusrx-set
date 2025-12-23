@@ -28,22 +28,42 @@ _importCommonFn() {
 }
 ## . END _importCommonFn }
 
-## BEGIN _updatePkgsFn {
-# Purpose: Update all kfocus packages only
+## BEGIN _updateKfocusPkgsFn {
+# Purpose: Update all kfocus packages and dependencies only
 #
-_updatePkgsFn () {
+_updateKfocusPkgsFn () {
+  declare _installed_list;
   _cm2SetMsgFn 'Update and upgrade kfocus packages';
   apt-get update || true;
-  if yes 2>/dev/null \
-    | apt-get install -y --only-upgrade 'kfocus*';
-  then
-    _cm2SucFn;
-    return;
+
+  # DKMS should be installed, but with accommodation for existing config
+  if ! _cm2ChkInstalledPkgFn 'dkms'; then
+    DEBIAN_FRONTEND='noninteractive' \
+      apt-get \
+      -o Dpkg::Options::='--force-confdef' \
+      -o Dpkg::Options::='--force-confold' \
+      -y install dkms;
   fi
-  _cm2WarnFn;
-  return 1;
+
+  readarray -t _installed_list < <(
+    dpkg -l | awk '/^.i\s+kfocus-/{print $2}'
+  );
+
+  if (( "${#_installed_list[@]}" < 1 )); then
+    _cm2WarnStrFn 'No kfocus packages found';
+    _cm2WarnFn;
+    return 1;
+  fi
+
+  if apt-get install -y "${_installed_list[@]}"; then
+    _cm2SucFn;
+    return 0;
+  else
+    _cm2WarnFn;
+    return 1;
+  fi
 }
-## . END _updatePkgsFn }
+## . END _updateKfocusPkgsFn }
 
 ## BEGIN _reconfigHwPkgFn {
 # Purpose: Reconfigure the kfocus-hw package.
@@ -371,7 +391,7 @@ _fixHwConfigFn () {
   if [ -z "${_reason_str}" ]; then return 0; fi
   IFS='|' read -r -a _reason_list <<< "${_reason_str}";
 
-  if ! _updatePkgsFn; then
+  if ! _updateKfocusPkgsFn; then
     echo 'Abort: Could not update kfocus packages.';
     return 1;
   fi
