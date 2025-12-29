@@ -1,3 +1,9 @@
+kfocus-nvidia (24.04.9) noble; urgency=medium
+
+  * kfocus-nvidia-edge.postinst: Default to prime-select nvidia (#5728)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Sat, 20 Dec 2025 15:43:26 -0500
+
 kfocus-nvidia (24.04.8) noble; urgency=medium
 
   [ Michael S. Mikowski ]
@@ -46,7 +52,7 @@ kfocus-nvidia (24.04.2) noble; urgency=medium
     latest hardware (#5313)
   * Update NVIDIA driver version to 570.153 for edge driver set (#5313)
   * Automate pinning of kfocus-nvidia(-edge) to release version (#5313)
-  * nvidia-edge.postinst: Hard-enable suspend-resume scripts (#5423)
+  * kfocus-nvidia-edge.postinst: Hard-enable suspend-resume scripts (#5423)
   * kfocus-nvidia-pinning-edge: Remove CUDA blacklist (#5423)
   * etc_modprobe.d_kfocus-nvidia-edge.conf: Add vblank_sem_control=0 to
     improve resume (#5423)
