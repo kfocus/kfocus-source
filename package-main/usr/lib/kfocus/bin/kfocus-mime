@@ -102,6 +102,7 @@ _exeLookupList=(
   'spectacle|spectacle||kde-spectacle|Spectacle: Take Screenshots'
   'steam|steam||steam|Steam: Manage and Play Games'
   'sublime-text|subl||sublime-text|Sublime Text editor'
+  'synaptic|sudo;-E;synaptic||synaptic|Synaptic: View, Install, and Remove Debian Packages'
   'systemsettings5|systemsettings5||systemsettings|System Settings: Adjust Your System'
   'msteams|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://www.microsoft.com/en-us/microsoft-teams/group-chat-software||kfocus-main|Microsoft Teams'
   'telegram-desktop|telegram-desktop||telegram-desktop|Telegram: Encrypted Instant Messenger'
@@ -956,32 +957,43 @@ EOT
 ## . END _runAppHandlerFn }
 
 ## BEGIN _chkPromptFlathubEnableFn {
+# Summary   : _chkPromptFlathubEnableFn
+# Example   : _chkPromptFlathubEnableFn
+# Purpose   : Check if Flathub is enabled, and prompt the user for
+#   confirmation if it needs to be enabled to install the
+#   requested application.
+# Arguments : none
+# Globals   : none
+# Outputs   : none
+# Returns   : 0 if Flathub is enabled or the user confirms they wish to enable
+#   it, 1 otherwise
+#
 _chkPromptFlathubEnableFn () {
-  declare _do_display_warn _flatpak_remote_list _flatpak_remote_str _msg;
+  declare _is_flathub_enabled _flatpak_remote_list _flatpak_remote_str _msg;
 
-  _do_display_warn='y';
+  _is_flathub_enabled='n';
   if _cm2ChkInstalledPkgFn 'flatpak'; then
     readarray -t _flatpak_remote_list < <(flatpak remotes --columns=name);
     for _flatpak_remote_str in "${_flatpak_remote_list[@]}"; do
       if [ "${_flatpak_remote_str}" = 'flathub' ]; then
-        _do_display_warn='n';
+        _is_flathub_enabled='y';
+        break;
       fi
     done
   fi
 
-  if [ "${_do_display_warn}" = 'n' ]; then
+  if [ "${_is_flathub_enabled}" = 'y' ]; then
     return 0;
   fi
 
   _msg="$(cat <<EOT
-\nTo install this application, Flathub must be configured.
-This will allow you to install other applications from
-Flathub in the future. Are you sure you want to do this?\n
+\nTo install this application, Flathub must be enabled.
+This will cause apps from Flathub to appear in Discover.
+Are you sure you want to do this?\n
 EOT
   )";
 
-  if [ "$(_cm2PromptUserFn "${_msg}" \
-    'Install package' 'a')" = 'y' ]; then
+  if [ "$(_cm2PromptUserFn "${_msg}" 'Install package' 'a')" = 'y' ]; then
     return 0;
   fi
   return 1;
@@ -1005,7 +1017,7 @@ _runAppFn () {
     _prompt_msg _pkg_name _line_str _bit_list _app_id       \
     _full_cmd_str _sniff_str _descr _cmd_str _do_handler    \
     _arg_list _report_str _sniff_exe _app_exe               \
-    _install_prompt_msg  _ans_str _exit_str _idx _do_install_str;
+    _install_prompt_msg  _ans_str _exit_str _idx;
 
   _arg1_str="${1:-}";
   _arg2_str="${2:-}";
@@ -1092,16 +1104,7 @@ _runAppFn () {
         _ans_str="$(
           _cm2PromptUserFn "${_install_prompt_msg:-}" 'Install package' 'a'
         )";
-        if [ "${_ans_str}" = 'y' ]; then
-          if _chkPromptFlathubEnableFn; then
-            _do_install_str='y';
-          else
-            _do_install_str='n';
-          fi
-        else
-          _do_install_str='n';
-        fi
-        if [ "${_do_install_str}" = 'y' ]; then
+        if [ "${_ans_str}" = 'y' ] && _chkPromptFlathubEnableFn; then
           # Note: _cm2RunLongCmdFn prefixes commands with _escExe (pkexec)
           if _exit_str="$(_cm2RunLongCmdFn "Installing ${_pkg_name}" \
               "${_binName}" '-i' "${_pkg_name}")"; then continue;
