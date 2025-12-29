@@ -110,7 +110,6 @@ _exeLookupList=(
   'wallpapers|dolphin;/usr/share/wallpapers||dolphin|Wallpapers: View Wallpaper Images'
   'webcamoid|webcamoid||webcamoid|Webcamoid: Test Your Webcam'
   'winff|winff||winff-qt|WinFF: Convert Video using ffmpeg'
-  'handbrake|flatpak;run;fr.handbrake.ghb|/var/lib/flatpak/app/fr.handbrake.ghb/x86_64/stable/active/files/bin/ghb|handbrake-flathub|Handbrake: Back up encoded audio and video'
 
   # Packages with special handlers
   'docker|!docker|docker|docker-ce|Docker: Container Engine'
@@ -122,6 +121,7 @@ _exeLookupList=(
   'virtualbox|!virtualbox||virtualbox|VirtualBox: Run Virtual Machines'
   'zoom|!zoom||zoom|Zoom: Start and Join Video and Web Conferencing'
   'displaylink-driver|!displaylink-driver|displaylink-installer|displaylink-driver|DisplayLink: Driver for DisplayLink Docking Stations'
+  'ghb|!ghb|/var/lib/flatpak/app/fr.handbrake.ghb/x86_64/stable/active/files/bin/ghb|handbrake-flathub|Handbrake: Back up encoded audio and video'
 
   # Future consideration: Nvidia CUDA and ML libs
 
@@ -649,7 +649,6 @@ _echoInstallPromptMsgFn () {
 }
 ## . END _echoInstallPromptMsgFn }
 
-
 ## BEGIN _installPkgFn {
 # Purpose: Install requested package
 _installPkgFn () {
@@ -919,6 +918,18 @@ EOT
       exit;
       ;;
 
+    ghb)
+      if ! [[ "$XDG_DATA_DIRS" =~ '/var/lib/flatpak/exports/share' ]]; then
+        _prompt_msg="$(cat <<EOT
+${_cm2HtmPStr}Handbrake is installed and will now launch. You may need to <br>
+log out and back in for it to appear in the Start Menu.</p>
+EOT
+        )";
+      fi
+      _cmd_str='flatpak';
+      _arg_list=( 'run' 'fr.handbrake.ghb' );
+      ;;
+
     *) true;;
   esac
 
@@ -944,6 +955,39 @@ EOT
 }
 ## . END _runAppHandlerFn }
 
+## BEGIN _chkPromptFlathubEnableFn {
+_chkPromptFlathubEnableFn () {
+  declare _do_display_warn _flatpak_remote_list _flatpak_remote_str _msg;
+
+  _do_display_warn='y';
+  if _cm2ChkInstalledPkgFn 'flatpak'; then
+    readarray -t _flatpak_remote_list < <(flatpak remotes --columns=name);
+    for _flatpak_remote_str in "${_flatpak_remote_list[@]}"; do
+      if [ "${_flatpak_remote_str}" = 'flathub' ]; then
+        _do_display_warn='n';
+      fi
+    done
+  fi
+
+  if [ "${_do_display_warn}" = 'n' ]; then
+    return 0;
+  fi
+
+  _msg="$(cat <<EOT
+\nTo install this application, Flathub must be configured.
+This will allow you to install other applications from
+Flathub in the future. Are you sure you want to do this?\n
+EOT
+  )";
+
+  if [ "$(_cm2PromptUserFn "${_msg}" \
+    'Install package' 'a')" = 'y' ]; then
+    return 0;
+  fi
+  return 1;
+}
+## . END _chkPromptFlathubEnableFn }
+
 ## BEGIN _runAppFn {
 # Summary  : _runAppFn <app_id>;
 # Example  : _runAppFn 'apt-rollback';
@@ -961,7 +1005,7 @@ _runAppFn () {
     _prompt_msg _pkg_name _line_str _bit_list _app_id       \
     _full_cmd_str _sniff_str _descr _cmd_str _do_handler    \
     _arg_list _report_str _sniff_exe _app_exe               \
-    _install_prompt_msg  _ans_str _exit_str _idx;
+    _install_prompt_msg  _ans_str _exit_str _idx _do_install_str;
 
   _arg1_str="${1:-}";
   _arg2_str="${2:-}";
@@ -1049,6 +1093,15 @@ _runAppFn () {
           _cm2PromptUserFn "${_install_prompt_msg:-}" 'Install package' 'a'
         )";
         if [ "${_ans_str}" = 'y' ]; then
+          if _chkPromptFlathubEnableFn; then
+            _do_install_str='y';
+          else
+            _do_install_str='n';
+          fi
+        else
+          _do_install_str='n';
+        fi
+        if [ "${_do_install_str}" = 'y' ]; then
           # Note: _cm2RunLongCmdFn prefixes commands with _escExe (pkexec)
           if _exit_str="$(_cm2RunLongCmdFn "Installing ${_pkg_name}" \
               "${_binName}" '-i' "${_pkg_name}")"; then continue;
