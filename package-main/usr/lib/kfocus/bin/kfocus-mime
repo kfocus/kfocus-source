@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2020-2024 MindShare Inc.
+# Copyright 2020-2025 MindShare Inc.
 # Written for Kubuntu Focus by:
 #   Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
 #   with some code and configurations courtesy of deb-get found at
@@ -112,16 +112,16 @@ _exeLookupList=(
   'winff|winff||winff-qt|WinFF: Convert Video using ffmpeg'
 
   # Packages with special handlers
+  'displaylink-driver|!displaylink-driver|displaylink-installer|displaylink-driver|DisplayLink: Driver for DisplayLink Docking Stations'
   'docker|!docker|docker|docker-ce|Docker: Container Engine'
   'dropbox|!dropbox|dropbox|dropbox|Dropbox: Sync to Cloud Storage'
-  'jetbrains-toolbox|!jetbrains-toolbox|jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs'
-  'intellij|!intellij|jetbrains-toolbox|jetbrains-toolbox|IntelliJ: JetBrains Java IDE'
-  'pycharm|!pycharm|jetbrains-toolbox|jetbrains-toolbox|PyCharm: JetBrains Python IDE'
-  'webstorm|!webstorm|jetbrains-toolbox|jetbrains-toolbox|WebStorm: JetBrains Web IDE'
-  'virtualbox|!virtualbox||virtualbox|VirtualBox: Run Virtual Machines'
-  'zoom|!zoom||zoom|Zoom: Start and Join Video and Web Conferencing'
-  'displaylink-driver|!displaylink-driver|displaylink-installer|displaylink-driver|DisplayLink: Driver for DisplayLink Docking Stations'
   'ghb|!ghb|/var/lib/flatpak/app/fr.handbrake.ghb/x86_64/stable/active/files/bin/ghb|handbrake-flathub|Handbrake: Back up encoded audio and video'
+  'intellij|!intellij|jetbrains-toolbox|jetbrains-toolbox|IntelliJ: JetBrains Java IDE'
+  'jetbrains-toolbox|!jetbrains-toolbox|jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs'
+  'pycharm|!pycharm|jetbrains-toolbox|jetbrains-toolbox|PyCharm: JetBrains Python IDE'
+  'virtualbox|!virtualbox||virtualbox|VirtualBox: Run Virtual Machines'
+  'webstorm|!webstorm|jetbrains-toolbox|jetbrains-toolbox|WebStorm: JetBrains Web IDE'
+  'zoom|!zoom||zoom|Zoom: Start and Join Video and Web Conferencing'
 
   # Future consideration: Nvidia CUDA and ML libs
 
