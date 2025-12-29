@@ -41,5 +41,14 @@ systemctl enable kfocus-nve-resume.service  || true;
 systemctl enable kfocus-nve-suspend.service || true;
 _cm2SucFn;
 
+# Set performance mode only on first install not upgrade
+case "${1:-}" in
+  configure)
+  if [ -x /usr/bin/prime-select ]; then
+    /usr/bin/prime-select nvidia || true
+  fi
+  ;;
+esac
+
 # Tag to allow some debhelper commands to inject relevant code
 #DEBHELPER#
