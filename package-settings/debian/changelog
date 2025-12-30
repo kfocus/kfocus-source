@@ -1,15 +1,20 @@
-kfocus-settings (24.04.13~beta2) noble; urgency=medium
+kfocus-settings (24.04.14~beta1) noble; urgency=medium
 
-  * kfocus-settings.postinst: Improve code safety (#6049)
+  * control: Add pre-depends for dkms (#6140)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 19 Nov 2025 15:47:04 -0600
+ -- Michael S. Mikowski <support@kfocus.org>  Mon, 22 Dec 2025 21:44:37 -0500
 
-kfocus-settings (24.04.13~beta1) noble; urgency=medium
+kfocus-settings (24.04.13) noble; urgency=medium
 
+  [ Michael S. Mikowski ]
+  * kfocus-settings-vbox-kvm.conf: Disable kvm optimization so
+    VirtualBox will continue to work as before 6.12 kernels (#6085)
+
+  [ Aaron Rainbolt ]
   * kfocus-settings.postinst: Add config so DKMS builds drivers
     for all kernels (#6049)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 17 Nov 2025 15:47:48 -0600
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 08 Dec 2025 18:20:35 -0600
 
 kfocus-settings (24.04.12) noble; urgency=medium
 

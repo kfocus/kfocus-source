@@ -1,14 +1,34 @@
-kfocus-main (24.04.29~beta2) noble; urgency=medium
+kfocus-main (24.04.30~beta2) noble; urgency=medium
 
-  * kfocus-mime: Improve code style (#6048)
+  * kfocus-mime: Switch Handbrake curated app to Flatpak (#5626)
+  * kfocus-mime: Add Synaptic curated app (#6158)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 19 Nov 2025 15:46:07 -0600
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 29 Dec 2025 17:07:18 -0600
 
-kfocus-main (24.04.29~beta1) noble; urgency=medium
+kfocus-main (24.04.30~beta1) noble; urgency=medium
 
+  * kfocus-focusrx-set: Adjust kfocus pkg upgrade to include deps (#6140)
+  * kfocus-focusrx-set: On kfocus pkg upgrade, ensure dkms is installed (#6140)
+  * kfocus-focusrx: Enforce firstrun 60 Hz edp-1-1 refresh on m2g6 (#6141)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Mon, 22 Dec 2025 21:39:21 -0500
+
+kfocus-main (24.04.29) noble; urgency=medium
+
+  [ Michael S. Mikowski ]
+  * common.2.source: Add ir14g3 model, ir1Xg3 config code (#6034)
+  * kfocus-focusrx-set: Add ir14g3 support (#6034)
+  * kfocus-focusrx-set: Adjust to reconfigure on model change (#6034)
+  * kfocus-reset-effects: Add DPI config for ir14g3 (#6034)
+  * kfocus-focusrx-set: Abort hw reconfig if step fails (#6034)
+
+  [ Aaron Rainbolt ]
   * kfocus-mime: Add DisplayLink driver installer (#6048)
+  * kfocus-mime: Avoid deadlock when a conffile conflict is hit (#6049)
+  * kfocus-focusrx-set: Audit actions that should cause hw reconfig to abort
+    (#6034)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 18 Nov 2025 11:25:13 -0600
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 08 Dec 2025 18:12:19 -0600
 
 kfocus-main (24.04.28) noble; urgency=medium
 
