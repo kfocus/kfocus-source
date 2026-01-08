@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2019-2025 MindShare Inc.
+# Copyright 2019-2026 MindShare Inc.
 # Written for Kubuntu Focus by:
 # Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
 #
@@ -60,19 +60,19 @@ _importCommonFn () {
  #   2: Other error.
  #
 _testNagCountFn () {
-  declare _mode _file_name _max_count _drop_file \
+  declare _mode _nag_name _max_count _drop_file \
     _view_count _left_count _ret_int;
 
   _mode="${1:-}";
-  _file_name="${2:-}";
+  _nag_name="${2:-}";
   _max_count="${3:-${_maxNagCount}}";
 
-  if [ -z "${_file_name}" ]; then
-    _cm2WarnStrFn 'No file name provided';
+  if [ -z "${_nag_name}" ]; then
+    _cm2WarnStrFn 'No nag name provided';
     return 2;
   fi
 
-  _drop_file="$HOME/.config/${_file_name}";
+  _drop_file="$HOME/.config/${_nag_name}";
   _view_count=0;
   if [ -f "${_drop_file}" ]; then
     _view_count="$(_cm2EchoIntFn "$(cat "${_drop_file}")")";
@@ -85,8 +85,8 @@ _testNagCountFn () {
   _ret_int=0;
   case "${_mode}" in
     check)
-      _left_count=$(( _max_count - _view_count - 1 ));
-      if (( _left_count <= 0 )); then
+      _left_count=$(( _max_count - _view_count ));
+      if (( _left_count < 1 )); then
         echo 'warning will not be shown again.';
         _ret_int=1;
       elif (( _left_count == 1 )); then
@@ -95,23 +95,20 @@ _testNagCountFn () {
         echo "warning will be shown for ${_left_count} more logins.";
       fi
       ;;
-    clear) 
-      _view_count=0;
-      echo "${_view_count}" > "${_drop_file}" || true;
+    clear)
+      echo '0' > "${_drop_file}" || true;
       ;;
-    fill) 
-      _view_count="${_max_count}";
-      echo "${_view_count}" > "${_drop_file}" || true;
+    fill)
+      echo "${_max_count}" > "${_drop_file}" || true;
       ;;
     inc)
-      _left_count=$(( _max_count - _view_count - 1 ));
-      if (( _left_count > 0 )); then 
+      if (( _view_count < _max_count )); then
         (( _view_count++ )) || true;
         echo "${_view_count}" > "${_drop_file}" || true;
       fi
       ;;
     *)
-      _cm2WarnStrFn 'Mode must be check, clear, fill, or inc.'; 
+      _cm2WarnStrFn 'Mode must be check, clear, fill, or inc.';
       _ret_int=2;
       ;;
   esac
@@ -253,16 +250,23 @@ _EOH04
  # Purpose: Check BIOS for updates
  #
 _chkUpdateBiosFn () {
-  declare _win_title _nag_msg _cmd_list _prompt_msg _do_run_btool;
+  declare _nag_name _warn_nag_count _title _win_title \
+    _nag_msg _cmd_list _prompt_msg _do_run_btool;
 
   # Skip if required tool not installed.
   [ -z "${_btoolExe}" ] && return;
+
+  # Set tunables
+  _nag_name='kfocus-bios-count';
+  _warn_nag_count='7';
 
   _title='Check BIOS Update';
   _cm2SetMsgFn "${_title}";
   _win_title="${_rootTitle}: ${_title} ";
 
-  if ! _nag_msg="$(_testNagCountFn 'check' 'kfocus-bios-count' 7)"; then
+  if ! _nag_msg="$(
+    _testNagCountFn 'check' "${_nag_name}" "${_warn_nag_count}"
+  )"; then
     _cm2SucStrFn 'View count limit reached.';
     _cm2SucFn;
     return;
@@ -303,7 +307,7 @@ _EOH05
   if [ "${_do_run_btool}" = 'n' ]; then
     _cm2SucStrFn 'BIOS update skipped on user request';
     _cm2SucFn;
-    _testNagCountFn 'inc' 'kfocus-bios-count';
+    _testNagCountFn 'inc' "${_nag_name}" "${_warn_nag_count}";
     return;
  fi
 
@@ -389,8 +393,7 @@ _chkNvPMizerFn () {
   _param_key='GPUPowerMizerMode';
   _tgt_idx=1;
 
-  # We query first to see if there is a change required since
-  #   the script now sleeps to let the display catch up.
+  # Query first to see if a change is required
   _current_idx="$("${_nvSettingsExe}" -q "${_param_key}" -t)";
   if [ "${_current_idx:-}" = "${_tgt_idx}" ]; then
     _cm2SucStrFn 'Skipped, parameter already set.';
@@ -406,8 +409,6 @@ _chkNvPMizerFn () {
 
   if "${_nvSettingsExe}" -a "${_param_key}=${_tgt_idx}"; then
     _cm2SucStrFn 'Parameter set as directed.';
-    # Sleep so kscreendoctor can initialize after change
-    sleep 2;
     _cm2SucFn;
   else
     _cm2WarnStrFn 'Parameter setting did not work.';
@@ -418,16 +419,16 @@ _chkNvPMizerFn () {
 
 ## BEGIN _chkDispRefreshFn {
 _chkDispRefreshFn () {
-  declare _title _win_title _prompt_msg _kscreen_doctor_report \
-    _internal_disp_name _nag_name _warn_nag_count;
+  declare _nag_name _warn_nag_count _title _win_title \
+    _kscreen_doctor_report _internal_disp_name _idx _prompt_msg;
 
   # Skip if not on m2g6 or zrg1 or kscreen tool not installed
   [[ "$(_cm2EchoModelStrFn 'config_code')" =~ ^(m2g6|zrg1)$ ]] || return;
   [ -z "${_kscreenDoctorExe}" ] && return;
 
   # Set tunables
-  _warn_nag_count='4';
   _nag_name='kfocus-disphz_count';
+  _warn_nag_count='5';
 
   _title='Configure display refresh';
   _cm2SetMsgFn "${_title}";
@@ -448,31 +449,41 @@ _chkDispRefreshFn () {
     return;
   fi
 
-  ## Begin Handle nag count < 1 {
-  #  This is typically first-time run only. 
-  if _nag_msg="$(_testNagCountFn 'check' "${_nag_name}" 1)"; then
-    # Always try to set display to 60 Hz
-    if "${_kscreenDoctorExe}" \
-      "output.${_internal_disp_name}.mode.2560x1600@60";
-      then _testNagCountFn 'fill' "${_nag_name}" 1;
-      _cm2SucFn;
-    else
-      # Do not set the nag count and try again later
-      _cm2WarnStrFn 'Could not set screen mode. Will try again next login';
-      _cm2WarnFn;
-    fi
-    return;
-  fi
-  ## End Handle nag_count < 1 }
-
   ## Begin Handle 60 Hz refresh rate {
   if grep " ${_internal_disp_name} " <<< "${_kscreen_doctor_report}" \
     | grep -q '2560x1600@60\*'; then
     _cm2SucStrFn 'Preferred screen refresh already set.';
     _cm2SucFn;
     return;
-  fi
   ## . End Handle 60 Hz refresh rate }
+  #
+  ## Otherwise, Handle nag count < 1 {
+  #  We try this first and second time run to start at 60 Hz because
+  #  although screen doctor claims to work the first time, it often does not.
+  #
+  elif _nag_msg="$(_testNagCountFn 'check' "${_nag_name}" 1)"; then
+    for _idx in {0..1}; do
+      _cm2EchoFn "Set laptop screen to 60Hz attempt |${_idx}|";
+      "${_kscreenDoctorExe}" \
+        "output.${_internal_disp_name}.mode.2560x1600@60" || true;
+      # Without sleep, this adjustment has been unreliable.
+      sleep 3;
+
+      _kscreen_doctor_report="$("${_kscreenDoctorExe}" -o)";
+      if grep " ${_internal_disp_name} " <<< "${_kscreen_doctor_report}" \
+        | grep -q '2560x1600@60\*'; then
+        _testNagCountFn 'inc' "${_nag_name}" '1';
+        _cm2SucFn;
+        return;
+      fi
+    done
+
+    # Do not set the nag count and try again later
+    _cm2WarnStrFn 'Could not set screen mode. Will try again next login.';
+    _cm2WarnFn;
+    return;
+  fi
+  ## End Otherwise, handle nag_count < 1 }
 
   ## Begin Handle 240 Hz refresh rate {
   if grep " ${_internal_disp_name} " <<< "${_kscreen_doctor_report}" \
@@ -547,7 +558,7 @@ EOF
       _cm2WarnFn;
     fi
     ## BETA test: Reset nag for 240 Hz
-    _testNagCountFn 'fill' "${_nag_name}" '1';
+    _testNagCountFn 'fill' "${_nag_name}" '2';
     return;
   fi
   ## . End Handle 300 Hz refresh rate }
@@ -562,12 +573,33 @@ _chkHwConfigFn () {
   _cm2SetMsgFn "${_title}";
   _win_title="${_rootTitle}: ${_title} ";
 
-  # Check if reconfiguration is required
-  _reason_str="$("${_escExe}" "${_focusRxSetExe}" 'chk-hw-config')";
+  # Check if reconfiguration is required do_force=n, is_internet_chkd=n
+  _reason_str="$("${_escExe}" "${_focusRxSetExe}" 'chk-hw-config' 'n' 'n')";
+
+  # 6204 Handle need for internet connect then rerun
+  if [ "${_reason_str}" = 'CHECK_INTERNET' ]; then
+    # Bail if internet connection appears hopeless
+    if ! _confirmInternetFn; then
+      _cm2WarnStrFn 'Could not connect to internet';
+      _cm2Warnfn;
+      return 1;
+    fi
+
+    # 6204 Rerun attempt with internet connect
+    #   do_force=n, is_internet_chkd=y
+    _reason_str="$("${_escExe}" "${_focusRxSetExe}" 'chk-hw-config' 'n' 'y')";
+    if [[ "${_reason_str}" =~ ^CANNOT_UPGRADE ]]; then
+      _cm2WarnStrFn 'Could not upgrade packages';
+      _cm2WarnStrFn "${_reason_str}";
+      _cm2Warnfn;
+      return 1;
+    fi
+  fi
+
   if [ -z "${_reason_str}" ]; then
     # Always skip if not in force mode
     if [ "${_doForce}" = 'n' ]; then
-      _cm2SucStrFn 'Configuration completed and not forced.';
+      _cm2SucStrFn 'Configuration change not needed.';
       _cm2SucFn;
       return;
     # Provide user *option* to reconfigure in force mode
@@ -588,10 +620,36 @@ _EOH06
         _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'A'
       )";
       if [ "${_ans_str}" = 'y' ]; then
-        _reason_str="$("${_escExe}" "${_focusRxSetExe}" 'force-hw-config')";
-      fi
-    fi
-  fi
+        # 6204 Rerun attempt. Internet connect is NOT checked yet.
+        # do_force=y, is_internet_chkd=n
+        _reason_str="$(
+          "${_escExe}" "${_focusRxSetExe}" 'chk-hw-config' 'y' 'n'
+        )";
+        # 6204 Handle need for internet connect then rerun
+        if [ "${_reason_str}" = 'CHECK_INTERNET' ]; then
+          # Bail if internet connection appears hopeless
+          if ! _confirmInternetFn; then
+            _cm2WarnStrFn 'Could not connect to internet';
+            _cm2Warnfn;
+            return 1;
+          fi
+
+          # 6204 Rerun attempt with internet connect
+          #   do_force=y, is_internet_chkd=y
+          _reason_str="$(
+            "${_escExe}" "${_focusRxSetExe}" 'chk-hw-config' 'y' 'y'
+          )";
+          if [[ "${_reason_str}" =~ ^CANNOT_UPGRADE ]]; then
+            _cm2WarnStrFn 'Could not upgrade packages';
+            _cm2WarnStrFn "${_reason_str}";
+            _cm2Warnfn;
+            return 1;
+          fi
+        fi # if ... CHECK_INTERNET
+      fi # if [ "${_ans_str}" ...
+    fi # if [ "${_do_force}" ...
+  fi # if [ -z "{_reason_str}" ...
+
   if [ -z "${_reason_str}" ]; then
     _cm2SucStrFn 'Configuration change not needed.';
     _cm2SucFn;
@@ -1323,6 +1381,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   fi
   _sysVersStr="$("${_focusRxVersExe}" -r)" || exit;
 
+  # Redirect this call to 2>/tmp/focusrx.debug.0.log to debug.
   _mainFn "$@";
 fi
 ## . END Run main if the script is not sourced }

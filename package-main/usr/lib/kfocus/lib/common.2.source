@@ -13,8 +13,7 @@
 # Example: source common.2.source
 # Run By : Scripts that source this file
 # Package: kfocus-main
-#
-# See documentation in rtests
+# See docs in unit.d/00025
 #
 _cm2EchoFn    () { 1>&2 echo -e  "$*"; }
 _cm2NechoFn   () { 1>&2 echo -ne "$*"; }
@@ -388,6 +387,14 @@ _cm2ChkDupRunFn () {
   declare _basename;
   [ "$#" -gt 0 ] && _basename="$*" || _basename="$(basename "$0")";
   pidof -x "${_basename}" -o "${BASHPID},$$,%PPID";
+}
+
+_cm2AptReinstallUnaFn() {
+  DEBIAN_FRONTEND='noninteractive' \
+    apt-get \
+    -o Dpkg::Options::='--force-confdef' \
+    -o Dpkg::Options::='--force-confold' \
+    -q -y --allow-downgrades reinstall "$@";
 }
 
 _cm2ChkInstalledPkgFn () {
@@ -786,10 +793,8 @@ _cm2RunPlasmaScriptFn () {
 
 # Regression tests only
 _cm2SetIsTtyFn () {
-  if [ "${1:-}" = 'y' ]; then
-    _cm2IsTty='y';
-  else
-    _cm2IsTty='n';
+  if [[ "${1:-}" =~ ^[Yy] ]]; then
+    _cm2IsTty='y'; else _cm2IsTty='n';
   fi
   export _cm2IsTty;
 }
@@ -867,14 +872,15 @@ export _cm2Arg01 _cm2Arg02 _cm2BlockMsg _cm2HtmBeginStr _cm2HtmEndStr      \
   _cm2QdbusExe;
 
 # Export Functions
-export -f _cm2AskExitFn _cm2AssignExeVarsFn _cm2CatStripEchoFn               \
-  _cm2ChkDupRunFn _cm2ChkPkgFn _cm2ChkInstalledPkgFn _cm2EchoInstalledVersFn \
-  _cm2EchoFn _cm2EchoIntFn _cm2EchoModelStrFn _cm2EchoStackFn _cm2ErrStrFn   \
-  _cm2ErrFn _cm2EscapeRxCharsFn _cm2CalcModelCodeFn _cm2CalcModelLineFn      \
-  _cm2GetEscExeFn _cm2InterruptFn _cm2MkTmpFileFn _cm2MkTmpDirFn _cm2NechoFn \
-  _cm2PromptUserFn _cm2ReadPromptYnFn _cm2RunLongCmdFn _cm2SetMsgFn          \
-  _cm2StripTagsFn _cm2SucFn _cm2SucStrFn _cm2TestVersFn _cm2TrapErrorFn      \
-  _cm2TrapExitFn _cm2TrapInterruptFn _cm2WarnFn _cm2WarnStrFn _cm2SetIsTtyFn \
+export -f _cm2AskExitFn _cm2AptReinstallUnaFn _cm2AssignExeVarsFn         \
+  _cm2CatStripEchoFn _cm2ChkDupRunFn _cm2ChkPkgFn _cm2ChkInstalledPkgFn   \
+  _cm2EchoInstalledVersFn _cm2EchoFn _cm2EchoIntFn _cm2EchoModelStrFn     \
+  _cm2EchoStackFn _cm2ErrStrFn _cm2ErrFn _cm2EscapeRxCharsFn              \
+  _cm2CalcModelCodeFn _cm2CalcModelLineFn _cm2GetEscExeFn _cm2InterruptFn \
+  _cm2MkTmpFileFn _cm2MkTmpDirFn _cm2NechoFn _cm2PromptUserFn             \
+  _cm2ReadPromptYnFn _cm2RunLongCmdFn _cm2SetMsgFn _cm2StripTagsFn        \
+  _cm2SucFn _cm2SucStrFn _cm2TestVersFn _cm2TrapErrorFn _cm2TrapExitFn    \
+  _cm2TrapInterruptFn _cm2WarnFn _cm2WarnStrFn _cm2SetIsTtyFn             \
   _cm2SetCliTypeFn _cm2SetLogLevelFn _cm2SetLogTagFn _cm2LogFn;
 ## . END Execute when sourced }
 
