@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2019-2022 MindShare Inc.
+# Copyright 2019-2026 MindShare Inc.
 # Written for the Kubuntu Focus by Michael Mikowski and Erich Eickmeyer
 #
 # Name      : 1.2.1-3_package-check.sh
@@ -163,7 +163,7 @@ _reinstallRecommendsFn () {
 
     _ans_str="$( _cm2ReadPromptYnFn "${_msg}" 'y' )";
     if [ "${_ans_str}" = 'y' ]; then
-      if ! apt-get install --reinstall "${_reinstall_list[@]}";
+      if ! apt-get reinstall "${_reinstall_list[@]}";
         then _return_int=1; fi
 
       # Mark these restored packages as auto, since they are recommended
@@ -647,7 +647,7 @@ _mainFn () {
   else
     _nextStepFn "${_step_name}";
     apt-get update || _cm2WarnFn;
-    apt-get install --reinstall kfocus-apt-source || _cm2WarnFn;
+    apt-get reinstall kfocus-apt-source || _cm2WarnFn;
     apt-get update || _cm2WarnFn;
     apt-get dist-upgrade || _cm2WarnFn;
     _cm2SucFn;

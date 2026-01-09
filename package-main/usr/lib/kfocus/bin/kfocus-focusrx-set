@@ -36,9 +36,13 @@ _updateKfocusPkgsFn () {
   _cm2SetMsgFn 'Update and upgrade kfocus packages';
   apt-get update || true;
 
-  # DKMS should be installed, but with accommodation for existing config
+  # Ensure dkms is installed with accommodation for existing config
   if ! _cm2ChkInstalledPkgFn 'dkms'; then
-    _cm2AptReinstallUnaFn 'dkms';
+    if ! _cm2SmartInstallPkgsFn 'dkms'; then
+      _cm2WarnStrFn 'dkms package could not be installed or updated.';
+      _cm2WarnFn;
+      return 1;
+    fi
   fi
 
   readarray -t _installed_list < <(
@@ -51,7 +55,7 @@ _updateKfocusPkgsFn () {
     return 1;
   fi
 
-  if _cm2AptReinstallUnaFn "${_installed_list[@]}"; then
+  if _cm2SmartInstallPkgsFn "${_installed_list[@]}"; then
     _cm2SucFn;
     return 0;
   else
@@ -95,7 +99,7 @@ _installToolsPkgFn () {
     _cm2WarnFn; return 1;
   fi
 
-  if _cm2AptReinstallUnaFn "${_tools_pkg}"; then
+  if _cm2ReinstallPkgsFn "${_tools_pkg}"; then
     _cm2SucFn; else _cm2WarnFn; return 1;
   fi
 }
@@ -106,7 +110,7 @@ _installToolsPkgFn () {
 #
 _installKbdIteFn () {
   _cm2SetMsgFn 'Install kfocus-keyboard-ite package';
-  if _cm2AptReinstallUnaFn 'kfocus-keyboard-ite'; then
+  if _cm2ReinstallPkgsFn 'kfocus-keyboard-ite'; then
     _cm2SucFn; else _cm2WarnFn; return 1;
   fi
 }
@@ -164,14 +168,14 @@ _installNvidiaFn () {
   fi
 
   _cm2SetMsgFn 'Install NVIDIA Packages';
-  if ! _cm2AptReinstallUnaFn "kfocus-nvidia-pinning${_nv_pkg_suffix}"; then
+  if ! _cm2ReinstallPkgsFn "kfocus-nvidia-pinning${_nv_pkg_suffix}"; then
     _cm2WarnStrFn "Trouble installing nvidia-pinning${_nv_pkg_suffix}.";
     _cm2WarnFn; return 1;
   fi
   if ! apt-get update; then
     _cm2WarnStrFn 'Trouble updating apt package list.';
   fi
-  if ! _cm2AptReinstallUnaFn "kfocus-nvidia${_nv_pkg_suffix}"; then
+  if ! _cm2ReinstallPkgsFn "kfocus-nvidia${_nv_pkg_suffix}"; then
     _cm2WarnStrFn "Trouble installing kfocus-nvidia${_nv_pkg_suffix}.";
     _cm2WarnFn; return 1;
   fi
@@ -184,7 +188,7 @@ _installNvidiaFn () {
 #
 _installSynapticsFn () {
   _cm2SetMsgFn 'Install xserver-xorg-input-synaptics package';
-  if _cm2AptReinstallUnaFn 'xserver-xorg-input-synaptics'; then
+  if _cm2ReinstallPkgsFn 'xserver-xorg-input-synaptics'; then
     _cm2SucFn; else _cm2WarnFn; return 1;
   fi
 }
@@ -292,7 +296,6 @@ _chkHwConfigFn () {
 
     ## Begin Consider directive to change tools pkg {
     #   Install pkg named like kfocus-tools<-model> (#3424)
-    _cm2EchoFn 'DBG: tools-01: start';
     _tool_pkg_suffix='';
     case "${_dmi_hw_config_code}" in
       default|generic|m2g4|m2g5|xeg2) _tool_pkg_suffix='';;
@@ -304,18 +307,13 @@ _chkHwConfigFn () {
     esac
     _tool_pkg_name="kfocus-tools${_tool_pkg_suffix}";
 
-    _cm2EchoFn "DBG: tools-02: _tool_pkg_name=|${_tool_pkg_name}|";
     if ! _cm2ChkPkgFn "${_tool_pkg_name}"; then
-      _cm2EchoFn "DBG: tools-02a: CANNOT FIND _tool_pkg_name=|${_tool_pkg_name}|";
-      # _tool_pkg_name='kfocus-tools-other';
+      _tool_pkg_name='kfocus-tools-other';
     fi
 
-    _cm2EchoFn "DBG: tools-03: Check installed _tool_pkg_name=|${_tool_pkg_name}|";
     if ! _cm2ChkInstalledPkgFn "${_tool_pkg_name}"; then
-      _cm2EchoFn "DBG: tools-03a: Not installed!";
       _msg="install-hw-tools;${_tool_pkg_name};";
       _msg+="Package ${_tool_pkg_name} needs to be installed.";
-      _cm2EchoFn "DBG: tools-03b: Directive created |${_msg}|";
       _reason_list+=( "${_msg}" );
     elif [ "${_do_force}" = 'y' ]; then
       _msg="install-hw-tools;${_tool_pkg_name};";
@@ -373,7 +371,7 @@ _chkHwConfigFn () {
     fi
     ## . End Consider directive to adjust nvidia pkgs }
 
-    ## BEGIN consider directive to add synaptics touchpad support {
+    ## Begin Consider directive to add synaptics touchpad support {
     case "${_dmi_hw_config_code}" in
       default|generic|xeg2)  # For models m1g1, m2g1-3 | xeg1 | xeg2
         if ! _cm2ChkInstalledPkgFn 'xserver-xorg-input-synaptics'; then
@@ -388,7 +386,7 @@ _chkHwConfigFn () {
       ;;
       *) true;;
     esac
-    ## . END consider directive to add synaptics touchpad support }
+    ## . End Consider directive to add synaptics touchpad support }
 
     ## Begin Consider directive to purge rollback support {
     if [ -n "${_rollbackBackendExe}" ]; then
@@ -418,13 +416,10 @@ _fixHwConfigFn () {
 
   _reason_str="${1:-}";
   if [ -z "${_reason_str}" ]; then return 0; fi
-
   IFS='|' read -r -a _reason_list <<< "${_reason_str}";
-  _cm2EchoFn "Reconfigure hardware with directives:";
-  _cm2EchoFn "str:  >>>${_reason_str}<<<";
-  _cm2EchoFn "list: >>>${_reason_list[*]}<<<";
 
   _cm2EchoFn '## BEGIN process hw-config directives';
+  _cm2EchoFn "  >>>${_reason_str}<<<\n";
   for _loop_line in "${_reason_list[@]}"; do
     IFS=';' read -r -a _bit_list <<< "${_loop_line}";
     _cm2EchoFn "Process directive |${_bit_list[*]}|";
@@ -450,7 +445,7 @@ _fixHwConfigFn () {
       return 1;
     fi
   done
-  _cm2EchoFn '## . END process hw-config directives';
+  _cm2EchoFn '## . END process hw-config directives\n';
 
   # Indicate post-install (finalize) setup is complete
   _model_code="$(_cm2EchoModelStrFn 'code')" || return 1;

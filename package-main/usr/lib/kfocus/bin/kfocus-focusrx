@@ -587,11 +587,15 @@ _chkHwConfigFn () {
 
     # 6204 Rerun attempt with internet connect
     #   do_force=n, is_internet_chkd=y
-    _reason_str="$("${_escExe}" "${_focusRxSetExe}" 'chk-hw-config' 'n' 'y')";
+    # Note: _cm2RunLongCmdFn prefixes commands with pkexec
+    _prompt_msg="Updating package list and system software";
+    _reason_str="$( _cm2RunLongCmdFn "${_prompt_msg}" \
+      "${_focusRxSetExe}" 'chk-hw-config' 'n' 'y'
+    )";
     if [[ "${_reason_str}" =~ ^CANNOT_UPGRADE ]]; then
       _cm2WarnStrFn 'Could not upgrade packages';
       _cm2WarnStrFn "${_reason_str}";
-      _cm2Warnfn;
+      _cm2WarnFn;
       return 1;
     fi
   fi
@@ -636,8 +640,10 @@ _EOH06
 
           # 6204 Rerun attempt with internet connect
           #   do_force=y, is_internet_chkd=y
-          _reason_str="$(
-            "${_escExe}" "${_focusRxSetExe}" 'chk-hw-config' 'y' 'y'
+          # Note: _cm2RunLongCmdFn prefixes commands with pkexec
+          _prompt_msg="Updating package list and system software";
+          _reason_str="$( _cm2RunLongCmdFn "${_prompt_msg}" \
+            "${_focusRxSetExe}" 'chk-hw-config' 'y' 'y'
           )";
           if [[ "${_reason_str}" =~ ^CANNOT_UPGRADE ]]; then
             _cm2WarnStrFn 'Could not upgrade packages';
@@ -654,13 +660,6 @@ _EOH06
     _cm2SucStrFn 'Configuration change not needed.';
     _cm2SucFn;
     return;
-  fi
-
-  # Bail if internet connection appears hopeless
-  if ! _confirmInternetFn; then
-    _cm2WarnStrFn 'Could not connect to internet';
-    _cm2Warnfn;
-    return 1;
   fi
 
   _prompt_msg="${_title}: This only needs to be done once";
@@ -1299,12 +1298,12 @@ _mainFn () {
   _cm2EchoFn "== BEGIN :      ${_rootTitle}\n";
   _announceStartFn;
   _chkNvPMizerFn;       #5423
-  _chkDispRefreshFn;
   _chkBtrfsSetUpFn;
   _chkOemMultiDiskFn;
   _chkHwConfigFn;
   _chkRollbackPresence;
   _chkKbdLedFn;         #3735
+  _chkDispRefreshFn;
   _offerKfRollbackFn;
   # _chkKernelPkgFn;    # Disabled: See 4423, 66226a00c
   # _chkNvidiaPkgFn;    # Disabled: See 2928

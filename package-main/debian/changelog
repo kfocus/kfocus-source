@@ -1,3 +1,17 @@
+kfocus-main (24.04.30~beta5) noble; urgency=medium
+
+  * 1.2.1-3_package-check.sh: install --reinstall -> reinstall (#6204)
+  * kfocus-focusrx: Simplify and improve nag system (#6204)
+  * kfocus-focusrx: Retry display refresh adjustments (#6141)
+  * kfocus-focusrx: Ensure network, package update before hw-config (#6204)
+  * kfocus-focusrx: Show throbber during package update (#6204)
+  * kfocus-focusrx: Abort hw-config if error occurs (#6204)
+  * kfocus-focusrx-set: Revise for hw-config resilience (#6204)
+  * kfocus-focusrx-set: Use improved smart install, reinstall (#6402)
+  * common.2.source: Add smart install, reinstall methods (#6402)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Thu, 08 Jan 2026 21:19:34 -0500
+
 kfocus-main (24.04.30~beta4) noble; urgency=medium
 
   * control: Add recommends: vpnc-scripts (#6158)

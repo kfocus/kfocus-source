@@ -1,7 +1,7 @@
 #!/bin/bash
 #bashsupport disable=BP1001
 #
-# Copyright 2019-2025 MindShare Inc.
+# Copyright 2019-2026 MindShare Inc.
 # Written for the Kubuntu Focus by:
 #  * Michael Mikowski
 #  * Erich Eickmeyer
@@ -389,12 +389,39 @@ _cm2ChkDupRunFn () {
   pidof -x "${_basename}" -o "${BASHPID},$$,%PPID";
 }
 
-_cm2AptReinstallUnaFn() {
+_cm2ReinstallPkgsFn () {
   DEBIAN_FRONTEND='noninteractive' \
     apt-get \
     -o Dpkg::Options::='--force-confdef' \
     -o Dpkg::Options::='--force-confold' \
     -q -y --allow-downgrades reinstall "$@";
+}
+
+_cm2SmartInstallPkgsFn () {
+  declare _arg_pkg_list _upgrade_pkg_list _filter_pkg_list _pkg_name;
+  _arg_pkg_list=( "$@" );
+
+  ## Begin Filter list to only new or pkgs with pending changes
+  _filter_pkg_list=();
+  readarray -t _upgrade_pkg_list < <(
+    apt-get full-upgrade --dry-run |awk '/^Inst/ {print $2}'\
+  );
+
+  for _pkg_name in "${_arg_pkg_list[@]}"; do
+    if ! _cm2ChkInstalledPkgFn "${_pkg_name}" \
+      || [[ " ${_upgrade_pkg_list[*]} " \
+      =~ [[:space:]]${_pkg_name}[[:space:]] ]]; then
+      _filter_pkg_list+=( "${_pkg_name}" );
+    fi
+  done
+  if (( "${#_filter_pkg_list[@]}" < 1 )); then return 0; fi
+  ## . End Filter list to only new or pkgs with pending changes
+
+  DEBIAN_FRONTEND='noninteractive' \
+    apt-get \
+    -o Dpkg::Options::='--force-confdef' \
+    -o Dpkg::Options::='--force-confold' \
+    -q -y --allow-downgrades reinstall "${_filter_pkg_list[@]}";
 }
 
 _cm2ChkInstalledPkgFn () {
@@ -872,7 +899,7 @@ export _cm2Arg01 _cm2Arg02 _cm2BlockMsg _cm2HtmBeginStr _cm2HtmEndStr      \
   _cm2QdbusExe;
 
 # Export Functions
-export -f _cm2AskExitFn _cm2AptReinstallUnaFn _cm2AssignExeVarsFn         \
+export -f _cm2AskExitFn _cm2AssignExeVarsFn \
   _cm2CatStripEchoFn _cm2ChkDupRunFn _cm2ChkPkgFn _cm2ChkInstalledPkgFn   \
   _cm2EchoInstalledVersFn _cm2EchoFn _cm2EchoIntFn _cm2EchoModelStrFn     \
   _cm2EchoStackFn _cm2ErrStrFn _cm2ErrFn _cm2EscapeRxCharsFn              \
@@ -881,6 +908,7 @@ export -f _cm2AskExitFn _cm2AptReinstallUnaFn _cm2AssignExeVarsFn         \
   _cm2ReadPromptYnFn _cm2RunLongCmdFn _cm2SetMsgFn _cm2StripTagsFn        \
   _cm2SucFn _cm2SucStrFn _cm2TestVersFn _cm2TrapErrorFn _cm2TrapExitFn    \
   _cm2TrapInterruptFn _cm2WarnFn _cm2WarnStrFn _cm2SetIsTtyFn             \
-  _cm2SetCliTypeFn _cm2SetLogLevelFn _cm2SetLogTagFn _cm2LogFn;
+  _cm2SetCliTypeFn _cm2SetLogLevelFn _cm2SetLogTagFn _cm2LogFn            \
+  _cm2ReinstallPkgsFn _cm2SmartInstallPkgsFn;
 ## . END Execute when sourced }
 

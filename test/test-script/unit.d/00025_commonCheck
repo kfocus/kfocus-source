@@ -1,5 +1,10 @@
-# vim: syntax=bash
+# vim: syntax=bash:
+
+# Copyright 2019-2026 MindShare Inc.
+# Written for the Kubuntu Focus by
+#   Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
 # This code is designed to be source by runUnitTests.
+
 ## BEGIN Scrub beginning and trailing whitespace
 # Works like sed 's/^\s\+//' <<< "$*" | sed 's/\s\+//';
 _echoScrubStrFn () { xargs <<< "$*"; }
@@ -83,7 +88,8 @@ _echoFormatFn   () { printf '  %-4.4s : %-14.14s %-2.2s %-14.14s ' "$@"; }
 #   0n_A _cm2EchoModelStrFn      : Echo the ${_search_key} field for host system
 #   0o_  _cm2ChkDupRunFn         : Check if another process is running the script
 #                                : (deprecated, use flock)
-#   0o1_ _cm2AptReinstallUnaFn   : Install, reinstall, upgrade pkgs unattended
+#   0o0_ _cm2ReinstallPkgsFn     : Reinstall packages always, allow downgrades
+#   0o1_ _cm2SmartInstallPkgsFn  : Install, reinstall, upgrade pkgs unattended
 #   0p_A _cm2ChkInstalledPkgFn   : Quickly check if a package is installed
 #   0q_A _cm2ChkPkgFn            : Quickly check if a package is available
 #   0r_A _cm2EchoInstalledVersFn : Echo installed version of package
@@ -385,24 +391,38 @@ _audit_cm2EchoModelStrFn () {
 #   process, create a lock file (see "flock" in kfocus-pstate).
 ## . END _cm2ChkDupRunFn }
 
+# 0o0_
+## BEGIN _cm2ReinstallPkgsFn {
+# Summary   : _cm2ReinstallPkgsFn <package-list>
+# Purpose   : Reinstall all packages listed, always.
+#   Retain configuration files only if changed.
+## . END _cm2ReinstallPkgsFn }
+
 # 0o1_
-## BEGIN _cm2AptReinstallUnaFn {
-# Summary   : _cm2AptReinstallUnaFn
-# Purpose   : Install, reinstall, upgrade pkgs unattended
-#   This is preferred over install because while it will
-#   * Install the package if needed as manual install
-#   * Upgrade the package if needed and keep (auto|manual) mark
-#   * Pull in changed dependencies and recommends like install
-#   * Generally leaves the config as-is (not an issue with us because we use
-#     symlinks for configs that we need to set in /etc)
-#   * Downgrades the named package if a pin requires it
-#   * Does not block from interactive control
-# Example   : _cm2AptReinstallUnaFn dkms
-# Arguments : "${@}" - like of package to upgrade
+## BEGIN _cm2SmartInstallPkgsFn {
+# Summary   : _cm2SmartInstallPkgsFn <package-list>
+# Purpose   : Install, reinstall, upgrade, downgrade unattended.
+#   For each package in <package-list>:
+#     * SAME: Install if not currently installed, mark manual
+#     * SAME: If installed, only reinstall IFF there is an upgrade
+#             or downgrade available.
+#     * SAME: Will remove broken dependency packages if required
+#     * SAME: Work with downgrades forced by pinning.
+#     * SAME: Pull in changed dependencies and recommends.
+#     * BETTER: Keep any (auto|manual) mark on upgrades; install always
+#       sets manual.
+#     * SAME: Leaves the any config file as-is IFF it has changed,
+#       otherwise it updates it.
+#       (This is the same as install with the options of
+#        Dpkg::Options of --force-confdef and --force-confold.)
+#     * SAME: Does not attempt interactive control
+#         (same as install with the 'noninteractive' setting)
+# Example   : _cm2SmartInstallPkgsFn dkms
+# Arguments : "${@}" - list of package to install or upgrade
 # Globals   : DEBIAN_FRONTEND
 # Outputs   : Normal apt-get minimal output
 # Returns   : The result of apt-get call
-## . END _cm2AptReinstallUnaFn }
+## . END _cm2SmartInstallPkgsFn }
 
 # 0p_A
 ## BEGIN _cm2ChkInstalledPkgFn {
