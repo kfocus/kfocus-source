@@ -394,7 +394,7 @@ _cm2ReinstallPkgsFn () {
     apt-get \
     -o Dpkg::Options::='--force-confdef' \
     -o Dpkg::Options::='--force-confold' \
-    -q -y --allow-downgrades reinstall "$@";
+    -y --allow-downgrades reinstall "$@";
 }
 
 _cm2SmartInstallPkgsFn () {
@@ -421,7 +421,7 @@ _cm2SmartInstallPkgsFn () {
     apt-get \
     -o Dpkg::Options::='--force-confdef' \
     -o Dpkg::Options::='--force-confold' \
-    -q -y --allow-downgrades reinstall "${_filter_pkg_list[@]}";
+    -y --allow-downgrades reinstall "${_filter_pkg_list[@]}";
 }
 
 _cm2ChkInstalledPkgFn () {

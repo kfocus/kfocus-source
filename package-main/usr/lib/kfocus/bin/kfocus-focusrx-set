@@ -30,9 +30,10 @@ _importCommonFn() {
 
 ## BEGIN _updateKfocusPkgsFn {
 # Purpose: Update all kfocus packages and dependencies only
+# Returns: 0 - success; 1 - general failure; 2 - kfocus-main upgraded
 #
 _updateKfocusPkgsFn () {
-  declare _installed_list;
+  declare _installed_list _pre_vers_str _post_vers_str;
   _cm2SetMsgFn 'Update and upgrade kfocus packages';
   apt-get update || true;
 
@@ -55,8 +56,14 @@ _updateKfocusPkgsFn () {
     return 1;
   fi
 
+  _pre_vers_str="$(_cm2EchoInstalledVersFn 'kfocus-main')";
   if _cm2SmartInstallPkgsFn "${_installed_list[@]}"; then
     _cm2SucFn;
+    _post_vers_str="$(_cm2EchoInstalledVersFn 'kfocus-main')";
+
+    if [ "${_pre_vers_str}" != "${_post_vers_str}" ]; then
+      return 2;
+    fi
     return 0;
   else
     _cm2WarnFn;
@@ -236,7 +243,7 @@ _chkHwConfigFn () {
     _file_hw_config_code _file_hw_model_code                \
     _msg _report_str _tool_pkg_suffix _tool_pkg_name        \
     _is_nv_system _nv_pkg_suffix _nv_series_str             \
-    _btrfs_status ;
+    _btrfs_status _ret_code;
 
   _do_force='n';
   if [[ "${1:-}" =~ ^[Yy] ]]; then _do_force='y'; fi
@@ -282,15 +289,20 @@ _chkHwConfigFn () {
     _file_hw_config_code=''; rm "${_hwConfigCodeFile}" 2>/dev/null || true;
     _file_hw_model_code='';  rm "${_hwModelCodeFile}"  2>/dev/null || true;
 
-    # 6204 Check internet if needed; caller should recall with this set to 'y'
+    # 6204 Request caller check for internet and try again
     if [ "${_is_internet_chkd}" = 'n' ]; then
       echo 'CHECK_INTERNET';
       return;
     fi
 
     # 6204 Update apt list and kfocus packages
-    if ! _report_str="$(_updateKfocusPkgsFn)"; then
-      echo "CANNOT_UPGRADE: |${_report_str}|" ;
+    _report_str="$(_updateKfocusPkgsFn)";
+    _ret_code="$?";
+    if (( _ret_code == 2 )); then
+      echo 'RERUN_REQUIRED';
+      return;
+    elif (( _ret_code > 0 )); then
+      echo "CANNOT_UPGRADE: |${_report_str}|";
       return;
     fi
 

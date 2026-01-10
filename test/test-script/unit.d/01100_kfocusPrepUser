@@ -33,7 +33,7 @@ _parseHomeDirFromPasswdFn () {
     if [ "$(cut -f1 -d':' <<< "${_passwd_str}" )" = "${_user_name}" ]; then
       cut -f6 -d':' <<< "${_passwd_str}";
       return 0;
-    fi  
+    fi
   done
 
   return 1;

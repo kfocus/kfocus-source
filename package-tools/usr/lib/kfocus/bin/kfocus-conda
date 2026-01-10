@@ -12,7 +12,7 @@
 #
 set -u;
 
-# shellcheck disable=SC2317
+# shellcheck disable=SC2317,SC2329
 _abortFn () { 2>&1 echo; 2>&1 echo 'Ctrl+C exit'; sleep 1; exit 1; }
 
 _exitFn () {
@@ -131,8 +131,11 @@ _setCudaPathsFn () {
   set +u;
   _ldLibraryPath="$(_ap2AddPathFn "${LD_LIBRARY_PATH}" "${_append_list[@]}")";
 
-  export LD_LIBRARY_PATH="${_ldLibraryPath}";
-  export CUDA_HOME="${_cuda_home_dir}";
+  # bashsupport disable=BP2001
+  LD_LIBRARY_PATH="${_ldLibraryPath}";
+  # bashsupport disable=BP2001
+  CUDA_HOME="${_cuda_home_dir}";
+  export LD_LIBRARY_PATH CUDA_HOME;
   set -u;
 
   _cm2EchoFn 'Environment variables TO EXPORT:';
@@ -630,11 +633,10 @@ _escExe="$(_cm2GetEscExeFn)" || exit;
 trap _abortFn SIGINT;
 
 # Check Nvidia Modules and PCI devices
-if ! _nvSeriesStr="$(_getNvSeriesStrFn)"; then
-  exit "$?";
-fi
+_nvSeriesStr="$(_getNvSeriesStrFn)";
+_retInt="$?";
+if (( _retInt > 0 )); then exit "${_retInt}"; fi
 
-# bashsupport disable=GrazieInspection
 _condaRawStr="$(cat << '_HERE01'
 # >>> conda initialize >>>
 # !! Contents within this block are managed by 'conda init' !!
