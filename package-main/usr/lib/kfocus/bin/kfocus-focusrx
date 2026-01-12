@@ -557,7 +557,7 @@ EOF
       _cm2WarnStrFn 'Could not set screen mode. Will try again next login';
       _cm2WarnFn;
     fi
-    ## BETA test: Reset nag for 240 Hz
+    ## Reset nag for 240 Hz
     _testNagCountFn 'fill' "${_nag_name}" '2';
     return;
   fi

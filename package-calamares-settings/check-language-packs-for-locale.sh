@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Copyright 2026-2026 MindShare Inc.
+# Written for the Kubuntu Focus by
+#   Aaron Rainbolt, Michael Mikowski
+
 # Checks which language pack packages exists for a given '$LOCALE'.
 
 LOCALE="$1";
