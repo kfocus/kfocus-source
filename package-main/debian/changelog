@@ -1,53 +1,32 @@
-kfocus-main (24.04.30~beta6) noble; urgency=medium
+kfocus-main (24.04.30) noble; urgency=medium
 
-  * kfocus-focusrx: Reordered user fixup tool presentation (#6204)
-  * kfocus-focusrx: Rerun script if main package is updated  (#6204)
-  * kfocus-focusrx: Rationalize fixup run order CFG > UX > APP (#6024)
-  * kfocus-focusrx-set: Detect and signal need for rerun (#6204)
-
- -- Michael S. Mikowski <support@kfocus.org>  Fri, 09 Jan 2026 17:16:20 -0500
-
-kfocus-main (24.04.30~beta5) noble; urgency=medium
-
+  [ Michael S. Mikowski ]
   * 1.2.1-3_package-check.sh: install --reinstall -> reinstall (#6204)
+  * kfocus-firstrun-set: Remove no longer used _updatePkgsFn (#6204)
   * kfocus-focusrx: Simplify and improve nag system (#6204)
-  * kfocus-focusrx: Retry display refresh adjustments (#6141)
+  * kfocus-focusrx: Enforce firstrun 60 Hz edp-1-1 refresh on m2g6 (#6141)
+  * kfocus-focusrx: Add retry loop for display refresh adjustment (#6141)
+  * kfocus-focusrx: Abort hw-config if error occurs (#6204)
   * kfocus-focusrx: Ensure network, package update before hw-config (#6204)
   * kfocus-focusrx: Show throbber during package update (#6204)
-  * kfocus-focusrx: Abort hw-config if error occurs (#6204)
-  * kfocus-focusrx-set: Revise for hw-config resilience (#6204)
+  * kfocus-focusrx: Rerun script if main package is updated (#6204)
+  * kfocus-focusrx: Rationalize fixup run order: CFG > UX > APP (#6024)
+  * kfocus-focusrx-set: On kfocus pkg upgrade, ensure dkms is installed
+    (#6140)
   * kfocus-focusrx-set: Use improved smart install, reinstall (#6402)
+  * kfocus-focusrx-set: Adjust kfocus pkg upgrade to include dependencies
+  * 40)
+  * kfocus-focusrx-set: Revise for hw-config resilience (#6204)
+  * kfocus-focusrx-set: Detect and signal need for rerun (#6204)
   * common.2.source: Add smart install, reinstall methods (#6402)
 
- -- Michael S. Mikowski <support@kfocus.org>  Thu, 08 Jan 2026 21:19:34 -0500
-
-kfocus-main (24.04.30~beta4) noble; urgency=medium
-
+  [ Aaron Rainbolt ]
+  * kfocus-mime: Add Synaptic curated app (#6158)
+  * kfocus-mime: Switch Handbrake curated app to Flatpak (#5626)
   * control: Add recommends: vpnc-scripts (#6158)
-  * kfocus-mime: Fix Synaptic curated app launcher (#6158)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 31 Dec 2025 10:12:33 -0600
-
-kfocus-main (24.04.30~beta3) noble; urgency=medium
-
   * control: Add recommends: synaptic, network-manager-openvpn (#6158)
 
- -- Michael S. Mikowski <support@kfocus.org>  Tue, 30 Dec 2025 17:26:58 -0500
-
-kfocus-main (24.04.30~beta2) noble; urgency=medium
-
-  * kfocus-mime: Switch Handbrake curated app to Flatpak (#5626)
-  * kfocus-mime: Add Synaptic curated app (#6158)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 29 Dec 2025 17:07:18 -0600
-
-kfocus-main (24.04.30~beta1) noble; urgency=medium
-
-  * kfocus-focusrx-set: Adjust kfocus pkg upgrade to include deps (#6140)
-  * kfocus-focusrx-set: On kfocus pkg upgrade, ensure dkms is installed (#6140)
-  * kfocus-focusrx: Enforce firstrun 60 Hz edp-1-1 refresh on m2g6 (#6141)
-
- -- Michael S. Mikowski <support@kfocus.org>  Mon, 22 Dec 2025 21:39:21 -0500
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 12 Jan 2026 13:17:56 -0600
 
 kfocus-main (24.04.29) noble; urgency=medium
 
