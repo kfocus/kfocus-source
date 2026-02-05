@@ -595,6 +595,19 @@ _echoKeyListFn () {
 ## . END _echoKeyListFn }
 
 ## BEGIN _echoInstallPromptMsgFn {
+# Summary   : _echoInstallPromptMsgFn <app_id> <pkg_name> <descr>
+# Example   : _echoInstallPromptMsgFn 'inkscape' 'inkscape' \
+#             'Inkscape: Edit Scalable Vector Graphics';
+# Purpose   : Echoes a message to display to the user when prompting whether
+#   to install an application or not.
+# Arguments :
+#   app_id   - The internal application ID from _exeLookupList.
+#   pkg_name - The package name from _exeLookupList.
+#   descr    - The application description from _exeLookupList.
+# Globals   : All globals from _readPkgRepoInfoFn.
+# Outputs   : Message to display to the user as described in Purpose.
+# Returns   : 0 on success, 1 on failure.
+#
 _echoInstallPromptMsgFn () {
   declare _app_id _pkg_name _descr_str _prompt_msg _report_str;
 
@@ -602,10 +615,6 @@ _echoInstallPromptMsgFn () {
   _pkg_name="${2:-}";
   _descr_str="${3:-Package}";
   _prompt_msg='';
-
-  # If available in repo, prompt to install directly
-  # TODO 2022-05-05 TEPID msm: Verify package comes from desired upstream repo
-  _readPkgRepoInfoFn "${_pkg_name}";
 
   if _cm2ChkPkgFn "${_pkg_name}" || [ "${METHOD:-}" = 'custom' ]; then
     echo -e "\n'${_descr_str}' is available ";
@@ -1098,13 +1107,21 @@ _runAppFn () {
 
     # Try to install the package using (may install repository too)
     if [ ! -x "${_sniff_exe}" ] && [ "${_idx}" = '0' ]; then
+      # TODO 2022-05-05 TEPID msm: Verify package comes from desired upstream repo
+      _readPkgRepoInfoFn "${_pkg_name}";
       if _install_prompt_msg="$(
         _echoInstallPromptMsgFn "${_app_id}" "${_pkg_name}" "${_descr}"
         )"; then
         _ans_str="$(
           _cm2PromptUserFn "${_install_prompt_msg:-}" 'Install package' 'a'
         )";
-        if [ "${_ans_str}" = 'y' ] && _chkPromptFlathubEnableFn; then
+        if [ "${_ans_str}" = 'y' ]; then
+          if [ "${METHOD:-}" = 'flathub' ] \
+            && ! _chkPromptFlathubEnableFn; then
+            _prompt_msg="Installation cancelled on user request";
+            _promptFn "${_prompt_msg}";
+            exit 1;
+          fi
           # Note: _cm2RunLongCmdFn prefixes commands with _escExe (pkexec)
           if _exit_str="$(_cm2RunLongCmdFn "Installing ${_pkg_name}" \
               "${_binName}" '-i' "${_pkg_name}")"; then continue;
