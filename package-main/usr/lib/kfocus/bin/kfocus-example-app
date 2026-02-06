@@ -146,6 +146,15 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   # Import libs and assign more global vars
   _importCommonFn;
 
+  _assignList=(
+    '_mountExe|/usr/bin/mount'
+  );
+  if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
+    _cm2ErrStrFn 'Could not assign variables';
+    exit 1;
+  fi
+  _escExe="$(_cm2GetEscExeFn)" || exit;
+
   _mainFn "$@";
 
   # Example calls
