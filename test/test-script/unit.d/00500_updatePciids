@@ -1,5 +1,10 @@
-#!/bin/bash
-#
+# vim: syntax=bash:
+
+# Copyright 2019-2026 MindShare Inc.
+# Written for the Kubuntu Focus by
+#   Michael Mikowski, Erich Eickmeyer
+# This code is designed to be source by runUnitTests.
+
 ## BEGIN _updatePciidsFn {
 #  Purpose  : Loads pci device details
 #  Example  : _updatePciidsFn
@@ -49,12 +54,12 @@ _rootDir='';
 
 _runTestFn () {
   declare _fn_str;
-  
+
   # See this hack to execute lib + function as root
   # https://stackoverflow.com/questions/7427262
   IFS='' read -rd '' _fn_str <"${_t00BinDir}/common.2.source";
   _fn_str+="$(declare -f _updatePciidsFn)";
-  
+
   sudo bash -c "${_fn_str}
   _updatePciidsFn";
   return;

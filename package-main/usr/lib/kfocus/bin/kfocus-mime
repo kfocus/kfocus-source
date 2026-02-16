@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2020-2024 MindShare Inc.
+# Copyright 2020-2026 MindShare Inc.
 # Written for Kubuntu Focus by:
 #   Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
 #   with some code and configurations courtesy of deb-get found at
@@ -38,7 +38,6 @@ _exeLookupList=(
   'filezilla|filezilla||filezilla|Filezilla: Transfer Files'
   'firefox|firefox||firefox|Firefox: Browse the Web with Mozilla Firefox'
   'gcloud|konsole;-e;main;gcloud;help|gcloud|google-cloud-cli|GCS: Google Cloud Services CLI'
-  'ghb|ghb||handbrake|Handbrake: Rip and Transcode DVDs and Video'
   'git-cola|git-cola||git-cola|Git-Cola: Explore Git Branches GUI'
   'gimp|gimp||gimp|Gimp: Edit and Create Raster Images'
   'google-chrome|google-chrome||google-chrome-stable|Chrome: Browse the Web with Google Chrome'
@@ -103,6 +102,7 @@ _exeLookupList=(
   'spectacle|spectacle||kde-spectacle|Spectacle: Take Screenshots'
   'steam|steam||steam|Steam: Manage and Play Games'
   'sublime-text|subl||sublime-text|Sublime Text editor'
+  'synaptic|synaptic-pkexec||synaptic|Synaptic: View, Install, and Remove Debian Packages'
   'systemsettings5|systemsettings5||systemsettings|System Settings: Adjust Your System'
   'msteams|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://www.microsoft.com/en-us/microsoft-teams/group-chat-software||kfocus-main|Microsoft Teams'
   'telegram-desktop|telegram-desktop||telegram-desktop|Telegram: Encrypted Instant Messenger'
@@ -113,15 +113,16 @@ _exeLookupList=(
   'winff|winff||winff-qt|WinFF: Convert Video using ffmpeg'
 
   # Packages with special handlers
+  'displaylink-driver|!displaylink-driver|displaylink-installer|displaylink-driver|DisplayLink: Driver for DisplayLink Docking Stations'
   'docker|!docker|docker|docker-ce|Docker: Container Engine'
   'dropbox|!dropbox|dropbox|dropbox|Dropbox: Sync to Cloud Storage'
-  'jetbrains-toolbox|!jetbrains-toolbox|jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs'
+  'ghb|!ghb|/var/lib/flatpak/app/fr.handbrake.ghb/x86_64/stable/active/files/bin/ghb|handbrake-flathub|Handbrake: Back up encoded audio and video'
   'intellij|!intellij|jetbrains-toolbox|jetbrains-toolbox|IntelliJ: JetBrains Java IDE'
+  'jetbrains-toolbox|!jetbrains-toolbox|jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs'
   'pycharm|!pycharm|jetbrains-toolbox|jetbrains-toolbox|PyCharm: JetBrains Python IDE'
-  'webstorm|!webstorm|jetbrains-toolbox|jetbrains-toolbox|WebStorm: JetBrains Web IDE'
   'virtualbox|!virtualbox||virtualbox|VirtualBox: Run Virtual Machines'
+  'webstorm|!webstorm|jetbrains-toolbox|jetbrains-toolbox|WebStorm: JetBrains Web IDE'
   'zoom|!zoom||zoom|Zoom: Start and Join Video and Web Conferencing'
-  'displaylink-driver|!displaylink-driver|displaylink-installer|displaylink-driver|DisplayLink: Driver for DisplayLink Docking Stations'
 
   # Future consideration: Nvidia CUDA and ML libs
 
@@ -362,6 +363,11 @@ function deb_displaylink-driver() {
   WEBSITE="https://www.synaptics.com/products/displaylink-graphics"
   CUSTOM_FUNC_NAME="_installDisplaylinkDriverFn"
 }
+function deb_handbrake-flathub() {
+  PRETTY_NAME="Handbrake"
+  WEBSITE="https://handbrake.fr/"
+  FLATHUB_PKG_NAME="fr.handbrake.ghb"
+}
 # Extracted from main
 function _makeAppListFn () {
   IFS=$'\n' read -r -d '' -a _pkgNameList < <(
@@ -387,7 +393,7 @@ function _readPkgRepoInfoFn () {
   export CACHE_DIR ERROR_STR HOST_CPU HOST_ARCH USER_AGENT UBUNTU_CODENAME \
     APT_KEY_URL GPG_KEY_URL APT_LIST_NAME APT_REPO_URL APT_EXTRA_PKGLIST PPA \
     ARCHS_SUPPORTED METHOD EULA SNAP_PKG_NAME URL VERSION_INSTALLED \
-    VERSION_PUBLISHED PRETTY_NAME WEBSITE CUSTOM_FUNC_NAME;
+    VERSION_PUBLISHED PRETTY_NAME WEBSITE CUSTOM_FUNC_NAME FLATHUB_PKG_NAME;
 
   CACHE_DIR='/var/cache/deb-get';
 
@@ -433,6 +439,7 @@ function _readPkgRepoInfoFn () {
   PRETTY_NAME='';
   WEBSITE='';
   CUSTOM_FUNC_NAME='';
+  FLATHUB_PKG_NAME='';
 
   # Source the variables
   if "deb_${_pkg_name}"; then
@@ -447,6 +454,8 @@ function _readPkgRepoInfoFn () {
     METHOD='custom';
   elif [ -n "${SNAP_PKG_NAME:-}" ]; then
     METHOD='snap';
+  elif [ -n "${FLATHUB_PKG_NAME:-}" ]; then
+    METHOD='flathub';
   elif [ -n "${APT_REPO_URL:-}" ]; then
     METHOD='apt';
   elif  [ -n "${PPA:-}" ]; then
@@ -514,6 +523,15 @@ function install_snap() {
 }
 function install_custom() {
   "${CUSTOM_FUNC_NAME:-}";
+}
+function install_flathub() {
+  if ! _cm2ChkInstalledPkgFn 'flatpak'; then
+    update_apt;
+    _aptGetInstallUnattended 'flatpak';
+  fi
+  flatpak remote-add --if-not-exists flathub \
+    https://dl.flathub.org/repo/flathub.flatpakrepo;
+  flatpak install --system --noninteractive flathub "${FLATHUB_PKG_NAME:-}";
 }
 function download_deb() {
   local URL="${1}"
@@ -594,9 +612,14 @@ _echoInstallPromptMsgFn () {
     echo -e "but it is not installed.";
     echo -e "\nInstall and start now?\n";
     return 0;
+  elif [ "${METHOD:-}" = 'flathub' ]; then
+    echo -e "\n'${_descr_str}' is available ";
+    echo -e "from Flathub but is not installed.";
+    echo -e "\nInstall and start now?\n";
+    return 0;
   elif [ "${METHOD:-}" = 'snap' ]; then
     echo -e "\n'${_descr_str}' is available ";
-    echo -e "only as a snap but is not installed.";
+    echo -e "as a snap but is not installed.";
     echo -e "\nInstall and start now?\n";
     return 0;
   fi
@@ -627,7 +650,6 @@ _echoInstallPromptMsgFn () {
 }
 ## . END _echoInstallPromptMsgFn }
 
-
 ## BEGIN _installPkgFn {
 # Purpose: Install requested package
 _installPkgFn () {
@@ -650,10 +672,11 @@ _installPkgFn () {
   # Dispatch
   case "${METHOD:-}" in
     direct|github|website) install_deb "${URL:-}";;
-    apt)    install_apt;;
-    ppa)    install_ppa;;
-    snap)   install_snap;;
-    custom) install_custom;;
+    apt)     install_apt;;
+    ppa)     install_ppa;;
+    snap)    install_snap;;
+    flathub) install_flathub;;
+    custom)  install_custom;;
     *) echo -e "Unexpected method |${METHOD:-}|";
       exit 1;;
   esac;
@@ -706,7 +729,7 @@ EOT02
         return;
       fi
     else
-      _promptFn "User cancelled joining group 'docker'";
+      _promptFn "User canceled joining group 'docker'";
       return;
     fi
   fi
@@ -802,8 +825,8 @@ EOT0C
 # Summary  : _runAppHandlerFn <app_id> <descr_str>
 # Example  : _runAppHandlerFn 'dropbox' 'Dropbox: Sync to ...'
 # Purpose  : Run the special handlers for provided _app_id.
-#          : This is called only when the cmd_str is prefixed by an '!'
-#          : and after installation is complete.
+#   This is called only when the cmd_str is prefixed by an '!'
+#   and after installation is complete.
 # Arguments: _app_id    : App identifier key
 #            _descr_str : App description
 #
@@ -896,6 +919,18 @@ EOT
       exit;
       ;;
 
+    ghb)
+      if ! [[ "$XDG_DATA_DIRS" =~ '/var/lib/flatpak/exports/share' ]]; then
+        _prompt_msg="$(cat <<EOT
+${_cm2HtmPStr}Handbrake is installed and will now launch. You may need to <br>
+log out and back in for it to appear in the Start Menu.</p>
+EOT
+        )";
+      fi
+      _cmd_str='flatpak';
+      _arg_list=( 'run' 'fr.handbrake.ghb' );
+      ;;
+
     *) true;;
   esac
 
@@ -920,6 +955,50 @@ EOT
   exit; # Always exit and do NOT return
 }
 ## . END _runAppHandlerFn }
+
+## BEGIN _chkPromptFlathubEnableFn {
+# Summary   : _chkPromptFlathubEnableFn
+# Example   : _chkPromptFlathubEnableFn
+# Purpose   : Check if Flathub is enabled, and prompt the user for
+#   confirmation if it needs to be enabled to install the
+#   requested application.
+# Arguments : none
+# Globals   : none
+# Outputs   : none
+# Returns   : 0 if Flathub is enabled or the user confirms they wish to enable
+#   it, 1 otherwise
+#
+_chkPromptFlathubEnableFn () {
+  declare _is_flathub_enabled _flatpak_remote_list _flatpak_remote_str _msg;
+
+  _is_flathub_enabled='n';
+  if _cm2ChkInstalledPkgFn 'flatpak'; then
+    readarray -t _flatpak_remote_list < <(flatpak remotes --columns=name);
+    for _flatpak_remote_str in "${_flatpak_remote_list[@]}"; do
+      if [ "${_flatpak_remote_str}" = 'flathub' ]; then
+        _is_flathub_enabled='y';
+        break;
+      fi
+    done
+  fi
+
+  if [ "${_is_flathub_enabled}" = 'y' ]; then
+    return 0;
+  fi
+
+  _msg="$(cat <<EOT
+\nTo install this application, Flathub must be enabled.
+This will cause apps from Flathub to appear in Discover.
+Are you sure you want to do this?\n
+EOT
+  )";
+
+  if [ "$(_cm2PromptUserFn "${_msg}" 'Install package' 'a')" = 'y' ]; then
+    return 0;
+  fi
+  return 1;
+}
+## . END _chkPromptFlathubEnableFn }
 
 ## BEGIN _runAppFn {
 # Summary  : _runAppFn <app_id>;
@@ -1025,7 +1104,7 @@ _runAppFn () {
         _ans_str="$(
           _cm2PromptUserFn "${_install_prompt_msg:-}" 'Install package' 'a'
         )";
-        if [ "${_ans_str}" = 'y' ]; then
+        if [ "${_ans_str}" = 'y' ] && _chkPromptFlathubEnableFn; then
           # Note: _cm2RunLongCmdFn prefixes commands with _escExe (pkexec)
           if _exit_str="$(_cm2RunLongCmdFn "Installing ${_pkg_name}" \
               "${_binName}" '-i' "${_pkg_name}")"; then continue;

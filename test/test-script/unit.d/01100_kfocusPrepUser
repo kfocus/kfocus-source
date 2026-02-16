@@ -1,5 +1,10 @@
-#!/bin/bash
-#
+# vim: syntax=bash:
+
+# Copyright 2019-2026 MindShare Inc.
+# Written for the Kubuntu Focus by
+#   Aaron Rainbolt, Michael Mikowski
+# This code is designed to be source by runUnitTests.
+
 # Test for /etc/passwd parsing code from kfocus-prep-user
 #
 # set -u is set in _runUnitTests (the test harness)
@@ -33,7 +38,7 @@ _parseHomeDirFromPasswdFn () {
     if [ "$(cut -f1 -d':' <<< "${_passwd_str}" )" = "${_user_name}" ]; then
       cut -f6 -d':' <<< "${_passwd_str}";
       return 0;
-    fi  
+    fi
   done
 
   return 1;

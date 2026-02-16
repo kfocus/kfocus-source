@@ -1,19 +1,20 @@
-kfocus-calamares-settings (24.04.18~beta2) noble; urgency=medium
-
-  * Uninstall kfocus-calamares-settings from the OEM session after initial
-    installation (#6119)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 22 Dec 2025 17:35:55 -0600
-
-kfocus-calamares-settings (24.04.18~beta1) noble; urgency=medium
+kfocus-calamares-settings (24.04.19~beta1) noble; urgency=medium
 
   * Allow multi-disk configuration tools to work on multiple secondary disks
     and with a data partition on the main disk (#5914)
   * Add additional installation modes to OEM installation, to allow working
     with a data partition on the main disk (#5914)
-  * Prevent installation crash if a third-party repository is offline (#6112)
 
  -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 16 Dec 2025 15:57:11 -0600
+
+kfocus-calamares-settings (24.04.18) noble; urgency=medium
+
+  * Allow installation to continue if a third-party repository is offline
+    (#6112)
+  * Remove kfocus-calamares-settings from the OEM session after system install
+    (#6119)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 12 Jan 2026 13:15:51 -0600
 
 kfocus-calamares-settings (24.04.17) noble; urgency=medium
 

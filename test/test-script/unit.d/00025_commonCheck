@@ -1,4 +1,10 @@
+# vim: syntax=bash:
+
+# Copyright 2019-2026 MindShare Inc.
+# Written for the Kubuntu Focus by
+#   Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
 # This code is designed to be source by runUnitTests.
+
 ## BEGIN Scrub beginning and trailing whitespace
 # Works like sed 's/^\s\+//' <<< "$*" | sed 's/\s\+//';
 _echoScrubStrFn () { xargs <<< "$*"; }
@@ -8,25 +14,42 @@ _echoFormatFn   () { printf '  %-4.4s : %-14.14s %-2.2s %-14.14s ' "$@"; }
 # Common symbols and functions for kfocus bash scripts
 # Can be used with scripts that use set -u and set -e
 #
-# STRINGS
-#   _cm2KdiagExe     : Kdialog command string; '' if not found
-#   _cm2IsTty        : 'y' or 'n' if this is a tty session
+# STRINGS AND LISTS
+#   _cm2Arg01 (arg1)  : First  argument (DEPRECATED)
+#   _cm2Arg02 (arg2)  : Second argument (DEPRECATED)
 #
-#   _cm2HtmBeginStr  : <html><body>
-#   _cm2HtmEndStr    : </body></html>
-#   _cm2HtmH3Str     : <h3 ...>
-#   _cm2HtmPStr      : <p ...>
+#   _cm2ModelCode     : Cached model code for system like 'm2g6'
+#   _cm2ModelLine     : Matching ModelTable line like 'm2g6|m2g6|M2 GEN 6|...'
+#   _cm2ModelHeadList : Header fields like [ code config_code label ... ]
+#   _cm2ModelTable    : Table of supported models
 #
-#   _cm2Arg01 (arg1)  : First  argument
-#   _cm2Arg02 (arg2)  : Second argument
+#   _cm2KdiagExe      : Kdialog command string; '' if not found
+#   _cm2IsTty         : 'y' or 'n' if this is a tty session
+#
 #   _cm2BlockMsg      : Message for _cm2ErrFn, _cm2SucFn, and _cm2WarnFn
-#   _cm2RmExe         : Explicit /bin/rm path
+#   _cm2CliType       : cli type, (cli|whiptail)
+#   _cm2DmiProductNameFile : DMI Product name file
+#   _cm2DmiProductSkuFile  : DMI SKU file
+#
+#   _cm2HtmBeginStr   : <html><body>
+#   _cm2HtmEndStr     : </body></html>
+#   _cm2HtmH3Str      : <h3 ...>
+#   _cm2HtmPStr       : <p ...>
+
+#   _cm2LogExe        : Logger command; '' if not found
+#   _cm2LogLevelIdx   : Current log level (5 is default, see syslog)
+#   _cm2LogLevelName  : Current log name  (5 = notice,   see syslog)
+#   _cm2LogTag        : Current log prefix, e.g. 'kfocus-pick-gcc'
+#   _cm2PlasmaScriptDir : KFocus Plasma scripts dir
+#   _cm2QdbusExe      : Command for QDBus; '' if not found
+#   _cm2RmExe         : File rm command, '/bin/rm';
+#   _cm2WhiptailExe   : Whiptail command, '' if not found
 #
 # KEY
-# <key>[-][A] <methodName> : <description>
+#   <key>[_][A] <methodName> : <description>
 #   key            = key for test
 #   [_]            = if present, see the key below for additional docs
-#   [A]            = if present, see the test below
+#   [A]            = if present, see the key below for Tests
 #   <methodName>   = Name of method
 #   <description>  = Short description of method
 #
@@ -36,6 +59,7 @@ _echoFormatFn   () { printf '  %-4.4s : %-14.14s %-2.2s %-14.14s ' "$@"; }
 #   02   _cm2EchoIntFn   : Convert and echo integer
 #   03   _cm2SetMsgFn    : Set _cm2BlockMsg variable
 #                        : stderr "== BEGIN : $_cm2BlockMsg"
+#   04a  _cm2ErrStrFn    : stderr "error: $input_str"
 #   04_  _cm2ErrFn       : stderr "== . END : FAIL $_cm2BlockMsg"
 #   05_  _cm2SucFn       : stderr "== . END : OK   $_cm2BlockMsg"
 #   06_  _cm2WarnFn      : stderr "== . END : WARN Could not $_cm2BlockMsg"
@@ -44,28 +68,45 @@ _echoFormatFn   () { printf '  %-4.4s : %-14.14s %-2.2s %-14.14s ' "$@"; }
 #
 #   09   _cm2MkTmpFileFn : Make a tmp file
 #   0a   _cm2MkTmpDirFn  : Make a tmp directory
-#   0b_A _cm2EchoStackFn : Echo -e call stack
+#   0a1  _cm2LsFn        : Cleanly list files with Find
 #
+#   0b_A _cm2EchoStackFn     : Echo -e call stack
 #   0c   _cm2TrapExitFn      : Use as |trap _cm2TrapExitFn            EXIT; |
 #   0d   _cm2TrapErrorFn     : Use as |trap '_cm2TrapErrorFn $LINENO' ERR;  |
 #   0e   _cm2TrapInterruptFn : Use as |trap _cm2TrapInterruptFn     SIGINT; |
-#   1
 #   0f_  _cm2GetEscExeFn     : Get escalation command
-#                           ('sudo|pkexec' or fail if not possible)
+#                            : ('sudo|pkexec' or fail if not possible)
 #   0g_  _cm2AskExitFn       : _cm2AskExitFn 0 'Press return to finish'
 #   0h_  _cm2InterruptFn     : Use as 'trap _cm2InterruptFn SIGINT SIGTERM'
-#                         : (DEPRECATED)
+#                            : (DEPRECATED)
 #
 #   0i_  _cm2ReadPromptYnFn      : CLI prompt for Yes or No with default
 #   0j_  _cm2RunLongCmdFn        : Run sudo command with spinner
+#   0k_  _cm2CalcModelCodeFn     : If unset, calc and set _cm2ModelCode
+#   0l_  _cm2CalcModelLineFn     : If unset, calc and set _cm2ModelLine
+#   0m_  _cm2MakeModelHeadListFn : Creates list column titles from model table header
+#   0n_A _cm2EchoModelStrFn      : Echo the ${_search_key} field for host system
+#   0o_  _cm2ChkDupRunFn         : Check if another process is running the script
+#                                : (deprecated, use flock)
+#   0o0_ _cm2ReinstallPkgsFn     : Reinstall packages always, allow downgrades
+#   0o1_ _cm2SmartInstallPkgsFn  : Install, reinstall, upgrade pkgs unattended
+#   0p_A _cm2ChkInstalledPkgFn   : Quickly check if a package is installed
+#   0q_A _cm2ChkPkgFn            : Quickly check if a package is available
 #   0r_A _cm2EchoInstalledVersFn : Echo installed version of package
+#
 #   0s_A _cm2AssignExeVarsFn     : Assign exe vars to qualified, tested paths
 #   0t_  _cm2StripTagsFn         : Remove HTML tags from string
+#   0t1_ _cm2SetIsTtyFn          : Override and set _cm2IsTtty for tests
 #   0v_A _cm2PromptUserFn        : Prompt user through GUI or term as available
 #   0w_  _cm2EscapeRxCharsFn     : Escape regex chars for use in grep -E '...'
 #   0x_A _cm2TestVersFn          : Compare version strings w/dots or dashes
 #   0y_A _cm2SetLogTagFn, _cm2SetLogLevel, _cm2LogFn
+#
+#   10   _cm2CatStripEchoFn    : Cat file with spaces and cr removed
+#   11   _cm2SetCliTypeFn      : Set _cm2CliType to 'cli' or 'whiptail'
+#   12   _cm2RunPlasmaScriptFn : Run a plasmashell script
 
+#####
 # See CONTRIBUTING.md, Header Section for function doc template
 # 04_
 ## BEGIN _cm2ErrFn {
@@ -191,7 +232,7 @@ _audit_cm2EchoStackFn () {
 # 0k_
 ## BEGIN _cm2CalcModelCodeFn {
 # Summary   : _cm2CalcModelCode [ <_do_quiet_flag> ];
-# Purpose   : Set _cm2ModelCode if needed
+# Purpose   : Calc system model code and set _cm2ModelCode
 # Example   : _cm2CalcModelCode y;
 # Arguments : $1 = _do_quiet_flag
 # Globals   : Package symbols _cm2ModelCode, _cm2DmiProductNameFile, _cm2DmiProductSkuFile
@@ -224,7 +265,7 @@ _audit_cm2EchoStackFn () {
 # 0n_A
 ## BEGIN _cm2EchoModelStrFn {
 # Summary   : _cm2EchoModelStrFn <_search_key>
-# Purpose   : Return the ${_search_key} value for host system model
+# Purpose   : Echo the ${_search_key} field for host system
 # Example   : _cm2EchoModelStrFn 'is_nv_sys'
 # Arguments : $1 = field_key
 #           : See header in _cm2ModelTable for a list of fields.
@@ -350,6 +391,39 @@ _audit_cm2EchoModelStrFn () {
 #   process, create a lock file (see "flock" in kfocus-pstate).
 ## . END _cm2ChkDupRunFn }
 
+# 0o0_
+## BEGIN _cm2ReinstallPkgsFn {
+# Summary   : _cm2ReinstallPkgsFn <package-list>
+# Purpose   : Reinstall all packages listed, always.
+#   Retain configuration files only if changed.
+## . END _cm2ReinstallPkgsFn }
+
+# 0o1_
+## BEGIN _cm2SmartInstallPkgsFn {
+# Summary   : _cm2SmartInstallPkgsFn <package-list>
+# Purpose   : Install, reinstall, upgrade, downgrade unattended.
+#   For each package in <package-list>:
+#     * SAME: Install if not currently installed, mark manual
+#     * SAME: If installed, only reinstall IFF there is an upgrade
+#             or downgrade available.
+#     * SAME: Will remove broken dependency packages if required
+#     * SAME: Work with downgrades forced by pinning.
+#     * SAME: Pull in changed dependencies and recommends.
+#     * BETTER: Keep any (auto|manual) mark on upgrades; install always
+#       sets manual.
+#     * SAME: Leaves the any config file as-is IFF it has changed,
+#       otherwise it updates it.
+#       (This is the same as install with the options of
+#        Dpkg::Options of --force-confdef and --force-confold.)
+#     * SAME: Does not attempt interactive control
+#         (same as install with the 'noninteractive' setting)
+# Example   : _cm2SmartInstallPkgsFn dkms
+# Arguments : "${@}" - list of package to install or upgrade
+# Globals   : DEBIAN_FRONTEND
+# Outputs   : Normal apt-get minimal output
+# Returns   : The result of apt-get call
+## . END _cm2SmartInstallPkgsFn }
+
 # 0p_A
 ## BEGIN _cm2ChkInstalledPkgFn {
 # Summary   : _cm2ChkInstalledPkgFn <_pkg_name>;
@@ -400,7 +474,7 @@ _audit_cm2ChkInstalledPkgFn () {
 # 0q_A
 ## BEGIN _cm2ChkPkgFn {
 # Summary   : _cm2ChkPkgFn <_pkg_str>;
-# Purpose   : Quickly check if a package matching _pkg_str is available
+# Purpose   : Quickly check if a package is available
 # Example   : _cm2ChkPkgFn kfocus-nvidia;
 # Arguments : $1 = _pkg_str
 # Globals   : Requires apt-cache command
@@ -461,7 +535,7 @@ _audit_cm2ChkPkgFn () {
 }
 ## . END _audit_cm2ChkPkgFn }
 
-# 0s_
+# 0s_A
 ## BEGIN _cm2AssignExeVarsFn {
 # Summary   : _cm2AssignExeVarsFn '<name>|<command>[|<type>|<required>', ...
 # Purpose   : For all in the arg list, assign value to global variable <name>
