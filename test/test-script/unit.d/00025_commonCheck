@@ -1100,6 +1100,23 @@ _audit_cm2SyslogFn () {
 }
 ## . END _audit_cm2SyslogFn }
 
+## BEGIN _cm2PrintTableFn {
+# Summary   : _cm2PrintTableFn <table_name> <header_list_str> <disp_table...>
+# Purpose   : Display a table to the user.
+# Example   :
+#   _printTableFn 'Mounted directories:' 'Location|Type|Source' \
+#     '...|...|...' '...|...|...'
+# Arguments :
+#   <table_name>      : Name to print above the table.
+#   <header_list_str> : Pipe-separated string containing strings to display in
+#     the header row
+#   <disp_table...>   : Remaining arguments are pipe-separated strings that make
+#     up the rest of the table
+# Globals   : none
+# Outputs   : none
+# Returns   : 1 on critical error
+## . END _cm2PrintTableFn }
+
 _runTestFn () {
   declare _ret_int _audit_fn_list _loop_idx _loop_fn_str;
 

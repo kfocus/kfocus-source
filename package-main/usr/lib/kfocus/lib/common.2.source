@@ -818,6 +818,79 @@ _cm2RunPlasmaScriptFn () {
   fi
 }
 
+_cm2EchoTableFn () {
+  declare _table_name _header_list_str _disp_table _header_list \
+    _header_len_list _item_str _field_size_list _printf_row_str \
+    _printf_row_len _field_size_list_idx _header_len_str _bit_list \
+    _line _idx _cell_len;
+
+  # Process arguments
+  _table_name="${1:-}";
+  _header_list_str="${2:-}";
+  shift 2;
+  _disp_table=("$@");
+  if [ -z "${_table_name}" ] \
+    || [ -z "${_header_list_str}" ] \
+    || [ "${#_disp_table}" = '0' ] \
+    || [ -z "${_disp_table[0]:-}" ]; then
+    _cm2ErrStrFn 'Missing table or header data!';
+    return 1;
+  fi
+
+  # Calculate the field widths for the table. Each field must be long enough
+  #   to display the length of its longest element. The length of the headers
+  #   must be taken into account.
+  IFS='|' read -r -a _header_list <<< "${_header_list_str}";
+  _header_len_list=();
+  for _item_str in "${_header_list[@]}"; do
+    _header_len_list+=("${#_item_str}");
+  done
+  _header_len_str="$(printf '%s|' "${_header_len_list[@]}" | head -c-1)";
+
+  # Calculate the field width list
+  ## Begin Loop through fields and calculate the maximum width {
+  IFS='|' read -r -a _field_size_list <<< "${_header_len_str}";
+  for _line in "${_disp_table[@]}"; do
+    IFS='|' read -r -a _bit_list <<< "${_line}";
+    for _idx in "${!_bit_list[@]}"; do
+      if ((_idx >= ${#_field_size_list[@]})); then
+        break;
+      fi
+      _cell_len="${#_bit_list[_idx]}";
+      if ((_cell_len > _field_size_list[_idx])); then
+        _field_size_list[_idx]="${_cell_len}";
+      fi
+    done
+  done
+  ## . End Loop through fields and calculate the maximum width }
+
+  # Calculate the table row template for use with printf
+  _printf_row_str='';
+  ((_printf_row_len = 0)) || true;
+  for _field_size_list_idx in "${!_field_size_list[@]}"; do
+    if [ "${_field_size_list_idx}" != '0' ]; then
+      _printf_row_str+=' | ';
+      ((_printf_row_len += 3)) || true;
+    fi
+    _printf_row_str+="%-${_field_size_list[_field_size_list_idx]}s";
+    ((_printf_row_len += _field_size_list[_field_size_list_idx])) || true;
+  done
+  _printf_row_str+='\n';
+
+  # Echo table name, header, separator
+  echo "${_table_name}";
+  # shellcheck disable=SC2059
+  printf "${_printf_row_str}" "${_header_list[@]}";
+  printf "%${_printf_row_len}s\n" '' | tr ' ' '=';
+
+  # Print table rows
+  for _line in "${_disp_table[@]}"; do
+    IFS='|' read -r -a _bit_list <<< "${_line}";
+    # shellcheck disable=SC2059
+    printf "${_printf_row_str}" "${_bit_list[@]}";
+  done
+}
+
 # Regression tests only
 _cm2SetIsTtyFn () {
   if [[ "${1:-}" =~ ^[Yy] ]]; then

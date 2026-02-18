@@ -55,37 +55,9 @@ _echoDebugFn () {
 }
 ## . END _echoDebugFn }
 
-## BEGIN _getDataPartPathFn {
-_getDataPartPathFn () {
-  declare _line _mount_path _return_path _found_avail_path _part_idx;
-
-  _return_path='/srv/data'
-  _part_idx='1';
-
-  while true; do
-    _found_avail_path='y';
-    while read -r _line; do
-      _mount_path="$(awk '{print $2}' <<< "${_line}")";
-      if [ "${_mount_path}" = "${_return_path}" ]; then
-        _found_avail_path='n';
-        break;
-      fi
-    done < /etc/fstab;
-
-    if [ "${_found_avail_path}" = 'y' ]; then
-      break;
-    fi
-    (( _part_idx++ )) || true;
-    _return_path="/srv/data${_part_idx}";
-  done
-
-  echo "${_return_path}";
-}
-## . END _getDataPartPathFn }
-
 ## BEGIN _mainFn {
 _mainFn () {
-  declare _target_mount_type _crypt_passphrase_str _part_tgt _crypt_tgt \
+  declare _crypt_passphrase_str _part_tgt _crypt_tgt \
     _key_tgt _mount_dev _mount_src _fstab_uuid_str _luks_dump_str \
     _key_capacity _key_size_list _key_size _key_size_idx _target_mount_point \
     _part_uuid _disk_tgt _part_num _part_label;
@@ -93,15 +65,15 @@ _mainFn () {
   _key_size=0;
 
   # Determine useful paths and names
-  _target_mount_type="${1:-}";
-  [ -z "${_target_mount_type}" ] && exit 1;
+  _target_mount_point="${1:-}";
+  [ -z "${_target_mount_point}" ] && exit 1;
   _part_tgt="${2:-}";
   [ -z "${_part_tgt}" ] && exit 1;
   _crypt_passphrase_str="${3:-}";
   _part_uuid="$(blkid -s UUID -o value "${_part_tgt}")";
   [ -z "${_part_uuid}" ] && exit 1;
   _crypt_tgt="luks-${_part_uuid}";
-  _key_tgt="luks-key-${_part_uuid}";
+  _key_tgt="/root/.luks-key-all";
     if [[ "${_part_tgt}" =~ ^/dev/(sd[a-z]|vd[a-z]|xvd[a-z]) ]]; then
     _disk_tgt="/dev/${BASH_REMATCH[1]}";
   else
@@ -113,7 +85,6 @@ _mainFn () {
   _echoDebugFn   "_part_tgt  : ${_part_tgt}";
   if [ -n "${_crypt_passphrase_str}" ]; then
     _echoDebugFn "_crypt_tgt : ${_crypt_tgt}";
-    _echoDebugFn "_key_tgt   : ${_key_tgt}";
   fi
 
   if [ -n "${_crypt_passphrase_str}" ]; then
@@ -147,20 +118,19 @@ _mainFn () {
     echo "${_crypt_passphrase_str}" \
       | "${_cryptsetupExe}" luksOpen "${_part_tgt}" "${_crypt_tgt}" \
       || exit 1;
-    dd if=/dev/urandom of="/root/.${_key_tgt}" bs=1024 count=4 \
-      || exit 1;
-    echo "${_crypt_passphrase_str}" \
-      | "${_cryptsetupExe}" luksAddKey "${_part_tgt}" "/root/.${_key_tgt}" \
-      || exit 3;
+    if ! [ -f "${_key_tgt}" ]; then
+      install -m600 /dev/null "${_key_tgt}" || exit 1;
+      dd if=/dev/urandom of="${_key_tgt}" bs=1024 count=4 || exit 1;
+      chmod 0400 "${_key_tgt}" || exit 1;
+    fi
+    if ! "${_cryptsetupExe}" luksOpen --test-passphrase --key-file \
+      "${_key_tgt}"; then
+      echo "${_crypt_passphrase_str}" \
+        | "${_cryptsetupExe}" luksAddKey "${_part_tgt}" "${_key_tgt}" \
+        || exit 3;
+    fi
   else
     _mount_dev="${_part_tgt}";
-  fi
-
-  # Determine target mount point
-  if [ "${_target_mount_type}" = 'home' ]; then
-    _target_mount_point='/home';
-  else # "${_target_mount_point}" = 'data'
-    _target_mount_point="$(_getDataPartPathFn)";
   fi
 
   # Label the partition
@@ -172,7 +142,7 @@ _mainFn () {
   _fstab_uuid_str="UUID=${_part_uuid}";
   if [ -n "${_crypt_passphrase_str}" ]; then
     _mount_src="${_mount_dev}";
-    echo "${_crypt_tgt} ${_fstab_uuid_str} /root/.${_key_tgt} luks,discard" \
+    echo "${_crypt_tgt} ${_fstab_uuid_str} ${_key_tgt} luks,discard" \
       >> /etc/crypttab || exit 3;
   else
     _mount_src="${_fstab_uuid_str}";
@@ -180,7 +150,7 @@ _mainFn () {
   echo -e "# KFOCUS ${_target_mount_point} is on ${_mount_dev}\n${_mount_src} ${_target_mount_point} ext4 defaults 0 2" >> /etc/fstab || exit 3;
 
   # Move the home directory if needed
-  if [ "${_target_mount_type}" = 'home' ]; then
+  if [ "${_target_mount_point}" = '/home' ]; then
     # Unmount in preparation to move
     umount '/home' || exit 3;
 
@@ -210,7 +180,7 @@ declare _binName _binDir _baseDir _baseName _debugMode _assignList \
 _debugMode='y';
 ## . END Declare and assign global vars }
 
-## BEGIN Run mainFn when script is NOT sourced {
+## BEGIN Run _mainFn when script is NOT sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binName="$(  readlink -f "$0"       )" || exit 101;
   _binDir="$(   dirname  "${_binName}" )" || exit 101;
@@ -231,4 +201,4 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   _mainFn "$@";
 fi
-## . END Run mainFn when script is NOT sourced }
+## . END Run _mainFn when script is NOT sourced }

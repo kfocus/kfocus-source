@@ -1111,133 +1111,6 @@ _mountFstabEntriesFn () {
 }
 ## . END _mountFstabEntriesFn }
 
-## BEGIN _getFieldWidthsStrFn {
-# Summary   : _getFieldWidthsStrFn <header_len_str> <disp_table...>
-# Purpose   : Determines the width each column in a table needs to be
-# Example   : _getFieldWidthsStrFn '5|8' 'abc|def' 'some_string|s'
-# Arguments :
-#   <header_len_str> : Pipe-delimited string indicating the length of each cell
-#     in the table's header row
-#   <disp_table...>  : Remaining arguments are pipe-separated strings that make
-#     up the rest of the table
-# Globals   : none
-# Outputs   : Pipe-separated string containing field widths
-# Returns   : 1 on critical error
-#
-_getFieldWidthsStrFn () {
-  declare _header_len_str _disp_table _field_len_list _bit_list \
-    _line _idx _cell_len;
-
-  # Process arguments
-  _header_len_str="${1:-}";
-  shift 1;
-  _disp_table=("$@");
-  if [ -z "${_header_len_str}" ] \
-    || [ "${#_disp_table}" = '0' ] \
-    || [ -z "${_disp_table[0]}" ]; then
-    _cm2ErrStrFn 'Missing table or header data!';
-    return 1;
-  fi
-
-  ## Begin Loop through fields and calculate the maximum width {
-  IFS='|' read -r -a _field_len_list <<< "${_header_len_str}";
-  for _line in "${_disp_table[@]}"; do
-    IFS='|' read -r -a _bit_list <<< "${_line}";
-    for _idx in "${!_bit_list[@]}"; do
-      if ((_idx >= ${#_field_len_list[@]})); then
-        break;
-      fi
-      _cell_len="${#_bit_list[_idx]}";
-      if ((_cell_len > _field_len_list[_idx])); then
-        _field_len_list[_idx]="${_cell_len}";
-      fi
-    done
-  done
-  ## . End Loop through fields and calculate the maximum width }
-
-  # Echo pipe-delimited list of field lengths, trimming off the final pipe
-  printf '%s|' "${_field_len_list[@]}" | head -c-1;
-}
-## . END _getFieldWidthsStrFn }
-
-## BEGIN _printTableFn {
-# Summary   : _printTableFn <table_name> <header_list_str> <disp_table...>
-# Purpose   : Display a table to the user.
-# Example   :
-#   _printTableFn 'Mounted directories:' 'Location|Type|Source' \
-#     '...|...|...' '...|...|...'
-# Arguments :
-#   <table_name>      : Name to print above the table.
-#   <header_list_str> : Pipe-separated string containing strings to display in
-#     the header row
-#   <disp_table...>   : Remaining arguments are pipe-separated strings that make
-#     up the rest of the table
-# Globals   : none
-# Outputs   : none
-# Returns   : 1 on critical error
-#
-_printTableFn () {
-  declare _table_name _header_list_str _disp_table _header_list \
-    _header_len_list _item_str _field_size_list _printf_row_str \
-    _printf_row_len _field_size_list_idx _header_len_str _bit_list;
-
-  # Process arguments
-  _table_name="${1:-}";
-  _header_list_str="${2:-}";
-  shift 2;
-  _disp_table=("$@");
-  if [ -z "${_table_name}" ] \
-    || [ -z "${_header_list_str}" ] \
-    || [ "${#_disp_table}" = '0' ] \
-    || [ -z "${_disp_table[0]:-}" ]; then
-    _cm2ErrStrFn 'Missing table or header data!';
-    return 1;
-  fi
-
-  # Calculate the field widths for the table. Each field must be long enough
-  #   to display the length of its longest element. The length of the headers
-  #   must be taken into account.
-  IFS='|' read -r -a _header_list <<< "${_header_list_str}";
-  _header_len_list=();
-  for _item_str in "${_header_list[@]}"; do
-    _header_len_list+=("${#_item_str}");
-  done
-  _header_len_str="$(printf '%s|' "${_header_len_list[@]}" | head -c-1)";
-
-  # Calculate the field width list
-  IFS='|' read -r -a _field_size_list < <(_getFieldWidthsStrFn \
-    "${_header_len_str}" "${_disp_table[@]}");
-
-  # Calculate the table row template for use with printf
-  _printf_row_str='';
-  ((_printf_row_len = 0)) || true;
-  for _field_size_list_idx in "${!_field_size_list[@]}"; do
-    if [ "${_field_size_list_idx}" != '0' ]; then
-      _printf_row_str+=' | ';
-      ((_printf_row_len += 3)) || true;
-    fi
-    _printf_row_str+="%-${_field_size_list[_field_size_list_idx]}s";
-    ((_printf_row_len += _field_size_list[_field_size_list_idx])) || true;
-  done
-  _printf_row_str+='\n';
-
-  # Print table name, header, separator
-  _cm2EchoFn "${_table_name}";
-  # shellcheck disable=SC2059
-  printf "${_printf_row_str}" "${_header_list[@]}" 1>&2;
-  printf "%${_printf_row_len}s\n" '' | tr ' ' '='  1>&2;
-
-  # Print table rows
-  for _line in "${_disp_table[@]}"; do
-    IFS='|' read -r -a _bit_list <<< "${_line}";
-    # shellcheck disable=SC2059
-    printf "${_printf_row_str}" "${_bit_list[@]}" 1>&2;
-  done
-
-  _cm2EchoFn;
-}
-## . END _printTableFn }
-
 ## BEGIN _mountSystemDisksFn {
 # Summary   : _mountSystemDisksFn
 # Purpose   : Mounts the partitions that form a KFocus installation to /mnt.
@@ -1377,12 +1250,14 @@ _chrootBindFn () {
 #
 _displayMountSummaryFn () {
   if [ "${#_chosenCryptList[@]}" != '0' ]; then
-    _printTableFn 'Decrypted volumes:' 'Volume|Source Device' \
-      "${_chosenCryptList[@]}" || return 1;
+    _cm2EchoFn "$(_cm2EchoTableFn 'Decrypted volumes:' \
+      'Volume|Source Device' "${_chosenCryptList[@]}")" || return 1;
+    _cm2EchoFn;
   fi
   if [ "${#_chosenMountList[@]}" != '0' ]; then
-    _printTableFn 'Mounted directories:' 'Location|Type|Source' \
-      "${_chosenMountList[@]}" || return 1;
+    _cm2EchoFn "$(_cm2EchoTableFn 'Mounted directories:' \
+      'Location|Type|Source' "${_chosenMountList[@]}")" || return 1;
+    _cm2EchoFn;
   fi
 }
 ## . END _displayMountSummaryFn }
