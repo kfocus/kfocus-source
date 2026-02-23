@@ -23,6 +23,7 @@
 # shellcheck source=../lib/common.2.source
 # shellcheck source=../lib/rollback.2.source
 #
+# TODO: Consider -o pipefail
 set -u;
 
 ## BEGIN INITIALIZATION AND EXIT FUNCTIONS ==================================
@@ -921,7 +922,7 @@ _defragmentFn () {
       _file_size="$(du -b "${_current_file}" | cut -f1)";
       (( _unreachable_size = _btdu_val_list[_report_idx] * 1024 ));
 
-      if [ "$(bc -l <<< "scale=2; (${_unreachable_size} / ${_file_size}) > 0.15")" \
+      if [ "$( "${_bcExe}" -l <<< "scale=2; (${_unreachable_size} / ${_file_size}) > 0.15")" \
         = '1' ]; then
         _clean_file_list+=( "${_current_file}" );
       fi
@@ -1661,7 +1662,7 @@ _promptAllUsersFn () {
     sudo -u "${_user_name}" \
       DISPLAY="${_xserver_id}" \
       DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$(id -u "${_user_name}")/bus" \
-      qdbus org.kfocus.FocusRxDispatch.launcher / "${_mode}" "${_msg}";
+      "${_qdbusExe}" org.kfocus.FocusRxDispatch.launcher / "${_mode}" "${_msg}";
   done < <(_cm2LsFn '/tmp/.X11-unix/' | sed 's?X??');
 }
 ## . END private _promptAllUsersFn }
@@ -1909,7 +1910,7 @@ _sendLowDiskMsgFn () {
   _main_usage_report="$(_getMainUsageReportFn)" || return 1;
   _main_device_size_int="$(grep $'Device size:\t' <<< "${_main_usage_report}" \
     | awk '{ print $3 }')";
-  _main_unalloc_pct="$(bc -l <<< "scale=2; ${_main_unalloc_int} / ${_main_device_size_int} * 100" \
+  _main_unalloc_pct="$("${_bcExe}" -l <<< "scale=2; ${_main_unalloc_int} / ${_main_device_size_int} * 100" \
     | cut -d'.' -f1)";
   if [ -z "${_home_part}" ] \
     || [ "${_home_part}" = "${_main_part}" ]; then
@@ -2012,17 +2013,17 @@ _writeMetadbFn () {
   _err_msg='Cannot write to metadb: ';
 
   if ! [ -d "${_rb2MainDir}" ]; then
-    _wrapLogFn 'err' "${_err_msg} No main dir |${_rb2MainDir}|";
+    _logWrapFn 'err' "${_err_msg} No main dir |${_rb2MainDir}|";
     return 2;
   fi
 
   if [ -z "${_group_str}" ]; then
-    _wrapLogFn 'err' "${_err_msg} No group string provided.";
+    _logWrapFn 'err' "${_err_msg} No group string provided.";
     return 2;
   fi
 
   if [ -z "${_key_str}" ]; then
-    _wrapLogFn 'err' "${_err_msg} No key string provided.";
+    _logWrapFn 'err' "${_err_msg} No key string provided.";
     return 2;
   fi
 
@@ -3392,6 +3393,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _snapshotMetaDb="${_rb2MainDir}/kfocus-rollback-snapshot-metadb";
 
   _assignList=(
+    '_qdbusExe|/usr/bin/qdbus'
+    '_bcExe|/usr/bin/bc'
     '_btrfsExe|/usr/bin/btrfs'
     '_btrfsBalanceExe|/usr/bin/btrfs-balance-least-used'
     '_btduExe|/usr/bin/btdu'
