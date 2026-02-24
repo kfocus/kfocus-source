@@ -878,7 +878,9 @@ _cm2EchoTableFn () {
   _printf_row_str+='\n';
 
   # Echo table name, header, separator
-  echo "${_table_name}";
+  if [ "${_table_name}" != 'NO_NAME' ]; then
+    echo "${_table_name}";
+  fi
   # shellcheck disable=SC2059
   printf "${_printf_row_str}" "${_header_list[@]}";
   printf "%${_printf_row_len}s\n" '' | tr ' ' '=';

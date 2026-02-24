@@ -89,7 +89,8 @@ _mainFn () {
 
   if [ -n "${_crypt_passphrase_str}" ]; then
     # Make sure there's room for a new key
-    _luks_dump_str="$(LC_ALL='C' cryptsetup luksDump "${_part_tgt}")";
+    _luks_dump_str="$(LC_ALL='C' "${_cryptsetupExe}" luksDump \
+      "${_part_tgt}")";
     _key_capacity="$(awk '/Keyslots area/{ print $3 }' \
       <<< "${_luks_dump_str}")";
     readarray -t _key_size_list < <(
@@ -123,8 +124,8 @@ _mainFn () {
       dd if=/dev/urandom of="${_key_tgt}" bs=1024 count=4 || exit 1;
       chmod 0400 "${_key_tgt}" || exit 1;
     fi
-    if ! "${_cryptsetupExe}" luksOpen --test-passphrase --key-file \
-      "${_key_tgt}"; then
+    if ! "${_cryptsetupExe}" luksOpen --test-passphrase \
+      --key-file="${_key_tgt}" "${_part_tgt}"; then
       echo "${_crypt_passphrase_str}" \
         | "${_cryptsetupExe}" luksAddKey "${_part_tgt}" "${_key_tgt}" \
         || exit 3;
@@ -135,8 +136,8 @@ _mainFn () {
 
   # Label the partition
   _part_label="kfocus_$(basename "${_target_mount_point}")";
-  sfdisk --part-label "${_disk_tgt}" "${_part_num}" "${_part_label}" \
-    || exit 1;
+  "${_sfdiskExe}" --part-label "${_disk_tgt}" "${_part_num}" \
+    "${_part_label}" || exit 1;
 
   # Configure the disk to mount at boot
   _fstab_uuid_str="UUID=${_part_uuid}";
@@ -152,7 +153,9 @@ _mainFn () {
   # Move the home directory if needed
   if [ "${_target_mount_point}" = '/home' ]; then
     # Unmount in preparation to move
-    umount '/home' || exit 3;
+    if "${_mountpointExe}" '/home' >/dev/null; then
+      "${_umountExe}" '/home' || exit 3;
+    fi
 
     # Delete the unneeded home subvolume
     # # Commented out because it makes the home dir conversion hard to revert.
@@ -163,19 +166,19 @@ _mainFn () {
     # Re-parse fstab
     systemctl daemon-reload;
     # Remount /home
-    mount '/home' || exit 3;
+    "${_mountExe}" '/home' || exit 3;
 
   # Otherwise make sure the data partition actually exists
   else
     mkdir -p "${_target_mount_point}";
-    mount "${_target_mount_point}" || exit 3;
+    "${_mountExe}" "${_target_mount_point}" || exit 3;
   fi
 }
 ## . END _mainFn }
 
 ## BEGIN Declare and assign global vars {
 declare _binName _binDir _baseDir _baseName _debugMode _assignList \
-  _btrfsExe _cryptsetupExe;
+  _btrfsExe _cryptsetupExe _sfdiskExe _mountExe _umountExe _mountpointExe;
 
 _debugMode='y';
 ## . END Declare and assign global vars }
@@ -193,6 +196,10 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _assignList=(
     '_btrfsExe|/usr/bin/btrfs'
     '_cryptsetupExe|/usr/sbin/cryptsetup'
+    '_sfdiskExe|/usr/sbin/sfdisk'
+    '_mountExe|/usr/bin/mount'
+    '_umountExe|/usr/bin/umount'
+    '_mountpointExe|/usr/bin/mountpoint'
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2WarnStrFn 'ABORT: Required commands not found';

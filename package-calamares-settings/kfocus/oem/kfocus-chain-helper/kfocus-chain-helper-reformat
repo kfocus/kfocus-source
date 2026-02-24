@@ -81,7 +81,7 @@ _mainFn () {
   fi
   [[ "${_part_tgt}" =~ ^/dev/.*[^0-9]([0-9]+) ]] || exit 1;
   _part_num="${BASH_REMATCH[1]}";
-  _default_str="$(xxd -r -p <<< '6b7562756e74750a')";
+  _default_str="$("${_xxdExe}" -r -p <<< '6b7562756e74750a')";
 
   _echoDebugFn   "_disk_tgt  : ${_disk_tgt}";
   _echoDebugFn   "_part_tgt  : ${_part_tgt}";
@@ -91,7 +91,8 @@ _mainFn () {
 
   # Partition the disk if needed
   if [ "${_format_mode}" = 'format_disk' ]; then
-    echo -e 'label:gpt\n- - L -' | sfdisk -w always "${_disk_tgt}" || exit 2;
+    echo -e 'label:gpt\n- - L -' \
+      | "${_sfdiskExe}" -w always "${_disk_tgt}" || exit 2;
   fi
 
   # Format the partition
@@ -118,8 +119,8 @@ _mainFn () {
 
   # Label the partition
   _part_label="kfocus_$(basename "${_target_mount_point}")";
-  sfdisk --part-label "${_disk_tgt}" "${_part_num}" "${_part_label}" \
-    || exit 1;
+  "${_sfdiskExe}" --part-label "${_disk_tgt}" "${_part_num}" \
+    "${_part_label}" || exit 1;
 
   # Configure the disk to mount at boot
   _fstab_uuid_str="UUID=${_part_uuid}";
@@ -135,8 +136,8 @@ _mainFn () {
   # Move the home directory if needed
   if [ "${_target_mount_point}" = '/home' ]; then
     # Unmount in preparation to move
-    if mountpoint '/home' >/dev/null; then
-      umount '/home' || exit 2;
+    if "${_mountpointExe}" '/home' >/dev/null; then
+      "${_umountExe}" '/home' || exit 2;
     fi
 
     # Delete the unneeded home subvolume
@@ -148,14 +149,14 @@ _mainFn () {
     # Re-parse fstab
     systemctl daemon-reload;
     # Remount /home
-    mount '/home' || exit 2;
+    "${_mountExe}" '/home' || exit 2;
     # Get rid of a useless directory
     rmdir '/home/lost+found' || true;
 
   # Otherwise make sure the data partition actually exists
   else
     mkdir -p "${_target_mount_point}";
-    mount "${_target_mount_point}" || exit 2;
+    "${_mountExe}" "${_target_mount_point}" || exit 2;
     # Get rid of a useless directory
     rmdir "${_target_mount_point}/lost+found" || true;
   fi
@@ -164,7 +165,8 @@ _mainFn () {
 
 ## BEGIN Declare and assign global vars {
 declare _binName _binDir _baseDir _baseName _debugMode _assignList \
-  _cryptsetupExe _sfdiskExe _ext4FormatExe _btrfsExe;
+  _cryptsetupExe _sfdiskExe _ext4FormatExe _btrfsExe _xxdExe _mountpointExe \
+  _mountExe _umountExe;
 
 _debugMode='y';
 ## . END Declare and assign global vars }
@@ -183,7 +185,11 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     '_btrfsExe|/usr/bin/btrfs'
     '_cryptsetupExe|/usr/sbin/cryptsetup'
     '_ext4FormatExe|/usr/sbin/mkfs.ext4'
+    "_xxdExe|/usr/bin/xxd"
     '_sfdiskExe|/usr/sbin/sfdisk'
+    '_mountpointExe|/usr/bin/mountpoint'
+    '_mountExe|/usr/bin/mount'
+    '_umountExe|/usr/bin/umount'
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2WarnStrFn 'ABORT: Required commands not found';
