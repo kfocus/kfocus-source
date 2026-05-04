@@ -10,6 +10,10 @@ public:
     explicit BackgroundScreen(QWidget *parent = nullptr);
     virtual ~BackgroundScreen();
     void activateBackground();
+
+private:
+    void paintEvent(QPaintEvent *event) override;
+    QImage background;
 };
 
 #endif // BACKGROUNDSCREEN_H

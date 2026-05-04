@@ -2,31 +2,34 @@ Source:              kfocus-calamares-settings
 Section:             devel
 Priority:            optional
 Maintainer:          Kubuntu Focus Team <support@kfocus.org>
-Standards-Version:   4.6.2
+Standards-Version:   4.7.3
 Rules-Requires-Root: no
-Build-Depends:       calamares (>= 3.3.5),
+Build-Depends:       debhelper-compat (= 13),
+                     dh-builtusing,
                      cmake,
-                     debhelper-compat (= 13),
                      extra-cmake-modules,
+                     fakeroot,
                      intltool,
-                     libkf5coreaddons-dev,
-                     libqt5svg5-dev,
+                     libcalamares-dev (>= 3.3.13-0ubuntu4),
+                     libkf6coreaddons-dev,
+                     libqt6svg6-dev,
                      libyaml-cpp-dev,
-                     qtbase5-dev,
-                     qtdeclarative5-dev,
-                     qttools5-dev,
-                     qttools5-dev-tools
+                     python3,
+                     qt6-base-dev,
+                     qt6-declarative-dev,
+                     qt6-l10n-tools,
+                     qt6-tools-dev,
+                     qt6-tools-dev-tools
 
 Package: kfocus-calamares-settings
 Architecture: any
-Depends: calamares (>= 3.2.14~),
+Depends: calamares (>= 3.3.14~),
          cryptsetup,
          kdialog,
          keyutils,
+         libglib2.0-bin,
          python3,
          python3-distro,
-         qml-module-qtquick-window2,
-         qml-module-qtquick2,
          squashfs-tools,
          sudo,
          ${misc:Depends},

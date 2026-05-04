@@ -25,13 +25,13 @@ Depends:      ${misc:Depends}, ${shlibs:Depends},
               kfocus-settings,
               kfocus-wallpapers,
               libspa-0.2-libcamera,
-              linux-kfocus-24.04-kfocus,
-              linux-tools-kfocus-24.04-kfocus,
               pipewire-alsa,
               policykit-1,
               python3-pip,
               rsync (>= 3.1.2),
               zenity
+#              linux-kfocus-24.04-kfocus,
+#              linux-tools-kfocus-24.04-kfocus,
 Recommends:   backintime-qt,
               kfocus-meta,
               kfocus-power-bin,
@@ -42,8 +42,6 @@ Recommends:   backintime-qt,
               vlc,
               xserver-xorg-input-evdev,
               xserver-xorg-input-synaptics
-Conflicts:    kfocus-rest (<< ${binary:Version})
-Replaces:     kfocus-rest (<< ${binary:Version})
 Description:  Kubuntu Focus System Integration
  This package provides hardware integration and optimizations
  for Kubuntu Focus computers. This includes Kubuntu Focus
@@ -86,7 +84,6 @@ Recommends:   unattended-upgrades,
               htop,
               hwinfo,
               inkscape,
-              jetbrains-toolbox,
               google-chrome-stable,
               kdenlive,
               kdiff3,
@@ -159,11 +156,3 @@ Depends:      ${misc:Depends},
 Description:  Kubuntu Focus Common Libraries
  This package provides the common libraries and custom menu
  for Kubuntu Focus Tools.
-
-Package:      kfocus-power-scripts
-Architecture: all
-Depends:      ${misc:Depends}, ${shlibs:Depends},
-              kfocus-power-bin
-Description:  Transitional Dummy Package for kfocus-power-bin
- This is a transitional dummy package.
- It can be safely removed.

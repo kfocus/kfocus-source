@@ -20,7 +20,7 @@ Presentation
             width: parent.masterWidth * 0.95
             fillMode: Image.PreserveAspectFit
             smooth: true
-            source: "01_Easy_Install.png"
+            source: "01-welcome-to-kubuntu.png"
         }
     }
     Slide {
@@ -32,7 +32,7 @@ Presentation
             width: parent.masterWidth * 0.95
             fillMode: Image.PreserveAspectFit
             smooth: true
-            source: "02_Customizable_Desktop.png"
+            source: "02-kubuntu-lts.png"
         }
     }
     Slide {
@@ -44,7 +44,7 @@ Presentation
             width: parent.masterWidth * 0.95
             fillMode: Image.PreserveAspectFit
             smooth: true
-            source: "03_Built-in_Applications.png"
+            source: "03-kde.png"
         }
     }
     Slide {
@@ -56,7 +56,7 @@ Presentation
             width: parent.masterWidth * 0.95
             fillMode: Image.PreserveAspectFit
             smooth: true
-            source: "04_Performant.png"
+            source: "04-docs-and-support.png"
         }
     }
     Slide {
@@ -68,7 +68,7 @@ Presentation
             width: parent.masterWidth * 0.95
             fillMode: Image.PreserveAspectFit
             smooth: true
-            source: "05_Secure_and_Private.png"
+            source: "05-third-party-apps.png"
         }
     }
     Slide {
@@ -80,9 +80,8 @@ Presentation
             width: parent.masterWidth * 0.95
             fillMode: Image.PreserveAspectFit
             smooth: true
-            source: "06_Community_Support.png"
+            source: "06-hardware.png"
         }
-
     }
     Slide {
         Image {
@@ -93,9 +92,8 @@ Presentation
             width: parent.masterWidth * 0.95
             fillMode: Image.PreserveAspectFit
             smooth: true
-            source: "07_Free_and_Open_Source.png"
+            source: "07-secure-and-private.png"
         }
-
     }
     Slide {
         Image {
@@ -106,9 +104,8 @@ Presentation
             width: parent.masterWidth * 0.95
             fillMode: Image.PreserveAspectFit
             smooth: true
-            source: "08_Software_Compatibility.png"
+            source: "08-kubuntu-focus.png"
         }
-
     }
     Slide {
         Image {
@@ -119,47 +116,7 @@ Presentation
             width: parent.masterWidth * 0.95
             fillMode: Image.PreserveAspectFit
             smooth: true
-            source: "09_Beautiful_Aesthetics.png"
+            source: "09-open-source-software.png"
         }
-
-    }
-    Slide {
-        Image {
-            id: image10
-            anchors.centerIn: parent
-            anchors.verticalCenterOffset: - parent.y / 3.6
-            height: parent.masterHeight * 0.95
-            width: parent.masterWidth * 0.95
-            fillMode: Image.PreserveAspectFit
-            smooth: true
-            source: "10_Kubuntu_Focus.png"
-        }
-
-    }
-    Slide {
-        Image {
-            id: image11
-            anchors.centerIn: parent
-            anchors.verticalCenterOffset: - parent.y / 3.6
-            height: parent.masterHeight * 0.95
-            width: parent.masterWidth * 0.95
-            fillMode: Image.PreserveAspectFit
-            smooth: true
-            source: "11_Testimonials_of_Success.png"
-        }
-
-    }
-        Slide {
-        Image {
-            id: image12
-            anchors.centerIn: parent
-            anchors.verticalCenterOffset: - parent.y / 3.6
-            height: parent.masterHeight * 0.95
-            width: parent.masterWidth * 0.95
-            fillMode: Image.PreserveAspectFit
-            smooth: true
-            source: "12_Get_Involved.png"
-        }
-
     }
 }

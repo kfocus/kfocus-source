@@ -27,9 +27,6 @@ required license.
 #
 ```
 
-We recommend you use a file like `package-main/usr/lib/kfocus/bin/kfocus-fan`
-as a guideline.
-
 ### Spacing
 - Indent lines two spaces per level. Do not use tabs.
 - Prefer to terminate all commands with semicolons to avoid confusion.

@@ -28,3 +28,9 @@ Package: dkms
 Pin: release o=Ubuntu
 Pin-Priority: 1001
 
+# Prevent the installation of HPLIP's GUI
+Package: hplip-gui
+Pin-Priority: -1
+
+Package: printer-driver-hpijs
+Pin-Priority: -1

@@ -29,6 +29,7 @@
 #include <QTimer>
 #include <QFile>
 #include <QUuid>
+#include <QPainter>
 #include <QDBusPendingReply>
 #include "installerprompt.h"
 #include "wifipassworddialog.h"
@@ -63,7 +64,7 @@ InstallerPrompt::InstallerPrompt(QWidget *parent)
     QTimer *repeater = new QTimer();
     connect(repeater, SIGNAL(timeout()), this, SLOT(updateConnectionInfo()));
     repeater->start(15000);
-    
+
     updateConnectionInfo();
 }
 
@@ -75,32 +76,34 @@ InstallerPrompt::~InstallerPrompt()
 void InstallerPrompt::activateBackground()
 {
     // Set the background image and scale it
-    QImage image(":/background");
-    if (image.isNull()) {
+    QImage rawImage(":/background");
+    if (rawImage.isNull()) {
         WarningDialog::showWarning(tr("Background image cannot be loaded."));
         return;
     }
 
-    qreal imgRatio = static_cast<qreal>(image.width()) / image.height();
+    qreal imgRatio = static_cast<qreal>(rawImage.width()) / rawImage.height();
     qreal screenRatio = static_cast<qreal>(this->width()) / this->height();
     QImage scaled;
     if (imgRatio < screenRatio) {
-        scaled = image.scaledToWidth(this->width(), Qt::SmoothTransformation);
+        scaled = rawImage.scaledToWidth(this->width(), Qt::SmoothTransformation);
         int yGap = (scaled.height() - this->height()) / 2;
         scaled = scaled.copy(0, yGap, scaled.width(), this->height());
     } else {
-        scaled = image.scaledToHeight(this->height(), Qt::SmoothTransformation);
+        scaled = rawImage.scaledToHeight(this->height(), Qt::SmoothTransformation);
         int xGap = (scaled.width() - this->width()) / 2;
         scaled = scaled.copy(xGap, 0, this->width(), scaled.height());
     }
-    QPixmap bg = QPixmap::fromImage(scaled);
-    QPalette palette;
-    palette.setBrush(QPalette::Window, bg);
-    this->setPalette(palette);
+    background = scaled;
 }
 
 void InstallerPrompt::onTryClicked()
 {
+    QProcess proc;
+    proc.setProgram("/usr/bin/killall");
+    proc.setArguments(QStringList() << "kwin_wayland");
+    proc.start();
+    proc.waitForFinished();
     QApplication::quit();
 }
 
@@ -112,8 +115,12 @@ void InstallerPrompt::onInstallClicked()
     ui->installKubuntu->setToolTip("");
     ui->languageComboBox->setEnabled(false);
     QProcess *calamares = new QProcess(this);
+    calamares->setProgram("/usr/bin/xhost");
+    calamares->setArguments(QStringList() << "si:localuser:root");
+    calamares->start();
+    calamares->waitForFinished();
     calamares->setProgram("/usr/bin/sudo");
-    calamares->setArguments(QStringList() << "-E" << "calamares-launch-normal");
+    calamares->setArguments(QStringList() << "calamares-launch-normal");
     calamares->start();
 
     // If Calamares exits, it either crashed or the user cancelled the installation. Exit the installer prompt (and start Plasma).
@@ -139,24 +146,17 @@ void InstallerPrompt::onLanguageSelected(int index)
         only_plasma = true;
     }
 
-    // Some of the LibreOffice language packs need special-casing, do that here
-    QString libreOfficeLang;
-    if (localeParts[0] == "zh") {
-        libreOfficeLang = (countryCode == "CN" || countryCode == "SG" || countryCode == "MY") ? "zh-cn" : "zh-tw";
-    } else {
-        static const QMap<QString, QString> localeMap = {
-            {"en_GB", "en-gb"}, {"en_ZA", "en-za"}, {"pa_IN", "pa-in"}, {"pt_BR", "pt-br"}
-        };
-        libreOfficeLang = localeMap.value(localeParts.join('_'), languageCode);
-    }
-
     // Construct the command to run the script with parameters
     QProcess *process = new QProcess(this);
     QStringList arguments;
 
     process->setProgram("sudo");
-    arguments << "/usr/libexec/change-system-language" << languageCode << countryCode << libreOfficeLang;
-    if (only_plasma) arguments << "1";
+    arguments << "/usr/libexec/change-system-language" << languageCode << countryCode;
+    if (only_plasma) {
+        arguments << "n";
+    } else {
+        arguments << "y";
+    }
     process->setArguments(arguments);
 
     connect(process, &QProcess::errorOccurred, this, &InstallerPrompt::languageProcessError);
@@ -175,7 +175,7 @@ void InstallerPrompt::onNetworkSelected(int index)
     QString networkId = ui->networkComboBox->itemData(index).toString();
     if (!networkId.isNull()) {
         if (networkId.left(4) == "UNI_") { // this is an Ethernet device
-            QString deviceUni = networkId.right(networkId.count() - 4);
+            QString deviceUni = networkId.right(networkId.length() - 4);
             NetworkManager::WiredDevice wiredDevice(deviceUni);
             QDBusPendingReply reply = wiredDevice.disconnectInterface();
             reply.waitForFinished();
@@ -430,9 +430,9 @@ QString InstallerPrompt::getDisplayNameForLocale(const QLocale &locale) {
 
     QLocale currentAppLocale = QLocale::system();
     QString nativeName = locale.nativeLanguageName();
-    QString nativeCountryName = sanitize(locale.nativeCountryName());
+    QString nativeCountryName = sanitize(locale.nativeTerritoryName());
     QString englishLanguageName = currentAppLocale.languageToString(locale.language());
-    QString englishCountryName = sanitize(currentAppLocale.countryToString(locale.country()));
+    QString englishCountryName = sanitize(currentAppLocale.territoryToString(locale.territory()));
 
     if (nativeName.isEmpty() || nativeCountryName.isEmpty()) {
         return QString();
@@ -451,4 +451,9 @@ QString InstallerPrompt::getDisplayNameForLocale(const QLocale &locale) {
     }
 
     return displayName;
+}
+
+void InstallerPrompt::paintEvent(QPaintEvent *event) {
+    QPainter painter(this);
+    painter.drawImage(0, 0, background);
 }

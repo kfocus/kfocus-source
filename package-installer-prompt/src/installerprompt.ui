@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1450</width>
-    <height>710</height>
+    <height>818</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -20,7 +20,87 @@
    <string>Try or Install Kubuntu</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">QWidget {
+   <string notr="true">/*
+Light theming, in case we need it later:
+
+QWidget {
+    color: #000000;
+}
+
+QPushButton {
+    background-color: rgb(200, 200, 200);
+    color: #ffffff;
+    border-radius: 10px;
+    padding: 10px 20px;
+    margin: 10px;
+}
+
+QPushButton:hover {
+    background-color: rgb(30, 144, 255);
+}
+
+QPushButton:disabled {
+    background-color: rgb(169, 169, 169);
+    color: #ffffff;
+}
+
+QComboBox, QLineEdit {
+    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 #dbe0ea, stop:1 #c5cddd);
+    color: #4d4d4d;
+    border: 1px solid #8d95a1;
+    border-radius: 15px;
+    padding: 6px 12px;
+}
+
+QComboBox:hover {
+    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 #e5e9ef, stop:1 #d6dbe6); color: #16191d; border-color: #16191d;
+}
+
+QComboBox::drop-down {
+    border: none;
+}
+
+QComboBox QAbstractItemView {
+    color: #4d4d4d;
+    background-color: #dbe0ea;
+}
+
+QComboBox::down-arrow {
+    image: url(:/arrow-down);
+    width: 30px;
+    padding-right: 10px;
+}
+
+QLabel {
+    color: #16191d;
+    margin-right: 8px;
+}
+
+QLabel#logoLabel {
+    image: url(:/logo);
+    background-color: transparent;
+}
+
+QPushButton {
+	background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 #dbe0ea, stop:1 #c5cddd); color: #4d4d4d; border: 1px solid #8d95a1; border-radius: 15px;
+}
+
+QPushButton:hover {
+    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 #e5e9ef, stop:1 #d6dbe6); color: #16191d; border-color: #16191d;
+}
+
+QPushButton:disabled {
+    background-color: #b5c1d5; color: #6882ad; border: 1px solid #8ea2c2; border-radius: 15px;
+}
+
+QToolTip {
+	background-color: rgba(229, 233, 239, 0.85); padding: 12px; border-radius: 15px; border: 1px solid #16191d; font: 12px 'IBM Plex Sans'; color: #16191d; line-height: 18px;
+}
+
+Tooltip text header: &lt;span style=&quot;font-size:18px; color: #333; margin-bottom: 0;&quot;&gt;
+*/
+
+QWidget {
     color: #000000;
 }
 
@@ -44,19 +124,24 @@ QPushButton:disabled {
 QComboBox, QLineEdit {
 /*    background-color: #315764; */
 /*    background-color: #729fa5;  */
-    background-color: #f1f1f1;
-    color: #16191d;
-    border: 1px solid #8d95a1;
+    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 #17325b, stop:1 #112747);
+    color: #fcfcfc;
+    border: 1px solid #3e5267;
     border-radius: 15px;
     padding: 6px 12px;
 }
 
 QComboBox:hover {
-    background-color: #fff; color: #000; border-color: #16191d;
+    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 #183867, stop:1 #142c53); color: rgb(255, 255, 255); border-color: #3f5369;
 }
 
 QComboBox::drop-down {
     border: none;
+}
+
+QComboBox QAbstractItemView {
+    color: #fcfcfc;
+    background-color: #112747;
 }
 
 QComboBox::down-arrow {
@@ -66,8 +151,7 @@ QComboBox::down-arrow {
 }
 
 QLabel {
-    color: #16191d;
-    margin-right: 12px;
+    color: #fcfcfc;
 }
 
 QLabel#logoLabel {
@@ -76,19 +160,19 @@ QLabel#logoLabel {
 }
 
 QPushButton {
-	background-color: #f1f1f1; color: #16191d; border: 1px solid #8d95a1; border-radius: 15px;
+	background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 #17325b, stop:1 #112747); color: #fcfcfc; border: 1px solid #3e5267; border-radius: 15px;
 }
 
 QPushButton:hover {
-    background-color: #fff; color: #000; border-color: #16191d;
+    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 #183867, stop:1 #142c53); color: rgb(255, 255, 255); border-color: #3f5369;
 }
 
 QPushButton:disabled {
-    background-color: #b5c1d5; color: #6882ad; border: 1px solid #8ea2c2; border-radius: 15px;
+    background-color: #26303f; color: #a4a4a4; border: 1px solid #444; border-radius: 15px;
 }
 
 QToolTip {
-	background-color: rgba(230, 230, 230, 0.85); padding: 12px; border-radius: 15px; border: 1px solid #16191d; font: 12px 'IBM Plex Sans'; color: #16191d; line-height: 18px;
+	background-color: rgba(24, 56, 103, 0.85); padding: 12px; border-radius: 15px; border: 1px solid #3e5267; font: 12px 'IBM Plex Sans'; color: #fcfcfc; line-height: 18px;
 }</string>
   </property>
   <widget class="QWidget" name="centralwidget">
@@ -98,11 +182,11 @@ QToolTip {
      <verstretch>0</verstretch>
     </sizepolicy>
    </property>
-   <layout class="QVBoxLayout" name="verticalLayout">
+   <layout class="QVBoxLayout" name="verticalLayout" stretch="376,0,138,0,188">
     <item>
      <spacer name="verticalSpacer">
       <property name="orientation">
-       <enum>Qt::Vertical</enum>
+       <enum>Qt::Orientation::Vertical</enum>
       </property>
       <property name="sizeHint" stdset="0">
        <size>
@@ -113,11 +197,11 @@ QToolTip {
      </spacer>
     </item>
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout">
+     <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="0,0,0">
       <item>
-       <spacer name="horizontalSpacer">
+       <spacer name="horizontalSpacer_8">
         <property name="orientation">
-         <enum>Qt::Horizontal</enum>
+         <enum>Qt::Orientation::Horizontal</enum>
         </property>
         <property name="sizeHint" stdset="0">
          <size>
@@ -128,34 +212,230 @@ QToolTip {
        </spacer>
       </item>
       <item>
-       <widget class="QLabel" name="label">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>513</width>
-          <height>100</height>
-         </size>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-        <property name="pixmap">
-         <pixmap resource="resource.qrc">:/logo</pixmap>
-        </property>
-        <property name="scaledContents">
-         <bool>true</bool>
-        </property>
-       </widget>
+       <layout class="QGridLayout" name="gridLayout">
+        <item row="0" column="0" colspan="3">
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
+          <item>
+           <spacer name="horizontalSpacer_6">
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Policy::Preferred</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>1</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLabel" name="label">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>513</width>
+              <height>100</height>
+             </size>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="pixmap">
+             <pixmap resource="resource.qrc">:/logo</pixmap>
+            </property>
+            <property name="scaledContents">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_9">
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Policy::Preferred</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>1</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item row="5" column="2">
+         <spacer name="verticalSpacer_6">
+          <property name="orientation">
+           <enum>Qt::Orientation::Vertical</enum>
+          </property>
+          <property name="sizeType">
+           <enum>QSizePolicy::Policy::Fixed</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>36</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="6" column="0">
+         <widget class="QLabel" name="WiFiLabel">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="font">
+           <font>
+            <family>IBM Plex Sans</family>
+            <pointsize>18</pointsize>
+            <bold>false</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Connection</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="2">
+         <spacer name="verticalSpacer_7">
+          <property name="orientation">
+           <enum>Qt::Orientation::Vertical</enum>
+          </property>
+          <property name="sizeType">
+           <enum>QSizePolicy::Policy::Fixed</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>64</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="6" column="2">
+         <widget class="QComboBox" name="networkComboBox">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>420</width>
+            <height>50</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>420</width>
+            <height>50</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <family>IBM Plex Sans</family>
+            <pointsize>16</pointsize>
+           </font>
+          </property>
+          <property name="cursor">
+           <cursorShape>PointingHandCursor</cursorShape>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="2">
+         <widget class="QComboBox" name="languageComboBox">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>420</width>
+            <height>50</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>420</width>
+            <height>50</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <family>IBM Plex Sans</family>
+            <pointsize>16</pointsize>
+           </font>
+          </property>
+          <property name="cursor">
+           <cursorShape>PointingHandCursor</cursorShape>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="0">
+         <widget class="QLabel" name="translationsLabel">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="font">
+           <font>
+            <family>IBM Plex Sans</family>
+            <pointsize>18</pointsize>
+            <bold>false</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Language</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="1">
+         <spacer name="horizontalSpacer">
+          <property name="orientation">
+           <enum>Qt::Orientation::Horizontal</enum>
+          </property>
+          <property name="sizeType">
+           <enum>QSizePolicy::Policy::Fixed</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>4</width>
+            <height>10</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
       </item>
       <item>
-       <spacer name="horizontalSpacer_2">
+       <spacer name="horizontalSpacer_7">
         <property name="orientation">
-         <enum>Qt::Horizontal</enum>
+         <enum>Qt::Orientation::Horizontal</enum>
         </property>
         <property name="sizeHint" stdset="0">
          <size>
@@ -170,178 +450,7 @@ QToolTip {
     <item>
      <spacer name="verticalSpacer_2">
       <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>20</width>
-        <height>40</height>
-       </size>
-      </property>
-     </spacer>
-    </item>
-    <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_5">
-      <item>
-       <spacer name="horizontalSpacer_6">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item>
-       <layout class="QGridLayout" name="gridLayout">
-        <item row="0" column="0">
-         <widget class="QLabel" name="translationsLabel">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="font">
-           <font>
-            <family>IBM Plex Sans</family>
-            <pointsize>18</pointsize>
-            <bold>false</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>Select Your Language</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QComboBox" name="languageComboBox">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>500</width>
-            <height>50</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>500</width>
-            <height>50</height>
-           </size>
-          </property>
-          <property name="font">
-           <font>
-            <family>IBM Plex Sans</family>
-            <pointsize>16</pointsize>
-           </font>
-          </property>
-          <property name="cursor">
-           <cursorShape>PointingHandCursor</cursorShape>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="1">
-         <widget class="QComboBox" name="networkComboBox">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>500</width>
-            <height>50</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>500</width>
-            <height>50</height>
-           </size>
-          </property>
-          <property name="font">
-           <font>
-            <family>IBM Plex Sans</family>
-            <pointsize>16</pointsize>
-           </font>
-          </property>
-          <property name="cursor">
-           <cursorShape>PointingHandCursor</cursorShape>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="0">
-         <widget class="QLabel" name="WiFiLabel">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="font">
-           <font>
-            <family>IBM Plex Sans</family>
-            <pointsize>18</pointsize>
-            <bold>false</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>Internet Connection</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <spacer name="verticalSpacer_6">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeType">
-           <enum>QSizePolicy::Fixed</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>36</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-       </layout>
-      </item>
-      <item>
-       <spacer name="horizontalSpacer_7">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-     </layout>
-    </item>
-    <item>
-     <spacer name="verticalSpacer_3">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
+       <enum>Qt::Orientation::Vertical</enum>
       </property>
       <property name="sizeHint" stdset="0">
        <size>
@@ -354,25 +463,9 @@ QToolTip {
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
-       <spacer name="verticalSpacer_5">
-        <property name="orientation">
-         <enum>Qt::Vertical</enum>
-        </property>
-        <property name="sizeType">
-         <enum>QSizePolicy::Maximum</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>20</width>
-          <height>130</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item>
        <spacer name="horizontalSpacer_3">
         <property name="orientation">
-         <enum>Qt::Horizontal</enum>
+         <enum>Qt::Orientation::Horizontal</enum>
         </property>
         <property name="sizeHint" stdset="0">
          <size>
@@ -407,7 +500,7 @@ QToolTip {
          <cursorShape>PointingHandCursor</cursorShape>
         </property>
         <property name="toolTip">
-         <string>&lt;p&gt;&lt;span style=&quot;font-size:18px; color: #333; margin-bottom: 0;&quot;&gt;Run live environment&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:16px;&quot;&gt;Run Kubuntu from the installation media without changing a system disk. Changes made to this environment will not be saved when the computer is shut down.&lt;/span&gt;&lt;/p&gt;</string>
+         <string>&lt;p&gt;&lt;span style=&quot;font-size:18px; color: rgb(252, 252, 252); margin-bottom: 0;&quot;&gt;Run live environment&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:16px;&quot;&gt;Run Kubuntu from the installation media without changing a system disk. Changes made to this environment will not be saved when the computer is shut down.&lt;/span&gt;&lt;/p&gt;</string>
         </property>
         <property name="autoFillBackground">
          <bool>false</bool>
@@ -430,7 +523,7 @@ QToolTip {
       <item>
        <spacer name="horizontalSpacer_5">
         <property name="orientation">
-         <enum>Qt::Horizontal</enum>
+         <enum>Qt::Orientation::Horizontal</enum>
         </property>
         <property name="sizeHint" stdset="0">
          <size>
@@ -465,7 +558,7 @@ QToolTip {
          <cursorShape>PointingHandCursor</cursorShape>
         </property>
         <property name="toolTip">
-         <string>&lt;p&gt;&lt;span style=&quot;font-size:18px; color: #333; margin-bottom: 0;&quot;&gt;Install to this system&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot;font-size:16px;&quot;&gt;Install Kubuntu to a system disk by itself, or alongside an existing operating system.&lt;/span&gt;&lt;/p&gt;</string>
+         <string>&lt;p&gt;&lt;span style=&quot;font-size:18px; color: rgb(252, 252, 252); margin-bottom: 0;&quot;&gt;Install to this system&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot;font-size:16px;&quot;&gt;Install Kubuntu to a system disk by itself, or alongside an existing operating system.&lt;/span&gt;&lt;/p&gt;</string>
         </property>
         <property name="autoFillBackground">
          <bool>false</bool>
@@ -488,7 +581,7 @@ QToolTip {
       <item>
        <spacer name="horizontalSpacer_4">
         <property name="orientation">
-         <enum>Qt::Horizontal</enum>
+         <enum>Qt::Orientation::Horizontal</enum>
         </property>
         <property name="sizeHint" stdset="0">
          <size>
@@ -501,9 +594,9 @@ QToolTip {
      </layout>
     </item>
     <item>
-     <spacer name="verticalSpacer_4">
+     <spacer name="verticalSpacer_3">
       <property name="orientation">
-       <enum>Qt::Vertical</enum>
+       <enum>Qt::Orientation::Vertical</enum>
       </property>
       <property name="sizeHint" stdset="0">
        <size>
@@ -515,7 +608,6 @@ QToolTip {
     </item>
    </layout>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
  </widget>
  <resources>
   <include location="resource.qrc"/>

@@ -3,12 +3,12 @@
 # Launch Calamares normally.
 
 if [ -e '/etc/calamares/OEM_MODE_ACTIVATED' ]; then
-  _msg="$(cat <<EOL
+  msg="$(cat <<EOL
 The installer was previously run in OEM mode. Please reboot to reset the
 configuration and try again.
 EOL
   )";
-  kdialog --msgbox "${_msg}";
+  kdialog --msgbox "${msg}";
   exit 1;
 fi
 

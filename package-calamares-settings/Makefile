@@ -6,7 +6,7 @@ all:
 	# basicwallpaper
 	(cd common/basicwallpaper && mkdir build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Release && make)
 	# kfocus OEM setup stuff
-	(cd kfocus && mkdir oemconfig && cd oemconfig && mkdir -p usr/bin && mkdir -p etc/calamares && mkdir -p usr/share/xsessions && mkdir -p usr/libexec && mkdir -p etc && mkdir -p usr/share/applications && mkdir -p home/oem/Desktop && mkdir -p usr/lib/kfocus/bin)
+	(cd kfocus && mkdir oemconfig && cd oemconfig && mkdir -p usr/bin && mkdir -p etc/calamares && mkdir -p usr/share/wayland-sessions && mkdir -p usr/libexec && mkdir -p etc && mkdir -p usr/share/applications && mkdir -p home/oem/Desktop && mkdir -p usr/lib/kfocus/bin)
 	(cp kfocus/calamares-logs-helper kfocus/oemconfig/usr/bin/)
 	(cp kfocus/kfocus-prep-user kfocus/oemconfig/usr/libexec/)
 	(cp kfocus/oem/sddm.conf kfocus/oemconfig/etc/)
@@ -17,8 +17,9 @@ all:
 	(cp -r kfocus/branding kfocus/oemconfig/etc/calamares/)
 	(cp -r kfocus/oem/modules/ kfocus/oemconfig/etc/calamares/)
 	(cp kfocus/oem/settings.conf kfocus/oemconfig/etc/calamares/)
-	(cp kfocus/oem/kubuntu-oem-env/kubuntu-oem-environment.desktop kfocus/oemconfig/usr/share/xsessions/)
+	(cp kfocus/oem/kubuntu-oem-env/kubuntu-oem-environment.desktop kfocus/oemconfig/usr/share/wayland-sessions/)
 	(cp kfocus/oem/kubuntu-oem-env/start-kubuntu-oem-env kfocus/oemconfig/usr/libexec/)
+	(cp kfocus/oem/kubuntu-oem-env/kubuntu-oem-env-shim kfocus/oemconfig/usr/libexec/)
 	(cp common/basicwallpaper/build/basicwallpaper kfocus/oemconfig/usr/bin/)
 	(cp kfocus/oem/calamares-finish-oem.desktop kfocus/oemconfig/home/oem/Desktop/)
 	(cp kfocus/oem/kfocus-chain-helper/kfocus-chain-helper-* kfocus/oemconfig/usr/lib/kfocus/bin/)

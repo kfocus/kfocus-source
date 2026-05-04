@@ -10,6 +10,7 @@
 #include <QMutex>
 #include <QLineEdit>
 #include <QProcess>
+#include <QImage>
 #include <NetworkManagerQt/Device>
 #include <NetworkManagerQt/WirelessDevice>
 #include <NetworkManagerQt/WiredDevice>
@@ -45,10 +46,12 @@ private:
     bool wifiWrongHandling = false;
     QMap<QString, QString> languageLocaleMap;
     bool firstUpdateConnectionInfoCall = true;
+    void paintEvent(QPaintEvent *event) override;
 
     void initLanguageComboBox();
     QStringList getAvailableLanguages();
     QString getDisplayNameForLocale(const QLocale &locale);
+    QImage background;
 };
 
 #endif // INSTALLERPROMPT_H

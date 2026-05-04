@@ -58,7 +58,7 @@ As of 24.04, the following packages are deprecated:
 | ------------------| -------------------- |
 | `kfocus-001-*`    | Since 22.04, `001` is dropped.                 |
 | `kfocus-cuda-lib` | Replaced by kfocus-conda tool dynamic loading. |
-| `kfocus-rest`     | Replaced by interactive script, kfocus-extra.  |
+| `kfocus-rest`     | Since 26.04, `kfocus-rest` is dropped. |
 
 ## Build and Distribution
 Packages are built using standard PPA preparation and uploaded to the [Kubuntu

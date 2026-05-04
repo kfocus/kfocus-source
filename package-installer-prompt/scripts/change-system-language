@@ -1,31 +1,189 @@
 #!/bin/bash
 
-LANGUAGE_CODE="$1"
-COUNTRY_CODE="$2"
-LOCALE="${LANGUAGE_CODE}_${COUNTRY_CODE}.UTF-8"
-LIBREOFFICE_CODE="$3"
-ONLY_PLASMA="$4"
+main() {
+    # Install language packs
+    if [ "${install_langpacks}" = 'y' ]; then
+        lang_pack_suffix="${language_code}"
+        if [ -n "${locale_langpack_map["${language_code}_${country_code}"]}" ]; then
+            lang_pack_suffix="${locale_langpack_map["${language_code}_${country_code}"]}"
+        fi
+        apt-get -y install "language-pack-gnome-${lang_pack_suffix}" "language-pack-kde-${lang_pack_suffix}"
 
-# Special handling for language packs for Chinese
-if [[ "$LANGUAGE_CODE" == "zh" ]]; then
-    if [[ "$COUNTRY_CODE" == "CN" || "$COUNTRY_CODE" == "SG" || "$COUNTRY_CODE" == "MY" ]]; then
-        LANG_PACK_SUFFIX="zh-hans"
+        lang_lo_suffix="${locale_lo_map["${language_code}_${country_code}"]}"
+        if [ -n "${lang_lo_suffix}" ]; then
+            apt-get -y install "libreoffice-l10n-${lang_lo_suffix}"
+        fi
+    fi
+
+    # Change system locale
+    locale-gen "${locale_gen_code}"
+    update-locale LANGUAGE="${locale_gen_code}" LANG="${locale_gen_code}" LC_ALL="${locale_gen_code}"
+
+    # Parse keyboard layout data
+    kbd_layout_with_variants=''
+    kbd_variant_list_str=''
+    kbd_parse_stage=0
+    while read -r line; do
+        if [ -z "${line}" ]; then
+            continue
+        fi
+
+        if [ "${kbd_parse_stage}" = '0' ]; then
+            if [ "${line}" = '! layout' ]; then
+                kbd_parse_stage=1
+                continue
+            fi
+        fi
+
+        if [ "${kbd_parse_stage}" = '1' ]; then
+            if [ "${line:0:1}" != '!' ]; then
+                kbd_layout_list+=( "$(awk '{ print $1 }' <<< "${line}")" )
+            else
+                kbd_parse_stage=2
+            fi
+        fi
+
+        if [ "${kbd_parse_stage}" = '2' ]; then
+            if [ "${line}" = '! variant' ]; then
+                kbd_parse_stage=3
+                continue
+            fi
+        fi
+
+        if [ "${kbd_parse_stage}" = '3' ]; then
+            if [ "${line:0:1}" != '!' ]; then
+                kbd_variant_name="$(awk '{ print $1 }' <<< "${line}")"
+                kbd_layout_name="$(awk '{ print $2 }' <<< "${line}")"
+                kbd_layout_name="${kbd_layout_name:0:-1}" # trim off a colon
+                if [ -n "${kbd_layout_with_variants}" ] \
+                    && [ "${kbd_layout_with_variants}" != "${kbd_layout_name}" ]; then
+                    kbd_variant_list["${kbd_layout_with_variants}"]="${kbd_variant_list_str}"
+                    kbd_variant_list_str=''
+                fi
+                kbd_layout_with_variants="${kbd_layout_name}"
+                kbd_variant_list_str="${kbd_variant_list_str}${kbd_variant_name},"
+            else
+                kbd_variant_list["${kbd_layout_with_variants}"]="${kbd_variant_list_str}"
+                break
+            fi
+        fi
+    done < "${xkb_kbd_db}"
+
+    # Set keyboard layout depending on language
+    # Algorithm taken from Calamares and translated to Bash
+    kbd_seek_key="${language_code}_${country_code}"
+    if [ -n "${locale_kbd_map["${kbd_seek_key}"]}" ]; then
+        kbd_seek_key="${locale_kbd_map["${kbd_seek_key}"]}"
+    fi
+    kbd_seek_key="${kbd_seek_key,,}" # need lowercase from this point forward
+    read -r -a kbd_seek_list < <(tr '_' '\n' <<< "${kbd_seek_key}" | tac | tr '\n' ' ')
+
+    found_kbd_layout=''
+    found_kbd_variant=''
+    for kbd_seek_item in "${kbd_seek_list[@]}"; do
+        if [ -z "${found_kbd_layout}" ]; then
+            for kbd_layout in "${kbd_layout_list[@]}"; do
+                if [ "${kbd_seek_item}" = "${kbd_layout}" ]; then
+                    found_kbd_layout="${kbd_seek_item}"
+                    break
+                fi
+            done
+        else
+            kbd_variant_str="${kbd_variant_list["${found_kbd_layout}"]}"
+            if [ -n "${kbd_variant_str}" ]; then
+                IFS=',' read -r -a kbd_variant_sublist <<< "${kbd_variant_str}"
+                for kbd_variant in "${kbd_variant_sublist[@]}"; do
+                    if [ "${kbd_seek_item}" = "${kbd_variant}" ]; then
+                        found_kbd_variant="${kbd_seek_item}"
+                        break
+                    fi
+                done
+            fi
+        fi
+    done
+
+    if [ -n "${found_kbd_layout}" ]; then
+        kwriteconfig6 \
+            --file "${kbd_config_file}" \
+            --group 'Layout' \
+            --key 'LayoutList' \
+            "${found_kbd_layout}"
     else
-        LANG_PACK_SUFFIX="zh-hant"
+        kwriteconfig6 \
+            --file "${kbd_config_file}" \
+            --group 'Layout' \
+            --key 'LayoutList' \
+            --delete
     fi
-else
-    LANG_PACK_SUFFIX="$LANGUAGE_CODE"
-fi
 
-if [ -z "$ONLY_PLASMA" ]; then
-    apt-get -y install language-pack-gnome-"$LANG_PACK_SUFFIX" language-pack-kde-"$LANG_PACK_SUFFIX"
-    # Install LibreOffice language pack only if LIBREOFFICE_CODE is provided
-    # and it's not English without a specific variant
-    if [[ "$LANGUAGE_CODE" != "en" ]] || [[ "$LANGUAGE_CODE" == "en" && ( "$COUNTRY_CODE" == "GB" || "$COUNTRY_CODE" == "ZA" ) ]]; then
-        apt-get -y install libreoffice-l10n-"$LIBREOFFICE_CODE"
+    if [ -n "${found_kbd_variant}" ]; then
+        kwriteconfig6 \
+            --file "${kbd_config_file}" \
+            --group 'Layout' \
+            --key 'VariantList' \
+            "${found_kbd_variant}"
+    else
+        kwriteconfig6 \
+            --file "${kbd_config_file}" \
+            --group 'Layout' \
+            --key 'VariantList' \
+            --delete
     fi
-fi
 
-locale-gen "$LOCALE"
-update-locale LANGUAGE="$LOCALE" LANG="$LOCALE" LC_ALL="$LOCALE"
-systemctl restart sddm
+    chown kubuntu:kubuntu ${kbd_config_file}
+    systemctl restart sddm
+}
+
+# Global variables
+language_code="${1:-}"
+country_code="${2:-}"
+install_langpacks="${3:-}"
+locale_gen_code="${language_code}_${country_code}.UTF-8"
+declare -A locale_langpack_map
+locale_langpack_map['zh_CN']='zh-hans'
+locale_langpack_map['zh_SG']='zh-hans'
+locale_langpack_map['zh_MY']='zh-hans'
+locale_langpack_map['zh']='zh-hant'
+declare -A locale_lo_map
+locale_lo_map['zh_CN']='zh-cn'
+locale_lo_map['zh_SG']='zh-cn'
+locale_lo_map['zh_MY']='zh-cn'
+locale_lo_map['zh']='zh-tw'
+locale_lo_map['en_GB']='en-gb'
+locale_lo_map['en_ZA']='en-za'
+locale_lo_map['pa_IN']='pa-in'
+locale_lo_map['pt_BR']='pt-br'
+# Taken from Calamares
+declare -A locale_kbd_map
+locale_kbd_map['ar_AE']='ara'
+locale_kbd_map['ar_BG']='ara'
+locale_kbd_map['ar_DZ']='ara'
+locale_kbd_map['ar_EG']='ara'
+locale_kbd_map['ar_IN']='ara'
+locale_kbd_map['ar_IQ']='ara'
+locale_kbd_map['ar_JO']='ara'
+locale_kbd_map['ar_KW']='ara'
+locale_kbd_map['ar_LB']='ara'
+locale_kbd_map['ar_LY']='ara'
+locale_kbd_map['ar_OM']='ara'
+locale_kbd_map['ar_QA']='ara'
+locale_kbd_map['ar_SA']='ara'
+locale_kbd_map['ar_SD']='ara'
+locale_kbd_map['ar_SS']='ara'
+locale_kbd_map['ar_TN']='ara'
+locale_kbd_map['ar_YE']='ara'
+locale_kbd_map['ca_ES']='cat_ES'
+locale_kbd_map['en_CA']='us'
+locale_kbd_map['el_CY']='gr'
+locale_kbd_map['el_GR']='gr'
+locale_kbd_map['ig_NG']='igbo_NG'
+locale_kbd_map['ha_NG']='hausa_NG'
+locale_kbd_map['en_IN']='us'
+
+kbd_layout_list=()
+declare -A kbd_variant_list
+
+xkb_kbd_db='/usr/share/X11/xkb/rules/base.lst'
+kbd_config_file="/home/kubuntu/.config/kxkbrc"
+
+main

@@ -43,12 +43,14 @@ int main(int argc, char *argv[])
             w->setGeometry(screen->geometry());
             w->activateBackground();
             w->showFullScreen();
+            w->repaint();
             continue;
         }
         BackgroundScreen *backscreen = new BackgroundScreen();
         backscreen->setGeometry(screen->geometry());
         backscreen->activateBackground();
         backscreen->showFullScreen();
+        backscreen->repaint();
         bss.append(backscreen);
     }
 

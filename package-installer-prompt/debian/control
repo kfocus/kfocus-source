@@ -1,18 +1,16 @@
 Source:              kfocus-installer-prompt
 Section:             misc
-Priority:            optional
 Maintainer:          Kubuntu Focus Team <support@kfocus.org>
 Uploaders:           Aaron Rainbolt <arainbolt@kfocus.org>
-Standards-Version:   4.6.2
-Rules-Requires-Root: no
+Standards-Version:   4.6.3
 Build-Depends:       cmake,
                      debhelper-compat (= 13),
                      extra-cmake-modules,
                      kubuntu-settings-desktop (>= 1:24.04.5),
-                     libkf5networkmanagerqt-dev,
-                     libkf5widgetsaddons-dev,
-                     qtbase5-dev,
-                     qttools5-dev
+                     libkf6config-bin,
+                     libkf6networkmanagerqt-dev,
+                     qt6-base-dev,
+                     qt6-tools-dev
 
 Package:      kfocus-installer-prompt
 Architecture: any

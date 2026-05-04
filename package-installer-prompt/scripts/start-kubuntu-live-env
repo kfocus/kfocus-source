@@ -6,12 +6,10 @@ export XDG_SESSION_DESKTOP="KDE"
 export DESKTOP_SESSION="plasma"
 export QT_QPA_PLATFORMTHEME="kde"
 
-kwin_x11 &
 if [[ $(cat /proc/cmdline) =~ "oem-config/enable=true" ]]; then
-    sudo -E /usr/bin/calamares-launch-oem;
+    kwin_wayland --xwayland --no-lockscreen /usr/bin/calamares-launch-oem;
 else
-    kubuntu-installer-prompt;
+    kwin_wayland --xwayland --no-lockscreen kubuntu-installer-prompt;
 fi
 # If it exits...
-killall kwin_x11
-startplasma-x11
+startplasma-wayland

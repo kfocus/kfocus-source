@@ -29,15 +29,7 @@ _installReposFn () {
   _pref_dir='/etc/apt/preferences.d';
   _kfocus_dir='/usr/lib/kfocus';
 
-  ##
-  if [ -e "${_repo_dir}/kfocus-recommended.list" ]; then
-    _cm2SetMsgFn 'Remove the deprecated kfocus-recommended.list';
-    if "${_cm2RmExe}" "${_repo_dir}/kfocus-recommended.list"; then
-      _cm2SucFn; else _cm2WarnFn;
-    fi
-  fi
-
-  # Add nodejs 20.x pins only once; these are set up by the script
+  # Add nodejs 22.x pins only once; these are set up by the script
   _nodejs_pin_file="${_pref_dir}/nodejs";
   if [ ! -e "${_nodejs_pin_file}" ]; then
     echo '# Provided by nodejs script:

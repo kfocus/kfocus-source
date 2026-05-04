@@ -1,6 +1,6 @@
-% KFOCUS-POWER-SCRIPTS(1) kfocus-power-scripts 24.04
+% KFOCUS-POWER-BIN(1) kfocus-power-bin 26.04
 % Michael Mikowski, Erich Eickmeyer
-% June 2024
+% May 2026
 
 # NAME
 kfocus-pstate - Script to run on plug or unplug of AC power

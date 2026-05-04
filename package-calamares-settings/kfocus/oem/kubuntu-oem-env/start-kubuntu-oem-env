@@ -4,10 +4,6 @@ export XDG_SESSION_CLASS="user"
 export XDG_SESSION_DESKTOP="KDE"
 export DESKTOP_SESSION="plasma"
 export QT_QPA_PLATFORMTHEME="kde"
+export BROWSER='sudo -H -u kubuntu firefox'
 
-/usr/bin/kwin_x11 &
-/usr/bin/basicwallpaper /usr/share/wallpapers/KubuntuDark/contents/images/3840x2400.png &
-sudo -E /usr/bin/calamares -D8 # This is intentionally *not* backgrounded.
-# If it exits...
-killall basicwallpaper
-killall kwin_x11
+/usr/bin/kwin_wayland --no-lockscreen --xwayland /usr/libexec/kubuntu-oem-env-shim
