@@ -1,35 +1,35 @@
-# ADDED TO SUPPORT CLION C++ DEBUGGING 2023-11-29
-# This improves debugging, but cmake will not build.
-#   There appears to be an issue finding the headers.
-# See https://blog.creekorful.org/2019/08/setup-qt-with-clion-easily/
-# Also https://stackoverflow.com/questions/38433375
-
-cmake_minimum_required(VERSION 3.14)
-
+cmake_minimum_required(VERSION 4.2)
 project(kfocus-firstrun-bin)
 
-set(CMAKE_CXX_STANDARD 17)
+find_package(ECM 6.0.0 REQUIRED NO_MODULE)
+set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH})
 
-# Tell cmake where Qt is located
-set(Qt5_DIR "/usr/include/x86_64-linux-gnu/cmake/Qt5")
+include(KDEInstallDirs)
+include(KDECMakeSettings)
+include(KDECompilerSettings NO_POLICY_SCOPE)
+include(ECMFindQmlModule)
+include(ECMQmlModule)
 
-# Quick QuickControls2
-# Tell cmake to find the modules
-# These may NOT be needed: Core Widgets Quick
-find_package(Qt5 COMPONENTS Core Widgets Quick QuickControls2 REQUIRED)
-
-# Define headers
-include_directories(.)
-
-# Define sources
-set(SOURCES shellengine.cpp main.cpp startupdata.cpp )
-
-add_executable(kfocus-firstrun-bin ${SOURCES})
-qt_add_resources(RCC_SOURCES qml.qrc )
-
-# Qt5:Quick Qt5:QuickControls2
-# Link the library to the executable
-# These may NOT be needed: Qt5::Core Qt5::Widgets Qt5::Quick
-target_link_libraries(kfocus-firstrun-bin
-    Qt5::Core Qt5::Widgets Qt5::Quick Qt5::QuickControls2
+find_package(Qt6 REQUIRED COMPONENTS
+    Core
+    Quick
+    Widgets
+    Gui
+    QuickControls2
 )
+
+find_package(KF6 REQUIRED COMPONENTS
+    Kirigami
+    I18n
+    CoreAddons
+    QQC2DesktopStyle
+    IconThemes
+)
+
+ecm_find_qmlmodule(org.kde.kirigami REQUIRED)
+
+add_subdirectory(src)
+
+install(PROGRAMS org.kfocus.firstrun.desktop DESTINATION ${KDE_INSTALL_APPDIR})
+
+feature_summary(WHAT ALL INCLUDE_QUIET_PACKAGES FATAL_ON_MISSING_REQUIRED_PACKAGES)

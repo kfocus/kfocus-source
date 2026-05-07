@@ -1,16 +1,14 @@
 Source: kfocus-wallpapers
 Section: x11
-Priority: optional
 Maintainer: Kubuntu Focus Developers <support@kfocus.org>
 Build-Depends: debhelper-compat (= 13), intltool
-Standards-Version: 4.6.0
+Standards-Version: 4.7.3
 
 Package: kfocus-wallpapers
 Architecture: all
 Pre-Depends: dpkg (>= 1.15.7.2~)
 Depends: ${misc:Depends},
          kfocus-settings (>> 20.04.4)
-Conflicts: kfocus-main (<= 20.04.8)
 Description: Kubuntu Focus Wallpapers
- This package contains the background wallpapers used by 
+ This package contains the background wallpapers used by
  Kubuntu Focus systems.

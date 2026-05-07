@@ -1,18 +1,14 @@
 Source: kfocus-qwe
 Section: admin
-Priority: optional
 Maintainer: Kubuntu Focus Support <support@kfocus.org>
 Build-Depends: debhelper-compat (= 13)
-Standards-Version: 4.6.0
+Standards-Version: 4.7.3
 Homepage: https://kfocus.org
-Rules-Requires-Root: no
 
 Package: kfocus-qwe
 Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends},
          bash-completion
-Conflicts: qwe (<< ${binary:Version})
-Replaces:  qwe (<< ${binary:Version})
 Description: Kubuntu Focus CLI Bookmarks with Autocomplete
  QWE has been adopted as a standard CLI utility for Kubuntu Focus
  systems and is available with the kfocus-qwe package from their

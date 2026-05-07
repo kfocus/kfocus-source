@@ -117,11 +117,6 @@ map <silent> TS :set   expandtab<CR>:%retab!<CR>
 map <silent> TT :set noexpandtab<CR>:%retab!<CR>
 
 " ====[ Visual modes ]================================================
-" Visual Block mode is far more common that Visual mode.
-" nnoremap works non-recursively in normal mode.
-nnoremap v <C-V>
-nnoremap <C-V> v
-
 set virtualedit=block "Square up visual selections
 
 " =====[ Toggle syntax highlighting ]==================================

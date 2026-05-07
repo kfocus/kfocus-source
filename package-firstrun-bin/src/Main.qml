@@ -1,11 +1,10 @@
 // vim: set syntax=javascript:
-import QtQuick 2.15
-import QtQuick.Controls 2.0 as Controls
-import QtQuick.Layouts 1.2
-import QtQuick.Window 2.2
-import org.kde.kirigami 2.15 as Kirigami
-import shellengine 1.1
-import startupdata 1.0
+import QtQuick
+import QtQuick.Controls as Controls
+import QtQuick.Layouts
+import QtQuick.Window
+import org.kde.kirigami as Kirigami
+import org.kde.kirigami.delegates as KirigamiDelegates
 
 Kirigami.ApplicationWindow {
     id: root
@@ -193,45 +192,55 @@ Kirigami.ApplicationWindow {
 
     Component {
         id: enabledSidebarDelegate
-        Kirigami.BasicListItem {
-            label     : task
-            iconColor : Kirigami.Theme.textColor
-            iconSize  : Kirigami.Units.gridUnit * 1.5
-            trailing  : Kirigami.Icon {
-                source: ''
-            }
-            onClicked : switchPageFn( jsId )
-            Component.onCompleted: {
-                var taskIcon_part_list = taskIcon.split( '|' );
-                if ( taskIcon_part_list[0] === 'THEMED' ) {
-                    this.icon = getThemedImageFn( taskIcon_part_list[1], 'svg' );
-                } else {
-                    this.icon = taskIcon
+        Controls.ItemDelegate {
+            contentItem: RowLayout {
+                KirigamiDelegates.IconTitleSubtitle {
+                    Layout.fillWidth: true
+                    title       : task
+                    icon.color  : Kirigami.Theme.textColor
+                    //icon.size   : Kirigami.Units.gridUnit * 1.5
+                    Component.onCompleted: {
+                        var taskIcon_part_list = taskIcon.split( '|' );
+                        if ( taskIcon_part_list[0] === 'THEMED' ) {
+                            this.icon.name = getThemedImageFn( taskIcon_part_list[1], 'svg' );
+                        } else {
+                            this.icon.name = taskIcon
+                        }
+                    }
+                }
+                Kirigami.Icon {
+                    source: ''
                 }
             }
+            onClicked   : switchPageFn( jsId )
         }
     }
 
     Component {
         id: disabledSidebarDelegate
-        Kirigami.BasicListItem {
-            label       : task
-            icon        : taskIcon
-            iconSize    : Kirigami.Units.gridUnit * 1.5
-            trailing  : Kirigami.Icon {
-                source: ''
+        Controls.ItemDelegate {
+            contentItem : RowLayout {
+                KirigamiDelegates.IconTitleSubtitle {
+                    Layout.fillWidth: true
+                    title       : task
+                    icon.color  : taskIcon
+                    //icon.size   : Kirigami.Units.gridUnit * 1.5
+                    //disabled    : true
+                    Component.onCompleted: {
+                        var taskIcon_part_list = taskIcon.split( '|' );
+                        if ( taskIcon_part_list[0] === 'THEMED' ) {
+                            this.icon.name = getThemedImageFn( taskIcon_part_list[1], 'svg' );
+                        } else {
+                            this.icon.name = taskIcon
+                        }
+                    }
+                }
+                Kirigami.Icon {
+                    source: ''
+                }
             }
-            fadeContent : true
             onClicked   : {
                 disabledSidebar.currentIndex = disabledSidebarIndex;
-            }
-            Component.onCompleted: {
-                var taskIcon_part_list = taskIcon.split( '|' );
-                if ( taskIcon_part_list[0] === 'THEMED' ) {
-                    this.icon = getThemedImageFn( taskIcon_part_list[1], 'svg' );
-                } else {
-                    this.icon = taskIcon
-                }
             }
         }
     }

@@ -1,6 +1,6 @@
-% KFOCUS-EXTRA(1) kfocus-qwe 24.04
+% KFOCUS-EXTRA(1) kfocus-qwe 26.04
 % Michael Mikowski
-% May 2024
+% May 2026
 
 # NAME
 kfocus-qwe - Command line bookmarks with autocomplete.
