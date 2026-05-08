@@ -214,12 +214,14 @@ _installNvidiaFn () {
   _config_code="${1:-}";
   _nv_series_str="${2:-}";
 
+
   _nv_pkg_suffix='';
-  if [ "${_config_code}" = 'm2g6' ]; then
-    _nv_pkg_suffix='-edge';
-  elif [ "${_nv_series_str}" = 'rtx50' ]; then
-    _nv_pkg_suffix='-edge';
-  fi
+  ## No edge drivers in 26.04 yet
+  # if [ "${_config_code}" = 'm2g6' ]; then
+  #   _nv_pkg_suffix='-edge';
+  # elif [ "${_nv_series_str}" = 'rtx50' ]; then
+  #   _nv_pkg_suffix='-edge';
+  # fi
 
   _cm2SetMsgFn 'Install NVIDIA Packages';
   if ! apt-get reinstall -y "kfocus-nvidia-pinning${_nv_pkg_suffix}"; then

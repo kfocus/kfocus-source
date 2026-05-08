@@ -102,9 +102,11 @@ _echoFormatFn   () { printf '  %-4.4s : %-14.14s %-2.2s %-14.14s ' "$@"; }
 #   0x_A _cm2TestVersFn          : Compare version strings w/dots or dashes
 #   0y_A _cm2SetLogTagFn, _cm2SetLogLevel, _cm2LogFn
 #
-#   10   _cm2CatStripEchoFn    : Cat file with spaces and cr removed
-#   11   _cm2SetCliTypeFn      : Set _cm2CliType to 'cli' or 'whiptail'
-#   12   _cm2RunPlasmaScriptFn : Run a plasmashell script
+#   10   _cm2CatStripEchoFn         : Cat file with spaces and cr removed
+#   11   _cm2SetCliTypeFn           : Set _cm2CliType to 'cli' or 'whiptail'
+#   12   _cm2RunPlasmaScriptFn      : Run a plasmashell script
+#   13   _cm2EchoGraphicalLoginInfo : Echo username and UID for graphical
+#                                     logins
 
 #####
 # See CONTRIBUTING.md, Header Section for function doc template

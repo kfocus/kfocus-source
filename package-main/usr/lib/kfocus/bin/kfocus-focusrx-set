@@ -160,19 +160,20 @@ _getNvSeriesStrFn () {
 #   The caller must determine if this step is appropriate.
 #
 _installNvidiaFn () {
-  declare _dmi_hw_config_code _nv_pkg_suffix _nv_series_str;
+  declare _dmi_hw_config_code _nv_pkg_suffix;
 
   # Use kfocus-nvidia-pinning-edge and kfocus-nvidia-edge for the latest hw
   _dmi_hw_config_code="$(_cm2EchoModelStrFn 'config_code')";
   _nv_pkg_suffix='';
-  if [[ "${_dmi_hw_config_code}" =~ ^(m2g6|zrg1)$ ]]; then
-    _nv_pkg_suffix='-edge';
-  else
-    _nv_series_str="$(_getNvSeriesStrFn)";
-    if [ "${_nv_series_str}" = 'rtx50' ]; then
-      _nv_pkg_suffix='-edge';
-    fi
-  fi
+  ## No edge drivers in 26.04 yet
+  # if [[ "${_dmi_hw_config_code}" =~ ^(m2g6|zrg1)$ ]]; then
+  #   _nv_pkg_suffix='-edge';
+  # else
+  #   _nv_series_str="$(_getNvSeriesStrFn)";
+  #   if [ "${_nv_series_str}" = 'rtx50' ]; then
+  #     _nv_pkg_suffix='-edge';
+  #   fi
+  # fi
 
   _cm2SetMsgFn 'Install NVIDIA Packages';
   if ! _cm2ReinstallPkgsFn "kfocus-nvidia-pinning${_nv_pkg_suffix}"; then
@@ -191,7 +192,7 @@ _installNvidiaFn () {
 ## END _installNvidiaFn }
 
 ## BEGIN _installSynapticsFn {
-# Purpose: Install kfocus-keyboard-ite package.
+# Purpose: Install xserver-xorg-input-synaptics package.
 #
 _installSynapticsFn () {
   _cm2SetMsgFn 'Install xserver-xorg-input-synaptics package';
@@ -242,8 +243,7 @@ _chkHwConfigFn () {
     _dmi_hw_config_code _dmi_hw_model_code                  \
     _file_hw_config_code _file_hw_model_code                \
     _msg _report_str _tool_pkg_suffix _tool_pkg_name        \
-    _is_nv_system _nv_pkg_suffix _nv_series_str             \
-    _btrfs_status _ret_code;
+    _is_nv_system _nv_pkg_suffix _btrfs_status _ret_code;
 
   _do_force='n';
   if [[ "${1:-}" =~ ^[Yy] ]]; then _do_force='y'; fi
@@ -357,19 +357,20 @@ _chkHwConfigFn () {
     ## Begin Consider directive to adjust nvidia pkgs {
     _is_nv_system="$(_cm2EchoModelStrFn 'is_nv_sys')";
     _nv_pkg_suffix='';
-    if [ "${_is_nv_system}" = 'y' ]; then
-      if [[ "${_dmi_hw_config_code}" =~ ^(m2g6|zrg1)$ ]]; then
-        _nv_pkg_suffix='-edge';
-      fi
-    else
-      _nv_series_str="$(_getNvSeriesStrFn)";
-      if [ -n "${_nv_series_str}" ]; then
-        _is_nv_system='y';
-        if [ "${_nv_series_str}" = 'rtx50' ]; then
-          _nv_pkg_suffix='-edge';
-        fi
-      fi
-    fi
+    ## No edge drivers in 26.04 yet
+    # if [ "${_is_nv_system}" = 'y' ]; then
+    #   if [[ "${_dmi_hw_config_code}" =~ ^(m2g6|zrg1)$ ]]; then
+    #     _nv_pkg_suffix='-edge';
+    #   fi
+    # else
+    #   _nv_series_str="$(_getNvSeriesStrFn)";
+    #   if [ -n "${_nv_series_str}" ]; then
+    #     _is_nv_system='y';
+    #     if [ "${_nv_series_str}" = 'rtx50' ]; then
+    #       _nv_pkg_suffix='-edge';
+    #     fi
+    #   fi
+    # fi
 
     # Add directive if nvidia libs should be installed
     if [ "${_is_nv_system}" = 'y' ]; then
@@ -441,7 +442,7 @@ _fixHwConfigFn () {
         _cmd_list+=( "${_bit_list[1]:-}" );;
       'install-kbd-ite'   ) _cmd_list=( '_installKbdIteFn'    );;
       'install-nvidia'    ) _cmd_list=( '_installNvidiaFn'    );;
-      'install-synaptics' ) _cmd_list=( '_installSynapticsFn' );;
+      #'install-synaptics' ) _cmd_list=( '_installSynapticsFn' );;
       'purge-kbd-ite'     ) _cmd_list=( '_purgeKbdIteFn'      );;
       'purge-rollback'    ) _cmd_list=( '_purgeRollbackFn'    );;
       *)

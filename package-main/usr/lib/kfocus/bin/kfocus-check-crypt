@@ -169,8 +169,8 @@ _modifyDiskPassFn () {
     fi
 
     if { echo "${_old_pass}"; echo "${_new_pass}"; echo "${_new_pass}"; } \
-     | cryptsetup luksChangeKey "${_dev_str}" 1>&2 2>/dev/null; then
-       true;
+      | cryptsetup luksChangeKey "${_dev_str}" 1>&2 2>/dev/null; then
+      true;
     else
       _fail_list+=( "${_dev_str}" );
     fi
@@ -273,4 +273,3 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _mainFn "$@";
 fi
 ## . END Run main if script is not sourced
-

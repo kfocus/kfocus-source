@@ -1,8 +1,7 @@
 #!/bin/bash
 # kfocus-main postrm
 #
-# set -u is used to exist on uninitialized variables
-# set -e is not used as we do our own error checking
+# set -u is used to exit on uninitialized variables
 #
 # set -u; # uncomment to debug
 set -e;
@@ -15,9 +14,7 @@ _cm2BlockMsg='';
 _cm2EchoFn    () { 1>&2 echo -e "$*";  }
 _cm2SetMsgFn  () { _cm2BlockMsg="$*"; _cm2EchoFn "== BEGIN : ${_cm2BlockMsg}"; }
 _cm2SucFn     () { _cm2EchoFn "== . END : OK   ${_cm2BlockMsg}\n\n"; }
-_cm2SucStrFn  () { _cm2EchoFn "ok  : ${*}"; }
 _cm2WarnFn    () { _cm2EchoFn "== . END : WARN Could not ${_cm2BlockMsg}\n\n"; }
-_cm2WarnStrFn () { _cm2EchoFn "warn: ${*}"; }
 ## } . END Declare common.2.source symbols
 
 ## BEGIN MAIN {

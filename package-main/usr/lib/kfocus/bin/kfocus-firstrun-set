@@ -60,8 +60,9 @@ _mainFn () {
 }
 
 ## BEGIN Declare global variables {
+## FIXME: _kwriteExe is used but never set?
 declare _binName _binDir _baseDir _baseName \
-  _kwriteExe _plasmashellExe _configList;
+  _kwriteExe _configList;
 ## . END Declare global variables }
 
 ## BEGIN Run main if script is not sourced {

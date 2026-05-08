@@ -1,7 +1,7 @@
 #!/bin/bash
 # kfocus-main.postinst
 
-# Copyright 2019-2025 MindShare Inc.
+# Copyright 2019-2026 MindShare Inc.
 # Written for Kubuntu Focus by:
 #   Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
 #
@@ -19,6 +19,7 @@ set -e;
 #  EXCERPT from test/test-scripts/common.2.source
 _cmXBlockMsg='';
 _cmXEchoFn    () { 1>&2 echo -e "$*";  }
+_cmXEchoIntFn () { printf '%d' "${1:-0}" 2>/dev/null; }
 _cmXSetMsgFn  () { _cmXBlockMsg="$*"; _cmXEchoFn "== BEGIN : ${_cmXBlockMsg}"; }
 _cmXSucFn     () { _cmXEchoFn "== . END : OK   ${_cmXBlockMsg}\n\n"; }
 _cmXSucStrFn  () { _cmXEchoFn "ok  : ${*}"; }
@@ -31,23 +32,59 @@ _cmXLsFn () {
       | grep -v '^\.' | sort;
   fi
 }
+_cmXEchoGraphicalLoginInfo() {
+  declare _session_list _session_str _session_info _uname _uid _info_list;
+
+  readarray -t _session_list < <(loginctl list-sessions --json=short \
+    | jq '.[].session');
+  _info_list=()
+  for _session_str in "${_session_list[@]}"; do
+    # jq includes quotes that we don't want, all session values are integers
+    _session_str="$(_cmXEchoIntFn "${_session_str//\"/}")";
+    _session_info="$(loginctl get-session "${_session_str}")"$'\n' \
+      || continue;
+
+    # Check session class, must be 'user'
+    [[ "${_session_info}" =~ .*($'\n'|^)Class=([^$'\n']*)$'\n' ]] || continue;
+    [ "${BASH_REMATCH[2]}" = 'user' ] || continue;
+
+    # Check session type, must be 'x11' or 'wayland'
+    [[ "${_session_info}" =~ .*($'\n'|^)Type=([^$'\n']*)$'\n' ]] || continue;
+    [ "${BASH_REMATCH[2]}" = 'wayland' ] || [ "${_session_type}" = 'x11' ] \
+      || continue;
+
+    # Extract username and UID
+    [[ "${_session_info}" =~ .*($'\n'|^)Name=([^$'\n']*)$'\n' ]] || continue;
+    _uname="${BASH_REMATCH[2]}";
+    [ -n "${_uname}" ] || continue;
+    [[ "${_session_info}" =~ .*($'\n'|^)User=([^$'\n']*)$'\n' ]] || continue;
+    _uid="${BASH_REMATCH[2]}";
+    [ -n "${_uid}" ] || continue;
+
+    _info_list+=( "${_uname}|${_uid}" );
+  done
+
+  # Print list separated by semicolons, omit the trailing semicolon on the
+  # last list item
+  printf '%s;' "${_info_list[@]:0:${#_info_list[@]}-1}";
+  printf '%s\n' "${_info_list[${#_info_list[@]}-1]}";
+}
 ## . END Declare common.2.source symbols }
 
 ## BEGIN _restartUserServiceFn {
 _restartUserServiceFn () {
-  declare _service_name _xserver_id _uname _uid _dbus_str _finish_fn;
+  declare _service_name _session_info _bit_list _uname_uid_tuple \
+    _uname_uid_list _uname _uid _dbus_str _finish_fn;
   _service_name="${1:-}";
   if [ -z "${_service_name}" ]; then return; fi
 
-  # Get all running X servers
-  while read -r _xserver_id; do
-    # Determine username of one graphically logged-in user
-    _uname="$(
-      who | grep "(:${_xserver_id})" | head -n1 | awk '{ print $1 }'
-    )";
-    [ -n "${_uname}" ]          || continue;
-    _uid="$(id -u "${_uname}")" || continue;
+  _session_info="$(_cmXEchoGraphicalLoginInfo)";
+  IFS=';' read -r -a _bit_list <<< "${_session_info}";
 
+  for _uname_uid_tuple in "${_bit_list[@]}"; do
+    IFS='|' read -r -a _uname_uid_list <<< "${_uname_uid_tuple}";
+    _uname="${_uname_uid_list[0]}";
+    _uid="${_uname_uid_list[1]}";
     # Reload and restart service for owner of this xserver.
     _cmXSetMsgFn "restart |${_uname}|${_service_name}|";
     _dbus_str="unix:path=/run/user/${_uid}/bus";
@@ -62,7 +99,7 @@ _restartUserServiceFn () {
       fi
     fi
     "${_finish_fn}" || true;
-  done < <(_cmXLsFn '/tmp/.X11-unix/' | sed 's?X??');
+  done
 }
 ## . END _restartUserServiceFn }
 
@@ -177,7 +214,7 @@ _setupHintDefaultsFn () {
 ## BEGIN _cleanupFn {
 #  Purpose: Clean up of various bits
 _cleanUpFn () {
-  declare _update_deskdb_exe _firstrun_file _file;
+  declare _update_deskdb_exe;
   if [ -d "${_libKfocusDir}/skel/.ssh" ]; then
     _cmXSetMsgFn "Set secure .ssh access rights";
     if chmod 700 "${_libKfocusDir}/skel/.ssh"; then
@@ -190,40 +227,10 @@ _cleanUpFn () {
     if "${_update_deskdb_exe}";  then _cmXSucFn; else _cmXWarnFn; fi
   fi
 
-  _firstrun_file='/etc/xdg/autostart/kfocus-firstrun.desktop';
-  if [ -e "${_firstrun_file}" ] || [ -L "${_firstrun_file}" ]; then
-    _cmXSetMsgFn "Remove deprecated ${_firstrun_file}";
-    if rm -f "${_firstrun_file}"; then
-      _cmXSucFn; else _cmXWarnFn;
-    fi
-  fi
-
   # Enable system-level FocusRx
   _cmXSetMsgFn 'Enable services';
   2>/dev/null deb-systemd-helper enable kfocus-focusrx-system.service || true;
   _cmXSucFn;
-
-  # Remove old bash completion symlink; this was renamed to
-  #   /etc/bash_completion.d/kfocus
-  # This is from Jammy; remove after Noble LTS
-  #
-  if [ -f /etc/bash_completion.d/kfocus-bashcompletion ]; then
-    _cmXSetMsgFn 'Remove out-of-date kfocus-bashcompletion';
-    if rm -f /etc/bash_completion.d/kfocus-bashcompletion; then
-      _cmXSucFn; else _cmXWarnFn;
-    fi
-  fi
-
-  # Disable unsupported Skype report 2024-06-25
-  while read -r _file; do
-    _cmXSetMsgFn "Disable old Skype repo in ${_file}";
-    if sed -i '/^\s*deb .*https*:\/\/repo.skype.com\/deb/s/^/# /' "${_file}";
-      then _cmXSucFn; else _cmXWarnFn;
-    fi
-  done < <(
-    grep -rlE '^\s*deb .*https?://repo.skype.com/deb' \
-      '/etc/apt/sources.list.d'
-  );
 }
 ## . END _cleanupFn }
 

@@ -367,7 +367,7 @@ _chkOemMultiDiskFn () {
 
   # Use sudo here always, pkexec wrecks the GUI. We can do this here
   # because the OEM user does not need a password for sudo.
-  sudo -E "${_chainHelperExe}" 'quietExit';
+  sudo XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR}" "${_chainHelperExe}" 'quietExit';
 
   _cm2SucFn;
 }
@@ -418,151 +418,153 @@ _chkNvPMizerFn () {
 ## . END _chkNvPMizerFn }
 
 ## BEGIN _chkDispRefreshFn {
-_chkDispRefreshFn () {
-  declare _nag_name _warn_nag_count _title _win_title \
-    _kscreen_doctor_report _internal_disp_name _idx _prompt_msg;
+# kscreen-doctor's output format has changed substantially. This function MUST
+# be reworked for Plasma 6 if we bring it back.
+# _chkDispRefreshFn () {
+#   declare _nag_name _warn_nag_count _title _win_title \
+#     _kscreen_doctor_report _internal_disp_name _idx _prompt_msg;
+#
+#   # Skip if not on m2g6 or zrg1 or kscreen tool not installed
+#   [[ "$(_cm2EchoModelStrFn 'config_code')" =~ ^(m2g6|zrg1)$ ]] || return;
+#   [ -z "${_kscreenDoctorExe}" ] && return;
+#
+#   # Set tunables
+#   _nag_name='kfocus-disphz_count';
+#   _warn_nag_count='5';
+#
+#   _title='Configure display refresh';
+#   _cm2SetMsgFn "${_title}";
+#   _win_title="${_rootTitle}: ${_title}";
+#
+#   # Calculate laptop display name
+#   _kscreen_doctor_report="$("${_kscreenDoctorExe}" -o)";
+#   _internal_disp_name="$(
+#     ansi2txt <<< "${_kscreen_doctor_report}" \
+#       | cut -d' ' -f3-5 \
+#       | grep 'eDP.* enabled connected' \
+#       | cut -d' ' -f1 \
+#       | head -n1
+#   )";
+#   if [ -z "${_internal_disp_name}" ]; then
+#     _cm2WarnStrFn 'Laptop display not found. Will try again next login.';
+#     _cm2WarnFn;
+#     return;
+#   fi
+#
+#   ## Begin Handle 60 Hz refresh rate {
+#   if grep " ${_internal_disp_name} " <<< "${_kscreen_doctor_report}" \
+#     | grep -q '2560x1600@60\*'; then
+#     _cm2SucStrFn 'Preferred screen refresh already set.';
+#     _cm2SucFn;
+#     return;
+#   ## . End Handle 60 Hz refresh rate }
+#   #
+#   ## Otherwise, Handle nag count < 1 {
+#   #  We try this first and second time run to start at 60 Hz because
+#   #  although screen doctor claims to work the first time, it often does not.
+#   #
+#   elif _nag_msg="$(_testNagCountFn 'check' "${_nag_name}" 1)"; then
+#     for _idx in {0..1}; do
+#       _cm2EchoFn "Set laptop screen to 60Hz attempt |${_idx}|";
+#       "${_kscreenDoctorExe}" \
+#         "output.${_internal_disp_name}.mode.2560x1600@60" || true;
+#       # Without sleep, this adjustment has been unreliable.
+#       sleep 3;
+#
+#       _kscreen_doctor_report="$("${_kscreenDoctorExe}" -o)";
+#       if grep " ${_internal_disp_name} " <<< "${_kscreen_doctor_report}" \
+#         | grep -q '2560x1600@60\*'; then
+#         _testNagCountFn 'inc' "${_nag_name}" '1';
+#         _cm2SucFn;
+#         return;
+#       fi
+#     done
+#
+#     # Do not set the nag count and try again later
+#     _cm2WarnStrFn 'Could not set screen mode. Will try again next login.';
+#     _cm2WarnFn;
+#     return;
+#   fi
+#   ## End Otherwise, handle nag_count < 1 }
+#
+#   ## Begin Handle 240 Hz refresh rate {
+#   if grep " ${_internal_disp_name} " <<< "${_kscreen_doctor_report}" \
+#     | grep -q '2560x1600@240\*'; then
 
-  # Skip if not on m2g6 or zrg1 or kscreen tool not installed
-  [[ "$(_cm2EchoModelStrFn 'config_code')" =~ ^(m2g6|zrg1)$ ]] || return;
-  [ -z "${_kscreenDoctorExe}" ] && return;
-
-  # Set tunables
-  _nag_name='kfocus-disphz_count';
-  _warn_nag_count='5';
-
-  _title='Configure display refresh';
-  _cm2SetMsgFn "${_title}";
-  _win_title="${_rootTitle}: ${_title}";
-
-  # Calculate laptop display name
-  _kscreen_doctor_report="$("${_kscreenDoctorExe}" -o)";
-  _internal_disp_name="$(
-    ansi2txt <<< "${_kscreen_doctor_report}" \
-      | cut -d' ' -f3-5 \
-      | grep 'eDP.* enabled connected' \
-      | cut -d' ' -f1 \
-      | head -n1
-  )";
-  if [ -z "${_internal_disp_name}" ]; then
-    _cm2WarnStrFn 'Laptop display not found. Will try again next login.';
-    _cm2WarnFn;
-    return;
-  fi
-
-  ## Begin Handle 60 Hz refresh rate {
-  if grep " ${_internal_disp_name} " <<< "${_kscreen_doctor_report}" \
-    | grep -q '2560x1600@60\*'; then
-    _cm2SucStrFn 'Preferred screen refresh already set.';
-    _cm2SucFn;
-    return;
-  ## . End Handle 60 Hz refresh rate }
-  #
-  ## Otherwise, Handle nag count < 1 {
-  #  We try this first and second time run to start at 60 Hz because
-  #  although screen doctor claims to work the first time, it often does not.
-  #
-  elif _nag_msg="$(_testNagCountFn 'check' "${_nag_name}" 1)"; then
-    for _idx in {0..1}; do
-      _cm2EchoFn "Set laptop screen to 60Hz attempt |${_idx}|";
-      "${_kscreenDoctorExe}" \
-        "output.${_internal_disp_name}.mode.2560x1600@60" || true;
-      # Without sleep, this adjustment has been unreliable.
-      sleep 3;
-
-      _kscreen_doctor_report="$("${_kscreenDoctorExe}" -o)";
-      if grep " ${_internal_disp_name} " <<< "${_kscreen_doctor_report}" \
-        | grep -q '2560x1600@60\*'; then
-        _testNagCountFn 'inc' "${_nag_name}" '1';
-        _cm2SucFn;
-        return;
-      fi
-    done
-
-    # Do not set the nag count and try again later
-    _cm2WarnStrFn 'Could not set screen mode. Will try again next login.';
-    _cm2WarnFn;
-    return;
-  fi
-  ## End Otherwise, handle nag_count < 1 }
-
-  ## Begin Handle 240 Hz refresh rate {
-  if grep " ${_internal_disp_name} " <<< "${_kscreen_doctor_report}" \
-    | grep -q '2560x1600@240\*'; then
-
-    # Bail if nag count is met
-    if ! _nag_msg="$(
-      _testNagCountFn 'check' "${_nag_name}" "${_warn_nag_count}"
-    )"; then
-      _cm2SucStrFn 'View count limit reached.';
-      _cm2SucFn;
-      return;
-    fi
-
-    _prompt_msg="$(cat <<EOF
-${_cm2HtmBeginStr}
-${_cm2HtmH3Str}${_title}</h3>
-
-${_cm2HtmPStr}The laptop display's refresh rate is currently set to<br>
-240 Hz. Higher refresh rates consume substantial<br>
-bandwidth, which may make it more difficult to use<br>
-multiple displays. If you encounter issues, consider<br>
-reducing the laptop display refresh rate to 60 Hz.</p>
-
-${_cm2HtmPStr}You may change the refresh rate using <code>System<br>
-Settings &gt; Display and Monitor &gt; Display<br>
-Configuration &gt; Refresh Rate</code>.</p>${_cm2HtmEndStr}
-
-${_cm2HtmPStr}If you keep the panel at 240 Hz, this <br>
-${_nag_msg}.</p>
-EOF
-  )";
-    _cm2PromptUserFn "${_prompt_msg}" "${_win_title}";
-    _testNagCountFn 'inc' "${_nag_name}";
-    _cm2SucFn;
-    return;
-  fi
-  ## . End Handle 240 Hz refresh rate }
-
-  ## Begin Handle 300 Hz refresh rate {
-  #  This should not affect nag count and should always be fixed.
-  #  TODO: Should we reset nag count here?
-  if grep " ${_internal_disp_name} " <<< "${_kscreen_doctor_report}" \
-    | grep -q '2560x1600@300\*'; then
-    _prompt_msg="$(cat <<EOF
-${_cm2HtmBeginStr}
-${_cm2HtmH3Str}${_title}</h3>
-
-<p><b>Setting screen refresh rate to 240 Hz.</b></p>
-
-${_cm2HtmPStr}Laptop display refresh rates greater than 240 Hz are<br>
-unstable, unsupported, and may cause system crashes<br>
-or other undesirable behavior.</p>
-
-${_cm2HtmPStr}If you are using multiple monitors, you may wish to<br>
-further reduce the laptop display refresh rate to 60 Hz.<br>
-This provides more display bandwidth for external<br>
-displays.</p>
-
-${_cm2HtmPStr}You may change the refresh rate later using <code>System<br>
-Settings &gt; Display and Monitor &gt; Display<br>
-Configuration &gt; Refresh Rate</code>.</p>${_cm2HtmEndStr}
-EOF
-    )";
-    _cm2PromptUserFn "${_prompt_msg}" "${_win_title}";
-
-    if "${_kscreenDoctorExe}" \
-      "output.${_internal_disp_name}.mode.2560x1600@240"; then
-      _cm2SucFn;
-    else
-      _cm2WarnStrFn 'Could not set screen mode. Will try again next login';
-      _cm2WarnFn;
-    fi
-    ## Reset nag for 240 Hz
-    _testNagCountFn 'fill' "${_nag_name}" '2';
-    return;
-  fi
-  ## . End Handle 300 Hz refresh rate }
-}
+#     # Bail if nag count is met
+#     if ! _nag_msg="$(
+#       _testNagCountFn 'check' "${_nag_name}" "${_warn_nag_count}"
+#     )"; then
+#       _cm2SucStrFn 'View count limit reached.';
+#       _cm2SucFn;
+#       return;
+#     fi
+#
+#     _prompt_msg="$(cat <<EOF
+# ${_cm2HtmBeginStr}
+# ${_cm2HtmH3Str}${_title}</h3>
+#
+# ${_cm2HtmPStr}The laptop display's refresh rate is currently set to<br>
+# 240 Hz. Higher refresh rates consume substantial<br>
+# bandwidth, which may make it more difficult to use<br>
+# multiple displays. If you encounter issues, consider<br>
+# reducing the laptop display refresh rate to 60 Hz.</p>
+#
+# ${_cm2HtmPStr}You may change the refresh rate using <code>System<br>
+# Settings &gt; Display and Monitor &gt; Display<br>
+# Configuration &gt; Refresh Rate</code>.</p>${_cm2HtmEndStr}
+#
+# ${_cm2HtmPStr}If you keep the panel at 240 Hz, this <br>
+# ${_nag_msg}.</p>
+# EOF
+#   )";
+#     _cm2PromptUserFn "${_prompt_msg}" "${_win_title}";
+#     _testNagCountFn 'inc' "${_nag_name}";
+#     _cm2SucFn;
+#     return;
+#   fi
+#   ## . End Handle 240 Hz refresh rate }
+#
+#   ## Begin Handle 300 Hz refresh rate {
+#   #  This should not affect nag count and should always be fixed.
+#   #  TODO: Should we reset nag count here?
+#   if grep " ${_internal_disp_name} " <<< "${_kscreen_doctor_report}" \
+#     | grep -q '2560x1600@300\*'; then
+#     _prompt_msg="$(cat <<EOF
+# ${_cm2HtmBeginStr}
+# ${_cm2HtmH3Str}${_title}</h3>
+#
+# <p><b>Setting screen refresh rate to 240 Hz.</b></p>
+#
+# ${_cm2HtmPStr}Laptop display refresh rates greater than 240 Hz are<br>
+# unstable, unsupported, and may cause system crashes<br>
+# or other undesirable behavior.</p>
+#
+# ${_cm2HtmPStr}If you are using multiple monitors, you may wish to<br>
+# further reduce the laptop display refresh rate to 60 Hz.<br>
+# This provides more display bandwidth for external<br>
+# displays.</p>
+#
+# ${_cm2HtmPStr}You may change the refresh rate later using <code>System<br>
+# Settings &gt; Display and Monitor &gt; Display<br>
+# Configuration &gt; Refresh Rate</code>.</p>${_cm2HtmEndStr}
+# EOF
+#     )";
+#     _cm2PromptUserFn "${_prompt_msg}" "${_win_title}";
+#
+#     if "${_kscreenDoctorExe}" \
+#       "output.${_internal_disp_name}.mode.2560x1600@240"; then
+#       _cm2SucFn;
+#     else
+#       _cm2WarnStrFn 'Could not set screen mode. Will try again next login';
+#       _cm2WarnFn;
+#     fi
+#     ## Reset nag for 240 Hz
+#     _testNagCountFn 'fill' "${_nag_name}" '2';
+#     return;
+#   fi
+#   ## . End Handle 300 Hz refresh rate }
+# }
 ## . END _chkDispRefreshFn }
 
 ## BEGIN _chkHwConfigFn {
@@ -1282,6 +1284,7 @@ _chkFirstrunFn () {
 
   # Check if launched at login: 'plasma_session' is used by Plasma 5.24
   #   and 'systemd' by Plasma 5.27. kfocus-focusrx if rerun.
+  # TODO: What is used by Plasma 6.6? Probably systemd?
   if [[ "${_parentCmdStr}" =~ ^(plasma_session|systemd|kfocus-focusrx) ]];
     then "${_firstrunExe}";
   fi
@@ -1322,7 +1325,9 @@ _mainFn () {
   _chkRollbackUxFn;   # UX 4013: Check for rollback, fixup icons
   _chkKbdLedFn;       # UX 3735: Check and restore keyboard LED state
   _chkIbusConfigFn;   # UX 4027: Check and apply IBUS fixup
-  _chkDispRefreshFn;  # UX 6141: Check display refresh, apply fixups
+  # _chkDispRefreshFn;  # UX 6141: Check display refresh, apply fixups
+                        # Disabled for 26.04 as higher refresh rates seem to
+                        # work better with Wayland
 
   # _chkKernelPkgFn;  # Disabled: See 4423, 66226a00c
   # _chkNvidiaPkgFn;  # Disabled: See 2928
@@ -1388,7 +1393,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     "_fixIbusExe|${_binDir}/kfocus-fix-ibus||optional"
     "_kbdColorSetExe|${_binDir}/kfocus-kb-color-set||optional"
     "_kcleanExe|${_binDir}/kfocus-kclean||optional"
-    "_kscreenDoctorExe|/usr/bin/kscreen-doctor||optional"
+    # "_kscreenDoctorExe|/usr/bin/kscreen-doctor||optional"
     "_nvSettingsExe|nvidia-settings||optional"
     "_primeSelectExe|prime-select||optional"
     "_resetEffectsExe|${_binDir}/kfocus-reset-effects||optional"

@@ -51,56 +51,28 @@ _importCommonFn () {
 ## BEGIN _promptAllUsersFn {
 # See https://stackoverflow.com/a/49533938
 _promptAllUsersFn () {
-  declare _mode _msg _xserver_id _user_name;
+  declare _session_info _bit_list _uname_uid_tuple _uname_uid_list _uname \
+    _uid _mode _msg;
   _mode="${1:-info}";
   _msg="${2:-blank}";
 
-  while read -r _xserver_id; do
-    _user_name="$(
-      who | grep "(:${_xserver_id})" | head -n1 | awk '{ print $1 }'
-    )";
-    if [ -z "${_user_name}" ]; then continue; fi
+  _session_info="$(_cm2EchoGraphicalLoginInfo)";
+  IFS=';' read -r -a _bit_list <<< "${_session_info}";
 
-    sudo -u "${_user_name}" \
-      DISPLAY="${_xserver_id}" \
-      DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$(id -u "${_user_name}")/bus" \
-      qdbus org.kfocus.FocusRxDispatch.launcher / "${_mode}" "${_msg}";
-  done < <(_cm2LsFn '/tmp/.X11-unix/' | sed 's?X??')
+  for _uname_uid_tuple in "${_bit_list[@]}"; do
+    IFS='|' read -r -a _uname_uid_list <<< "${_uname_uid_tuple}";
+    _uname="${_uname_uid_list[0]}"
+    _uid="${_uname_uid_list[1]}"
+    sudo -u "${_uname}" \
+      XDG_RUNTIME_DIR="/run/user/${_uid}" \
+      DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${_uid}/bus" \
+      dbus-send --print-reply --session \
+        --dest=org.kfocus.FocusRxDispatch.launcher / \
+        "org.freedesktop.FocusRxDispatch.launcher.${_mode}" \
+        "string:${_msg}";
+  done
 }
 ## . END _promptAllUsersFn }
-
-## BEGIN _cleanupDkmsFilesFn {
-# Purpose   : Clean up residual dkms files not supported by dkms 3.0.x.
-#
-_cleanupDkmsFilesFn () {
-  declare _dkms_vers _verify_str _rm_list _file;
-
-  # Determine installed dkms version
-  _dkms_vers="$(awk -F': ' '/^Version:/ {print $NF}' < <(dpkg --status dkms))";
-
-  # Bail if dkms version is not in the 3.0.x range
-  dpkg --compare-versions "${_dkms_vers}" ge '3.1.0' && return;
-  dpkg --compare-versions "${_dkms_vers}" lt '3.0.0' && return;
-
-  # Create a list of residual files to remove and dkms file status string
-  _rm_list=(
-    '/etc/dkms/framework.conf.d/autoinstall_all_kernels.conf'
-    '/etc/kernel/preinst.d/dkms'
-  );
-  _verify_str="$(dpkg --verify dkms)";
-
-  ## Begin Loop through the residual file list {
-  for _file in "${_rm_list[@]}"; do
-    # Skip this file if it does not exist
-    #   or if it has been modified from the original config
-    if [ ! -f "${_file}" ]; then continue; fi
-    if grep -q "..5...... c ${_file}" <<< "${_verify_str}"; then continue; fi
-
-    rm -f "${_file}";
-  done
-  ## . End Loop through the residual file list }
-}
-## . END _cleanupDkmsFilesFn }
 
 ## BEGIN _initCpuFn {
 # Purpose   : Initialize CPU for 2023+ systems
@@ -249,7 +221,6 @@ _mainFn () {
     case "${_opt_str}" in
     b) # Boot tasks
       _cm2EchoFn "== BEGIN :     ${_rootTitle}\n";
-      _cleanupDkmsFilesFn;
       _initCpuFn;
       _manageSnapshotsOnBootFn;
       _cm2EchoFn "\n==. END : OK   ${_rootTitle}\n\n";
