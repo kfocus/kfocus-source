@@ -254,7 +254,7 @@ function deb_element-desktop() {
   WEBSITE="https://element.io/"
 }
 function deb_google-chrome-stable() {
-  APT_KEY_URL="http://dl.google.com/linux/linux_signing_key.pub"
+  APT_KEY_URL="https://dl.google.com/linux/linux_signing_key.pub"
   APT_LIST_NAME="google-chrome"
   APT_REPO_URL="deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main"
   EULA="By downloading Chrome, you agree to the Google Terms of Service and Chrome and Chrome OS Additional Terms of Service\n - https://policies.google.com/terms\n - https://www.google.co.uk/intl/en/chrome/terms/"
@@ -262,19 +262,9 @@ function deb_google-chrome-stable() {
   WEBSITE="https://www.google.com/chrome/"
 }
 function deb_insync-dolphin() {
-  ARCHS_SUPPORTED="amd64"
-  APT_KEY_ID='ACCAF35C'
-  # See https://www.insynchq.com/downloads/linux#apt
-  #   sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys ACCAF35C
-  #   If the previous command did not work, use this instead:
-  #   sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys ACCAF35C
-  #   GPG_KEY_ID="A684470CACCAF35C" # upstream from deb-get
-  APT_LIST_NAME="insync"
-  APT_REPO_URL="deb http://apt.insync.io/ubuntu ${UBUNTU_CODENAME} non-free contrib"
   PRETTY_NAME="Insync"
   WEBSITE="https://www.insynchq.com/"
-  PRETTY_NAME="Insync"
-  WEBSITE="https://www.insynchq.com/"
+  CUSTOM_FUNC_NAME="_installInsyncDolphinFn"
 }
 function deb_keepassxc() {
   PPA="ppa:phoerious/keepassxc"
@@ -423,7 +413,6 @@ function _readPkgRepoInfoFn () {
   APT_KEY_URL='';
   GPG_KEY_ID='';
   GPG_KEY_URL='';
-  APT_KEY_ID='';
   APT_LIST_NAME='';
   APT_REPO_URL='';
   APT_EXTRA_PKGLIST=();
@@ -472,9 +461,7 @@ function install_apt() {
     fi
   fi
 
-  if [ -n "${APT_KEY_ID}" ]; then
-    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys "${APT_KEY_ID}";
-  elif [ -n "${GPG_KEY_ID}" ]; then
+  if [ -n "${GPG_KEY_ID}" ]; then
     gpg --no-default-keyring --keyring \
       "/usr/share/keyrings/${APT_LIST_NAME}-archive-keyring.gpg" \
       --keyserver keyserver.ubuntu.com --recv "${GPG_KEY_ID}";
@@ -586,6 +573,22 @@ _installDisplaylinkDriverFn() {
   install_apt;
 }
 ## . END _installDisplaylinkDriverFn }
+
+## BEGIN _installInsyncDolphinFn() {
+_installInsyncDolphinFn() {
+  declare _url;
+
+  _url='https://cdn.insynchq.com/builds/linux/3.9.10.60041';
+  _url+='/insync_3.9.10.60041-resolute_amd64.deb';
+  install_deb "${_url}";
+
+  _url='https://cdn.insynchq.com/builds/linux/3.9.8.60034';
+  _url+='/insync-dolphin-kde6_3.9.8.60034_all.deb'
+  install_deb "${_url}";
+
+  update_apt;
+}
+## . END _installInsyncDolphinFn }
 
 ## BEGIN _echoKeyListFn {
 _echoKeyListFn () {
