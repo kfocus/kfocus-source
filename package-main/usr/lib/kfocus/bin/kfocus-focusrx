@@ -367,7 +367,8 @@ _chkOemMultiDiskFn () {
 
   # Use sudo here always, pkexec wrecks the GUI. We can do this here
   # because the OEM user does not need a password for sudo.
-  sudo XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR}" "${_chainHelperExe}" 'quietExit';
+  sudo XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-}" DISPLAY="${DISPLAY:-}" \
+    "${_chainHelperExe}" 'quietExit';
 
   _cm2SucFn;
 }
@@ -853,21 +854,22 @@ _EOH13
 ## . END _chkXorgConfigFn }
 
 ## BEGIN _chkKernelCleanFn {
-_chkKernelCleanFn () {
-  declare _cmd_list;
-
-  # Skip if required tool not installed.
-  [ -z "${_kcleanExe}" ] && return;
-
-  _cm2SetMsgFn 'Run Kernel Cleaner';
-  _cmd_list=( "${_kcleanExe}" );
-  if [ "${_doForce}" = 'y' ]; then
-    _cmd_list+=( '-f' );
-  fi
-  if "${_cmd_list[@]}"; then
-    _cm2SucFn; else _cm2WarnFn;
-  fi
-}
+## Disabled for now, this may not be needed in 26.04 anymore.
+# _chkKernelCleanFn () {
+#   declare _cmd_list;
+#
+#   # Skip if required tool not installed.
+#   [ -z "${_kcleanExe}" ] && return;
+#
+#   _cm2SetMsgFn 'Run Kernel Cleaner';
+#   _cmd_list=( "${_kcleanExe}" );
+#   if [ "${_doForce}" = 'y' ]; then
+#     _cmd_list+=( '-f' );
+#   fi
+#   if "${_cmd_list[@]}"; then
+#     _cm2SucFn; else _cm2WarnFn;
+#   fi
+# }
 ## . END _chkKernelCleanFn }
 
 ## BEGIN _checkIbusConfigFn {
@@ -1334,7 +1336,7 @@ _mainFn () {
   # _cleanupZoomFn;   # Disabled: See 2146,2305
   # _chkExperRepoFn;  # Disabled: See 66226a00c
 
-  _chkKernelCleanFn;  # APP: Check kernels, offer kernel cleaner tool
+  # _chkKernelCleanFn;  # APP: Check kernels, offer kernel cleaner tool
   _chkResetEffectsFn; # APP: Force only: offer reset effects tool
   _chkXorgConfigFn;   # APP: Detect xorg, offer advice
   _offerSnapshotsFn;  # APP: Force only: offer snapshots tool
@@ -1392,7 +1394,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     "_firstrunExe|${_binDir}/kfocus-firstrun-bin||optional"
     "_fixIbusExe|${_binDir}/kfocus-fix-ibus||optional"
     "_kbdColorSetExe|${_binDir}/kfocus-kb-color-set||optional"
-    "_kcleanExe|${_binDir}/kfocus-kclean||optional"
+    #"_kcleanExe|${_binDir}/kfocus-kclean||optional"
     # "_kscreenDoctorExe|/usr/bin/kscreen-doctor||optional"
     "_nvSettingsExe|nvidia-settings||optional"
     "_primeSelectExe|prime-select||optional"
