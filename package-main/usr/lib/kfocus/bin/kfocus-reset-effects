@@ -67,19 +67,14 @@ _resetShortcutsFn () {
     'kwin|Desktops|Number|4'
     'kwin|Desktops|Rows|4'
 
-    # Configure desktopgrid.
-    'kwin|Effect-desktopgrid|BorderActivate|'
-    'kwin|Effect-desktopgrid|ClickBehavior|'
-    'kwin|Effect-desktopgrid|CustomLayoutRows|'
-    'kwin|Effect-desktopgrid|DesktopLayoutMode|1'
-    'kwin|Effect-desktopgrid|DesktopNameAlignment|36'
-    'kwin|Effect-desktopgrid|LayoutMode|1'
-    'kwin|Effect-desktopgrid|PresentWindows|'
-    'kwin|Effect-desktopgrid|ShowAddRemove|false'
+    # Configure overview.
+    'kwin|Effect-overview|FilterWindows|'
+    'kwin|Effect-overview|IgnoreMinimized|'
+    'kwin|Effect-overview|OrganizedGrid|'
+    'kwin|Effect-overview|BorderActivate|'
 
     # Disable Night Color by default as it can cause flickering on Intel.
     # Users also find it confusing.
-    'kwin|Compositing|OpenGLIsUnsafe|false'
     'kwin|NightColor|Active|false'
 
     # Enable transparent move, squash windows, wobbly effects.

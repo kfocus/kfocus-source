@@ -78,7 +78,6 @@ _exeLookupList=(
   'konsole|konsole||konsole|Konsole: Use an X Terminal Emulator'
   'krita|krita||krita|Krita: Raster Image Editor'
   'kruler|kruler||kruler|Kruler: Measure Screen Objects'
-  'kubectl|konsole;--hold;-e;kubectl;help|kubectl|kubectl|Kubernetes: Command Line Container Management'
   'libreoffice-base|libreoffice;--base||libreoffice-base|LibreOffice Database: Connect Databases'
   'libreoffice-calc|libreoffice;--calc||libreoffice-calc|LibreOffice Calc: Create and Edit Spreadsheets'
   'libreoffice-draw|libreoffice;--draw||libreoffice-draw|LibreOffice Drawing: Create Vector and Raster Images'
@@ -86,7 +85,7 @@ _exeLookupList=(
   'libreoffice-writer|libreoffice;--writer||libreoffice-writer|LibreOffice Writer: Word Processor'
   'lutris|lutris||lutris|Lutris: Play Games With Wine'
   'meld|meld||meld|Meld: Visual Difference and Merge Tool'
-  'minecraft-launcher|minecraft-launcher||minecraft-launcher|Minecraft: Launch Minecraft'
+  #'minecraft-launcher|minecraft-launcher||minecraft-launcher|Minecraft: Launch Minecraft'
   'nvidia-settings|nvidia-settings||nvidia-settings|Nvidia Settings: Configure Nvidia GPUs'
   'obs|obs||obs-studio|OBS Studio: Record and Stream Live Video'
   'okular|okular||okular|Okular: View PDFs and Other Documents'
@@ -198,11 +197,6 @@ function deb_azure-cli() {
   PRETTY_NAME="Azure CLI"
   WEBSITE="https://docs.microsoft.com/en-us/cli/azure/install-azure-cli"
 }
-function deb_backintime() {
-  PPA="ppa:ppa:bit-team/stable"
-  PRETTY_NAME="BackInTime"
-  WEBSITE="https://backintime.readthedocs.io/en/latest/"
-}
 # Brave is currently broken and not available from the Curated Apps webpage.
 # The key is out-of-date. We would like to fix this with a method that does
 # not require trusted.gpg.d, such as creating a sources.list file for Brave
@@ -241,7 +235,7 @@ function deb_dropbox() {
   # Verified 2024-05-07
   APT_KEY_URL="https://linux.dropbox.com/fedora/rpm-public-key.asc"
   APT_LIST_NAME="dropbox"
-  APT_REPO_URL="deb [arch=i386,amd64 signed-by=/usr/share/keyrings/dropbox.asc] http://linux.dropbox.com/ubuntu noble main"
+  APT_REPO_URL="deb [arch=i386,amd64 signed-by=/usr/share/keyrings/dropbox.asc] http://linux.dropbox.com/ubuntu ${UBUNTU_CODENAME} main"
   PRETTY_NAME="Dropbox"
   WEBSITE="https://www.dropbox.com/"
 }
@@ -271,52 +265,15 @@ function deb_keepassxc() {
   PRETTY_NAME="KeePassXC"
   WEBSITE="https://keepassxc.org/"
 }
-function deb_kubectl() {
-  GPG_KEY_URL="https://packages.cloud.google.com/apt/doc/apt-key.gpg"
-  APT_LIST_NAME="kubectl"
-  # APT_REPO_URL="deb https://apt.kubernetes.io/ kubernetes-xenial main"
-  APT_REPO_URL="deb [signed-by=/usr/share/keyrings/kubectl-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main"
-  PRETTY_NAME="Kubernetes"
-  WEBSITE="https://kubernetes.io"
-}
 function deb_lutris() {
   PPA="ppa:lutris-team/lutris"
   PRETTY_NAME="Lutris"
   WEBSITE="https://lutris.net/"
 }
-# Node.js is preinstalled. This implementation does not quite work.
-# function deb_nodejs() {
-#   GPG_KEY_URL="https://deb.nodesource.com/gpgkey/nodesource.gpg.key"
-#   APT_REPO_URL="deb https://deb.nodesource.com/node_16.x jammy main"
-#   APT_LIST_NAME="nodesource"
-#   PRETTY_NAME="NodeJS 16.x"
-# }
-function deb_nvidia-cuda() {
-  APT_KEY_URL="https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub"
-  APT_LIST_NAME="nvidia-cuda"
-  APT_REPO_URL="deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 /"
-  PRETTY_NAME="Nvidia CUDA and ML"
-  WEBSITE="https://developer.nvidia.com"
-}
-function deb_nvidia-ml() {
-  APT_KEY_URL="https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub"
-  APT_LIST_NAME="nvidia-ml"
-  APT_REPO_URL="deb https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64 /"
-  PRETTY_NAME="Nvidia ML (deprecated; use CUDA for later lib versions)"
-  WEBSITE="https://developer.nvidia.com"
-}
-# Disabled 2025-05-01
-# function deb_skype() {
-#   PRETTY_NAME="Skype"
-#   SNAP_PKG_NAME="skype"
-#   WEBSITE="https://www.skype.com/"
-# }
 function deb_slack-desktop() {
-  APT_KEY_URL="https://packagecloud.io/slacktechnologies/slack/gpgkey"
-  APT_LIST_NAME="slack"
-  APT_REPO_URL="deb https://packagecloud.io/slacktechnologies/slack/debian/ jessie main"
   PRETTY_NAME="Slack"
   WEBSITE="https://slack.com/"
+  SNAP_PKG_NAME="slack"
 }
 function deb_sublime-text() {
   APT_KEY_URL="https://download.sublimetext.com/sublimehq-pub.gpg"
@@ -325,12 +282,15 @@ function deb_sublime-text() {
   PRETTY_NAME="Sublime Text"
   WEBSITE="https://www.sublimetext.com/"
 }
-function deb_minecraft-launcher() {
-  URL=$(unroll_url "https://launcher.mojang.com/download/Minecraft.deb")
-  VERSION_PUBLISHED='latest';
-  PRETTY_NAME="Minecraft Launcher"
-  WEBSITE="https://launcher.mojang.com"
-}
+## As of 2026-05-11, Minecraft cannot be installed on Ubuntu 26.04 due to a
+## dependency issue. Microsoft is aware, see
+## https://bugs.mojang.com/browse/MCL/issues/MCL-26579.
+# function deb_minecraft-launcher() {
+#   URL=$(unroll_url "https://launcher.mojang.com/download/Minecraft.deb")
+#   VERSION_PUBLISHED='latest';
+#   PRETTY_NAME="Minecraft Launcher"
+#   WEBSITE="https://launcher.mojang.com"
+# }
 function deb_zoom() {
   URL=$(unroll_url "https://zoom.us/client/latest/zoom_amd64.deb")
   VERSION_PUBLISHED="$(echo "${URL}" | cut -d'/' -f5)"
