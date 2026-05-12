@@ -45,9 +45,9 @@ _exeLookupList=(
   'gvim|gvim||vim-gtk3|Vim GUI: Edit Text With Extreme Power'
   'gwenview|gwenview||gwenview|Gwenview: Image and Document Viewer'
   'inkscape|inkscape||inkscape|Inkscape: Edit Scalable Vector Graphics'
+  'intellij|intellij-idea||intellij-idea|IntelliJ: JetBrains Java IDE'
   'insync|insync;start||insync-dolphin|Insync: Sync Google Drive and Others'
   'jekyll|konsole;-e;man jekyll|jekyll|jekyll|Jekyll: Create Static Web Sites'
-  'jetbrains-toolbox-plain|jetbrains-toolbox|jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs' # for firstrun-bin
   'kate|kate||kate|Kate: Edit Text with Power'
   'kde-connect|kdeconnect-settings||kdeconnect|KDE Connect: Connect Smartphones to Desktop'
   'kdenlive|kdenlive||kdenlive|KDEnlive: Edit  Non-Linear Videos'
@@ -93,10 +93,9 @@ _exeLookupList=(
   'pavucontrol|pavucontrol-qt||pavucontrol-qt|PulseAudio: Manage Audio Volume'
   'plasma-discover|plasma-discover||plasma-discover|Discover: Manage Software'
   'ppa-purge|konsole;-e;man ppa-purge|ppa-purge|ppa-purge|PPA Purge: Purge PPAs'
+  'pycharm|pycharm||pycharm|PyCharm: JetBrains Python IDE'
   'rar|konsole;-e;man rar|rar|rar|Rar: Create .rar Archive Files'
   'simplescreenrecorder|simplescreenrecorder||simplescreenrecorder|SimpleScreenRecorder: Record Your Screen with Powerful Options'
-  # Disabled 2025-05-01
-  # 'skype|skype||skype|Skype: Video Call Platform'
   'slack|slack||slack-desktop|Slack: Team Messaging'
   'spectacle|spectacle||kde-spectacle|Spectacle: Take Screenshots'
   'steam|steam||steam|Steam: Manage and Play Games'
@@ -109,6 +108,7 @@ _exeLookupList=(
   'vlc|vlc||vlc|VLC: Play and Stream Video and Multimedia'
   'wallpapers|dolphin;/usr/share/wallpapers||dolphin|Wallpapers: View Wallpaper Images'
   'webcamoid|webcamoid||webcamoid|Webcamoid: Test Your Webcam'
+  'webstorm|webstorm||webstorm|WebStorm: JetBrains Web IDE'
   'winff|winff||winff-qt|WinFF: Convert Video using ffmpeg'
 
   # Packages with special handlers
@@ -116,11 +116,7 @@ _exeLookupList=(
   'docker|!docker|docker|docker-ce|Docker: Container Engine'
   'dropbox|!dropbox|dropbox|dropbox|Dropbox: Sync to Cloud Storage'
   'ghb|!ghb|/var/lib/flatpak/app/fr.handbrake.ghb/x86_64/stable/active/files/bin/ghb|handbrake-flathub|Handbrake: Back up encoded audio and video'
-  'intellij|!intellij|jetbrains-toolbox|jetbrains-toolbox|IntelliJ: JetBrains Java IDE'
-  'jetbrains-toolbox|!jetbrains-toolbox|jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs'
-  'pycharm|!pycharm|jetbrains-toolbox|jetbrains-toolbox|PyCharm: JetBrains Python IDE'
   'virtualbox|!virtualbox||virtualbox|VirtualBox: Run Virtual Machines'
-  'webstorm|!webstorm|jetbrains-toolbox|jetbrains-toolbox|WebStorm: JetBrains Web IDE'
   'zoom|!zoom||zoom|Zoom: Start and Join Video and Web Conferencing'
 
   # Future consideration: Nvidia CUDA and ML libs
@@ -128,7 +124,6 @@ _exeLookupList=(
   # these are deprecated:
   # 'atom|atom;--no-sandbox||atom|Atom: A hackable text editor.'
   # 'brave-browser|brave-browser||brave-browser|Brave Browser'
-  # 'jetbrains-toolbox-plain|jetbrains-toolbox|jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs'
 );
 
 ## BEGIN _importCommonFn {
@@ -317,6 +312,24 @@ function deb_handbrake-flathub() {
   PRETTY_NAME="Handbrake"
   WEBSITE="https://handbrake.fr/"
   FLATHUB_PKG_NAME="fr.handbrake.ghb"
+}
+function deb_intellij() {
+  PRETTY_NAME="IntelliJ IDEA"
+  WEBSITE="https://www.jetbrains.com/idea/"
+  SNAP_PKG_NAME="intellij-idea"
+  IS_CLASSIC_SNAP='y'
+}
+function deb_pycharm() {
+  PRETTY_NAME="PyCharm"
+  WEBSITE="https://www.jetbrains.com/pycharm/"
+  SNAP_PKG_NAME="pycharm"
+  IS_CLASSIC_SNAP='y'
+}
+function deb_webstorm() {
+  PRETTY_NAME="WebStorm"
+  WEBSITE="https://www.jetbrains.com/webstorm/"
+  SNAP_PKG_NAME="webstorm"
+  IS_CLASSIC_SNAP='y'
 }
 # Extracted from main
 function _makeAppListFn () {
@@ -814,32 +827,6 @@ _runAppHandlerFn () {
   _cm2EchoFn "Running handler for app_id |${_app_id}|";
 
   case "${_app_id}" in
-    intellij|pycharm|webstorm)
-      _prompt_msg="$(cat <<EOT
-${_cm2HtmPStr}Click to start JetBrain toolbox <br>
-and select the tool for <br>
-'${_descr_str}'.</p>
-
-${_cm2HtmPStr}You may click on the Toolbox icon <br>
-in the System Tray to reopen <br>
-the toolbox as needed.</p>
-EOT
-      )";
-      _cmd_str='jetbrains-toolbox';
-      ;;
-
-    jetbrains-toolbox)
-      _prompt_msg="$(cat <<EOT
-${_cm2HtmPStr}Click OK to start JetBrain toolbox.</p>
-
-${_cm2HtmPStr}You may click on the Toolbox icon <br>
-in the System Tray to reopen <br>
-the toolbox as needed.</p>
-EOT
-      )";
-      _cmd_str='jetbrains-toolbox';
-      ;;
-
     dropbox)
       _prompt_msg="$(cat <<EOT
 ${_cm2HtmPStr}Click OK to start Dropbox.</p>

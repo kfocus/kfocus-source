@@ -66,6 +66,9 @@ _setupDisplaysFn () {
 }
 
 _mainFn () {
+  if [ "$XDG_SESSION_TYPE" != 'x11' ]; then
+    exit 0;
+  fi
   _calcDisplaySetListFn;
   _setupDisplaysFn;
   echo 'BEGIN report';

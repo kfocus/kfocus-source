@@ -601,9 +601,10 @@ _cm2PromptUserFn () {
 
   # Handle GUI presentation
   if [ "${_cm2IsTty}" = 'n' ]; then
+    # `--icon` is intentionally not passed. KDialog cannot set a custom window
+    # icon under Wayland.
     _cmd_list=(
-      "${_cm2KdiagExe}" '--icon' "${_icon_key}" \
-      '--title' "${_window_title}"
+      "${_cm2KdiagExe}" '--title' "${_window_title}"
     );
 
     # These arguments *must* be inserted before the actual '--yesno' argument
@@ -949,4 +950,3 @@ export -f _cm2AskExitFn _cm2AssignExeVarsFn \
   _cm2SetCliTypeFn _cm2SetLogLevelFn _cm2SetLogTagFn _cm2LogFn            \
   _cm2ReinstallPkgsFn _cm2SmartInstallPkgsFn;
 ## . END Execute when sourced }
-
