@@ -62,9 +62,11 @@ _repairIbusConfigFn () {
   "${_dconfExe}" write \
     '/desktop/ibus/general/use-system-keyboard-layout' 'true' || return 1;
 
-  # Hiding the systray icon via IBus's dconf setting doesn't work reliably,
-  # so we use a Plasma script to do it.
-  _cm2RunPlasmaScriptFn 'fixIbusPanelIcon.js';
+  # We previously used a Plasma script to hide the IBus icon, but Plasma now
+  # contains a warning to not do this. We've gone back to using dconf for this
+  # reason.
+  "${_dconfExe}" write \
+    '/desktop/ibus/panel/show-icon-on-systray' 'false' || return 1;
 }
 ## . END _repairIbusConfigFn }
 
@@ -75,9 +77,10 @@ _checkIbusConfigFn () {
   # NOTE: Right now this just checks for a running IBus service. It may be
   # worthwhile to also check and see if IBus is installed.
   if _chkInstalledPkgFn 'ibus'; then
-    _do_show_icon="$(_cm2RunPlasmaScriptFn 'chkIbusPanelIcon.js')";
+    _do_show_icon="$("${_dconfExe}" read \
+      '/desktop/ibus/panel/show-icon-on-systray')";
     _do_use_system_keyboard="$("${_dconfExe}" read \
-     '/desktop/ibus/general/use-system-keyboard-layout')";
+      '/desktop/ibus/general/use-system-keyboard-layout')";
 
     if [ "${_do_show_icon}" != 'false' ] || \
       [ "${_do_use_system_keyboard}" != 'true' ]; then

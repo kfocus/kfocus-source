@@ -796,7 +796,7 @@ _cm2RunPlasmaScriptFn () {
     return 1;
   fi
 
-  [ -z "${_cm2QdbusExe}" ] && return;
+  [ -z "${_cm2DbusSendExe}" ] && return;
 
   for (( _counter = 0; _counter < 3; _counter++ )); do
     if ! pgrep plasmashell >/dev/null; then
@@ -811,8 +811,11 @@ _cm2RunPlasmaScriptFn () {
   fi
 
   if [ -f "${_script_name}" ]; then
-    "${_cm2QdbusExe}" 'org.kde.plasmashell' '/PlasmaShell' \
-      'org.kde.PlasmaShell.evaluateScript' "$(cat "${_script_name}")";
+    "${_cm2DbusSendExe}" --session --print-reply \
+      --dest='org.kde.plasmashell' \
+      '/PlasmaShell' \
+      'org.kde.PlasmaShell.evaluateScript' \
+      "string:$(cat "${_script_name}")";
   else
     _cm2WarnStrFn 'Specified Plasma script does not exist!';
     return 1;
@@ -925,7 +928,7 @@ _cm2LogLevelIdx=5;
 _cm2LogLevelName='notice';
 _cm2LogTag='';
 _cm2PlasmaScriptDir='/usr/lib/kfocus/plasma/script';
-_cm2QdbusExe="$(command -v qdbus || true)";
+_cm2DbusSendExe="$(command -v dbus-send || true)";
 _cm2RmExe='/bin/rm';
 _cm2WhiptailExe="$(command -v whiptail || true)";
 
@@ -935,7 +938,7 @@ export _cm2Arg01 _cm2Arg02 _cm2BlockMsg _cm2HtmBeginStr _cm2HtmEndStr      \
   _cm2HtmH3Str _cm2HtmPStr _cm2IsTty _cm2KdiagExe _cm2ModelCode _cm2RmExe  \
   _cm2CliType _cm2WhiptailExe _cm2LogExe _cm2LogIdxMap _cm2LogLevelIdx     \
   _cm2LogLevelName _cm2LogCodeMap _cm2LogTag _cm2PlasmaScriptDir           \
-  _cm2QdbusExe;
+  _cm2DbusSendExe;
 
 # Export Functions
 export -f _cm2AskExitFn _cm2AssignExeVarsFn \

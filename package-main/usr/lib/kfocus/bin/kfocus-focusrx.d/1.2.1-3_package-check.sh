@@ -627,17 +627,13 @@ _mainFn () {
     _cm2EchoFn "${_msg}";
 
     _do_pkg_warn='n';
-    # See /usr/share/wajig/commands.py for source commands
     _cm2EchoFn 'Fix an interrupted install';
-    # wajig fix-configure || _doWarn='y';
     /usr/bin/dpkg --configure --pending || _do_pkg_warn='y';
 
     _cm2EchoFn 'Fix an install interrupted by broken dependencies';
-    # wajig fix-install   || _doWarn='y';
     /usr/bin/apt-get --fix-broken install || _do_pkg_warn='y';
 
     _cm2EchoFn 'Fix and install even though there are missing dependencies';
-    # wajig fix-missing   || _doWarn='y';
     /usr/bin/apt-get --ignore-missing upgrade || _do_pkg_warn='y';
 
     if [ "${_do_pkg_warn}" = 'y' ]; then _cm2WarnFn; else _cm2SucFn; fi

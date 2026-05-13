@@ -87,18 +87,18 @@ var
 
   // kfocus hints widget images are 1280 x 1988
   widgetPathList = [
-    '{"path":"file:///usr/share/kfocus-hints//00_badge.png","type":"file"}',
-    '{"path":"file:///usr/share/kfocus-hints//01_desktop.png","type":"file"}',
-    '{"path":"file:///usr/share/kfocus-hints//02_system.png","type":"file"}',
-    '{"path":"file:///usr/share/kfocus-hints//03_konsole.png","type":"file"}',
-    '{"path":"file:///usr/share/kfocus-hints//04_filesys.png","type":"file"}',
-    '{"path":"file:///usr/share/kfocus-hints//05_env.png","type":"file"}',
-    '{"path":"file:///usr/share/kfocus-hints//06_search.png","type":"file"}',
-    '{"path":"file:///usr/share/kfocus-hints//07_perms.png","type":"file"}',
-    '{"path":"file:///usr/share/kfocus-hints//08_network.png","type":"file"}',
-    '{"path":"file:///usr/share/kfocus-hints//09_vim_01.png","type":"file"}',
-    '{"path":"file:///usr/share/kfocus-hints//10_vim_02.png","type":"file"}',
-    '{"path":"file:///usr/share/kfocus-hints//11_vim_03.png","type":"file"}'
+    '{"path":"file:///usr/share/kfocus-hints/00_badge.png","type":"file"}',
+    '{"path":"file:///usr/share/kfocus-hints/01_desktop.png","type":"file"}',
+    '{"path":"file:///usr/share/kfocus-hints/02_system.png","type":"file"}',
+    '{"path":"file:///usr/share/kfocus-hints/03_konsole.png","type":"file"}',
+    '{"path":"file:///usr/share/kfocus-hints/04_filesys.png","type":"file"}',
+    '{"path":"file:///usr/share/kfocus-hints/05_env.png","type":"file"}',
+    '{"path":"file:///usr/share/kfocus-hints/06_search.png","type":"file"}',
+    '{"path":"file:///usr/share/kfocus-hints/07_perms.png","type":"file"}',
+    '{"path":"file:///usr/share/kfocus-hints/08_network.png","type":"file"}',
+    '{"path":"file:///usr/share/kfocus-hints/09_vim_01.png","type":"file"}',
+    '{"path":"file:///usr/share/kfocus-hints/10_vim_02.png","type":"file"}',
+    '{"path":"file:///usr/share/kfocus-hints/11_vim_03.png","type":"file"}'
   ];
 
 function quantizeToGridFn(px) {
@@ -228,4 +228,3 @@ setLayoutFn();
 // (1) See QRectF https://develop.kde.org/docs/extend/plasma/scripting/api/#screen-geometry
 // (2) Scale ratio is 1.5 for HDPI 4k screens. This should reduce to 1 for a
 //     1080p screen at 96dpi.
-
