@@ -1,9 +1,9 @@
-% KFOCUS-KB-COLOR(1) kfocus-kb-color 24.04
+% KFOCUS-KB-COLOR(1) kfocus-kb-color 26.04
 % Erich Eickmeyer, Michael Mikowski
-% June 2024
+% May 2026
 
 # NAME
-kfocus-kb=color - GUI keyboard color and brightness chooser
+kfocus-kb-color - GUI keyboard color and brightness chooser
 
 # SYNOPSIS
 **kfocus-kb-color**

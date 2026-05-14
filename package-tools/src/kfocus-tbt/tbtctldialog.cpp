@@ -39,8 +39,8 @@ TbtCtlDialog::TbtCtlDialog(QWidget *parent)
 
     setOkButtonState();
 
-    connect(ui->tbtEnabledCheckBox, &QCheckBox::stateChanged, this, &TbtCtlDialog::onTbtEnabledCheckboxChanged);
-    connect(ui->tbtPersistEnabledCheckBox, &QCheckBox::stateChanged, this, &TbtCtlDialog::onTbtPersistEnabledCheckboxChanged);
+    connect(ui->tbtEnabledCheckBox, &QCheckBox::checkStateChanged, this, &TbtCtlDialog::onTbtEnabledCheckboxChanged);
+    connect(ui->tbtPersistEnabledCheckBox, &QCheckBox::checkStateChanged, this, &TbtCtlDialog::onTbtPersistEnabledCheckboxChanged);
     connect(ui->enableInfoButton, &QPushButton::clicked, this, &TbtCtlDialog::onEnableInfoButtonClicked);
     connect(ui->enablePersistInfoButton, &QPushButton::clicked, this, &TbtCtlDialog::onEnablePersistInfoButtonClicked);
     connect(ui->okButton, &QPushButton::clicked, this, &TbtCtlDialog::onOkClicked);

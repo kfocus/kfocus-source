@@ -1,6 +1,6 @@
-% KFOCUS-PICK-GCC(1) kfocus-pick-gcc 24.04
+% KFOCUS-PICK-GCC(1) kfocus-pick-gcc 26.04
 % Erich Eickmeyer, Michael Mikowski
-% June 2024
+% May 2026
 
 # NAME
 kfocus-pick-gcc - GUI for switching default GCC version

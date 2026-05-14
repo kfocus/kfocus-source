@@ -5,13 +5,13 @@ Maintainer:        Kubuntu Focus Team <support@kfocus.org>
 Standards-Version: 4.6.0
 Build-Depends:     cmake,
                    debhelper-compat (=13),
-                   qtbase5-dev,
-                   qtbase5-dev-tools
+                   qt6-base-dev,
+                   qt6-base-dev-tools
 
+# Removed dependency on kfocus-power-fan
 Package:      kfocus-tools
 Architecture: all
 Depends:      ${misc:Depends},
-              kfocus-power-fan,
               kfocus-keyboard
 Recommends:   kfocus-conda,
               kfocus-kb-color,
@@ -28,6 +28,7 @@ Breaks:       kfocus-eth-yt6801,
 Description:  Kubuntu Focus Tools Metapackage
  This metapackage installs the Kubuntu Focus tools.
 
+# Removed breaks on kfocus-power-fan
 Package:      kfocus-tools-ir1xg3
 Architecture: all
 Depends:      ${misc:Depends}
@@ -39,8 +40,7 @@ Recommends:   kfocus-eth-yt6801,
               kfocus-tbt,
               kfocus-vidsync,
               kfocus-recover-mount
-Breaks:       kfocus-power-fan,
-              kfocus-keyboard,
+Breaks:       kfocus-keyboard,
               kfocus-tools-m2g6,
               kfocus-tools-nxg1,
               kfocus-tools-other,
@@ -49,6 +49,7 @@ Description:  Kubuntu Focus Tools - ir1xg3 Metapackage
  This metapackage installs the Kubuntu Focus tools
  for the Ir1X GEN 3 laptops.
 
+# Removed breaks on kfocus-power-fan
 Package:      kfocus-tools-m2g6
 Architecture: all
 Depends:      ${misc:Depends},
@@ -61,7 +62,6 @@ Recommends:   kfocus-conda,
               kfocus-vidsync,
               kfocus-recover-mount
 Breaks:       kfocus-eth-yt6801,
-              kfocus-power-fan,
               kfocus-tools-ir1xg3,
               kfocus-tools-nxg1,
               kfocus-tools-other,
@@ -70,6 +70,7 @@ Description:  Kubuntu Focus Tools - M2G6 Metapackage
  This metapackage installs the Kubuntu Focus tools
  for the M2 GEN 6 laptops.
 
+# Removed breaks on kfocus-power-fan
 Package:      kfocus-tools-nxg1
 Architecture: all
 Depends:      ${misc:Depends}
@@ -81,7 +82,6 @@ Recommends:   kfocus-conda,
               kfocus-vidsync,
               kfocus-recover-mount
 Breaks:       kfocus-eth-yt6801,
-              kfocus-power-fan,
               kfocus-keyboard,
               kfocus-tools-ir1xg3,
               kfocus-tools-m2g6,
@@ -91,6 +91,7 @@ Description:  Kubuntu Focus Tools - NX Metapackage
  This metapackage installs the Kubuntu Focus tools
  for the NX desktops.
 
+# Removed breaks on kfocus-power-fan
 Package:      kfocus-tools-other
 Architecture: all
 Depends:      ${misc:Depends}
@@ -102,7 +103,6 @@ Recommends:   kfocus-conda,
               kfocus-vidsync,
               kfocus-recover-mount
 Breaks:       kfocus-eth-yt6801,
-              kfocus-power-fan,
               kfocus-keyboard,
               kfocus-tools-ir1xg3,
               kfocus-tools-m2g6,

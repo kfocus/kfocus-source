@@ -178,7 +178,10 @@ map ;nn :%s?[^\x00-\x7F]? ?gc<CR>
 map ;l :%s?\([\.!?]\) \s\+?\1 ?gc<CR>
 
 " ;v Paste from clipboard fast
-map ;v :set paste<CR>:r !xsel --clipboard --output<CR>:set nopaste<CR>
+"   You may need to use this for X11 sessions with xsel:
+"   map ;v :set paste<CR>:r !xsel --clipboard --output<CR>:set nopaste<CR>
+" The following works with Wayland and XWayland apps
+map ;v :set paste<CR>:r !wl-paste<CR>:set nopaste<CR>
 
 " C-J format JSON blob and tighten up leading and single-line entries
 map <C-J> :set paste<CR>1Givar j = GA; console.log(JSON.stringify(j,null,2));1G^vG:!node<CR> :%s?^\(\s*{\)\s*\n\s*?\1 ?g<CR>:%s?^\(\s*{[^,}]*\)\n\s*}?\1 }?g<CR>
@@ -277,4 +280,3 @@ set mmp=20000 " was set mmp=5000
 " ====[ Use this to size comment lines ]===============================
 " =====================================================================
 " ====[ END ]==========================================================
-

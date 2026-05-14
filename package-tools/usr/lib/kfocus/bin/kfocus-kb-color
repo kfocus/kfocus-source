@@ -100,13 +100,13 @@ EOE
 
   if [ -n "${_prompt_msg}" ]; then
     "${_cm2KdiagExe}" --title 'Keyboard Color Message' \
-      --icon 'kfocus-bug-kbcolor' --msgbox "${_prompt_msg}";
+      --msgbox "${_prompt_msg}";
     exit 0;
   fi
 
   ## Begin Get keyboard string {
   _kbd_cfg_str="$(
-    for _modStr in $(lsmod | grep 'tuxedo_keyboard' | cut -c 31-32); do
+    for _modStr in $(lsmod | grep 'tuxedo_keyboard' | awk '{ print $3 }'); do
       if [ "${_modStr}" = '0' ]; then exit;
       else echo 'exists'; exit; fi
     done
@@ -114,7 +114,6 @@ EOE
 
   if [ -z "${_kbd_cfg_str}" ]; then
     "${_cm2KdiagExe}" --title 'Keyboard Color Error' \
-    --icon 'kfocus-bug-kbcolor' \
     --error 'Configuration string not found.';
     exit 1
   fi
@@ -152,7 +151,7 @@ EOH
     _read_bright_str='';
     _read_hex_str='';
     read -ra _change_list <<< "$(
-      "${_cm2KdiagExe}" --title "Keyboard Color" --icon kfocus-bug-kbcolor \
+      "${_cm2KdiagExe}" --title "Keyboard Color" \
       --checklist "${_prompt_msg}" \
       _read_bright_str 'Brightness'   bright \
       _read_hex_str    'Change Color' color
@@ -165,23 +164,21 @@ EOH
       _loop_line="${_loop_line//\"/}";
       _bright_default_str="${_color_bright_str}0%";
       if [ "${_loop_line}" = '_read_bright_str' ]; then
-        _pick_bright_str=$("${_cm2KdiagExe}" --icon kfocus-bug-kbcolor --title\
-         'Brightness' --combobox 'Set Brightness' 00% 10% 20% 30% 40% 50% 60% \
-         70% 80% 90% 100% --default "${_bright_default_str}");
+        _pick_bright_str=$("${_cm2KdiagExe}" --title \
+         'Brightness' --combobox 'Set Brightness' 00% 10% 20% 30% 40% 50% \
+         60% 70% 80% 90% 100% --default "${_bright_default_str}");
         if [ -z "${_pick_bright_str}" ]; then
-          "${_cm2KdiagExe}" --icon kfocus-bug-kbcolor \
-          --msgbox 'Brightness is unchanged';
+          "${_cm2KdiagExe}" --msgbox 'Brightness is unchanged';
           _read_bright_str="${_color_bright_str}";
         else
           _read_bright_str="${_pick_bright_str//0%/}";
         fi
       elif [ "${_loop_line}" = '_read_hex_str' ]; then
-        _pick_hex_str="$("${_cm2KdiagExe}" --icon kfocus-bug-kbcolor \
-          --title "Choose Color" --default "#${_color_hex_str}" \
+        _pick_hex_str="$("${_cm2KdiagExe}" --title "Choose Color" \
+          --default "#${_color_hex_str}" \
           --getcolor | cut -c 2- | tr '[:lower:]' '[:upper:]')"
         if [ -z "${_pick_hex_str}" ]; then
-          "${_cm2KdiagExe}" --icon kfocus-bug-kbcolor \
-            --msgbox 'Color is unchanged';
+          "${_cm2KdiagExe}" --msgbox 'Color is unchanged';
           _read_hex_str="${_color_hex_str}";
         else
           _read_hex_str="${_pick_hex_str}";

@@ -9,7 +9,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt5 REQUIRED COMPONENTS Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
 set(PROJECT_SOURCES
         main.cpp
@@ -26,7 +26,7 @@ add_executable(kfocus-tbt
     ${PROJECT_SOURCES}
 )
 
-target_link_libraries(kfocus-tbt PRIVATE Qt5::Widgets)
+target_link_libraries(kfocus-tbt PRIVATE Qt6::Widgets)
 
 include(GNUInstallDirs)
 install(TARGETS kfocus-tbt DESTINATION "/usr/lib/kfocus/bin")

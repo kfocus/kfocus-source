@@ -85,7 +85,7 @@ _chkCondaEnvFn () {
       conda activate base;
     fi
   fi
-  return ${_ret_int};
+  return "${_ret_int}";
 }
 
 _fixCondaEnvFn () {
@@ -172,7 +172,7 @@ _installEnvFn () {
   declare  _reply_str _pkg_suffix _conda_installed_exe \
     _conda_oldstyle_vers _conda_installed_vers _conda_expect_dir \
     _conda_expect01_exe _conda_expect02_exe _conda_install_file \
-    _conda_repo_url _conda_md5sum _is_new_conda _chk_str \
+    _conda_repo_url _conda_sha256sum _is_new_conda _chk_str \
     _do_install_tensorflow _msg _conda_pkg_url __conda_setup;
 
   ## Begin Install GPU Libs
@@ -180,13 +180,14 @@ _installEnvFn () {
   if [ -n "${_nvSeriesStr}" ]; then
     _cm2EchoFn "\nNvidia ${_nvSeriesStr}-series GPU found";
     _pkg_suffix='';
-    [ "${_nvSeriesStr}" = 'rtx50' ] && _pkg_suffix='-edge';
+    # No edge drivers at the moment
+    # [ "${_nvSeriesStr}" = 'rtx50' ] && _pkg_suffix='-edge';
 
     if _cm2ChkInstalledPkgFn   "kfocus-nvidia-pinning${_pkg_suffix}" \
       && _cm2ChkInstalledPkgFn "kfocus-nvidia${_pkg_suffix}" \
       && _cm2ChkInstalledPkgFn 'cuda-toolkit' \
-      && _cm2ChkInstalledPkgFn 'libcudnn8' \
-      && _cm2ChkInstalledPkgFn 'libnvinfer8'; then
+      && _cm2ChkInstalledPkgFn 'libcudnn9-cuda-13' \
+      && _cm2ChkInstalledPkgFn 'libnvinfer10'; then
       _cm2EchoFn "All ${_nvSeriesStr}-series libraries appear installed";
     else
       _cm2EchoFn "Install ${_nvSeriesStr}-series required libraries.";
@@ -201,7 +202,7 @@ _installEnvFn () {
           _exitFn;
         fi
         if "${_escExe}" apt-get install "kfocus-nvidia${_pkg_suffix}" \
-          cuda-toolkit libcudnn8 libnvinfer8; then
+          cuda-toolkit libcudnn9-cuda-13 libnvinfer10; then
           _cm2SucStrFn 'Library installation successful.';
         else
           _cm2ErrStrFn 'Abort: Could not install all libraries.';
@@ -228,12 +229,9 @@ _installEnvFn () {
   _conda_installed_vers='';
   _conda_oldstyle_vers='';
   _conda_repo_url='https://repo.anaconda.com/archive';
-  _conda_md5sum='268568a6803b678044f1b54ed26a95b4';
-  _conda_install_file='Anaconda3-2024.10-1-Linux-x86_64.sh';
+  _conda_sha256sum='57b2b48cc5b8665e25fce7011f0389d47c1288288007844b3b1ba482d4f39029';
+  _conda_install_file='Anaconda3-2025.12-2-Linux-x86_64.sh';
   _conda_pkg_url="${_conda_repo_url}/${_conda_install_file}";
-
-  # _conda_md5sum='b3332806aa15750d6bc4e604f9110622';
-  # _conda_install_file='Anaconda3-2023.03-1-Linux-x86_64.sh';
 
   # Report unexpected exe, get installed conda version
   if [ -e "${_conda_installed_exe}" ]; then
@@ -250,10 +248,10 @@ _installEnvFn () {
   fi
 
   # Test Conda version from ${HOME}/anaconda3
-  if  [[ "${_conda_installed_vers}" =~ ^4.12.0$ ]]; then
+  if _cm2TestVersFn 25.11.1 "${_conda_installed_vers}"; then
     _cm2EchoFn;
     _cm2EchoFn "Conda can be upgraded from version |${_conda_installed_vers}|";
-    _cm2EchoFn 'to version |23.5.0|. If you decide to upgrade, your original';
+    _cm2EchoFn 'to version |25.11.1|. If you decide to upgrade, your original';
     _cm2EchoFn "data will be copied to |anaconda3-${_conda_installed_vers}|.";
     _reply_str=$( _cm2ReadPromptYnFn 'Upgrade now' );
 
@@ -267,6 +265,7 @@ _installEnvFn () {
     fi
   fi
 
+  ## FIXME: update this regex
   if [[  "${_conda_installed_vers}" =~ ^2[3-9]\.|^4.12.0$ ]]; then
     _cm2EchoFn "Using compatible conda version |${_conda_installed_vers}|.";
   else
@@ -321,12 +320,12 @@ _installEnvFn () {
       popd || _exitFn;
     fi;
 
-    _cm2EchoFn 'Check md5sum of Anaconda Package';
+    _cm2EchoFn 'Check sha256sum of Anaconda Package';
     _chk_str=$(
-      md5sum "${_vendTempDir}/${_conda_install_file}" | cut -f1 -d' '
+      sha256sum "${_vendTempDir}/${_conda_install_file}" | cut -f1 -d' '
     );
 
-    if [ "${_chk_str}" != "${_conda_md5sum}" ]; then
+    if [ "${_chk_str}" != "${_conda_sha256sum}" ]; then
       _cm2WarnStrFn 'Please rerun the script to download again.';
       "${_rmFn}" -f "${_vendTempDir}/${_conda_install_file}";
       _exitFn;
@@ -382,6 +381,7 @@ _installEnvFn () {
     _cm2SetMsgFn 'Install Jupyter Notebook';
     set +u;
     conda activate base                    || _exitFn;
+    ## TODO: Consider bumping Python version here?
     conda create -y --name jnb python=3.12 || _exitFn;
     conda activate jnb                     || _exitFn;
     # 2023-12-22 nb_conda no longer works
@@ -417,6 +417,7 @@ _installEnvFn () {
     _cm2SetMsgFn 'Install Pytorch';
     set +u;
     conda activate base                          || _exitFn;
+    ## TODO: Consider bumping Python version here?
     conda create -y --name pytorch python=3.12   || _exitFn;
     conda activate pytorch                       || _exitFn;
 
@@ -441,6 +442,7 @@ _installEnvFn () {
 
   # TensorFlow does not work with 5000-series GPUs, see
   # https://github.com/tensorflow/tensorflow/issues/89272
+  # This is still true as of 2026-05-14.
   _reply_str=$( _fixCondaEnvFn 'tensorflow') || _exitFn;
   if [ "${_reply_str}" = 'y' ]; then
     _do_install_tensorflow='n';

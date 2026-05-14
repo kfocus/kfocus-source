@@ -11,7 +11,6 @@ _cm2BlockMsg='';
 _cm2EchoFn    () { 1>&2 echo -e "$*"; }
 _cm2SetMsgFn  () { _cm2BlockMsg="$*"; _cm2EchoFn "== BEGIN : ${_cm2BlockMsg}"; }
 _cm2SucFn     () { _cm2EchoFn "== . END : OK   ${_cm2BlockMsg}\n\n"; }
-_cm2WarnFn    () { _cm2EchoFn "== . END : WARN Could not ${_cm2BlockMsg}..\n\n"; }
 ## . END Declare common.2.source symbols
 
 # IMPORTANT: We do NOT use deb-systemd-helper because it does NOT force
@@ -25,4 +24,3 @@ _cm2SucFn;
 
 # Tag to allow some debhelper commands to inject relevant code
 #DEBHELPER#
-
