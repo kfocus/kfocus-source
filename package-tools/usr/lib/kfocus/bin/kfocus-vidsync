@@ -41,8 +41,7 @@ _importCommonFn() {
 ## . END _importCommonFn }
 
 _promptUserFn () {
-  "${_cm2KdiagExe}" --icon 'kfocus-bug-vidsync' --title "${_titleStr}" \
-    --msgbox "${1:-Unexpected Error}";
+  "${_cm2KdiagExe}" --title "${_titleStr}" --msgbox "${1:-Unexpected Error}";
 }
 
 _promptNoNvidiaFn () {
@@ -66,8 +65,7 @@ _promptBadExesFn () {
 <h3>${_titleStr}: Missing App</h3>
 ${_cm2HtmPStr}<b>Please install <code>nvidia-settings</code> and <br>
 <code>nvidia-prime</code> packages</b> to use this tool. <br>
-You may use the Discover app or CLI <code>apt</code> <br>
-command for this purpose.<br></p>
+Use the CLI <code>apt</code> command to do this.<br></p>
 ${_cm2HtmEndStr}
 _EOH03
   )";
@@ -116,6 +114,8 @@ _mainFn () {
   _cm2SucFn;
 
   _cm2SetMsgFn 'Determine current meta mode';
+  # TODO: Ensure this still works on 26.04 with NVIDIA graphics set as
+  #   primary. It does NOT work when Intel is primary.
   _solve_list_str="$("${_nvSetExe}" -q CurrentMetaMode -t)";
   _mod_list_str="${_solve_list_str#*" :: "}"; # snip off front of meta
   _solve_comp_str='Off';
@@ -148,7 +148,7 @@ ${_cm2HtmEndStr}
 _EOH05
   )";
 
-  _user_pick_str="$("${_cm2KdiagExe}" --icon 'kfocus-bug-vidsync' \
+  _user_pick_str="$("${_cm2KdiagExe}" \
     --title "${_titleStr}" --default "${_default_str}" \
     --combobox "${_main_message_str}" 'Off' 'Medium' 'High'
   )";
@@ -207,4 +207,3 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _mainFn "$@";
 fi
 ## . END Run main if script is not sourced }
-

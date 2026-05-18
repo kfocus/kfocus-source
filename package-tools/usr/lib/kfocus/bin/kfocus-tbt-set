@@ -100,7 +100,7 @@ _getModelCodeFn () {
     # Hack for m2g5p1 which has Barlow Ridge Thunderbolt 5
     if [ "${_model_code}" = 'm2g5p' ] \
       && [[ "${_dmi_name:-}" =~ ^X370SN.*1$ ]]; then
-        _model_code='m2g5p1';
+      _model_code='m2g5p1';
     fi
   fi
   echo "${_model_code:-}";

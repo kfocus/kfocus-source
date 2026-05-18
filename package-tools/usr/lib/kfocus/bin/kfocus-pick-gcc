@@ -100,7 +100,8 @@ fi
 
 _gccVersStr='';
 case "${_osId}" in
-  '24.04') _osID='Ubuntu 24.04 LTS'; _gccVersStr='13';;
+  '26.04') _osId='Ubuntu 26.04 LTS'; _gccVersStr='15';;
+  '24.04') _osId='Ubuntu 24.04 LTS'; _gccVersStr='13';;
   '22.04') _osId='Ubuntu 22.04 LTS'; _gccVersStr='11';;
   '20.04') _osId='Ubuntu 20.04 LTS'; _gccVersStr='9';;
   *) _osId="Unsupported ${_osId}"; _gccVersStr='<unknown>';;
@@ -214,8 +215,7 @@ done
 
 ## Begin Get user selection and matching _foundLineStr {
 _selectedStr="$(
-  "${_cm2KdiagExe}" --icon "${_iconStr}" \
-    --title "Set GCC Version" \
+  "${_cm2KdiagExe}" --title "Set GCC Version" \
     --combobox "${_mainHtml}" \
     "${_comboList[@]}" --default "${_defaultPickStr}"
 )";
@@ -256,18 +256,18 @@ if [ "${#_fieldList[@]}" -gt 2 ] && [ -n "${_fieldList[2]}" ]; then
 _EOH02
   )";
 
-  if "${_cm2KdiagExe}" --icon "${_iconStr}" --yesno "${_yesNoHtml}"; then
+  if "${_cm2KdiagExe}" --yesno "${_yesNoHtml}"; then
     _killZombieProcFn;
     if qapt-batch --install "${_addPkgList[@]}"; then
       _cm2EchoFn 'Install appears successful';
     else
-      "${_cm2KdiagExe}" --icon "${_iconStr}" \
+      "${_cm2KdiagExe}" \
         --msgbox "Installation of GCC ${_tgtVersStr} failed.
 Please see your administrator.";
       exit 1;
     fi
   else
-    "${_cm2KdiagExe}" --icon "${_iconStr}" \
+    "${_cm2KdiagExe}" \
         --msgbox "Installation of GCC ${_tgtVersStr} cancelled.  ";
     exit 0;
   fi
@@ -276,7 +276,7 @@ fi
 
 ## Begin Bail if no change AND no install {
 if [ "${_inUseVersStr}" = "${_tgtVersStr}" ] && [ "${_hasUpdates}" = "n" ]; then
-  "${_cm2KdiagExe}" --icon "${_iconStr}" \
+  "${_cm2KdiagExe}" \
     --msgbox "System GCC already set to version ${_tgtVersStr}.";
   exit 0;
 fi
@@ -289,17 +289,17 @@ _outputStr="$( pkexec "${_gccSetExe}" "${_tgtVersStr}"; )";
 _exitIdx="$?";
 
 if [ "${_exitIdx}" = '0' ]; then
-  "${_cm2KdiagExe}" --icon "${_iconStr}" \
+  "${_cm2KdiagExe}" \
     --msgbox "SUCCESS: System GCC set to version ${_tgtVersStr}.  ";
   _cm2SucFn;
 elif [ "${_exitIdx}" = '2' ]; then
-  "${_cm2KdiagExe}" --icon "${_iconStr}" \
+  "${_cm2KdiagExe}" \
     --msgbox "SUCCESS: System GCC set to version ${_tgtVersStr}.
 WARNING: Some links were not successful:
 ${_outputStr}";
   _cm2WarnFn;
 else
-  "${_cm2KdiagExe}" --icon "${_iconStr}" \
+  "${_cm2KdiagExe}" \
     --msgbox "FAIL: System GCC NOT set to version ${_tgtVersStr}:
 ${_outputStr}";
   _cm2ErrFn;

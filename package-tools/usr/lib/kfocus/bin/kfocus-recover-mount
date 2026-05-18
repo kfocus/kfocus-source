@@ -252,71 +252,6 @@ _getUnmountedBlockDevListFn () {
   echo "${_block_dev_str}";
 }
 
-## DEPRECATED
-_getUnmountedBlockDevListOldFn () {
-  declare _block_device_list _init_mountpoint_list _ignore_device_list \
-    _disk_id_regex _ignore_device_str _idx;
-
-  # Create a list of all block devices and where they are mounted
-  readarray -t _block_device_list < <(
-    "${_lsblkExe}" --paths --raw --output=NAME | tail -n+2
-  ) || return 1;
-  readarray -t _init_mountpoint_list < <(
-    "${_lsblkExe}" --paths --raw --output=MOUNTPOINTS | tail -n+2
-  ) || return 1;
-  if [ "${#_block_device_list[@]}" != "${#_init_mountpoint_list[@]}" ]; then
-    _cm2ErrStrFn \
-      'Block device list length does not equal mountpoint list length!'
-    return 1;
-  fi
-
-  ## Begin Loop through block devices and mark devices to be ignored {
-  _ignore_device_list=();
-  _disk_id_regex='(sd[a-z]+|hd[a-z]+|vd[a-z]+|xvd[a-z]+|nvme[0-9]+n[0-9]+';
-  _disk_id_regex+='|mmcblk[0-9]+)';
-  for _idx in "${!_block_device_list[@]}"; do
-    # Ignore any devices that don't look like a normal disk device.
-    if ! [[ "${_block_device_list[_idx]}" =~ ^/dev/${_disk_id_regex} ]]; then
-      _ignore_device_list+=("${_block_device_list[_idx]}");
-      continue;
-    fi
-
-    if [ -n "${_init_mountpoint_list[_idx]}" ]; then
-      # Ignore whole disk devices that happen to be mounted
-      if [[ "${_block_device_list[_idx]}" =~ ${_disk_id_regex}$ ]]; then
-        _ignore_device_list+=("${_block_device_list[_idx]}");
-
-      # Mark disks that have at least one mounted partition as "to be
-      #   ignored"
-      else
-        if [[ "${_block_device_list[_idx]}" \
-          =~ (nvme[0-9]+n[0-9]+p[0-9]+|mmcblk[0-9]+p[0-9]+)$ ]]; then
-          _ignore_device_list+=("${_block_device_list[_idx]%p*}");
-        else
-          [[ "${_block_device_list[_idx]}" =~ (.*[a-z]*)[0-9]+ ]]
-          _ignore_device_list+=("${BASH_REMATCH[1]}");
-        fi
-      fi
-    fi
-  done
-  ## . End Loop through block devices and mark devices to be ignored }
-
-  # Ignore all devices that are marked as "to be ignored", including partitions
-  #   on those devices
-  for _ignore_device_str in "${_ignore_device_list[@]}"; do
-    for _idx in "${!_block_device_list[@]}"; do
-      if [[ "${_block_device_list[_idx]}" =~ ^"${_ignore_device_str}" ]]; then
-        unset "_block_device_list[${_idx}]";
-      fi
-    done
-  done
-
-  # Remove deleted elements from array
-  _block_device_list=("${_block_device_list[@]}")
-  printf '%s\n' "${_block_device_list[@]}"
-}
-## . END _getUnmountedBlockDevListOldFn }
-
 ## BEGIN _extractBlkidFieldStrFn {
 # Summary   : _extractBlkidFieldStrFn <blkid_report> <target_dev> <field_name>
 # Purpose   : Extracts a metadata field for a disk from blkid data
@@ -328,6 +263,9 @@ _getUnmountedBlockDevListOldFn () {
 # Globals   : none
 # Outputs   : Requested metadata field
 # Returns   : 1 on critical error
+#
+# TODO: This function can probably be replaced using blkid's --match-tag and
+#   --output options.
 #
 _extractBlkidFieldStrFn () {
   declare _blkid_report _target_dev _field_name _blkid_field_str;
@@ -529,7 +467,7 @@ _fsckAndMountFn () {
     fi
   fi
 
-  # Run filesystem fsck if the filesystem is ext4, btrfs, or xfs.
+  # Run filesystem fsck if the filesystem is ext4, btrfs, xfs, or vfat.
   # NOTE: Mapped LUKS partitions show as unmounted, but that does not
   #   matter here.
   _is_fs_mounted="$(
