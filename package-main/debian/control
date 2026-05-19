@@ -7,6 +7,8 @@ Build-Depends:     cmake,
                    qt6-base-dev,
                    qt6-base-dev-tools
 
+# linux-kfocus-24.04-kfocus,
+# linux-tools-kfocus-24.04-kfocus,
 Package:      kfocus-main
 Architecture: any
 Pre-Depends:  kfocus-apt-source
@@ -25,10 +27,8 @@ Depends:      ${misc:Depends}, ${shlibs:Depends},
               kfocus-settings,
               kfocus-wallpapers,
               libspa-0.2-libcamera,
-              linux-kfocus-24.04-kfocus,
-              linux-tools-kfocus-24.04-kfocus,
               pipewire-alsa,
-              policykit-1,
+              polkitd,
               python3-pip,
               rsync (>= 3.1.2),
               zenity

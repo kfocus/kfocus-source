@@ -35,9 +35,11 @@ Depends: calamares (>= 3.3.14~),
          ${misc:Depends},
          ${shlibs:Depends}
 Conflicts: calamares-settings-ubuntu-flavor,
-           calamares-settings-ubuntu-common
+           calamares-settings-ubuntu-common,
+           calamares-settings-ubuntu-common-data
 Provides: calamares-settings-ubuntu-flavor,
           calamares-settings-ubuntu-common,
+          calamares-settings-ubuntu-common-data,
           calamares-settings-kubuntu
 Description: Kubuntu Focus Calamares Settings and Branding
  This package contains the Calamares settings and branding for Kubuntu Focus.

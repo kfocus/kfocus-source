@@ -2,13 +2,7 @@ Source:              kfocus-power-bin
 Section:             admin
 Maintainer:          Kubuntu Focus Team <support@kfocus.org>
 Standards-Version:   4.7.3
-Build-Depends:       debhelper-compat (=13),
-                     libkirigami-dev,
-                     libkf6coreaddons-dev,
-                     libkf6qqc2desktopstyle-dev,
-                     libkf6iconthemes-dev,
-                     libkf6i18n-dev,
-                     extra-cmake-modules
+Build-Depends:       debhelper-compat (=13)
 
 Package:      kfocus-power-bin
 Architecture: amd64
@@ -17,8 +11,7 @@ Depends:      ${misc:Depends},
               kfocus-common,
               cpufrequtils,
               hicolor-icon-theme,
-              policykit-1,
-              qml6-module-org-kde-kirigami,
+              polkitd,
               plasma-framework
 Description: Kubuntu Focus Power and Fan Control
  This utility is available to switch between several power profiles, processor
