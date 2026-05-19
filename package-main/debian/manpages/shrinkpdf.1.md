@@ -1,6 +1,6 @@
-% SHRINKPDF(1) shrinkpdf 24.04
+% SHRINKPDF(1) shrinkpdf 26.04
 % Copyright (c) 2014, Alfred Klomp
-% Revised March 2021, May 2024
+% Revised March 2021, May 2024, May 2026
 
 # NAME
 shrinkpdf - Reduces PDF filesize by lossy recompressing with Ghostscript.

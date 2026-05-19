@@ -1,13 +1,12 @@
 Source:              kfocus-firstrun-bin
 Section:             admin
-Priority:            optional
 Maintainer:          Kubuntu Focus Team <support@kfocus.org>
-Standards-Version:   4.6.0
+Standards-Version:   4.7.3
 Build-Depends:       debhelper-compat (=13),
                      libkirigami-dev,
                      libkf6coreaddons-dev,
                      libkf6qqc2desktopstyle-dev,
-                     libfk6iconthemes-dev,
+                     libkf6iconthemes-dev,
                      libkf6i18n-dev,
                      extra-cmake-modules
 Rules-Requires-Root: no
@@ -26,4 +25,3 @@ Recommends:   plasma-welcome
 Description: Kubuntu Focus Welcome Wizard.
  This tools guides the user on initial login.
  Internally, it is known as the FirstRun Wizard.
-

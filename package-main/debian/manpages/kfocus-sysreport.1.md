@@ -1,6 +1,6 @@
-% KFOCUS-SYSREPORT(1) kfocus-sysreport 24.04
+% KFOCUS-SYSREPORT(1) kfocus-sysreport 26.04
 % Michael Mikowski, Erich Eickmeyer
-% June 2024
+% May 2026
 
 # NAME
 kfocus-sysreport - Gathers system information and logs for technical support

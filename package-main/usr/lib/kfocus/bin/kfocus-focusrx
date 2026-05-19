@@ -128,7 +128,6 @@ _runXtermCmdFn () {
   _cmd_str="$*;"' echo "$?" > '"${_tmp_file}";
   xterm -fa 'Monospace' -fs 12 -b 24 \
     -geometry 90x32 -T 'FocusRx' \
-    -xrm 'xterm*iconHint: /usr/share/pixmaps/kfocus-bug-rx' \
     -e "${_cmd_str}";
 
   _exit_int="$(cat "${_tmp_file}")";

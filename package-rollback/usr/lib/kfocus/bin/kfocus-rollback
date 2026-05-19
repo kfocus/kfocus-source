@@ -1064,7 +1064,8 @@ _mainFn () {
 
   ## Begin Chain to dashboard if GUI available  {
   if [ "${_cm2IsTty}" = 'n' ] \
-    && [ "${_arg_str}" != 'afterRestore' ]; then
+    && [ "${_arg_str}" != 'afterRestore' ] \
+    && [ -n "${_rollbackBinExe:-}" ]; then
     if [ -n "${_arg_str}" ]; then
       "${_rollbackBinExe}" "${_arg_str}";
     else
@@ -1105,7 +1106,7 @@ _mainFn () {
   ## Begin Handle after-restore action {
   if [ "${_arg_str}" = 'afterRestore' ]; then
     # Refresh desktop database after restore
-    [ -n "${_kbuildSyCoca5Exe}" ] && "${_kbuildSyCoca5Exe}";
+    [ -n "${_kbuildSycoca6Exe}" ] && "${_kbuildSycoca6Exe}";
     _snapshot_id="$(_rollbackSetFn 'getSnapshotList' \
       | head -n1)";
     readarray -t _restored_snapshot_info_list < "${_rb2RestoreCompleteFile}";
@@ -1613,9 +1614,9 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   _assignList=(
     '_btrfsExe|/usr/bin/btrfs'
-    '_kbuildSyCoca5Exe|/usr/bin/kbuildsycoca5||optional'
+    '_kbuildSycoca6Exe|/usr/bin/kbuildsycoca6||optional'
     "_rollbackBackendExe|${_binDir}/kfocus-rollback-backend"
-    "_rollbackBinExe|${_binDir}/kfocus-rollback-bin"
+    "_rollbackBinExe|${_binDir}/kfocus-rollback-bin||optional"
     "_rollbackSetExe|${_binDir}/kfocus-rollback-set"
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then

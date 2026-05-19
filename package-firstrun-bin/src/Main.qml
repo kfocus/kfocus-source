@@ -1,4 +1,3 @@
-// vim: set syntax=javascript:
 import QtQuick
 import QtQuick.Controls as Controls
 import QtQuick.Layouts
@@ -2307,8 +2306,7 @@ Kirigami.ApplicationWindow {
         case 'installExtraSoftware':
             exeRun.exec(
               'xterm -fa \'Monospace\' -fs 12 -b 28 -geometry 80x24 -T '
-              + '\'Install Extras\' -xrm \'xterm*iconHint: '
-              + '/usr/share/pixmaps/kfocus-bug-wizard\' -e pkexec '
+              + '\'Install Extras\' -e pkexec '
               + systemDataMap.binDir + '/kfocus-extra' );
             switchPageFn( 'extraSoftwareInstallItem' );
             break;

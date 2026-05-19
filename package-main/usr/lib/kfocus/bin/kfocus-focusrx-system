@@ -56,13 +56,14 @@ _promptAllUsersFn () {
   _mode="${1:-info}";
   _msg="${2:-blank}";
 
-  _session_info="$(_cm2EchoGraphicalLoginInfo)";
+  _session_info="$(_cm2EchoGraphicalLoginInfoFn)";
   IFS=';' read -r -a _bit_list <<< "${_session_info}";
 
   for _uname_uid_tuple in "${_bit_list[@]}"; do
     IFS='|' read -r -a _uname_uid_list <<< "${_uname_uid_tuple}";
-    _uname="${_uname_uid_list[0]}"
-    _uid="${_uname_uid_list[1]}"
+    _uname="${_uname_uid_list[0]}";
+    _uid="${_uname_uid_list[1]}";
+
     sudo -u "${_uname}" \
       XDG_RUNTIME_DIR="/run/user/${_uid}" \
       DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${_uid}/bus" \

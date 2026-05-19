@@ -4,7 +4,7 @@
 #
 set -e;
 
-## BEGIN Declare common.2.source symbols {
+## BEGIN Declare common.2.source symbols
 #  IMPORTED on 2022-03-23 EXCERPT from test-scripts/common.2.source
 #
 _cm2BlockMsg='';
@@ -12,7 +12,7 @@ _cm2EchoFn    () { 1>&2 echo -e "$*"; }
 _cm2SetMsgFn  () { _cm2BlockMsg="$*"; _cm2EchoFn "== BEGIN : ${_cm2BlockMsg}"; }
 _cm2SucFn     () { _cm2EchoFn "== . END : OK   ${_cm2BlockMsg}\n\n"; }
 _cm2WarnFn    () { _cm2EchoFn "== . END : WARN Could not ${_cm2BlockMsg}..\n\n"; }
-## } . END Declare common.2.source symbols
+## . END Declare common.2.source symbols
 
 if ! [ -f /etc/apt/preferences.d/kfocus-nvidia ]; then
   _cm2SetMsgFn "Make sure pinning is available";
@@ -21,13 +21,23 @@ if ! [ -f /etc/apt/preferences.d/kfocus-nvidia ]; then
   fi
 fi
 
-# https://download.nvidia.com/XFree86/
-#   Linux-x86_64/570.86.16/README/powermanagement.html
-_cm2SetMsgFn 'Disable /proc/driver/nvidia/suspend methods';
-deb-systemd-helper disable nvidia-hibernate.service;
-deb-systemd-helper disable nvidia-resume.service;
-deb-systemd-helper disable nvidia-suspend.service;
-deb-systemd-helper disable nvidia-suspend-then-hibernate.service;
+# NON-EDGE and EDGE both currently enable nvidia-resume services;
+#   https://download.nvidia.com/XFree86/
+#     Linux-x86_64/570.86.16/README/powermanagement.html
+# IMPORTANT: We do NOT use deb-systemd-helper because it does NOT force
+#   the units to be enabled if previously disabled. Instead, we
+#   use systemctl ensure this is set every time.
+#
+_cm2SetMsgFn 'Enable /proc/driver/nvidia/suspend methods';
+systemctl enable nvidia-hibernate.service || true;
+systemctl enable nvidia-resume.service    || true;
+systemctl enable nvidia-suspend.service   || true;
+systemctl enable nvidia-suspend-then-hibernate.service || true;
+_cm2SucFn;
+
+_cm2SetMsgFn 'Enable helper services';
+systemctl enable kfocus-nve-resume.service  || true;
+systemctl enable kfocus-nve-suspend.service || true;
 _cm2SucFn;
 
 # Set performance mode only on first install not upgrade

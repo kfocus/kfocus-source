@@ -1,6 +1,6 @@
-% KFOCUS-KCLEAN(1) kfocus-kclean 24.04
+% KFOCUS-KCLEAN(1) kfocus-kclean 26.04
 % Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
-% June 2024
+% May 2026
 
 # NAME
 kfocus-kclean - Detect and uninstall unused/excessive Linux kernels
@@ -13,7 +13,7 @@ kfocus-kclean helps with cleaning up unneeded Linux kernels. It detects when
 space for kernels is getting low, determines which kernels are most likely to
 be unused based on their type and version, and offers to uninstall those older
 kernels. By default, kfocus-kclean will exit and do nothing if free boot space
-is sufficient. It will only scan for and offer to remove kernels is space is
+is sufficient. It will only scan for and offer to remove kernels if space is
 low.
 
 # OPTIONS

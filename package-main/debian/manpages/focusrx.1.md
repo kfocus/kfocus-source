@@ -1,6 +1,6 @@
-% FOCUSRX(1) focusrx 24.04
+% FOCUSRX(1) focusrx 26.04
 % Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
-% June 2024
+% May 2026
 
 # NAME
 focusrx - Runs system checks on login

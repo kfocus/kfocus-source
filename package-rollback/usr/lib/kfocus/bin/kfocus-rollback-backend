@@ -1644,25 +1644,27 @@ _logWrapFn () {
 #
 # See https://stackoverflow.com/a/49533938
 _promptAllUsersFn () {
-  declare _mode _msg _xserver_id _user_name;
+  declare _session_info _bit_list _uname_uid_tuple _uname_uid_list _uname \
+    _uid _mode _msg;
   _mode="${1:-info}";
   _msg="${2:-blank}";
 
-  # Get all running X servers
-  while read -r _xserver_id; do
-    # Determine username of one graphically logged-in user
-    _user_name="$(
-      who | grep "(:${_xserver_id})" | head -n1 | awk '{ print $1 }'
-    )";
-    if [ -z "${_user_name}" ]; then continue; fi
+  _session_info="$(_cm2EchoGraphicalLoginInfoFn)";
+  IFS=';' read -r -a _bit_list <<< "${_session_info}";
 
-    # Switch to the user and send a D-Bus message to their corresponding
-    # kfocus-focusrx-dbus-dispatch process
-    sudo -u "${_user_name}" \
-      DISPLAY="${_xserver_id}" \
-      DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$(id -u "${_user_name}")/bus" \
-      qdbus org.kfocus.FocusRxDispatch.launcher / "${_mode}" "${_msg}";
-  done < <(_cm2LsFn '/tmp/.X11-unix/' | sed 's?X??');
+  for _uname_uid_tuple in "${_bit_list[@]}"; do
+    IFS='|' read -r -a _uname_uid_list <<< "${_uname_uid_tuple}";
+    _uname="${_uname_uid_list[0]}";
+    _uid="${_uname_uid_list[1]}";
+
+    sudo -u "${_uname}" \
+      XDG_RUNTIME_DIR="/run/user/${_uid}" \
+      DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${_uid}/bus" \
+      dbus-send --print-reply --session \
+        --dest=org.kfocus.FocusRxDispatch.launcher / \
+        "org.freedesktop.FocusRxDispatch.launcher.${_mode}" \
+        "string:${_msg}";
+  done
 }
 ## . END private _promptAllUsersFn }
 
@@ -1721,7 +1723,7 @@ _readMetadbFn () {
   # Read failure here is almost impossible: It will succeed even if
   # the file cannot be created, or group or key is bad.
   # Only weird edge cases like perhaps a bad value can trigger exit.
-  _result_str="$("${_kreadconfig5Exe}" \
+  _result_str="$("${_kreadconfig6Exe}" \
     --file "${_snapshotMetaDb}" \
     --group "${_group_str}" \
     --key "${_key_str}")" || {
@@ -2037,7 +2039,7 @@ _writeMetadbFn () {
     return 2;
   fi
 
-  _cmd_list=( "${_kwriteconfig5Exe}"
+  _cmd_list=( "${_kwriteconfig6Exe}"
     '--file'  "${_snapshotMetaDb}"
     '--group' "${_group_str}"
     '--key'    "${_key_str}"
@@ -3342,8 +3344,8 @@ declare _binName _binDir _baseName _baseDir \
   _btrfsStatus _lockDir _lockFile _metaGlobalKeyList _metaSnapshotKeyList \
   _snapshotMetaDb _libTable _browStr _erowStr _tableStr _prepareFailMsg \
   _lowDiskWithHomeMsg _lowDiskWithoutHomeMsg _lowBootMsg _inconsistentMsg \
-  _btrfsExe _btduExe _filefragExe _btrfsBalanceExe _kwriteconfig5Exe \
-  _kreadconfig5Exe _diffExe _legacySnapshotReasonFile _bulkLocationPathList \
+  _btrfsExe _btduExe _filefragExe _btrfsBalanceExe _kwriteconfig6Exe \
+  _kreadconfig6Exe _diffExe _legacySnapshotReasonFile _bulkLocationPathList \
   _bulkLocationNameList _bulkLocationSeenFile _bulkDataWarnMsg;
 
 _btrfsStatus='';
@@ -3397,8 +3399,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     '_btduExe|/usr/bin/btdu'
     '_diffExe|/usr/bin/diff'
     "_filefragExe|${_binDir}/kfocus-report-filefrag"
-    '_kwriteconfig5Exe|/usr/bin/kwriteconfig5'
-    '_kreadconfig5Exe|/usr/bin/kreadconfig5'
+    '_kwriteconfig6Exe|/usr/bin/kwriteconfig6'
+    '_kreadconfig6Exe|/usr/bin/kreadconfig6'
   );
 
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then

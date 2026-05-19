@@ -32,7 +32,7 @@ _cmXLsFn () {
       | grep -v '^\.' | sort;
   fi
 }
-_cmXEchoGraphicalLoginInfo() {
+_cmXEchoGraphicalLoginInfoFn() {
   declare _session_list _session_str _session_info _uname _uid _info_list;
 
   readarray -t _session_list < <(loginctl list-sessions --json=short \
@@ -41,7 +41,7 @@ _cmXEchoGraphicalLoginInfo() {
   for _session_str in "${_session_list[@]}"; do
     # jq includes quotes that we don't want, all session values are integers
     _session_str="$(_cmXEchoIntFn "${_session_str//\"/}")";
-    _session_info="$(loginctl get-session "${_session_str}")"$'\n' \
+    _session_info="$(loginctl show-session "${_session_str}")"$'\n' \
       || continue;
 
     # Check session class, must be 'user'
@@ -66,7 +66,9 @@ _cmXEchoGraphicalLoginInfo() {
 
   # Print list separated by semicolons, omit the trailing semicolon on the
   # last list item
-  printf '%s;' "${_info_list[@]:0:${#_info_list[@]}-1}";
+  if (( ${#_info_list[@]} > 1 )); then
+    printf '%s;' "${_info_list[@]:0:${#_info_list[@]}-1}";
+  fi
   printf '%s\n' "${_info_list[${#_info_list[@]}-1]}";
 }
 ## . END Declare common.2.source symbols }
@@ -78,7 +80,7 @@ _restartUserServiceFn () {
   _service_name="${1:-}";
   if [ -z "${_service_name}" ]; then return; fi
 
-  _session_info="$(_cmXEchoGraphicalLoginInfo)";
+  _session_info="$(_cmXEchoGraphicalLoginInfoFn)";
   IFS=';' read -r -a _bit_list <<< "${_session_info}";
 
   for _uname_uid_tuple in "${_bit_list[@]}"; do
