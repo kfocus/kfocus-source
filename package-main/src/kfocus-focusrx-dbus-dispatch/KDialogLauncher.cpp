@@ -4,6 +4,11 @@
 #include <QSettings>
 #include <QDir>
 
+/*
+ * TODO: This file now does more than launching KDialog and should therefore
+ * be renamed (along with the class).
+ */
+
 void KDialogLauncher::info(const QString &msg) {
     launchDialog(Info, msg);
 }
@@ -23,6 +28,14 @@ void KDialogLauncher::rollbackLowBootSpace(const QString &msg) {
 }
 void KDialogLauncher::rollbackBulkDataWarn(const QString &msg) {
     launchDialog(RollbackBulkDataWarn, msg);
+}
+
+void KDialogLauncher::kfocusMime(const QString &uri) {
+    auto *kfocusMimeProc = new QProcess();
+    kfocusMimeProc->setProgram("/usr/lib/kfocus/bin/kfocus-mime");
+    kfocusMimeProc->setArguments(QStringList() << uri);
+    connect(kfocusMimeProc, SIGNAL(finished(int)), this, SLOT(cleanupSubproc()));
+    kfocusMimeProc->start();
 }
 
 void KDialogLauncher::launchDialog(const KDialogType &type, const QString &msg) {

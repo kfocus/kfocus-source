@@ -1119,6 +1119,15 @@ _runAppFn () {
 }
 ## . END _runAppFn }
 
+## BEGIN _dbusDispatchFn {
+_dbusDispatchFn () {
+  dbus-send --print-reply --session \
+    --dest=org.kfocus.FocusRxDispatch.launcher /\
+    "org.kfocus.FocusRxDispatch.launcher.kfocusMime" \
+    "string:${1:-}";
+}
+## . END _dbusDispatchFn }
+
 ## BEGIN _mainFn {
 _mainFn () {
   declare _arg1_str _arg2_str _arg_app_id;
@@ -1163,22 +1172,18 @@ _mainFn () {
     _arg_app_id="${1:-}";
     _doForceForeground='y';
 
+  # Handle URI via MIME handler
+  elif [ "${_arg1_str}" = '-d' ]; then
+    shift;
+    _arg_app_id="$(_urlDecodeFn "${1:-}" | cut -d'/' -f3)";
+    _dbusDispatchFn "${_arg_app_id}"
+    exit 0;
+
   # Handle URI
   else
     if [[ "${_arg1_str}" =~ ^kfocus-mime:// ]]; then
       _arg_app_id="$(_urlDecodeFn "${1:-}" | cut -d'/' -f3)";
       # DEBUG: _cm2EchoFn "_arg_app_id=${_arg_app_id}";
-    # Handle link file. Bail if not readable.
-    else
-      # Ensure the link file is readable
-      if ! [ -r "${_arg1_str}" ]; then
-        _cm2WarnStrFn "Abort: Link file |${_arg1_str}| cannot be read";
-        exit 1;
-      fi
-
-      # Read id from the link file and then remove it.
-      read -r _arg_app_id < "${_arg1_str}" || exit 1;
-      rm "${_arg1_str}" || true;
     fi
   fi
 

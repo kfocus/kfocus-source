@@ -157,7 +157,7 @@ function setLayoutFn () {
   mediaframe_widget_obj = main_desktop_obj.addWidget(
     "org.kde.plasma.mediaframe",
     quantizeToGridFn(widget_x_px), quantizeToGridFn(widget_y_px),
-    quantizeToGridFn(widget_w_px), quantizeToGridFn(widget_h_px), 1
+    quantizeToGridFn(widget_w_px), quantizeToGridFn(widget_h_px)
   );
   mediaframe_widget_obj.currentConfigGroup = [];
   mediaframe_widget_obj.writeConfig("PreloadWeight", "0");
@@ -177,7 +177,7 @@ function setLayoutFn () {
   curated_icon_widget_obj = main_desktop_obj.addWidget(
     "org.kde.plasma.icon",
     quantizeToGridFn(icon_x_px), quantizeToGridFn(icon_top_px),
-    quantizeToGridFn(icon_w_px), quantizeToGridFn(icon_h_px), 2
+    quantizeToGridFn(icon_w_px), quantizeToGridFn(icon_h_px)
   );
   curated_icon_widget_obj.currentConfigGroup = [];
   curated_icon_widget_obj.writeConfig("localPath",
@@ -189,7 +189,7 @@ function setLayoutFn () {
     "org.kde.plasma.icon",
     quantizeToGridFn(icon_x_px),
     quantizeToGridFn(icon_top_px + icon_space_px * 1),
-    quantizeToGridFn(icon_w_px), quantizeToGridFn(icon_h_px), 3
+    quantizeToGridFn(icon_w_px), quantizeToGridFn(icon_h_px)
   );
   guided_icon_widget_obj.currentConfigGroup = [];
   guided_icon_widget_obj.writeConfig("localPath",
@@ -201,7 +201,7 @@ function setLayoutFn () {
     "org.kde.plasma.icon",
     quantizeToGridFn(icon_x_px),
     quantizeToGridFn(icon_top_px + icon_space_px * 2),
-    quantizeToGridFn(icon_w_px), quantizeToGridFn(icon_h_px), 4
+    quantizeToGridFn(icon_w_px), quantizeToGridFn(icon_h_px)
   );
   feature_icon_widget_obj.currentConfigGroup = [];
   feature_icon_widget_obj.writeConfig("localPath",
@@ -213,7 +213,7 @@ function setLayoutFn () {
     "org.kde.plasma.icon",
     quantizeToGridFn(icon_x_px),
     quantizeToGridFn(icon_top_px + icon_space_px * 3),
-    quantizeToGridFn(icon_w_px), quantizeToGridFn(icon_h_px), 5
+    quantizeToGridFn(icon_w_px), quantizeToGridFn(icon_h_px)
   );
   reference_icon_widget_obj.currentConfigGroup = [];
   reference_icon_widget_obj.writeConfig("localPath",

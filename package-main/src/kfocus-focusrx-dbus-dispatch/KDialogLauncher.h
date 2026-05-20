@@ -32,6 +32,7 @@ public slots:
     void rollbackLowMainSpace(const QString &msg);
     void rollbackLowBootSpace(const QString &msg);
     void rollbackBulkDataWarn(const QString &msg);
+    void kfocusMime(const QString &uri);
 
 private slots:
     void cleanupDialog();

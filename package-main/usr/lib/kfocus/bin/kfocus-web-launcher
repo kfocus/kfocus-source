@@ -56,7 +56,7 @@ _mainFn () {
   if [ -r "${_fq_desktop_file}" ]; then
     _exec_line="$(
      grep -E '^Exec=' "${_fq_desktop_file}" | head -n 1 \
-       | sed 's/^Exec=//' | sed 's/\s*%[a-Z]\s*$//'
+       | sed 's/^Exec=//' | sed 's/\s*%[a-zA-Z]\s*$//'
     )";
   fi
 
@@ -77,4 +77,3 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _mainFn "$@";
 fi
 ## . END Run main if script is not sourced }
-

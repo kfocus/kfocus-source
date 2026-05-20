@@ -1662,7 +1662,7 @@ _promptAllUsersFn () {
       DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${_uid}/bus" \
       dbus-send --print-reply --session \
         --dest=org.kfocus.FocusRxDispatch.launcher / \
-        "org.freedesktop.FocusRxDispatch.launcher.${_mode}" \
+        "org.kfocus.FocusRxDispatch.launcher.${_mode}" \
         "string:${_msg}";
   done
 }
