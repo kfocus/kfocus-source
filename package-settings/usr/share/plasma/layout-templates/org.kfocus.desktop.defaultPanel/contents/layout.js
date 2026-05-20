@@ -220,6 +220,7 @@ function addEndFn( arg_panel_obj, arg_is_horiz ) {
     const clock_obj = arg_panel_obj.addWidget( 'org.kde.plasma.digitalclock' );
     clock_obj.currentConfigGroup = [ 'Appearance' ];
     clock_obj.writeConfig( 'showDate', 'true' );
+    clock_obj.writeConfig( 'dateFormat', 'isoDate' );
     clock_obj.writeConfig( 'showSeconds', 'false' );
 
     arg_panel_obj.addWidget( 'org.kde.plasma.showdesktop' );
