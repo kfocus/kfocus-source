@@ -34,6 +34,8 @@ void KDialogLauncher::kfocusMime(const QString &uri) {
     auto *kfocusMimeProc = new QProcess();
     kfocusMimeProc->setProgram("/usr/lib/kfocus/bin/kfocus-mime");
     kfocusMimeProc->setArguments(QStringList() << uri);
+    kfocusMimeProc->setStandardOutputFile(QProcess::nullDevice());
+    kfocusMimeProc->setStandardErrorFile(QProcess::nullDevice());
     connect(kfocusMimeProc, SIGNAL(finished(int)), this, SLOT(cleanupSubproc()));
     kfocusMimeProc->start();
 }
