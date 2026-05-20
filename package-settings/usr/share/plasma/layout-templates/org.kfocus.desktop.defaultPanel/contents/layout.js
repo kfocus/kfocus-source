@@ -85,6 +85,7 @@ function addStartFn ( arg_panel_obj, arg_is_horiz ) {
     clock_obj.writeConfig( 'showDate', 'true' );
     clock_obj.writeConfig( 'dateFormat', 'isoDate' );
     clock_obj.writeConfig( 'showSeconds', 'false' );
+    clock_obj.writeconfig( 'use24hFormat', '0' );
   }
 }
 //== . END addKickoffFn }
@@ -222,6 +223,7 @@ function addEndFn( arg_panel_obj, arg_is_horiz ) {
     clock_obj.writeConfig( 'showDate', 'true' );
     clock_obj.writeConfig( 'dateFormat', 'isoDate' );
     clock_obj.writeConfig( 'showSeconds', 'false' );
+    clock_obj.writeconfig( 'use24hFormat', '0' );
 
     arg_panel_obj.addWidget( 'org.kde.plasma.showdesktop' );
   }
