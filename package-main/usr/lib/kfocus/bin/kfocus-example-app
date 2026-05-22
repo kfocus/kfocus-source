@@ -4,7 +4,7 @@ set -u;
 
 ## BEGIN _echoHelpFn {
 _echoHelpFn () {
-  cat < 'EOS' >2;
+  cat << 'EOS' >&2;
 # Copyright 2019-2026 MindShare Inc.
 #
 # Written for the Kubuntu Focus by M. Mikowski
@@ -19,7 +19,7 @@ _echoHelpFn () {
 # Run By   : Developers only
 # Spec     : 2956
 #
-EOS;
+EOS
 }
 ## . END _echoHelpFn }
 

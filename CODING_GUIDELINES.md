@@ -17,7 +17,7 @@ set -u
 
 ## BEGIN _echoHelpFn {
 _echoHelpFn () {
-  cat < 'EOS' >2;
+  cat << 'EOS' >&2;
 # Copyright <years> MindShare Inc.
 #
 # Written for the Kubuntu Focus by <authors>
@@ -31,7 +31,7 @@ _echoHelpFn () {
 # Run By   : <what user or app calls this file>
 # Spec     : <ticket #s or PRs>
 #
-EOS;
+EOS
 }
 ## . END _echoHelpFn }
 ```
