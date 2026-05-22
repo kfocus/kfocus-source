@@ -5,13 +5,19 @@ Please use the [Google Shell Style Guide][_0090] with the following
 refinements:
 
 ### Header
-When creating a new file, use the following as a header. Notice, any
+When creating a new file, use the following at the top. Notice, any
 contributions will transfer copyright to MindShare Inc, and GPLv2 is the
-required license.
+required license. We wrap the header in `_echoHelpFn` so it can be used
+as quick help by the user.
 
 ```bash
 #!/bin/bash
-#
+
+set -u
+
+## BEGIN _echoHelpFn {
+_echoHelpFn () {
+  cat < 'EOS' >2;
 # Copyright <years> MindShare Inc.
 #
 # Written for the Kubuntu Focus by <authors>
@@ -25,10 +31,13 @@ required license.
 # Run By   : <what user or app calls this file>
 # Spec     : <ticket #s or PRs>
 #
+EOS;
+}
+## . END _echoHelpFn }
 ```
 
-We recommend you use a file like `package-main/usr/lib/kfocus/bin/kfocus-fan`
-as a guideline.
+We recommend start with the example app as a template, found here:
+`package-main/usr/lib/kfocus/bin/kfocus-example-app`
 
 ### Spacing
 - Indent lines two spaces per level. Do not use tabs.
@@ -114,9 +123,13 @@ Test or trap errors instead. See `kfocus-example-app` as a more complete
 example.
 
 ```bash
-# <HEADER>
+#!/bin/bash
 
-set -u;
+set -u
+
+## BEGIN _echoHelpFn {
+_echoHelpFn () { ... } # <= See Header section, above
+## . END _echoHelpFn }
 
 ## BEGIN _importCommonFn {
 _importCommonFn () { ... } # <= Import common.2.source

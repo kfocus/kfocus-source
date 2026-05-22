@@ -1,10 +1,15 @@
 #!/bin/bash
 #
-# Copyright 2019-2024 MindShare Inc.
+set -u;
+
+## BEGIN _echoHelpFn {
+_echoHelpFn () {
+  cat < 'EOS' >2;
+# Copyright 2019-2026 MindShare Inc.
 #
 # Written for the Kubuntu Focus by M. Mikowski
 #   Use this file as a template in conjunction with the guidance
-#   found in CONTRIBUTING.md.
+#   found in CONTRIBUTING.md and CODING_GUIDELINES.md.
 #
 # Name     : kfocus-example-app
 # Summary  : kfocus-example-app [<argN>] [-[i|j|k] <str>] [-x]
@@ -14,7 +19,9 @@
 # Run By   : Developers only
 # Spec     : 2956
 #
-set -u;
+EOS;
+}
+## . END _echoHelpFn }
 
 ## BEGIN _importCommonFn {
 # Summary   : _importCommonFn
