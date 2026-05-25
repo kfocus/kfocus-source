@@ -54,6 +54,7 @@ _disableXhciFn () {
       && echo 'XHCI' > "${_acpiWakeupFile}";
     sleep 1;
   fi
+  return 0;
 }
 ## . END _disableXhciFn }
 
@@ -64,6 +65,7 @@ _enableXhciFn () {
     grep -q '^XHCI.*disable' "${_acpiWakeupFile}" \
       && echo 'XHCI' > "${_acpiWakeupFile}";
   fi
+  return 0;
 }
 ## . END _enableXhciFn }
 
@@ -71,11 +73,15 @@ _enableXhciFn () {
 # The acpiWakeupFile manipulation turns the interface off and on.
 #
 _startThunderboltFn () {
+  declare _modprobe_return_int;
   if ! grep -q 'thunderbolt' < <(lsmod); then
     _disableXhciFn;
     modprobe thunderbolt;
+    _modprobe_return_int="$?";
     _enableXhciFn;
+    return "${_modprobe_return_int}";
   fi
+  return 0;
 }
 ## . END _startThunderboltFn }
 
@@ -83,11 +89,15 @@ _startThunderboltFn () {
 # The wake file manipulation turns the interface off and on.
 #
 _stopThunderboltFn () {
+  declare _modprobe_return_int;
   if grep -q 'thunderbolt' < <(lsmod); then
     _disableXhciFn;
     modprobe -r thunderbolt;
+    _modprobe_return_int="$?";
     _enableXhciFn;
+    return "${_modprobe_return_int}";
   fi
+  return 0;
 }
 ## . END _stopThunderboltFn }
 
