@@ -112,28 +112,6 @@ _installToolsPkgFn () {
 }
 ## . END _installToolsPkgFn }
 
-## BEGIN _installKbdIteFn {
-# Purpose: Install kfocus-keyboard-ite package.
-#
-_installKbdIteFn () {
-  _cm2SetMsgFn 'Install kfocus-keyboard-ite package';
-  if _cm2ReinstallPkgsFn 'kfocus-keyboard-ite'; then
-    _cm2SucFn; else _cm2WarnFn; return 1;
-  fi
-}
-## . END _installKbdIteFn }
-
-## BEGIN _purgeKbdIteFn {
-# Purpose: Purge kfocus-keyboard-ite package.
-#
-_purgeKbdIteFn () {
-  _cm2SetMsgFn 'Purge kfocus-keyboard-ite package';
-  if apt-get purge -y 'kfocus-keyboard-ite'; then
-    _cm2SucFn; else _cm2WarnFn; return 1;
-  fi
-}
-## . END _purgeKbdIteFn }
-
 ## BEGIN _getNvSeriesStrFn {
 # Purpose: Determine nvidia graphics card series
 #
@@ -334,26 +312,6 @@ _chkHwConfigFn () {
     fi
     ## . End Consider directive to change tools pkg }
 
-    ## Begin Consider directive to add or remove keyboard pkg {
-    if [[ "${_dmi_hw_model_code}" =~ ^(m2g5p|zrg1) ]]; then
-      if ! _cm2ChkInstalledPkgFn 'kfocus-keyboard-ite'; then
-        _msg='install-kbd-ite;;';
-        _msg+='Package kfocus-keyboard-ite needs to be installed.';
-        _reason_list+=( "${_msg}" );
-      elif [ "${_do_force}" = 'y' ]; then
-        _msg='install-kbd-ite;;';
-        _msg+='Package kfocus-keyboard-ite reinstall forced.';
-        _reason_list+=( "${_msg}" );
-      fi
-    else
-      if _cm2ChkInstalledPkgFn 'kfocus-keyboard-ite'; then
-        _msg='purge-kbd-ite;;';
-        _msg+='Package kfocus-keyboard-ite needs purge.';
-        _reason_list+=( "${_msg}" );
-      fi
-    fi
-    ## . End Consider directive to add or remove keyboard pkg }
-
     ## Begin Consider directive to adjust nvidia pkgs {
     _is_nv_system="$(_cm2EchoModelStrFn 'is_nv_sys')";
     _nv_pkg_suffix='';
@@ -440,10 +398,8 @@ _fixHwConfigFn () {
       'reconfig-hw'       ) _cmd_list=( '_reconfigHwPkgFn'    );;
       'install-hw-tools'  ) _cmd_list=( '_installToolsPkgFn'  );
         _cmd_list+=( "${_bit_list[1]:-}" );;
-      'install-kbd-ite'   ) _cmd_list=( '_installKbdIteFn'    );;
       'install-nvidia'    ) _cmd_list=( '_installNvidiaFn'    );;
       #'install-synaptics' ) _cmd_list=( '_installSynapticsFn' );;
-      'purge-kbd-ite'     ) _cmd_list=( '_purgeKbdIteFn'      );;
       'purge-rollback'    ) _cmd_list=( '_purgeRollbackFn'    );;
       *)
         echo 'Abort: Could not complete step:';
