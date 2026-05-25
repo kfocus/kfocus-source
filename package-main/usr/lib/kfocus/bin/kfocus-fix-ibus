@@ -133,7 +133,7 @@ _mainFn () {
 }
 ## . END _mainFn }
 
-declare _qdbusExe _dconfExe _dpkgQueryExe;
+declare _dconfExe _dpkgQueryExe;
 
 ## BEGIN Run fi2MainFn when script is NOT sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
@@ -144,14 +144,9 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   _importCommonFn;
 
-  _qdbusExe="$(      command -v qdbus      )";
   _dconfExe="$(      command -v dconf      )";
   _dpkgQueryExe="$(  command -v dpkg-query )";
 
-  if [ -z "${_qdbusExe}" ]; then
-    _cm2EchoFn 'qdbus not found';
-    exit 1;
-  fi
   if [ -z "${_dconfExe}" ]; then
     _cm2EchoFn 'dconf not found';
     exit 0;
