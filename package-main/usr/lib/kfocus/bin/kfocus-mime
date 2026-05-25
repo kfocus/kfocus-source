@@ -1175,8 +1175,7 @@ _mainFn () {
   # Handle URI via MIME handler
   elif [ "${_arg1_str}" = '-d' ]; then
     shift;
-    _arg_app_id="$(_urlDecodeFn "${1:-}" | cut -d'/' -f3)";
-    _dbusDispatchFn "${_arg_app_id}"
+    _dbusDispatchFn "${1:-}"
     exit 0;
 
   # Handle URI
