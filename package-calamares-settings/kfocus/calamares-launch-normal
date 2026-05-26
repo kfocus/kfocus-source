@@ -2,6 +2,8 @@
 #
 # Launch Calamares normally.
 
+export QT_QPA_PLATFORMTHEME=kde
+
 if [ -e '/etc/calamares/OEM_MODE_ACTIVATED' ]; then
   msg="$(cat <<EOL
 The installer was previously run in OEM mode. Please reboot to reset the
