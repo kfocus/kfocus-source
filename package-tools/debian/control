@@ -2,10 +2,7 @@ Source:            kfocus-tools
 Section:           misc
 Maintainer:        Kubuntu Focus Team <support@kfocus.org>
 Standards-Version: 4.7.3
-Build-Depends:     cmake,
-                   debhelper-compat (=13),
-                   qt6-base-dev,
-                   qt6-base-dev-tools
+Build-Depends:     debhelper-compat (=13)
 
 # Removed dependency on kfocus-power-fan
 Package:      kfocus-tools
@@ -163,7 +160,7 @@ Description:  Utility to help with vertical sync on Nvidia hardware
 
 Package:      kfocus-tbt
 Architecture: any
-Depends:      ${misc:Depends}, ${shlibs:Depends}
+Depends:      ${misc:Depends}, ${shlibs:Depends}, python3-pyqt6
 Description:  KFocus Thunderbolt control tool
  Allows enabling and disabling Thunderbolt temporarily or permanently.
 
