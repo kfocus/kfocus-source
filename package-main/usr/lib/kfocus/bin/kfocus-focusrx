@@ -1284,8 +1284,7 @@ _chkFirstrunFn () {
   [ -z "${_firstrunExe}" ] && return;
 
   # Check if launched at login: 'plasma_session' is used by Plasma 5.24
-  #   and 'systemd' by Plasma 5.27. kfocus-focusrx if rerun.
-  # TODO: What is used by Plasma 6.6? Probably systemd?
+  #   and 'systemd' by Plasma 5.27 and 6.6. kfocus-focusrx if rerun.
   if [[ "${_parentCmdStr}" =~ ^(plasma_session|systemd|kfocus-focusrx) ]];
     then "${_firstrunExe}";
   fi
