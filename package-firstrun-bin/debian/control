@@ -2,7 +2,16 @@ Source:              kfocus-firstrun-bin
 Section:             admin
 Maintainer:          Kubuntu Focus Team <support@kfocus.org>
 Standards-Version:   4.7.3
-Build-Depends:       debhelper-compat (=13)
+Build-Depends:       debhelper-compat (=13),
+                     cmake,
+                     extra-cmake-modules,
+                     libkirigami-dev,
+                     libkf6i18n-dev,
+                     libkf6coreaddons-dev,
+                     libkf6iconthemes-dev,
+                     qt6-base-dev,
+                     qt6-declarative-dev,
+                     libkf6qqc2desktopstyle-dev
 Rules-Requires-Root: no
 
 Package:      kfocus-firstrun-bin
@@ -13,7 +22,7 @@ Depends:      ${misc:Depends},
               kfocus-main,
               breeze-icon-theme,
               polkitd,
-              plasma-framework
+              libkf6kcmutils-bin,
 Recommends:   plasma-welcome
 Description: Kubuntu Focus Welcome Wizard.
  This tools guides the user on initial login.

@@ -112,6 +112,9 @@ class TbtCtlDialog(QDialog):
             )
             sys.exit(1)
 
+        self.resize(440, 440)
+        self.setWindowTitle(WINDOW_TITLE)
+
         self.core_layout: QVBoxLayout = QVBoxLayout()
         self.top_grid_layout: QGridLayout = QGridLayout()
 
@@ -199,8 +202,6 @@ class TbtCtlDialog(QDialog):
         self.core_layout.addLayout(self.button_layout)
 
         self.setLayout(self.core_layout)
-        self.resize(440, 440)
-        self.setWindowTitle(WINDOW_TITLE)
 
         self.set_ok_button_state()
         self.use_tbt_info_button.clicked.connect(

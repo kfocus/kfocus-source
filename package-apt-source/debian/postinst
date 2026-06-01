@@ -33,7 +33,7 @@ _installReposFn () {
   _nodejs_pin_file="${_pref_dir}/nodejs";
   if [ ! -e "${_nodejs_pin_file}" ]; then
     echo '# Provided by nodejs script:
-# curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+# curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
 Package: nodejs
 Pin: origin deb.nodesource.com
 Pin-Priority: 600' > "${_nodejs_pin_file}" || true;
@@ -41,7 +41,7 @@ Pin-Priority: 600' > "${_nodejs_pin_file}" || true;
   _nsolid_pin_file="${_pref_dir}/nsolid";
   if [ ! -e "${_nsolid_pin_file}" ]; then
     echo '# Provided by nodejs script:
-# curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+# curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
 Package: nsolid
 Pin: origin deb.nodesource.com
 Pin-Priority: 600' > "${_nsolid_pin_file}" || true;

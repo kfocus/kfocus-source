@@ -1,4 +1,5 @@
 import QtQuick
+import QtQml
 import QtQuick.Controls as Controls
 import QtQuick.Layouts
 import QtQuick.Window
@@ -17,6 +18,7 @@ Kirigami.ApplicationWindow {
     property string networkDisconnectTitleImage : ''
     property int disabledSidebarIndex           : 0
     property bool firstRun                      : true
+    property bool highlightReady                : false
     property var interImageList                 : []
     property var defaultCryptList               : []
     property string cryptChangeMode             : ''
@@ -146,12 +148,12 @@ Kirigami.ApplicationWindow {
 
     // == BEGIN Views =================================================
     // Define page size and columns
-    width  : Kirigami.Units.gridUnit * 40
-    height : Kirigami.Units.gridUnit * 29
-    minimumWidth  : Kirigami.Units.gridUnit * 40
-    minimumHeight : Kirigami.Units.gridUnit * 28
+    width  : Kirigami.Units.gridUnit * 48
+    height : Kirigami.Units.gridUnit * 34
+    minimumWidth  : Kirigami.Units.gridUnit * 48
+    minimumHeight : Kirigami.Units.gridUnit * 34
 
-    pageStack.defaultColumnWidth : Kirigami.Units.gridUnit * 12
+    pageStack.defaultColumnWidth : Kirigami.Units.gridUnit * 14
 
     // BEGIN Define sidebar views
     Kirigami.ScrollablePage {
@@ -159,9 +161,10 @@ Kirigami.ApplicationWindow {
         visible : false // Avoids a graphical glitch, DO NOT SET TO TRUE
 
         ListView {
-            id       : enabledSidebar
-            model    : sidebarModel
-            delegate : enabledSidebarDelegate
+            id           : enabledSidebar
+            anchors.fill : parent
+            model        : sidebarModel
+            delegate     : enabledSidebarDelegate
         }
     }
 
@@ -192,12 +195,15 @@ Kirigami.ApplicationWindow {
     Component {
         id: enabledSidebarDelegate
         Controls.ItemDelegate {
+            property string checkIconSource: ''
+            width       : ListView.view.width
+            highlighted : enabledSidebar.currentIndex === index && highlightReady
             contentItem: RowLayout {
                 KirigamiDelegates.IconTitleSubtitle {
                     Layout.fillWidth: true
                     title       : task
                     icon.color  : Kirigami.Theme.textColor
-                    //icon.size   : Kirigami.Units.gridUnit * 1.5
+                    //icon.size : Kirigami.Units.gridUnit * 1.5
                     Component.onCompleted: {
                         var taskIcon_part_list = taskIcon.split( '|' );
                         if ( taskIcon_part_list[0] === 'THEMED' ) {
@@ -208,23 +214,29 @@ Kirigami.ApplicationWindow {
                     }
                 }
                 Kirigami.Icon {
-                    source: ''
+                    source: checkIconSource
                 }
             }
-            onClicked   : switchPageFn( jsId )
+            onClicked   : {
+                enabledSidebar.currentIndex = index;
+                switchPageFn( jsId );
+            }
         }
     }
 
     Component {
         id: disabledSidebarDelegate
         Controls.ItemDelegate {
+            property string checkIconSource: ''
+            width       : ListView.view.width
+            highlighted : enabledSidebar.currentIndex === index && highlightReady
             contentItem : RowLayout {
                 KirigamiDelegates.IconTitleSubtitle {
                     Layout.fillWidth: true
-                    title       : task
-                    icon.color  : taskIcon
-                    //icon.size   : Kirigami.Units.gridUnit * 1.5
-                    //disabled    : true
+                    title        : task
+                    //icon.color : Kirigami.Theme.textColor
+                    //icon.size  : Kirigami.Units.gridUnit * 1.5
+                    //disabled   : true
                     Component.onCompleted: {
                         var taskIcon_part_list = taskIcon.split( '|' );
                         if ( taskIcon_part_list[0] === 'THEMED' ) {
@@ -235,7 +247,7 @@ Kirigami.ApplicationWindow {
                     }
                 }
                 Kirigami.Icon {
-                    source: ''
+                    source: checkIconSource
                 }
             }
             onClicked   : {
@@ -462,6 +474,7 @@ Kirigami.ApplicationWindow {
 
         Kirigami.Heading {
             id : interTopHeading
+            verticalAlignment: Text.AlignVCenter
 
             anchors {
                 left       : headerHighlightRect.left
@@ -816,7 +829,7 @@ Kirigami.ApplicationWindow {
         var light_dark_str = ( Kirigami.Theme.textColor.hsvValue < 0.5 )
             ? '_light' : '_dark';
         var image_name = getModelImageNameFn( image_id );
-        return 'qrc:/assets/images/' + image_name
+        return 'qrc:/qt/qml/org/kfocus/firstrun/assets/images/' + image_name
             + light_dark_str + '.' + file_type;
     }
 
@@ -867,9 +880,9 @@ Kirigami.ApplicationWindow {
         const current_page_id = getCurrentPageIdFn();
         const check_map = stateMatrix.check_map;
         check_map[current_page_id] = Date.now();
-        enabledSidebar.currentItem.trailing.source = 'checkbox';
+        enabledSidebar.currentItem.checkIconSource = 'checkbox';
         disabledSidebar.currentIndex = enabledSidebar.currentIndex;
-        disabledSidebar.currentItem.trailing.source = 'checkbox';
+        disabledSidebar.currentItem.checkIconSource = 'checkbox';
     }
 
     function gotoNextPageFn () {
@@ -892,8 +905,8 @@ Kirigami.ApplicationWindow {
             var js_id = sidebarModel.get( i ).jsId;
             for ( let target_obj of [ enabledSidebar, disabledSidebar ] ) {
                 var item_obj = target_obj.itemAtIndex(i);
-                if ( item_obj && typeof item_obj.trailing === 'object' ) {
-                    item_obj.trailing.source = ( check_map[ js_id ] > 0 )
+                if ( item_obj ) {
+                    item_obj.checkIconSource = ( check_map[ js_id ] > 0 )
                       ? 'checkbox' : '';
                 }
             }
@@ -2195,6 +2208,7 @@ Kirigami.ApplicationWindow {
             // ... else use whatever object was already there
 
             populateCheckboxesFn();
+            highlightReady = true;
         }
    }
 
