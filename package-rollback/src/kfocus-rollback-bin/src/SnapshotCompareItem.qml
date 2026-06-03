@@ -1,7 +1,8 @@
-import QtQuick 2.15
-import QtQuick.Layouts 1.15
-import QtQuick.Controls 2.15 as Controls
-import org.kde.kirigami 2.20 as Kirigami
+import QtQuick
+import QtQuick.Layouts
+import QtQuick.Controls as Controls
+import org.kde.kirigami as Kirigami
+import org.kde.kirigami.delegates as KirigamiDelegates
 
 ColumnLayout {
     property var snapshotList : ListModel {}
@@ -34,22 +35,27 @@ ColumnLayout {
         valueRole        : "name"
         displayText      : currentText + ' - ' + currentValue
         model            : snapshotList
-        delegate         : Kirigami.BasicListItem {
-            label    : date
-            subtitle : name
-            icon     : reason === 'System Schedule'
-              ? 'clock'
-              : reason === 'Before Package Change'
-                ? 'system-upgrade'
-                : reason === 'Pre-Rollback'
-                  ? 'edit-undo'
-                  : reason === 'current'
-                    ? 'drive-harddisk-root'
-                    : 'user'
-            trailing : Kirigami.Icon {
-                source: pinned ? 'lock' : ''
+        delegate         : Controls.ItemDelegate {
+            width: ListView.view.width
+            contentItem: RowLayout {
+                KirigamiDelegates.IconTitleSubtitle {
+                    Layout.fillWidth: true
+                    title: date
+                    subtitle: name
+                    icon.name: reason === 'System Schedule'
+                      ? 'clock'
+                      : reason === 'Before Package Change'
+                        ? 'system-upgrade'
+                        : reason === 'Pre-Rollback'
+                          ? 'edit-undo'
+                          : reason === 'current'
+                            ? 'drive-harddisk-root'
+                            : 'user'
+                }
+                Kirigami.Icon {
+                    source: pinned ? 'lock' : ''
+                }
             }
-
             HoverHandler {
                 cursorShape: Qt.PointingHandCursor
             }

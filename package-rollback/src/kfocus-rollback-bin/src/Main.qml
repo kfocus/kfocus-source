@@ -1,9 +1,8 @@
-import QtQuick 2.15
-import QtQuick.Layouts 1.15
-import QtQuick.Controls 2.15 as Controls
-import org.kde.kirigami 2.20 as Kirigami
-import shellengine 1.1
-import backendengine 1.0
+import QtQuick
+import QtQuick.Layouts
+import QtQuick.Controls as Controls
+import org.kde.kirigami as Kirigami
+import org.kde.kirigami.delegates as KirigamiDelegates
 
 Kirigami.ApplicationWindow {
     id: root
@@ -97,13 +96,18 @@ Kirigami.ApplicationWindow {
     Component {
         id: enabledSnapshotBarDelegate
 
-        Kirigami.BasicListItem {
-            font.family : "courier"
-            label       : date + ' ' + genSnapshotSizeStrFn(mainSize, bootSize)
-            subtitle    : name
-            icon        : getIconForReasonFn( reason )
-            trailing    : Kirigami.Icon {
-                source  : pinned ? 'lock' : ''
+        Controls.ItemDelegate {
+            width: ListView.view.width
+            contentItem: RowLayout {
+                KirigamiDelegates.IconTitleSubtitle {
+                    title: date + ' ' + genSnapshotSizeStrFn(mainSize, bootSize)
+                    subtitle    : name
+                    font.family: "courier"
+                    icon.name : getIconForReasonFn( reason )
+                }
+                Kirigami.Icon {
+                    source: pinned ? 'logk' : ''
+                }
             }
         }
     }
@@ -111,15 +115,19 @@ Kirigami.ApplicationWindow {
     Component {
         id: disabledSnapshotBarDelegate
 
-        Kirigami.BasicListItem {
-            font.family : "courier"
-            label       : date + ' ' + genSnapshotSizeStrFn(mainSize, bootSize)
-            subtitle    : name
-            icon        : getIconForReasonFn( reason )
-            trailing    : Kirigami.Icon {
-                source  : pinned ? 'lock' : ''
+        Controls.ItemDelegate {
+            width: ListView.view.width
+            contentItem: RowLayout {
+                KirigamiDelegates.IconTitleSubtitle {
+                    font.family : "courier"
+                    title: date + ' ' + genSnapshotSizeStrFn(mainSize, bootSize)
+                    subtitle: name
+                    icon.name: getIconForReasonFn( reason )
+                }
+                Kirigami.Icon {
+                    source: pinned ? 'lock' : ''
+                }
             }
-            fadeContent : true
             onClicked   : {
                 snapshotBar.currentIndex = disabledSnapshotBarIndex;
             }
@@ -378,6 +386,9 @@ Kirigami.ApplicationWindow {
                               ? Kirigami.Theme.disabledTextColor
                               : Kirigami.Theme.linkColor
                             onLinkActivated : {
+                                // TODO: Use a real JavaScript method here,
+                                // parameter injection into signal handlers is
+                                // deprecated
                                 if ( link === 'large-snapshot-warn' ) {
                                     backend.enableBulkDataWarning();
                                     bulkDataOverlay.visible = true;
@@ -1402,6 +1413,9 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id          : createSnapshotEngine
         onAppExited : {
+            // TODO: Use a real JavaScript method here,
+            // parameter injection into signal handlers is
+            // deprecated
             if ( exitCode === 127 ) {
                 switchViewFn( authFailedView );
                 return;
@@ -1421,6 +1435,9 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id          : balanceDiskEngine
         onAppExited : {
+            // TODO: Use a real JavaScript method here,
+            // parameter injection into signal handlers is
+            // deprecated
             if ( exitCode === 127 ) {
                 switchViewFn( authFailedView );
                 return;
@@ -1438,6 +1455,9 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id          : optimizeDiskEngine
         onAppExited : {
+            // TODO: Use a real JavaScript method here,
+            // parameter injection into signal handlers is
+            // deprecated
             if ( exitCode === 127 ) {
                 switchViewFn( authFailedView );
                 return;
@@ -1455,6 +1475,9 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id          : automaticSnapshotToggleEngine
         onAppExited : {
+            // TODO: Use a real JavaScript method here,
+            // parameter injection into signal handlers is
+            // deprecated
             if ( exitCode === 127 ) {
                 switchViewFn( authFailedView );
                 automaticSnapshotsSwitch.checked = Qt.binding(function() {
@@ -1475,6 +1498,9 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id          : deleteSnapshotEngine
         onAppExited : {
+            // TODO: Use a real JavaScript method here,
+            // parameter injection into signal handlers is
+            // deprecated
             if ( exitCode === 127 ) {
                 switchViewFn( authFailedView );
                 return;
@@ -1494,6 +1520,9 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id          : restoreSnapshotEngine
         onAppExited : {
+            // TODO: Use a real JavaScript method here,
+            // parameter injection into signal handlers is
+            // deprecated
             if ( exitCode === 0 ) {
                 execSync( 'systemctl reboot -i' );
             } else if ( exitCode === 127 ) {
@@ -1511,6 +1540,9 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id          : compareSnapshotsEngine
         onAppExited : {
+            // TODO: Use a real JavaScript method here,
+            // parameter injection into signal handlers is
+            // deprecated
             if ( exitCode === 127 ) {
                 switchViewFn( authFailedView );
                 return;
@@ -1529,6 +1561,9 @@ Kirigami.ApplicationWindow {
     ShellEngine {
         id: saveEditsEngine
         onAppExited: {
+            // TODO: Use a real JavaScript method here,
+            // parameter injection into signal handlers is
+            // deprecated
             if ( exitCode === 127 ) {
                 switchViewFn( authFailedView );
                 restoreSnapshotViewBindingsFn();
