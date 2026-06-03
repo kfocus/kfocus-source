@@ -6,7 +6,7 @@ ShellEngine::ShellEngine()
 }
 
 void ShellEngine::exec(QString args) {
-    exec(args, "");
+    exec(args, QStringLiteral(""));
 }
 
 void ShellEngine::exec(QString args, QString stdinFeed) {
@@ -15,7 +15,7 @@ void ShellEngine::exec(QString args, QString stdinFeed) {
 }
 
 int ShellEngine::execSync(QString args) {
-    return execSync(args, "");
+    return execSync(args, QStringLiteral(""));
 }
 
 int ShellEngine::execSync(QString args, QString stdinFeed) {
@@ -29,9 +29,9 @@ int ShellEngine::execSync(QString args, QString stdinFeed) {
 QProcess *ShellEngine::execCore(QString args, QString stdinFeed) {
     QProcess *proc = new QProcess();
     QStringList argsList;
-    argsList.append("-c");
+    argsList.append(QStringLiteral("-c"));
     argsList.append(args);
-    proc->start("bash", argsList);
+    proc->start(QStringLiteral("bash"), argsList);
     lastProcess = proc;
     if (stdinFeed.length() != 0) {
         proc->write(stdinFeed.toUtf8());
@@ -44,7 +44,7 @@ void ShellEngine::triggerExited() {
     QProcess *proc = static_cast<QProcess *>(sender());
     m_stdout = extractStdout(proc);
     proc->deleteLater();
-    appExited(proc == lastProcess, proc->exitCode());
+    Q_EMIT appExited(proc == lastProcess, proc->exitCode());
 }
 
 QString ShellEngine::extractStdout(QProcess *proc) {

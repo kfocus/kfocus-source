@@ -62,7 +62,7 @@ public:
     Q_INVOKABLE void enableBulkDataWarning();
     Q_INVOKABLE void disableBulkDataWarning();
 
-signals:
+Q_SIGNALS:
     void inhibitCloseChanged();
     void automaticSnapshotsEnabledChanged();
     void mainSpaceLowChanged();
@@ -76,7 +76,7 @@ signals:
     void bulkDataListChanged();
     void bulkDataWarningEnabledChanged();
 
-private slots:
+private Q_SLOTS:
     void onSystemDataReady();
 
 private:

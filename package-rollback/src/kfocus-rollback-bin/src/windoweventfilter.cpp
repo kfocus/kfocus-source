@@ -9,7 +9,7 @@ WindowEventFilter::WindowEventFilter(QObject *parent)
 
 WindowEventFilter::~WindowEventFilter() {}
 
-bool WindowEventFilter::eventFilter(QObject *obj, QEvent *event) {
+bool WindowEventFilter::eventFilter(__attribute__((unused)) QObject *obj, QEvent *event) {
     if (event->type() == QEvent::Close) {
         if (m_backendEngine.inhibitClose()) {
             return true;

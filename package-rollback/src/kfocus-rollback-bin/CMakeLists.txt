@@ -1,34 +1,33 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 4.2)
+project(kfocus-rollback-bin)
 
-project(kfocus-rollback-bin VERSION 0.1 LANGUAGES CXX)
+find_package(ECM 6.0.0 REQUIRED NO_MODULE)
+set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH})
 
-set(CMAKE_AUTOUIC ON)
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
+include(KDEInstallDirs)
+include(KDECMakeSettings)
+include(KDECompilerSettings NO_POLICY_SCOPE)
+include(ECMFindQmlModule)
+include(ECMQmlModule)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-find_package(QT NAMES Qt5 REQUIRED COMPONENTS Core Quick QuickControls2)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Quick QuickControls2)
-
-set(PROJECT_SOURCES
-        main.cpp
-        qml.qrc
-        shellengine.cpp
-        backendengine.cpp
-        shellengine.h
-        backendengine.h
-        windoweventfilter.h
-        windoweventfilter.cpp
+find_package(Qt6 REQUIRED COMPONENTS
+    Core
+    Quick
+    Widgets
+    Gui
+    QuickControls2
 )
 
-add_executable(kfocus-rollback-bin
-    ${PROJECT_SOURCES}
+find_package(KF6 REQUIRED COMPONENTS
+    Kirigami
+    I18n
+    CoreAddons
+    QQC2DesktopStyle
+    IconThemes
 )
 
-target_link_libraries(kfocus-rollback-bin
-  PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Quick Qt${QT_VERSION_MAJOR}::QuickControls2)
+ecm_find_qmlmodule(org.kde.kirigami REQUIRED)
 
-include(GNUInstallDirs)
-install(TARGETS kfocus-rollback-bin DESTINATION "/usr/lib/kfocus/bin")
+add_subdirectory(src)
+
+feature_summary(WHAT ALL INCLUDE_QUIET_PACKAGES FATAL_ON_MISSING_REQUIRED_PACKAGES)

@@ -27,11 +27,11 @@ public:
         return m_stdout;
     }
 
-signals:
+Q_SIGNALS:
     void commandStrChanged();
     void appExited(bool wasLastProcess, int exitCode);
 
-public slots:
+public Q_SLOTS:
     void triggerExited();
 
 private:
