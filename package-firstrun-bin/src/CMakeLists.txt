@@ -33,4 +33,4 @@ target_link_libraries(kfocus-firstrun-bin
     KF6::IconThemes
 )
 
-install(TARGETS kfocus-firstrun-bin ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
+install(TARGETS kfocus-firstrun-bin DESTINATION "/usr/lib/kfocus/bin")

@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
   QStringList args;
   ShellEngine earlyEngine;
   bool forced = false;
-  for (int i = 0; i < argc; i++) {
+  for (int i = 1; i < argc; i++) {
     args.append(QString::fromUtf8(argv[i]));
   }
   if (args.contains(QStringLiteral("-f"))) {

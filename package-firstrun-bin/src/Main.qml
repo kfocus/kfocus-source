@@ -115,11 +115,13 @@ Kirigami.ApplicationWindow {
             task     : 'Insync'
             taskIcon : 'folder-sync'
         }
-        ListElement {
-            jsId     : 'jetbrainsToolboxItem'
-            task     : 'JetBrains Toolbox'
-            taskIcon : 'THEMED|jetbrains_toolbox_line'
-        }
+        /*
+         * ListElement {
+         *     jsId     : 'jetbrainsToolboxItem'
+         *     task     : 'JetBrains Toolbox'
+         *     taskIcon : 'THEMED|jetbrains_toolbox_line'
+         * }
+         */
         ListElement {
             jsId     : 'avatarItem'
             task     : 'Avatar'
@@ -440,7 +442,7 @@ Kirigami.ApplicationWindow {
 
             Controls.Button {
                 id          : actionButton
-                palette { button: getThemedColorFn( 'green' ) }
+                Kirigami.Theme.backgroundColor: 'green'
                 onClicked   : takeActionFn()
             }
 
@@ -581,6 +583,8 @@ Kirigami.ApplicationWindow {
 
         Kirigami.Heading {
             id : cryptTopHeading
+            verticalAlignment: Text.AlignVCenter
+
             anchors {
                 left       : cryptHighlightRect.left
                 right      : cryptHighlightRect.right
@@ -1353,12 +1357,12 @@ Kirigami.ApplicationWindow {
               + 'there is no recovery except to reformat your disks '
               + 'and restore from backup.<br></p>'
 
-              + '<p><b>For your security</b>, the Kubuntu Focus Team does NOT '
-              + 'install tools that could assist in any recovery. '
+              + '<p><b>For your security, the Kubuntu Focus Team does NOT '
+              + 'install tools that could assist in any recovery</b>. '
               + 'In other words, if you lose your password, they have no '
               + 'way to help you recover it!</p>'
               ;
-            cryptActionButton.text      = 'Continue';
+            cryptActionButton.text      = 'Change Now';
             cryptActionButton.icon.name = 'arrow-right';
             actionName                  = 'changeCryptNonDefault';
             regenUiFn( cryptTemplatePage, false );
@@ -1553,7 +1557,7 @@ Kirigami.ApplicationWindow {
               + 'bottom to set automatic snapshots.<br></p>'
 
               + '<p>' + ding07Str
-              + '<b>Click on the disk icon next to the system tray</b> to '
+              + '<b>Click on the tree icon next to the system tray</b> to '
               + 'launch BackInTime.<br></p>'
 
               + '<p><b>See more in the</b> '
@@ -1863,75 +1867,77 @@ Kirigami.ApplicationWindow {
             regenUiFn( interTemplatePage, false );
             break;
 
-        case 'jetbrainsToolboxItem':
-            initPageFn([
-              topImage,       topHeading,
-              primaryText,    actionButton,
-              previousButton, skipButton
-            ]);
-
-            pageTitleText   = 'JetBrains Toolbox';
-            topImage.source = imgDir + 'jetbrains_toolbox_logo.svg';
-            topHeading.text = 'Install and Manage JetBrains IDEs';
-            primaryText.text
-              = '<p><b>JetBrains Toolbox provides a convenient interface to '
-              + 'use their products</b>. You can install, browse, remove, '
-              + 'upgrade, configure, and otherwise manage their many popular '
-              + 'developer tools. These includes IDEs like IntelliJ, '
-              + 'PyCharm, WebStorm, Android Studio, and DataGrip. Several '
-              + 'IDEs have free community editions, while others have '
-              + 'generous free trial periods.<br></p>'
-
-              + '<p><b>See more in the</b> '
-              + '<a href="https://kfocus.org/wf/ide.html">IDEs Guided '
-              + 'Solution.</a></p>'
-              ;
-            actionButton.text      = 'Launch JetBrains Toolbox Now';
-            actionButton.icon.name = 'arrow-right';
-            actionName             = 'launchJetbrainsToolbox';
-
-            regenUiFn( baseTemplatePage, true );
-            break;
-
-        case 'jetbrainsToolboxLaunchedItem':
-            initPageFn([
-              headerHighlightRect, interTopHeading,
-              instructionsText,    interActionButton,
-              pictureColumn,       interContinueLabel
-            ]);
-
-            pageTitleText             = 'JetBrains Toolbox';
-            pageTitleImage            = imgDir + 'jetbrains_toolbox_logo.svg';
-            headerHighlightRect.color = '#27ae60';
-            interTopHeading.text      = 'Proceed with JetBrains Toolbox...';
-            instructionsText.text
-              = '<p>' + ding01Str
-              + '<b>If JetBrains Toolbox is not installed</b>, you will '
-              + 'be asked to install it, and will need to provide your '
-              + 'password to do so.<br></p>'
-
-              + '<p>' + ding02Str
-              + '<b>If you’re launching the Toolbox for the first '
-              + 'time</b>, you will be asked to configure it and accept the '
-              + 'JetBrains User Agreement. It may take up to 30 seconds for '
-              + 'the Toolbox to launch.<br></p>'
-
-              + '<p>' + ding03Str
-              + '<b>Click on the Toolbox icon</b> in the system tray to open '
-              + 'the management interface. '
-              + '</p>'
-              ;
-            interActionButton.text      = 'Continue';
-            interActionButton.icon.name = 'arrow-right';
-            interImageList = [
-              'kfocus_mime_jetbrains_toolbox.svg',
-              'jetbrains_toolbox_ui.webp',
-              'jetbrains_toolbox_systray.svg'
-            ];
-            actionName = 'nextPage';
-
-            regenUiFn( interTemplatePage, false );
-            break;
+        /*
+         * case 'jetbrainsToolboxItem':
+         *     initPageFn([
+         *       topImage,       topHeading,
+         *       primaryText,    actionButton,
+         *       previousButton, skipButton
+         *     ]);
+         *
+         *     pageTitleText   = 'JetBrains Toolbox';
+         *     topImage.source = imgDir + 'jetbrains_toolbox_logo.svg';
+         *     topHeading.text = 'Install and Manage JetBrains IDEs';
+         *     primaryText.text
+         *       = '<p><b>JetBrains Toolbox provides a convenient interface to '
+         *       + 'use their products</b>. You can install, browse, remove, '
+         *       + 'upgrade, configure, and otherwise manage their many popular '
+         *       + 'developer tools. These includes IDEs like IntelliJ, '
+         *       + 'PyCharm, WebStorm, Android Studio, and DataGrip. Several '
+         *       + 'IDEs have free community editions, while others have '
+         *       + 'generous free trial periods.<br></p>'
+         *
+         *       + '<p><b>See more in the</b> '
+         *       + '<a href="https://kfocus.org/wf/ide.html">IDEs Guided '
+         *       + 'Solution.</a></p>'
+         *       ;
+         *     actionButton.text      = 'Launch JetBrains Toolbox Now';
+         *     actionButton.icon.name = 'arrow-right';
+         *     actionName             = 'launchJetbrainsToolbox';
+         *
+         *     regenUiFn( baseTemplatePage, true );
+         *     break;
+         *
+         * case 'jetbrainsToolboxLaunchedItem':
+         *     initPageFn([
+         *       headerHighlightRect, interTopHeading,
+         *       instructionsText,    interActionButton,
+         *       pictureColumn,       interContinueLabel
+         *     ]);
+         *
+         *     pageTitleText             = 'JetBrains Toolbox';
+         *     pageTitleImage            = imgDir + 'jetbrains_toolbox_logo.svg';
+         *     headerHighlightRect.color = '#27ae60';
+         *     interTopHeading.text      = 'Proceed with JetBrains Toolbox...';
+         *     instructionsText.text
+         *       = '<p>' + ding01Str
+         *       + '<b>If JetBrains Toolbox is not installed</b>, you will '
+         *       + 'be asked to install it, and will need to provide your '
+         *       + 'password to do so.<br></p>'
+         *
+         *       + '<p>' + ding02Str
+         *       + '<b>If you’re launching the Toolbox for the first '
+         *       + 'time</b>, you will be asked to configure it and accept the '
+         *       + 'JetBrains User Agreement. It may take up to 30 seconds for '
+         *       + 'the Toolbox to launch.<br></p>'
+         *
+         *       + '<p>' + ding03Str
+         *       + '<b>Click on the Toolbox icon</b> in the system tray to open '
+         *       + 'the management interface. '
+         *       + '</p>'
+         *       ;
+         *     interActionButton.text      = 'Continue';
+         *     interActionButton.icon.name = 'arrow-right';
+         *     interImageList = [
+         *       'kfocus_mime_jetbrains_toolbox.svg',
+         *       'jetbrains_toolbox_ui.webp',
+         *       'jetbrains_toolbox_systray.svg'
+         *     ];
+         *     actionName = 'nextPage';
+         *
+         *     regenUiFn( interTemplatePage, false );
+         *     break;
+         */
 
         case 'avatarItem':
             initPageFn([
@@ -1981,8 +1987,7 @@ Kirigami.ApplicationWindow {
               // TODO: Specify image type and size?
 
               + '<p>' + ding03Str
-              + '<b>Click “Apply” and provide your password</b> to change '
-              + 'your avatar.</p>'
+              + '<b>Click “Apply”</b> to change your avatar.</p>'
               ;
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
@@ -2355,14 +2360,16 @@ Kirigami.ApplicationWindow {
             switchPageFn( 'insyncLaunchedItem' );
             break;
 
-        case 'launchJetbrainsToolbox':
-            exeRun.exec( systemDataMap.binDir
-              + '/kfocus-mime -k jetbrains-toolbox-plain' );
-            switchPageFn( 'jetbrainsToolboxLaunchedItem' );
-            break;
+        /*
+         * case 'launchJetbrainsToolbox':
+         *     exeRun.exec( systemDataMap.binDir
+         *       + '/kfocus-mime -k jetbrains-toolbox-plain' );
+         *     switchPageFn( 'jetbrainsToolboxLaunchedItem' );
+         *     break;
+         */
 
         case 'changeAvatar':
-            exeRun.exec( 'kcmshell5 users' );
+            exeRun.exec( 'kcmshell6 kcm_users' );
             switchPageFn( 'avatarChangeItem' );
             break;
 
