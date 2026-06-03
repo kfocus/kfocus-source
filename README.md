@@ -31,7 +31,6 @@ kfocus-<name>
 ```
 
 ## Source Package Table
-
 All these are source packages. Many create multiple binary packages.
 
 | Name                 |
@@ -58,7 +57,7 @@ As of 24.04, the following packages are deprecated:
 | ------------------| -------------------- |
 | `kfocus-001-*`    | Since 22.04, `001` is dropped.                 |
 | `kfocus-cuda-lib` | Replaced by kfocus-conda tool dynamic loading. |
-| `kfocus-rest`     | Since 26.04, `kfocus-rest` is dropped. |
+| `kfocus-rest`     | Since 26.04, `kfocus-rest` is dropped, replaced by kfocus-extra|
 
 ## Build and Distribution
 Packages are built using standard PPA preparation and uploaded to the [Kubuntu

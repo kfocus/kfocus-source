@@ -8,39 +8,67 @@ set -e;
 
 ## { BEGIN Declare common.2.source symbols
 #  IMPORT 2022-03-23 EXCERPT from test/test-scripts/common.2.source
-_cm2Arg01="${1:-}";
-
 _cm2BlockMsg='';
 _cm2EchoFn    () { 1>&2 echo -e "$*";  }
 _cm2SetMsgFn  () { _cm2BlockMsg="$*"; _cm2EchoFn "== BEGIN : ${_cm2BlockMsg}"; }
 _cm2SucFn     () { _cm2EchoFn "== . END : OK   ${_cm2BlockMsg}\n\n"; }
 _cm2WarnFn    () { _cm2EchoFn "== . END : WARN Could not ${_cm2BlockMsg}\n\n"; }
+_cm2WarnStrFn () { _cm2EchoFn "warn: ${*}"; }
 ## } . END Declare common.2.source symbols
 
-## BEGIN MAIN {
-case "${_cm2Arg01}" in
-  abort-upgrade)
-  ;;
+## BEGIN _mainFn {
+_mainFn () {
+  declare _orig_file _replace_file;
 
-  install|upgrade)
-    _cm2SetMsgFn 'Add i386 architecture for Vulkan';
-    if ( dpkg --add-architecture i386 ); then
-      _cm2SucFn; else _cm2WarnFn;
-    fi
-    _cm2SetMsgFn 'Divert language-selector pkg_depends file';
-    if dpkg-divert --package 'kfocus-main' --add --rename --divert \
-      '/usr/share/language-selector/data/pkg_depends.orig' \
-      '/usr/share/language-selector/data/pkg_depends'; then
-      _cm2SucFn;
-    else
-      _cm2WarnFn;
-      exit 1;
-    fi
-  ;;
-esac
+  case "${1:-}" in
+    abort-upgrade)
+    ;;
 
+    install|upgrade)
+      _cm2SetMsgFn 'Add i386 architecture for Vulkan';
+      if ( dpkg --add-architecture i386 ); then
+        _cm2SucFn; else _cm2WarnFn;
+      fi
+
+      ## TODO: This appears no longer needed. Remove after confirmation.
+      # _cm2SetMsgFn 'Divert language-selector pkg_depends file';
+      # if dpkg-divert --package 'kfocus-main' --add --rename --divert \
+      #   '/usr/share/language-selector/data/pkg_depends.orig' \
+      #   '/usr/share/language-selector/data/pkg_depends'; then
+      #   _cm2SucFn;
+      # else
+      #   _cm2WarnFn;
+      #   exit 1;
+      # fi
+
+      _cm2SetMsgFn 'Divert non-instructive backintime icon';
+      _orig_file='/usr/share/icons/hicolor/scalable/apps/backintime.svg';
+      _replace_file='/usr/share/icons/breeze/actions/24/backup.svg';
+
+      if [ -f "${_replace_file}" ] && [ -f "${_orig_file}" ]; then
+        if dpkg-divert --package 'kfocus-main' --add --rename --divert \
+          "${_orig_file}.orig" "${_orig_file}"; then
+          if ln -s "${_replace_file}" "${_orig_file}"; then
+            _cm2SucFn;
+          else
+            _cm2WarnStrFn "Could not symlink to |${_orig_file}|";
+            _cm2WarnFn;
+          fi
+        else
+          _cm2WarnFn;
+        fi
+      else
+        _cm2WarnStrFn "Replacement icon |${_replace_file}|"
+        _cm2WarnStrFn "  OR orig |${_orig_file}| not found.";
+        _cm2WarnFn;
+      fi
+    ;;
+  esac
+}
+## . END _mainFn }
+
+_mainFn "$@";
 exit 0;
-## . END MAIN }
 
 # Tag to allow some debhelper commands to inject relevant code
 #DEBHELPER#

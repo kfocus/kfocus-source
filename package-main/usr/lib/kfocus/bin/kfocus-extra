@@ -83,6 +83,9 @@ _installExtraFn () {
     _cm2SetMsgFn 'Updating DVD support...';
     if dpkg-reconfigure libdvd-pkg; then _cm2SucFn; else _cm2WarnFn; fi
   fi
+
+  ## TODO: Consider adding option to change default editor to vim here
+
 }
 
 ## BEGIN _mainFn {

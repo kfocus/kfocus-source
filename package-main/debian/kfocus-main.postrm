@@ -8,35 +8,56 @@ set -e;
 
 ## { BEGIN Declare common.2.source symbols
 #  IMPORT 2022-03-23 EXCERPT from test/test-scripts/common.2.source
-_cm2Arg01="${1:-}";
-
 _cm2BlockMsg='';
 _cm2EchoFn    () { 1>&2 echo -e "$*";  }
 _cm2SetMsgFn  () { _cm2BlockMsg="$*"; _cm2EchoFn "== BEGIN : ${_cm2BlockMsg}"; }
 _cm2SucFn     () { _cm2EchoFn "== . END : OK   ${_cm2BlockMsg}\n\n"; }
 _cm2WarnFn    () { _cm2EchoFn "== . END : WARN Could not ${_cm2BlockMsg}\n\n"; }
+_cm2WarnStrFn () { _cm2EchoFn "warn: ${*}"; }
 ## } . END Declare common.2.source symbols
 
 ## BEGIN MAIN {
-case "${_cm2Arg01}" in
-  abort-upgrade|failed-upgrade|purge|upgrade)
-  ;;
+_mainFn () {
+  declare _orig_file;
 
-  remove|disappear|abort-install)
-    _cm2SetMsgFn 'Remove wrapper for check-language-support';
-    if dpkg-divert --package 'kfocus-main' --remove --rename --divert \
-      '/usr/share/language-selector/data/pkg_depends.orig' \
-      '/usr/share/language-selector/data/pkg_depends'; then
-      _cm2SucFn;
-    else
-      _cm2WarnFn;
-      exit 1;
-    fi
-  ;;
-esac
+  case "${1:-}" in
+    abort-upgrade|failed-upgrade|purge|upgrade)
+    ;;
 
-exit 0;
+    remove|disappear|abort-install)
+
+      ## TODO: This appears no longer needed. Remove after confirmation.
+      # _cm2SetMsgFn 'Remove wrapper for check-language-support';
+      # if dpkg-divert --package 'kfocus-main' --remove --rename --divert \
+      #   '/usr/share/language-selector/data/pkg_depends.orig' \
+      #   '/usr/share/language-selector/data/pkg_depends'; then
+      #   _cm2SucFn;
+      # else
+      #   _cm2WarnFn;
+      #   exit 1;
+      # fi
+
+      _cm2SetMsgFn 'Revert non-instructive backintime icon';
+      _orig_file='/usr/share/icons/hicolor/scalable/apps/backintime.svg';
+
+      # if [ -f "${_orig_file}" ] && [ -f "${_orig_file}.orig" ]; then
+        if dpkg-divert --package 'kfocus-main' --remove --rename --divert \
+          "${_orig_file}.orig" "${_orig_file}"; then
+          _cm2SucFn;
+        else
+          _cm2WarnFn;
+        fi
+      # else
+      #   _cm2WarnStrFn "Original icon |${_orig_file}|";
+      #   _cm2WarnStrFn "  OR backup |${_orig_file}.orig| not found.";
+      # fi
+    ;;
+  esac
+}
 ## . END MAIN }
+
+_mainFn "$@";
+exit 0;
 
 # Tag to allow some debhelper commands to inject relevant code
 #DEBHELPER#
