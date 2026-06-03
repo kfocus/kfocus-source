@@ -5,7 +5,15 @@ Standards-Version:   4.7.3
 Build-Depends:       cmake,
                      debhelper-compat (=13),
                      libbtrfs-dev,
-                     libext2fs-dev
+                     libext2fs-dev,
+                     extra-cmake-modules,
+                     libkirigami-dev,
+                     libkf6i18n-dev,
+                     libkf6coreaddons-dev,
+                     libkf6iconthemes-dev,
+                     qt6-base-dev,
+                     qt6-declarative-dev,
+                     libkf6qqc2desktopstyle-dev
 
 Package:      kfocus-rollback
 Architecture: any
