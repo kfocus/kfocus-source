@@ -30,7 +30,11 @@ Pin-Priority: 1001
 
 # Prevent the installation of HPLIP's GUI
 Package: hplip-gui
+Pin: release o=*
 Pin-Priority: -1
 
+# Prevent installation of "bad" hpijs driver per Till
 Package: printer-driver-hpijs
+Pin: release o=*
 Pin-Priority: -1
+
