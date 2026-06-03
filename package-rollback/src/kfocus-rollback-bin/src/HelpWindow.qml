@@ -10,10 +10,10 @@ Kirigami.ApplicationWindow {
 
     title: helpTitle
 
-    width         : Kirigami.Units.gridUnit * 30
-    height        : Kirigami.Units.gridUnit * 22
-    minimumWidth  : Kirigami.Units.gridUnit * 30
-    minimumHeight : Kirigami.Units.gridUnit * 22
+    width         : Kirigami.Units.gridUnit * 35
+    height        : Kirigami.Units.gridUnit * 27
+    minimumWidth  : Kirigami.Units.gridUnit * 35
+    minimumHeight : Kirigami.Units.gridUnit * 27
 
     pageStack.initialPage : Kirigami.Page {
         title : helpTitle
@@ -24,7 +24,7 @@ Kirigami.ApplicationWindow {
                 Layout.alignment       : Qt.AlignTop
                 Layout.preferredHeight : Kirigami.Units.gridUnit * 3
                 Layout.preferredWidth  : Kirigami.Units.gridUnit * 3
-                Layout.rightMargin     : Kirigami.Units.gridUnit * 0.25
+                Layout.rightMargin     : Kirigami.Units.gridUnit * 0.5
                 source                 : 'dialog-information'
             }
             Controls.Label {

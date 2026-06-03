@@ -31,24 +31,24 @@ RowLayout {
         right        : parent.right
         top          : parent.top
         bottom       : parent.bottom
-        rightMargin  : Kirigami.Units.gridUnit * 0.75
-        topMargin    : Kirigami.Units.gridUnit * 3.5
-        bottomMargin : Kirigami.Units.gridUnit * 0.775
+        rightMargin  : Kirigami.Units.gridUnit * 1
+        topMargin    : Kirigami.Units.gridUnit * 4.55
+        bottomMargin : Kirigami.Units.gridUnit * 1
     }
     width : parent.width
       - snapshotListView.width
-      - (Kirigami.Units.gridUnit * 2.40)
+      - (Kirigami.Units.gridUnit * 3)
 
     ColumnLayout {
         Layout.fillHeight : true
 
         RowLayout {
             Layout.fillWidth    : true
-            Layout.bottomMargin : Kirigami.Units.gridUnit * 0.3
+            Layout.topMargin: Kirigami.Units.gridUnit * -0.25
+            Layout.bottomMargin : Kirigami.Units.gridUnit * 0.45
 
             Kirigami.Icon {
                 Layout.alignment : Qt.AlignVCenter
-                Layout.topMargin : Kirigami.Units.gridUnit * 0.15
                 source           : reason === 'System Schedule'
                   ? 'clock'
                   : reason === 'Before Package Change'
@@ -59,7 +59,6 @@ RowLayout {
             }
 
             ColumnLayout {
-                Layout.topMargin : Kirigami.Units.gridUnit * 0.15
                 Kirigami.Heading {
                     id               : snapshotTitle
                     Layout.alignment : Qt.AlignVCenter
@@ -94,7 +93,6 @@ RowLayout {
             }
 
             ColumnLayout {
-                Layout.topMargin: Kirigami.Units.gridUnit * 0.15
                 Kirigami.Heading {
                     Layout.alignment : Qt.AlignVCenter | Qt.AlignRight
                     text             : mainSize !== '' && bootSize != ''
@@ -115,7 +113,7 @@ RowLayout {
             id                  : nameField
             Layout.alignment    : Qt.AlignTop
             Layout.fillWidth    : true
-            Layout.bottomMargin : Kirigami.Units.gridUnit * 0.55
+            Layout.bottomMargin : Kirigami.Units.gridUnit * 0.72
 
             text                : name
             font.family         : 'courier'
@@ -145,7 +143,7 @@ RowLayout {
                     return Kirigami.Theme.activeBackgroundColor
                 }
                 border.width    : 1
-                radius          : Kirigami.Units.gridUnit * 0.125
+                radius          : Kirigami.Units.gridUnit * 0.25
             }
         }
 
@@ -180,34 +178,33 @@ RowLayout {
                         focusedBox = this;
                     }
                 }
-            }
-
-            background       : Rectangle {
-                id           : descFieldBackground
-                color        : editing
-                  ? Kirigami.Theme.backgroundColor
-                  : Kirigami.Theme.alternateBackgroundColor
-                border.color : {
-                    if (editing) {
-                        if (focusedBox === descField) {
-                            return Kirigami.Theme.highlightColor
+                background       : Rectangle {
+                    id           : descFieldBackground
+                    color        : editing
+                      ? Kirigami.Theme.backgroundColor
+                      : Kirigami.Theme.alternateBackgroundColor
+                    border.color : {
+                        if (editing) {
+                            if (focusedBox === descField) {
+                                return Kirigami.Theme.highlightColor
+                            }
                         }
+                        return Kirigami.Theme.activeBackgroundColor
                     }
-                    return Kirigami.Theme.activeBackgroundColor
-                }
 
-                border.width : 1
-                radius       : Kirigami.Units.gridUnit * 0.125
+                    border.width : 1
+                    radius       : Kirigami.Units.gridUnit * 0.25
+                }
             }
         }
     }
 
     ColumnLayout {
-        Layout.leftMargin : Kirigami.Units.gridUnit * 0.45
+        Layout.leftMargin : Kirigami.Units.gridUnit * 0.67
 
         Rectangle{
             Layout.alignment       : Qt.AlignTop
-            Layout.preferredWidth  : Kirigami.Units.gridUnit * 7.5
+            Layout.preferredWidth  : Kirigami.Units.gridUnit * 8.4
             Layout.bottomMargin    : Kirigami.Units.gridUnit * 0.5
             Layout.preferredHeight : restoreButton.implicitHeight
             color                  :
@@ -248,7 +245,7 @@ RowLayout {
         Controls.Button {
             id                    : compareButton
             Layout.alignment      : Qt.AlignTop
-            Layout.preferredWidth : Kirigami.Units.gridUnit * 7.5
+            Layout.preferredWidth : Kirigami.Units.gridUnit * 8.4
             Layout.bottomMargin   : Kirigami.Units.gridUnit * 0.5
             text                  : 'Compare'
             icon.name             : 'document-duplicate'
@@ -262,7 +259,7 @@ RowLayout {
 
         Rectangle {
             Layout.alignment       : Qt.AlignTop
-            Layout.preferredWidth  : Kirigami.Units.gridUnit * 7.5
+            Layout.preferredWidth  : Kirigami.Units.gridUnit * 8.4
             Layout.bottomMargin    : Kirigami.Units.gridUnit * 0.5
             Layout.preferredHeight : deleteButton.implicitHeight
             color                  :
@@ -312,6 +309,11 @@ RowLayout {
                 id                : pinSwitch
                 checked           : pinned
 
+                // This doesn't make the switch taller, it makes Qt allocate
+                // it (and the containing layout) more vertical space so that
+                // toggling on the lock icon doesn't result in widget shifting
+                Layout.preferredHeight: Kirigami.Units.gridUnit * 2
+
                 onClicked         : {
                     if ( !editing ) {
                         editButton.clicked();
@@ -336,7 +338,7 @@ RowLayout {
         Controls.Button {
             id                    : editButton
             Layout.alignment      : Qt.AlignBottom
-            Layout.preferredWidth : Kirigami.Units.gridUnit * 7.5
+            Layout.preferredWidth : Kirigami.Units.gridUnit * 8.4
             text                  : 'Edit'
             icon.name             : 'document-edit'
             visible               : !editing
@@ -354,7 +356,7 @@ RowLayout {
         Controls.Button {
             id                    : saveButton
             Layout.alignment      : Qt.AlignBottom
-            Layout.preferredWidth : Kirigami.Units.gridUnit * 7.5
+            Layout.preferredWidth : Kirigami.Units.gridUnit * 8.4
             Layout.bottomMargin   : Kirigami.Units.gridUnit * 0.5
             text                  : 'Save'
             icon.name             : 'document-save'
@@ -386,7 +388,7 @@ RowLayout {
         Controls.Button {
             id                    : cancelButton
             Layout.alignment      : Qt.AlignBottom
-            Layout.preferredWidth : Kirigami.Units.gridUnit * 7.5
+            Layout.preferredWidth : Kirigami.Units.gridUnit * 8.4
             text                  : 'Cancel'
             icon.name             : 'dialog-cancel'
             visible               : editing

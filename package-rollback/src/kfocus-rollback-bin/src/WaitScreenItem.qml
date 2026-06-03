@@ -11,13 +11,13 @@ ColumnLayout {
         right        : parent.right
         top          : parent.top
         bottom       : parent.bottom
-        rightMargin  : Kirigami.Units.gridUnit * 0.75
+        rightMargin  : Kirigami.Units.gridUnit * 1
         topMargin    : Kirigami.Units.gridUnit * 3.5
-        bottomMargin : Kirigami.Units.gridUnit * 0.775
+        bottomMargin : Kirigami.Units.gridUnit * 1
     }
     width : parent.width
       - snapshotListView.width
-      - (Kirigami.Units.gridUnit * 2.40)
+      - (Kirigami.Units.gridUnit * 3)
 
     Controls.BusyIndicator {
         Layout.alignment       : Qt.AlignHCenter

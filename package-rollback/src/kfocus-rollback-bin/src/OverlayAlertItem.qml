@@ -40,9 +40,9 @@ Rectangle {
                 Layout.preferredHeight: Kirigami.Units.gridUnit * 4
                 Layout.preferredWidth: Kirigami.Units.gridUnit * 4
                 Layout.rightMargin:
-                  Kirigami.Units.gridUnit * 1.05
+                  Kirigami.Units.gridUnit * 1
                 Layout.topMargin:
-                  Kirigami.Units.gridUnit * 1.90
+                  Kirigami.Units.gridUnit * 2
                 source: mainIcon
             }
 
@@ -67,8 +67,6 @@ Rectangle {
                 Controls.Label {
                     Layout.preferredWidth:
                       Kirigami.Units.gridUnit * 20
-                    Layout.bottomMargin:
-                      Kirigami.Units.gridUnit * 0.5
                     text: secondaryText
                     visible: secondaryText !== ''
                     wrapMode: Text.WordWrap
@@ -91,7 +89,7 @@ Rectangle {
 
                     Controls.Button {
                         Layout.leftMargin:
-                          Kirigami.Units.gridUnit * 0.5
+                          Kirigami.Units.gridUnit * 0.6
                         visible: showSecondaryButton
                         text: secondaryButtonText
                         icon.name: secondaryButtonIcon

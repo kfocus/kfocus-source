@@ -13,20 +13,20 @@ ColumnLayout {
         right        : parent.right
         top          : parent.top
         bottom       : parent.bottom
-        rightMargin  : Kirigami.Units.gridUnit * 0.75
-        topMargin    : Kirigami.Units.gridUnit * 3.5
-        bottomMargin : Kirigami.Units.gridUnit * 0.775
+        rightMargin  : Kirigami.Units.gridUnit * 1
+        topMargin    : Kirigami.Units.gridUnit * 4.28
+        bottomMargin : Kirigami.Units.gridUnit * 1
     }
     width : parent.width
       - snapshotListView.width
-      - (Kirigami.Units.gridUnit * 2.40)
+      - (Kirigami.Units.gridUnit * 3)
 
     RowLayout {
         Kirigami.Icon {
             Layout.alignment       : Qt.AlignTop
             Layout.preferredHeight : Kirigami.Units.gridUnit * 3
             Layout.preferredWidth  : Kirigami.Units.gridUnit * 3
-            Layout.rightMargin     : Kirigami.Units.gridUnit * 0.25
+            Layout.rightMargin     : Kirigami.Units.gridUnit * 0.5
             source                 : isCritical
               ? 'dialog-error'
               : 'dialog-warning'
@@ -45,7 +45,7 @@ ColumnLayout {
 
     Controls.Button {
         text                  : 'OK'
-        Layout.preferredWidth : Kirigami.Units.gridUnit * 7
+        Layout.preferredWidth  : Kirigami.Units.gridUnit * 8.4
         Layout.alignment      : Qt.AlignRight
         onClicked             : {
             okClicked();

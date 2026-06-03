@@ -21,13 +21,13 @@ ColumnLayout {
         right        : parent.right
         top          : parent.top
         bottom       : parent.bottom
-        rightMargin  : Kirigami.Units.gridUnit * 0.75
-        topMargin    : Kirigami.Units.gridUnit * 3.5
-        bottomMargin : Kirigami.Units.gridUnit * 0.775
+        rightMargin  : Kirigami.Units.gridUnit * 1
+        topMargin    : Kirigami.Units.gridUnit * 4.28
+        bottomMargin : Kirigami.Units.gridUnit * 1
     }
     width : parent.width
       - snapshotListView.width
-      - (Kirigami.Units.gridUnit * 2.40)
+      - (Kirigami.Units.gridUnit * 3)
 
     Controls.Label {
         text             : startInfoText
@@ -39,7 +39,7 @@ ColumnLayout {
         Layout.fillWidth: true
         Kirigami.Icon {
             Layout.alignment   : Qt.AlignVCenter
-            Layout.rightMargin : Kirigami.Units.gridUnit * 0.25
+            Layout.rightMargin : Kirigami.Units.gridUnit * 0.5
             source             : reason === 'System Schedule'
               ? 'clock'
               : reason === 'Before Package Change'
@@ -76,7 +76,7 @@ ColumnLayout {
           : Kirigami.Theme.textColor
         text                  : acceptText
         icon.name             : acceptIcon
-        Layout.preferredWidth : Kirigami.Units.gridUnit * 7
+        Layout.preferredWidth  : Kirigami.Units.gridUnit * 8.4
         Layout.bottomMargin   : Kirigami.Units.gridUnit * 0.5
         Layout.alignment      : Qt.AlignRight
         enabled               : actionsEnabled
@@ -93,7 +93,7 @@ ColumnLayout {
     Controls.Button {
         text                  : 'Cancel'
         icon.name             : 'dialog-cancel'
-        Layout.preferredWidth : Kirigami.Units.gridUnit * 7
+        Layout.preferredWidth  : Kirigami.Units.gridUnit * 8.4
         Layout.alignment      : Qt.AlignRight
         enabled               : actionsEnabled
         onClicked             : {

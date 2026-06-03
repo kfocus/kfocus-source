@@ -25,7 +25,7 @@ Kirigami.ApplicationWindow {
             Kirigami.Heading {
                 text                : 'Comparison results:'
                 level               : 1
-                Layout.bottomMargin : Kirigami.Units.gridUnit * 0.25
+                Layout.bottomMargin : Kirigami.Units.gridUnit * 0.5
             }
 
             Controls.Label {
@@ -35,7 +35,7 @@ Kirigami.ApplicationWindow {
                   + 'State being compared to: <b><font color="#f7941d">'
                   + targetSnapshotId
                   + '</font></b>'
-                Layout.bottomMargin : Kirigami.Units.gridUnit * 0.25
+                Layout.bottomMargin : Kirigami.Units.gridUnit * 0.5
             }
 
             Controls.ScrollView {

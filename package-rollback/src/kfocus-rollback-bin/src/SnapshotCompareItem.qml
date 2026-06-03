@@ -15,17 +15,17 @@ ColumnLayout {
         right        : parent.right
         top          : parent.top
         bottom       : parent.bottom
-        rightMargin  : Kirigami.Units.gridUnit * 0.75
-        topMargin    : Kirigami.Units.gridUnit * 3.5
-        bottomMargin : Kirigami.Units.gridUnit * 0.75
+        rightMargin  : Kirigami.Units.gridUnit * 1
+        topMargin    : Kirigami.Units.gridUnit * 4.28
+        bottomMargin : Kirigami.Units.gridUnit * 1
     }
     width : parent.width
       - snapshotListView.width
-      - (Kirigami.Units.gridUnit * 2.25)
+      - (Kirigami.Units.gridUnit * 3)
 
     Controls.Label {
         text                : 'Please select the snapshot to compare to:'
-        Layout.bottomMargin : Kirigami.Units.gridUnit * 0.25
+        Layout.bottomMargin : Kirigami.Units.gridUnit * 0.5
     }
 
     Controls.ComboBox {
@@ -68,7 +68,7 @@ ColumnLayout {
         HoverHandler {
             cursorShape: Qt.PointingHandCursor
         }
-        Layout.bottomMargin : Kirigami.Units.gridUnit * 0.25
+        Layout.bottomMargin : Kirigami.Units.gridUnit * 0.5
     }
     Controls.Label {
         text             : ''
@@ -86,7 +86,7 @@ ColumnLayout {
     Controls.Button {
         id                    : compareButton
         Layout.alignment      : Qt.AlignRight
-        Layout.preferredWidth : Kirigami.Units.gridUnit * 7
+        Layout.preferredWidth  : Kirigami.Units.gridUnit * 8.4
         Layout.bottomMargin   : Kirigami.Units.gridUnit * 0.5
         text                  : 'Compare'
         icon.name             : 'document-duplicate'
@@ -100,7 +100,7 @@ ColumnLayout {
     Controls.Button {
         id                    : cancelButton
         Layout.alignment      : Qt.AlignRight
-        Layout.preferredWidth : Kirigami.Units.gridUnit * 7
+        Layout.preferredWidth  : Kirigami.Units.gridUnit * 8.4
         text                  : 'Cancel'
         icon.name             : 'dialog-cancel'
         onClicked             : cancelled()

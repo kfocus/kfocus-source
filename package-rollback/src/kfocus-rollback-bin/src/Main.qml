@@ -87,10 +87,10 @@ Kirigami.ApplicationWindow {
 
     // == BEGIN Views =================================================
     // Define window size
-    width         : Kirigami.Units.gridUnit * 47
-    height        : Kirigami.Units.gridUnit * 33
-    minimumWidth  : Kirigami.Units.gridUnit * 47
-    minimumHeight : Kirigami.Units.gridUnit * 33
+    width         : Kirigami.Units.gridUnit * 57
+    height        : Kirigami.Units.gridUnit * 40
+    minimumWidth  : Kirigami.Units.gridUnit * 57
+    minimumHeight : Kirigami.Units.gridUnit * 40
 
     // BEGIN Define sidebar views
     Component {
@@ -98,6 +98,7 @@ Kirigami.ApplicationWindow {
 
         Controls.ItemDelegate {
             width: ListView.view.width
+            highlighted: snapshotBar.currentIndex == index
             contentItem: RowLayout {
                 KirigamiDelegates.IconTitleSubtitle {
                     title: date + ' ' + genSnapshotSizeStrFn(mainSize, bootSize)
@@ -105,9 +106,15 @@ Kirigami.ApplicationWindow {
                     font.family: "courier"
                     icon.name : getIconForReasonFn( reason )
                 }
-                Kirigami.Icon {
-                    source: pinned ? 'logk' : ''
+                Item {
+                    Layout.fillWidth: true
                 }
+                Kirigami.Icon {
+                    source: pinned ? 'lock' : ''
+                }
+            }
+            onClicked : {
+                snapshotBar.currentIndex = index;
             }
         }
     }
@@ -117,12 +124,16 @@ Kirigami.ApplicationWindow {
 
         Controls.ItemDelegate {
             width: ListView.view.width
+            highlighted: snapshotBar.currentIndex == index
             contentItem: RowLayout {
                 KirigamiDelegates.IconTitleSubtitle {
                     font.family : "courier"
                     title: date + ' ' + genSnapshotSizeStrFn(mainSize, bootSize)
                     subtitle: name
                     icon.name: getIconForReasonFn( reason )
+                }
+                Item {
+                    Layout.fillWidth: true
                 }
                 Kirigami.Icon {
                     source: pinned ? 'lock' : ''
@@ -329,23 +340,23 @@ Kirigami.ApplicationWindow {
 
             RowLayout {
                 Layout.fillWidth     : true
-                Layout.maximumHeight : Kirigami.Units.gridUnit * 7
+                Layout.maximumHeight : Kirigami.Units.gridUnit * 8
 
                 ColumnLayout {
                     Layout.alignment    : Qt.AlignTop
-                    Layout.bottomMargin : Kirigami.Units.gridUnit * 0.75
+                    Layout.bottomMargin : Kirigami.Units.gridUnit * 0.66
 
                     RowLayout {
-                        Layout.bottomMargin: Kirigami.Units.gridUnit * 0.5
+                        Layout.bottomMargin: Kirigami.Units.gridUnit * 0.38
                         Layout.maximumWidth : mainPage.width / 2
 
                         Controls.Button {
                             Layout.preferredWidth  : Kirigami.Units.gridUnit
-                              * 1.3
+                              * 1.5
                             Layout.preferredHeight : Kirigami.Units.gridUnit
-                              * 1.3
-                            Layout.leftMargin      : Kirigami.Units.gridUnit
-                              * 0.2
+                              * 1.5
+                            //Layout.leftMargin      : Kirigami.Units.gridUnit
+                            //  * 0.5
                             icon.name              : 'help-contextual'
                             icon.width             : Kirigami.Units.gridUnit
                             icon.height            : Kirigami.Units.gridUnit
@@ -399,10 +410,6 @@ Kirigami.ApplicationWindow {
                         }
                     }
 
-                    Item {
-                        Layout.fillHeight: true
-                    }
-
                     GridLayout {
                         columns             : 2
                         Layout.maximumWidth : mainPage.width / 2
@@ -410,9 +417,9 @@ Kirigami.ApplicationWindow {
 
                         RowLayout {
                             Layout.preferredWidth  : (mainPage.width / 4)
-                              - Kirigami.Units.gridUnit * 0.35
+                              - Kirigami.Units.gridUnit * 0.44
                             Layout.bottomMargin    :
-                              Kirigami.Units.gridUnit * 0.45
+                              Kirigami.Units.gridUnit * 0.61
                             Controls.Label {
                                 text               : automaticSnapshotsLabel
                                 color              : uiLocked
@@ -420,13 +427,13 @@ Kirigami.ApplicationWindow {
                                   : Kirigami.Theme.textColor
                                 Layout.alignment   : Qt.AlignRight
                                 Layout.rightMargin : Kirigami.Units.gridUnit
-                                  * 0.125
+                                  * 0.5
                             }
                             Controls.Switch {
                                 id                : automaticSnapshotsSwitch
                                 Layout.alignment  : Qt.AlignRight
                                 Layout.leftMargin : Kirigami.Units.gridUnit
-                                  * 0.125
+                                  * 0.5
                                 checked           :
                                   backend.automaticSnapshotsEnabled
                                 enabled           : !uiLocked
@@ -440,9 +447,9 @@ Kirigami.ApplicationWindow {
 
                         Rectangle {
                             Layout.bottomMargin    :
-                              Kirigami.Units.gridUnit * 0.45
+                              Kirigami.Units.gridUnit * 0.61
                             Layout.preferredWidth  : (mainPage.width / 4)
-                              - Kirigami.Units.gridUnit * 0.36
+                              - Kirigami.Units.gridUnit * 0.44
                             Layout.alignment       : Qt.AlignRight
                             Layout.preferredHeight :
                               createSnapshotButton.implicitHeight
@@ -491,7 +498,7 @@ Kirigami.ApplicationWindow {
                                 calculateSnapshotSizesLabel
                             icon.name             : 'disk-quota'
                             Layout.preferredWidth : (mainPage.width / 4)
-                              - Kirigami.Units.gridUnit * 0.36
+                              - Kirigami.Units.gridUnit * 0.44
                             Layout.alignment      : Qt.AlignLeft
                             enabled               : !uiLocked
 
@@ -507,7 +514,7 @@ Kirigami.ApplicationWindow {
                             text                  : optimizeDiskLabel
                             icon.name             : 'clean-up-destructive'
                             Layout.preferredWidth : (mainPage.width / 4)
-                              - Kirigami.Units.gridUnit * 0.36
+                              - Kirigami.Units.gridUnit * 0.44
                             Layout.alignment      : Qt.AlignRight
                             enabled               : !uiLocked;
                             onClicked             : {
@@ -522,35 +529,36 @@ Kirigami.ApplicationWindow {
                 }
 
                 Item {
-                    Layout.preferredWidth: Kirigami.Units.gridUnit * 0.30
+                    Layout.preferredWidth: Kirigami.Units.gridUnit * 0.38
                 }
 
                 Rectangle {
                     Layout.preferredWidth  : 1
-                    Layout.preferredHeight : Kirigami.Units.gridUnit * 6.25
+                    Layout.preferredHeight : Kirigami.Units.gridUnit * 7.28
                     Layout.alignment       : Qt.AlignTop
                     color                  : Kirigami.Theme.disabledTextColor
                 }
 
                 Item {
-                    Layout.preferredWidth: Kirigami.Units.gridUnit * 0.30
+                    Layout.preferredWidth: Kirigami.Units.gridUnit * 0.38
                 }
 
                 ColumnLayout {
                     Layout.alignment    : Qt.AlignTop
-                    Layout.bottomMargin : Kirigami.Units.gridUnit * 0.75
+                    Layout.bottomMargin : Kirigami.Units.gridUnit * 0.66
 
                     RowLayout {
-                        Layout.bottomMargin : Kirigami.Units.gridUnit * 0.5
+                        Layout.bottomMargin : Kirigami.Units.gridUnit * 0.66
                         Layout.alignment    : Qt.AlignTop
 
                         Controls.Button {
+                            Layout.alignment    : Qt.AlignTop
                             Layout.preferredWidth  : Kirigami.Units.gridUnit
-                              * 1.3
+                              * 1.5
                             Layout.preferredHeight : Kirigami.Units.gridUnit
-                              * 1.3
-                            Layout.leftMargin      : Kirigami.Units.gridUnit
-                              * 0.2
+                              * 1.5
+                            //Layout.leftMargin      : Kirigami.Units.gridUnit
+                            //  * 0.5
                             icon.name              : "help-contextual"
                             icon.width             : Kirigami.Units.gridUnit
                             icon.height            : Kirigami.Units.gridUnit
@@ -566,6 +574,7 @@ Kirigami.ApplicationWindow {
                             }
                         }
                         Kirigami.Heading {
+                            Layout.alignment    : Qt.AlignTop
                             text  : 'Partition Health'
                             color : uiLocked
                               ? Kirigami.Theme.disabledTextColor
@@ -591,8 +600,8 @@ Kirigami.ApplicationWindow {
                     GridLayout {
                         columns             : 5
                         Layout.maximumWidth : mainPage.width / 2
-                        Layout.alignment    : Qt.AlignTop
-                        Layout.topMargin    : Kirigami.Units.gridUnit * 0.7
+                        Layout.alignment    : Qt.AlignBottom
+                        //Layout.topMargin    : Kirigami.Units.gridUnit * 1
 
                         Controls.Label {
                             text  : 'Mount'
@@ -741,7 +750,7 @@ Kirigami.ApplicationWindow {
                 }
 
                 Controls.Label {
-                    text        : '               Size GiB:  / [/boot]'
+                    text        : '                Size GiB:  / [/boot]'
                     font.family : 'courier'
                     visible     : backend.snapshotSizeInfoPresent
                     color       : uiLocked
@@ -750,7 +759,7 @@ Kirigami.ApplicationWindow {
                     anchors {
                         left         : parent.left
                         bottom       : snapshotListView.top
-                        bottomMargin : Kirigami.Units.gridUnit * 0.20
+                        bottomMargin : Kirigami.Units.gridUnit * 0.5
                     }
                 }
 
@@ -760,11 +769,11 @@ Kirigami.ApplicationWindow {
                     anchors {
                         verticalCenter : mainAreaLabel.verticalCenter
                         right          : mainAreaLabel.left
-                        rightMargin    : Kirigami.Units.gridUnit * 0.25
+                        rightMargin    : Kirigami.Units.gridUnit * 0.5
                     }
 
-                    width       : Kirigami.Units.gridUnit * 1.3
-                    height      : Kirigami.Units.gridUnit * 1.3
+                    width       : Kirigami.Units.gridUnit * 1.5
+                    height      : Kirigami.Units.gridUnit * 1.5
                     icon.name   : "help-contextual"
                     icon.width  : Kirigami.Units.gridUnit
                     icon.height : Kirigami.Units.gridUnit
@@ -780,8 +789,8 @@ Kirigami.ApplicationWindow {
                     anchors {
                         top              : parent.top
                         horizontalCenter : parent.horizontalCenter
-                        topMargin        : Kirigami.Units.gridUnit  * 0.75
-                        leftMargin       : Kirigami.Units.gridUnit * 0.25
+                        topMargin        : Kirigami.Units.gridUnit  * 1
+                        leftMargin       : Kirigami.Units.gridUnit * 0.5
                     }
                     level : 1
                 }
@@ -793,11 +802,11 @@ Kirigami.ApplicationWindow {
                         left         : parent.left
                         top          : parent.top
                         bottom       : parent.bottom
-                        leftMargin   : Kirigami.Units.gridUnit * 0.80
-                        topMargin    : Kirigami.Units.gridUnit * 2.75
-                        bottomMargin : Kirigami.Units.gridUnit * 0.80
+                        leftMargin   : Kirigami.Units.gridUnit * 1
+                        topMargin    : Kirigami.Units.gridUnit * 3.55
+                        bottomMargin : Kirigami.Units.gridUnit * 1
                     }
-                    width      : Kirigami.Units.gridUnit * 16
+                    width      : Kirigami.Units.gridUnit * 20
                     background : Rectangle {
                         color        : Kirigami.Theme.backgroundColor
                     }
@@ -834,11 +843,11 @@ Kirigami.ApplicationWindow {
                         left         : parent.left
                         top          : parent.top
                         bottom       : parent.bottom
-                        leftMargin   : Kirigami.Units.gridUnit * 0.80
-                        topMargin    : Kirigami.Units.gridUnit * 2.75
-                        bottomMargin : Kirigami.Units.gridUnit * 0.80
+                        leftMargin   : Kirigami.Units.gridUnit * 1
+                        topMargin    : Kirigami.Units.gridUnit * 3.55
+                        bottomMargin : Kirigami.Units.gridUnit * 1
                     }
-                    width   : Kirigami.Units.gridUnit * 16
+                    width   : Kirigami.Units.gridUnit * 17
                     color   : Kirigami.Theme.backgroundColor
                     visible : snapshotModel.count === 0
 
@@ -862,9 +871,9 @@ Kirigami.ApplicationWindow {
                         left        : snapshotListView.right
                         right       : parent.right
                         top         : mainAreaLabel.bottom
-                        leftMargin  : Kirigami.Units.gridUnit * 0.85
-                        rightMargin : Kirigami.Units.gridUnit * 0.80
-                        topMargin   : Kirigami.Units.gridUnit * 0.75
+                        leftMargin  : Kirigami.Units.gridUnit * 1
+                        rightMargin : Kirigami.Units.gridUnit * 1
+                        topMargin   : Kirigami.Units.gridUnit * 1
                     }
 
                     height : 1
