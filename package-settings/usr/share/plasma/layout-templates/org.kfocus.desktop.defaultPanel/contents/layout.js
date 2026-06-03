@@ -187,9 +187,9 @@ function addExtraIconsFn ( arg_panel_obj ) {
   // Add only if installed
   if (applicationExists( 'kfocus-rollback' ) ) {
     const rollback_obj = arg_panel_obj.addWidget( 'org.kde.plasma.icon' );
-    rollback_obj.writeConfig( 'localPath', '/usr/share/applications/kfocus-rollback.desktop' );
+    rollback_obj.writeConfig( 'localPath', '/usr/share/applications/org.kfocus.rollback.desktop' );
     rollback_obj.currentConfigGroup = [ 'General' ];
-    rollback_obj.writeConfig( 'url', 'file:///usr/share/applications/kfocus-rollback.desktop' );
+    rollback_obj.writeConfig( 'url', 'file:///usr/share/applications/org.kfocus.rollback.desktop' );
   }
   // Add only if installed
   if (applicationExists( 'backintime-qt' ) ) {
