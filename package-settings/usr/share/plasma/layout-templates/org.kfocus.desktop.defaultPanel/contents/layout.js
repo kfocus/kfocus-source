@@ -185,7 +185,7 @@ function addInputPanelFn ( arg_panel_obj ) {
 //== BEGIN addExtraIconsFn {
 function addExtraIconsFn ( arg_panel_obj ) {
   // Add only if installed
-  if (applicationExists( 'kfocus-rollback' ) ) {
+  if (applicationExists( 'org.kfocus.rollback' ) ) {
     const rollback_obj = arg_panel_obj.addWidget( 'org.kde.plasma.icon' );
     rollback_obj.writeConfig( 'localPath', '/usr/share/applications/org.kfocus.rollback.desktop' );
     rollback_obj.currentConfigGroup = [ 'General' ];
