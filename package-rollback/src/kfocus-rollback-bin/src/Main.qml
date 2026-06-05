@@ -847,7 +847,7 @@ Kirigami.ApplicationWindow {
                         topMargin    : Kirigami.Units.gridUnit * 3.55
                         bottomMargin : Kirigami.Units.gridUnit * 1
                     }
-                    width   : Kirigami.Units.gridUnit * 17
+                    width   : Kirigami.Units.gridUnit * 20
                     color   : Kirigami.Theme.backgroundColor
                     visible : snapshotModel.count === 0
 

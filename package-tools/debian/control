@@ -14,7 +14,6 @@ Recommends:   kfocus-conda,
               kfocus-pick-gcc,
               kfocus-power-bin,
               kfocus-tbt,
-              kfocus-vidsync,
               kfocus-recover-mount
 Breaks:       kfocus-eth-yt6801,
               kfocus-tools-ir1xg3,
@@ -34,7 +33,6 @@ Recommends:   kfocus-eth-yt6801,
               kfocus-pick-gcc,
               kfocus-power-bin,
               kfocus-tbt,
-              kfocus-vidsync,
               kfocus-recover-mount
 Breaks:       kfocus-keyboard,
               kfocus-tools-m2g6,
@@ -55,7 +53,6 @@ Recommends:   kfocus-conda,
               kfocus-pick-gcc,
               kfocus-power-bin,
               kfocus-tbt,
-              kfocus-vidsync,
               kfocus-recover-mount
 Breaks:       kfocus-eth-yt6801,
               kfocus-tools-ir1xg3,
@@ -75,7 +72,6 @@ Recommends:   kfocus-conda,
               kfocus-pick-gcc,
               kfocus-power-bin,
               kfocus-tbt,
-              kfocus-vidsync,
               kfocus-recover-mount
 Breaks:       kfocus-eth-yt6801,
               kfocus-keyboard,
@@ -96,7 +92,6 @@ Recommends:   kfocus-conda,
               kfocus-pick-gcc,
               kfocus-power-bin,
               kfocus-tbt,
-              kfocus-vidsync,
               kfocus-recover-mount
 Breaks:       kfocus-eth-yt6801,
               kfocus-keyboard,
@@ -147,16 +142,10 @@ Description:  Change default GCC Version
 
 Package:      kfocus-vidsync
 Architecture: all
-Depends:      ${misc:Depends},
-              kfocus-common,
-              hicolor-icon-theme,
-              kdialog
-Suggests:     kfocus-nvidia
-Description:  Utility to help with vertical sync on Nvidia hardware
- Some external displays lose vertical sync on the Kubuntu Focus
- M1/M2 laptops. This utility helps to prevent that by enabling
- the composition pipeline and full composition pipeline. Enabling
- this can cause performance issues.
+Depends:      ${misc:Depends}
+Description:  Transitional Dummy Package for kfocus-vidsync
+ This is a transitional dummy package.
+ It can be safely removed.
 
 Package:      kfocus-tbt
 Architecture: any
