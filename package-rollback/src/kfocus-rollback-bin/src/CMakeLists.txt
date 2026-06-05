@@ -45,5 +45,3 @@ target_link_libraries(kfocus-rollback-bin
     KF6::CoreAddons
     KF6::IconThemes
 )
-
-install(TARGETS kfocus-rollback-bin DESTINATION "/usr/lib/kfocus/bin")
