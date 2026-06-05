@@ -78,11 +78,12 @@ _resetShortcutsFn () {
     'kwin|NightColor|Active|false'
 
     # Enable transparent move, squash windows, wobbly effects.
+    # The advanced mode is turned off, but the default settings are still shown.
     'kwin|Effect-translucency|MoveResize|75'
-    'kwin|Effect-wobblywindows|AdvancedMode|true'
-    'kwin|Effect-wobblywindows|Drag|85'
-    'kwin|Effect-wobblywindows|Stiffness|10'
-    'kwin|Effect-wobblywindows|MoveFactor|5'
+    'kwin|Effect-wobblywindows|AdvancedMode|false'
+    'kwin|Effect-wobblywindows|Drag|80'
+    'kwin|Effect-wobblywindows|Stiffness|15'
+    'kwin|Effect-wobblywindows|MoveFactor|10'
 
     # Enable plugins
     'kwin|Plugins|overviewEnabled|true'
@@ -139,7 +140,7 @@ _resetShortcutsFn () {
     'kwin|Effect-trackmouse|Meta|'
     'kwin|Effect-trackmouse|Shift|'
 
-    # Set cursorsize for all devices to 36.
+    # Set cursor size for all devices to 36.
     'inpu|Mouse|cursorSize|36'
     'inpu|Mouse|cursorTheme|breeze_cursors'
 
