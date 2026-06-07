@@ -1,0 +1,14 @@
+[Unit]
+Description=KFocus fan control daemon
+ConditionPathExists=/dev/tuxedo_io
+ConditionPathExists=/usr/share/kfocus/kfocus_fand.d/fan_profile_db
+
+[Service]
+Type=notify-reload
+ExecStart=/usr/lib/kfocus/bin/kfocus-fand
+WatchdogSec=6
+Restart=on-failure
+ReloadSignal=SIGUSR1
+
+[Install]
+WantedBy=multi-user.target
