@@ -14,9 +14,11 @@
 set -u;
 
 _optionTable=(
-  # _label;_do_tccd
-  'Soft|Quieter but Warmer|y'
-  'Linear|Best Performance|n'
+  # label|desc|profile_code
+  'Quiet|Quieter but warmer|quiet'
+  'Balanced|Cool, performs well|balanced'
+  'Performance|Best performance|performance'
+  'None|fan control disabled|'
 );
 
 _importCommonFn () {
@@ -32,23 +34,12 @@ _importCommonFn () {
 }
 
 _setFanControlFn () {
-  declare _do_fan_control;
-  _do_fan_control="${1:-y}";
+  declare _fan_control_mode;
+  _fan_control_mode="${1:-}";
 
-  if [ "${_do_fan_control}" = 'y' ]; then
-    if ! 1>/dev/null systemctl is-active tccd; then
-      systemctl unmask tccd       || true;
-      systemctl enable tccd       || true;
-      systemctl start  tccd       || true;
-      systemctl unmask tccd-sleep || true;
-    fi
-  else
-    if 1>/dev/null systemctl is-active tccd; then
-      systemctl disable tccd       || true;
-      systemctl stop    tccd       || true;
-      systemctl mask    tccd-sleep || true;
-    fi
-  fi
+  echo "${_fan_control_mode}" > "${_fanProfileFile}";
+  systemctl start  kfocus-fand || true;
+  systemctl reload kfocus-fand || true;
 }
 
 _setModeFn () {
@@ -79,20 +70,18 @@ _setModeFn () {
 
 _chkReportFanSupportFn () {
   declare _model_label _model_code _model_msg \
-  _is_kpf_installed _kpf_msg _title;
+  _is_tuxedo_io_present _title;
 
   _model_label="$(_cm2EchoModelStrFn 'label')";
   _model_code="$(_cm2EchoModelStrFn 'code')";
 
-  if _cm2ChkInstalledPkgFn 'kfocus-power-fan'; then
-    _is_kpf_installed='y';
-    _kpf_msg='';
+  if [ -c /dev/tuxedo_io ]; then
+    _is_tuxedo_io_present='y';
     # This can be used if we want more detail:
     # <br><br>The kfocus-power-fan package is installed but
     # not used. We recommend you remove it.
   else
-    _is_kpf_installed='n';
-    _kpf_msg='';
+    _is_tuxedo_io_present='n';
   fi
 
   _title="Fan Profile (${_model_label})";
@@ -102,31 +91,24 @@ _chkReportFanSupportFn () {
 <b>Select a fan profile in the BIOS</b>.
  Press <code>F2</code> during boot and select <code>BIOS &gt;
  Advanced &gt; Operating Mode &gt; Balanced</code> or
- another mode. ${_kpf_msg}
+ another mode.
 _EOH010
       )";;
 
-    m1*|m2g1*|m2g2*|m2g3*|m2g4*|m2g5*|xe*)
-      if [ "${_is_kpf_installed}" = 'y' ]; then return 0; fi
+    m1*|m2g1*|m2g2*|m2g3*|m2g4*|m2g5*|m2g6*|xe*|zr*)
+      if [ "${_is_tuxedo_io_present}" = 'y' ]; then return 0; fi
       _model_msg="$(cat <<_EOH020
 <b>Custom fan profiles are available</b>. Please install
- <code>kfocus-power-fan</code> and then rerun this app to see
+ <code>kfocus-keyboard</code>, then reboot and rerun this app to see
  the controls.
 _EOH020
-      )";;
-
-    m2g6*)
-      _model_msg="$(cat <<_EOH030
-The M2 GEN 6 fan profile is non-linear and preferred for
-most tasks. Press [ Fn ][ 1 ] to toggle max cooling.
-_EOH030
       )";;
 
     nxg1*)
       _model_msg="$(cat <<_EOH040
 <b>Select a fan profile in the BIOS</b>. Press <code>F2</code>
  during boot and select <code>BIOS &gt; Cooling &gt; Fan Control
- &gt; Balanced</code> or other mode. ${_kpf_msg}
+ &gt; Balanced</code> or other mode.
 _EOH040
       )";;
 
@@ -135,7 +117,7 @@ _EOH040
 <b>Select a fan profile in the BIOS</b>.
  Press <code>F2</code> during boot and select <code>BIOS &gt;
  Power, Performance, and Cooling &gt; Fan Control &gt;
- Balanced</code> or another mode. ${_kpf_msg}
+ Balanced</code> or another mode.
 _EOH050
       )";;
 
@@ -144,22 +126,14 @@ _EOH050
 <b>Select a fan profile in the BIOS</b>.
  Press <code>F2</code> during boot and select <code>BIOS &gt;
  Cooling &gt; Fan Mode</code> and then pick <code>Whisper</code>,
- <code>Standard</code>, or <code>Performance</code>. ${_kpf_msg}
+ <code>Standard</code>, or <code>Performance</code>.
 _EOH060
-      )";;
-
-    zrg1*)
-      _model_msg="$(cat <<_EOH070
-The Zr GEN 1 fan profile is non-linear and preferred for
-most tasks. Press [ Fn ][ 1 ] to toggle max cooling.
-_EOH070
       )";;
 
    *)
      _model_msg="$(cat <<_EOH080
 <b>Fan profile not found for this device</b>. You may be able
  to adjust the fans in the BIOS or with a device-specific tool.
- ${_kpf_msg}
 _EOH080
       )";;
   esac
@@ -186,24 +160,23 @@ _printOptionsFn () {
 }
 
 _readModeFn () {
-  declare _is_tccd_active _opt_line _bit_list;
+  declare _fan_profile_str _opt_line _bit_list;
 
-  # TODO: Add other profiles here
-  if 1>/dev/null systemctl is-active tccd; then
-    _is_tccd_active='y';
+  if ! [ -f "${_fanProfileFile}" ]; then
+    _fan_profile_str='none';
   else
-    _is_tccd_active='n';
+  _fan_profile_str="$(head -n1 "${_fanProfileFile}")";
   fi
 
   for _opt_line in "${_optionTable[@]}"; do
     IFS='|' read -r -a _bit_list <<< "${_opt_line}";
-    if [ "${_bit_list[2]:-}" = "${_is_tccd_active}" ]; then
+    if [ "${_bit_list[2]:-}" = "${_fan_profile_str}" ]; then
       echo "${_bit_list[0]} ( ${_bit_list[1]} )";
       return 0;
     fi
   done;
 
-  echo "Custom ( enabled: ${_is_tccd_active} )";
+  echo "Custom (${_fan_profile_str})";
 }
 
 _mainFn () {
@@ -220,6 +193,7 @@ _mainFn () {
 
 ## BEGIN Set global vars {
 _rootDir='';
+_fanProfileFile="${_rootDir}/var/lib/kfocus/fan_state"
 ## . END Set global vars }
 
 ## BEGIN Run main if the script is not sourced {
