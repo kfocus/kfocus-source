@@ -682,7 +682,7 @@ _calcCanonicalFreqsFn() {
 # Returns   : 0 on success, 1 if frequency profiles cannot be calculated
 #
 _calcOptionsFn () {
-  declare _opt_line _out_list _out_str _title _model_msg _normal_cpu_freq \
+  declare _opt_line _out_list _out_str _model_msg _normal_cpu_freq \
     _low_cpu_freq _opt_parts _out_parts _cpu_str _return_val \
     _canonical_table_str _canonical_freqs_list;
 
@@ -740,14 +740,13 @@ _calcOptionsFn () {
 
   ## TODO 2023-03-27 Add per-cpu messages where appropriate
   if [ "${#_out_list[@]}" = '1' ]; then
-    _title='Frequency Profile';
     _model_msg="$(cat << EOH
 <b>We do not have a frequency profile for this CPU</b>.
  If you would like to contribute a frequency profile, please
  provide a pull request to kfocus-source on GitHub.com.
 EOH
     )";
-    _out_list+=( "title:${_title}|message:${_cm2HtmPStr}${_model_msg}</p>" );
+    _out_list+=( "message:${_cm2HtmPStr}${_model_msg}</p>" );
     _return_val='1';
   fi
 

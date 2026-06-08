@@ -264,7 +264,8 @@ static void read_active_fan_profile(void) {
 
   fan_profile_idx = -1;
   orig_profile_ptr = profile_ptr = read_text_file(FAN_CONFIG_PATH);
-  if (profile_ptr == NULL) {
+  if (profile_ptr == NULL || profile_ptr[0] == '\0'
+    || profile_ptr[0] == '\n') {
     return; /* and leave fan_profile_idx set to -1 */
   }
 

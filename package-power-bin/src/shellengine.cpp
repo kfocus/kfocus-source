@@ -8,16 +8,26 @@ ShellEngine::ShellEngine()
 void ShellEngine::exec(QString args) {
     QProcess *proc = new QProcess();
     QStringList argsList;
-    argsList.append("-c");
+    argsList.append(QStringLiteral("-c"));
     argsList.append(args);
-    proc->start("bash", argsList);
+    proc->start(QStringLiteral("bash"), argsList);
     connect(proc, SIGNAL(finished(int)), this, SLOT(triggerStdout()));
 }
 
+void ShellEngine::ignoreResult() {
+  m_ignoreResult = true;
+}
+
 void ShellEngine::triggerStdout() {
+    if (m_ignoreResult) {
+      m_ignoreResult = false;
+      sender()->deleteLater();
+      return;
+    }
+
     QByteArray result = ((QProcess *)sender())->readAllStandardOutput();
     QString final = QString::fromUtf8(result);
     m_stdout = final;
     sender()->deleteLater();
-    emit stdoutChanged();
+    Q_EMIT stdoutChanged();
 }

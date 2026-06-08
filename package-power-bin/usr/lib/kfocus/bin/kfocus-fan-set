@@ -15,10 +15,10 @@ set -u;
 
 _optionTable=(
   # label|desc|profile_code
+  'None|fan control disabled|' # this element MUST be first
   'Quiet|Quieter but warmer|quiet'
   'Balanced|Cool, performs well|balanced'
   'Performance|Best performance|performance'
-  'None|fan control disabled|'
 );
 
 _importCommonFn () {
@@ -65,12 +65,12 @@ _setModeFn () {
   fi
 
   IFS='|' read -r -a _bit_list <<< "${_match_line}";
-  _setFanControlFn "${_bit_list[2]}";
+  _setFanControlFn "${_bit_list[2]:-}";
 }
 
 _chkReportFanSupportFn () {
   declare _model_label _model_code _model_msg \
-  _is_tuxedo_io_present _title;
+  _is_tuxedo_io_present;
 
   _model_label="$(_cm2EchoModelStrFn 'label')";
   _model_code="$(_cm2EchoModelStrFn 'code')";
@@ -84,7 +84,6 @@ _chkReportFanSupportFn () {
     _is_tuxedo_io_present='n';
   fi
 
-  _title="Fan Profile (${_model_label})";
   case "${_model_code}" in
     ir14*|ir16*)
       _model_msg="$(cat <<_EOH010
@@ -138,7 +137,7 @@ _EOH080
       )";;
   esac
 
-  echo "title:${_title}|message:${_cm2HtmPStr}${_model_msg}</p>"
+  echo "message:${_cm2HtmPStr}${_model_msg}</p>"
   return 1;
 }
 
