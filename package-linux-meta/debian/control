@@ -3,134 +3,225 @@ Section: devel
 Priority: optional
 Maintainer: Ubuntu Kernel Team <kernel-team@lists.ubuntu.com>
 Standards-Version: 3.9.8
-Build-Depends: dpkg (>= 1.13.19), debhelper (>= 11), gawk
+Build-Depends: dpkg (>= 1.13.19), debhelper (>= 9), gawk
 Build-Depends-Arch:
- linux-kfocus-headers-6.17.0-22,
- linux-headers-6.17.0-22-kfocus,
-Vcs-Git: https://github.com/kfocus/kfocus-source.git
+ linux-oem-7.0-headers-7.0.0-1005,
+ linux-headers-7.0.0-1005-oem,
+Vcs-Git: git://git.launchpad.net/~canonical-kernel/ubuntu/+source/linux-meta-oem/+git/resolute -b oem-7.0
 
-Package: linux-headers-kfocus-24.04-kfocus
+Package: linux-headers-oem-7.0
 Architecture: amd64
 Section: kernel
-Replaces: linux-headers-kfocus-24.04, linux-headers-generic-hwe-24.04-kfocus
-Conflicts: linux-headers-kfocus-24.04, linux-headers-generic-hwe-24.04-kfocus
-Depends: ${misc:Depends}, linux-headers-${kernel-abi-version}-kfocus
-Description: KFocus Linux kernel headers
- This package will always depend on the latest KFocus kernel headers
+Depends:
+ ${misc:Depends},
+ linux-headers-${kernel-abi-version}-oem,
+Description: OEM Linux kernel headers
+ This package will always depend on the latest OEM kernel headers
  available.
 
-Package: linux-image-kfocus-24.04-kfocus
+Package: linux-image-oem-7.0
 Architecture: amd64
 Section: kernel
-Provides: ${dkms:v4l2loopback-modules} ${dkms:zfs-modules} ${dkms:ivsc-modules} ${dkms:virtualbox-guest-modules} ${dkms:wireguard-linux-compat-modules}
-Replaces: linux-image-kfocus-24.04, linux-image-generic-hwe-24.04-kfocus
-Conflicts: linux-image-kfocus-24.04, linux-image-generic-hwe-24.04-kfocus
-Depends: ${misc:Depends}, linux-image-unsigned-${kernel-abi-version}-kfocus, linux-firmware [amd64], intel-microcode [amd64], amd64-microcode [amd64]
+Conflicts:
+ linux-image-fb-oem-7.0
+Provides: ${dkms:ivsc-modules} ${dkms:virtualbox-guest-modules} ${dkms:wireguard-linux-compat-modules} ${dkms:ipu6-modules}
+Depends: ${misc:Depends},
+ linux-image-${kernel-abi-version}-oem,
+ linux-modules-${kernel-abi-version}-oem [amd64],
+ linux-main-modules-zfs-${kernel-abi-version}-oem [amd64],
+ linux-firmware [amd64],
+ intel-microcode [amd64],
+ amd64-microcode [amd64]
 Recommends: thermald [amd64]
-Description: KFocus Linux kernel image
- This package will always depend on the latest KFocus kernel image
+Description: OEM Linux kernel image
+ This package will always depend on the latest OEM kernel image
  available.
 
-Package: linux-image-uc-kfocus-24.04-kfocus
+Package: linux-image-uc-oem-7.0
 Architecture: amd64
 Section: kernel
-Replaces: linux-image-uc-kfocus-24.04, linux-image-uc-generic-hwe-24.04-kfocus
-Conflicts: linux-image-uc-kfocus-24.04, linux-image-uc-generic-hwe-24.04-kfocus
-Depends: ${misc:Depends}, linux-image-uc-${kernel-abi-version}-kfocus, linux-firmware, firmware-sof-signed [amd64], wireless-regdb
-Description: KFocus Linux kernel image for Ubuntu Core
- This package will always depend on the latest KFocus kernel image
+Depends:
+ ${misc:Depends},
+ linux-image-uc-${kernel-abi-version}-oem,
+ linux-modules-${kernel-abi-version}-oem,
+ linux-main-modules-zfs-${kernel-abi-version}-oem,
+ linux-firmware,
+ firmware-sof-signed [amd64],
+ wireless-regdb
+Description: OEM Linux kernel image for Ubuntu Core
+ This package will always depend on the latest OEM kernel image
  available.
  .
  This kernel is suitable for staging into a kernel snap, and is not
  suitable to be used directly on classic systems.
 
-Package: linux-tools-kfocus-24.04-kfocus
+Package: linux-tools-oem-7.0
 Architecture: amd64
 Section: kernel
-Provides: linux-tools
-Replaces: linux-tools-kfocus-24.04, linux-tools-generic-hwe-24.04-kfocus
-Conflicts: linux-tools-kfocus-24.04, linux-tools-generic-hwe-24.04-kfocus
-Depends: ${misc:Depends}, linux-tools-${kernel-abi-version}-kfocus
-Description: KFocus Linux kernel tools
- This package will always depend on the latest KFocus kernel tools
+Provides:
+ linux-tools
+Depends: ${misc:Depends},
+ linux-tools-${kernel-abi-version}-oem,
+Description: OEM Linux kernel tools
+ This package will always depend on the latest OEM kernel tools
  available.
 
-Package: linux-kfocus-24.04-kfocus
+Package: linux-oem-7.0
 Architecture: amd64
 Section: kernel
-Provides: kernel-testing--linux-kfocus--full--kfocus, kernel-testing--linux-kfocus--full--preferred,
-Replaces: linux-kfocus-24.04, linux-generic-hwe-24.04-kfocus
-Conflicts: linux-kfocus-24.04, linux-generic-hwe-24.04-kfocus
-Depends: ${misc:Depends}, linux-image-kfocus-24.04-kfocus (= ${binary:Version}), linux-headers-kfocus-24.04-kfocus (= ${binary:Version})
-Recommends: linux-tools-${kernel-abi-version}-kfocus
-Description: Complete KFocus Linux kernel and headers
- This package will always depend on the latest complete KFocus Linux kernel
+Provides:
+ kernel-testing--linux-oem-7.0--full--oem, kernel-testing--linux-oem-7.0--full--preferred,,
+Depends:
+ ${misc:Depends},
+ linux-image-oem-7.0 (= ${binary:Version}),
+ linux-headers-oem-7.0 (= ${binary:Version}),
+Recommends: linux-tools-${kernel-abi-version}-oem, ubuntu-kernel-accessories
+Description: Complete OEM Linux kernel and headers
+ This package will always depend on the latest complete OEM Linux kernel
  and headers.
 
 
-
-Package: linux-modules-evdi-kfocus-24.04
+Package: linux-headers-oem-26.04
 Architecture: amd64
 Section: kernel
-Provides: ${dkms:evdi-modules}
 Depends:
  ${misc:Depends},
- linux-modules-evdi-${kernel-abi-version}-kfocus,
-Description: Extra drivers for evdi for the kfocus flavour
- Install extra signed evdi modules compatible with the kfocus flavour.
+ linux-headers-${kernel-abi-version}-oem,
+Description: OEM Linux kernel headers
+ This package will always depend on the latest OEM kernel headers
+ available.
 
-
-Package: linux-modules-ipu6-kfocus-24.04
+Package: linux-image-oem-26.04
 Architecture: amd64
 Section: kernel
-Provides: ${dkms:ipu6-modules}
-Depends:
- ${misc:Depends},
- linux-modules-ipu6-${kernel-abi-version}-kfocus,
-Description: Extra drivers for ipu6 for the kfocus flavour
- Install extra signed ipu6 modules compatible with the kfocus flavour.
+Conflicts:
+ linux-image-fb-oem-26.04
+Provides: ${dkms:ivsc-modules} ${dkms:virtualbox-guest-modules} ${dkms:wireguard-linux-compat-modules} ${dkms:ipu6-modules}
+Depends: ${misc:Depends},
+ linux-image-${kernel-abi-version}-oem,
+ linux-modules-${kernel-abi-version}-oem [amd64],
+ linux-main-modules-zfs-${kernel-abi-version}-oem [amd64],
+ linux-firmware [amd64],
+ intel-microcode [amd64],
+ amd64-microcode [amd64]
+Recommends: thermald [amd64]
+Description: OEM Linux kernel image
+ This package will always depend on the latest OEM kernel image
+ available.
 
-
-Package: linux-modules-ipu7-kfocus-24.04
+Package: linux-image-uc-oem-26.04
 Architecture: amd64
 Section: kernel
-Provides: ${dkms:ipu7-modules}
 Depends:
  ${misc:Depends},
- linux-modules-ipu7-${kernel-abi-version}-kfocus,
-Description: Extra drivers for ipu7 for the kfocus flavour
- Install extra signed ipu7 modules compatible with the kfocus flavour.
+ linux-image-uc-${kernel-abi-version}-oem,
+ linux-modules-${kernel-abi-version}-oem,
+ linux-main-modules-zfs-${kernel-abi-version}-oem,
+ linux-firmware,
+ firmware-sof-signed [amd64],
+ wireless-regdb
+Description: OEM Linux kernel image for Ubuntu Core
+ This package will always depend on the latest OEM kernel image
+ available.
+ .
+ This kernel is suitable for staging into a kernel snap, and is not
+ suitable to be used directly on classic systems.
 
-
-Package: linux-modules-iwlwifi-kfocus-24.04
+Package: linux-tools-oem-26.04
 Architecture: amd64
 Section: kernel
-Provides: ${dkms:iwlwifi-modules}
-Depends:
- ${misc:Depends},
- linux-modules-iwlwifi-${kernel-abi-version}-kfocus,
-Description: Extra drivers for iwlwifi for the kfocus flavour
- Install extra signed iwlwifi modules compatible with the kfocus flavour.
+Provides:
+ linux-tools
+Depends: ${misc:Depends},
+ linux-tools-${kernel-abi-version}-oem,
+Description: OEM Linux kernel tools
+ This package will always depend on the latest OEM kernel tools
+ available.
 
-
-Package: linux-modules-usbio-kfocus-24.04
+Package: linux-oem-26.04
 Architecture: amd64
 Section: kernel
-Provides: ${dkms:usbio-modules}
+Provides:
+  ,
 Depends:
  ${misc:Depends},
- linux-modules-usbio-${kernel-abi-version}-kfocus,
-Description: Extra drivers for usbio for the kfocus flavour
- Install extra signed usbio modules compatible with the kfocus flavour.
+ linux-image-oem-26.04 (= ${binary:Version}),
+ linux-headers-oem-26.04 (= ${binary:Version}),
+Recommends: linux-tools-${kernel-abi-version}-oem, ubuntu-kernel-accessories
+Description: Complete OEM Linux kernel and headers
+ This package will always depend on the latest complete OEM Linux kernel
+ and headers.
 
 
-Package: linux-modules-vision-kfocus-24.04
+Package: linux-headers-oem-26.04a
 Architecture: amd64
 Section: kernel
-Provides: ${dkms:vision-modules}
 Depends:
  ${misc:Depends},
- linux-modules-vision-${kernel-abi-version}-kfocus,
-Description: Extra drivers for vision for the kfocus flavour
- Install extra signed vision modules compatible with the kfocus flavour.
+ linux-headers-${kernel-abi-version}-oem,
+Description: OEM Linux kernel headers
+ This package will always depend on the latest OEM kernel headers
+ available.
+
+Package: linux-image-oem-26.04a
+Architecture: amd64
+Section: kernel
+Conflicts:
+ linux-image-fb-oem-26.04a
+Provides: ${dkms:ivsc-modules} ${dkms:virtualbox-guest-modules} ${dkms:wireguard-linux-compat-modules} ${dkms:ipu6-modules}
+Depends: ${misc:Depends},
+ linux-image-${kernel-abi-version}-oem,
+ linux-modules-${kernel-abi-version}-oem [amd64],
+ linux-main-modules-zfs-${kernel-abi-version}-oem [amd64],
+ linux-firmware [amd64],
+ intel-microcode [amd64],
+ amd64-microcode [amd64]
+Recommends: thermald [amd64]
+Description: OEM Linux kernel image
+ This package will always depend on the latest OEM kernel image
+ available.
+
+Package: linux-image-uc-oem-26.04a
+Architecture: amd64
+Section: kernel
+Depends:
+ ${misc:Depends},
+ linux-image-uc-${kernel-abi-version}-oem,
+ linux-modules-${kernel-abi-version}-oem,
+ linux-main-modules-zfs-${kernel-abi-version}-oem,
+ linux-firmware,
+ firmware-sof-signed [amd64],
+ wireless-regdb
+Description: OEM Linux kernel image for Ubuntu Core
+ This package will always depend on the latest OEM kernel image
+ available.
+ .
+ This kernel is suitable for staging into a kernel snap, and is not
+ suitable to be used directly on classic systems.
+
+Package: linux-tools-oem-26.04a
+Architecture: amd64
+Section: kernel
+Provides:
+ linux-tools
+Depends: ${misc:Depends},
+ linux-tools-${kernel-abi-version}-oem,
+Description: OEM Linux kernel tools
+ This package will always depend on the latest OEM kernel tools
+ available.
+
+Package: linux-oem-26.04a
+Architecture: amd64
+Section: kernel
+Provides:
+  ,
+Depends:
+ ${misc:Depends},
+ linux-image-oem-26.04a (= ${binary:Version}),
+ linux-headers-oem-26.04a (= ${binary:Version}),
+Recommends: linux-tools-${kernel-abi-version}-oem, ubuntu-kernel-accessories
+Description: Complete OEM Linux kernel and headers
+ This package will always depend on the latest complete OEM Linux kernel
+ and headers.
+
 

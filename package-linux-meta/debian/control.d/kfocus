@@ -1,9 +1,11 @@
 Package: linux-headers-kfocus${variant:suffix}-kfocus
 Architecture: amd64
 Section: kernel
-Replaces: linux-headers-kfocus${variant:suffix}, linux-headers-generic-hwe-24.04-kfocus
-Conflicts: linux-headers-kfocus${variant:suffix}, linux-headers-generic-hwe-24.04-kfocus
-Depends: ${misc:Depends}, linux-headers-${kernel-abi-version}-kfocus
+Conflicts: linux-headers-kfocus${variant:suffix}
+Replaces: linux-headers-kfocus${variant:suffix}
+Depends:
+ ${misc:Depends},
+ linux-headers-${kernel-abi-version}-kfocus,
 Description: KFocus Linux kernel headers
  This package will always depend on the latest KFocus kernel headers
  available.
@@ -11,10 +13,18 @@ Description: KFocus Linux kernel headers
 Package: linux-image-kfocus${variant:suffix}-kfocus
 Architecture: amd64
 Section: kernel
-Provides: ${dkms:v4l2loopback-modules} ${dkms:zfs-modules} ${dkms:ivsc-modules} ${dkms:virtualbox-guest-modules} ${dkms:wireguard-linux-compat-modules}
-Replaces: linux-image-kfocus${variant:suffix}, linux-image-generic-hwe-24.04-kfocus
-Conflicts: linux-image-kfocus${variant:suffix}, linux-image-generic-hwe-24.04-kfocus
-Depends: ${misc:Depends}, linux-image-unsigned-${kernel-abi-version}-kfocus, linux-firmware [amd64], intel-microcode [amd64], amd64-microcode [amd64]
+Conflicts:
+ linux-image-fb-kfocus${variant:suffix}-kfocus,
+ linux-image-kfocus${variant:suffix},
+Replaces:
+ linux-image-kfocus${variant:suffix},
+Provides: ${dkms:ivsc-modules} ${dkms:virtualbox-guest-modules} ${dkms:wireguard-linux-compat-modules} ${dkms:ipu6-modules}
+Depends: ${misc:Depends},
+ linux-image-unsigned-${kernel-abi-version}-kfocus,
+ linux-modules-${kernel-abi-version}-kfocus [amd64],
+ linux-firmware [amd64],
+ intel-microcode [amd64],
+ amd64-microcode [amd64]
 Recommends: thermald [amd64]
 Description: KFocus Linux kernel image
  This package will always depend on the latest KFocus kernel image
@@ -23,9 +33,17 @@ Description: KFocus Linux kernel image
 Package: linux-image-uc-kfocus${variant:suffix}-kfocus
 Architecture: amd64
 Section: kernel
-Replaces: linux-image-uc-kfocus${variant:suffix}, linux-image-uc-generic-hwe-24.04-kfocus
-Conflicts: linux-image-uc-kfocus${variant:suffix}, linux-image-uc-generic-hwe-24.04-kfocus
-Depends: ${misc:Depends}, linux-image-uc-${kernel-abi-version}-kfocus, linux-firmware, firmware-sof-signed [amd64], wireless-regdb
+Conflicts:
+ linux-image-uc-kfocus${variant:suffix}
+Replaces:
+ linux-image-uc-kfocus${variant:suffix}
+Depends:
+ ${misc:Depends},
+ linux-image-uc-${kernel-abi-version}-kfocus,
+ linux-modules-${kernel-abi-version}-kfocus,
+ linux-firmware,
+ firmware-sof-signed [amd64],
+ wireless-regdb
 Description: KFocus Linux kernel image for Ubuntu Core
  This package will always depend on the latest KFocus kernel image
  available.
@@ -36,10 +54,12 @@ Description: KFocus Linux kernel image for Ubuntu Core
 Package: linux-tools-kfocus${variant:suffix}-kfocus
 Architecture: amd64
 Section: kernel
-Provides: linux-tools
-Replaces: linux-tools-kfocus${variant:suffix}, linux-tools-generic-hwe-24.04-kfocus
-Conflicts: linux-tools-kfocus${variant:suffix}, linux-tools-generic-hwe-24.04-kfocus
-Depends: ${misc:Depends}, linux-tools-${kernel-abi-version}-kfocus
+Provides:
+ linux-tools
+Conflicts: linux-tools-kfocus${variant:suffix}
+Replaces: linux-tools-kfocus${variant:suffix}
+Depends: ${misc:Depends},
+ linux-tools-${kernel-abi-version}-kfocus
 Description: KFocus Linux kernel tools
  This package will always depend on the latest KFocus kernel tools
  available.
@@ -47,10 +67,14 @@ Description: KFocus Linux kernel tools
 Package: linux-kfocus${variant:suffix}-kfocus
 Architecture: amd64
 Section: kernel
-Provides: ${test:provides-full-kfocus} ${test:provides-full-preferred}
-Replaces: linux-kfocus${variant:suffix}, linux-generic-hwe-24.04-kfocus
-Conflicts: linux-kfocus${variant:suffix}, linux-generic-hwe-24.04-kfocus
-Depends: ${misc:Depends}, linux-image-kfocus${variant:suffix}-kfocus (= ${binary:Version}), linux-headers-kfocus${variant:suffix}-kfocus (= ${binary:Version})
+Provides:
+ ${test:provides-full-kfocus} ${test:provides-full-preferred},
+Conflicts: linux-kfocus${variant:suffix}
+Replaces: linux-kfocus${variant:suffix}
+Depends:
+ ${misc:Depends},
+ linux-image-kfocus${variant:suffix}-kfocus (= ${binary:Version}),
+ linux-headers-kfocus${variant:suffix}-kfocus (= ${binary:Version})
 Recommends: linux-tools-${kernel-abi-version}-kfocus
 Description: Complete KFocus Linux kernel and headers
  This package will always depend on the latest complete KFocus Linux kernel
