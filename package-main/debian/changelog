@@ -1,6 +1,14 @@
+kfocus-main (26.04.1~alpha6) resolute; urgency=medium
+
+  * Update snap workaround to open using X11 (#6374)
+    TODO: This is a hack, as the desktop file does not include
+    slack --ozone-platform=x11, so it alone will not work.
+
+ -- Michael S. Mikowski <support@kfocus.org>  Fri, 05 Jun 2026 17:27:13 -0400
+
 kfocus-main (26.04.1~alpha5) resolute; urgency=medium
 
-  * Update defaults for kwinrc in kfocus-reset-effects
+  * Update defaults for kwinrc in kfocus-reset-effects (#6374)
 
  -- Michael S. Mikowski <support@kfocus.org>  Thu, 04 Jun 2026 17:16:45 -0400
 
