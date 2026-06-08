@@ -1294,11 +1294,7 @@ _chkFirstrunFn () {
 
 ## BEGIN _mainFn {
 _mainFn () {
-  declare _who_str _opt_str;
-
-  # 1902 Bail if run as user 'kubuntu' which implies liveCD
-  _who_str="$(whoami)";
-  if [ "${_who_str}" = 'kubuntu' ]; then return; fi
+  declare _who_str _opt_str _prompt_msg _title;
 
   ## Begin Process options {
   _doForce='n';
@@ -1312,6 +1308,26 @@ _mainFn () {
     esac
   done
   ## . End Process options }
+
+  # 1902 Bail if run as user 'kubuntu' which implies liveCD
+  _who_str="$(whoami)";
+  if [ "${_who_str}" = 'kubuntu' ]; then
+    if [ "${_doForce}" = 'y' ]; then
+      _title='FocusRx: Live Session';
+      _prompt_msg="$(cat <<EOF
+${_cm2HtmBeginStr}
+${_cm2HtmH3Str}Live Session</h3>
+
+${_cm2HtmPStr}FocusRx has detected that this system is running from a <br>
+live USB or DVD. FocusRx is not useful in this scenario, and <br>
+will now exit.</p>
+${_cm2HtmEndStr}
+EOF
+      )";
+      _cm2PromptUserFn "${_prompt_msg}" "${_title}";
+    fi
+    return;
+  fi
 
   ## Begin Run focusrx steps {
   _cm2EchoFn "== BEGIN :      ${_rootTitle}\n";
