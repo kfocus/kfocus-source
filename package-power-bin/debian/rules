@@ -8,3 +8,7 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 	# Disabling source builds for now, as the UI portion of this needs
 	# rewritten for Plasma 6 compatibility.
 	dh ${@} --buildsystem none # --buildsystem cmake
+
+override_dh_auto_build:
+	(cd kfocus-fand && ./build.sh)
+	dh_auto_build

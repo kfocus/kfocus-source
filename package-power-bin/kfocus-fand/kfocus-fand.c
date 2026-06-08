@@ -26,6 +26,7 @@
 #include <time.h>
 #include <unistd.h>
 
+#include <sys/file.h>
 #include <sys/ioctl.h>
 #include <sys/signalfd.h>
 #include <sys/stat.h>
@@ -38,7 +39,7 @@
 #define FAN_PROFILE_DB_PATH   "/usr/share/kfocus/kfocus_fand.d/fan_profile_db"
 #define STATE_DIR_PATH        "/var/lib/kfocus"
 #define FAN_CONFIG_PATH       "/var/lib/kfocus/fan_state"
-#define FAN_PROFILE_COUNT     3
+#define FAN_PROFILE_COUNT     4
 #define MAX_FAN_COUNT         3
 #define POLL_WAIT_MS          1500
 #define WATCHDOG_INTERVAL_SEC 3
@@ -62,22 +63,40 @@ static char *  fan_profile_header_list[FAN_PROFILE_COUNT] = {
   "=quiet",
   "=balanced",
   "=performance",
+  "=max",
 };
 static int     signal_handle   = -1;
 struct pollfd  poll_watch      = { 0 };
 static ssize_t fan_profile_idx = -1;
 
-static char *read_text_file(const char *path) {
-  int target_file = 0;
-  off_t file_len = 0;
-  char *file_contents = NULL;
-  ssize_t file_pos = 0;
-  ssize_t read_bytes = 0;
+static void flock_exclusive_safe(int target_file, const char *path) {
+  while (true) {
+    int flock_rslt = flock(target_file, LOCK_EX);
+    if (flock_rslt != -1) {
+      break;
+    }
+    if (errno == EINTR) {
+      continue;
+    }
+    err(1, "Could not flock |%s|", path);
+  }
+}
+
+static char *read_text_file(const char *path, bool do_flock) {
+  int     target_file   = 0;
+  off_t   file_len      = 0;
+  char   *file_contents = NULL;
+  ssize_t file_pos      = 0;
+  ssize_t read_bytes    = 0;
 
   target_file = open(path, O_RDONLY);
   if (target_file == -1) {
-    warn("Could not open file |%s|", path);
+    warn("Could not open file |%s| for reading", path);
     return NULL;
+  }
+
+  if (do_flock) {
+    flock_exclusive_safe(target_file, path);
   }
 
   file_len = lseek(target_file, 0, SEEK_END);
@@ -85,7 +104,9 @@ static char *read_text_file(const char *path) {
     err(1, "Could not get length of file |%s|", path);
   }
   if (file_len == 0) {
-    errx(1, "File |%s| is empty\n", path);
+    warnx("File |%s| is empty\n", path);
+    close(target_file);
+    return NULL;
   }
   if (lseek(target_file, 0, SEEK_SET) == -1) {
     err(1, "Could not seek to beginning of file |%s|", path);
@@ -112,18 +133,104 @@ static char *read_text_file(const char *path) {
   return file_contents;
 }
 
+/* The only place that calls this function currently doesn't care whether the
+ * write succeeds or not. This should be changed to report success or failure
+ * if that becomes important in the future. */
+static void write_text_file(const char *cont_dir, const char *path,
+  const char *text, bool do_flock) {
+  struct stat stinfo             = { 0 };
+  int         target_file        = 0;
+  size_t      remaining_text_len = 0;
+  ssize_t     write_bytes        = 0;
+
+  if (stat(cont_dir, &stinfo) == -1) {
+    if (errno != ENOENT) {
+      warn("Could not stat path |%s|", cont_dir);
+      return;
+    }
+
+    if (mkdir(cont_dir, 0755) == -1) {
+      warn("Directory |%s| does not exist and cannot be created", cont_dir);
+      return;
+    }
+
+    /* If we get here, the directory was successfully created, the following
+     * else condition is skipped, and the rest of the function runs. */
+  } else {
+    if (!S_ISDIR(stinfo.st_mode)) {
+      warnx("Path |%s| is not a directory\n", cont_dir);
+      return;
+    }
+  }
+
+  target_file = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0755);
+  if (target_file == -1) {
+    warn("Could not open file |%s| for writing", path);
+    return;
+  }
+
+  if (do_flock) {
+    flock_exclusive_safe(target_file, path);
+  }
+
+  remaining_text_len = strlen(text);
+
+  while ((write_bytes = write(target_file, text, remaining_text_len)) > 0) {
+    remaining_text_len -= write_bytes;
+  }
+  if (write_bytes < 0) {
+    err(1, "Write failure on file |%s|", path);
+  }
+
+  close(target_file);
+}
+
+static void conf_file_line_trim(char **file_line_ref) {
+  char  *file_line     = NULL;
+  size_t file_line_len = 0;
+
+  file_line     = *file_line_ref;
+  file_line_len = strlen(file_line);
+
+  /* Advance the pointer past leading whitespace */
+  while (file_line[0] == ' ') {
+    file_line++;
+    file_line_len--;
+  }
+
+  /* Trim off any comment */
+  for (size_t i = 0; i < file_line_len; i++) {
+    if (file_line[i] == '#') {
+      file_line[i]  = '\0';
+      file_line_len = i;
+      break;
+    }
+  }
+
+  /* Trim off any trailing whitespace */
+  for (ssize_t i = file_line_len - 1; i >= 0; i--) {
+    if (file_line[i] == ' ') {
+      file_line[i] = '\0';
+    } else {
+      break;
+    }
+  }
+
+  *file_line_ref = file_line;
+}
+
 static void parse_fan_profile_db(void) {
-  char *orig_file_ptr = NULL;
-  char *file_ptr = NULL;
-  char *file_line = NULL;
-  char *temperature_str = NULL;
-  char *speed_str_list[MAX_FAN_COUNT];
-  char *parse_str_endptr = NULL;
-  ssize_t header_idx = -1;
-  int16_t last_temperature_val = -1;
-  uint8_t last_speed_val_list[MAX_FAN_COUNT];
-  bool valid_header_found = false;
+  char         *orig_file_ptr           = NULL;
+  char         *file_ptr                = NULL;
+  char         *file_line               = NULL;
+  char         *temperature_str         = NULL;
+  char         *parse_str_endptr        = NULL;
+  ssize_t       header_idx              = -1;
+  int16_t       last_temperature_val    = -1;
+  bool          valid_header_found      = false;
   unsigned long current_temperature_val = 0;
+  char         *speed_str_list[MAX_FAN_COUNT];
+  uint8_t       last_speed_val_list[MAX_FAN_COUNT];
   unsigned long current_speed_val_list[MAX_FAN_COUNT];
 
   for (size_t i = 0; i < FAN_PROFILE_COUNT; i++) {
@@ -134,15 +241,18 @@ static void parse_fan_profile_db(void) {
     }
   }
   memset(fan_profile_present_list, 0, FAN_PROFILE_COUNT * sizeof(bool));
-  memset(current_speed_val_list, 0, MAX_FAN_COUNT * sizeof(unsigned long));
+  memset(current_speed_val_list,   0, MAX_FAN_COUNT     * sizeof(
+    unsigned long));
 
-  orig_file_ptr = file_ptr = read_text_file(FAN_PROFILE_DB_PATH);
+  orig_file_ptr = file_ptr = read_text_file(FAN_PROFILE_DB_PATH, false);
   if (file_ptr == NULL) {
     exit(1);
   }
 
   /* Parse the file and populate the profile arrays with info from it */
   while ((file_line = strsep(&file_ptr, "\n")) != NULL) {
+    conf_file_line_trim(&file_line);
+
     if (strcmp(file_line, "") == 0) {
       continue;
     }
@@ -153,14 +263,15 @@ static void parse_fan_profile_db(void) {
           errx(1, "Duplicate header |%s| in fan profile db file\n", file_line);
         }
         fan_profile_present_list[i] = true;
-        valid_header_found = true;
-        header_idx = i;
-        temperature_str = NULL;
-        last_temperature_val = -1;
-        current_temperature_val = 0;
-        memset(speed_str_list, 0, MAX_FAN_COUNT * sizeof(char *));
-        memset(last_speed_val_list, 0, MAX_FAN_COUNT * sizeof(uint8_t));
-        memset(current_speed_val_list, 0, MAX_FAN_COUNT * sizeof(unsigned long));
+        valid_header_found          = true;
+        header_idx                  = i;
+        temperature_str             = NULL;
+        last_temperature_val        = -1;
+        current_temperature_val     = 0;
+        memset(speed_str_list,         0, MAX_FAN_COUNT * sizeof(char *));
+        memset(last_speed_val_list,    0, MAX_FAN_COUNT * sizeof(uint8_t));
+        memset(current_speed_val_list, 0, MAX_FAN_COUNT * sizeof(
+          unsigned long));
         break;
       }
     }
@@ -188,9 +299,9 @@ static void parse_fan_profile_db(void) {
       }
     }
 
-    if (speed_str_list[0] == NULL || speed_str_list[0][0] == '\0'
-      || temperature_str == NULL || temperature_str[0] == '\0'
-      || file_line != NULL) {
+    if ( speed_str_list[0] == NULL || speed_str_list[0][0] == '\0'
+      || temperature_str   == NULL || temperature_str[0]   == '\0'
+      || file_line         != NULL) {
       errx(1, "Malformed profile line\n");
     }
     for (size_t i = 1; i < MAX_FAN_COUNT; i++) {
@@ -257,16 +368,25 @@ static void parse_fan_profile_db(void) {
   }
 }
 
-static void read_active_fan_profile(void) {
-  char *profile_ptr = NULL;
+static void determine_active_fan_profile(void) {
+  char *profile_ptr      = NULL;
   char *orig_profile_ptr = NULL;
-  char *line_one = NULL;
+  char *line_one         = NULL;
 
   fan_profile_idx = -1;
-  orig_profile_ptr = profile_ptr = read_text_file(FAN_CONFIG_PATH);
+  orig_profile_ptr = profile_ptr = read_text_file(FAN_CONFIG_PATH, true);
   if (profile_ptr == NULL || profile_ptr[0] == '\0'
     || profile_ptr[0] == '\n') {
-    return; /* and leave fan_profile_idx set to -1 */
+    /* No fan profile found, use the "balanced" mode by default and write the
+     * fan config file */
+    for (size_t i = 0; i < FAN_PROFILE_COUNT; i++) {
+      if (strcmp(fan_profile_header_list[i], "=balanced") == 0) {
+        fan_profile_idx = i;
+        break;
+      }
+    }
+    write_text_file(STATE_DIR_PATH, FAN_CONFIG_PATH, "balanced\n", true);
+    return;
   }
 
   line_one = strsep(&profile_ptr, "\n");
@@ -310,10 +430,10 @@ static void exit_cleanup(void) {
  * something with it. Thus we can call non-async-signal-safe functions
  * here. */
 void handle_signal(void) {
-  ssize_t read_rslt = 0;
-  struct signalfd_siginfo signal_info = { 0 };
-  struct timespec ts = { 0 };
-  uint64_t current_time_ms = 0;
+  ssize_t                 read_rslt       = 0;
+  struct signalfd_siginfo signal_info     = { 0 };
+  struct timespec         ts              = { 0 };
+  uint64_t                current_time_ms = 0;
 
   while ((read_rslt = read(signal_handle, &signal_info,
     sizeof(struct signalfd_siginfo))) == 0) {
@@ -330,7 +450,7 @@ void handle_signal(void) {
     current_time_ms = (uint64_t)((ts.tv_sec * 1000000) + (ts.tv_nsec / 1000));
     sd_notifyf(0, "RELOADING=1\nMONOTONIC_USEC=%ld", current_time_ms);
     parse_fan_profile_db();
-    read_active_fan_profile();
+    determine_active_fan_profile();
 
     if (fan_profile_idx == -1 || !fan_profile_present_list[fan_profile_idx]) {
       /* Put the daemon into a dormant mode */
@@ -353,12 +473,12 @@ void handle_signal(void) {
 }
 
 void main_loop(void) {
-  int poll_rslt = 0;
-  int ioctl_rslt = 0;
-  uint32_t fan_info_val = 0;
-  uint8_t fan_temp = 0;
-  uint8_t fan_speed = 0;
-  uint8_t watchdog_counter = 0;
+  int      poll_rslt        = 0;
+  int      ioctl_rslt       = 0;
+  uint32_t fan_info_val     = 0;
+  uint8_t  fan_temp         = 0;
+  uint8_t  fan_speed        = 0;
+  uint8_t  watchdog_counter = 0;
 
   while (true) {
     bool write_fan_speeds = false;
@@ -417,9 +537,9 @@ void main_loop(void) {
     }
 
     if (write_fan_speeds) {
-      int32_t fan_arg  = (uint8_t)(active_fan_speed_list[0]);
-      fan_arg         |= (uint8_t)(active_fan_speed_list[1]) << 8;
-      fan_arg         |= (uint8_t)(active_fan_speed_list[2]) << 16;
+      int32_t fan_arg = (uint8_t)(active_fan_speed_list[0]);
+      fan_arg        |= (uint8_t)(active_fan_speed_list[1]) << 8;
+      fan_arg        |= (uint8_t)(active_fan_speed_list[2]) << 16;
 
       ioctl_rslt = ioctl(driver_handle, W_CL_FANSPEED, &fan_arg);
       if (ioctl_rslt == -1) {
@@ -443,7 +563,24 @@ int main(void) {
   set_fan_automatic_mode(true);
 
   parse_fan_profile_db();
-  read_active_fan_profile();
+  determine_active_fan_profile();
+
+  /* debugging
+  for (size_t i = 0; i < FAN_PROFILE_COUNT; i++) {
+    if (!fan_profile_present_list[i]) {
+      printf("Fan profile %s missing\n", fan_profile_header_list[i] + 1);
+      continue;
+    }
+    for (size_t j = 0; j < MAX_FAN_COUNT; j++) {
+      for (size_t k = 0; k < 256; k++) {
+        printf("Fan profile %s: fan %ld, temperature %ld, speed %d\n",
+          fan_profile_header_list[i] + 1,
+          j, k, fan_profile_data[i][j][k]);
+      }
+    }
+  }
+  exit(0);
+  */
 
   if (atexit(exit_cleanup) != 0) {
     errx(1, "Unable to register exit cleanup function\n");

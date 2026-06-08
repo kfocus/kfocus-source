@@ -15,7 +15,6 @@ set -u;
 
 _optionTable=(
   # label|desc|profile_code
-  'None|fan control disabled|' # this element MUST be first
   'Quiet|Quieter but warmer|quiet'
   'Balanced|Cool, performs well|balanced'
   'Performance|Best performance|performance'
@@ -33,11 +32,25 @@ _importCommonFn () {
   fi
 }
 
-_setFanControlFn () {
-  declare _fan_control_mode;
-  _fan_control_mode="${1:-}";
+_openFanProfileFile () {
+  declare _file_fd;
 
-  echo "${_fan_control_mode}" > "${_fanProfileFile}";
+  exec {_file_fd}<>"${_fanProfileFile}";
+  if [ -z "${_file_fd}" ]; then
+    return 1;
+  fi
+  flock -x "${_file_fd}" || return 1;
+  echo "${_file_fd}";
+  return 0;
+}
+
+_setFanControlFn () {
+  declare _fan_control_mode _file_fd;
+  _fan_control_mode="${1:-}";
+  _file_fd="$(_openFanProfileFile)" || return 1;
+
+  echo "${_fan_control_mode}" >&"${_file_fd}";
+  flock -u "${_file_fd}";
   systemctl start  kfocus-fand || true;
   systemctl reload kfocus-fand || true;
 }
@@ -159,13 +172,11 @@ _printOptionsFn () {
 }
 
 _readModeFn () {
-  declare _fan_profile_str _opt_line _bit_list;
+  declare _fan_profile_str _opt_line _bit_list _file_fd;
 
-  if ! [ -f "${_fanProfileFile}" ]; then
-    _fan_profile_str='none';
-  else
-  _fan_profile_str="$(head -n1 "${_fanProfileFile}")";
-  fi
+  _file_fd="$(_openFanProfileFile)" || return 1;
+  _fan_profile_str="$(head -n1 <&"${_file_fd}")";
+  flock -u "${_file_fd}";
 
   for _opt_line in "${_optionTable[@]}"; do
     IFS='|' read -r -a _bit_list <<< "${_opt_line}";
@@ -184,9 +195,9 @@ _mainFn () {
   case "${_arg_str}" in
     '-p') _printOptionsFn;;
     '-x') _printOptionsFn 'x';;
-    '-r') _readModeFn;;
+    '-r') _readModeFn || exit 1;;
       '') _cm2EchoFn 'Argument or flag required'; exit 1;;
-       *) _setModeFn "${_arg_str}";
+       *) _setModeFn "${_arg_str}" || exit 1;
   esac
 }
 

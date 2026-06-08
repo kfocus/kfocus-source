@@ -267,37 +267,10 @@ Kirigami.ApplicationWindow {
         visible: !fanSlider.visible
       }
 
-      Controls.Switch {
-        id: fanSwitch
-        visible: fanSlider.visible
-        text: 'Enable fan control'
-
-        onCheckedChanged: {
-          if ( fanProfilesModel.count === 0 ) {
-            return;
-          }
-
-          fanSlider.value = 0 /* uh oh */
-          getFanProfileTimer.stop();
-          getFanProfileEngine.ignoreResult();
-
-          if ( checked ) {
-            setFanProfileEngine.exec ( 'pkexec ' + binDir + '/kfocus-fan-set '
-              + fanProfilesModel.profileNames[0] );
-            fanDescription.text = getFanProfileDesc( 0 );
-          } else {
-            setFanProfileEngine.exec ( 'pkexec ' + binDir
-              + '/kfocus-fan-set None' );
-            fanDescription.text = 'None (fan control disabled)';
-          }
-        }
-      }
-
       Controls.Slider {
         id: fanSlider
         Layout.fillWidth: true
         visible: false
-        enabled: fanSwitch.checked
         to: fanProfilesModel.count - 1
         stepSize: 1
 
@@ -547,7 +520,6 @@ Kirigami.ApplicationWindow {
           if ( line === '' ) { return; }
           let [name, description] = line.split( '(' );
           name = name.trim();
-          if ( name == 'None' ) { return; }
           description = description.split( ')' )[0];
           description = description.trim();
           fanProfilesModel.append( {
@@ -572,11 +544,8 @@ Kirigami.ApplicationWindow {
       profile_idx = fanProfilesModel.profileNames.indexOf(profile_str);
 
       if ( profile_idx === -1 ) {
-        fanSlider.value = 0;
-        fanSwitch.checked = false;
-        fanDescription.text = 'None (fan control disabled)';
+        fanDescription.text = 'Unknown';
       } else {
-        fanSwitch.checked = true;
         fanSlider.value = profile_idx;
         fanDescription.text = getFanProfileDesc( profile_idx );
       }
