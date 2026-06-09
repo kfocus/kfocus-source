@@ -10,6 +10,7 @@ target_sources(kfocus-power-bin
     main.cpp
     shellengine.cpp
     shellengine.h
+    qml.qrc
 )
 
 ecm_target_qml_sources(kfocus-power-bin
@@ -30,3 +31,5 @@ target_link_libraries(kfocus-power-bin
     KF6::CoreAddons
     KF6::IconThemes
 )
+
+install(TARGETS kfocus-power-bin DESTINATION "/usr/lib/kfocus/bin")

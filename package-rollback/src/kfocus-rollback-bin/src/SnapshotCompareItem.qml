@@ -29,20 +29,21 @@ ColumnLayout {
     }
 
     Controls.ComboBox {
-        id               : compareSelectBox
-        Layout.fillWidth : true
-        textRole         : "date"
-        valueRole        : "name"
-        displayText      : currentText + ' - ' + currentValue
-        model            : snapshotList
-        delegate         : Controls.ItemDelegate {
-            width: ListView.view.width
-            contentItem: RowLayout {
+        id                  : compareSelectBox
+        Layout.fillWidth    : true
+        Layout.bottomMargin : Kirigami.Units.gridUnit * 0.5
+        textRole            : "date"
+        valueRole           : "name"
+        displayText         : currentText + ' - ' + currentValue
+        model               : snapshotList
+        delegate            : Controls.ItemDelegate {
+            width       : ListView.view.width
+            contentItem : RowLayout {
                 KirigamiDelegates.IconTitleSubtitle {
-                    Layout.fillWidth: true
-                    title: date
-                    subtitle: name
-                    icon.name: reason === 'System Schedule'
+                    Layout.fillWidth : true
+                    title            : date
+                    subtitle         : name
+                    icon.name        : reason === 'System Schedule'
                       ? 'clock'
                       : reason === 'Before Package Change'
                         ? 'system-upgrade'
@@ -53,11 +54,11 @@ ColumnLayout {
                             : 'user'
                 }
                 Kirigami.Icon {
-                    source: pinned ? 'lock' : ''
+                    source : pinned ? 'lock' : ''
                 }
             }
             HoverHandler {
-                cursorShape: Qt.PointingHandCursor
+                cursorShape : Qt.PointingHandCursor
             }
         }
 
@@ -66,9 +67,8 @@ ColumnLayout {
         }
 
         HoverHandler {
-            cursorShape: Qt.PointingHandCursor
+            cursorShape : Qt.PointingHandCursor
         }
-        Layout.bottomMargin : Kirigami.Units.gridUnit * 0.5
     }
     Controls.Label {
         text             : ''
@@ -86,7 +86,7 @@ ColumnLayout {
     Controls.Button {
         id                    : compareButton
         Layout.alignment      : Qt.AlignRight
-        Layout.preferredWidth  : Kirigami.Units.gridUnit * 8.4
+        Layout.preferredWidth : Kirigami.Units.gridUnit * 8.4
         Layout.bottomMargin   : Kirigami.Units.gridUnit * 0.5
         text                  : 'Compare'
         icon.name             : 'document-duplicate'
@@ -100,7 +100,7 @@ ColumnLayout {
     Controls.Button {
         id                    : cancelButton
         Layout.alignment      : Qt.AlignRight
-        Layout.preferredWidth  : Kirigami.Units.gridUnit * 8.4
+        Layout.preferredWidth : Kirigami.Units.gridUnit * 8.4
         text                  : 'Cancel'
         icon.name             : 'dialog-cancel'
         onClicked             : cancelled()

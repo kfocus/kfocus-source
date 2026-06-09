@@ -4,11 +4,11 @@ import QtQuick.Controls as Controls
 import org.kde.kirigami as Kirigami
 
 Kirigami.ApplicationWindow {
-    id: root
     property string compareText      : ''
     property string sourceSnapshotId : ''
     property string targetSnapshotId : ''
 
+    id            : root
     title         : 'Compare Snapshots'
 
     width         : Kirigami.Units.gridUnit * 30
@@ -29,7 +29,8 @@ Kirigami.ApplicationWindow {
             }
 
             Controls.Label {
-                text : '<p>Base state: <b><font color="#f7941d">'
+                text                : '<p>Base state: '
+                  + '<b><font color="#f7941d">'
                   + sourceSnapshotId
                   + '</font></b></p>'
                   + 'State being compared to: <b><font color="#f7941d">'

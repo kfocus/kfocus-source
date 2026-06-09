@@ -5,44 +5,46 @@ import QtQuick.Window
 import org.kde.kirigami as Kirigami
 
 Kirigami.ApplicationWindow {
-  id: root
-  title: 'Power and Fan'
-  width: Kirigami.Units.gridUnit * 35
-  height: Kirigami.Units.gridUnit * 40
-  minimumWidth: Kirigami.Units.gridUnit * 35
-  minimumHeight: Kirigami.Units.gridUnit * 40
+  id            : root
+  title         : 'Power and Fan'
+  width         : Kirigami.Units.gridUnit * 35
+  height        : Kirigami.Units.gridUnit * 40
+  minimumWidth  : Kirigami.Units.gridUnit * 35
+  minimumHeight : Kirigami.Units.gridUnit * 40
 
   pageStack.initialPage: Kirigami.Page {
     title: 'Power and Fan'
 
     ColumnLayout {
-      id: coreLayout
+      id      : coreLayout
+      spacing : Kirigami.Units.smallSpacing
+
       anchors {
-        left: parent.left
-        right: parent.right
-        top: parent.top
+        left  : parent.left
+        right : parent.right
+        top   : parent.top
       }
-      spacing: Kirigami.Units.smallSpacing
 
       Kirigami.Heading {
-        visible: plasmaProfilesSlider.visible
-        enabled: plasmaProfilesSlider.enabled
-        text: 'Power Profile'
-        level: 3
+        visible : powerProfileSlider.visible
+        enabled : powerProfileSlider.enabled
+        text    : 'Power Profile'
+        level   : 3
       }
 
       Controls.Slider {
-        id: plasmaProfilesSlider
-        Layout.fillWidth: true
-        visible: true
-        enabled: false
-        value: 0
-        to: 2
-        stepSize: 1
+        id       : powerProfileSlider
+        visible  : true
+        enabled  : false
+        value    : 0
+        to       : 2
+        stepSize : 1
 
-        onValueChanged: {
-          powerProfileTimer.stop();
-          getPowerProfileEngine.ignoreResult();
+        Layout.fillWidth : true
+
+        onValueChanged : {
+          readPowerProfileTimer.stop();
+          readPowerProfileEngine.ignoreResult();
           switch ( value ) {
           case 0:
             setPowerProfileEngine.exec('powerprofilesctl set power-saver');
@@ -58,146 +60,165 @@ Kirigami.ApplicationWindow {
       }
 
       Rectangle {
-        visible: plasmaProfilesSlider.visible
-        Layout.fillWidth: true
-        Layout.preferredHeight: childrenRect.height
-        Layout.bottomMargin: Kirigami.Units.largeSpacing
-        color: 'transparent'
+        visible : powerProfileSlider.visible
+        color   : 'transparent'
+
+        Layout.fillWidth       : true
+        Layout.preferredHeight : childrenRect.height
+        Layout.bottomMargin    : Kirigami.Units.largeSpacing
 
         Controls.Label {
-          text: '🔋 Powersave'
+          text : '🔋 Powersave'
+
           anchors {
-            left: parent.left
-            top: parent.top
+            left : parent.left
+            top  : parent.top
           }
         }
 
         Controls.Label{
-          horizontalAlignment: Text.AlignHCenter
-          text: 'Balanced'
+          horizontalAlignment : Text.AlignHCenter
+          text                : 'Balanced'
+
           anchors {
-            left: parent.left
-            right: parent.right
-            top: parent.top
+            left  : parent.left
+            right : parent.right
+            top   : parent.top
           }
         }
 
         Controls.Label {
-          text: 'Performance ⚡'
+          text : 'Performance ⚡'
+
           anchors {
-            right: parent.right
-            top: parent.top
+            right : parent.right
+            top   : parent.top
           }
         }
       }
 
       Kirigami.Heading {
-        visible: plasmaBrightnessSlider.visible
-        text: 'Brightness'
-        level: 3
+        visible : brightnessSlider.visible
+        text    : 'Brightness'
+        level   : 3
       }
 
       Controls.Slider {
-        id: plasmaBrightnessSlider
-        Layout.fillWidth: true
-        visible: false
-        snapMode: Controls.Slider.NoSnap
-        onValueChanged: {
-          getBrightnessTimer.stop();
-          getBrightnessEngine.ignoreResult();
-          setBrightnessEngine.exec(
-            'dbus-send --print-reply=literal --session --dest=org.kde.Solid.PowerManagement /org/kde/Solid/PowerManagement/Actions/BrightnessControl org.kde.Solid.PowerManagement.Actions.BrightnessControl.setBrightness int32:' + plasmaBrightnessSlider.value.toString()
-          );
+        id       : brightnessSlider
+        visible  : false
+        snapMode : Controls.Slider.NoSnap
+
+        Layout.fillWidth : true
+
+        onValueChanged : {
+          readBrightnessTimer.stop();
+          readBrightnessEngine.ignoreResult();
+          setBrightnessEngine.exec('dbus-send --print-reply=literal '
+            + '--session --dest=org.kde.Solid.PowerManagement '
+            + '/org/kde/Solid/PowerManagement/Actions/BrightnessControl '
+            + 'org.kde.Solid.PowerManagement.Actions.BrightnessControl.setBrightness '
+            + 'int32:' + brightnessSlider.value.toString());
         }
       }
 
       RowLayout {
-        visible: plasmaBrightnessSlider.visible
-        spacing: 0
-        Layout.fillWidth: true
-        Layout.bottomMargin: Kirigami.Units.largeSpacing
+        visible : brightnessSlider.visible
+        spacing : 0
+
+        Layout.fillWidth    : true
+        Layout.bottomMargin : Kirigami.Units.largeSpacing
 
         Controls.Label {
-          text: '🔅 Dimmer'
-          Layout.leftMargin: 3
+          text : '🔅 Dimmer'
+
+          Layout.leftMargin : 3
         }
 
         Item {
-          Layout.fillWidth: true
+          Layout.fillWidth : true
         }
 
         Controls.Label {
-          text: 'Brighter 🔆'
-          Layout.rightMargin: 8
+          text : 'Brighter 🔆'
+
+          Layout.rightMargin : 8
         }
       }
 
       RowLayout {
         Kirigami.Heading {
-          id: powerHeading
-          property string cpuId: ''
-          visible: true
-          text: 'Frequency Profile (' + cpuId + ')'
-          level: 3
-          Layout.bottomMargin: Kirigami.Units.smallSpacing
+          property string cpuId : ''
+
+          id      : powerHeading
+          visible : true
+          text    : 'Frequency Profile (' + cpuId + ')'
+          level   : 3
+
+          Layout.bottomMargin : Kirigami.Units.smallSpacing
         }
 
         Controls.BusyIndicator {
-          id: powerChangeSpinner
-          Layout.preferredWidth: Kirigami.Units.gridUnit
-          Layout.preferredHeight: Kirigami.Units.gridUnit
-          visible: false
+          id      : powerChangeSpinner
+          visible : false
+
+          Layout.preferredWidth  : Kirigami.Units.gridUnit
+          Layout.preferredHeight : Kirigami.Units.gridUnit
         }
       }
 
       Controls.ButtonGroup {
-        id: freqRadioGroup
+        id : freqRadioGroup
       }
 
       GridLayout {
-        id: frequencyGrid
-        visible: false
-        columnSpacing: 1
-        rowSpacing: 3
-        Layout.bottomMargin: Kirigami.Units.smallSpacing
-        Layout.fillWidth: true
+        id            : freqGrid
+        visible       : false
+        columnSpacing : 1
+        rowSpacing    : 3
+
+        Layout.bottomMargin : Kirigami.Units.smallSpacing
+        Layout.fillWidth    : true
 
         // Number of columns is set by freqProfileModelFillEngine
         Repeater {
-          id: freqRepeater
-          model: freqProfilesModel
+          id    : freqRepeater
+          model : freqProfilesModel
 
           // Each cell of the grid is a rectangle; we have magic properties
           // that are defined in the model, namely elementName, rowIndex,
           // colIndex, elementColor, and firstElementName.
           Rectangle {
-            property bool firstElement: colIndex === 0
-            property bool highlightCell: !firstElement
+            property bool isFirstElement  : colIndex === 0
+            property bool doHighlightCell : !isFirstElement
               && firstElementName === freqProfilesModel.selectedProfile
-            property bool isHeaderRow: rowIndex === 0
-            property bool bold: isHeaderRow || firstElement || highlightCell
+            property bool isHeaderRow     : rowIndex === 0
+            property bool bold            : isHeaderRow || isFirstElement
+              || doHighlightCell
 
-            color: isHeaderRow || highlightCell ? 'gray' : elementColor
+            color  : isHeaderRow || doHighlightCell ? 'gray' : elementColor
+            radius : Kirigami.Units.gridUnit / 6
+
             // Column size ratio is controlled by the colIndex ternary
-            Layout.rightMargin: 2
-            Layout.preferredWidth: (coreLayout.width
-              - (Layout.rightMargin * frequencyGrid.columns * 2))
-              * (firstElement ? 0.25 : colIndex === 1 ? 0.30 : 0.45
-                / (frequencyGrid.columns - 2))
-            Layout.preferredHeight: 30
-            radius: Kirigami.Units.gridUnit / 6
+            Layout.rightMargin     : 2
+            Layout.preferredWidth  : (coreLayout.width
+              - (Layout.rightMargin * freqGrid.columns * 2))
+              * (isFirstElement ? 0.25 : colIndex === 1 ? 0.30 : 0.45
+                / (freqGrid.columns - 2))
+            Layout.preferredHeight : 30
 
             Controls.RadioButton {
-              id: radioButton
-              anchors.verticalCenter: parent.verticalCenter
-              anchors.left: parent.left
-              anchors.leftMargin: 5
-              visible: firstElement && !isHeaderRow
-              checked: freqProfilesModel.selectedProfile === elementName
-              Controls.ButtonGroup.group: freqRadioGroup
+              id      : freqRadioButton
+              visible : isFirstElement && !isHeaderRow
+              checked : freqProfilesModel.selectedProfile === elementName
 
-              onClicked: {
-                frequencyGrid.enabled = false;
+              Controls.ButtonGroup.group : freqRadioGroup
+
+              anchors.verticalCenter : parent.verticalCenter
+              anchors.left           : parent.left
+              anchors.leftMargin     : 5
+
+              onClicked : {
+                freqGrid.enabled = false;
                 powerChangeSpinner.visible = true;
                 readFreqProfileTimer.stop();
                 readFreqProfileEngine.ignoreResult();
@@ -208,14 +229,7 @@ Kirigami.ApplicationWindow {
             }
 
             Controls.Label {
-              anchors.verticalCenter: parent.verticalCenter
-              anchors.left: firstElement ? radioButton.right : parent.left
-              anchors.right: parent.right
-              anchors.leftMargin: firstElement ? 3 : 20
-              font.family: isHeaderRow || firstElement
-                ? 'Noto Sans' : 'Courier'
-
-              text: {
+              text : {
                 let elementText = elementName
                 if ( bold ) {
                   elementText = elementText.replace( ' ', '&nbsp;' );
@@ -224,59 +238,76 @@ Kirigami.ApplicationWindow {
                 }
                 return elementText;
               }
+
+              font.family : isHeaderRow || isFirstElement
+                ? 'Noto Sans' : 'Courier'
+
+              anchors {
+                left           : isFirstElement
+                  ? freqRadioButton.right : parent.left
+                right          : parent.right
+                verticalCenter : parent.verticalCenter
+                leftMargin     : isFirstElement ? 3 : 20
+              }
             }
           }
         }
       }
 
       Kirigami.InlineMessage {
-        id: powerError
-        Layout.fillWidth: true
-        visible: false
-        text: 'Frequency Modes Not Found'
-        Layout.bottomMargin: Kirigami.Units.largeSpacing
+        id      : powerInlineMsg
+        visible : false
+        text    : 'Frequency Modes Not Found'
+
+        Layout.fillWidth    : true
+        Layout.bottomMargin : Kirigami.Units.largeSpacing
       }
 
       Controls.Label {
-        id: cpuTypeLegend
-        visible: false
-        text: 'P = perf core, E = efficient core'
+        id      : cpuTypeLegend
+        visible : false
+        text    : 'P = perf core, E = efficient core'
+
         // Default margin is too large, tighten things up with a negative
         // margin
-        Layout.bottomMargin: 0 - Kirigami.Units.smallSpacing
+        Layout.bottomMargin : 0 - Kirigami.Units.smallSpacing
       }
 
       Controls.Label {
-        id: powerLegend
-        visible: frequencyGrid.visible
-        text: 'psave = powersave, PERF = performance'
+        id      : powerLegend
+        visible : freqGrid.visible
+        text    : 'psave = powersave, PERF = performance'
       }
 
       Kirigami.Heading {
-        id: fanControlHeading
-        property string modelId: ''
-        text: 'Fan Profile (' + modelId + ')'
-        Layout.topMargin: Kirigami.Units.largeSpacing
-        level: 3
+        property string modelId : ''
+
+        id    : fanControlHeading
+        text  : 'Fan Profile (' + modelId + ')'
+        level : 3
+
+        Layout.topMargin : Kirigami.Units.largeSpacing
       }
 
       Kirigami.InlineMessage {
-        id: fanError
-        Layout.fillWidth: true
-        text: 'Fan Profile Not Found'
-        visible: !fanSlider.visible
+        id      : fanInlineMsg
+        text    : 'Fan Profile Not Found'
+        visible : !fanSlider.visible
+
+        Layout.fillWidth : true
       }
 
       Controls.Slider {
-        id: fanSlider
-        Layout.fillWidth: true
-        visible: false
-        to: fanProfilesModel.count - 1
-        stepSize: 1
+        id       : fanSlider
+        visible  : false
+        to       : fanProfilesModel.count - 1
+        stepSize : 1
 
-        onValueChanged: {
-          getFanProfileTimer.stop();
-          getFanProfileEngine.ignoreResult();
+        Layout.fillWidth : true
+
+        onValueChanged : {
+          readFanProfileTimer.stop();
+          readFanProfileEngine.ignoreResult();
           setFanProfileEngine.exec( 'pkexec ' + binDir + '/kfocus-fan-set '
             + fanProfilesModel.profileNames[value] );
           fanDescription.text = getFanProfileDesc( value );
@@ -284,122 +315,182 @@ Kirigami.ApplicationWindow {
       }
 
       RowLayout {
-        id: fanLabelLayout
-        visible: fanSlider.visible
-        spacing: 0
-        Layout.fillWidth: true
+        id      : fanLabelLayout
+        visible : fanSlider.visible
+        spacing : 0
+
+        Layout.fillWidth : true
 
         Repeater {
-          model: fanProfilesModel
-          delegate: Controls.Label {
-            text: name
-            Layout.preferredWidth: coreLayout.width / (fanProfilesModel.count)
-            horizontalAlignment: index === 0
-              ? Text.AlignLeft
-              : (index === fanProfilesModel.count - 1
-                ? Text.AlignRight : Text.AlignHCenter)
+          model : fanProfilesModel
+
+          Item {
+            height : childrenRect.height
+            width  : coreLayout.width / 3
+
+            Item {
+              height : childrenRect.height
+              width  : childrenRect.width
+
+              anchors {
+                left             : index === 0 ? parent.left : undefined
+                right            : index === fanProfilesModel.count - 1
+                  ? parent.right : undefined
+                horizontalCenter : index !== 0
+                  && index !== fanProfilesModel.count - 1
+                  ? parent.horizontalCenter : undefined
+              }
+
+              Image {
+                id       : fanProfileLeftImage
+                visible  : index === 0
+                source   : 'images/kfocus-fand-quiet.svg'
+                height   : fanProfileLabel.height
+                fillMode : Image.PreserveAspectFit
+
+                anchors.left : parent.left
+              }
+
+              Controls.Label {
+                id   : fanProfileLabel
+                text : name
+
+                anchors.left       : fanProfileLeftImage.right
+                anchors.leftMargin : Kirigami.Units.gridUnit / 4
+              }
+
+              Image {
+                id        : fanProfileRightImage
+                visible   : index === fanProfilesModel.count - 1
+                source    : 'images/kfocus-fand-loud.svg'
+                height    : fanProfileLabel.height
+                fillModei : Image.PreserveAspectFit
+
+                anchors.left       : fanProfileLabel.right
+                anchors.leftMargin : Kirigami.Units.gridUnit / 4
+              }
+            }
           }
         }
       }
 
       Controls.Label {
-        id: fanDescription
-        visible: fanSlider.visible
-        text: ''
-        horizontalAlignment: Text.AlignHCenter
-        Layout.fillWidth: true
-        Layout.bottomMargin: Kirigami.Units.smallSpacing
+        id                  : fanDescription
+        visible             : fanSlider.visible
+        text                : ''
+        horizontalAlignment : Text.AlignHCenter
+
+        Layout.fillWidth    : true
+        Layout.bottomMargin : Kirigami.Units.smallSpacing
       }
     }
 
     ListModel {
-      id: freqProfilesModel
-      property string selectedProfile: ''
-      property var gridColors: ['transparent', '#F63114', '#F7941E',
+      property string selectedProfile : ''
+      property var gridColors         : ['transparent', '#F63114', '#F7941E',
         '#33cc33', '#3caae4', '#0085be'].reverse()
+
+      id : freqProfilesModel
     }
 
     ListModel {
-      id: fanProfilesModel
       // It's very difficult to get the index of an item in a model, so this
       // provides a lookup mechanism.
-      property var profileNames: []
+      property var profileNames : []
+
+      id : fanProfilesModel
     }
 
     ShellEngine {
-      id: getPowerProfileEngine
-      onStdoutChanged: {
+      id : readPowerProfileEngine
+
+      onStdoutChanged : {
         switch ( stdout.trim() ) {
         case 'performance':
-          plasmaProfilesSlider.value = 2;
+          powerProfileSlider.value = 2;
           break;
         case 'balanced':
-          plasmaProfilesSlider.value = 1;
+          powerProfileSlider.value = 1;
           break;
         case 'power-saver':
-          plasmaProfilesSlider.value = 0;
+          powerProfileSlider.value = 0;
           break;
         }
-        plasmaProfilesSlider.enabled = true;
+        powerProfileSlider.enabled = true;
       }
     }
 
     ShellEngine {
-      id: setPowerProfileEngine
-      onStdoutChanged: {
-        powerProfileTimer.start();
+      id : setPowerProfileEngine
+
+      onStdoutChanged : {
+        readPowerProfileTimer.start();
       }
     }
 
     Timer {
-      id: powerProfileTimer
-      interval: 2000
-      triggeredOnStart: true
-      running: true
-      repeat: true
-      onTriggered: {
-        getPowerProfileEngine.exec('powerprofilesctl get');
+      id               : readPowerProfileTimer
+      interval         : 2000
+      triggeredOnStart : true
+      running          : true
+      repeat           : true
+
+      onTriggered : {
+        readPowerProfileEngine.exec('powerprofilesctl get');
       }
     }
 
     ShellEngine {
-      id: getMaxBrightnessEngine
-      commandStr: 'dbus-send --print-reply=literal --session --dest=org.kde.Solid.PowerManagement /org/kde/Solid/PowerManagement/Actions/BrightnessControl org.kde.Solid.PowerManagement.Actions.BrightnessControl.brightnessMax | awk \'{ print $2 }\''
+      id         : readMaxBrightnessEngine
+      commandStr : 'dbus-send --print-reply=literal --session '
+        + '--dest=org.kde.Solid.PowerManagement '
+        + '/org/kde/Solid/PowerManagement/Actions/BrightnessControl '
+        + 'org.kde.Solid.PowerManagement.Actions.BrightnessControl.brightnessMax '
+        + '| awk \'{ print $2 }\''
+
       onStdoutChanged: {
-        plasmaBrightnessSlider.to = Number(stdout.trim());
-        plasmaBrightnessSlider.visible = true;
-        getBrightnessTimer.start();
+        brightnessSlider.to = Number(stdout.trim());
+        brightnessSlider.visible = true;
+        readBrightnessTimer.start();
       }
     }
 
     ShellEngine {
-      id: getBrightnessEngine
-      onStdoutChanged: {
-        plasmaBrightnessSlider.value = Number(stdout.trim());
+      id : readBrightnessEngine
+
+      onStdoutChanged : {
+        brightnessSlider.value = Number(stdout.trim());
       }
     }
 
     ShellEngine {
-      id: setBrightnessEngine
-      onStdoutChanged: {
-        getBrightnessTimer.start();
+      id : setBrightnessEngine
+
+      onStdoutChanged : {
+        readBrightnessTimer.start();
       }
     }
 
     Timer {
-      id: getBrightnessTimer
-      interval: 2000
-      triggeredOnStart: true
-      repeat: true
-      onTriggered: {
-        getBrightnessEngine.exec('dbus-send --print-reply=literal --session --dest=org.kde.Solid.PowerManagement /org/kde/Solid/PowerManagement/Actions/BrightnessControl org.kde.Solid.PowerManagement.Actions.BrightnessControl.brightness | awk \'{ print $2 }\'');
+      id               : readBrightnessTimer
+      interval         : 2000
+      triggeredOnStart : true
+      repeat           : true
+
+      onTriggered : {
+        readBrightnessEngine.exec('dbus-send --print-reply=literal --session '
+          + '--dest=org.kde.Solid.PowerManagement '
+          + '/org/kde/Solid/PowerManagement/Actions/BrightnessControl '
+          + 'org.kde.Solid.PowerManagement.Actions.BrightnessControl.brightness '
+          + '| awk \'{ print $2 }\'');
       }
     }
 
     ShellEngine {
-      id: freqProfileModelFillEngine
-      commandStr: 'pkexec ' + binDir + '/kfocus-power-set -x'
-      onStdoutChanged: {
+      id         : freqProfileModelFillEngine
+      commandStr : 'pkexec ' + binDir + '/kfocus-power-set -x'
+
+      onStdoutChanged : {
         let stdout_arr = [], col_count = 0;
 
         stdout_arr = stdout.split( '\n' );
@@ -427,8 +518,8 @@ Kirigami.ApplicationWindow {
           stdout_arr.forEach( function ( line, index ) {
             body_msg += line;
           } );
-          powerError.text = body_msg;
-          powerError.visible = true;
+          powerInlineMsg.text = body_msg;
+          powerInlineMsg.visible = true;
           return;
         }
 
@@ -458,14 +549,15 @@ Kirigami.ApplicationWindow {
           } );
         } );
 
-        frequencyGrid.visible = true;
-        frequencyGrid.columns = col_count;
+        freqGrid.visible = true;
+        freqGrid.columns = col_count;
       }
     }
 
     ShellEngine {
-      id: readFreqProfileEngine
-      onStdoutChanged: {
+      id : readFreqProfileEngine
+
+      onStdoutChanged : {
         let trimmed_stdout = '';
 
         trimmed_stdout = stdout.trim();
@@ -478,30 +570,33 @@ Kirigami.ApplicationWindow {
     }
 
     ShellEngine {
-      id: setFreqProfileEngine
-      onStdoutChanged: {
+      id : setFreqProfileEngine
+
+      onStdoutChanged : {
         readFreqProfileTimer.start()
-        frequencyGrid.enabled = true;
+        freqGrid.enabled = true;
         powerChangeSpinner.visible = false;
       }
     }
 
     Timer {
-      id: readFreqProfileTimer
-      interval: 2000
-      triggeredOnStart: true
-      running: true
-      repeat: true
-      onTriggered: {
+      id               : readFreqProfileTimer
+      interval         : 2000
+      triggeredOnStart : true
+      running          : true
+      repeat           : true
+
+      onTriggered : {
         readFreqProfileEngine.exec('pkexec ' + binDir
           + '/kfocus-power-set -r');
       }
     }
 
     ShellEngine {
-      id: fanProfileModelFillEngine
-      commandStr: binDir + '/kfocus-fan-set -x'
-      onStdoutChanged: {
+      id         : fanProfileModelFillEngine
+      commandStr : 'pkexec ' + binDir + '/kfocus-fan-set -x'
+
+      onStdoutChanged : {
         let stdout_arr = [];
 
         stdout_arr =  stdout.split( '\n' );
@@ -512,7 +607,7 @@ Kirigami.ApplicationWindow {
           stdout_arr.forEach( function ( line, index ) {
             body_msg += line;
           } );
-          fanError.text = body_msg;
+          fanInlineMsg.text = body_msg;
           return;
         }
 
@@ -530,14 +625,15 @@ Kirigami.ApplicationWindow {
         } );
 
         fanSlider.visible = true;
-        getFanProfileTimer.start();
+        readFanProfileTimer.start();
       }
     }
   }
 
   ShellEngine {
-    id: getFanProfileEngine
-    onStdoutChanged: {
+    id : readFanProfileEngine
+
+    onStdoutChanged : {
       let profile_str = '', profile_idx = 0;
 
       profile_str = stdout.split( "\n" )[0].split( ' ' )[0].trim();
@@ -553,25 +649,27 @@ Kirigami.ApplicationWindow {
   }
 
   ShellEngine {
-    id: setFanProfileEngine
-    onStdoutChanged: {
-      getFanProfileTimer.start();
+    id : setFanProfileEngine
+
+    onStdoutChanged : {
+      readFanProfileTimer.start();
     }
   }
 
   Timer {
-    id: getFanProfileTimer
-    interval: 2000
-    triggeredOnStart: true
-    repeat: true
-    onTriggered: {
-      getFanProfileEngine.exec( binDir + '/kfocus-fan-set -r' );
+    id               : readFanProfileTimer
+    interval         : 2000
+    triggeredOnStart : true
+    repeat           : true
+
+    onTriggered : {
+      readFanProfileEngine.exec( 'pkexec ' + binDir + '/kfocus-fan-set -r' );
     }
   }
 
   function getFanProfileDesc ( profile_idx ) {
     const profile_obj = fanProfilesModel.get( profile_idx );
-    return profile_obj.name + ' (' + profile_obj.description + ')';
+    return profile_obj.description
   }
 
   readonly property string binDir: '/usr/lib/kfocus/bin'

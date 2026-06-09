@@ -45,14 +45,14 @@ ColumnLayout {
 
     Controls.Button {
         text                  : 'OK'
-        Layout.preferredWidth  : Kirigami.Units.gridUnit * 8.4
+        Layout.preferredWidth : Kirigami.Units.gridUnit * 8.4
         Layout.alignment      : Qt.AlignRight
         onClicked             : {
             okClicked();
         }
 
         HoverHandler {
-            cursorShape: Qt.PointingHandCursor
+            cursorShape : Qt.PointingHandCursor
         }
     }
 }

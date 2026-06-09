@@ -34,23 +34,26 @@ _importCommonFn () {
 
 _openFanProfileFile () {
   declare _file_fd;
+  declare -n _out_file_fd;
+
+  _out_file_fd="${1}"
 
   exec {_file_fd}<>"${_fanProfileFile}";
   if [ -z "${_file_fd}" ]; then
     return 1;
   fi
   flock -x "${_file_fd}" || return 1;
-  echo "${_file_fd}";
+  _out_file_fd="${_file_fd}";
   return 0;
 }
 
 _setFanControlFn () {
-  declare _fan_control_mode _file_fd;
+  declare _fan_control_mode _write_file_fd;
   _fan_control_mode="${1:-}";
-  _file_fd="$(_openFanProfileFile)" || return 1;
+  _openFanProfileFile _write_file_fd || return 1;
 
-  echo "${_fan_control_mode}" >&"${_file_fd}";
-  flock -u "${_file_fd}";
+  echo "${_fan_control_mode}" >&"${_write_file_fd}";
+  flock -u "${_write_file_fd}";
   systemctl start  kfocus-fand || true;
   systemctl reload kfocus-fand || true;
 }
@@ -172,11 +175,11 @@ _printOptionsFn () {
 }
 
 _readModeFn () {
-  declare _fan_profile_str _opt_line _bit_list _file_fd;
+  declare _fan_profile_str _opt_line _bit_list _read_file_fd;
 
-  _file_fd="$(_openFanProfileFile)" || return 1;
-  _fan_profile_str="$(head -n1 <&"${_file_fd}")";
-  flock -u "${_file_fd}";
+  _openFanProfileFile _read_file_fd || return 1;
+  _fan_profile_str="$(head -n1 <&"${_read_file_fd}")";
+  flock -u "${_read_file_fd}";
 
   for _opt_line in "${_optionTable[@]}"; do
     IFS='|' read -r -a _bit_list <<< "${_opt_line}";

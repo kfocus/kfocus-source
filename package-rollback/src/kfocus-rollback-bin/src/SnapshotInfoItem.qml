@@ -44,7 +44,7 @@ RowLayout {
 
         RowLayout {
             Layout.fillWidth    : true
-            Layout.topMargin: Kirigami.Units.gridUnit * -0.25
+            Layout.topMargin    : Kirigami.Units.gridUnit * -0.25
             Layout.bottomMargin : Kirigami.Units.gridUnit * 0.45
 
             Kirigami.Icon {
@@ -52,10 +52,10 @@ RowLayout {
                 source           : reason === 'System Schedule'
                   ? 'clock'
                   : reason === 'Before Package Change'
-                  ? 'system-upgrade'
-                  : reason === 'Pre-Rollback'
-                  ? 'edit-undo-symbolic'
-                  : 'user'
+                    ? 'system-upgrade'
+                    : reason === 'Pre-Rollback'
+                      ? 'edit-undo-symbolic'
+                      : 'user'
             }
 
             ColumnLayout {
@@ -110,31 +110,33 @@ RowLayout {
         }
 
         Controls.TextField {
-            id                  : nameField
-            Layout.alignment    : Qt.AlignTop
-            Layout.fillWidth    : true
-            Layout.bottomMargin : Kirigami.Units.gridUnit * 0.72
+            id                   : nameField
+            Layout.alignment     : Qt.AlignTop
+            Layout.fillWidth     : true
+            Layout.bottomMargin  : Kirigami.Units.gridUnit * 0.72
 
-            text                : name
-            font.family         : 'courier'
-            maximumLength       : 40
-            readOnly            : !editing
-            color               : editing
+            text                 : name
+            font.family          : 'courier'
+            maximumLength        : 40
+            readOnly             : !editing
+            color                : editing
               ? Kirigami.Theme.textColor
               : Kirigami.Theme.disabledTextColor
-            placeholderText     : reason
+            placeholderText      : reason
 
-            onActiveFocusChanged: {
+            onActiveFocusChanged : {
                 if (activeFocus) {
                     focusedBox = this;
                 }
             }
-            background          : Rectangle {
-                id: nameFieldBackground
-                color: editing
+            background           : Rectangle {
+                id           : nameFieldBackground
+                color        : editing
                   ? Kirigami.Theme.backgroundColor
                   : Kirigami.Theme.alternateBackgroundColor
-                border.color: {
+                radius       : Kirigami.Units.gridUnit * 0.25
+                border.width : 1
+                border.color : {
                     if (editing) {
                         if (focusedBox === nameField) {
                             return Kirigami.Theme.highlightColor
@@ -142,8 +144,6 @@ RowLayout {
                     }
                     return Kirigami.Theme.activeBackgroundColor
                 }
-                border.width    : 1
-                radius          : Kirigami.Units.gridUnit * 0.25
             }
         }
 
@@ -178,7 +178,7 @@ RowLayout {
                         focusedBox = this;
                     }
                 }
-                background       : Rectangle {
+                background           : Rectangle {
                     id           : descFieldBackground
                     color        : editing
                       ? Kirigami.Theme.backgroundColor
@@ -202,7 +202,7 @@ RowLayout {
     ColumnLayout {
         Layout.leftMargin : Kirigami.Units.gridUnit * 0.67
 
-        Rectangle{
+        Rectangle {
             Layout.alignment       : Qt.AlignTop
             Layout.preferredWidth  : Kirigami.Units.gridUnit * 8.4
             Layout.bottomMargin    : Kirigami.Units.gridUnit * 0.5
@@ -230,7 +230,7 @@ RowLayout {
                 opacity : 0
 
                 HoverHandler {
-                    id: restoreDisableHover
+                    id : restoreDisableHover
                 }
 
                 Controls.ToolTip {
@@ -285,7 +285,7 @@ RowLayout {
                 opacity : 0
 
                 HoverHandler {
-                    id: deleteDisableHover
+                    id : deleteDisableHover
                 }
 
                 Controls.ToolTip {
@@ -305,14 +305,14 @@ RowLayout {
             }
 
             Controls.Switch {
-                Layout.leftMargin : Kirigami.Units.gridUnit * 0.5
-                id                : pinSwitch
-                checked           : pinned
+                Layout.leftMargin      : Kirigami.Units.gridUnit * 0.5
+                id                     : pinSwitch
+                checked                : pinned
 
                 // This doesn't make the switch taller, it makes Qt allocate
                 // it (and the containing layout) more vertical space so that
                 // toggling on the lock icon doesn't result in widget shifting
-                Layout.preferredHeight: Kirigami.Units.gridUnit * 2
+                Layout.preferredHeight : Kirigami.Units.gridUnit * 2
 
                 onClicked         : {
                     if ( !editing ) {

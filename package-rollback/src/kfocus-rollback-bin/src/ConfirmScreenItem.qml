@@ -47,7 +47,7 @@ ColumnLayout {
           : Kirigami.Theme.textColor
         text                  : acceptText
         icon.name             : acceptIcon
-        Layout.preferredWidth  : Kirigami.Units.gridUnit * 8.4
+        Layout.preferredWidth : Kirigami.Units.gridUnit * 8.4
         Layout.bottomMargin   : Kirigami.Units.gridUnit * 0.5
         Layout.alignment      : Qt.AlignRight
         enabled               : actionsEnabled
@@ -63,12 +63,12 @@ ColumnLayout {
     }
 
     Controls.Button {
-        palette.buttonText: isOk2Destructive
+        palette.buttonText : isOk2Destructive
           ? Kirigami.Theme.negativeTextColor
           : Kirigami.Theme.textColor
         text                  : accept2Text
         icon.name             : accept2Icon
-        Layout.preferredWidth  : Kirigami.Units.gridUnit * 8.4
+        Layout.preferredWidth : Kirigami.Units.gridUnit * 8.4
         Layout.bottomMargin   : Kirigami.Units.gridUnit * 0.5
         Layout.alignment      : Qt.AlignRight
         enabled               : actionsEnabled
@@ -87,7 +87,7 @@ ColumnLayout {
     Controls.Button {
         text                  : 'Cancel'
         icon.name             : 'dialog-cancel'
-        Layout.preferredWidth  : Kirigami.Units.gridUnit * 8.4
+        Layout.preferredWidth : Kirigami.Units.gridUnit * 8.4
         Layout.alignment      : Qt.AlignRight
         enabled               : actionsEnabled
         onClicked             : {

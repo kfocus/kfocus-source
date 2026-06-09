@@ -41,7 +41,7 @@
 #define FAN_CONFIG_PATH       "/var/lib/kfocus/fan_state"
 #define FAN_PROFILE_COUNT     4
 #define MAX_FAN_COUNT         3
-#define POLL_WAIT_MS          1500
+#define POLL_WAIT_MS          1000
 #define WATCHDOG_INTERVAL_SEC 3
 
 /* ioctl macros taken from kfocus-keyboard/src/tuxedo_io/tuxedo_io_ioctl.h */
@@ -163,7 +163,7 @@ static void write_text_file(const char *cont_dir, const char *path,
     }
   }
 
-  target_file = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0755);
+  target_file = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
   if (target_file == -1) {
     warn("Could not open file |%s| for writing", path);
     return;
@@ -464,6 +464,7 @@ void handle_signal(void) {
   case SIGWINCH:
   case SIGTTIN:
   case SIGTTOU:
+  case SIGCONT: /* systemd sends us this during a reload */
     /* ignore */
     return;
   }
