@@ -8,9 +8,9 @@ Kirigami.ApplicationWindow {
   id            : root
   title         : 'Power and Fan'
   width         : Kirigami.Units.gridUnit * 35
-  height        : Kirigami.Units.gridUnit * 40
+  height        : Kirigami.Units.gridUnit * 36
   minimumWidth  : Kirigami.Units.gridUnit * 35
-  minimumHeight : Kirigami.Units.gridUnit * 40
+  minimumHeight : Kirigami.Units.gridUnit * 36
 
   pageStack.initialPage: Kirigami.Page {
     title: 'Power and Fan'
@@ -310,7 +310,6 @@ Kirigami.ApplicationWindow {
           readFanProfileEngine.ignoreResult();
           setFanProfileEngine.exec( 'pkexec ' + binDir + '/kfocus-fan-set '
             + fanProfilesModel.profileNames[value] );
-          fanDescription.text = getFanProfileDesc( value );
         }
       }
 
@@ -326,7 +325,7 @@ Kirigami.ApplicationWindow {
 
           Item {
             height : childrenRect.height
-            width  : coreLayout.width / 3
+            Layout.fillWidth: true
 
             Item {
               height : childrenRect.height
@@ -360,11 +359,11 @@ Kirigami.ApplicationWindow {
               }
 
               Image {
-                id        : fanProfileRightImage
-                visible   : index === fanProfilesModel.count - 1
-                source    : 'images/kfocus-fand-loud.svg'
-                height    : fanProfileLabel.height
-                fillModei : Image.PreserveAspectFit
+                id       : fanProfileRightImage
+                visible  : index === fanProfilesModel.count - 1
+                source   : 'images/kfocus-fand-loud.svg'
+                height   : fanProfileLabel.height
+                fillMode : Image.PreserveAspectFit
 
                 anchors.left       : fanProfileLabel.right
                 anchors.leftMargin : Kirigami.Units.gridUnit / 4
@@ -372,16 +371,6 @@ Kirigami.ApplicationWindow {
             }
           }
         }
-      }
-
-      Controls.Label {
-        id                  : fanDescription
-        visible             : fanSlider.visible
-        text                : ''
-        horizontalAlignment : Text.AlignHCenter
-
-        Layout.fillWidth    : true
-        Layout.bottomMargin : Kirigami.Units.smallSpacing
       }
     }
 
@@ -639,11 +628,8 @@ Kirigami.ApplicationWindow {
       profile_str = stdout.split( "\n" )[0].split( ' ' )[0].trim();
       profile_idx = fanProfilesModel.profileNames.indexOf(profile_str);
 
-      if ( profile_idx === -1 ) {
-        fanDescription.text = 'Unknown';
-      } else {
+      if ( profile_idx !== -1 ) {
         fanSlider.value = profile_idx;
-        fanDescription.text = getFanProfileDesc( profile_idx );
       }
     }
   }
@@ -665,11 +651,6 @@ Kirigami.ApplicationWindow {
     onTriggered : {
       readFanProfileEngine.exec( 'pkexec ' + binDir + '/kfocus-fan-set -r' );
     }
-  }
-
-  function getFanProfileDesc ( profile_idx ) {
-    const profile_obj = fanProfilesModel.get( profile_idx );
-    return profile_obj.description
   }
 
   readonly property string binDir: '/usr/lib/kfocus/bin'
