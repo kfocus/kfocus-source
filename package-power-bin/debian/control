@@ -2,7 +2,17 @@ Source:              kfocus-power-bin
 Section:             admin
 Maintainer:          Kubuntu Focus Team <support@kfocus.org>
 Standards-Version:   4.7.3
-Build-Depends:       debhelper-compat (=13)
+Build-Depends:       cmake,
+                     debhelper-compat (=13),
+                     extra-cmake-modules,
+                     libkirigami-dev,
+                     libkf6i18n-dev,
+                     libkf6coreaddons-dev,
+                     libkf6iconthemes-dev,
+                     qt6-base-dev,
+                     qt6-declarative-dev,
+                     libkf6qqc2desktopstyle-dev
+
 
 Package:      kfocus-power-bin
 Architecture: amd64
