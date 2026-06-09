@@ -185,14 +185,21 @@ function addInputPanelFn ( arg_panel_obj ) {
 //== BEGIN addExtraIconsFn {
 function addExtraIconsFn ( arg_panel_obj ) {
   // Add only if installed
-  if (applicationExists( 'org.kfocus.rollback' ) ) {
+  if ( applicationExists( 'org.kfocus.power' ) ) {
+    const power_obj = arg_panel_obj.addWidget( 'org.kde.plasma.icon' );
+    power_obj.writeConfig( 'localPath', '/usr/share/applications/org.kfocus.power.desktop' );
+    power_obj.currentConfigGroup = [ 'General' ];
+    power_obj.writeConfig( 'url', 'file:///usr/share/applications/org.kfocus.power.desktop' );
+  }
+  // Add only if installed
+  if ( applicationExists( 'org.kfocus.rollback' ) ) {
     const rollback_obj = arg_panel_obj.addWidget( 'org.kde.plasma.icon' );
     rollback_obj.writeConfig( 'localPath', '/usr/share/applications/org.kfocus.rollback.desktop' );
     rollback_obj.currentConfigGroup = [ 'General' ];
     rollback_obj.writeConfig( 'url', 'file:///usr/share/applications/org.kfocus.rollback.desktop' );
   }
   // Add only if installed
-  if (applicationExists( 'backintime-qt' ) ) {
+  if ( applicationExists( 'backintime-qt' ) ) {
     const backup_obj = arg_panel_obj.addWidget( 'org.kde.plasma.icon' );
     // Write this config with out setting a group to match
     //   qdbus6 org.kde.plasmashell /PlasmaShell \
