@@ -320,6 +320,50 @@ Kirigami.ApplicationWindow {
 
         Layout.fillWidth : true
 
+        Image {
+          id       : fanProfileQuietImage
+          source   : 'images/kfocus-fand-quiet.svg'
+          fillMode : Image.PreserveAspectFit
+
+          Layout.rightMargin     : Kirigami.Units.gridUnit / 4
+          Layout.preferredHeight : fanProfileQuietLabel.height
+          Layout.preferredWidth  : fanProfileQuietLabel.height
+        }
+
+        Controls.Label {
+          id   : fanProfileQuietLabel
+          text : 'Quiet'
+        }
+
+        Item {
+          Layout.fillWidth : true
+        }
+
+        Controls.Label {
+          id   : fanProfileMaxLabel
+          text : 'Max'
+        }
+
+        Image {
+          id       : fanProfileMaxImage
+          source   : 'images/kfocus-fand-loud.svg'
+          fillMode : Image.PreserveAspectFit
+
+          Layout.leftMargin      : Kirigami.Units.gridUnit / 4
+          Layout.preferredHeight : fanProfileMaxLabel.height
+          Layout.preferredWidth  : fanProfileMaxLabel.height
+        }
+      }
+
+      /* This used to dynamically place labels underneath each fan slider
+       * tick, but was disabled due to layout bugs.
+      RowLayout {
+        id      : fanLabelLayout
+        visible : fanSlider.visible
+        spacing : 0
+
+        Layout.fillWidth : true
+
         Repeater {
           model : fanProfilesModel
 
@@ -372,6 +416,7 @@ Kirigami.ApplicationWindow {
           }
         }
       }
+      */
     }
 
     ListModel {
@@ -613,9 +658,25 @@ Kirigami.ApplicationWindow {
           fanProfilesModel.profileNames.push(name);
         } );
 
+        checkKfocusFandEngine.exec('systemctl is-active kfocus-fand');
+      }
+    }
+  }
+
+  ShellEngine {
+    id : checkKfocusFandEngine
+
+    onStdoutChanged : {
+        let trimmed_stdout = stdout.trim();
+        if ( trimmed_stdout !== 'active' ) {
+          fanInlineMsg.text = '<b>kfocus-fand is not running</b>. Check the '
+            + 'logs by running <b>sudo journalctl --boot -u '
+            + 'kfocus-fand.service</b> to find out why.';
+          return;
+        }
+
         fanSlider.visible = true;
         readFanProfileTimer.start();
-      }
     }
   }
 

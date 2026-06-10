@@ -18,8 +18,8 @@ _mainFn () {
   _action_str='';
 
   case "${_action_key}" in
-    'pre')  _action_str='org.kde.kded5.unloadModule';;
-    'post') _action_str='org.kde.kded5.loadModule';;
+    'pre')  _action_str='org.kde.kded6.unloadModule';;
+    'post') _action_str='org.kde.kded6.loadModule';;
     *) echo "Unsupported action: ${_action_key}"; return;;
   esac
 
@@ -33,7 +33,8 @@ _mainFn () {
     if 1>/dev/null sudo -u "${_uname}" \
       DISPLAY="${_xserver_id}" \
       DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${_uid}/bus" \
-      qdbus org.kde.kded5 /kded "${_action_str}" 'kscreen';
+      dbus-send --print-reply --session --dest=org.kde.kded6 /kded \
+        "${_action_str}" 'kscreen';
     then
       echo "pass: ${_action_key} for |${_uname}|${_xserver_id}|";
     else

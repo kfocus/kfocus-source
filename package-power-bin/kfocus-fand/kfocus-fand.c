@@ -228,6 +228,8 @@ static void parse_fan_profile_db(void) {
   ssize_t       header_idx              = -1;
   int16_t       last_temperature_val    = -1;
   bool          valid_header_found      = false;
+  bool          fanauto_marker_found    = false;
+  bool          speed_config_found      = false;
   unsigned long current_temperature_val = 0;
   char         *speed_str_list[MAX_FAN_COUNT];
   uint8_t       last_speed_val_list[MAX_FAN_COUNT];
@@ -268,6 +270,8 @@ static void parse_fan_profile_db(void) {
         temperature_str             = NULL;
         last_temperature_val        = -1;
         current_temperature_val     = 0;
+        fanauto_marker_found        = false;
+        speed_config_found          = false;
         memset(speed_str_list,         0, MAX_FAN_COUNT * sizeof(char *));
         memset(last_speed_val_list,    0, MAX_FAN_COUNT * sizeof(uint8_t));
         memset(current_speed_val_list, 0, MAX_FAN_COUNT * sizeof(
@@ -286,9 +290,24 @@ static void parse_fan_profile_db(void) {
       continue;
     }
 
+    if (strcmp(file_line, "FANAUTO") == 0) {
+      if (speed_config_found) {
+        errx(1, "FANAUTO line found after profile speed config\n");
+      }
+      fanauto_marker_found = true;
+      fan_profile_present_list[header_idx] = false;
+      continue;
+    }
+
+    if (fanauto_marker_found) {
+      errx(1, "Profile speed config found after a FANAUTO line\n");
+    }
+
     if (header_idx == -1) {
       errx(1, "Non header line |%s| found before any header\n", file_line);
     }
+
+    speed_config_found = true;
 
     for (size_t i = 0; i < MAX_FAN_COUNT + 1; i++) {
       char *bit_str = strsep(&file_line, ":");
@@ -399,7 +418,7 @@ static void determine_active_fan_profile(void) {
   }
 
   if (fan_profile_idx == -1) {
-    errx(1, "File |%s| contained invalid profile name |%s|", FAN_CONFIG_PATH, line_one);
+    errx(1, "File |%s| contained invalid profile name |%s|\n", FAN_CONFIG_PATH, line_one);
   }
   free(orig_profile_ptr);
 }

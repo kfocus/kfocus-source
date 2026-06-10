@@ -350,7 +350,8 @@ _EOH03
       _cm2SetMsgFn 'Warn user if using iGPU when dGPU requested';
       if [ "${_doGui}" = 'y' ]; then
         if "${_cm2KdiagExe}" --warningyesno "${_ask_reboot_msg}"; then
-          "${_qdbusExe}" org.kde.Shutdown /Shutdown logoutAndReboot;
+          "${_cm2DbusSendExe}" --print-reply --session \
+            --dest=org.kde.Shutdown /Shutdown org.kde.Shutdown.logoutAndReboot
         fi
       fi
       _cm2SucFn;
@@ -405,7 +406,7 @@ _EOH03
 ## BEGIN Declare and set global vars {
 declare _binName _binDir _baseName  _userName _doGui _lockFile \
   _disabledNvDropFile _assignExeList _kbdColorSetExe _lspciExe \
-  _powerSetExe _primeExe _profilesCtlExe _pstateSetExe _qdbusExe \
+  _powerSetExe _primeExe _profilesCtlExe _pstateSetExe \
   _upowerExe _escExe;
 
 # Sync this with the kfocus-pstate-set value
@@ -433,7 +434,6 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     "_lspciExe|lspci"
     "_powerSetExe|${_binDir}/kfocus-power-set"
     "_pstateSetExe|${_binDir}/kfocus-pstate-set"
-    "_qdbusExe|qdbus"
     "_upowerExe|upower"
 
     "_kbdColorSetExe|${_binDir}/kfocus-kb-color-set||optional"
