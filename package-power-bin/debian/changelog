@@ -1,3 +1,14 @@
+kfocus-power-bin (26.04.1~alpha7) resolute; urgency=medium
+
+  * kfocus-fand: Add support for "FANAUTO" config lines (#6593)
+  * kfocus-fan-set: Add "max" fan profile (#6593)
+  * kfocus-pstate: Port to using dbus-send instead of qdbus (#6593)
+  * kfocus-power-bin: Remove unnecessary labels underneath fan slider (#6593)
+  * kfocus-power-bin: Add an error message in place of the fan slider if fan
+    profiles should be supported but kfocus-fand is not running (#6593)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 10 Jun 2026 22:43:05 -0500
+
 kfocus-power-bin (26.04.1~alpha6) resolute; urgency=medium
 
   * kfocus-power-bin.install: Fix desktop file name (#6593)
