@@ -248,7 +248,8 @@ _installEnvFn () {
   fi
 
   # Test Conda version from ${HOME}/anaconda3
-  if _cm2TestVersFn 25.11.1 "${_conda_installed_vers}"; then
+  if [ -n "${_conda_installed_vers}" ] \
+    && _cm2TestVersFn 25.11.1 "${_conda_installed_vers}"; then
     _cm2EchoFn;
     _cm2EchoFn "Conda can be upgraded from version |${_conda_installed_vers}|";
     _cm2EchoFn 'to version |25.11.1|. If you decide to upgrade, your original';
@@ -364,6 +365,12 @@ _installEnvFn () {
 
   if [ "${_is_new_conda}" = '1' ]; then
     _cm2EchoFn 'Update conda (press return ONCE)';
+
+    # User agreed to the Anaconda license agreement to run this script,
+    # communicate this to conda
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
+
     _str="$(conda update -n base -c defaults conda)" || _exitFn;
     _cm2EchoFn "${_str:=success}";
   fi
@@ -425,9 +432,10 @@ _installEnvFn () {
   #   install special support for this gpu.
   # Per https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/16884
     _cm2EchoFn "Installing Pytorch for ${_nvSeriesStr}-series GPU";
-    pip install --pre torch torchvision torchaudio \
-      --index-url https://download.pytorch.org/whl/nightly/cu128 || _exitFn;
-    pip install gpu-benchmark                    || _exitFn;
+    pip install torch torchvision torchaudio || _exitFn;
+    # gpu-benchmark is broken, see:
+    # https://github.com/United-Compute/gpu-benchmark/issues/5
+    # pip install gpu-benchmark                || _exitFn;
 
     set -u;
     _cm2SucFn;
@@ -525,34 +533,35 @@ EOF
     _cm2SucFn;
   fi
 
-  if _chkCondaEnvFn 'pytorch'; then
-    _reply_str="$(_cm2ReadPromptYnFn \
-      "Benchmark PyTorch (takes about 12m + model download time)" 'n'
-    )";
-    if [ "${_reply_str}" = 'y' ]; then
-      _cm2SetMsgFn 'Benchmark PyTorch';
-      set +u;
-      conda activate pytorch || _exitFn;
-      set -u;
-      _cm2EchoFn 'Benchmarking Stable Diffusion 1.5...';
-      gpu-benchmark --model=stable-diffusion-1-5;
-      _cm2EchoFn 'Stable diffusion benchmark result link shown above. Copy';
-      _cm2EchoFn 'the URL into a browser, click "Stable Diffusion 1.5", and';
-      _cm2EchoFn 'find the table row matching your ID to see results.';
-      _cm2EchoFn 'Press Enter to continue.';
-      read -r;
-      _cm2EchoFn 'Benchmarking Qwen 3 6B...';
-      gpu-benchmark --model=qwen3-0-6b;
-      _cm2EchoFn 'Qwen benchmark result link shown above. Copy the URL into';
-      _cm2EchoFn 'a browser, click "Qwen 3-0-6b", and find the table row';
-      _cm2EchoFn 'matching your ID to see results.';
-      _cm2EchoFn 'Press Enter to continue.';
-      read -r;
-      set +u;
-      conda deactivate
-      set -u;
-    fi
-  fi
+  ## TODO: Restore if gpu-benchmark is restored to working order
+  # if _chkCondaEnvFn 'pytorch'; then
+  #   _reply_str="$(_cm2ReadPromptYnFn \
+  #     "Benchmark PyTorch (takes about 12m + model download time)" 'n'
+  #   )";
+  #   if [ "${_reply_str}" = 'y' ]; then
+  #     _cm2SetMsgFn 'Benchmark PyTorch';
+  #     set +u;
+  #     conda activate pytorch || _exitFn;
+  #     set -u;
+  #     _cm2EchoFn 'Benchmarking Stable Diffusion 1.5...';
+  #     gpu-benchmark --model=stable-diffusion-1-5;
+  #     _cm2EchoFn 'Stable diffusion benchmark result link shown above. Copy';
+  #     _cm2EchoFn 'the URL into a browser, click "Stable Diffusion 1.5", and';
+  #     _cm2EchoFn 'find the table row matching your ID to see results.';
+  #     _cm2EchoFn 'Press Enter to continue.';
+  #     read -r;
+  #     _cm2EchoFn 'Benchmarking Qwen 3 6B...';
+  #     gpu-benchmark --model=qwen3-0-6b;
+  #     _cm2EchoFn 'Qwen benchmark result link shown above. Copy the URL into';
+  #     _cm2EchoFn 'a browser, click "Qwen 3-0-6b", and find the table row';
+  #     _cm2EchoFn 'matching your ID to see results.';
+  #     _cm2EchoFn 'Press Enter to continue.';
+  #     read -r;
+  #     set +u;
+  #     conda deactivate
+  #     set -u;
+  #   fi
+  # fi
 
   ## TODO: Use code /like/ this to invoke GPU Benchmark with Pytorch
   # if _chkCondaEnvFn 'tensorflow'; then
