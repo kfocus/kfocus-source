@@ -21,31 +21,34 @@ _cm2WarnStrFn () { _cm2EchoFn "warn: ${*}"; }
 
 ## BEGIN _installReposFn {
 _installReposFn () {
-  declare _repo_dir _pref_dir _kfocus_dir _nodejs_pin_file _nsolid_pin_file \
+  declare _repo_dir _pref_dir _kfocus_dir \
     _ppa_table _line _bit_list _bit_file _bit_min_date _bit_ppa_str \
     _bit_ppa_name _fq_bit_file _file_mtime _file_mdate _src_dir _top_msg;
+    # _nodejs_pin_file _nsolid_pin_file
 
   _repo_dir='/etc/apt/sources.list.d';
   _pref_dir='/etc/apt/preferences.d';
   _kfocus_dir='/usr/lib/kfocus';
 
   # Add nodejs 24.x pins only once; these are set up by the script
-  _nodejs_pin_file="${_pref_dir}/nodejs";
-  if [ ! -e "${_nodejs_pin_file}" ]; then
-    echo '# Provided by nodejs script:
-# curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
-Package: nodejs
-Pin: origin deb.nodesource.com
-Pin-Priority: 600' > "${_nodejs_pin_file}" || true;
-  fi
-  _nsolid_pin_file="${_pref_dir}/nsolid";
-  if [ ! -e "${_nsolid_pin_file}" ]; then
-    echo '# Provided by nodejs script:
-# curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
-Package: nsolid
-Pin: origin deb.nodesource.com
-Pin-Priority: 600' > "${_nsolid_pin_file}" || true;
-  fi
+  # Disabled, as we are no longer using NodeJS from NodeSource for the time
+  # being.
+  # _nodejs_pin_file="${_pref_dir}/nodejs";
+  # if [ ! -e "${_nodejs_pin_file}" ]; then
+  #   echo '# Provided by nodejs script:
+# # curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
+# Package: nodejs
+# Pin: origin deb.nodesource.com
+# Pin-Priority: 600' > "${_nodejs_pin_file}" || true;
+  # fi
+  # _nsolid_pin_file="${_pref_dir}/nsolid";
+  # if [ ! -e "${_nsolid_pin_file}" ]; then
+  #   echo '# Provided by nodejs script:
+# # curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
+# Package: nsolid
+# Pin: origin deb.nodesource.com
+# Pin-Priority: 600' > "${_nsolid_pin_file}" || true;
+  # fi
 
   ##
   _cm2SetMsgFn 'Create or overwrite repo list files';
