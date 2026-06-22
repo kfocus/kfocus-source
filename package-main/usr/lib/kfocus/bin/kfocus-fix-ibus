@@ -144,6 +144,9 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   _importCommonFn;
 
+  ## TODO 2026-06-23: Consider using _cm2AssignExeVarsFn instead of manual
+  ## executable finding
+
   _dconfExe="$(      command -v dconf      )";
   _dpkgQueryExe="$(  command -v dpkg-query )";
 

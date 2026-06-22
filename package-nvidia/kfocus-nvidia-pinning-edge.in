@@ -125,6 +125,9 @@ Pin-Priority: -1
 # == CUDA Nvidia Packages =============================================
 # Pin cuda-drivers to use version 595.71.*, fallback to versions
 #   595.58 and 590.48.
+#
+# CUDA packages come from NVIDIA repos at developer.download.nvidia.com, which
+# are enabled by kfocus-apt-source.
 
 # 1st: CUDA nvidia packages, version 595.71.*
 # Note: Although specified, nvidia  developer.download.nvidia.com repo

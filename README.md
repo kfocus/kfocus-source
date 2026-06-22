@@ -40,7 +40,6 @@ All these are source packages. Many create multiple binary packages.
 | firstrun-bin         |
 | hw                   |
 | installer-prompt     |
-| jetbrains-toolbox    |
 | linux-meta           |
 | main                 |
 | nvidia               |

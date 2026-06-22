@@ -214,9 +214,8 @@ _installNvidiaFn () {
   _config_code="${1:-}";
   _nv_series_str="${2:-}";
 
-
   _nv_pkg_suffix='';
-  ## No edge drivers in 26.04 yet
+  ## TODO 2026-05-08: No edge drivers in 26.04 yet
   # if [ "${_config_code}" = 'm2g6' ]; then
   #   _nv_pkg_suffix='-edge';
   # elif [ "${_nv_series_str}" = 'rtx50' ]; then
@@ -627,6 +626,7 @@ _mainFn () {
     _cm2EchoFn "${_msg}";
 
     _do_pkg_warn='n';
+    # See /usr/share/wajig/commands.py for source commands
     _cm2EchoFn 'Fix an interrupted install';
     # wajig fix-configure || _doWarn='y';
     /usr/bin/dpkg --configure --pending || _do_pkg_warn='y';

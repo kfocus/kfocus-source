@@ -827,8 +827,8 @@ _chooseSnapshotFn () {
       "${_snapshot_disp_list[_snapshot_idx]}" 'off' );
   done
 
-  _answer="$(_cm2PromptUserFn "${_choose_msg}" "${_winTitle}" 'd' \
-    "${_radio_list[@]}")";
+  _answer="$(_cm2PromptUserFn -i "${_iconStr}" "${_choose_msg}" \
+    "${_winTitle}" 'd' "${_radio_list[@]}")";
 
   if [ -z "${_answer}" ]; then
     return;
@@ -869,15 +869,18 @@ _handleOperationExitIntFn () {
         systemctl reboot -i;
       elif [ "${_exit_int}" = '1' ]; then
         _restoreFailedMsg="${_restoreFailedMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
-        _cm2PromptUserFn "${_restoreFailedMsg}" "${_winTitle}" 's';
+        _cm2PromptUserFn -i "${_iconStr}" "${_restoreFailedMsg}" \
+          "${_winTitle}" 's';
         exit 1
       # 127 = auth failure, this is what pkexec spits out if you click 'Cancel' on
       # the auth window or provide a wrong password too many times.
       elif [ "${_exit_int}" = '127' ]; then
-        _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
+        _cm2PromptUserFn -i "${_iconStr}" "${_operationCancelledMsg}" \
+          "${_winTitle}";
         exit 0;
       else
-        _cm2PromptUserFn "${_criticalErrorMsg}" "${_winTitle}" 'e';
+        _cm2PromptUserFn -i "${_iconStr}" "${_criticalErrorMsg}" \
+          "${_winTitle}" 'e';
         exit "${_exit_int}";
       fi
       ;;
@@ -889,16 +892,20 @@ _handleOperationExitIntFn () {
           _rollbackSetFn 'makeSnapshotDispId' "${_snapshot_id}"
         )";
         _snapshotCreatedMsg="${_snapshotCreatedMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
-        _cm2PromptUserFn "${_snapshotCreatedMsg}" "${_winTitle}";
+        _cm2PromptUserFn -i "${_iconStr}" "${_snapshotCreatedMsg}" \
+          "${_winTitle}";
       elif [ "${_exit_int}" = '1' ]; then
-        _cm2PromptUserFn "${_creationFailedMsg}" "${_winTitle}" 's';
+        _cm2PromptUserFn -i "${_iconStr}" "${_creationFailedMsg}" \
+          "${_winTitle}" 's';
         exit 1;
       # 127 = auth failure, see note above.
       elif [ "${_exit_int}" = '127' ]; then
-        _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
+        _cm2PromptUserFn -i "${_iconStr}" "${_operationCancelledMsg}" \
+          "${_winTitle}";
         exit 0;
       else
-        _cm2PromptUserFn "${_criticalErrorMsg}" "${_winTitle}" 'e';
+        _cm2PromptUserFn -i "${_iconStr}" "${_criticalErrorMsg}" \
+          "${_winTitle}" 'e';
         exit "${_exit_int}";
       fi
       ;;
@@ -910,18 +917,22 @@ _handleOperationExitIntFn () {
 
       if [ "${_exit_int}" = '0' ]; then
         _snapshotDeletedMsg="${_snapshotDeletedMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
-        _cm2PromptUserFn "${_snapshotDeletedMsg}" "${_winTitle}";
+        _cm2PromptUserFn -i "${_iconStr}" "${_snapshotDeletedMsg}" \
+          "${_winTitle}";
         exit 0;
       elif [ "${_exit_int}" = '1' ]; then
         _deletionFailedMsg="${_deletionFailedMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
-        _cm2PromptUserFn "${_deletionFailedMsg}" "${_winTitle}";
+        _cm2PromptUserFn -i "${_iconStr}" "${_deletionFailedMsg}" \
+          "${_winTitle}";
         exit 1;
       # 127 = auth failure, see note above.
       elif [ "${_exit_int}" = '127' ]; then
-        _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
+        _cm2PromptUserFn -i "${_iconStr}" "${_operationCancelledMsg}" \
+          "${_winTitle}";
         exit 0;
       else
-        _cm2PromptUserFn "${_criticalErrorMsg}" "${_winTitle}" 'e';
+        _cm2PromptUserFn -i "${_iconStr}" "${_criticalErrorMsg}" \
+          "${_winTitle}" 'e';
         exit "${_exit_int}";
       fi
       ;;
@@ -938,18 +949,22 @@ _handleOperationExitIntFn () {
       if [ "${_exit_int}" = '0' ]; then
         _pinSwitchSuccessfulMsg="${_pinSwitchSuccessfulMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
         _pinSwitchSuccessfulMsg="${_pinSwitchSuccessfulMsg//XXX_PIN_STATUS_XXX/${_state_str}}";
-        _cm2PromptUserFn "${_pinSwitchSuccessfulMsg}" "${_winTitle}";
+        _cm2PromptUserFn -i "${_iconStr}" "${_pinSwitchSuccessfulMsg}" \
+          "${_winTitle}";
         exit 0;
       elif [ "${_exit_int}" = '1' ]; then
         _pinSwitchFailedMsg="${_pinSwitchFailedMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
-        _cm2PromptUserFn "${_pinSwitchFailedMsg}" "${_winTitle}";
+        _cm2PromptUserFn -i "${_iconStr}" "${_pinSwitchFailedMsg}" \
+          "${_winTitle}";
         exit 1;
       # 127 = auth failure, see note above.
       elif [ "${_exit_int}" = '127' ]; then
-        _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
+        _cm2PromptUserFn -i "${_iconStr}" "${_operationCancelledMsg}" \
+          "${_winTitle}";
         exit 0;
       else
-        _cm2PromptUserFn "${_criticalErrorMsg}" "${_winTitle}" 'e';
+        _cm2PromptUserFn -i "${_iconStr}" "${_criticalErrorMsg}" \
+          "${_winTitle}" 'e';
         exit "${_exit_int}";
       fi
       ;;
@@ -961,30 +976,36 @@ _handleOperationExitIntFn () {
 
       if [ "${_exit_int}" = '0' ]; then
         _editSuccessfulMsg="${_editSuccessfulMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
-        _cm2PromptUserFn "${_editSuccessfulMsg}" "${_winTitle}";
+        _cm2PromptUserFn -i "${_iconStr}" "${_editSuccessfulMsg}" \
+          "${_winTitle}";
         exit 0;
       elif [ "${_exit_int}" = '1' ]; then
         _editFailedMsg="${_editFailedMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
-        _cm2PromptUserFn "${_editFailedMsg}" "${_winTitle}";
+        _cm2PromptUserFn -i "${_iconStr}" "${_editFailedMsg}" "${_winTitle}";
         exit 1;
       # 127 = auth failure, see note above.
       elif [ "${_exit_int}" = '127' ]; then
-        _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
+        _cm2PromptUserFn -i "${_iconStr}" "${_operationCancelledMsg}" \
+          "${_winTitle}";
         exit 0;
       else
-        _cm2PromptUserFn "${_criticalErrorMsg}" "${_winTitle}" 'e';
+        _cm2PromptUserFn -i "${_iconStr}" "${_criticalErrorMsg}" \
+          "${_winTitle}" 'e';
         exit "${_exit_int}";
       fi
       ;;
     'optimize')
       if [ "${_exit_int}" = '0' ]; then
-        _cm2PromptUserFn "${_optimizeSuccessfulMsg}" "${_winTitle}";
+        _cm2PromptUserFn -i "${_iconStr}" "${_optimizeSuccessfulMsg}" \
+          "${_winTitle}";
         exit 0;
       elif [ "${_exit_int}" = '127' ]; then
-        _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
+        _cm2PromptUserFn -i "${_iconStr}" "${_operationCancelledMsg}" \
+          "${_winTitle}";
         exit 0;
       else
-        _cm2PromptUserFn "${_optimizeFailedMsg}" "${_winTitle}" 'e';
+        _cm2PromptUserFn -i "${_iconStr}" "${_optimizeFailedMsg}" \
+          "${_winTitle}" 'e';
         exit "${_exit_int}";
       fi
       ;;
@@ -1055,7 +1076,7 @@ _mainFn () {
     _pin_status_str _pin_other_status_str _new_is_pinned _optimize_mode_str;
 
   _checkSetFlockFn || {
-    _cm2PromptUserFn "${_alreadyOpenMsg}" "${_winTitle}";
+    _cm2PromptUserFn -i "${_iconStr}" "${_alreadyOpenMsg}" "${_winTitle}";
     exit;
   }
 
@@ -1081,25 +1102,29 @@ _mainFn () {
   elif [ "${_btrfs_status_str}" = 'SUPPORTED, MANUAL' ]; then
     _state_msg='MANUAL mode is ON.';
   else
-    _cm2PromptUserFn "${_systemUnsupportedMsg}" "${_winTitle}";
+    _cm2PromptUserFn -i "${_iconStr}" "${_systemUnsupportedMsg}" \
+      "${_winTitle}";
     exit 0;
   fi
 
   # Ensure post-restore subvols are not mounted
   if mount   | grep 'btrfs' | grep -q '@kfocus-rollback-working' \
     || mount | grep 'btrfs' | grep -q '@kfocus-rollback-working-boot'; then
-    _cm2PromptUserFn "${_restoreIncompleteMsg}" "${_winTitle}" 's';
+    _cm2PromptUserFn -i "${_iconStr}" "${_restoreIncompleteMsg}" \
+      "${_winTitle}" 's';
     exit 0;
   fi
 
   # Ensure post-restore subvol locations are not in use
   if [ -e "${_rb2MainWorkingDir}" ]; then
     _strangeSubvolsMsg="${_strangeSubvolsMsg//XXX_SUBVOL_NAME_XXX/${_rb2MainWorkingDir}}";
-    _cm2PromptUserFn "${_strangeSubvolsMsg}" "${_winTitle}" 's';
+    _cm2PromptUserFn -i "${_iconStr}" "${_strangeSubvolsMsg}" \
+      "${_winTitle}" 's';
     exit 1;
   elif [ -e "${_rb2BootWorkingDir}" ]; then
     _strangeSubvolsMsg="${_strangeSubvolsMsg//XXX_SUBVOL_NAME_XXX/${_rb2BootWorkingDir}}";
-    _cm2PromptUserFn "${_strangeSubvolsMsg}" "${_winTitle}" 's';
+    _cm2PromptUserFn -i "${_iconStr}" "${_strangeSubvolsMsg}" \
+      "${_winTitle}" 's';
     exit 1;
   fi
 
@@ -1122,11 +1147,12 @@ _mainFn () {
       _restored_snapshot_disp_id="${_restored_snapshot_name} — ${_restored_snapshot_date}"
     fi
     _rollbackSuccessfulMsg="${_rollbackSuccessfulMsg//XXX_SNAPSHOT_NAME_XXX/${_restored_snapshot_disp_id}}";
-    if [ "$(_cm2PromptUserFn "${_rollbackSuccessfulMsg}" \
+    if [ "$(_cm2PromptUserFn -i "${_iconStr}" "${_rollbackSuccessfulMsg}" \
       "FocusRx: System Rollback" 'm')" = 'n' ]; then
       _snapshot_dir="/btrfs_main/@kfocus-rollback-snapshots/${_snapshot_id}";
       _rollbackMoreInfoMsg="${_rollbackMoreInfoMsg//XXX_SNAPSHOT_DIR_XXX/${_snapshot_dir}}";
-      _cm2PromptUserFn "${_rollbackMoreInfoMsg}" "${_winTitle}";
+      _cm2PromptUserFn -i "${_iconStr}" "${_rollbackMoreInfoMsg}" \
+        "${_winTitle}";
     fi
     exit 0;
   fi
@@ -1135,8 +1161,8 @@ _mainFn () {
   ## All code below this line is for the Whiptail UI.
   # Create main menu selector
   _mode_str="$(
-    _cm2PromptUserFn "${_chooseModeMsg/XXX_STATE_MSG_XXX/${_state_msg}}" \
-    "${_winTitle}" 'd' \
+    _cm2PromptUserFn -i "${_iconStr}" \
+    "${_chooseModeMsg/XXX_STATE_MSG_XXX/${_state_msg}}" "${_winTitle}" 'd' \
     'create' 'CREATE Snapshot' 'on' \
     'restore' 'RESTORE Snapshot' 'off' \
     'delete' 'DELETE Snapshot' 'off' \
@@ -1156,22 +1182,24 @@ _mainFn () {
       _boot_unalloc="$(_rollbackSetFn 'getBootUnallocSpace')";
       _boot_min_unalloc="$(_rollbackSetFn 'getBootMinUnalloc')";
       if (( _main_unalloc <= _main_min_unalloc )); then
-        _cm2PromptUserFn "${_lowDiskMsg}" "${_winTitle}" 's';
+        _cm2PromptUserFn -i "${_iconStr}" "${_lowDiskMsg}" "${_winTitle}" 's';
         exit 1;
       elif (( _boot_unalloc <= _boot_min_unalloc )); then
-        _cm2PromptUserFn "${_lowBootMsg}" "${_winTitle}" 's';
+        _cm2PromptUserFn -i "${_iconStr}" "${_lowBootMsg}" "${_winTitle}" 's';
         exit 1;
       fi
 
       _reply_str="$(
-        _cm2PromptUserFn "${_createSnapshotMsg}" "${_winTitle}" 'a'
+        _cm2PromptUserFn -i "${_iconStr}" "${_createSnapshotMsg}" \
+          "${_winTitle}" 'a'
       )";
 
       if [  "${_reply_str}" = 'y' ]; then
         _rollbackBackendFn 'systemSnapshot' "${_userName}";
         _handleOperationExitIntFn 'create' "$?";
       else
-        _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
+        _cm2PromptUserFn -i "${_iconStr}" "${_operationCancelledMsg}" \
+          "${_winTitle}";
         exit 0;
       fi
       ;;
@@ -1181,15 +1209,16 @@ _mainFn () {
       _boot_unalloc="$(_rollbackSetFn 'getBootUnallocSpace')";
       _boot_min_unalloc="$(_rollbackSetFn 'getBootMinUnalloc')";
       if (( _main_unalloc <= _main_min_unalloc )); then
-        _cm2PromptUserFn "${_lowDiskMsg}" "${_winTitle}" 's';
+        _cm2PromptUserFn -i "${_iconStr}" "${_lowDiskMsg}" "${_winTitle}" 's';
         exit 1;
       elif (( _boot_unalloc <= _boot_min_unalloc )); then
-        _cm2PromptUserFn "${_lowBootMsg}" "${_winTitle}" 's';
+        _cm2PromptUserFn -i "${_iconStr}" "${_lowBootMsg}" "${_winTitle}" 's';
         exit 1;
       fi
 
       if [ -z "$(_rollbackSetFn 'getSnapshotList')" ]; then
-        _cm2PromptUserFn "${_noSnapshotsFoundMsg}" "${_winTitle}";
+        _cm2PromptUserFn -i "${_iconStr}" "${_noSnapshotsFoundMsg}" \
+          "${_winTitle}";
         exit 0;
       fi
 
@@ -1198,25 +1227,29 @@ _mainFn () {
         < <(_chooseSnapshotFn "${_chooseRestoreSnapshotMsg}");
 
       if [ -z "${_snapshot_id}" ]; then
-        _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
+        _cm2PromptUserFn -i "${_iconStr}" "${_operationCancelledMsg}" \
+          "${_winTitle}";
         exit 0;
       fi
 
       _restoreConfirmMsg="${_restoreConfirmMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
       _reply_str="$(
-        _cm2PromptUserFn "${_restoreConfirmMsg}" "${_winTitle}" 'o'
+        _cm2PromptUserFn -i "${_iconStr}" "${_restoreConfirmMsg}" \
+          "${_winTitle}" 'o'
        )";
       if [ "${_reply_str}" = 'y' ]; then
         _rollbackBackendFn 'restoreSnapshot' "${_snapshot_id}";
         _handleOperationExitIntFn 'restore' "$?" "${_snapshot_disp_id}";
       else
-        _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
+        _cm2PromptUserFn -i "${_iconStr}" "${_operationCancelledMsg}" \
+          "${_winTitle}";
         exit 0;
       fi
       ;;
     'delete')
       if [ -z "$(_rollbackSetFn 'getSnapshotList')" ]; then
-        _cm2PromptUserFn "${_noSnapshotsFoundMsg}" "${_winTitle}";
+        _cm2PromptUserFn -i "${_iconStr}" "${_noSnapshotsFoundMsg}" \
+          "${_winTitle}";
         exit 0;
       fi
 
@@ -1225,7 +1258,8 @@ _mainFn () {
         < <(_chooseSnapshotFn "${_chooseDeleteSnapshotMsg}");
 
       if [ -z "${_snapshot_id}" ]; then
-        _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
+        _cm2PromptUserFn -i "${_iconStr}" "${_operationCancelledMsg}" \
+          "${_winTitle}";
         exit 0;
       fi
 
@@ -1234,69 +1268,77 @@ _mainFn () {
         'getBaseSnapshotMetadata' "${_snapshot_id}");
       if [ "${_snapshot_metadata_list[2]}" = 'y' ]; then
         _deletePinnedSnapshotRefusedMsg="${_deletePinnedSnapshotRefusedMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}"
-        _cm2PromptUserFn "${_deletePinnedSnapshotRefusedMsg}" "${_winTitle}";
+        _cm2PromptUserFn -i "${_iconStr}" \
+          "${_deletePinnedSnapshotRefusedMsg}" "${_winTitle}";
         exit 0;
       fi
 
       _deleteConfirmMsg="${_deleteConfirmMsg//XXX_SNAPSHOT_NAME_XXX/${_snapshot_disp_id}}";
-      _reply_str="$(_cm2PromptUserFn \
+      _reply_str="$(_cm2PromptUserFn -i "${_iconStr}" \
         "${_deleteConfirmMsg}" "${_winTitle}" 'o')";
       if [ "${_reply_str}" = 'y' ]; then
         _rollbackBackendFn 'deleteSnapshot' "${_snapshot_id}";
         _handleOperationExitIntFn 'delete' "$?" "${_snapshot_disp_id}";
       else
-        _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
+        _cm2PromptUserFn -i "${_iconStr}" "${_operationCancelledMsg}" \
+          "${_winTitle}";
         exit 0;
       fi
       ;;
     'optimize')
-      _optimize_mode_str="$(_cm2PromptUserFn "${_chooseOptimizeModeMsg}" \
-        "${_winTitle}" 'd' \
+      _optimize_mode_str="$(_cm2PromptUserFn -i "${_iconStr}" \
+        "${_chooseOptimizeModeMsg}" "${_winTitle}" 'd' \
         'quick' 'Quick Clean - Free unallocated space quickly' 'on' \
         'deep' 'Deep Clean - Delete all snapshots and free more space' 'off')";
 
       case "${_optimize_mode_str}" in
         'quick')
-          _reply_str="$(_cm2PromptUserFn "${_quickOptimizeMsg}" \
-            "${_winTitle}" 'o')";
+          _reply_str="$(_cm2PromptUserFn -i "${_iconStr}" \
+            "${_quickOptimizeMsg}" "${_winTitle}" 'o')";
           if [ "${_reply_str}" = 'y' ]; then
             # NOTE: _cm2RunLongCmdFn prefixes commands with pkexec
             _cm2RunLongCmdFn 'Quick cleaning disk...' \
               "${_rollbackBackendExe}" 'btrfsMaintain';
             _handleOperationExitIntFn 'optimize' "$?";
           else
-            _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}"
+            _cm2PromptUserFn -i "${_iconStr}" "${_operationCancelledMsg}" \
+              "${_winTitle}"
           fi
           ;;
         'deep')
-          _reply_str="$(_cm2PromptUserFn "${_deepOptimizeMsg}" \
-            "${_winTitle}" 'o')";
+          _reply_str="$(_cm2PromptUserFn -i "${_iconStr}" \
+            "${_deepOptimizeMsg}" "${_winTitle}" 'o')";
           if [ "${_reply_str}" = 'y' ]; then
             # NOTE: _cm2RunLongCmdFn prefixes commands with pkexec
             _cm2RunLongCmdFn 'Deep cleaning disk...' \
               "${_rollbackBackendExe}" 'btrfsDeepClean';
             _handleOperationExitIntFn 'optimize' "$?";
           else
-            _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}"
+            _cm2PromptUserFn -i "${_iconStr}" "${_operationCancelledMsg}" \
+              "${_winTitle}"
           fi
           ;;
         *)
-          _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
+          _cm2PromptUserFn -i "${_iconStr}" "${_operationCancelledMsg}" \
+            "${_winTitle}";
           ;;
       esac
-      # _reply_str="$(_cm2PromptUserFn "${_doOptimizeMsg}" "${_winTitle}" 'o')";
+      # _reply_str="$(_cm2PromptUserFn -i "${_iconStr}" "${_doOptimizeMsg}" \
+      #   "${_winTitle}" 'o')";
       # if [ "${_reply_str}" = 'y' ]; then
       #   # NOTE: _cm2RunLongCmdFn prefixes commands with pkexec
       #   _cm2RunLongCmdFn 'Optimizing disk...' \
       #     "${_rollbackBackendExe}" 'btrfsDeepClean';
       #   _handleOperationExitIntFn 'optimize' "$?";
       # else
-      #   _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
+      #   _cm2PromptUserFn -i "${_iconStr}" "${_operationCancelledMsg}" \
+      #     "${_winTitle}";
       # fi
       ;;
     'protect')
       if [ -z "$(_rollbackSetFn 'getSnapshotList')" ]; then
-        _cm2PromptUserFn "${_noSnapshotsFoundMsg}" "${_winTitle}";
+        _cm2PromptUserFn -i "${_iconStr}" "${_noSnapshotsFoundMsg}" \
+          "${_winTitle}";
         exit 0;
       fi
 
@@ -1305,7 +1347,8 @@ _mainFn () {
         < <(_chooseSnapshotFn "${_choosePinSwitchSnapshotMsg}");
 
       if [ -z "${_snapshot_id}" ]; then
-        _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}"
+        _cm2PromptUserFn -i "${_iconStr}" "${_operationCancelledMsg}" \
+          "${_winTitle}"
         exit 0;
       fi
 
@@ -1325,7 +1368,7 @@ _mainFn () {
       _confirmPinSwitchMsg="${_confirmPinSwitchMsg//XXX_PIN_STATUS_XXX/${_pin_status_str}}";
       _confirmPinSwitchMsg="${_confirmPinSwitchMsg//XXX_OTHER_PIN_STATUS_XXX/${_pin_other_status_str}}";
 
-      _reply_str="$(_cm2PromptUserFn \
+      _reply_str="$(_cm2PromptUserFn -i "${_iconStr}" \
         "${_confirmPinSwitchMsg}" "${_winTitle}" 'o')";
       if [ "${_reply_str}" = 'y' ]; then
         _rollbackBackendFn 'setSnapshotMetadata' \
@@ -1336,13 +1379,15 @@ _mainFn () {
         _handleOperationExitIntFn 'protect' "$?" "${_snapshot_disp_id}" \
           "${_pin_other_status_str}";
       else
-        _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
+        _cm2PromptUserFn -i "${_iconStr}" "${_operationCancelledMsg}" \
+          "${_winTitle}";
         exit 0;
       fi
       ;;
     'edit')
       if [ -z "$(_rollbackSetFn 'getSnapshotList')" ]; then
-        _cm2PromptUserFn "${_noSnapshotsFoundMsg}" "${_winTitle}";
+        _cm2PromptUserFn -i "${_iconStr}" "${_noSnapshotsFoundMsg}" \
+          "${_winTitle}";
         exit 0;
       fi
 
@@ -1351,7 +1396,8 @@ _mainFn () {
         < <(_chooseSnapshotFn "${_chooseEditSnapshotMsg}");
 
       if [ -z "${_snapshot_id}" ]; then
-        _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}"
+        _cm2PromptUserFn -i "${_iconStr}" "${_operationCancelledMsg}" \
+          "${_winTitle}";
         exit 0;
       fi
 
@@ -1399,12 +1445,14 @@ _mainFn () {
       _handleOperationExitIntFn 'edit' "${_exit_int}" "${_snapshot_disp_id}";
       ;;
     'bound')
-      _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
+      _cm2PromptUserFn -i "${_iconStr}" "${_operationCancelledMsg}" \
+        "${_winTitle}";
       exit 0;
       ;;
     'explain')
       if [ -z "$(_rollbackSetFn 'getSnapshotList')" ]; then
-        _cm2PromptUserFn "${_noSnapshotsFoundMsg}" "${_winTitle}";
+        _cm2PromptUserFn -i "${_iconStr}" "${_noSnapshotsFoundMsg}" \
+          "${_winTitle}";
         exit 0;
       fi
 
@@ -1413,7 +1461,8 @@ _mainFn () {
         < <(_chooseSnapshotFn "${_chooseExplainSnapshotMsg}");
 
       if [ -z "${_snapshot_id}" ]; then
-        _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
+        _cm2PromptUserFn -i "${_iconStr}" "${_operationCancelledMsg}" \
+          "${_winTitle}";
         exit 0;
       fi
 
@@ -1421,7 +1470,8 @@ _mainFn () {
       _snapshot_dir="${_rb2MainSnapshotDir}/${_snapshot_id}";
       _explainSnapshotMsg="${_explainSnapshotMsg//XXX_SNAPSHOT_DIR_XXX/${_snapshot_dir}}";
 
-      _cm2PromptUserFn "${_explainSnapshotMsg}" "${_winTitle}";
+      _cm2PromptUserFn -i "${_iconStr}" "${_explainSnapshotMsg}" \
+        "${_winTitle}";
       ;;
     'show')
       _btrfs_main_report="$(LC_ALL=C "${_btrfsExe}" filesystem usage \
@@ -1501,9 +1551,10 @@ _mainFn () {
         _diskUsageKdiagMsg="${_diskUsageKdiagMsg//XBRM/${_btrfs_boot_remain}}";
         _diskUsageKdiagMsg="${_diskUsageKdiagMsg//XBUA/${_btrfs_boot_unalloc}}";
 
-        if [ "$(_cm2PromptUserFn "${_diskUsageKdiagMsg}" "${_winTitle}" \
-          'm')" = 'n' ]; then
-          _cm2PromptUserFn "${_diskGuidanceMsg}" "${_winTitle}";
+        if [ "$(_cm2PromptUserFn -i "${_iconStr}" "${_diskUsageKdiagMsg}" \
+            "${_winTitle}" 'm')" = 'n' ]; then
+          _cm2PromptUserFn -i "${_iconStr}" "${_diskGuidanceMsg}" \
+            "${_winTitle}";
         fi
       else # whiptail
         # Format the strings for table presentation
@@ -1519,9 +1570,10 @@ _mainFn () {
         _diskUsageWhiptailMsg="${_diskUsageWhiptailMsg//XXX_INFO_LINE_1_XXX/${_disk_usage_line1_str}}";
         _diskUsageWhiptailMsg="${_diskUsageWhiptailMsg//XXX_INFO_LINE_2_XXX/${_disk_usage_line2_str}}";
 
-        if [ "$(_cm2PromptUserFn "${_diskUsageWhiptailMsg}" "${_winTitle}" \
-          'm')" = 'n' ]; then
-          _cm2PromptUserFn "${_diskGuidanceMsg}" "${_winTitle}";
+        if [ "$(_cm2PromptUserFn -i "${_iconStr}" "${_diskUsageWhiptailMsg}" \
+          "${_winTitle}" 'm')" = 'n' ]; then
+          _cm2PromptUserFn -i "${_iconStr}" "${_diskGuidanceMsg}" \
+            "${_winTitle}";
         fi
       fi
       ;;
@@ -1539,32 +1591,38 @@ _mainFn () {
         _auto_onoff='off';
       fi
       _new_switch_state="$(
-        _cm2PromptUserFn "${_switchSelectMsg}" "${_winTitle}" 'd' \
+        _cm2PromptUserFn -i "${_iconStr}" "${_switchSelectMsg}" \
+        "${_winTitle}" 'd' \
         'manual' 'MANUAL — Snapshots created on user request only' "${_manual_onoff}" \
         'auto' 'AUTO — Snapshots created automatically and regularly' "${_auto_onoff}"
       )";
 
       if [ -z "${_new_switch_state}" ]; then
-        _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
+        _cm2PromptUserFn -i "${_iconStr}" "${_operationCancelledMsg}" \
+          "${_winTitle}";
         exit 0;
       fi
 
       if [ "${_switch_state,,}" = "${_new_switch_state}" ]; then
         _switchUnchangedMsg="${_switchUnchangedMsg//XXX_SNAPSHOT_MODE_XXX/${_new_switch_state^^}}";
-        _cm2PromptUserFn "${_switchUnchangedMsg}" "${_winTitle}";
+        _cm2PromptUserFn -i "${_iconStr}" "${_switchUnchangedMsg}" \
+          "${_winTitle}";
         exit 0;
       elif _rollbackBackendFn 'setManualSwitchState' \
         "${_new_switch_state}"; then
         _switchSuccessfulMsg="${_switchSuccessfulMsg//XXX_SNAPSHOT_MODE_XXX/${_new_switch_state^^}}";
-        _cm2PromptUserFn "${_switchSuccessfulMsg}" "${_winTitle}";
+        _cm2PromptUserFn -i "${_iconStr}" "${_switchSuccessfulMsg}" \
+          "${_winTitle}";
         exit 0;
       else
-        _cm2PromptUserFn "${_switchFailedMsg}" "${_winTitle}" 's';
+        _cm2PromptUserFn -i "${_iconStr}" "${_switchFailedMsg}" \
+          "${_winTitle}" 's';
         exit 1;
       fi
       ;;
     *)
-      _cm2PromptUserFn "${_operationCancelledMsg}" "${_winTitle}";
+      _cm2PromptUserFn -i "${_iconStr}" "${_operationCancelledMsg}" \
+        "${_winTitle}";
       exit 0;
       ;;
   esac
@@ -1589,7 +1647,9 @@ declare _binName _binDir _baseName _baseDir _libTable _assignList \
   _restoreFailedMsg _deletionFailedMsg _creationFailedMsg _pinSwitchFailedMsg \
   _editFailedMsg _deletePinnedSnapshotRefusedMsg \
   _criticalErrorMsg _operationCancelledMsg _alreadyOpenMsg _lowDiskMsg \
-  _lowBootMsg _rollbackBinExe _rollbackSetExe;
+  _lowBootMsg _rollbackBinExe _rollbackSetExe _iconStr;
+
+_iconStr='kfocus-bug-rollback';
 
 _lockDir='';
 _lockFile='';

@@ -98,20 +98,25 @@ EOF
 _mainFn () {
   declare _reply;
 
-  _reply="$(_cm2PromptUserFn "${_doResetWidgetsMsg}" "${_winTitle}" 'a')";
+  _reply="$(_cm2PromptUserFn -i "${_iconStr}" "${_doResetWidgetsMsg}" \
+    "${_winTitle}" 'a')";
 
   if [ "${_reply}" = 'y' ]; then
     if ! _cm2RunPlasmaScriptFn 'removeKfocusWidgets.js'; then
-      _cm2PromptUserFn "${_resetWidgetsFailedMsg}" "${_winTitle}" 's';
+      _cm2PromptUserFn -i "${_iconStr}" "${_resetWidgetsFailedMsg}" \
+        "${_winTitle}" 's';
       exit 1;
     fi
     if ! _cm2RunPlasmaScriptFn 'createKfocusWidgets.js'; then
-      _cm2PromptUserFn "${_resetWidgetsFailedMsg}" "${_winTitle}" 's';
+      _cm2PromptUserFn -i "${_iconStr}" "${_resetWidgetsFailedMsg}" \
+        "${_winTitle}" 's';
       exit 1;
     fi
-    _cm2PromptUserFn "${_resetWidgetsDoneMsg}" "${_winTitle}";
+    _cm2PromptUserFn -i "${_iconStr}" "${_resetWidgetsDoneMsg}" \
+      "${_winTitle}";
   else
-    _cm2PromptUserFn "${_resetWidgetsCancelledMsg}" "${_winTitle}";
+    _cm2PromptUserFn -i "${_iconStr}" "${_resetWidgetsCancelledMsg}" \
+      "${_winTitle}";
   fi
 }
 ## . END _mainFn }
@@ -119,7 +124,9 @@ _mainFn () {
 ## BEGIN Declare and assign global vars {
 declare _binName _binDir _baseDir _baseName _winTitle _browStr _erowStr \
   _tableStr _doResetWidgetsMsg _resetWidgetsDoneMsg \
-  _resetWidgetsCancelledMsg _resetWidgetsFailedMsg;
+  _resetWidgetsCancelledMsg _resetWidgetsFailedMsg _iconStr;
+
+_iconStr='kfocus-bug-widget'
 ## . END Declare and assign global vars }
 
 ## BEGIN Run mainFn when script is NOT sourced {

@@ -1557,7 +1557,7 @@ Kirigami.ApplicationWindow {
               + 'bottom to set automatic snapshots.<br></p>'
 
               + '<p>' + ding07Str
-              + '<b>Click on the tree icon next to the system tray</b> to '
+              + '<b>Click on the backup icon next to the system tray</b> to '
               + 'launch BackInTime.<br></p>'
 
               + '<p><b>See more in the</b> '

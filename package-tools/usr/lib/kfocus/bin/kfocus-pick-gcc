@@ -20,6 +20,7 @@ _cssStyleStr="$(cat << '_EOH';
   </style>
 _EOH
 )";
+_iconStr='kfocus-bug-pick-gcc'
 
 ## BEGIN _chkCallerFn {
  # Purpose: Exit if called by brain-dead qtcreator which
@@ -46,7 +47,7 @@ _killZombieProcFn () {
 
     if [ "${#_pid_list[@]}" -lt 1 ]; then return 0; fi
 
-    "${_cm2KdiagExe}" --msgbox "The installer is stuck.
+    "${_cm2KdiagExe}" --icon "${_iconStr}" --msgbox "The installer is stuck.
 Please provide your password to restart.";
     if [ "${_try_idx}" = '1' ]; then
       pkexec kill "${_pid_list[@]}";
@@ -56,7 +57,8 @@ Please provide your password to restart.";
   done
 
   if [ "${#_pid_list[@]}" -gt 0 ]; then
-    "${_cm2KdiagExe}" --msgbox "Could not kill install PIDs\n${_pid_list[*]}\n
+    "${_cm2KdiagExe}" --icon "${_iconStr}" \
+      --msgbox "Could not kill install PIDs\n${_pid_list[*]}\n
 Please see your administrator or reboot to fix.";
     exit 1;
   fi
@@ -214,7 +216,7 @@ done
 
 ## Begin Get user selection and matching _foundLineStr {
 _selectedStr="$(
-  "${_cm2KdiagExe}" --title "Set GCC Version" \
+  "${_cm2KdiagExe}" --icon "${_iconStr}" --title "Set GCC Version" \
     --combobox "${_mainHtml}" \
     "${_comboList[@]}" --default "${_defaultPickStr}"
 )";
@@ -255,18 +257,18 @@ if [ "${#_fieldList[@]}" -gt 2 ] && [ -n "${_fieldList[2]}" ]; then
 _EOH02
   )";
 
-  if "${_cm2KdiagExe}" --yesno "${_yesNoHtml}"; then
+  if "${_cm2KdiagExe}" --icon "${_iconStr}" --yesno "${_yesNoHtml}"; then
     _killZombieProcFn;
     if qapt-batch --install "${_addPkgList[@]}"; then
       _cm2EchoFn 'Install appears successful';
     else
-      "${_cm2KdiagExe}" \
+      "${_cm2KdiagExe}" --icon "${_iconStr}" \
         --msgbox "Installation of GCC ${_tgtVersStr} failed.
 Please see your administrator.";
       exit 1;
     fi
   else
-    "${_cm2KdiagExe}" \
+    "${_cm2KdiagExe}" --icon "${_iconStr}" \
         --msgbox "Installation of GCC ${_tgtVersStr} cancelled.  ";
     exit 0;
   fi
@@ -275,7 +277,7 @@ fi
 
 ## Begin Bail if no change AND no install {
 if [ "${_inUseVersStr}" = "${_tgtVersStr}" ] && [ "${_hasUpdates}" = "n" ]; then
-  "${_cm2KdiagExe}" \
+  "${_cm2KdiagExe}" --icon "${_iconStr}" \
     --msgbox "System GCC already set to version ${_tgtVersStr}.";
   exit 0;
 fi
@@ -288,17 +290,17 @@ _outputStr="$( pkexec "${_gccSetExe}" "${_tgtVersStr}"; )";
 _exitIdx="$?";
 
 if [ "${_exitIdx}" = '0' ]; then
-  "${_cm2KdiagExe}" \
+  "${_cm2KdiagExe}" --icon "${_iconStr}" \
     --msgbox "SUCCESS: System GCC set to version ${_tgtVersStr}.  ";
   _cm2SucFn;
 elif [ "${_exitIdx}" = '2' ]; then
-  "${_cm2KdiagExe}" \
+  "${_cm2KdiagExe}" --icon "${_iconStr}" \
     --msgbox "SUCCESS: System GCC set to version ${_tgtVersStr}.
 WARNING: Some links were not successful:
 ${_outputStr}";
   _cm2WarnFn;
 else
-  "${_cm2KdiagExe}" \
+  "${_cm2KdiagExe}" --icon "${_iconStr}" \
     --msgbox "FAIL: System GCC NOT set to version ${_tgtVersStr}:
 ${_outputStr}";
   _cm2ErrFn;

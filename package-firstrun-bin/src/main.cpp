@@ -52,11 +52,11 @@ int main(int argc, char *argv[])
     dat.setStartPage(args[0]);
   }
 
-  // Determine path for kfocus-firstrun-set. Prefer dev path if available.
+  // Determine path for kfocus-focusrx. Prefer dev path if available.
   QString exeDir = app.applicationDirPath();
   QString dirList[2] = { QStringLiteral("../../package-main/usr/lib/kfocus/bin"), exeDir };
   for (QString testDir : dirList) {
-    if (QFile::exists(testDir + QStringLiteral("/kfocus-firstrun-set"))) {
+    if (QFile::exists(testDir + QStringLiteral("/kfocus-focusrx"))) {
       dat.setBinDir(testDir);
       break;
     }

@@ -160,11 +160,14 @@ endfunction
 " Keycodes and maps timeout in 3/10 sec...
 set timeout timeoutlen=300 ttimeoutlen=300
 
-" H Switch off highlighting till next search
-map H :nohlsearch<CR>
+" Clear search highlights by pressing Ctrl + L
+nnoremap <C-l> :nohlsearch<CR><C-l>
 
-" e Edit a file
-map e :n
+" e Edit the next file
+" Conflicts with normal use of e to move forward to a word, disabled by
+" default.
+"
+" map e :n
 
 " ;k Trim trailing space, ;kk clears checkboxes
 map <silent> ;k  :call TrimTrailingWhiteSpace()<CR>

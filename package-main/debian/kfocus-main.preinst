@@ -30,7 +30,8 @@ _mainFn () {
         _cm2SucFn; else _cm2WarnFn;
       fi
 
-      ## TODO: This appears no longer needed. Remove after confirmation.
+      ## TODO 2026-06-03: This appears no longer needed. Remove after
+      ## confirmation.
       # _cm2SetMsgFn 'Divert language-selector pkg_depends file';
       # if dpkg-divert --package 'kfocus-main' --add --rename --divert \
       #   '/usr/share/language-selector/data/pkg_depends.orig' \
@@ -68,7 +69,6 @@ _mainFn () {
 ## . END _mainFn }
 
 _mainFn "$@";
-exit 0;
 
 # Tag to allow some debhelper commands to inject relevant code
 #DEBHELPER#

@@ -5,8 +5,8 @@
 #include <QDir>
 
 /*
- * TODO: This file now does more than launching KDialog and should therefore
- * be renamed (along with the class).
+ * TODO 2026-05-20: This file now does more than launching KDialog and should
+ * therefore be renamed (along with the class).
  */
 
 void KDialogLauncher::info(const QString &msg) {
@@ -34,6 +34,8 @@ void KDialogLauncher::kfocusMime(const QString &uri) {
     auto *kfocusMimeProc = new QProcess();
     kfocusMimeProc->setProgram("/usr/lib/kfocus/bin/kfocus-mime");
     kfocusMimeProc->setArguments(QStringList() << uri);
+    /* Redirecting stdout/stderr to /dev/null to prevent kfocus-mime from
+     * locking up every time before the UI appears */
     kfocusMimeProc->setStandardOutputFile(QProcess::nullDevice());
     kfocusMimeProc->setStandardErrorFile(QProcess::nullDevice());
     connect(kfocusMimeProc, SIGNAL(finished(int)), this, SLOT(cleanupSubproc()));

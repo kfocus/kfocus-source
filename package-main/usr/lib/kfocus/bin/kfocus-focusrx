@@ -126,6 +126,8 @@ _runXtermCmdFn () {
   if [ ! -w "${_tmp_file}" ]; then return 230; fi
 
   _cmd_str="$*;"' echo "$?" > '"${_tmp_file}";
+  # Xterm can no longer set a custom window icon. Confirmed 2026-06-23.
+  # -xrm 'xterm*iconHint: /usr/share/pixmaps/kfocus-bug-rx'
   xterm -fa 'Monospace' -fs 12 -b 24 \
     -geometry 90x32 -T 'FocusRx' \
     -e "${_cmd_str}";
@@ -162,7 +164,7 @@ _EOH01
       nslookup "${_lookup_str}" && return;
     done
 
-    _cm2PromptUserFn "${_prompt_msg}" "${_title}";
+    _cm2PromptUserFn -i "${_iconStr}" "${_prompt_msg}" "${_title}";
 
     if [ "${_count}" = 4 ]; then break; fi
     _title="Retry ${_count}";
@@ -196,7 +198,7 @@ _EOH03
   )";
 
   _title='Cannot Connect';
-  _cm2PromptUserFn "${_prompt_msg}" "${_title}";
+  _cm2PromptUserFn -i "${_iconStr}" "${_prompt_msg}" "${_title}";
   return 1;
 }
 ## . END _confirmInternetFn }
@@ -237,7 +239,7 @@ _EOH04
   )";
 
   _ans_str="$(
-    _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'a'
+    _cm2PromptUserFn -i "${_iconStr}" "${_prompt_msg}" "${_win_title}" 'a'
   )";
 
   _cm2SucFn;
@@ -300,7 +302,7 @@ _EOH05
   )";
 
   _do_run_btool="$(
-    _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'a'
+    _cm2PromptUserFn -i "${_iconStr}" "${_prompt_msg}" "${_win_title}" 'a'
   )"
 
   if [ "${_do_run_btool}" = 'n' ]; then
@@ -419,152 +421,8 @@ _chkNvPMizerFn () {
 
 ## BEGIN _chkDispRefreshFn {
 # kscreen-doctor's output format has changed substantially. This function MUST
-# be reworked for Plasma 6 if we bring it back.
-# _chkDispRefreshFn () {
-#   declare _nag_name _warn_nag_count _title _win_title \
-#     _kscreen_doctor_report _internal_disp_name _idx _prompt_msg;
-#
-#   # Skip if not on m2g6 or zrg1 or kscreen tool not installed
-#   [[ "$(_cm2EchoModelStrFn 'config_code')" =~ ^(m2g6|zrg1)$ ]] || return;
-#   [ -z "${_kscreenDoctorExe}" ] && return;
-#
-#   # Set tunables
-#   _nag_name='kfocus-disphz_count';
-#   _warn_nag_count='5';
-#
-#   _title='Configure display refresh';
-#   _cm2SetMsgFn "${_title}";
-#   _win_title="${_rootTitle}: ${_title}";
-#
-#   # Calculate laptop display name
-#   _kscreen_doctor_report="$("${_kscreenDoctorExe}" -o)";
-#   _internal_disp_name="$(
-#     ansi2txt <<< "${_kscreen_doctor_report}" \
-#       | cut -d' ' -f3-5 \
-#       | grep 'eDP.* enabled connected' \
-#       | cut -d' ' -f1 \
-#       | head -n1
-#   )";
-#   if [ -z "${_internal_disp_name}" ]; then
-#     _cm2WarnStrFn 'Laptop display not found. Will try again next login.';
-#     _cm2WarnFn;
-#     return;
-#   fi
-#
-#   ## Begin Handle 60 Hz refresh rate {
-#   if grep " ${_internal_disp_name} " <<< "${_kscreen_doctor_report}" \
-#     | grep -q '2560x1600@60\*'; then
-#     _cm2SucStrFn 'Preferred screen refresh already set.';
-#     _cm2SucFn;
-#     return;
-#   ## . End Handle 60 Hz refresh rate }
-#   #
-#   ## Otherwise, Handle nag count < 1 {
-#   #  We try this first and second time run to start at 60 Hz because
-#   #  although screen doctor claims to work the first time, it often does not.
-#   #
-#   elif _nag_msg="$(_testNagCountFn 'check' "${_nag_name}" 1)"; then
-#     for _idx in {0..1}; do
-#       _cm2EchoFn "Set laptop screen to 60Hz attempt |${_idx}|";
-#       "${_kscreenDoctorExe}" \
-#         "output.${_internal_disp_name}.mode.2560x1600@60" || true;
-#       # Without sleep, this adjustment has been unreliable.
-#       sleep 3;
-#
-#       _kscreen_doctor_report="$("${_kscreenDoctorExe}" -o)";
-#       if grep " ${_internal_disp_name} " <<< "${_kscreen_doctor_report}" \
-#         | grep -q '2560x1600@60\*'; then
-#         _testNagCountFn 'inc' "${_nag_name}" '1';
-#         _cm2SucFn;
-#         return;
-#       fi
-#     done
-#
-#     # Do not set the nag count and try again later
-#     _cm2WarnStrFn 'Could not set screen mode. Will try again next login.';
-#     _cm2WarnFn;
-#     return;
-#   fi
-#   ## End Otherwise, handle nag_count < 1 }
-#
-#   ## Begin Handle 240 Hz refresh rate {
-#   if grep " ${_internal_disp_name} " <<< "${_kscreen_doctor_report}" \
-#     | grep -q '2560x1600@240\*'; then
-
-#     # Bail if nag count is met
-#     if ! _nag_msg="$(
-#       _testNagCountFn 'check' "${_nag_name}" "${_warn_nag_count}"
-#     )"; then
-#       _cm2SucStrFn 'View count limit reached.';
-#       _cm2SucFn;
-#       return;
-#     fi
-#
-#     _prompt_msg="$(cat <<EOF
-# ${_cm2HtmBeginStr}
-# ${_cm2HtmH3Str}${_title}</h3>
-#
-# ${_cm2HtmPStr}The laptop display's refresh rate is currently set to<br>
-# 240 Hz. Higher refresh rates consume substantial<br>
-# bandwidth, which may make it more difficult to use<br>
-# multiple displays. If you encounter issues, consider<br>
-# reducing the laptop display refresh rate to 60 Hz.</p>
-#
-# ${_cm2HtmPStr}You may change the refresh rate using <code>System<br>
-# Settings &gt; Display and Monitor &gt; Display<br>
-# Configuration &gt; Refresh Rate</code>.</p>${_cm2HtmEndStr}
-#
-# ${_cm2HtmPStr}If you keep the panel at 240 Hz, this <br>
-# ${_nag_msg}.</p>
-# EOF
-#   )";
-#     _cm2PromptUserFn "${_prompt_msg}" "${_win_title}";
-#     _testNagCountFn 'inc' "${_nag_name}";
-#     _cm2SucFn;
-#     return;
-#   fi
-#   ## . End Handle 240 Hz refresh rate }
-#
-#   ## Begin Handle 300 Hz refresh rate {
-#   #  This should not affect nag count and should always be fixed.
-#   #  TODO: Should we reset nag count here?
-#   if grep " ${_internal_disp_name} " <<< "${_kscreen_doctor_report}" \
-#     | grep -q '2560x1600@300\*'; then
-#     _prompt_msg="$(cat <<EOF
-# ${_cm2HtmBeginStr}
-# ${_cm2HtmH3Str}${_title}</h3>
-#
-# <p><b>Setting screen refresh rate to 240 Hz.</b></p>
-#
-# ${_cm2HtmPStr}Laptop display refresh rates greater than 240 Hz are<br>
-# unstable, unsupported, and may cause system crashes<br>
-# or other undesirable behavior.</p>
-#
-# ${_cm2HtmPStr}If you are using multiple monitors, you may wish to<br>
-# further reduce the laptop display refresh rate to 60 Hz.<br>
-# This provides more display bandwidth for external<br>
-# displays.</p>
-#
-# ${_cm2HtmPStr}You may change the refresh rate later using <code>System<br>
-# Settings &gt; Display and Monitor &gt; Display<br>
-# Configuration &gt; Refresh Rate</code>.</p>${_cm2HtmEndStr}
-# EOF
-#     )";
-#     _cm2PromptUserFn "${_prompt_msg}" "${_win_title}";
-#
-#     if "${_kscreenDoctorExe}" \
-#       "output.${_internal_disp_name}.mode.2560x1600@240"; then
-#       _cm2SucFn;
-#     else
-#       _cm2WarnStrFn 'Could not set screen mode. Will try again next login';
-#       _cm2WarnFn;
-#     fi
-#     ## Reset nag for 240 Hz
-#     _testNagCountFn 'fill' "${_nag_name}" '2';
-#     return;
-#   fi
-#   ## . End Handle 300 Hz refresh rate }
-# }
+# be reworked for Plasma 6 if we bring it back. See the `noble` branch if we
+# need to revive this.
 ## . END _chkDispRefreshFn }
 
 ## BEGIN _chkHwConfigFn {
@@ -629,7 +487,7 @@ ${_cm2HtmEndStr}
 _EOH06
       )";
       _ans_str="$(
-        _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'A'
+        _cm2PromptUserFn -i "${_iconStr}" "${_prompt_msg}" "${_win_title}" 'A'
       )";
       if [ "${_ans_str}" = 'y' ]; then
         # 6204 Rerun attempt. Internet connect is NOT checked yet.
@@ -695,13 +553,13 @@ hardware support and stability.<br></p>
 ${_cm2HtmEndStr}
 _EOH07
     )";
-    _ans_str="$(_cm2PromptUserFn \
+    _ans_str="$(_cm2PromptUserFn -i "${_iconStr}" \
       "${_prompt_msg}" "${_rootTitle}: Reboot NOW?" 'w'
     )";
     if [ "${_ans_str}" = 'y' ]; then reboot; fi
   else
     _prompt_msg="Trouble with hardware config:\n ${_output_str}";
-    _cm2PromptUserFn "${_prompt_msg}";
+    _cm2PromptUserFn -i "${_iconStr}" "${_prompt_msg}";
     _cm2WarnStrFn "${_prompt_msg}";
     _cm2WarnFn;
     return 1;
@@ -806,7 +664,7 @@ _EOH12
   if [ -f "${_xorg_file}" ]; then
     if ! [ -f "${_drop_file}" ]; then
       _do_remove_file="$(
-        _cm2PromptUserFn "${_warn_str}" "${_win_title}" 'a'
+        _cm2PromptUserFn -i "${_iconStr}" "${_warn_str}" "${_win_title}" 'a'
       )";
 
       if [ "${_do_remove_file}" = 'y' ]; then
@@ -819,7 +677,8 @@ _EOH12
           127 ) _prompt_msg='xorg.conf deletion was cancelled' ;;
           *   ) _prompt_msg='xorg.conf was NOT deleted'   ;;
         esac
-        _cm2PromptUserFn "FocusRx: ${_prompt_msg}" "${_win_title}";
+        _cm2PromptUserFn -i "${_iconStr}" "FocusRx: ${_prompt_msg}" \
+          "${_win_title}";
       else
         _prompt_msg="$( cat <<_EOH13
 ${_cm2HtmBeginStr}
@@ -831,7 +690,8 @@ ${_cm2HtmEndStr}
 _EOH13
         )";
         _do_show_again="$(
-          _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'a'
+          _cm2PromptUserFn -i "${_iconStr}" "${_prompt_msg}" \
+            "${_win_title}" 'a'
         )";
         if [ "${_do_show_again}" = 'y' ]; then
           "${_cm2RmExe}" -f "${_drop_file}";
@@ -844,7 +704,7 @@ _EOH13
     fi
   else
     if [ "${_doForce}" = 'y' ]; then
-      _cm2PromptUserFn "${_confirm_str}" "${_win_title}" 'p';
+      _cm2PromptUserFn -i "${_iconStr}" "${_confirm_str}" "${_win_title}" 'p';
     fi
   fi
   _cm2SucStrFn 'Xorg file considered.';
@@ -853,7 +713,7 @@ _EOH13
 ## . END _chkXorgConfigFn }
 
 ## BEGIN _chkKernelCleanFn {
-## Disabled for now, this may not be needed in 26.04 anymore.
+## TODO 2026-05-11: Disabled for now, this may not be needed in 26.04 anymore.
 # _chkKernelCleanFn () {
 #   declare _cmd_list;
 #
@@ -915,14 +775,16 @@ ${_cm2HtmEndStr}
 _EOH1
     )";
     _ans_str="$(
-      _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'p';
+      _cm2PromptUserFn -i "${_iconStr}" "${_prompt_msg}" "${_win_title}" 'p';
     )";
 
     if "${_fixIbusExe}" 'repair' 2>/dev/null; then
-      _cm2PromptUserFn 'IBus configuration repaired.' "${_win_title}";
+      _cm2PromptUserFn -i "${_iconStr}" 'IBus configuration repaired.' \
+        "${_win_title}";
       _cm2SucStrFn 'IBus configuration repaired.';
     else
-      _cm2PromptUserFn 'IBus configuration repair failed!' "${_win_title}";
+      _cm2PromptUserFn -i "${_iconStr}" 'IBus configuration repair failed!' \
+        "${_win_title}";
       _cm2WarnFn;
       return;
     fi
@@ -1020,7 +882,8 @@ _runDropScriptsFn () {
 
       elif [ "${_loop_ext}" = 'sh' ]; then
         _prompt_msg="Running fixup script ${_loop_name}";
-        _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_loop_name}" 'p';
+        _cm2PromptUserFn -i "${_iconStr}" "${_prompt_msg}" \
+          "${_rootTitle}: ${_loop_name}" 'p';
       else
         _cm2WarnStrFn "Skip unsupported file type: ${_loop_file}";
       fi
@@ -1050,7 +913,8 @@ ${_cm2HtmEndStr}
 _EOH14
           )";
           _ans_str="$(
-            _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: ${_loop_name}" 'A'
+            _cm2PromptUserFn -i "${_iconStr}" "${_prompt_msg}" \
+              "${_rootTitle}: ${_loop_name}" 'A'
           )";
         fi
 
@@ -1087,9 +951,10 @@ _EOH14
     _last_exe_vers="${_loop_vers_str}";
     case "${_exit_int}" in
       99) _do_reboot='y';;
-      98) _cm2PromptUserFn "User cancelled ${_loop_name}" "${_rootTitle}: Cancel";;
+      98) _cm2PromptUserFn -i "${_iconStr}" "User cancelled ${_loop_name}" \
+        "${_rootTitle}: Cancel";;
       0) true;;
-      *) _cm2PromptUserFn \
+      *) _cm2PromptUserFn -i "${_iconStr}" \
         "Non-zero exit status (${_exit_int} for ${_loop_file}" \
          "${_rootTitle}: Cancel";;
     esac
@@ -1122,7 +987,8 @@ ${_cm2HtmEndStr}
 _EOH15
     )";
     _ans_str="$(
-      _cm2PromptUserFn "${_prompt_msg}" "${_rootTitle}: Reboot?" 'A'
+      _cm2PromptUserFn -i "${_iconStr}" "${_prompt_msg}" \
+        "${_rootTitle}: Reboot?" 'A'
     )";
     if [ "${_ans_str}" = 'y' ]; then
       "${_escExe}" systemctl reboot;
@@ -1171,7 +1037,7 @@ _EOH17b
   )";
 
   _ans_str="$(
-    _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'A'
+    _cm2PromptUserFn -i "${_iconStr}" "${_prompt_msg}" "${_win_title}" 'A'
   )";
 
   if [ "${_ans_str}" = 'y' ]; then
@@ -1211,7 +1077,7 @@ _EOH18
   )";
 
   _ans_str="$(
-    _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'A'
+    _cm2PromptUserFn -i "${_iconStr}" "${_prompt_msg}" "${_win_title}" 'A'
   )";
 
   if [ "${_ans_str}" = 'y' ]; then
@@ -1270,7 +1136,7 @@ _EOH18
   )";
 
   _ans_str="$(
-    _cm2PromptUserFn "${_prompt_msg}" "${_win_title}"
+    _cm2PromptUserFn -i "${_iconStr}" "${_prompt_msg}" "${_win_title}"
   )";
 }
 ## . END _announceEndFn }
@@ -1324,7 +1190,7 @@ will now exit.</p>
 ${_cm2HtmEndStr}
 EOF
       )";
-      _cm2PromptUserFn "${_prompt_msg}" "${_title}";
+      _cm2PromptUserFn -i "${_iconStr}" "${_prompt_msg}" "${_title}";
     fi
     return;
   fi
@@ -1351,6 +1217,7 @@ EOF
   # _chkExperRepoFn;  # Disabled: See 66226a00c
 
   # _chkKernelCleanFn;  # APP: Check kernels, offer kernel cleaner tool
+                        # Disabled for 26.04, as it may no longer be necessary
   _chkResetEffectsFn; # APP: Force only: offer reset effects tool
   _chkXorgConfigFn;   # APP: Detect xorg, offer advice
   _offerSnapshotsFn;  # APP: Force only: offer snapshots tool
@@ -1375,7 +1242,9 @@ declare _parentCmdStr _lookupList \
   _focusRxDropDir _kbdColorSetExe _rootTitle _assignList \
   _focusRxSetExe _focusRxVersExe _btoolExe _firstrunExe \
   _fixIbusExe _kcleanExe _resetEffectsExe _rollbackBackendExe \
-  _rollbackSetExe _chainHelperExe _sysVersStr;
+  _rollbackSetExe _chainHelperExe _sysVersStr _iconStr;
+
+_iconStr='kfocus-bug-rx';
 
 _parentCmdStr="$(ps -o comm= "$PPID")";
 
@@ -1408,7 +1277,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     "_firstrunExe|${_binDir}/kfocus-firstrun-bin||optional"
     "_fixIbusExe|${_binDir}/kfocus-fix-ibus||optional"
     "_kbdColorSetExe|${_binDir}/kfocus-kb-color-set||optional"
-    #"_kcleanExe|${_binDir}/kfocus-kclean||optional"
+    ## TODO 2026-06-23: Disabled for 26.04, remove if no longer needed
+    # "_kcleanExe|${_binDir}/kfocus-kclean||optional"
     # "_kscreenDoctorExe|/usr/bin/kscreen-doctor||optional"
     "_nvSettingsExe|nvidia-settings||optional"
     "_primeSelectExe|prime-select||optional"

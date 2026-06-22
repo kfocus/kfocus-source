@@ -457,7 +457,7 @@ ${_browStr}Click OK to exit.${_erowStr}
 ${_cm2HtmEndStr}
 EOF
   )";
-  _cm2PromptUserFn "${_disp_msg}" "${_winTitle}" 'p';
+  _cm2PromptUserFn -i "${_iconStr}" "${_disp_msg}" "${_winTitle}" 'p';
   exit 0;
 }
 ## . END _notifyAndExitFn }
@@ -493,7 +493,7 @@ ${_browStr}Click OK to finish.${_erowStr}
 ${_cm2HtmEndStr}
 EOF
   )";
-  _cm2PromptUserFn "${_end_msg}" "${_winTitle}" 'p';
+  _cm2PromptUserFn -i "${_iconStr}" "${_end_msg}" "${_winTitle}" 'p';
 }
 ## . END _triggerActionFn }
 
@@ -757,7 +757,8 @@ ${_cm2HtmEndStr}
 EOF
     )";
 
-    _cm2PromptUserFn "${_still_low_warn_msg}" "${_winTitle}" 's';
+    _cm2PromptUserFn -i "${_iconStr}" "${_still_low_warn_msg}" \
+      "${_winTitle}" 's';
     return;
   fi
   ## . End Warn Still Low }
@@ -780,7 +781,7 @@ EOF
 Unexpected empty running-kernel string (uname -r).<br>
 Please see your system administrator to fix.<br>
 Click OK to exit.";
-    _cm2PromptUserFn "${_run_msg}" "${_winTitle}" 'p';
+    _cm2PromptUserFn -i "${_iconStr}" "${_run_msg}" "${_winTitle}" 'p';
     return 1;
   fi
 
@@ -894,7 +895,8 @@ _EOW02
     )";
 
     if [ "${_isBtrfsYn}" = 'y' ] && [ "${_is_boot_low}" = 'y' ]; then
-      _reply="$(_cm2PromptUserFn "${_purge_msg}" "${_winTitle}" 'w')";
+      _reply="$(_cm2PromptUserFn -i "${_iconStr}" "${_purge_msg}" \
+        "${_winTitle}" 'w')";
       [ "${_reply}" = 'n' ] && _notifyAndExitFn "$(cat <<EOF
 Quick Clean was NOT performed, per user request. <br>
 ${_exit_wizard_msg}
@@ -910,7 +912,7 @@ EOF
       # Check if space is still low and warn user if so
       "${_kcleanExe}" '-d';
     else
-      _cm2PromptUserFn "${_purge_msg}" "${_winTitle}" 'p';
+      _cm2PromptUserFn -i "${_iconStr}" "${_purge_msg}" "${_winTitle}" 'p';
     fi
 
     return;
@@ -943,7 +945,8 @@ ${_cm2HtmEndStr}
 _EOW04
   )";
 
-  _reply="$(_cm2PromptUserFn "${_purge_msg}" "${_winTitle}" 'w')";
+  _reply="$(_cm2PromptUserFn -i "${_iconStr}" "${_purge_msg}" \
+    "${_winTitle}" 'w')";
   [ "${_reply}" = 'n' ] && _notifyAndExitFn "$(cat <<EOF
 Kernels were NOT purged, per user request. <br>
 ${_exit_wizard_msg}
@@ -973,7 +976,9 @@ declare _binName _binDir _baseDir _baseName _cStr \
   _isBtrfsYn _divisorInt _kernelUnitSizeInt _kernelUnitSizeBtrfsInt \
   _lowDiskSizeInt _multiInt _assignList _btrfsExe _rollbackSetExe \
   _kcleanSetExe _kcleanExe _winTitle _bodyTitle \
-  _browStr _erowStr _tableStr;
+  _browStr _erowStr _tableStr _iconStr;
+
+_iconStr='kfocus-bug-kclean';
 
 _aptListStr='';
 _cStr=$'\n';

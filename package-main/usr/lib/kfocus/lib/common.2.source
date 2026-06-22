@@ -227,26 +227,44 @@ _cm2ReadPromptYnFn () {
 
 _cm2RunLongCmdFn () {
   declare _prompt_msg _cmd_list _zenity_exe _exit_int _exit_str \
-    _tmp_str_file _tmp_int_file;
+    _tmp_str_file _tmp_int_file _do_user_run;
 
   _exit_int=0;
   _exit_str='';
   _prompt_msg="${1:-Please wait.}"; shift;
+  _do_user_run='n';
+
+  if [ "${1:-}" = 'AS_USER' ]; then
+    _do_user_run='y';
+    shift;
+  fi
 
   read -r -d '' -a _cmd_list <<< "$@";
   if [ "${_cm2IsTty}" = 'y' ]; then
-    sudo "${_cmd_list[@]}";
+    if [ "${_do_user_run}" = 'y' ]; then
+      "${_cmd_list[@]}";
+    else
+      sudo "${_cmd_list[@]}";
+    fi
     return;
   fi
 
   _zenity_exe="$(command -v 'zenity' || true)";
   if [ -z "${_zenity_exe}" ]; then
-    pkexec "${_cmd_list[@]}";
+    if [ "${_do_user_run}" = 'y' ]; then
+      "${_cmd_list[@]}";
+    else
+      pkexec "${_cmd_list[@]}";
+    fi
     _exit_int="$?";
   else
     _tmp_int_file="$(_cm2MkTmpFileFn)" || return;
     _tmp_str_file="$(_cm2MkTmpFileFn)" || return;
-    ( pkexec "${_cmd_list[@]}" > "${_tmp_str_file}";
+    ( if [ "${_do_user_run}" = 'y' ]; then
+        "${_cmd_list[@]}" > "${_tmp_str_file}";
+      else
+        pkexec "${_cmd_list[@]}" > "${_tmp_str_file}";
+      fi
       echo "$?" > "${_tmp_int_file}";
     ) | "${_zenity_exe}" --window-icon 'kfocus-bug-rx' --progress \
         --title "${_prompt_msg}" --pulsate --no-cancel --auto-close \
@@ -601,10 +619,8 @@ _cm2PromptUserFn () {
 
   # Handle GUI presentation
   if [ "${_cm2IsTty}" = 'n' ]; then
-    # `--icon` is intentionally not passed. KDialog cannot set a custom window
-    # icon under Wayland.
     _cmd_list=(
-      "${_cm2KdiagExe}" '--title' "${_window_title}"
+      "${_cm2KdiagExe}" '--icon' "${_icon_key}" '--title' "${_window_title}"
     );
 
     # These arguments *must* be inserted before the actual '--yesno' argument

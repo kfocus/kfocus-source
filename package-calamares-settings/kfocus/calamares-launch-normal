@@ -5,12 +5,12 @@
 export QT_QPA_PLATFORMTHEME=kde
 
 if [ -e '/etc/calamares/OEM_MODE_ACTIVATED' ]; then
-  msg="$(cat <<EOL
+  _msg="$(cat <<EOL
 The installer was previously run in OEM mode. Please reboot to reset the
 configuration and try again.
 EOL
   )";
-  kdialog --msgbox "${msg}";
+  kdialog --msgbox "${_msg}";
   exit 1;
 fi
 

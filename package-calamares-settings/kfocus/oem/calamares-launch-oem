@@ -32,7 +32,7 @@ for _dev_file in "${_block_list[@]}"; do
   (( _disk_count++ )) || true;
 done
 
-msg="$(cat <<EOL
+_msg="$(cat <<EOL
 You are about to install the OS in OEM mode. This will prepare the system for
 distribution to an end user, providing them with an account setup wizard. If
 you do not need this capability, please cancel and use the normal install
@@ -42,7 +42,7 @@ EOL
 
 # Report multi-disk
 if (( _disk_count > 1 )); then
-  msg+="$(cat <<EOL
+  _msg+="$(cat <<EOL
 
 <p>The system has multiple disks present. To properly configure a secondary
 disk after installation, you MUST install the Kubuntu Focus Suite to a single
@@ -57,13 +57,13 @@ EOL
   )";
 fi
 
-msg+="$(cat <<EOL
+_msg+="$(cat <<EOL
 
 <p>Are you sure you want to continue?</p>
 EOL
 )";
 
-if kdialog --warningyesno "${msg}"; then
+if kdialog --warningyesno "${_msg}"; then
   # Tweak branding to make it clear that OEM installation mode is active
   # Disabled, this was an older image, and there's an OEM item in the left
   # sidebar so it's not really that important

@@ -1,17 +1,14 @@
-# THESE ARE OUTDATED, UPDATE
-
 # Build Instructions
 
 ## Install Tools and Build
 
 ```bash
-sudo apt install build-essential qt5-qmake qtdeclarative5-dev \
-  qtbase5-dev qtquickcontrols2-5-dev debhelper-compat;
+sudo apt install ... # get list of deps from package-firstrun-bin/debian/control
 
-cd package-power-bin
+cd package-firstrun-bin;
 mkdir build;
 cd build;
-qmake ..;
-make
+cmake ..;
+make -j$(nproc);
 ```
 

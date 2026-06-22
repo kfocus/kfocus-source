@@ -20,6 +20,10 @@ set -u;
 
 # app_id|cmd_str;with;args|sniff_str|pkg_str|descr_str
 # 1       2                 3         4       5
+## TODO 2026-06-23: For all "FIXME A" in the list below, implement a FRIENDLY
+## "this app is not supported on 26.04" message.
+## TODO 2026-06-23: For all "FIXME B" in the list below, attempt to implement
+## JetBrains Toolbox installer and remove the Snap implementation
 _exeLookupList=(
   'apt-rollback|konsole;-e;man;apt-rollback|apt-rollback|apt-rollback|AptRollback: Rollback System Packages'
   'audacity|audacity||audacity|Audacity: Edit Sound'
@@ -37,7 +41,7 @@ _exeLookupList=(
   'ffmpeg|konsole;-e;man ffmpeg|ffmpeg|ffmpeg|FFMpeg: Stream and Play Multimedia Files'
   'filezilla|filezilla||filezilla|Filezilla: Transfer Files'
   'firefox|firefox||firefox|Firefox: Browse the Web with Mozilla Firefox'
-  'gcloud|konsole;-e;main;gcloud;help|gcloud|google-cloud-cli|GCS: Google Cloud Services CLI'
+  'gcloud|konsole;-e;gcloud;help|gcloud|google-cloud-cli|GCS: Google Cloud Services CLI'
   'git-cola|git-cola||git-cola|Git-Cola: Explore Git Branches GUI'
   'gimp|gimp||gimp|Gimp: Edit and Create Raster Images'
   'google-chrome|google-chrome||google-chrome-stable|Chrome: Browse the Web with Google Chrome'
@@ -45,11 +49,11 @@ _exeLookupList=(
   'gvim|gvim||vim-gtk3|Vim GUI: Edit Text With Extreme Power'
   'gwenview|gwenview||gwenview|Gwenview: Image and Document Viewer'
   'inkscape|inkscape||inkscape|Inkscape: Edit Scalable Vector Graphics'
-  'intellij|intellij-idea||intellij-idea|IntelliJ: JetBrains Java IDE'
   'insync|insync;start||insync-dolphin|Insync: Sync Google Drive and Others'
   'jekyll|konsole;-e;man jekyll|jekyll|jekyll|Jekyll: Create Static Web Sites'
+  'jetbrains-toolbox-plain|jetbrains-toolbox|jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs' # for firstrun-bin
   'kate|kate||kate|Kate: Edit Text with Power'
-  'kde-connect|kdeconnect-settings||kdeconnect|KDE Connect: Connect Smartphones to Desktop'
+  'kde-connect|kdeconnect-app||kdeconnect|KDE Connect: Connect Smartphones to Desktop'
   'kdenlive|kdenlive||kdenlive|KDEnlive: Edit  Non-Linear Videos'
   'kdiff3|kdiff3||kdiff3|KDiff3: Diff and Merge Files and Directories'
   'keepassxc|keepassxc||keepassxc|KeepassXC: Password Manager'
@@ -69,6 +73,7 @@ _exeLookupList=(
   'kfocus_reset_widgets|kfocus-reset-widgets||kfocus-main|KFocus Reset Widget: Reset desktop hint and icon widgets'
   'kfocus_rollback|/usr/lib/kfocus/bin/kfocus-rollback|/usr/lib/kfocus/bin/kfocus-rollback|kfocus-rollback|KFocus System Rollback Dashboard: Create, manage, and restore coherent system snapshots'
   'kfocus_tbt|/usr/lib/kfocus/bin/kfocus-tbt||kfocus-tools|KFocus Thunderbolt Control: Enable or disable Thunderbolt'
+  #'kfocus_vidsync|kfocus-vidsync||kfocus-vidsync|KFocus Video Sync Utility: Change video sync settings' # FIXME A
   'kfocus_welcome|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://docs.google.com/presentation/d/e/2PACX-1vTsKGkzy_tFm2xZo-BYX7mqeLG43C2vy108qsWZ2L_c4XJGXEVh2fAt3sNvgiqXfw4OFPWynHS-32xx/pub?start=false&loop=false&delayms=3000||kfocus-main|KFocus Feature Guide: Explore the features of Kubuntu Focus systems'
   # app_id|cmd_str;with;args|sniff_str|pkg_str|descr_str
   # 1       2                 3         4       5
@@ -77,6 +82,7 @@ _exeLookupList=(
   'konsole|konsole||konsole|Konsole: Use an X Terminal Emulator'
   'krita|krita||krita|Krita: Raster Image Editor'
   'kruler|kruler||kruler|Kruler: Measure Screen Objects'
+  #'kubectl|konsole;--hold;-e;kubectl;help|kubectl|kubectl|Kubernetes: Command Line Container Management' # FIXME A
   'libreoffice-base|libreoffice;--base||libreoffice-base|LibreOffice Database: Connect Databases'
   'libreoffice-calc|libreoffice;--calc||libreoffice-calc|LibreOffice Calc: Create and Edit Spreadsheets'
   'libreoffice-draw|libreoffice;--draw||libreoffice-draw|LibreOffice Drawing: Create Vector and Raster Images'
@@ -84,7 +90,7 @@ _exeLookupList=(
   'libreoffice-writer|libreoffice;--writer||libreoffice-writer|LibreOffice Writer: Word Processor'
   'lutris|lutris||lutris|Lutris: Play Games With Wine'
   'meld|meld||meld|Meld: Visual Difference and Merge Tool'
-  #'minecraft-launcher|minecraft-launcher||minecraft-launcher|Minecraft: Launch Minecraft'
+  #'minecraft-launcher|minecraft-launcher||minecraft-launcher|Minecraft: Launch Minecraft' # FIXME A
   'nvidia-settings|nvidia-settings||nvidia-settings|Nvidia Settings: Configure Nvidia GPUs'
   'obs|obs||obs-studio|OBS Studio: Record and Stream Live Video'
   'okular|okular||okular|Okular: View PDFs and Other Documents'
@@ -92,7 +98,6 @@ _exeLookupList=(
   'pavucontrol|pavucontrol-qt||pavucontrol-qt|PulseAudio: Manage Audio Volume'
   'plasma-discover|plasma-discover||plasma-discover|Discover: Manage Software'
   'ppa-purge|konsole;-e;man ppa-purge|ppa-purge|ppa-purge|PPA Purge: Purge PPAs'
-  'pycharm|pycharm||pycharm|PyCharm: JetBrains Python IDE'
   'rar|konsole;-e;man rar|rar|rar|Rar: Create .rar Archive Files'
   'simplescreenrecorder|simplescreenrecorder||simplescreenrecorder|SimpleScreenRecorder: Record Your Screen with Powerful Options'
   'slack|slack;--ozone-platform=x11|slack|slack-desktop|Slack: Team Messaging'
@@ -107,7 +112,6 @@ _exeLookupList=(
   'vlc|vlc||vlc|VLC: Play and Stream Video and Multimedia'
   'wallpapers|dolphin;/usr/share/wallpapers||dolphin|Wallpapers: View Wallpaper Images'
   'webcamoid|webcamoid||webcamoid|Webcamoid: Test Your Webcam'
-  'webstorm|webstorm||webstorm|WebStorm: JetBrains Web IDE'
   'winff|winff||winff-qt|WinFF: Convert Video using ffmpeg'
 
   # Packages with special handlers
@@ -115,7 +119,11 @@ _exeLookupList=(
   'docker|!docker|docker|docker-ce|Docker: Container Engine'
   'dropbox|!dropbox|dropbox|dropbox|Dropbox: Sync to Cloud Storage'
   'ghb|!ghb|/var/lib/flatpak/app/fr.handbrake.ghb/x86_64/stable/active/files/bin/ghb|handbrake-flathub|Handbrake: Back up encoded audio and video'
+  'intellij|!intellij|jetbrains-toolbox|jetbrains-toolbox|IntelliJ: JetBrains Java IDE'
+  'jetbrains-toolbox|!jetbrains-toolbox|jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs'
+  'pycharm|!pycharm|jetbrains-toolbox|jetbrains-toolbox|PyCharm: JetBrains Python IDE'
   'virtualbox|!virtualbox||virtualbox|VirtualBox: Run Virtual Machines'
+  'webstorm|!webstorm|jetbrains-toolbox|jetbrains-toolbox|WebStorm: JetBrains Web IDE'
   'zoom|!zoom||zoom|Zoom: Start and Join Video and Web Conferencing'
 
   # Future consideration: Nvidia CUDA and ML libs
@@ -276,7 +284,7 @@ function deb_sublime-text() {
   PRETTY_NAME="Sublime Text"
   WEBSITE="https://www.sublimetext.com/"
 }
-## As of 2026-05-11, Minecraft cannot be installed on Ubuntu 26.04 due to a
+## TODO 2026-05-11: Minecraft cannot be installed on Ubuntu 26.04 due to a
 ## dependency issue. Microsoft is aware, see
 ## https://bugs.mojang.com/browse/MCL/issues/MCL-26579.
 # function deb_minecraft-launcher() {
@@ -312,23 +320,11 @@ function deb_handbrake-flathub() {
   WEBSITE="https://handbrake.fr/"
   FLATHUB_PKG_NAME="fr.handbrake.ghb"
 }
-function deb_intellij() {
-  PRETTY_NAME="IntelliJ IDEA"
-  WEBSITE="https://www.jetbrains.com/idea/"
-  SNAP_PKG_NAME="intellij-idea"
-  IS_CLASSIC_SNAP='y'
-}
-function deb_pycharm() {
-  PRETTY_NAME="PyCharm"
-  WEBSITE="https://www.jetbrains.com/pycharm/"
-  SNAP_PKG_NAME="pycharm"
-  IS_CLASSIC_SNAP='y'
-}
-function deb_webstorm() {
-  PRETTY_NAME="WebStorm"
-  WEBSITE="https://www.jetbrains.com/webstorm/"
-  SNAP_PKG_NAME="webstorm"
-  IS_CLASSIC_SNAP='y'
+function deb_jetbrains-toolbox() {
+  PRETTY_NAME="JetBrains Toolbox"
+  WEBSITE="https://www.jetbrains.com/toolbox-app/"
+  CUSTOM_FUNC_NAME="_installJetbrainsToolboxFn"
+  INSTALL_AS_USER='y'
 }
 # Extracted from main
 function _makeAppListFn () {
@@ -355,7 +351,8 @@ function _readPkgRepoInfoFn () {
   export CACHE_DIR ERROR_STR HOST_CPU HOST_ARCH USER_AGENT UBUNTU_CODENAME \
     APT_KEY_URL GPG_KEY_URL APT_LIST_NAME APT_REPO_URL APT_EXTRA_PKGLIST PPA \
     ARCHS_SUPPORTED METHOD EULA SNAP_PKG_NAME URL VERSION_INSTALLED \
-    VERSION_PUBLISHED PRETTY_NAME WEBSITE CUSTOM_FUNC_NAME FLATHUB_PKG_NAME;
+    VERSION_PUBLISHED PRETTY_NAME WEBSITE CUSTOM_FUNC_NAME FLATHUB_PKG_NAME \
+    INSTALL_AS_USER;
 
   CACHE_DIR='/var/cache/deb-get';
 
@@ -401,6 +398,7 @@ function _readPkgRepoInfoFn () {
   WEBSITE='';
   CUSTOM_FUNC_NAME='';
   FLATHUB_PKG_NAME='';
+  INSTALL_AS_USER='';
 
   # Source the variables
   if "deb_${_pkg_name}"; then
@@ -481,7 +479,9 @@ function install_snap() {
   fi
 }
 function install_custom() {
-  "${CUSTOM_FUNC_NAME:-}";
+  # TODO 2026-06-23: Ensure custom installation functions have reasonable
+  # error handling
+  "${CUSTOM_FUNC_NAME:-}" || return "$?";
 }
 function install_flathub() {
   if ! _cm2ChkInstalledPkgFn 'flatpak'; then
@@ -505,6 +505,7 @@ function download_deb() {
   fi
 }
 function install_deb() {
+  ## TODO 2026-06-23 cool: Make install_deb take a list?
   local URL="${1}"
   local FILE="${URL##*/}"
 
@@ -546,8 +547,11 @@ _installDisplaylinkDriverFn() {
 }
 ## . END _installDisplaylinkDriverFn }
 
-## BEGIN _installInsyncDolphinFn() {
+## BEGIN _installInsyncDolphinFn {
 _installInsyncDolphinFn() {
+  ## TODO 2026-06-23 warm: Reverse-engineer the sources.list mechanism and
+  ## implement it here rather than downloading the debs and installing them
+  ## one by one
   declare _url;
 
   _url='https://cdn.insynchq.com/builds/linux/3.9.10.60041';
@@ -561,6 +565,79 @@ _installInsyncDolphinFn() {
   update_apt;
 }
 ## . END _installInsyncDolphinFn }
+
+## BEGIN _installJetbrainsToolboxFn {
+_installJetbrainsToolboxFn() {
+  # NOTE: This function runs as a standard user, NOT as root. See
+  # the "deb_jetbrains-toolbox" function.
+
+  declare _detect_url _download_url _unpack_path _download_file_name \
+    _extract_dir_name;
+
+  _detect_url="https://data.services.jetbrains.com/products/";
+  _detect_url+="releases?code=TBA";
+  _unpack_path="$HOME/bin";
+
+  _download_url="$(curl -s "${_detect_url}" \
+    | jq -r '.TBA[0].downloads.linux.link')";
+  if ! [[ "${_download_url}" =~ ^https:// ]]; then
+    return 1;
+  fi
+
+  # Trim off the last slash in the string and everything before it
+  _download_file_name="${_download_url##*/}";
+
+  # URL-decode the filename
+  _download_file_name="${_download_file_name//+/ }";
+  _download_file_name="${_download_file_name//%/\\x}";
+  printf -v _download_file_name "%b" "${_download_file_name}";
+
+  # Validate the filename
+  if [ -z "${_download_file_name}" ]; then
+    # Empty filename, reject
+    return 1;
+  fi
+  if [[ "${_download_file_name}" =~ '/' ]]; then
+    # Path traversal, reject
+    return 1;
+  fi
+  if ! grep -q -P '^[[:ascii:]]*$' <<< "${_download_file_name}" \
+    || ! [[ "${_download_file_name}" =~ ^[[:print:]]*$ ]]; then
+    # Non-printable ASCII or Unicode, reject
+    return 1;
+  fi
+  if ! [[ "${_download_file_name}" =~ .*\.tar\.gz$ ]]; then
+    # Not a gzipped tarball, reject
+    # TODO: Allow other compression types like xz here?
+    return 1;
+  fi
+
+  # Make sure the directory we will extract to doesn't already exist
+  _extract_dir_name="${_download_file_name%.tar.gz}";
+  if [ -e "${_unpack_path}/${_extract_dir_name}" ]; then
+    return 1;
+  fi
+
+  # Download the file
+  mkdir -p "${_unpack_path}" || return 1;
+  cd "${_unpack_path}" || return 1;
+  wget -O "${_download_file_name}" "${_download_url}" || return 1;
+  if ! [ -f "${_download_file_name}" ]; then
+    # File is missing, bail out
+    return 1;
+  fi
+
+  # Extract the file
+  mkdir "${_extract_dir_name}" || return 1;
+  tar \
+    --extract \
+    --strip-components=1 \
+    --file="${_download_file_name}" \
+    --directory="${_extract_dir_name}" || return 1;
+
+  return 0;
+}
+## . END _installJetbrainsToolboxFn }
 
 ## BEGIN _echoKeyListFn {
 _echoKeyListFn () {
@@ -660,7 +737,7 @@ _installPkgFn () {
     ppa)     install_ppa;;
     snap)    install_snap;;
     flathub) install_flathub;;
-    custom)  install_custom;;
+    custom)  install_custom || return 1;;
     *) echo -e "Unexpected method |${METHOD:-}|";
       exit 1;;
   esac;
@@ -668,7 +745,7 @@ _installPkgFn () {
 ## . END _installPkgFn }
 
 _promptFn () {
-  _cm2PromptUserFn "$*" "${_baseName}" 'p';
+  _cm2PromptUserFn -i "${_iconStr}" "$*" "${_baseName}" 'p';
 }
 
 _handleDockerSetupFn () {
@@ -703,7 +780,7 @@ EOT02
    _cm2EchoFn "User '${_userName}' is in 'docker' group";
   else
     _ans_str="$(
-      _cm2PromptUserFn "${_msg01}" 'Add to Group' 'a'
+      _cm2PromptUserFn -i "${_iconStr}" "${_msg01}" 'Add to Group' 'a'
     )";
     if [ "${_ans_str}" = 'y' ]; then
       if "${_escExe}" usermod -aG 'docker' "${_userName}"; then
@@ -780,7 +857,7 @@ EOT0C
     _cm2EchoFn "User '${_userName}' is in 'vboxusers' group";
   else
     _ans_str="$(
-      _cm2PromptUserFn "${_msg0b}" 'Add to Group' 'a'
+      _cm2PromptUserFn -i "${_iconStr}" "${_msg0b}" 'Add to Group' 'a'
     )";
     if [ "${_ans_str}" = 'y' ]; then
       if "${_escExe}" usermod -aG 'vboxusers' "${_userName}"; then
@@ -826,6 +903,32 @@ _runAppHandlerFn () {
   _cm2EchoFn "Running handler for app_id |${_app_id}|";
 
   case "${_app_id}" in
+    intellij|pycharm|webstorm)
+      _prompt_msg="$(cat <<EOT
+${_cm2HtmPStr}Click to start JetBrain toolbox <br>
+and select the tool for <br>
+'${_descr_str}'.</p>
+
+${_cm2HtmPStr}You may click on the Toolbox icon <br>
+in the System Tray to reopen <br>
+the toolbox as needed.</p>
+EOT
+      )";
+      _cmd_str='jetbrains-toolbox';
+      ;;
+
+    jetbrains-toolbox)
+      _prompt_msg="$(cat <<EOT
+${_cm2HtmPStr}Click OK to start JetBrains toolbox.</p>
+
+${_cm2HtmPStr}You may click on the Toolbox icon <br>
+in the System Tray to reopen <br>
+the toolbox as needed.</p>
+EOT
+      )";
+      _cmd_str='jetbrains-toolbox';
+      ;;
+
     dropbox)
       _prompt_msg="$(cat <<EOT
 ${_cm2HtmPStr}Click OK to start Dropbox.</p>
@@ -951,7 +1054,8 @@ Are you sure you want to do this?\n
 EOT
   )";
 
-  if [ "$(_cm2PromptUserFn "${_msg}" 'Install package' 'a')" = 'y' ]; then
+  if [ "$(_cm2PromptUserFn -i "${_iconStr}" "${_msg}" 'Install package' 'a')" \
+    = 'y' ]; then
     return 0;
   fi
   return 1;
@@ -975,7 +1079,7 @@ _runAppFn () {
     _prompt_msg _pkg_name _line_str _bit_list _app_id       \
     _full_cmd_str _sniff_str _descr _cmd_str _do_handler    \
     _arg_list _report_str _sniff_exe _app_exe               \
-    _install_prompt_msg  _ans_str _exit_str _idx;
+    _install_prompt_msg  _ans_str _exit_str _idx _reentrant_cmd_list;
 
   _arg1_str="${1:-}";
   _arg2_str="${2:-}";
@@ -1062,7 +1166,8 @@ _runAppFn () {
         _echoInstallPromptMsgFn "${_app_id}" "${_pkg_name}" "${_descr}"
         )"; then
         _ans_str="$(
-          _cm2PromptUserFn "${_install_prompt_msg:-}" 'Install package' 'a'
+          _cm2PromptUserFn -i "${_iconStr}" "${_install_prompt_msg:-}" \
+            'Install package' 'a'
         )";
         if [ "${_ans_str}" = 'y' ]; then
           if [ "${METHOD:-}" = 'flathub' ] \
@@ -1072,8 +1177,14 @@ _runAppFn () {
             exit 1;
           fi
           # Note: _cm2RunLongCmdFn prefixes commands with _escExe (pkexec)
+          # unless "AS_USER" is passed immediately after the prompt message
+          _reentrant_cmd_list=();
+          if [ "${INSTALL_AS_USER}" = 'y' ]; then
+            _reentrant_cmd_list+=( 'AS_USER' );
+          fi
+          _reentrant_cmd_list+=( "${_binName}" '-i' "${_pkg_name}" );
           if _exit_str="$(_cm2RunLongCmdFn "Installing ${_pkg_name}" \
-              "${_binName}" '-i' "${_pkg_name}")"; then continue;
+              "${_reentrant_cmd_list[@]}")"; then continue;
           else
             _prompt_msg="Trouble installing ${_descr}";
             if [ -n "${_exit_str}" ]; then
@@ -1137,7 +1248,7 @@ _mainFn () {
   if [ "${_arg1_str}" = '-i' ]; then
     shift;
     _installPkgFn "$@";
-    exit;
+    exit "$?";
   elif [ "${_arg1_str}" = '-l' ]; then
     _echoKeyListFn;
     exit;
@@ -1197,12 +1308,14 @@ _mainFn () {
 ## BEGIN Declare and set global vars {
 declare _binName _binDir _baseDir _baseName \
   _rootDir _exeAptDir _pkgNameList _userName \
-  _escExe _doForceForeground \
+  _escExe _doForceForeground _iconStr \
   ARCHS_SUPPORTED HOST_CPU PRETTY_NAME USER_AGENT \
   VERSION_INSTALLED VERSION_PUBLISHED WEBSITE;
 
 # Set this first.
 _rootDir='';
+
+_iconStr='kfocus-bug-apps';
 
 _doForceForeground='n';
 _etcAptDir="${_rootDir}/etc/apt";
