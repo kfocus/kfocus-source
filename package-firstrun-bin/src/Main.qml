@@ -442,7 +442,7 @@ Kirigami.ApplicationWindow {
 
             Controls.Button {
                 id          : actionButton
-                Kirigami.Theme.backgroundColor: 'green'
+                Kirigami.Theme.backgroundColor: getThemedColorFn( 'green' );
                 onClicked   : takeActionFn()
             }
 
