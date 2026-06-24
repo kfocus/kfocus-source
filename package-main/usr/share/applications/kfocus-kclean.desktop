@@ -1,10 +1,14 @@
-[Desktop Entry]
-Categories=System;X-Kubuntu-Focus;
-Comment=Remove unused and old kernel files
-Exec=/usr/lib/kfocus/bin/kfocus-kclean -f
-Icon=kfocus-bug-kclean
-Keywords=kubuntu;focus;kfocus;fixup;kernels;cleanup;kfocus-kclean
-Name=Kernel Cleaner
-StartupNotify=true
-Terminal=false
-Type=Application
+# !!! ** DO NOT ENABLE THIS ON END-USER SYSTEMS ** !!!
+# kfocus-kclean is not currently compatible with 26.04's kernel naming scheme.
+# !!! ** DO NOT ENABLE THIS ON END-USER SYSTEMS ** !!!
+
+#[Desktop Entry]
+#Categories=System;X-Kubuntu-Focus;
+#Comment=Remove unused and old kernel files
+#Exec=/usr/lib/kfocus/bin/kfocus-kclean -f
+#Icon=kfocus-bug-kclean
+#Keywords=kubuntu;focus;kfocus;fixup;kernels;cleanup;kfocus-kclean
+#Name=Kernel Cleaner
+3StartupNotify=true
+#Terminal=false
+#Type=Application

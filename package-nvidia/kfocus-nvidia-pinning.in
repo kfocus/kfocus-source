@@ -26,7 +26,7 @@
 # next upgrade.
 #
 Package: kfocus-nvidia-edge
-Pin: release l=Kubuntu Focus PPA, v=24.04, n=noble
+Pin: release l=Kubuntu Focus PPA, v=26.04, n=resolute
 Pin: version XXX_PKG_VER_XXX
 Pin-Priority: 1006
 
@@ -50,13 +50,21 @@ Pin-Priority: 1006
 # Pin-Priority: 1006
 ## . END BETA SECTION - deleted from release packages
 
-# 2rd: Core nvidia packages version 595.71.* from highest-ranked repo
+# 2nd: Core nvidia packages version 595.71.* from highest-ranked repo
 # Note: Although specified, kfocus-team-release repo constraint
 #    is NOT honored.
 Package: nvidia-* libnvidia-* xserver-xorg-video-nvidia-*
 Pin: release o=LP-PPA-kfocus-team-release
 Pin: version 595.71.*
 Pin-Priority: 1005
+
+# 3rd: Core nvidia packages version 595.* from highest-ranked repo
+# Note: Although specified, kfocus-team-release repo constraint
+#    is NOT honored.
+Package: nvidia-* libnvidia-* xserver-xorg-video-nvidia-*
+Pin: release o=LP-PPA-kfocus-team-release
+Pin: version 595.*
+Pin-Priority: 1004
 
 # == Utility Nvidia Packages ==========================================
 # Prefer versions of nvidia-settings, nvidia-modrobe, and libnvctrl0
@@ -94,7 +102,7 @@ Pin-Priority: 1006
 # 3rd: Utility nvidia packages version 595.71.* from highest-ranked repo
 # Note: Although specified, ubuntu repo constraint is NOT honored.
 Package: nvidia-settings nvidia-modprobe libxnvctrl0
-Pin: release l=Ubuntu, v=24.04, n=noble
+Pin: release l=Ubuntu, v=26.04, n=resolute
 Pin: version 595.71.*
 Pin-Priority: 1005
 
@@ -124,15 +132,18 @@ Pin-Priority: -1
 
 # == CUDA Nvidia Packages =============================================
 # Pin cuda-drivers to use version 595.71.*, fallback to versions
-#   595.58 and 590.48.
+#   595.58 and 595.*.
 #
 # CUDA packages come from NVIDIA repos at developer.download.nvidia.com, which
 # are enabled by kfocus-apt-source.
+#
+# NOTE: We used to also pin cuda-drivers-VERS (e.g. cuda-drivers-595), but
+# these packages appear to no longer exist.
 
 # 1st: CUDA nvidia packages, version 595.71.*
 # Note: Although specified, nvidia  developer.download.nvidia.com repo
 #   constraint is NOT honored.
-Package: cuda-drivers cuda-drivers-595
+Package: cuda-drivers
 Pin: release o=NVIDIA,l=NVIDIA CUDA
 Pin: origin developer.download.nvidia.com
 Pin: version 595.71.*
@@ -141,18 +152,18 @@ Pin-Priority: 1006
 # 2nd: CUDA nvidia packages, version 595.58.*
 # Note: Although specified, nvidia developer.download.nvidia.com repo
 #   constraint is not honored.
-Package: cuda-drivers cuda-drivers-595
+Package: cuda-drivers
 Pin: release o=NVIDIA,l=NVIDIA CUDA
 Pin: origin developer.download.nvidia.com
 Pin: version 595.58.*
 Pin-Priority: 1005
 
-# 3rd: CUDA nvidia packages, version 590.48.*
+# 3rd: CUDA nvidia packages, version 595.*
 # Note: Although specified, nvidia developer.download.nvidia.com repo
 #   constraint is not honored.
-Package: cuda-drivers cuda-drivers-595
+Package: cuda-drivers
 Pin: release o=NVIDIA, l=NVIDIA CUDA
 Pin: origin developer.download.nvidia.com
-Pin: version 590.48.*
+Pin: version 595.*
 Pin-Priority: 1004
 

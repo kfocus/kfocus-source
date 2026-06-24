@@ -22,8 +22,6 @@ set -u;
 # 1       2                 3         4       5
 ## TODO 2026-06-23: For all "FIXME A" in the list below, implement a FRIENDLY
 ## "this app is not supported on 26.04" message.
-## TODO 2026-06-23: For all "FIXME B" in the list below, attempt to implement
-## JetBrains Toolbox installer and remove the Snap implementation
 _exeLookupList=(
   'apt-rollback|konsole;-e;man;apt-rollback|apt-rollback|apt-rollback|AptRollback: Rollback System Packages'
   'audacity|audacity||audacity|Audacity: Edit Sound'
@@ -51,7 +49,7 @@ _exeLookupList=(
   'inkscape|inkscape||inkscape|Inkscape: Edit Scalable Vector Graphics'
   'insync|insync;start||insync-dolphin|Insync: Sync Google Drive and Others'
   'jekyll|konsole;-e;man jekyll|jekyll|jekyll|Jekyll: Create Static Web Sites'
-  'jetbrains-toolbox-plain|jetbrains-toolbox|jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs' # for firstrun-bin
+  'jetbrains-toolbox-plain|$HOME/bin/jetbrains-toolbox/bin/jetbrains-toolbox|$HOME/bin/jetbrains-toolbox/bin/jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs' # for firstrun-bin
   'kate|kate||kate|Kate: Edit Text with Power'
   'kde-connect|kdeconnect-app||kdeconnect|KDE Connect: Connect Smartphones to Desktop'
   'kdenlive|kdenlive||kdenlive|KDEnlive: Edit  Non-Linear Videos'
@@ -120,7 +118,7 @@ _exeLookupList=(
   'dropbox|!dropbox|dropbox|dropbox|Dropbox: Sync to Cloud Storage'
   'ghb|!ghb|/var/lib/flatpak/app/fr.handbrake.ghb/x86_64/stable/active/files/bin/ghb|handbrake-flathub|Handbrake: Back up encoded audio and video'
   'intellij|!intellij|jetbrains-toolbox|jetbrains-toolbox|IntelliJ: JetBrains Java IDE'
-  'jetbrains-toolbox|!jetbrains-toolbox|jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs'
+  'jetbrains-toolbox|!jetbrains-toolbox|$HOME/bin/jetbrains-toolbox/bin/jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs'
   'pycharm|!pycharm|jetbrains-toolbox|jetbrains-toolbox|PyCharm: JetBrains Python IDE'
   'virtualbox|!virtualbox||virtualbox|VirtualBox: Run Virtual Machines'
   'webstorm|!webstorm|jetbrains-toolbox|jetbrains-toolbox|WebStorm: JetBrains Web IDE'
@@ -613,7 +611,7 @@ _installJetbrainsToolboxFn() {
   fi
 
   # Make sure the directory we will extract to doesn't already exist
-  _extract_dir_name="${_download_file_name%.tar.gz}";
+  _extract_dir_name="${_download_file_name%%.*}";
   if [ -e "${_unpack_path}/${_extract_dir_name}" ]; then
     return 1;
   fi
@@ -731,15 +729,17 @@ _installPkgFn () {
   fi
 
   # Dispatch
+  # Since this is the last command in the function, the return value is that
+  # of the called method.
   case "${METHOD:-}" in
     direct|github|website) install_deb "${URL:-}";;
     apt)     install_apt;;
     ppa)     install_ppa;;
     snap)    install_snap;;
     flathub) install_flathub;;
-    custom)  install_custom || return 1;;
+    custom)  install_custom;;
     *) echo -e "Unexpected method |${METHOD:-}|";
-      exit 1;;
+      return 1;;
   esac;
 }
 ## . END _installPkgFn }
@@ -926,7 +926,7 @@ in the System Tray to reopen <br>
 the toolbox as needed.</p>
 EOT
       )";
-      _cmd_str='jetbrains-toolbox';
+      _cmd_str='$HOME/bin/jetbrains-toolbox/bin/jetbrains-toolbox';
       ;;
 
     dropbox)
@@ -1182,8 +1182,10 @@ _runAppFn () {
           if [ "${INSTALL_AS_USER}" = 'y' ]; then
             _reentrant_cmd_list+=( 'AS_USER' );
           fi
-          _reentrant_cmd_list+=( "${_binName}" '-i' "${_pkg_name}" );
-          if _exit_str="$(_cm2RunLongCmdFn "Installing ${_pkg_name}" \
+          _reentrant_cmd_list+=(
+            "Installing ${_app_id}" "${_binName}" '-i' "${_pkg_name}"
+          );
+          if _exit_str="$(_cm2RunLongCmdFn \
               "${_reentrant_cmd_list[@]}")"; then continue;
           else
             _prompt_msg="Trouble installing ${_descr}";
@@ -1248,7 +1250,7 @@ _mainFn () {
   if [ "${_arg1_str}" = '-i' ]; then
     shift;
     _installPkgFn "$@";
-    exit "$?";
+    exit;
   elif [ "${_arg1_str}" = '-l' ]; then
     _echoKeyListFn;
     exit;
@@ -1285,8 +1287,8 @@ _mainFn () {
   # Handle URI via MIME handler
   elif [ "${_arg1_str}" = '-d' ]; then
     shift;
-    _dbusDispatchFn "${1:-}"
-    exit 0;
+    _dbusDispatchFn "${1:-}";
+    exit;
 
   # Handle URI
   else
@@ -1297,7 +1299,7 @@ _mainFn () {
   fi
 
   if [ -z "${_arg_app_id}" ]; then
-    1>&2 echo 'Missing required argument';
+    1>&2 echo 'Missing or invalid argument';
     exit 1;
   fi
 
@@ -1329,8 +1331,9 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binDir="$(dirname "${_binName}")"    || exit 1;
   _baseDir="$(dirname "${_binDir}")"    || exit 1;
   _baseName="$(basename "${_binName}")" || exit 1;
-  # IMPORTANT: When called via Google Chrome, this is necessary to keep Zenity
-  # from grabbing Chrome's libvulkan rather than the system's libvulkan.
+  # IMPORTANT: When called via Google Chrome, this may be necessary to prevent
+  # downstream apps (like dbus-send) from using Chrome's libraries rather than
+  # the system libraries.
   export LD_LIBRARY_PATH='';
   _importCommonFn;
 

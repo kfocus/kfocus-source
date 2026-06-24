@@ -1,4 +1,4 @@
-% KFOCUS-EXTRA(1) kfocus-qwe 26.04
+% KFOCUS-QWE(1) kfocus-qwe 26.04
 % Michael Mikowski
 % May 2026
 

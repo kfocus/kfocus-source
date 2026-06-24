@@ -231,13 +231,12 @@ _cm2RunLongCmdFn () {
 
   _exit_int=0;
   _exit_str='';
-  _prompt_msg="${1:-Please wait.}"; shift;
   _do_user_run='n';
-
   if [ "${1:-}" = 'AS_USER' ]; then
     _do_user_run='y';
     shift;
   fi
+  _prompt_msg="${1:-Please wait.}"; shift;
 
   read -r -d '' -a _cmd_list <<< "$@";
   if [ "${_cm2IsTty}" = 'y' ]; then

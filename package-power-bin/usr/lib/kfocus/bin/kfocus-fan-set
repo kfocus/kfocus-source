@@ -33,7 +33,7 @@ _importCommonFn () {
   fi
 }
 
-_openFanProfileFile () {
+_openFanProfileFileFn () {
   declare _file_fd;
   declare -n _out_file_fd;
 
@@ -51,7 +51,7 @@ _openFanProfileFile () {
 _setFanControlFn () {
   declare _fan_control_mode _write_file_fd;
   _fan_control_mode="${1:-}";
-  _openFanProfileFile _write_file_fd || return 1;
+  _openFanProfileFileFn _write_file_fd || return 1;
 
   echo "${_fan_control_mode}" >&"${_write_file_fd}";
   flock -u "${_write_file_fd}";
@@ -111,7 +111,7 @@ _chkReportFanSupportFn () {
 _EOH010
       )";;
 
-    m1*|m2g1*|m2g2*|m2g3*|m2g4*|m2g5*|m2g6*|xe*|zr*)
+    ar*|m1*|m2*|xe*|zr*)
       if [ "${_is_tuxedo_io_present}" = 'y' ]; then return 0; fi
       _model_msg="$(cat <<_EOH020
 <b>Custom fan profiles are available</b>. Please install
@@ -178,7 +178,7 @@ _printOptionsFn () {
 _readModeFn () {
   declare _fan_profile_str _opt_line _bit_list _read_file_fd;
 
-  _openFanProfileFile _read_file_fd || return 1;
+  _openFanProfileFileFn _read_file_fd || return 1;
   _fan_profile_str="$(head -n1 <&"${_read_file_fd}")";
   flock -u "${_read_file_fd}";
 

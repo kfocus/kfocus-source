@@ -222,10 +222,14 @@ _audit_cm2EchoStackFn () {
 
 # 0j_
 ## BEGIN _cm2RunLongCmdFn {
-# Summary   : _cm2RunLongCmdFn <_prompt_msg> <_command> [ <arg1>, ... ]
-# Purpose   : Run command as sudo with spinner in GUI or TTY
+# Summary   : _cm2RunLongCmdFn [AS_USER] <_prompt_msg> <_command>
+#             [ <arg1>, ... ]
+# Purpose   : Run command with spinner in GUI or TTY
 # Example   : _cm2RunLongCmdFn 'Install packages' 'apt' 'install' "${list[@]}";
 # Arguments : $1 = _prompt_msg, $2 = _command, $3... command arguments
+#    By default, commands run as root via sudo or pkexec. The special string
+#    'AS_USER' can be placed before all other arguments to run the command as
+#    a standard user.
 # Globals   : Package symbols _cm2IsTty, _cm2RmExe, _cm2MkTmpFileFn
 # Outputs   : Prompt to STDERR or GUI. Command STDOUT is echoed to STDOUT
 # Returns   : Command return value

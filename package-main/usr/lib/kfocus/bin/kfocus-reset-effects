@@ -148,17 +148,19 @@ _resetShortcutsFn () {
     # It is presented in the first-run wizard.
     "plwc|General|LastSeenVersion|${_plasma_version:-6.6.4}"
 
-    # Reset DPI per ticket 3521: Set the scale factor based on the device.
-    #   First, clear prior values.
+    # Reset DPI step 1: Clear prior values. If a model is not listed below,
+    #   default values are used (#3521).
     'font|General|forceFontDPI|'
     'glob|KScreen|ScaleFactor|'
     'glob|KScreen|ScreenScaleFactors|'
 
-    # Second, set desired values on devices where it matters.
-    # Ticket 6374: These settings only affects X11, which is as desired.
-    #   In Wayland, this is a no-op and per-display configs are stored in
+    # Reset DPI step 2: Set desired values on devices where it matters.
+    #   These settings only affects X11, which is as desired. In Wayland, this
+    #   is a no-op and per-display configs are stored in
     #   kwinoutputconfig.json. The values there are auto-calculated by
-    #   Wayland using EDID data, and is generally good.
+    #   Wayland using EDID data, and is generally good (#6374).
+    #
+    'font|General|forceFontDPI|120|arg1'
     'font|General|forceFontDPI|120|ir14g1'
     'font|General|forceFontDPI|120|ir14g2'
     'font|General|forceFontDPI|120|ir16g2'
@@ -167,7 +169,9 @@ _resetShortcutsFn () {
     'font|General|forceFontDPI|120|m2g5'
     'font|General|forceFontDPI|120|m2g5p'
     'font|General|forceFontDPI|120|m2g6'
+    'font|General|forceFontDPI|120|m2g7'
     'font|General|forceFontDPI|120|zrg1'
+    'font|General|forceFontDPI|120|zrg2'
   );
 
   _tab_char=$'\t';
@@ -378,7 +382,7 @@ _EOH01
   # NEW IMPLEMENTATION: Prompt user to log out and back in immediately. There
   #   is some risk of desktop components rewriting their configuration files
   #   before or during logout, which will result in an incomplete settings
-  #   reset. See ticket ???? for details and other possible implementations.
+  #   reset. See ticket 6579 for details and other possible implementations.
   _prompt_msg="$(cat <<_EOH02
 ${_cm2HtmBeginStr}
 <h3 style="color:#f7941d">KFocus Reset Effects Finished</h3>

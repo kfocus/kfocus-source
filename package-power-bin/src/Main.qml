@@ -7,9 +7,9 @@ import org.kde.kirigami as Kirigami
 Kirigami.ApplicationWindow {
   id            : root
   title         : 'Power and Fan'
-  width         : Kirigami.Units.gridUnit * 35
+  width         : Kirigami.Units.gridUnit * 32
   height        : Kirigami.Units.gridUnit * 36
-  minimumWidth  : Kirigami.Units.gridUnit * 35
+  minimumWidth  : Kirigami.Units.gridUnit * 32
   minimumHeight : Kirigami.Units.gridUnit * 36
 
   pageStack.initialPage: Kirigami.Page {
