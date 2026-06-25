@@ -251,6 +251,7 @@ _getUnmountedBlockDevListFn () {
   _block_dev_str="$(sed -E 's/ +$//g' <<< "${_block_dev_str}")";
   echo "${_block_dev_str}";
 }
+## . END _getUnmountedBlockDevListFn }
 
 ## BEGIN _extractBlkidFieldStrFn {
 # Summary   : _extractBlkidFieldStrFn <blkid_report> <target_dev> <field_name>

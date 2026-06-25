@@ -71,7 +71,6 @@ _exeLookupList=(
   'kfocus_reset_widgets|kfocus-reset-widgets||kfocus-main|KFocus Reset Widget: Reset desktop hint and icon widgets'
   'kfocus_rollback|/usr/lib/kfocus/bin/kfocus-rollback|/usr/lib/kfocus/bin/kfocus-rollback|kfocus-rollback|KFocus System Rollback Dashboard: Create, manage, and restore coherent system snapshots'
   'kfocus_tbt|/usr/lib/kfocus/bin/kfocus-tbt||kfocus-tools|KFocus Thunderbolt Control: Enable or disable Thunderbolt'
-  #'kfocus_vidsync|kfocus-vidsync||kfocus-vidsync|KFocus Video Sync Utility: Change video sync settings' # FIXME A
   'kfocus_welcome|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://docs.google.com/presentation/d/e/2PACX-1vTsKGkzy_tFm2xZo-BYX7mqeLG43C2vy108qsWZ2L_c4XJGXEVh2fAt3sNvgiqXfw4OFPWynHS-32xx/pub?start=false&loop=false&delayms=3000||kfocus-main|KFocus Feature Guide: Explore the features of Kubuntu Focus systems'
   # app_id|cmd_str;with;args|sniff_str|pkg_str|descr_str
   # 1       2                 3         4       5
@@ -80,7 +79,6 @@ _exeLookupList=(
   'konsole|konsole||konsole|Konsole: Use an X Terminal Emulator'
   'krita|krita||krita|Krita: Raster Image Editor'
   'kruler|kruler||kruler|Kruler: Measure Screen Objects'
-  #'kubectl|konsole;--hold;-e;kubectl;help|kubectl|kubectl|Kubernetes: Command Line Container Management' # FIXME A
   'libreoffice-base|libreoffice;--base||libreoffice-base|LibreOffice Database: Connect Databases'
   'libreoffice-calc|libreoffice;--calc||libreoffice-calc|LibreOffice Calc: Create and Edit Spreadsheets'
   'libreoffice-draw|libreoffice;--draw||libreoffice-draw|LibreOffice Drawing: Create Vector and Raster Images'
@@ -88,7 +86,6 @@ _exeLookupList=(
   'libreoffice-writer|libreoffice;--writer||libreoffice-writer|LibreOffice Writer: Word Processor'
   'lutris|lutris||lutris|Lutris: Play Games With Wine'
   'meld|meld||meld|Meld: Visual Difference and Merge Tool'
-  #'minecraft-launcher|minecraft-launcher||minecraft-launcher|Minecraft: Launch Minecraft' # FIXME A
   'nvidia-settings|nvidia-settings||nvidia-settings|Nvidia Settings: Configure Nvidia GPUs'
   'obs|obs||obs-studio|OBS Studio: Record and Stream Live Video'
   'okular|okular||okular|Okular: View PDFs and Other Documents'
@@ -119,6 +116,9 @@ _exeLookupList=(
   'ghb|!ghb|/var/lib/flatpak/app/fr.handbrake.ghb/x86_64/stable/active/files/bin/ghb|handbrake-flathub|Handbrake: Back up encoded audio and video'
   'intellij|!intellij|jetbrains-toolbox|jetbrains-toolbox|IntelliJ: JetBrains Java IDE'
   'jetbrains-toolbox|!jetbrains-toolbox|$HOME/bin/jetbrains-toolbox/bin/jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs'
+  'kfocus_vidsync|!kfocus-vidsync|/usr/bin/true|base-files|KFocus Video Sync Utility: Change video sync settings'
+  'kubectl|!kubectl|/usr/bin/true|base-files|Kubernetes: Command Line Container Management'
+  'minecraft-launcher|!minecraft-launcher|/usr/bin/true|base-files|Minecraft: Launch Minecraft'
   'pycharm|!pycharm|jetbrains-toolbox|jetbrains-toolbox|PyCharm: JetBrains Python IDE'
   'virtualbox|!virtualbox||virtualbox|VirtualBox: Run Virtual Machines'
   'webstorm|!webstorm|jetbrains-toolbox|jetbrains-toolbox|WebStorm: JetBrains Web IDE'
@@ -990,6 +990,40 @@ EOT
       fi
       _cmd_str='flatpak';
       _arg_list=( 'run' 'fr.handbrake.ghb' );
+      ;;
+
+    kfocus_vidsync)
+      _prompt_msg="$(cat <<EOT
+${_cm2HtmPStr}kfocus-vidsync is not necessary for tear-free video playback <br>
+on Kubuntu 26.04, and has been removed.</p>
+EOT
+      )";
+      _cmd_str='true';
+      ;;
+
+    kubectl)
+      _prompt_msg="$(cat <<EOT
+${_cm2HtmPStr}kubectl cannot be automatically installed, as the version to <br>
+install depends on the cluster you are managing.</p>
+
+${_cm2HtmPStr}To install kubectl, follow the instructions at <br>
+<a href="https://kubernetes.io/docs/tasks/tools/install-kubectl-linux"
+>https://kubernetes.io/docs/tasks/tools/install-kubectl-linux</a>.</p>
+EOT
+      )";
+      _cmd_str='true';
+      ;;
+
+    minecraft-launcher)
+      _prompt_msg="$(cat <<EOT
+${_cm2HtmPStr}Minecraft cannot be installed on Kubuntu 26.04 due to a bug <br>
+in Minecraft's installer. See <br>
+<a href="https://bugs.mojang.com/browse/MCL/issues/MCL-26563"
+>https://bugs.mojang.com/browse/MCL/issues/MCL-26563</a> for <br>
+more information.</p>
+EOT
+      )";
+      _cmd_str='true';
       ;;
 
     *) true;;

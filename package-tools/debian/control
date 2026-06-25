@@ -4,7 +4,6 @@ Maintainer:        Kubuntu Focus Team <support@kfocus.org>
 Standards-Version: 4.7.3
 Build-Depends:     debhelper-compat (=13)
 
-# Removed dependency on kfocus-power-fan
 Package:      kfocus-tools
 Architecture: all
 Depends:      ${misc:Depends},
@@ -23,7 +22,6 @@ Breaks:       kfocus-eth-yt6801,
 Description:  Kubuntu Focus Tools Metapackage
  This metapackage installs the Kubuntu Focus tools.
 
-# Removed breaks on kfocus-power-fan
 Package:      kfocus-tools-ir1xg3
 Architecture: all
 Depends:      ${misc:Depends}
@@ -43,7 +41,6 @@ Description:  Kubuntu Focus Tools - ir1xg3 Metapackage
  This metapackage installs the Kubuntu Focus tools
  for the Ir1X GEN 3 laptops.
 
-# Removed breaks on kfocus-power-fan
 Package:      kfocus-tools-m2g6
 Architecture: all
 Depends:      ${misc:Depends},
@@ -63,7 +60,6 @@ Description:  Kubuntu Focus Tools - M2G6 Metapackage
  This metapackage installs the Kubuntu Focus tools
  for the M2 GEN 6 laptops.
 
-# Removed breaks on kfocus-power-fan
 Package:      kfocus-tools-nxg1
 Architecture: all
 Depends:      ${misc:Depends}
@@ -83,7 +79,6 @@ Description:  Kubuntu Focus Tools - NX Metapackage
  This metapackage installs the Kubuntu Focus tools
  for the NX desktops.
 
-# Removed breaks on kfocus-power-fan
 Package:      kfocus-tools-other
 Architecture: all
 Depends:      ${misc:Depends}
@@ -144,6 +139,13 @@ Package:      kfocus-vidsync
 Architecture: all
 Depends:      ${misc:Depends}
 Description:  Transitional Dummy Package for kfocus-vidsync
+ This is a transitional dummy package.
+ It can be safely removed.
+
+Package:      kfocus-power-fan
+Architecture: all
+Depends:      ${misc:Depends}, kfocus-power-bin
+Description:  Transitional Dummy Package for kfocus-power-fan
  This is a transitional dummy package.
  It can be safely removed.
 

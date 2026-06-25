@@ -1637,7 +1637,7 @@ _logWrapFn () {
 #     at time of writing include 'info', 'warning', 'error',
 #     'rollbackLowMainSpace', and 'rollbackLowBootSpace'.
 #   _msg_str - The message to display to the user.
-# Globals   : DISPLAY, DBUS_SESSION_BUS_ADDRESS
+# Globals   : XDG_RUNTIME_DIR, DBUS_SESSION_BUS_ADDRESS
 # Outputs   : none
 # Returns   : none
 # Throws    : none
@@ -1652,11 +1652,13 @@ _promptAllUsersFn () {
   _session_info="$(_cm2EchoGraphicalLoginInfoFn)";
   IFS=';' read -r -a _bit_list <<< "${_session_info}";
 
+  # Loop through users
   for _uname_uid_tuple in "${_bit_list[@]}"; do
     IFS='|' read -r -a _uname_uid_list <<< "${_uname_uid_tuple}";
     _uname="${_uname_uid_list[0]}";
     _uid="${_uname_uid_list[1]}";
 
+    # Switch to user and send message
     sudo -u "${_uname}" \
       XDG_RUNTIME_DIR="/run/user/${_uid}" \
       DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${_uid}/bus" \

@@ -244,6 +244,8 @@ vnoremap <F2> :<C-w>exe join(getline("'<","'>"),'<Bar>')<CR>
 vnoremap ,u :s/\<\@!\([A-Z]\)/\_\l\1/g<CR>gul
 " Change snake_case to camelCase
 vnoremap ,c :s/_\([a-z]\)/\u\1/g<CR>gUl
+" Change selection to Pascal Case (disabled, doesn't quite work yet)
+" vnoremap ,p :s/\<\w/\u&/g<CR>
 
 " =====[ Smarter searching ]===========================================
 set hlsearch                        "Highlight all search matches

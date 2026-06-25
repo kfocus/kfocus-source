@@ -219,6 +219,7 @@ function addEndFn( arg_panel_obj, arg_is_horiz ) {
   const systray_obj = arg_panel_obj.addWidget( 'org.kde.plasma.systemtray' );
   systray_obj.currentConfigGroup = [ 'General' ];
 
+  // Ensure the battery / power icon is always visible
   const shown_items = systray_obj.readConfig('shownItems').split(',');
   if (shown_items.indexOf('org.kde.plasma.battery') === -1) {
     shown_items.push('org.kde.plasma.battery');

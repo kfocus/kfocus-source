@@ -266,28 +266,23 @@ _installEnvFn () {
     fi
   fi
 
-  ## FIXME: update this regex
-  if [[  "${_conda_installed_vers}" =~ ^2[3-9]\.|^4.12.0$ ]]; then
-    _cm2EchoFn "Using compatible conda version |${_conda_installed_vers}|.";
-  else
-    _conda_oldstyle_vers="$(
-      conda list anaconda$ |tail -n0 |awk '{print $2}'
-    )";
-    case "${_conda_oldstyle_vers}" in
-    '') _cm2EchoFn 'Conda does not appear installed';;
-    '2020.11'|'2020.07')
-      _cm2WarnStrFn "Conda version |${_conda_oldstyle_vers}| found in";
-      _cm2WarnStrFn "the current installation |${_conda_expect_dir}";
-      _cm2WarnStrFn 'is an older version. Use kfocus-conda-legacy-v01';
-      _cm2WarnStrFn 'to continue using this installation. Exiting...';
-      _exitFn;;
-    *) _cm2WarnStrFn "Conda version |${_conda_oldstyle_vers}| found in";
-      _cm2WarnStrFn "the current installation |${_conda_expect_dir}|";
-      _cm2WarnStrFn  "is not a supported version. Please move this";
-      _cm2WarnStrFn  "directory aside before proceeding. Exiting...";
-      _exitFn;;
-    esac
-  fi
+  ## This no longer appears necessary.
+  # if [  "${_conda_installed_vers}" = '25.11.1' ] \
+  #   || _cm2TestVersFn "${_conda_installed_vers}" '25.11.1'; then
+  #   _cm2EchoFn "Using compatible conda version |${_conda_installed_vers}|.";
+  # else
+  #   _conda_oldstyle_vers="$(
+  #     conda list anaconda$ |tail -n0 |awk '{print $2}'
+  #   )";
+  #   case "${_conda_oldstyle_vers}" in
+  #   '') _cm2EchoFn 'Conda does not appear installed';;
+  #   *) _cm2WarnStrFn "Conda version |${_conda_oldstyle_vers}| found in";
+  #     _cm2WarnStrFn "the current installation |${_conda_expect_dir}|";
+  #     _cm2WarnStrFn  "is not a supported version. Please move this";
+  #     _cm2WarnStrFn  "directory aside before proceeding. Exiting...";
+  #     _exitFn;;
+  #   esac
+  # fi
 
   if [ -d "${_conda_expect_dir}" ]; then
     _reply_str=$( _cm2ReadPromptYnFn \
