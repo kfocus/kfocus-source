@@ -1,26 +1,10 @@
-kfocus-hw (26.04.1~alpha3) resolute; urgency=medium
+kfocus-hw (26.04.1~beta1) resolute; urgency=medium
 
-  * usr_share_kfocus_kfocus_fand.d_fan_profile_db:
-    - Split into dflt-usr_share_kfocus_kfocus_fand.d_fan_profile_db and
-      m2g6-usr_share_kfocus_kfocus_fand.d_fan_profile_db, with model-specific
-      settings (#6593)
-    - Add "max" fan profile (#6593)
+  * postinst: Remove X11 touchpad config (#6374)
+  * usr/lib/kfocus/conf/*: Update hardware config for Kubuntu 26.04 (#6374)
+  * kfocus-hints/*: Update hint widget images for Kubuntu 26.04 (#6414)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 10 Jun 2026 22:07:05 -0500
-
-kfocus-hw (26.04.1~alpha2) resolute; urgency=medium
-
-  * usr_share_kfocus_kfocus_fand.d_fan_profile_db: Add configuration for
-    kfocus-fand (#6593)
-  * postinst: Symlink kfocus-fand configuration as appropriate (#6593)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 08 Jun 2026 22:24:23 -0500
-
-kfocus-hw (26.04.1~alpha1) resolute; urgency=medium
-
-  * Initial alpha build. (#6563)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 25 May 2026 12:10:38 -0500
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Fri, 26 Jun 2026 15:58:31 -0500
 
 kfocus-hw (24.04.15) noble; urgency=medium
 

@@ -1,20 +1,19 @@
-kfocus-apt-source (26.04.1~alpha3) resolute; urgency=medium
+kfocus-apt-source (26.04.1~beta1) resolute; urgency=medium
 
-  * Restore 24.04 nvidia-cuda repository (#6374)
+  * postinst: Remove NodeJS pinning (#6617)
+  * postinst: Remove obsolete migration code for kfocus-recommended.list
+    (#6374)
+  * kfocus-package-pin: Blacklist HPLIP GUI and hpijs driver (#6457)
+  + nodesource.list, nodesource.gpg: Remove, use Ubuntu's NodeJS packages
+    instead (#6617)
+  * nvidia-cuda.list: Bump to 24.04 CUDA packages (#6374)
+  * nvidia-cuda.list: Remove old repo URLs (#6374)
+  * nvidia-ml.list, nv-ml.asc: Delete, ML libraries are included in NVIDIA's
+    CUDA driver repo (#6374)
+  * google-chrome.asc: Update Google's signing key (#6374)
+  * tuxedo.asc: Delete, no longer using Tuxedo's driver binaries (#6374)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 04 Jun 2026 23:31:21 -0500
-
-kfocus-apt-source (26.04.1~alpha2) resolute; urgency=medium
-
-  * Fix pins to stop auto install of hplip-gui, printer-driver-jpijs (#6457)
-
- -- Michael S. Mikowski <support@kfocus.org>  Wed, 03 Jun 2026 18:53:15 -0400
-
-kfocus-apt-source (26.04.1~alpha1) resolute; urgency=medium
-
-  * Initial alpha build (#6563)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 25 May 2026 12:09:55 -0500
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Fri, 26 Jun 2026 15:46:11 -0500
 
 kfocus-apt-source (24.04.6) noble; urgency=medium
 

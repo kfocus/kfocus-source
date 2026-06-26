@@ -40,14 +40,13 @@ Pin: release o=LP-PPA-kfocus-team-release
 Pin-Priority: 1006
 
 ## BEGIN BETA SECTION - deleted from release packages
-# DISABLED FOR 24.04.8~beta5; release packages will be preferred
 # 1st: Core nvidia packages from kfocus-team-package-testing repo
 # Note: Although specified, v 595.71.05-0ubuntu0.26.04.1~kfocus1
 #   is NOT honored.
-# Package: nvidia-* libnvidia-* xserver-xorg-video-nvidia-*
-# Pin: version 595.71.05-0ubuntu0.26.04.1~kfocus1
-# Pin: release o=LP-PPA-kfocus-team-package-testing
-# Pin-Priority: 1006
+Package: nvidia-* libnvidia-* xserver-xorg-video-nvidia-*
+Pin: version 595.71.05-0ubuntu0.26.04.1~kfocus1
+Pin: release o=LP-PPA-kfocus-team-package-testing
+Pin-Priority: 1006
 ## . END BETA SECTION - deleted from release packages
 
 # 2nd: Core nvidia packages version 595.71.* from highest-ranked repo

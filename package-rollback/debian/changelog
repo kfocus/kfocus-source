@@ -1,21 +1,22 @@
-kfocus-rollback (26.04.1~alpha4) resolute; urgency=medium
+kfocus-rollback (26.04.1~beta1) resolute; urgency=medium
 
-  * General code cleanup (#6592)
+  * src/kfocus-rollback-bin/*:
+    - Port to KF6 Kirigami (#6592)
+    - Switch build system to CMake (#6592)
+    - General code cleanup (#6592)
+    - Adjust widget spacing (#6592)
+  * kfocus-rollback.postinst: Remove metadb migration code (#6592)
+  * kfocus-rollback:
+    - Bring back KDialog icons (#6592)
+    - Chain to the fancy frontend only if it exists, fall back to the bash UI
+      otherwise (#6592)
+    - Update to KF6 binaries where needed (#6592)
+  * kfocus-rollback-backend:
+    - Port to `_cm2EchoGraphicalLoginInfoFn` API (#6592)
+    - Update to KF6 binaries where needed (#6592)
+  * org.kfocus.rollback.desktop: Rename from kfocus-rollback.desktop (#6592)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 08 Jun 2026 22:30:37 -0500
-
-kfocus-rollback (26.04.1~alpha3) resolute; urgency=medium
-
-  * Rename desktop file (#6592)
-  * Fix launch and installation of the fancy frontend (#6592)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 04 Jun 2026 23:34:01 -0500
-
-kfocus-rollback (26.04.1~alpha2) resolute; urgency=medium
-
-  * Second alpha build. (#6563)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 03 Jun 2026 15:12:57 -0500
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Fri, 26 Jun 2026 16:41:53 -0500
 
 kfocus-rollback (24.04.11) noble; urgency=medium
 

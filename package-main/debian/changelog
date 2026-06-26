@@ -1,38 +1,96 @@
-kfocus-main (26.04.1~alpha7) resolute; urgency=medium
+kfocus-main (26.04.1~beta1) resolute; urgency=medium
 
-  * control: Bring back dependency on Linux kernel metapackages (#6631)
-  * kfocus-focusrx: Add notification when launched in live mode (#6597)
-  * kfocus-mime: Remove kfocus-vidsync launcher (#6374)
-  * etc_xdg_menus_applications-merged_kfocus.menu: Remove
-    kfocus-vidsync.desktop (#6374)
+  * debian/control:
+    - Switch build dependencies to Qt6 (#6374)
+    - Add dconf-cli to kfocus-main dependencies (for kfocus-fix-ibus) (#6374)
+    - Add jq to kfocus-main dependencies (for common.2.source) (#6374)
+    - Update Linux metapackage dependency (#6631)
+    - Remove pipewire-alsa dependency, upstream now provides this (#6374)
+    - Rename policykit-1 dependency to polkitd (#6374)
+    - Add xterm to kfocus-main dependencies (for kfocus-extra and others)
+      (#6374)
+    - Remove obsolete kfocus-rest transitional dependencies (#6374)
+    - Update kfocus-meta dependencies (#6566)
+    - Remove kfocus-power-scripts transitional package (#6374)
+  * kfocus-main.config: Remove, obsolete (#6374)
+  * kfocus-firstrun.desktop: Move to kfocus-firstrun-bin and rename (#6374)
+  * usr/share/pixmaps/*: Delete, no longer useful (#6374)
+  * usr/share/mime/*: Delete, no longer useful (#6374)
+  * kfocus-main.lintian-overrides: Rename policykit-1 dependency to polkitd
+    (#6374)
+  * kfocus-main.postinst:
+    - Update graphical login search code (#6374)
+    - Remove obsolete migration code (#6374)
+  * kfocus-main.preinst:
+    - Fix BackInTime icon (#6374)
+    - Remove obsolete language-selector pkg_depends undiversion (#6374)
+    - Remove unsafe `exit 0` before debhelper-generated code (#6374)
+  * kfocus-main.postrm:
+    - Undo BackInTime icon fix on uninstall (#6374)
+    - Remove obsolete language-selector pkg_depends undiversion (#6374)
+    - Remove unsafe `exit 0` before debhelper-generated code (#6374)
+  * kfocus-main.templates: Remove, obsolete (#6374)
+  * debian/manpages/*: Bump version and date (#6374)
+  * kfocus-reset-effects.1.md: Fix wording (#6374)
+  * kfocus-focusrx-dbus-dispatch/*: Port to Qt6 (#6374)
+  * kfocus-focusrx-dbus-dispatch/KDialogLauncher.{cpp,h}: Add kfocusMime
+    command to work around environment variable issues when launching
+    kfocus-mime from a browser (#6374)
+  * kfocus-check-crypt: Fix indentation and whitespace (#6374)
+  * kfocus-firstrun-set: Delete, unused (#6374)
+  * kfocus-fix-ibus:
+    - Port from qdbus to dbus-send (#6374)
+    - Use DConf to hide the IBus icon (#6374)
+  * kfocus-focusrx:
+    - Port away from "sudo -E" (#5881)
+    - Remove `_chkDispRefreshFn`, no longer needed (#6374)
+    - Disable `_chkKernelCleanFn`, current form no longer needed (#6374)
+    - Add popup notice when refusing to launch in live session (#6374)
+  * kfocus-focusrx-set:
+    - Remove references to kfocus-keyboard-ite (#6584)
+    - Disable references to NVIDIA edge drivers (#6374)
+  * kfocus-focusrx-system:
+    - Port to new `_cm2EchoGraphicalLoginInfoFn` API (#6374)
+    - Remove obsolete DKMS downgrade migration code (#6374)
+  * kfocus-kclean: Remove, current form is no longer necessary (#6374)
+  * kfocus-mime:
+    - Add per-user installer for JetBrains Toolbox (#6565)
+    - Fix install and launch routines for multiple apps (#6565)
+    - Disable obsolete and broken curated apps (#6565)
+    - Get BackInTime packages from the Ubuntu repos instead of the BiT PPA
+      (#6374)
+    - Port away from apt-key (#6052)
+    - Add back KDialog icons (#6374)
+    - Add D-Bus indirect launch mechanism to avoid environment variable issues
+      when laucnhed from a browser (#6374)
+    - Remove support for .kfocus-001 link files (#6374)
+  + kfocus-reset-effects:
+    - Update settings for 26.04 (#6374)
+    - Port to kwriteconfig6 (#6374)
+    - Prompt the user to log out and back in rather than restarting the
+      desktop (#6374)
+  * kfocus-reset-widgets: Add back KDialog icons (#6374)
+  * kfocus-sddm-setup: Remove, no longer used (#6374)
+  * kfocus-sysreport: Update memory tester application name (#6374)
+  * kfocus-web-launcher: Fix invalid sed regex (#6374)
+  * etc_xdg_menus_applications-merged_kfocus.menu:
+    - Delete kfocus-kclean desktop entry listing (#6374)
+    - Delete kfocus-vidsync desktop entry listing (#6374)
+    - Update desktop file names for kfocus-firstrun-bin, kfocus-power-bin, and
+      kfocus-rollback-bin (#6374)
+  * common.2.source:
+    - Add `AS_USER` argument for `_cm2RunLongCmdFn` (#6374)
+    - Port from qdbus to dbus-send (#6374)
+    - Add `_cm2EchoGraphicalLoginInfoFn` API (#6374)
+  * chkIbusPanelIcon.js, fixIbusPanelIcon.js: Remove, we now hide the IBus
+    icon using dconf (#6374)
+  * createKfocusWidgets.js: Update for compatibility with Plasma 6.6 (#6374)
+  * kfocus-kclean.desktop: Remove, current form is no longer necessary (#6374)
+  * kfocus-mime.desktop: Use D-Bus launch method (#6374)
+  * usr/share/icons/hicolor/*: Remove non-SVG icons (#6374)
+  * usr/share/kfocus-hints/*: Update hint widget for 26.04 (#6414)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 08 Jun 2026 22:25:48 -0500
-
-kfocus-main (26.04.1~alpha6) resolute; urgency=medium
-
-  * Update snap workaround to open using X11 (#6374)
-    TODO: This is a hack, as the desktop file does not include
-    slack --ozone-platform=x11, so it alone will not work.
-
- -- Michael S. Mikowski <support@kfocus.org>  Fri, 05 Jun 2026 17:27:13 -0400
-
-kfocus-main (26.04.1~alpha5) resolute; urgency=medium
-
-  * Update defaults for kwinrc in kfocus-reset-effects (#6374)
-
- -- Michael S. Mikowski <support@kfocus.org>  Thu, 04 Jun 2026 17:16:45 -0400
-
-kfocus-main (26.04.1~alpha4) resolute; urgency=medium
-
-  * Divert BackInTime icon to something a user understands (#6621)
-
- -- Michael S. Mikowski <support@kfocus.org>  Wed, 03 Jun 2026 12:06:30 -0400
-
-kfocus-main (26.04.1~alpha3) resolute; urgency=medium
-
-  * Third alpha build. (#6563)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 27 May 2026 16:47:23 -0500
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Fri, 26 Jun 2026 16:29:21 -0500
 
 kfocus-main (24.04.31) noble; urgency=medium
 

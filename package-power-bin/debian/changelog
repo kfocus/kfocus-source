@@ -1,56 +1,22 @@
-kfocus-power-bin (26.04.1~alpha7) resolute; urgency=medium
+kfocus-power-bin (26.04.1~beta1) resolute; urgency=medium
 
-  * kfocus-fand: Add support for "FANAUTO" config lines (#6593)
-  * kfocus-fan-set: Add "max" fan profile (#6593)
-  * kfocus-pstate: Port to using dbus-send instead of qdbus (#6593)
-  * kfocus-power-bin: Remove unnecessary labels underneath fan slider (#6593)
-  * kfocus-power-bin: Add an error message in place of the fan slider if fan
-    profiles should be supported but kfocus-fand is not running (#6593)
+  * Update for KF6 Kirigami (#6593)
+  * Rewrite to improve race condition avoidance (#6593)
+  * Switch build system to CMake (#6593)
+  * debian/control: Remove old Conflicts/Replaces for kfocus-power,
+    kfocus-fan, kfocus-power-scripts (#6593)
+  * debian/control: Rename policykit-1 dependency to polkitd (#6593)
+  * debian/copyright: Change kfocus-power to kfocus-power-bin in upstream name
+    field (#6593)
+  * org.kfocus.power.desktop: Rename from kfocus-power.desktop (#6593)
+  * org.kfocus.power.desktop: Update exec line and keywords (#6593)
+  * kfocus-fand/*, kfocus-fand.service: Add fan control daemon (#6593)
+  * debian/manpages/*: Bump version and date (#6593)
+  * kfocus-fan-set: Port to kfocus-fand API (#6593)
+  * kfocus-power-set: Remove obsolete `_title` output (#6593)
+  * kfocus-pstate: Port from qdbus to dbus-send (#6593)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 10 Jun 2026 22:43:05 -0500
-
-kfocus-power-bin (26.04.1~alpha6) resolute; urgency=medium
-
-  * kfocus-power-bin.install: Fix desktop file name (#6593)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 09 Jun 2026 10:14:45 -0500
-
-kfocus-power-bin (26.04.1~alpha5) resolute; urgency=medium
-
-  * control: Add missing pkgconf dependency (#6593)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 09 Jun 2026 10:00:07 -0500
-
-kfocus-power-bin (26.04.1~alpha4) resolute; urgency=medium
-
-  * control: Fix build dependencies (#6593)
-  * kfocus-power-bin: Remove unnecessary fan profile hint (#6593)
-  * kfocus-power-bin: Shorten window (#6593)
-  * kfocus-power-bin: Fix widgets not moving correctly when window is resized
-    (#6593)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 09 Jun 2026 09:46:17 -0500
-
-kfocus-power-bin (26.04.1~alpha3) resolute; urgency=medium
-
-  * control: Fix build dependencies (#6593)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 09 Jun 2026 09:00:16 -0500
-
-kfocus-power-bin (26.04.1~alpha2) resolute; urgency=medium
-
-  * Rewrite frontend for Kubuntu 26.04 / Plasma 6 (#6593)
-  * kfocus-fand/*, kfocus-fand.service: Add fan control subsystem (#6593)
-  * kfocus-fan-set: Adjust to use kfocus-fand (#6593)
-  * kfocus-power-set: Tweaks for compatibility with frontend rewrite (#6593)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 08 Jun 2026 22:26:34 -0500
-
-kfocus-power-bin (26.04.1~alpha1) resolute; urgency=medium
-
-  * Initial alpha build. (#6563)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 25 May 2026 12:11:37 -0500
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Fri, 26 Jun 2026 16:36:26 -0500
 
 kfocus-power-bin (24.04.15) noble; urgency=medium
 

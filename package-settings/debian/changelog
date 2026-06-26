@@ -1,30 +1,49 @@
-kfocus-settings (26.04.1~alpha5) UNRELEASED; urgency=medium
+kfocus-settings (26.04.1~beta1) resolute; urgency=medium
 
-  * org.kfocus.desktop.defaultPanel/layout.js,
-    org.focusvert.desktop.defaultPanel/layout.js: Add kfocus-power icon near
-    system tray (#6593)
+  * kfocus-settings.links: Move environment injection script to
+    /etc/xdg/plasma-workspace/env/ dir (#6374)
+  * kfocus-settings.postinst: Remove code that enabled the now-obsolete
+    KFocus SDDM theme (#6374)
+  * kfocus-settings.postinst: Remove DKMS downgrade migration code (#6374)
+  * layout-*/org.kde.plasma.desktop-layout.js: Unify implementation with
+    kfocus-reset-widgets (#6374)
+  * etc_sysctl.d_20-kfocus-allow-userns.conf: Adjust comment (#6374)
+  * etc_xdg_plasma-workspace_env_z-kfocus.sh: Fix KFocus kf5-settings
+    directory placement in XDG_CONFIG_DIRS (#6374)
+  * skel/.config/BraveSoftware/*: Removed, Brave is no longer a Curated App
+    (#6374)
+  * skel/.config/autostart/org.keepassxc.KeePassXC.desktop: Start KeePassXC
+    automatically (#6374)
+  * skel/.config/google-chrome/Default/Preferences: Remove handler for
+    kfocus-001 files (#6374)
+  * skel/.config/obs-studio/global.ini: Remove, obsolete (#6374)
+  * skel/.vimrc:
+    - Remove swap of visual block select and visual select modes (#6374)
+    - Change shortcut for disabling hlsearch to avoid a conflict (#6374)
+    - Disable custom shortcut for moving to next file to edit (#6374)
+    - Adjust fast paste shortcut for Wayland (#6374)
+    - Add a WIP Pascal Case transform shortcut (#6374)
+  * katerc: Switch to upstream Kubuntu Black terminal profile (#6374)
+  * konsolerc: Sync with upstream, switch to upstream Kubuntu Black terminal
+    profile (#6374)
+  * kscreenlockerrc: Remove, redundant with upstream (#6374)
+  * ksplashrc: Remove, no longer functional and redundant with upstream
+    (#6374)
+  * mimeapps.list: Comment out Chrome associations (#6374)
+  * mimeapps.list: Remove VLC associations (#6374)
+  * plasma-welcomerc: Update last seen version to keep this disabled by
+    default, as it is redundant with our own welcome wizard (#6374)
+  * kfocus-black.colorscheme, kfocus-black.profile: Remove, these have been
+    upstreamed to Kubuntu (#6374)
+  * truevideowall/*: Remove, no longer working (#6374)
+  * usr/share/plasma/*: Update for Plasma 6 (#6374)
+  * org.*.desktop.defaultPanel/contents/layout.js:
+    - Sync with upstream (#6374)
+    - Add kfocus-power-bin launcher (#6374)
+    - Always display battery icon (#6374)
+  * usr/share/sddm/*: Remove, we now use upstream's SDDM theme (#6374)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Tue, 09 Jun 2026 10:36:12 -0500
-
-kfocus-settings (26.04.1~alpha4) resolute; urgency=medium
-
-  * org.kfocus.desktop.defaultPanel/layout.js,
-    org.focusvert.desktop.defaultPanel/layout.js: Fix kfocus-rollback
-    detection (#6592)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 08 Jun 2026 22:31:09 -0500
-
-kfocus-settings (26.04.1~alpha3) resolute; urgency=medium
-
-  * Rename kfocus-rollback desktop file (#6592)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 04 Jun 2026 23:35:10 -0500
-
-kfocus-settings (26.04.1~alpha2) resolute; urgency=medium
-
-  * Second alpha build. (#6563)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 27 May 2026 16:47:46 -0500
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Fri, 26 Jun 2026 16:51:20 -0500
 
 kfocus-settings (24.04.14) noble; urgency=medium
 

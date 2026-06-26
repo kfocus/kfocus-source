@@ -1,21 +1,15 @@
-kfocus-nvidia (26.04.1~alpha3) resolute; urgency=medium
+kfocus-nvidia (26.04.1~beta1) resolute; urgency=medium
 
-  * kfocus-nve-helper: Port to using dbus-send instead of qdbus (#6374)
+  * Update main drivers to 595-open (#6374)
+  * Make nvidia and nvidia-edge driver metapackages identical (#6374)
+  * kfocus-nvidia-pinning.in: Add note about what repo CUDA drivers come from
+    (#6374)
+  * kfocus-nve-helper:
+    - Port from qdbus to dbus-send (#6374)
+    - Use kded6 API for load and unload of kscreen (#6374)
+    - Port to `_cm2EchoGraphicalLoginInfoFn` API (#6374)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 10 Jun 2026 22:40:44 -0500
-
-kfocus-nvidia (26.04.1~alpha2) resolute; urgency=medium
-
-  * Switch to 595-open drivers for non-edge (#6374)
-  * Upgrade to 595.71.05 drivers to fix sleep/resume (#6374)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 04 Jun 2026 23:32:04 -0500
-
-kfocus-nvidia (26.04.1~alpha1) resolute; urgency=medium
-
-  * Initial alpha build. (#6563)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 25 May 2026 12:11:21 -0500
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Fri, 26 Jun 2026 16:31:46 -0500
 
 kfocus-nvidia (24.04.9) noble; urgency=medium
 
