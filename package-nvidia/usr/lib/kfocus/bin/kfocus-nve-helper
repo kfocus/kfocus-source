@@ -12,8 +12,42 @@
 #
 set -u;
 
+## BEGIN _importCommonFn {
+# Summary   : _importCommonFn
+# Purpose   : Load common routines, prefer relative dir
+# Example   : _importCommonFn;
+# Arguments : none
+# Globals   : Package vars _baseDir _baseName
+# Outputs   : none
+# Returns   : none
+#
+_importCommonFn () {
+  declare _lib_list _is_loaded _lib_file;
+  _lib_list=(
+    "${_baseDir}/lib/common.2.source"
+    '/usr/lib/kfocus/lib/common.2.source'
+  );
+  _is_loaded='n';
+  for _lib_file in "${_lib_list[@]}"; do
+    if [ -r "${_lib_file}" ]; then
+      # shellcheck source=/usr/lib/kfocus/lib/common.2.source
+      if source "${_lib_file}"; then
+        _is_loaded='y';
+        break;
+      fi
+    fi
+  done
+
+  if [ "${_is_loaded}" = 'n' ]; then
+    echo 1>&2 "${_baseName}: ABORT - Cannot source common lib";
+    exit 202;
+  fi
+}
+## . END _importCommonFn }
+
 _mainFn () {
-  declare _action_key _action_str _xserver_id _uname _uid;
+  declare _action_key _action_str _session_info _bit_list _uname_uid_tuple \
+    _uname_uid_list _uname _uid;
   _action_key="${1:-}";
   _action_str='';
 
@@ -23,28 +57,46 @@ _mainFn () {
     *) echo "Unsupported action: ${_action_key}"; return;;
   esac
 
-  while read -r _xserver_id; do
-    _uname="$(
-      who | grep "(:${_xserver_id})" | head -n1 | awk '{ print $1 }'
-    )";
-    if [ -z "${_uname}" ]; then continue; fi
-    _uid="$(id -u "${_uname}")";
+  _session_info="$(_cm2EchoGraphicalLoginInfoFn)";
+  IFS=';' read -r -a _bit_list <<< "${_session_info}";
+
+  for _uname_uid_tuple in "${_bit_list[@]}"; do
+    IFS='|' read -r -a _uname_uid_list <<< "${_uname_uid_tuple}";
+    _uname="${_uname_uid_list[0]}";
+    _uid="${_uname_uid_list[1]}";
 
     if 1>/dev/null sudo -u "${_uname}" \
-      DISPLAY="${_xserver_id}" \
+      XDG_RUNTIME_DIR="/run/user/${_uid}" \
       DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${_uid}/bus" \
       dbus-send --print-reply --session --dest=org.kde.kded6 /kded \
-        "${_action_str}" 'kscreen';
+        "${_action_str}" 'string:kscreen';
     then
-      echo "pass: ${_action_key} for |${_uname}|${_xserver_id}|";
+      echo "pass: ${_action_key} for |${_uname}|";
     else
-      echo "fail: ${_action_key} for |${_uname}|${_xserver_id}|";
+      echo "fail: ${_action_key} for |${_uname}|";
     fi
-  done < <(
-    find '/tmp/.X11-unix/' -mindepth 1 -maxdepth 1 -printf '%f\n' | sed 's?X??'
-  );
+  done
 }
-_mainFn "$@";
+
+## BEGIN Declare and assign global vars {
+#
+declare _binName _binDir _baseName _baseDir;
+## . END Declare and assign global vars }
+
+## BEGIN Run mainFn when the script is NOT sourced {
+#
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+
+  # Import libs and assign more global vars
+  _importCommonFn;
+
+  _mainFn "$@";
+fi
+## . END Run mainFn when the script is NOT sourced }
 
 # Command reference
 # qdbus org.kde.kded5 /kded org.kde.kded5.loadModule      'kscreen' || true;
