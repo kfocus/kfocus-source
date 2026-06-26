@@ -13,6 +13,12 @@ ColumnLayout {
     property bool   isOkDestructive  : false
     property bool   isOk2Destructive : false
     property bool   ok2Visible       : false
+    property string okColor          : isOkDestructive
+      ? Kirigami.Theme.negativeTextColor
+      : Kirigami.Theme.textColor
+    property string ok2Color         : isOk2Destructive
+      ? Kirigami.Theme.negativeTextColor
+      : Kirigami.Theme.textColor
 
     signal okAction()
     signal ok2Action()
@@ -42,9 +48,7 @@ ColumnLayout {
     }
 
     Controls.Button {
-        palette.buttonText: isOkDestructive
-          ? Kirigami.Theme.negativeTextColor
-          : Kirigami.Theme.textColor
+        Kirigami.Theme.textColor : okColor
         text                  : acceptText
         icon.name             : acceptIcon
         Layout.preferredWidth : Kirigami.Units.gridUnit * 8.4
@@ -63,9 +67,7 @@ ColumnLayout {
     }
 
     Controls.Button {
-        palette.buttonText : isOk2Destructive
-          ? Kirigami.Theme.negativeTextColor
-          : Kirigami.Theme.textColor
+        Kirigami.Theme.textColor : ok2Color
         text                  : accept2Text
         icon.name             : accept2Icon
         Layout.preferredWidth : Kirigami.Units.gridUnit * 8.4
