@@ -4,7 +4,7 @@
 
 if [ -e '/etc/calamares/OEM_MODE_ACTIVATED' ]; then
   export BROWSER='sudo -H -u kubuntu firefox'
-  sudo BROWSER="${BROWSER}" calamares -D8;
+  sudo --preserve-env=XDG_CONFIG_DIRS BROWSER="${BROWSER}" calamares -D8;
   exit;
 fi
 
@@ -96,5 +96,5 @@ if kdialog --warningyesno "${_msg}"; then
 
   # Launch Calamares
   export BROWSER='sudo -H -u kubuntu firefox'
-  sudo BROWSER="${BROWSER}" calamares -D8;
+  sudo --preserve-env=XDG_CONFIG_DIRS BROWSER="${BROWSER}" calamares -D8;
 fi

@@ -4,4 +4,4 @@
 
 /usr/bin/basicwallpaper /usr/share/wallpapers/Next/contents/images/5120x2880.png &
 xhost si:localuser:root
-sudo QT_QPA_PLATFORMTHEME=kde /usr/bin/calamares -D8
+sudo --preserve-env=XDG_CONFIG_DIRS QT_QPA_PLATFORMTHEME=kde /usr/bin/calamares -D8

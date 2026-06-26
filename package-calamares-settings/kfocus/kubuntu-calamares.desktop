@@ -3,7 +3,7 @@ Type=Application
 Version=1.0
 Name=Install Kubuntu 26.04 LTS
 GenericName=Install Kubuntu
-Exec=sudo /usr/bin/calamares-launch-normal
+Exec=sudo --preserve-env=XDG_CONFIG_DIRS /usr/bin/calamares-launch-normal
 Comment=Calamares — System Installer
 Icon=system-software-install
 Terminal=false
