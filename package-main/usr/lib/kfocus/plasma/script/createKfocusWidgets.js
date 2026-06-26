@@ -84,7 +84,6 @@ var
       widget_w_px   : 428
     }
   },
-
   // kfocus hints widget images are 1280 x 1988
   widgetPathList = [
     '{"path":"file:///usr/share/kfocus-hints/00_badge.png","type":"file"}',
@@ -128,7 +127,7 @@ function setLayoutFn () {
     : (screen_w_px >= 2560 && screen_h_px >= 1440 ) ? 'medium' : 'small';
   scale_map    = scaleMatrix[ scale_key ];
 
-  icon_h_px    = scale_map.icon_ht_px;
+  icon_h_px     = scale_map.icon_ht_px;
   icon_padx_px  = scale_map.icon_padx_px;
   icon_space_px = scale_map.icon_space_px;
   icon_top_px   = scale_map.icon_top_px;
