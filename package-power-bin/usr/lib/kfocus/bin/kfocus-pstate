@@ -422,7 +422,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   _userName="$(id -un)";
 
-  if [ "${XDG_SESSION_TYPE:-}" != 'x11' ] || [ "$(id -u)" = '0' ]; then
+  if [[ ! "${XDG_SESSION_TYPE:-}" =~ ^(x11|wayland)$ ]] || [ "$(id -u)" = '0' ]; then
     _doGui='n'; else _doGui='y';
   fi
   _lockFile="/tmp/${_baseName}-${_userName}.lock";

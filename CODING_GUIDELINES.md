@@ -54,10 +54,20 @@ Declare all function-scope variables at the top of a function using a single
 `declare` statement. Do not combine declaration and assignment. Instead, assign
 an initial value to a variable as needed before first use.
 
-Use `ALL_UPPER_CASE` names for exported global variables. Use `camelCase` for
-package (file-scope) variables. Use `snake_case` for function-scope (local)
-variables. Prefix package- and function-scope variables with an underscore to
-avoid conflicting with other variables in the bash environment.
+
+Prefix package- and function-scope variables with an underscore to avoid
+conflicting with other variables in the bash environment. Use `ALL_UPPER_CASE`
+names for exported global variables. Use `_camelCase` for package (file-scope)
+variables. Use `_snake_case` for function-scope (local) variables.
+
+| Type    | Scope | Indicator | Example       |
+|---------|-------|-----------|---------------|
+| Integer | local | `_int`    | `__int`   |
+| "       | "     | `_count`  | `_item_count` |
+| "       | "     | `_idx`    | `_loop_idx`   |
+| Integer | pkg   | `Int`     | `_nameInt`    |
+| "       | "     | `Count`   | `_itemCount`  |
+| "       | "     | `Idx`     | `_loopIdx`    |
 
 Use duck typing to avoid confusion. Instead of using `line` for a text line
 and `lines` as an array of lines, use `_line` and `_line_list`. Use obvious
@@ -96,7 +106,7 @@ Write and annotate your code in paragraphs. Avoid comments per line or at the
 end of lines except in rare instances where the results are clearer. Try to
 avoid noise and have the code speak for itself. Comments should have verb-noun
 construction with the first letter capitalized. Do not use a period unless
-multiple sentences are used:
+multiple sentences are used. Use present tense verbs.
 
 ```bash
 # GOOD: Use a single comment for the block using noun-verb construction
@@ -108,11 +118,20 @@ if [ "${_user_id}" != '0' ]; then
 fi
 
 # BAD: Too noisy, inconsistent sentence construction
-_user_id="$(id -u)"; # user id get
+_user_id="$(id -u)"; # user id get. skipped.
 if [ "${_user_id}" != '0' ]; then       # root check
   _cm2WarnStr 'User is not root. Exit'; # exit if not root
   return 1; # non-zero return
 fi # close if statement
+```
+
+When writing a TODO comment, use the following form:
+
+```bash
+## TODO <date> <user> <priority>: <comment>
+
+# Example:
+## TODO 2026-06-21 mmikowski warm: Consider removing after smoke tests
 ```
 
 ## Structure

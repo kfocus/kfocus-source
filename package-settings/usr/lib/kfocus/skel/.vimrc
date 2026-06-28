@@ -206,6 +206,7 @@ vmap <silent> ;q :s?^\(\s*\)\(.*\)\s*$?      + \1'\2'?<CR>
 vmap <silent> ;h :s?^\(\s*\)+\(\s*\)'\([^']\+\)',*\s*$?\1\2\3?g<CR>
 
 " ;r Round all numbers on a line to n places (see SVG)
+" https://stackoverflow.com/questions/41330466
 vmap <silent> ;r :s?\d\+\.\d\+?\=printf('%.0f',str2float(submatch(0)))?gc<CR>
 vmap <silent> ;rr :s?\d\+\.\d\d\+?\=printf('%.1f',str2float(submatch(0)))?gc<CR>
 vmap <silent> ;rrr :s?\d\+\.\d\d\d\+?\=printf('%.2f',str2float(submatch(0)))?gc<CR>
@@ -232,7 +233,7 @@ set backspace=indent,eol,start      "BS past autoindents, boundaries, insertion
 " Turn off stupid-huge html indents
 " per https://vi.stackexchange.com/questions/10128
 au FileType html setlocal shiftwidth=2 tabstop=2 indentexpr=''
-au FileType md setlocal   shiftwidth=2 tabstop=2 indentexpr=''
+au FileType md   setlocal shiftwidth=2 tabstop=2 indentexpr=''
 
 " Execute from selected lines
 " See https://stackoverflow.com/questions/14385998
@@ -241,11 +242,11 @@ vnoremap <F2> :<C-w>exe join(getline("'<","'>"),'<Bar>')<CR>
 
 " See https://superuser.com/questions/271471
 " Change camelCase to snake_case
-vnoremap ,u :s/\<\@!\([A-Z]\)/\_\l\1/g<CR>gul
-" Change snake_case to camelCase
-vnoremap ,c :s/_\([a-z]\)/\u\1/g<CR>gUl
-" Change selection to Pascal Case (disabled, doesn't quite work yet)
-" vnoremap ,p :s/\<\w/\u&/g<CR>
+vnoremap ,u :s/\<\@!\([A-Z]\)/\_\l\1/g<CR>
+" Change snakeCase to camelCase
+vnoremap ,c :s/_\([a-z]\)/\u\1/g<CR>
+" Change Text To Pascal Case
+vnoremap ,p :s/\<\w/\u&/g<CR>
 
 " =====[ Smarter searching ]===========================================
 set hlsearch                        "Highlight all search matches

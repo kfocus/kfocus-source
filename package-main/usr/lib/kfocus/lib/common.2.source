@@ -226,7 +226,7 @@ _cm2ReadPromptYnFn () {
 }
 
 _cm2RunLongCmdFn () {
-  declare _prompt_msg _cmd_list _zenity_exe _exit_int _exit_str \
+  declare _prompt_msg _cmd_list _exit_int _exit_str \
     _tmp_str_file _tmp_int_file _do_user_run;
 
   _exit_int=0;
@@ -248,8 +248,7 @@ _cm2RunLongCmdFn () {
     return;
   fi
 
-  _zenity_exe="$(command -v 'zenity' || true)";
-  if [ -z "${_zenity_exe}" ]; then
+  if [ -z "${_cm2ZenityExe}" ]; then
     if [ "${_do_user_run}" = 'y' ]; then
       "${_cmd_list[@]}";
     else
@@ -265,7 +264,7 @@ _cm2RunLongCmdFn () {
         pkexec "${_cmd_list[@]}" > "${_tmp_str_file}";
       fi
       echo "$?" > "${_tmp_int_file}";
-    ) | "${_zenity_exe}" --window-icon 'kfocus-bug-rx' --progress \
+    ) | "${_cm2ZenityExe}" --window-icon 'kfocus-bug-rx' --progress \
         --title "${_prompt_msg}" --pulsate --no-cancel --auto-close \
         --text "${_prompt_msg}.\nThis can take a few minutes.";
 
@@ -332,6 +331,16 @@ _cm2CalcModelCodeFn () {
     NUC15CRKU[357]*)  _code='nxg3';;
     other|*)          _code='other';;
   esac;
+
+  if [[ "${_code}" =~ ^(m2g6|zrg1)$ ]]; then
+    if [ -n "${_cm2LscpuExe}" ]; then
+      if [[ "$("${_cm2LscpuExe}"| grep -i 'model name')" =~ ' 290HX' ]]; then
+        if   [ "${_code}" = 'm2g6' ]; then _code='m2g7';
+        elif [ "${_code}" = 'zrg1' ]; then _code='zrg2';
+        fi
+      fi
+    fi
+  fi
 
   _cm2ModelCode="${_code}";
   [ -z "${_do_quiet:-}" ] && echo "${_cm2ModelCode}";
@@ -855,7 +864,7 @@ _cm2EchoGraphicalLoginInfoFn() {
 
     # Check session type, must be 'x11' or 'wayland'
     [[ "${_session_info}" =~ .*($'\n'|^)Type=([^$'\n']*)$'\n' ]] || continue;
-    [ "${BASH_REMATCH[2]}" = 'wayland' ] || [ "${_session_type}" = 'x11' ] \
+    [ "${BASH_REMATCH[2]}" = 'wayland' ] || [ "${_BASH_REMATCH[2]}" = 'x11' ] \
       || continue;
 
     # Extract username and UID
@@ -896,25 +905,29 @@ _cm2ModelLine='';
 _cm2ModelHeadList=();
 _cm2ModelTable=(
   'code|config_code|label|is_nv_sys|has_kb_led'
+  'arg1|arg1|Ar GEN 1|n|y'
+  'ir14g1|ir14g1|Ir14 GEN 1|n|n'
+  'ir14g2|ir1Xg2|Ir14 GEN 2|n|n'
   'ir14g3|ir1Xg3|Ir14 GEN 3|n|n'
   'ir16g2|ir1Xg2|Ir16 GEN 2|n|n'
-  'ir14g2|ir1Xg2|Ir14 GEN 2|n|n'
-  'ir14g1|ir14g1|Ir14 GEN 1|n|n'
-  'zrg1|zrg1|Zr GEN 1|y|y'
-  'm2g6|m2g6|M2 GEN 6|y|y'
+  'm1g1|default|M1|y|y'
+  'm2g1|default|M2 GEN 1|y|y'
+  'm2g2|default|M2 GEN 2|y|y'
+  'm2g3|default|M2 GEN 3|y|y'
+  'm2g4|m2g4|M2 GEN 4|y|y'
   'm2g5p|m2g5|M2 GEN 5|y|y'
   'm2g5|m2g5|M2 GEN 5|y|y'
-  'm2g4|m2g4|M2 GEN 4|y|y'
-  'm2g3|default|M2 GEN 3|y|y'
-  'm2g2|default|M2 GEN 2|y|y'
-  'm2g1|default|M2 GEN 1|y|y'
-  'm1g1|default|M1|y|y'
-  'xeg1|generic|XE GEN 1|n|n'
-  'xeg2|xeg2|XE GEN 2|n|n'
+  'm2g6|m2g6|M2 GEN 6|y|y'
+  'm2g7|m2g6|M2 GEN 7|y|y'
   'nxg1|nxg1|NX GEN 1|n|n'
   'nxg2|nxg1|NX GEN 2|n|n'
   'nxg3|nxg1|NX GEN 3|n|n'
   'other|other|other|n|n'
+  'xeg1|generic|XE GEN 1|n|n'
+  'xeg2|xeg2|XE GEN 2|n|n'
+  'xeg3|xeg3|XE GEN 3|n|y'
+  'zrg1|zrg1|Zr GEN 1|y|y'
+  'zrg2|zrg1|Zr GEN 1|y|y'
 );
 
 # Determine if tty, revert to tty if no kdialog executable found
@@ -932,6 +945,7 @@ fi
 # Set shared strings
 _cm2BlockMsg='';
 _cm2CliType='cli';
+_cm2DbusSendExe="$(command -v dbus-send || true)";
 _cm2DmiProductNameFile='/sys/devices/virtual/dmi/id/product_name';
 _cm2DmiProductSkuFile='/sys/devices/virtual/dmi/id/product_sku';
 _cm2HtmBeginStr='<html><body>';
@@ -940,14 +954,15 @@ _cm2HtmEndStr='</body></html>';
 _cm2HtmH3Str='<h3 style="color:#f7941d">FocusRx: ';
 # shellcheck disable=SC2089
 _cm2HtmPStr='<p style="margin-right:32px">';
+_cm2LscpuExe="$(command -v lscpu || true)";
 _cm2LogExe="$(command -v logger || true)";
 _cm2LogLevelIdx=5;
 _cm2LogLevelName='notice';
 _cm2LogTag='';
 _cm2PlasmaScriptDir='/usr/lib/kfocus/plasma/script';
-_cm2DbusSendExe="$(command -v dbus-send || true)";
 _cm2RmExe='/bin/rm';
 _cm2WhiptailExe="$(command -v whiptail || true)";
+_cm2ZenityExe="$(command -v zenity || true)";
 
 # Export Strings
 # shellcheck disable=2090 # Disable complaining about HTML vars
@@ -955,7 +970,7 @@ export _cm2Arg01 _cm2Arg02 _cm2BlockMsg _cm2HtmBeginStr _cm2HtmEndStr      \
   _cm2HtmH3Str _cm2HtmPStr _cm2IsTty _cm2KdiagExe _cm2ModelCode _cm2RmExe  \
   _cm2CliType _cm2WhiptailExe _cm2LogExe _cm2LogIdxMap _cm2LogLevelIdx     \
   _cm2LogLevelName _cm2LogCodeMap _cm2LogTag _cm2PlasmaScriptDir           \
-  _cm2DbusSendExe;
+  _cm2DbusSendExe _cm2ZentiyExe;
 
 # Export Functions
 export -f _cm2AskExitFn _cm2AssignExeVarsFn \
