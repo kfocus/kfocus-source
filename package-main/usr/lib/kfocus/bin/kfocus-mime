@@ -49,7 +49,7 @@ _exeLookupList=(
   'inkscape|inkscape||inkscape|Inkscape: Edit Scalable Vector Graphics'
   'insync|insync;start||insync-dolphin|Insync: Sync Google Drive and Others'
   'jekyll|konsole;-e;man jekyll|jekyll|jekyll|Jekyll: Create Static Web Sites'
-  'jetbrains-toolbox-plain|$HOME/bin/jetbrains-toolbox/bin/jetbrains-toolbox|$HOME/bin/jetbrains-toolbox/bin/jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs' # for firstrun-bin
+  "jetbrains-toolbox-plain|$HOME/bin/jetbrains-toolbox/bin/jetbrains-toolbox|$HOME/bin/jetbrains-toolbox/bin/jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs" # for firstrun-bin
   'kate|kate||kate|Kate: Edit Text with Power'
   'kde-connect|kdeconnect-app||kdeconnect|KDE Connect: Connect Smartphones to Desktop'
   'kdenlive|kdenlive||kdenlive|KDEnlive: Edit  Non-Linear Videos'
@@ -115,7 +115,7 @@ _exeLookupList=(
   'dropbox|!dropbox|dropbox|dropbox|Dropbox: Sync to Cloud Storage'
   'ghb|!ghb|/var/lib/flatpak/app/fr.handbrake.ghb/x86_64/stable/active/files/bin/ghb|handbrake-flathub|Handbrake: Back up encoded audio and video'
   'intellij|!intellij|jetbrains-toolbox|jetbrains-toolbox|IntelliJ: JetBrains Java IDE'
-  'jetbrains-toolbox|!jetbrains-toolbox|$HOME/bin/jetbrains-toolbox/bin/jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs'
+  "jetbrains-toolbox|!jetbrains-toolbox|$HOME/bin/jetbrains-toolbox/bin/jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs"
   'kfocus_vidsync|!kfocus-vidsync|/usr/bin/true|base-files|KFocus Video Sync Utility: Change video sync settings'
   'kubectl|!kubectl|/usr/bin/true|base-files|Kubernetes: Command Line Container Management'
   'minecraft-launcher|!minecraft-launcher|/usr/bin/true|base-files|Minecraft: Launch Minecraft'
@@ -611,7 +611,7 @@ _installJetbrainsToolboxFn() {
   fi
 
   # Make sure the directory we will extract to doesn't already exist
-  _extract_dir_name="${_download_file_name%%.*}";
+  _extract_dir_name="${_download_file_name%-*}";
   if [ -e "${_unpack_path}/${_extract_dir_name}" ]; then
     return 1;
   fi
@@ -926,7 +926,7 @@ in the System Tray to reopen <br>
 the toolbox as needed.</p>
 EOT
       )";
-      _cmd_str='$HOME/bin/jetbrains-toolbox/bin/jetbrains-toolbox';
+      _cmd_str="$HOME/bin/jetbrains-toolbox/bin/jetbrains-toolbox";
       ;;
 
     dropbox)
