@@ -94,7 +94,6 @@ _exeLookupList=(
   'plasma-discover|plasma-discover||plasma-discover|Discover: Manage Software'
   'ppa-purge|konsole;-e;man ppa-purge|ppa-purge|ppa-purge|PPA Purge: Purge PPAs'
   'rar|konsole;-e;man rar|rar|rar|Rar: Create .rar Archive Files'
-  'simplescreenrecorder|simplescreenrecorder||simplescreenrecorder|SimpleScreenRecorder: Record Your Screen with Powerful Options'
   'slack|slack;--ozone-platform=x11|slack|slack-desktop|Slack: Team Messaging'
   'spectacle|spectacle||kde-spectacle|Spectacle: Take Screenshots'
   'steam|steam||steam|Steam: Manage and Play Games'
@@ -120,6 +119,7 @@ _exeLookupList=(
   'kubectl|!kubectl|/usr/bin/true|base-files|Kubernetes: Command Line Container Management'
   'minecraft-launcher|!minecraft-launcher|/usr/bin/true|base-files|Minecraft: Launch Minecraft'
   'pycharm|!pycharm|jetbrains-toolbox|jetbrains-toolbox|PyCharm: JetBrains Python IDE'
+  'simplescreenrecorder|!simplescreenrecorder|/usr/bin/true|base-files|SimpleScreenRecorder: Record Your Screen with Powerful Options'
   'virtualbox|!virtualbox||virtualbox|VirtualBox: Run Virtual Machines'
   'webstorm|!webstorm|jetbrains-toolbox|jetbrains-toolbox|WebStorm: JetBrains Web IDE'
   'zoom|!zoom||zoom|Zoom: Start and Join Video and Web Conferencing'
@@ -1021,6 +1021,16 @@ in Minecraft's installer. See <br>
 <a href="https://bugs.mojang.com/browse/MCL/issues/MCL-26563"
 >https://bugs.mojang.com/browse/MCL/issues/MCL-26563</a> for <br>
 more information.</p>
+EOT
+      )";
+      _cmd_str='true';
+      ;;
+
+    simplescreenrecorder)
+      _prompt_msg="$(cat <<EOT
+${_cm2HtmPStr}SimpleScreenRecorder is no lunger supported as a Curated <br>
+App, as it does not work with KDE Plasma Wayland. You may <br>
+record the screen using Spectacle or OBS Studio instead.</p>
 EOT
       )";
       _cmd_str='true';
