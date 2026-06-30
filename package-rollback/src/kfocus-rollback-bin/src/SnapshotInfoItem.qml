@@ -16,6 +16,7 @@ RowLayout {
     property bool editing       : false
     property bool saving        : false
     property bool diskLow       : false
+    property var  reasonIconMap : ({})
 
     // Private
     property bool oldPinned     : pinned
@@ -49,13 +50,7 @@ RowLayout {
 
             Kirigami.Icon {
                 Layout.alignment : Qt.AlignVCenter
-                source           : reason === 'System Schedule'
-                  ? 'clock'
-                  : reason === 'Before Package Change'
-                    ? 'system-upgrade'
-                    : reason === 'Pre-Rollback'
-                      ? 'edit-undo-symbolic'
-                      : 'user'
+                source           : getIconForReasonFn( reason )
             }
 
             ColumnLayout {
@@ -407,5 +402,13 @@ RowLayout {
                 cursorShape : Qt.PointingHandCursor
             }
         }
+    }
+
+    function getIconForReasonFn( reason ) {
+        let icon_val = reasonIconMap[reason];
+        if ( icon_val === undefined ) {
+            icon_val = 'user';
+        }
+        return icon_val;
     }
 }

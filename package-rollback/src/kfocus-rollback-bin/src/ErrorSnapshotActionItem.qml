@@ -10,6 +10,7 @@ ColumnLayout {
     property string name          : ''
     property string reason        : ''
     property bool   isCritical    : false
+    property var  reasonIconMap   : ({})
 
     signal okClicked();
 
@@ -48,13 +49,7 @@ ColumnLayout {
                 Kirigami.Icon {
                     Layout.alignment   : Qt.AlignVCenter
                     Layout.rightMargin : Kirigami.Units.gridUnit * 0.5
-                    source             : reason === 'System Schedule'
-                      ? 'clock'
-                      : reason === 'Before Package Change'
-                        ? 'system-upgrade'
-                        : reason === 'Pre-Rollback'
-                          ? 'edit-undo'
-                          : 'user'
+                    source             : getIconForReasonFn( reason )
                 }
                 ColumnLayout {
                     Kirigami.Heading {
@@ -92,5 +87,13 @@ ColumnLayout {
         HoverHandler {
             cursorShape : Qt.PointingHandCursor
         }
+    }
+
+    function getIconForReasonFn( reason ) {
+        let icon_val = reasonIconMap[reason];
+        if ( icon_val === undefined ) {
+            icon_val = 'user';
+        }
+        return icon_val;
     }
 }

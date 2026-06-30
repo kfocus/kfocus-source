@@ -58,6 +58,12 @@ Kirigami.ApplicationWindow {
       + ' '
       + rollbackStr
       + 'btrfsDeepClean'
+    property var    reasonIconMap            : ({
+      "System Schedule"       : "clock",
+      "Before Package Change" : "system-upgrade",
+      "Pre-Rollback"          : "edit-undo-symbolic",
+      "current"               : "drive-harddisk-root"
+    })
 
     // Set Constant Names
     property string automaticSnapshotsLabel     : 'Automatic Snapshots'
@@ -890,25 +896,26 @@ Kirigami.ApplicationWindow {
                 }
 
                 SnapshotInfoItem {
-                    id          : snapshotView
-                    date        : snapshotModel.get(
+                    id            : snapshotView
+                    date          : snapshotModel.get(
                       snapshotBar.currentIndex).date
-                    dayofweek   : snapshotModel.get(
+                    dayofweek     : snapshotModel.get(
                       snapshotBar.currentIndex).dayofweek
-                    mainSize    : snapshotModel.get(
+                    mainSize      : snapshotModel.get(
                       snapshotBar.currentIndex).mainSize
-                    bootSize    : snapshotModel.get(
+                    bootSize      : snapshotModel.get(
                       snapshotBar.currentIndex).bootSize
-                    name        : snapshotModel.get(
+                    name          : snapshotModel.get(
                       snapshotBar.currentIndex).name
-                    reason      : snapshotModel.get(
+                    reason        : snapshotModel.get(
                       snapshotBar.currentIndex).reason
-                    pinned      : snapshotModel.get(
+                    pinned        : snapshotModel.get(
                       snapshotBar.currentIndex).pinned
-                    description : snapshotModel.get(
+                    description   : snapshotModel.get(
                       snapshotBar.currentIndex).description
-                    diskLow     : backend.mainSpaceLow || backend.bootSpaceLow
-                    visible     : false
+                    diskLow       :
+                      backend.mainSpaceLow || backend.bootSpaceLow
+                    visible       : false
 
                     onDeleteClicked  : {
                         prepDeleteSnapshotFn( snapshotBar.currentIndex );
@@ -1609,13 +1616,11 @@ Kirigami.ApplicationWindow {
     }
 
     function getIconForReasonFn( reason ) {
-        return reason === 'System Schedule'
-          ? 'clock'
-          : reason    === 'Before Package Change'
-            ? 'system-upgrade'
-            : reason  === 'Pre-Rollback'
-              ? 'edit-undo-symbolic'
-              : 'user'
+        let icon_val = reasonIconMap[reason];
+        if ( icon_val === undefined ) {
+            icon_val = 'user';
+        }
+        return icon_val;
     }
 
     function getSnapshotViewHeaderFn() {
@@ -1896,6 +1901,14 @@ Kirigami.ApplicationWindow {
 
     // Kick-off rendering on completion
     Component.onCompleted: {
+        // These can't be passed using QML bindings
+        snapshotView.reasonIconMap             = reasonIconMap;
+        deleteSnapshotView.reasonIconMap       = reasonIconMap;
+        restoreSnapshotView.reasonIconMap      = reasonIconMap;
+        compareSnapshotView.reasonIconMap      = reasonIconMap;
+        deleteSnapshotErrorView.reasonIconMap  = reasonIconMap;
+        restoreSnapshotErrorView.reasonIconMap = reasonIconMap;
+
         mainAreaLabel.text = getSnapshotViewHeaderFn();
         refreshSystemDataFn( false );
     }

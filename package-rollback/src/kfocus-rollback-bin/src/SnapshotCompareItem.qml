@@ -5,8 +5,9 @@ import org.kde.kirigami as Kirigami
 import org.kde.kirigami.delegates as KirigamiDelegates
 
 ColumnLayout {
-    property var snapshotList : ListModel {}
-    property int compareIndex : compareSelectBox.currentIndex
+    property var snapshotList  : ListModel {}
+    property int compareIndex  : compareSelectBox.currentIndex
+    property var reasonIconMap : ({})
 
     signal compareClicked()
     signal cancelled()
@@ -37,21 +38,12 @@ ColumnLayout {
         displayText         : currentText + ' - ' + currentValue
         model               : snapshotList
         delegate            : Controls.ItemDelegate {
-            width       : ListView.view.width
             contentItem : RowLayout {
                 KirigamiDelegates.IconTitleSubtitle {
                     Layout.fillWidth : true
                     title            : date
                     subtitle         : name
-                    icon.name        : reason === 'System Schedule'
-                      ? 'clock'
-                      : reason === 'Before Package Change'
-                        ? 'system-upgrade'
-                        : reason === 'Pre-Rollback'
-                          ? 'edit-undo'
-                          : reason === 'current'
-                            ? 'drive-harddisk-root'
-                            : 'user'
+                    icon.name        : getIconForReasonFn( reason )
                 }
                 Kirigami.Icon {
                     source : pinned ? 'lock' : ''
@@ -112,5 +104,13 @@ ColumnLayout {
 
     function resetSelector() {
         compareSelectBox.currentIndex = 0;
+    }
+
+    function getIconForReasonFn( reason ) {
+        let icon_val = reasonIconMap[reason];
+        if ( icon_val === undefined ) {
+            icon_val = 'user';
+        }
+        return icon_val;
     }
 }

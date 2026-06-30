@@ -13,6 +13,7 @@ ColumnLayout {
     property string acceptIcon      : ''
     property bool   actionsEnabled  : true
     property bool   isOkDestructive : false
+    property var  reasonIconMap : ({})
     property string okColor         : isOkDestructive
       ? Kirigami.Theme.negativeTextColor
       : Kirigami.Theme.textColor
@@ -43,13 +44,7 @@ ColumnLayout {
         Kirigami.Icon {
             Layout.alignment   : Qt.AlignVCenter
             Layout.rightMargin : Kirigami.Units.gridUnit * 0.5
-            source             : reason === 'System Schedule'
-              ? 'clock'
-              : reason === 'Before Package Change'
-                ? 'system-upgrade'
-                : reason === 'Pre-Rollback'
-                  ? 'edit-undo'
-                  : 'user'
+            source             : getIconForReasonFn( reason )
         }
         ColumnLayout {
             Kirigami.Heading {
@@ -104,5 +99,13 @@ ColumnLayout {
         HoverHandler {
             cursorShape: Qt.PointingHandCursor
         }
+    }
+
+    function getIconForReasonFn( reason ) {
+        let icon_val = reasonIconMap[reason];
+        if ( icon_val === undefined ) {
+            icon_val = 'user';
+        }
+        return icon_val;
     }
 }
