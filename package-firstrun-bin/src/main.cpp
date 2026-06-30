@@ -19,7 +19,7 @@ QString StartupData::m_rollbackCmd = QStringLiteral("");
 bool StartupData::m_isLiveSession  = false;
 QString StartupData::m_startPage   = QStringLiteral("introductionItem");
 
-const qint64 min_disk_int = 1073741824;
+const qint64 min_disk_int = 5368709120;
 
 int main(int argc, char *argv[])
 {

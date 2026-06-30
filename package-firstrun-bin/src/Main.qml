@@ -149,9 +149,9 @@ Kirigami.ApplicationWindow {
     // == BEGIN Views =================================================
     // Define page size and columns
     width  : Kirigami.Units.gridUnit * 48
-    height : Kirigami.Units.gridUnit * 34
+    height : Kirigami.Units.gridUnit * 35
     minimumWidth  : Kirigami.Units.gridUnit * 48
-    minimumHeight : Kirigami.Units.gridUnit * 34
+    minimumHeight : Kirigami.Units.gridUnit * 35
 
     pageStack.defaultColumnWidth : Kirigami.Units.gridUnit * 14
 
@@ -1892,6 +1892,7 @@ Kirigami.ApplicationWindow {
             actionButton.icon.name = 'arrow-right';
             actionName             = 'launchJetbrainsToolbox';
 
+            setLiveUsbFieldsFn();
             regenUiFn( baseTemplatePage, true );
             break;
 
