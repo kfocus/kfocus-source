@@ -5,7 +5,7 @@ echo 'to ensure they are in main.qml. '
 echo
 echo 'This must be run in its own directory to work.'
 echo
-echo 'There are currently 4 _light and _dark images that are themed, '
+echo 'There are _light and _dark images that are themed, '
 echo 'so these will be shown as false negatives.'
 echo
 _check_str="$(

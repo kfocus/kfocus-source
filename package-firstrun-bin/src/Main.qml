@@ -115,13 +115,11 @@ Kirigami.ApplicationWindow {
             task     : 'Insync'
             taskIcon : 'folder-sync'
         }
-        /*
-         * ListElement {
-         *     jsId     : 'jetbrainsToolboxItem'
-         *     task     : 'JetBrains Toolbox'
-         *     taskIcon : 'THEMED|jetbrains_toolbox_line'
-         * }
-         */
+        ListElement {
+            jsId     : 'jetbrainsToolboxItem'
+            task     : 'JetBrains Toolbox'
+            taskIcon : 'THEMED|jetbrains_toolbox_line'
+        }
         ListElement {
             jsId     : 'avatarItem'
             task     : 'Avatar'
@@ -1867,77 +1865,74 @@ Kirigami.ApplicationWindow {
             regenUiFn( interTemplatePage, false );
             break;
 
-        /*
-         * case 'jetbrainsToolboxItem':
-         *     initPageFn([
-         *       topImage,       topHeading,
-         *       primaryText,    actionButton,
-         *       previousButton, skipButton
-         *     ]);
-         *
-         *     pageTitleText   = 'JetBrains Toolbox';
-         *     topImage.source = imgDir + 'jetbrains_toolbox_logo.svg';
-         *     topHeading.text = 'Install and Manage JetBrains IDEs';
-         *     primaryText.text
-         *       = '<p><b>JetBrains Toolbox provides a convenient interface to '
-         *       + 'use their products</b>. You can install, browse, remove, '
-         *       + 'upgrade, configure, and otherwise manage their many popular '
-         *       + 'developer tools. These includes IDEs like IntelliJ, '
-         *       + 'PyCharm, WebStorm, Android Studio, and DataGrip. Several '
-         *       + 'IDEs have free community editions, while others have '
-         *       + 'generous free trial periods.<br></p>'
-         *
-         *       + '<p><b>See more in the</b> '
-         *       + '<a href="https://kfocus.org/wf/ide.html">IDEs Guided '
-         *       + 'Solution.</a></p>'
-         *       ;
-         *     actionButton.text      = 'Launch JetBrains Toolbox Now';
-         *     actionButton.icon.name = 'arrow-right';
-         *     actionName             = 'launchJetbrainsToolbox';
-         *
-         *     regenUiFn( baseTemplatePage, true );
-         *     break;
-         *
-         * case 'jetbrainsToolboxLaunchedItem':
-         *     initPageFn([
-         *       headerHighlightRect, interTopHeading,
-         *       instructionsText,    interActionButton,
-         *       pictureColumn,       interContinueLabel
-         *     ]);
-         *
-         *     pageTitleText             = 'JetBrains Toolbox';
-         *     pageTitleImage            = imgDir + 'jetbrains_toolbox_logo.svg';
-         *     headerHighlightRect.color = '#27ae60';
-         *     interTopHeading.text      = 'Proceed with JetBrains Toolbox...';
-         *     instructionsText.text
-         *       = '<p>' + ding01Str
-         *       + '<b>If JetBrains Toolbox is not installed</b>, you will '
-         *       + 'be asked to install it, and will need to provide your '
-         *       + 'password to do so.<br></p>'
-         *
-         *       + '<p>' + ding02Str
-         *       + '<b>If you’re launching the Toolbox for the first '
-         *       + 'time</b>, you will be asked to configure it and accept the '
-         *       + 'JetBrains User Agreement. It may take up to 30 seconds for '
-         *       + 'the Toolbox to launch.<br></p>'
-         *
-         *       + '<p>' + ding03Str
-         *       + '<b>Click on the Toolbox icon</b> in the system tray to open '
-         *       + 'the management interface. '
-         *       + '</p>'
-         *       ;
-         *     interActionButton.text      = 'Continue';
-         *     interActionButton.icon.name = 'arrow-right';
-         *     interImageList = [
-         *       'kfocus_mime_jetbrains_toolbox.svg',
-         *       'jetbrains_toolbox_ui.webp',
-         *       'jetbrains_toolbox_systray.svg'
-         *     ];
-         *     actionName = 'nextPage';
-         *
-         *     regenUiFn( interTemplatePage, false );
-         *     break;
-         */
+        case 'jetbrainsToolboxItem':
+            initPageFn([
+              topImage,       topHeading,
+              primaryText,    actionButton,
+              previousButton, skipButton
+            ]);
+
+            pageTitleText   = 'JetBrains Toolbox';
+            topImage.source = imgDir + 'jetbrains_toolbox_logo.svg';
+            topHeading.text = 'Install and Manage JetBrains IDEs';
+            primaryText.text
+              = '<p><b>JetBrains Toolbox provides a convenient interface to '
+              + 'use their products</b>. You can install, browse, remove, '
+              + 'upgrade, configure, and otherwise manage their many popular '
+              + 'developer tools. These includes IDEs like IntelliJ, '
+              + 'PyCharm, WebStorm, Android Studio, and DataGrip. Several '
+              + 'IDEs have free community editions, while others have '
+              + 'generous free trial periods.<br></p>'
+
+              + '<p><b>See more in the</b> '
+              + '<a href="https://kfocus.org/wf/ide.html">IDEs Guided '
+              + 'Solution.</a></p>'
+              ;
+            actionButton.text      = 'Launch JetBrains Toolbox Now';
+            actionButton.icon.name = 'arrow-right';
+            actionName             = 'launchJetbrainsToolbox';
+
+            regenUiFn( baseTemplatePage, true );
+            break;
+
+        case 'jetbrainsToolboxLaunchedItem':
+            initPageFn([
+              headerHighlightRect, interTopHeading,
+              instructionsText,    interActionButton,
+              pictureColumn,       interContinueLabel
+            ]);
+
+            pageTitleText             = 'JetBrains Toolbox';
+            pageTitleImage            = imgDir + 'jetbrains_toolbox_logo.svg';
+            headerHighlightRect.color = '#27ae60';
+            interTopHeading.text      = 'Proceed with JetBrains Toolbox...';
+            instructionsText.text
+              = '<p>' + ding01Str
+              + '<b>If JetBrains Toolbox is not installed</b>, you will '
+              + 'be asked to install it.<br></p>'
+
+              + '<p>' + ding02Str
+              + '<b>If you’re launching the Toolbox for the first '
+              + 'time</b>, you will be asked to configure it and accept the '
+              + 'JetBrains User Agreement. It may take up to 30 seconds for '
+              + 'the Toolbox to launch.<br></p>'
+
+              + '<p>' + ding03Str
+              + '<b>Click on the Toolbox icon</b> in the system tray to open '
+              + 'the management interface. '
+              + '</p>'
+              ;
+            interActionButton.text      = 'Continue';
+            interActionButton.icon.name = 'arrow-right';
+            interImageList = [
+              'kfocus_mime_jetbrains_toolbox.svg',
+              'jetbrains_toolbox_ui.webp',
+              'jetbrains_toolbox_systray.svg'
+            ];
+            actionName = 'nextPage';
+
+            regenUiFn( interTemplatePage, false );
+            break;
 
         case 'avatarItem':
             initPageFn([
@@ -2360,13 +2355,11 @@ Kirigami.ApplicationWindow {
             switchPageFn( 'insyncLaunchedItem' );
             break;
 
-        /*
-         * case 'launchJetbrainsToolbox':
-         *     exeRun.exec( systemDataMap.binDir
-         *       + '/kfocus-mime -k jetbrains-toolbox-plain' );
-         *     switchPageFn( 'jetbrainsToolboxLaunchedItem' );
-         *     break;
-         */
+        case 'launchJetbrainsToolbox':
+            exeRun.exec( systemDataMap.binDir
+              + '/kfocus-mime -kf jetbrains-toolbox-plain' );
+            switchPageFn( 'jetbrainsToolboxLaunchedItem' );
+            break;
 
         case 'changeAvatar':
             exeRun.exec( 'kcmshell6 kcm_users' );
