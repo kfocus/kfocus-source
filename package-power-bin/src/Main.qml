@@ -528,6 +528,19 @@ Kirigami.ApplicationWindow {
         let stdout_arr = [], col_count = 0;
 
         stdout_arr = stdout.split( '\n' );
+
+        if ( stdout_arr[0].substring( 0, 8 ) == 'message:' ) {
+          let body_msg = ''
+          body_msg = stdout_arr[0].slice(8);
+          stdout_arr.splice( 0, 1 );
+          stdout_arr.forEach( function ( line, index ) {
+            body_msg += line;
+          } );
+          powerInlineMsg.text = body_msg;
+          powerInlineMsg.visible = true;
+          return;
+        }
+
         stdout_arr[0].split( ';' ).forEach(function ( value, index ) {
           if ( index === 0 ) {
             // System model
@@ -544,18 +557,6 @@ Kirigami.ApplicationWindow {
         } );
 
         stdout_arr.splice( 0, 1 );
-
-        if ( stdout_arr[0].substring( 0, 8 ) == 'message:' ) {
-          let body_msg = ''
-          body_msg = stdout_arr[0].split( ':' )[1];
-          stdout_arr.splice( 0, 1 );
-          stdout_arr.forEach( function ( line, index ) {
-            body_msg += line;
-          } );
-          powerInlineMsg.text = body_msg;
-          powerInlineMsg.visible = true;
-          return;
-        }
 
         stdout_arr.forEach( function ( line, index ) {
           let first_el_name = '';
@@ -636,8 +637,8 @@ Kirigami.ApplicationWindow {
         stdout_arr =  stdout.split( '\n' );
         if ( stdout_arr[0].substring( 0, 8 ) == 'message:' ) {
           let body_msg = ''
-          body_msg = stdout_arr[0].split( ':' )[1];
-          stdout_arr.split( 0, 1 );
+          body_msg = stdout_arr[0].slice(8);
+          stdout_arr.splice( 0, 1 );
           stdout_arr.forEach( function ( line, index ) {
             body_msg += line;
           } );
