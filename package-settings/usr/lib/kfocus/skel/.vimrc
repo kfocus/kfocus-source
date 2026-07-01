@@ -121,12 +121,15 @@ set virtualedit=block "Square up visual selections
 
 " =====[ Toggle syntax highlighting ]==================================
 function! ToggleSyntax ()
-  if g:f_syntax == 1
-    syntax off
-    let g:f_syntax = 0
-  else
-    syntax on
-    let g:f_syntax = 1
+  " We expect an IDE to provide its own highlighting
+  if !has('ide')
+    if g:f_syntax == 1
+      syntax off
+      let g:f_syntax = 0
+    else
+      syntax on
+      let g:f_syntax = 1
+    endif
   endif
 endfunction
 
@@ -151,9 +154,12 @@ map <silent> # :call ToggleComment()<CR>j0
 " =====[ Trim trailing whitespace ]================================
 " This is used in ;k shortcut and on file save
 function! TrimTrailingWhiteSpace ()
-  let wv = winsaveview()
-  %s/\s\+$//ge
-  call winrestview(wv)
+  " We expect an IDE to provide its own trimming
+  if !has('ide')
+    let wv = winsaveview()
+    %s/\s\+$//ge
+    call winrestview(wv)
+  endif
 endfunction
 
 " =====[ Keyboard shortcuts ]======================================

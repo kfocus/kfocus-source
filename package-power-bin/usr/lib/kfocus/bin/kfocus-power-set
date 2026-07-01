@@ -473,7 +473,7 @@ _chkInitCpuFn () {
     return 0;
   fi
 
-  # Enable turbo boost, this takes about 16 seconds on the m2g5 but
+  # Enable turboboost, this takes about 16 seconds on the m2g5 but
   # could take longer in theory. The 8th fibonacci number is 21, so
   # max total delay time is 54 seconds.
   while (( _delay_int <= 21 )); do
@@ -703,7 +703,7 @@ _calcOptionsFn () {
 
   for _opt_line in "${_optionTable[@]}"; do
     # Calculate frequencies for normal and low modes even if a hardcoded
-    #   table exists, for checking turbo boost
+    #   table exists, for checking turboboost
     if [ -n "${_canonical_table_str}" ] \
       && ! [[ "${_opt_line}" =~ ^(Normal|Low)\; ]]; then
       continue;
@@ -900,8 +900,13 @@ _readModeFn () {
   # TODO: Consider setting the mode to "Normal" if no mode is found
   if ! [ -f "${_currentModeFile}" ]; then
     _cm2WarnStrFn 'Current mode file does not exist!';
-    echo 'Unknown';
-    return 0;
+    _current_mode_str='Normal';
+    _cm2WarnStrFn "Setting to '${_current_mode_str}'.";
+    if ! _setModeFn "${_current_mode_str}"; then
+      _cm2WarnStrFn "Could not default to '${_current_mode_str}'.";
+      echo 'Unknown';
+      return 0;
+    fi
   fi
 
   _current_mode_str="$(cat "${_currentModeFile}")";
