@@ -20,8 +20,6 @@ set -u;
 
 # app_id|cmd_str;with;args|sniff_str|pkg_str|descr_str
 # 1       2                 3         4       5
-## TODO 2026-06-23: For all "FIXME A" in the list below, implement a FRIENDLY
-## "this app is not supported on 26.04" message.
 _exeLookupList=(
   'apt-rollback|konsole;-e;man;apt-rollback|apt-rollback|apt-rollback|AptRollback: Rollback System Packages'
   'audacity|audacity||audacity|Audacity: Edit Sound'
@@ -49,7 +47,6 @@ _exeLookupList=(
   'inkscape|inkscape||inkscape|Inkscape: Edit Scalable Vector Graphics'
   'insync|insync;start||insync-dolphin|Insync: Sync Google Drive and Others'
   'jekyll|konsole;-e;man jekyll|jekyll|jekyll|Jekyll: Create Static Web Sites'
-  "jetbrains-toolbox-plain|$HOME/bin/jetbrains-toolbox/bin/jetbrains-toolbox|$HOME/bin/jetbrains-toolbox/bin/jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs" # for firstrun-bin
   'kate|kate||kate|Kate: Edit Text with Power'
   'kde-connect|kdeconnect-app||kdeconnect|KDE Connect: Connect Smartphones to Desktop'
   'kdenlive|kdenlive||kdenlive|KDEnlive: Edit  Non-Linear Videos'
@@ -113,15 +110,16 @@ _exeLookupList=(
   'docker|!docker|docker|docker-ce|Docker: Container Engine'
   'dropbox|!dropbox|dropbox|dropbox|Dropbox: Sync to Cloud Storage'
   'ghb|!ghb|/var/lib/flatpak/app/fr.handbrake.ghb/x86_64/stable/active/files/bin/ghb|handbrake-flathub|Handbrake: Back up encoded audio and video'
-  'intellij|!intellij|jetbrains-toolbox|jetbrains-toolbox|IntelliJ: JetBrains Java IDE'
+  "intellij|!intellij|$HOME/bin/jetbrains-toolbox/bin/jetbrains-toolbox|jetbrains-toolbox|IntelliJ via JetBrains Toolbox: Java IDE"
   "jetbrains-toolbox|!jetbrains-toolbox|$HOME/bin/jetbrains-toolbox/bin/jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs"
+  "jetbrains-toolbox-plain|!jetbrains-toolbox-plain|$HOME/bin/jetbrains-toolbox/bin/jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs" # for firstrun-bin
   'kfocus_vidsync|!kfocus-vidsync|/usr/bin/true|base-files|KFocus Video Sync Utility: Change video sync settings'
   'kubectl|!kubectl|/usr/bin/true|base-files|Kubernetes: Command Line Container Management'
   'minecraft-launcher|!minecraft-launcher|/usr/bin/true|base-files|Minecraft: Launch Minecraft'
-  'pycharm|!pycharm|jetbrains-toolbox|jetbrains-toolbox|PyCharm: JetBrains Python IDE'
+  "pycharm|!pycharm|$HOME/bin/jetbrains-toolbox/bin/jetbrains-toolbox|jetbrains-toolbox|PyCharm via JetBrains Toolbox: Python IDE"
   'simplescreenrecorder|!simplescreenrecorder|/usr/bin/true|base-files|SimpleScreenRecorder: Record Your Screen with Powerful Options'
   'virtualbox|!virtualbox||virtualbox|VirtualBox: Run Virtual Machines'
-  'webstorm|!webstorm|jetbrains-toolbox|jetbrains-toolbox|WebStorm: JetBrains Web IDE'
+  "webstorm|!webstorm|$HOME/bin/jetbrains-toolbox/bin/jetbrains-toolbox|jetbrains-toolbox|WebStorm via JetBrains Toolbox: Web IDE"
   'zoom|!zoom||zoom|Zoom: Start and Join Video and Web Conferencing'
 
   # Future consideration: Nvidia CUDA and ML libs
@@ -667,17 +665,17 @@ _echoInstallPromptMsgFn () {
   _prompt_msg='';
 
   if _cm2ChkPkgFn "${_pkg_name}" || [ "${METHOD:-}" = 'custom' ]; then
-    echo -e "\n'${_descr_str}' is available ";
+    echo -e "\n\"${_descr_str}\" is available ";
     echo -e "but it is not installed.";
     echo -e "\nInstall and start now?\n";
     return 0;
   elif [ "${METHOD:-}" = 'flathub' ]; then
-    echo -e "\n'${_descr_str}' is available ";
+    echo -e "\n\"${_descr_str}\" is available ";
     echo -e "from Flathub but is not installed.";
     echo -e "\nInstall and start now?\n";
     return 0;
   elif [ "${METHOD:-}" = 'snap' ]; then
-    echo -e "\n'${_descr_str}' is available ";
+    echo -e "\n\"${_descr_str}\" is available ";
     echo -e "as a snap but is not installed.";
     echo -e "\nInstall and start now?\n";
     return 0;
@@ -882,6 +880,22 @@ EOT0C
   fi
 }
 
+_handleJetbrainsToolboxSetupFn () {
+  declare _prompt_msg;
+
+  if [[ "${PATH}" =~ JetBrains/Toolbox ]]; then
+    return 0;
+  fi
+
+  _prompt_msg="$(cat <<EOT
+${_cm2HtmPStr}JetBrains Toolbox is installed. You must log out and <br>
+log back in for the Toolbox to appear in the Start <br>
+Menu and in the \$PATH environment variable.</p>
+EOT
+  )";
+  _promptFn "${_cm2HtmBeginStr}${_prompt_msg}${_cm2HtmEndStr}";
+}
+
 ## BEGIN _runAppHandlerFn {
 # Summary  : _runAppHandlerFn <app_id> <descr_str>
 # Example  : _runAppHandlerFn 'dropbox' 'Dropbox: Sync to ...'
@@ -893,7 +907,7 @@ EOT0C
 #
 _runAppHandlerFn () {
   declare _app_id _descr_str _prompt_msg _cmd_str \
-    _exe_str _arg_list _run_list;
+    _exe_str _arg_list _run_list _jb_disp_str;
 
   _app_id="${1:-}";
   _descr_str="${2:-}";
@@ -904,20 +918,21 @@ _runAppHandlerFn () {
 
   case "${_app_id}" in
     intellij|pycharm|webstorm)
+      _handleJetbrainsToolboxSetupFn;
       _prompt_msg="$(cat <<EOT
 ${_cm2HtmPStr}Click to start JetBrain toolbox <br>
-and select the tool for <br>
-'${_descr_str}'.</p>
+and select the tool for "${_descr_str%% *}".</p>
 
 ${_cm2HtmPStr}You may click on the Toolbox icon <br>
 in the System Tray to reopen <br>
 the toolbox as needed.</p>
 EOT
       )";
-      _cmd_str='jetbrains-toolbox';
+      _cmd_str="$HOME/bin/jetbrains-toolbox/bin/jetbrains-toolbox";
       ;;
 
     jetbrains-toolbox)
+      _handleJetbrainsToolboxSetupFn;
       _prompt_msg="$(cat <<EOT
 ${_cm2HtmPStr}Click OK to start JetBrains toolbox.</p>
 
@@ -926,6 +941,11 @@ in the System Tray to reopen <br>
 the toolbox as needed.</p>
 EOT
       )";
+      _cmd_str="$HOME/bin/jetbrains-toolbox/bin/jetbrains-toolbox";
+      ;;
+
+    jetbrains-toolbox-plain)
+      _handleJetbrainsToolboxSetupFn;
       _cmd_str="$HOME/bin/jetbrains-toolbox/bin/jetbrains-toolbox";
       ;;
 
@@ -1227,7 +1247,7 @@ _runAppFn () {
             _reentrant_cmd_list+=( 'AS_USER' );
           fi
           _reentrant_cmd_list+=(
-            "Installing ${_app_id}" "${_binName}" '-i' "${_pkg_name}"
+            "Installing ${_pkg_name}" "${_binName}" '-i' "${_pkg_name}"
           );
           if _exit_str="$(_cm2RunLongCmdFn \
               "${_reentrant_cmd_list[@]}")"; then continue;
