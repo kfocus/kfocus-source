@@ -50,7 +50,7 @@ _cmXEchoGraphicalLoginInfoFn() {
 
     # Check session type, must be 'x11' or 'wayland'
     [[ "${_session_info}" =~ .*($'\n'|^)Type=([^$'\n']*)$'\n' ]] || continue;
-    [ "${BASH_REMATCH[2]}" = 'wayland' ] || [ "${_session_type}" = 'x11' ] \
+    [ "${BASH_REMATCH[2]}" = 'wayland' ] || [ "${BASH_REMATCH[2]}" = 'x11' ] \
       || continue;
 
     # Extract username and UID

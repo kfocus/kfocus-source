@@ -273,7 +273,7 @@ _EOH03
   # If _is_on_ac flag is not provided, pause and then calculate here
   _is_resume_mode='n';
   if [ -z "${_is_on_ac}" ]; then
-    _pid_str="$(ps -o args= $PPID)"; # TODO: Use ptree
+    _pid_str="$(ps -o args= "${PPID}")"; # TODO: Use ptree
     _cm2WarnStrFn "Called without arguments from: ${_pid_str}";
 
     # Pause to let udev catch up
@@ -422,7 +422,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   _userName="$(id -un)";
 
-  if [ "${XDG_SESSION_TYPE:-}" != 'x11' ] || [ "$(id -u)" = '0' ]; then
+  if [[ ! "${XDG_SESSION_TYPE:-}" =~ ^(x11|wayland)$ ]] || [ "$(id -u)" = '0' ]; then
     _doGui='n'; else _doGui='y';
   fi
   _lockFile="/tmp/${_baseName}-${_userName}.lock";
