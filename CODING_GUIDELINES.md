@@ -54,35 +54,58 @@ Declare all function-scope variables at the top of a function using a single
 `declare` statement. Do not combine declaration and assignment. Instead, assign
 an initial value to a variable as needed before first use.
 
-
 Prefix package- and function-scope variables with an underscore to avoid
 conflicting with other variables in the bash environment. Use `ALL_UPPER_CASE`
 names for exported global variables. Use `_camelCase` for package (file-scope)
 variables. Use `_snake_case` for function-scope (local) variables.
 
-| Type    | Scope | Indicator | Example       |
-|---------|-------|-----------|---------------|
-| Integer | local | `_int`    | `__int`   |
-| "       | "     | `_count`  | `_item_count` |
-| "       | "     | `_idx`    | `_loop_idx`   |
-| Integer | pkg   | `Int`     | `_nameInt`    |
-| "       | "     | `Count`   | `_itemCount`  |
-| "       | "     | `Idx`     | `_loopIdx`    |
+Use duck typing to avoid confusion. The table below shows preferred naming
+preferences.
 
-Use duck typing to avoid confusion. Instead of using `line` for a text line
-and `lines` as an array of lines, use `_line` and `_line_list`. Use obvious
-suffixes for strings such as `_str`, `_line`, or `_name`. Use the `_list`
-suffix for simple arrays and `_table` for delimited lists. Use an `_int`, `_idx`,
-or `_count` suffix to indicate an integer. Use the `_num` suffix to indicate
-a number. Use a prefix to indicate booleans using a form of 'do', 'is', or
-'has'. For example, you might use `_do_exit`, `_has_string`, or `_is_empty`.
+| Type    | Scope | Indicator | Example       | Indicator meaning |
+|---------|-------|-----------|---------------|-------------------|
+| String  | local | `_str`    | `_user_str`   | Generic           |
+| "       | "     | `_name`   | `_user_name`  | Single name       |
+| "       | "     | `_line`   | `_row_line`   | Delimited String  |
+| "       | pkg   | `Str`     | `_userStr`    |                   |
+| "       | "     | `Name`    | `_userName`   |                   |
+| "       | "     | `Line`    | `_rowLine`    |                   |
+|         |       |           |               |                   |
+| Number  | local | `_num`    | `_spec_num`   | Generic           |
+| "       | "     | `_ratio`  | `_time_ratio` | A ratio           |
+| "       | pkg   | `Num`     | `_specNum`    |                   |
+| "       | "     | `Count`   | `_timeRatio`  |                   |
+|         |       |           |               |                   |
+| Integer | local | `_int`    | `_spec_int`   | Generic           |
+| "       | "     | `_count`  | `_item_count` | A count items     |
+| "       | "     | `_idx`    | `_loop_idx`   | A loop index      |
+| "       | pkg   | `Int`     | `_nameInt`    |                   |
+| "       | "     | `Count`   | `_itemCount`  |                   |
+| "       | "     | `Idx`     | `_loopIdx`    |                   |
+|         |       |           |               |                   |
+| Boolean | local | `is_`     | `_is_local`   | Generic           |
+| "       | "     | `has_`    | `_has_x11`    | Something has     |
+| "       | "     | `do_`     | `_do_x11`     | Indicates to do   |
+| "       | pkg   | `is`      | `_isLocal`    |                   |
+| "       | "     | `has`     | `_hasX11`     |                   |
+|         |       |           |               |                   |
+| Array   | local | `_list`   | `_item_list`  | Simple list       |
+| "       | "     | `_table`  | `_line_table` | List of lines     |
+| "       | pkg   | `List`    | `_itemList`   |                   |
+| "       | "     | `Table`   | `_lineTable`  |                   |
+|         |       |           |               |                   |
+| Map     | local | `_map`    | `_lookup_map` | Simple map        |
+| "       | "     | `_matrix` | `_partMatrix` | Map of lines      |
+| "       | pkg   | `_map`    | `_lookup_map` |                   |
+| "       | "     | `_matrix` | `_partMatrix` |                   |
 
 ### Function Declarations
 Please use the template below for function declarations. Functions are usually
 package-scoped, and therefore should be usually name like `_<verb><Noun>Fn`,
 with the `Fn` suffix identifying the symbol as a function. The matched
 braces make it easy to quickly move the cursor to the beginning or end of
-the function with many editors:
+the function with many editors. The function declaration has a space between
+the name and '()' to differentiate it from a function call.
 
 ```bash
 ## BEGIN _verbNounFn {
@@ -118,7 +141,7 @@ if [ "${_user_id}" != '0' ]; then
 fi
 
 # BAD: Too noisy, inconsistent sentence construction
-_user_id="$(id -u)"; # user id get. skipped.
+_user_id="$(id -u)"; # user id get
 if [ "${_user_id}" != '0' ]; then       # root check
   _cm2WarnStr 'User is not root. Exit'; # exit if not root
   return 1; # non-zero return

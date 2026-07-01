@@ -313,7 +313,7 @@ _handle_m2g5Fn () {
   fi
   ## . End Add or remove symlink for m2g5p1 thunderbolt blacklist
 }
-# hw_config_code 'zrg1' handles hw_model_code zrg1 5080/5090
+# hw_config_code 'zrg1' handles hw_model_code zrg1, zrg2 5080/5090
 # shellcheck disable=SC2317,SC2329
 #
 _handle_zrg1Fn () {
@@ -344,7 +344,7 @@ _handle_zrg1Fn () {
     '/usr/share/kfocus/kfocus_fand.d/fan_profile_db|/usr/lib/kfocus/conf/m2g6-usr_share_kfocus_kfocus_fand.d_fan_profile_db'
   );
 }
-# hw_config_code 'm2g6' handles hw_model_code m2g6 5070Ti
+# hw_config_code 'm2g6' handles hw_model_codes m2g6, m2g7 5070Ti
 # shellcheck disable=SC2317,SC2329
 #
 _handle_m2g6Fn () {

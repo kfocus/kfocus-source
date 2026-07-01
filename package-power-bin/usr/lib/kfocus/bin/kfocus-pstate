@@ -273,7 +273,7 @@ _EOH03
   # If _is_on_ac flag is not provided, pause and then calculate here
   _is_resume_mode='n';
   if [ -z "${_is_on_ac}" ]; then
-    _pid_str="$(ps -o args= $PPID)"; # TODO: Use ptree
+    _pid_str="$(ps -o args= "${PPID}")"; # TODO: Use ptree
     _cm2WarnStrFn "Called without arguments from: ${_pid_str}";
 
     # Pause to let udev catch up

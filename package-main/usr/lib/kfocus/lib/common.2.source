@@ -864,7 +864,7 @@ _cm2EchoGraphicalLoginInfoFn() {
 
     # Check session type, must be 'x11' or 'wayland'
     [[ "${_session_info}" =~ .*($'\n'|^)Type=([^$'\n']*)$'\n' ]] || continue;
-    [ "${BASH_REMATCH[2]}" = 'wayland' ] || [ "${_BASH_REMATCH[2]}" = 'x11' ] \
+    [ "${BASH_REMATCH[2]}" = 'wayland' ] || [ "${BASH_REMATCH[2]}" = 'x11' ] \
       || continue;
 
     # Extract username and UID
@@ -927,7 +927,7 @@ _cm2ModelTable=(
   'xeg2|xeg2|XE GEN 2|n|n'
   'xeg3|xeg3|XE GEN 3|n|y'
   'zrg1|zrg1|Zr GEN 1|y|y'
-  'zrg2|zrg1|Zr GEN 1|y|y'
+  'zrg2|zrg1|Zr GEN 2|y|y'
 );
 
 # Determine if tty, revert to tty if no kdialog executable found
@@ -970,7 +970,7 @@ export _cm2Arg01 _cm2Arg02 _cm2BlockMsg _cm2HtmBeginStr _cm2HtmEndStr      \
   _cm2HtmH3Str _cm2HtmPStr _cm2IsTty _cm2KdiagExe _cm2ModelCode _cm2RmExe  \
   _cm2CliType _cm2WhiptailExe _cm2LogExe _cm2LogIdxMap _cm2LogLevelIdx     \
   _cm2LogLevelName _cm2LogCodeMap _cm2LogTag _cm2PlasmaScriptDir           \
-  _cm2DbusSendExe _cm2ZentiyExe;
+  _cm2DbusSendExe _cm2LscpuExe _cm2ZentiyExe;
 
 # Export Functions
 export -f _cm2AskExitFn _cm2AssignExeVarsFn \

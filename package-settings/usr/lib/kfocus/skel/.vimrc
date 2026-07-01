@@ -241,12 +241,12 @@ nnoremap <F2> :exe getline(".")<CR>
 vnoremap <F2> :<C-w>exe join(getline("'<","'>"),'<Bar>')<CR>
 
 " See https://superuser.com/questions/271471
-" Change camelCase to snake_case
+" Convert selected lines camelCase to snake_case
 vnoremap ,u :s/\<\@!\([A-Z]\)/\_\l\1/g<CR>
-" Change snakeCase to camelCase
+" Convert selected lines snake_case to camelCase
 vnoremap ,c :s/_\([a-z]\)/\u\1/g<CR>
-" Change Text To Pascal Case
-vnoremap ,p :s/\<\w/\u&/g<CR>
+" Convert selected lines to Pascal Case
+vnoremap ,p :s/\<\w/\u&/g<CR>:nohlsearch<CR>
 
 " =====[ Smarter searching ]===========================================
 set hlsearch                        "Highlight all search matches
