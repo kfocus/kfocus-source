@@ -103,15 +103,35 @@ Kirigami.ApplicationWindow {
         id : enabledSnapshotBarDelegate
 
         Controls.ItemDelegate {
+            // "ListView.view.width" is a float referring to the width of
+            // snapshotBar
             width       : ListView.view.width
+
+            // "snapshotBar" is a ListView object defined below, search for
+            // "id.*:.*snapshotBar", "currentIndex" is an element of that
+            // object describing the index of the currently selected item in
+            // the view
+            //
+            // "index" is a magic integer variable from QML indicating the
+            // index of the item in snapshotModel we are rendering
             highlighted : snapshotBar.currentIndex == index
 
             contentItem : RowLayout {
                 KirigamiDelegates.IconTitleSubtitle {
+                    // "date" is a string, "mainSize" and "bootSize" are
+                    // integers, all are elements of the item from
+                    // snapshotModel we are currently rendering, set by
+                    // populateSnapshotModelFn()
                     title       : date + ' ' + genSnapshotSizeStrFn(
-                      mainSize, bootSize)
+                      mainSize, bootSize )
+
+                    // "name" is a string, it also comes from the current
+                    // snapshotModel item
                     subtitle    : name
                     font.family : "courier"
+
+                    // "reason" is a string, it also comes from the current
+                    // snapshotModel item
                     icon.name   : getIconForReasonFn( reason )
                 }
 
@@ -120,11 +140,14 @@ Kirigami.ApplicationWindow {
                 }
 
                 Kirigami.Icon {
+                    // "pinned" is a boolean, it also comes from the current
+                    // snapshotModel item
                     source : pinned ? 'lock' : ''
                 }
             }
 
             onClicked : {
+                // Same as "index" above
                 snapshotBar.currentIndex = index;
             }
         }
