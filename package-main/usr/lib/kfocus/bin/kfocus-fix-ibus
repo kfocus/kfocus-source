@@ -14,7 +14,7 @@
 # License  : GPLv2
 # Run By   : Developers only
 # Spec     : 4027
-# 
+#
 # shellcheck source=../lib/common.2.source
 #
 set -u;
@@ -133,7 +133,10 @@ _mainFn () {
 }
 ## . END _mainFn }
 
-declare _dconfExe _dpkgQueryExe;
+## BEGIN Declare and assign global vars {
+declare _dconfExe _dpkgQueryExe _binName _binDir _baseDir _baseName \
+  _assignList _dconfExe _dpkgQueryExe;
+## . END Declare and assign global vars {
 
 ## BEGIN Run fi2MainFn when script is NOT sourced {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
@@ -144,19 +147,18 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   _importCommonFn;
 
-  ## TODO 2026-06-23: Consider using _cm2AssignExeVarsFn instead of manual
-  ## executable finding
-
-  _dconfExe="$(      command -v dconf      )";
-  _dpkgQueryExe="$(  command -v dpkg-query )";
+  _assignList=(
+    '_dconfExe|/usr/bin/dconf||optional'
+    '_dpkgQueryExe|/usr/bin/dpkg-query'
+  );
+  if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
+    _cm2WarnStrFn 'Could not assign variables';
+    exit 1;
+  fi
 
   if [ -z "${_dconfExe}" ]; then
     _cm2EchoFn 'dconf not found';
     exit 0;
-  fi
-  if [ -z "${_dpkgQueryExe}" ]; then
-    _stdErrFn 'dpkg-query not found';
-    exit 1;
   fi
 
   _mainFn "$@";
