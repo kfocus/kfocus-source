@@ -50,8 +50,9 @@ _importCommonFn () {
 ## BEGIN _disableXhciFn {
 _disableXhciFn () {
   if [ -e "${_acpiWakeupFile}" ]; then
-    grep -q '^XHCI.*enable' "${_acpiWakeupFile}" \
-      && echo 'XHCI' > "${_acpiWakeupFile}";
+    if grep -q '^XHCI.*enable' "${_acpiWakeupFile}"; then
+      echo 'XHCI' > "${_acpiWakeupFile}" || return 1;
+    fi
     sleep 1;
   fi
   return 0;
@@ -62,8 +63,9 @@ _disableXhciFn () {
 _enableXhciFn () {
   if [ -e "${_acpiWakeupFile}" ]; then
     sleep 1;
-    grep -q '^XHCI.*disable' "${_acpiWakeupFile}" \
-      && echo 'XHCI' > "${_acpiWakeupFile}";
+    if grep -q '^XHCI.*disable' "${_acpiWakeupFile}"; then
+      echo 'XHCI' > "${_acpiWakeupFile}" || return 1;
+    fi
   fi
   return 0;
 }
