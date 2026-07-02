@@ -2802,7 +2802,7 @@ _prepareSystemPublicFn () {
     "${_root_mount_id}" | sed -n '2p' | awk '{ print $3 }')";
   _boot_mount_id="UUID=$(LC_ALL=C lsblk -o NAME,FSTYPE,UUID,MOUNTPOINTS \
     | grep -P '/boot$' | awk '{ print $3 }')";
-  _btrfs_defaults_str="defaults,noatime,autodefrag 0 0";
+  _btrfs_defaults_str="defaults,noatime 0 0";
 
   echo "${_root_mount_id} ${_rb2MainDir} btrfs subvolid=5,${_btrfs_defaults_str}" \
     >> /etc/fstab || _logPrepareExitFn 'crit' '2' "Cannot create fstab line for |${_rb2MainDir}|!";
