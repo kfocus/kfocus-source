@@ -1,4 +1,6 @@
 #!/bin/bash
+#shellcheck disable=SC2154
+#bashsupport disable=BP1001
 #
 # Test for default kfocus-fan on mocked hardware
 #
@@ -10,7 +12,6 @@
 # Purpose: Overwrite functions from sourced script before running assertions
 # shellcheck disable=SC2317
 _setMocksFn () {
-  declare _user_name;
   _cm2KdiagExeFn () {
     echo "REQUEST kdialog $*" >>"${_runFile}"
   }
@@ -63,8 +64,8 @@ _EOT
   _pstateSetExeFn () {
     echo "REQUEST pstate-set $*" >>"${_runFile}";
   }
-  _qdbusExeFn () {
-    echo "REQUEST qbus $*" >>"${_runFile};"
+  _dbusSendExeFn () {
+    echo "REQUEST dbus-send $*" >>"${_runFile};"
   }
   _upowerExeFn () {
     # Mock upower commands
@@ -76,7 +77,7 @@ _EOT
   }
 
   declare -g _baseName _cm2KdiagExe _escExe _lockFile _lspciExe \
-    _powerSetExe _primeExe _profilesCtlExe _pstateSetExe _qdbusExe \
+    _powerSetExe _primeExe _profilesCtlExe _pstateSetExe _dbusExe \
     _upowerExe _userName;
 
   _baseName='kfocus-pstate';
@@ -94,11 +95,12 @@ _EOT
   _primeExe='_primeExeFn';
   _profilesCtlExe='_profilesCtlExeFn';
   _pstateSetExe='_pstateSetExeFn';
-  _qdbusExe='_qdbusExeFn';
+  _cm2DbusSendExe='_dbusSendExeFn';
   _upowerExe='_upowerExeFn';
 
   # shellcheck source=../../../package-power-bin/usr/lib/kfocus/bin/kfocus-pstate
   source "${_t00TopDir}/package-power-bin/usr/lib/kfocus/bin/kfocus-pstate";
+  1>&2 echo "${_t00TopDir}/package-power-bin/usr/lib/kfocus/bin/kfocus-pstate";
 }
 ## . END _setMocksFn }
 
@@ -109,7 +111,7 @@ _EOT
 #   See more notes in 00900.
 _unsetMocksFn () {
   unset _baseName _cm2KdiagExe _escExe _lockFile _lspciExe \
-    _primeExe _powerSetExe _pstateSetExe _qdbusExe _upowerExe _userName;
+    _primeExe _powerSetExe _pstateSetExe _dbusExe _upowerExe _userName;
 }
 ## . END _unsetMocksFn }
 
@@ -118,7 +120,7 @@ _unsetMocksFn () {
 _runTestFn () {
   declare _cr _fail_count _assert_table _assert_count _assert_idx \
     _assert_line _lspci_str _prime_select_str _file _expect_file \
-    _msg _check_str _count_str _wrap_str;
+    _cmd_list _msg _check_str _count_str _wrap_str;
 
   # Use function from _runUnitTests: clear out run dir and check expect dir
   if ! _t00ClearRunDirFn;    then return 1; fi
@@ -181,6 +183,9 @@ _runTestFn () {
         echo "${_msg}" > "${_runFile}";
 
         _wrap_str="$("${_cmd_list[@]}" 2>&1)";
+        # Hack: Trim off leading path from runUnitTests for repeatability
+        _wrap_str="${_wrap_str/#*runUnitTests:/.\/runUnitTests:}";
+
         echo "${_wrap_str}" >> "${_runFile}";
 
         ## Begin Check diffs {
