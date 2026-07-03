@@ -5,8 +5,8 @@ Maintainer: Ubuntu Kernel Team <kernel-team@lists.ubuntu.com>
 Standards-Version: 3.9.8
 Build-Depends: dpkg (>= 1.13.19), debhelper (>= 11), gawk
 Build-Depends-Arch:
- linux-kfocus-headers-7.0.0-17,
- linux-headers-7.0.0-17-kfocus,
+ linux-kfocus-headers-7.0.0-27,
+ linux-headers-7.0.0-27-kfocus,
 Vcs-Git: https://github.com/kfocus/kfocus-source.git
 
 Package: linux-headers-kfocus-26.04-kfocus
@@ -86,7 +86,7 @@ Depends:
  ${misc:Depends},
  linux-image-kfocus-26.04-kfocus (= ${binary:Version}),
  linux-headers-kfocus-26.04-kfocus (= ${binary:Version})
-Recommends: linux-tools-${kernel-abi-version}-kfocus
+Recommends: linux-tools-${kernel-abi-version}-kfocus, ubuntu-kernel-accessories
 Description: Complete KFocus Linux kernel and headers
  This package will always depend on the latest complete KFocus Linux kernel
  and headers.

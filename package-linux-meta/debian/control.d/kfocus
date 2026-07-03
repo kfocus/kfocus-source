@@ -75,7 +75,7 @@ Depends:
  ${misc:Depends},
  linux-image-kfocus${variant:suffix}-kfocus (= ${binary:Version}),
  linux-headers-kfocus${variant:suffix}-kfocus (= ${binary:Version})
-Recommends: linux-tools-${kernel-abi-version}-kfocus
+Recommends: linux-tools-${kernel-abi-version}-kfocus, ubuntu-kernel-accessories
 Description: Complete KFocus Linux kernel and headers
  This package will always depend on the latest complete KFocus Linux kernel
  and headers.
