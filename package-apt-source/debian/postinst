@@ -76,9 +76,9 @@ _installReposFn () {
   # 'ubuntustudio-ppa-ubuntu-backports-noble.list|2024-05-31
   #   |ppa:ubuntustudio-ppa/backports|Ubuntu Studio Backports'
   _ppa_table=(
-    'kubuntu-ppa-ubuntu-backports-noble.list|2024-04-11|ppa:kubuntu-ppa/backports|Kubuntu Backports'
-    'mozilla-team-noble.list|2024-04-11|ppa:mozillateam/ppa|Mozilla Team'
-    'phoerious-ubuntu-keepassxc-noble.list|2024-04-07|ppa:phoerious/keepassxc|KeePassXC'
+    'kubuntu-ppa-ubuntu-backports-resolute.sources|2026-07-03|ppa:kubuntu-ppa/backports|Kubuntu Backports'
+    'mozillateam-ubuntu-ppa-resolute.sources|2026-07-03|ppa:mozillateam/ppa|Mozilla Team'
+    'phoerious-ubuntu-keepassxc-resolute.sources|2026-07-03|ppa:phoerious/keepassxc|KeePassXC'
   );
 
   for _line in "${_ppa_table[@]}"; do
