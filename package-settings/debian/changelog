@@ -1,11 +1,6 @@
-kfocus-settings (26.04.1~beta2~local1) resolute; urgency=medium
+kfocus-settings (26.04.1) resolute; urgency=medium
 
-  * skel/.vimrc Tweak case change short-cuts (#6582)
-
- -- Michael S. Mikowski <support@kfocus.org>  Wed, 01 Jul 2026 12:54:42 -0400
-
-kfocus-settings (26.04.1~beta1) resolute; urgency=medium
-
+  [ Aaron Rainbolt ]
   * kfocus-settings.links: Move environment injection script to
     /etc/xdg/plasma-workspace/env/ dir (#6374)
   * kfocus-settings.postinst: Remove code that enabled the now-obsolete
@@ -49,7 +44,11 @@ kfocus-settings (26.04.1~beta1) resolute; urgency=medium
     - Always display battery icon (#6374)
   * usr/share/sddm/*: Remove, we now use upstream's SDDM theme (#6374)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Fri, 26 Jun 2026 16:51:20 -0500
+  [ Michael S. Mikowski ]
+  * skel/.vimrc Tweak case change short-cuts (#6582)
+  * Consolidate changes and publish to release repo
+
+ -- Michael S. Mikowski <support@kfocus.org>  Thu, 02 Jul 2026 20:21:14 -0400
 
 kfocus-settings (24.04.14) noble; urgency=medium
 

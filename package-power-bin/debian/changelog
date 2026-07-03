@@ -1,5 +1,6 @@
-kfocus-power-bin (26.04.1~beta1) resolute; urgency=medium
+kfocus-power-bin (26.04.1) resolute; urgency=medium
 
+  [ Aaron Rainbolt ]
   * Update for KF6 Kirigami (#6593)
   * Rewrite to improve race condition avoidance (#6593)
   * Switch build system to CMake (#6593)
@@ -16,7 +17,10 @@ kfocus-power-bin (26.04.1~beta1) resolute; urgency=medium
   * kfocus-power-set: Remove obsolete `_title` output (#6593)
   * kfocus-pstate: Port from qdbus to dbus-send (#6593)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Fri, 26 Jun 2026 16:36:26 -0500
+  [ Michael S. Mikowski ]
+  * Consolidate changes and publish to release repo
+
+ -- Michael S. Mikowski <support@kfocus.org>  Thu, 02 Jul 2026 20:14:54 -0400
 
 kfocus-power-bin (24.04.15) noble; urgency=medium
 

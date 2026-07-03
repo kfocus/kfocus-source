@@ -1,5 +1,6 @@
-kfocus-apt-source (26.04.1~beta1) resolute; urgency=medium
+kfocus-apt-source (26.04.1) resolute; urgency=medium
 
+  [ Aaron Rainbolt ]
   * postinst: Remove NodeJS pinning (#6617)
   * postinst: Remove obsolete migration code for kfocus-recommended.list
     (#6374)
@@ -12,6 +13,13 @@ kfocus-apt-source (26.04.1~beta1) resolute; urgency=medium
     CUDA driver repo (#6374)
   * google-chrome.asc: Update Google's signing key (#6374)
   * tuxedo.asc: Delete, no longer using Tuxedo's driver binaries (#6374)
+
+  [ Michael S. Mikowski ]
+  * Consolidate changes and publish to release repo
+
+ -- Michael S. Mikowski <support@kfocus.org>  Thu, 02 Jul 2026 19:56:37 -0400
+
+kfocus-apt-source (26.04.1~beta1) resolute; urgency=medium
 
  -- Aaron Rainbolt <arainbolt@kfocus.org>  Fri, 26 Jun 2026 15:46:11 -0500
 

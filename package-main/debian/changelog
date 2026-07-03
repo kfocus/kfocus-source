@@ -1,20 +1,8 @@
-kfocus-main (26.04.1~beta3~local1) resolute; urgency=medium
+kfocus-main (26.04.1) resolute; urgency=medium
 
-  * kfocus-main.postinst: Fix test for BASHREMATCH x11 (#6582)
-  * common.2.source: Add support for m2g7 and zrg2 (#6582)
-  * common.2.source: Fix test for BASHREMATCH x11 (#6582)
-
- -- Michael S. Mikowski <support@kfocus.org>  Wed, 01 Jul 2026 12:05:24 -0400
-
-kfocus-main (26.04.1~beta2) resolute; urgency=medium
-
+  [ Aaron Rainbolt ]
   * debian/kfocus-main.install: Remove org.kfocus.pkexec.kfocus-firstrun.policy line
     (#6374)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Fri, 26 Jun 2026 17:17:39 -0500
-
-kfocus-main (26.04.1~beta1) resolute; urgency=medium
-
   * debian/control:
     - Switch build dependencies to Qt6 (#6374)
     - Add dconf-cli to kfocus-main dependencies (for kfocus-fix-ibus) (#6374)
@@ -105,7 +93,13 @@ kfocus-main (26.04.1~beta1) resolute; urgency=medium
   * usr/share/icons/hicolor/*: Remove non-SVG icons (#6374)
   * usr/share/kfocus-hints/*: Update hint widget for 26.04 (#6414)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Fri, 26 Jun 2026 16:29:21 -0500
+  [ Michael S. Mikowski ]
+  * kfocus-main.postinst: Fix test for BASHREMATCH x11 (#6582)
+  * common.2.source: Add support for m2g7 and zrg2 (#6582)
+  * common.2.source: Fix test for BASHREMATCH x11 (#6582)
+  * Consolidate changes and publish to release repo
+
+ -- Michael S. Mikowski <support@kfocus.org>  Thu, 02 Jul 2026 20:03:20 -0400
 
 kfocus-main (24.04.31) noble; urgency=medium
 

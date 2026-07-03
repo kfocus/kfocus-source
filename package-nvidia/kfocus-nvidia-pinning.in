@@ -25,7 +25,7 @@
 # installed first, then the supporting drivers are installed on the
 # next upgrade.
 #
-Package: kfocus-nvidia-edge
+Package: kfocus-nvidia
 Pin: release l=Kubuntu Focus PPA, v=26.04, n=resolute
 Pin: version XXX_PKG_VER_XXX
 Pin-Priority: 1006
@@ -124,45 +124,13 @@ Pin: version 595.*
 Pin-Priority: 1002
 
 # BLACKLIST (alway ignore) other core and util packages from nvidia repos
-Package: nvidia-* libnvidia-* xserver-xorg-video-nvidia-* libxnvctrl0
+Package: nvidia-* libnvidia-* libxnvctrl0 cuda-drivers* xserver-xorg-video-nvidia-*
 Pin: release o=NVIDIA,l=NVIDIA CUDA
 Pin: origin developer.download.nvidia.com
 Pin-Priority: -1
 
 # == CUDA Nvidia Packages =============================================
-# Pin cuda-drivers to use version 595.71.*, fallback to versions
-#   595.58 and 595.*.
+# The cuda-drivers package is no longer installable or advisable in
+# 26.04 LTS. Instead, it is redundant with nvidia-driver-595-open and
+# it is disallowed with a pin-priority above.
 #
-# CUDA packages come from NVIDIA repos at developer.download.nvidia.com, which
-# are enabled by kfocus-apt-source.
-#
-# NOTE: We used to also pin cuda-drivers-VERS (e.g. cuda-drivers-595), but
-# these packages appear to no longer exist.
-
-# 1st: CUDA nvidia packages, version 595.71.*
-# Note: Although specified, nvidia  developer.download.nvidia.com repo
-#   constraint is NOT honored.
-Package: cuda-drivers
-Pin: release o=NVIDIA,l=NVIDIA CUDA
-Pin: origin developer.download.nvidia.com
-Pin: version 595.71.*
-Pin-Priority: 1006
-
-# 2nd: CUDA nvidia packages, version 595.58.*
-# Note: Although specified, nvidia developer.download.nvidia.com repo
-#   constraint is not honored.
-Package: cuda-drivers
-Pin: release o=NVIDIA,l=NVIDIA CUDA
-Pin: origin developer.download.nvidia.com
-Pin: version 595.58.*
-Pin-Priority: 1005
-
-# 3rd: CUDA nvidia packages, version 595.*
-# Note: Although specified, nvidia developer.download.nvidia.com repo
-#   constraint is not honored.
-Package: cuda-drivers
-Pin: release o=NVIDIA, l=NVIDIA CUDA
-Pin: origin developer.download.nvidia.com
-Pin: version 595.*
-Pin-Priority: 1004
-
