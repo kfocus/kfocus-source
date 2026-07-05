@@ -28,16 +28,6 @@ _overwriteWithMocksFn () {
   source "${_exe_file}" || exit 1;
   # Override executables with functions
   declare -g _dconfExe="_dconfExe";
-
-  _cm2RunPlasmaScriptFn () {
-    if [ "$1" = 'fixIbusPanelIcon.js' ]; then
-      _mockIbusSystray='false';
-    elif [ "$1" = 'chkIbusPanelIcon.js' ]; then
-      echo "${_mockIbusSystray}";
-    else
-      _cm2WarnStrFn 'No Plasma script name provided!';
-    fi
-  }
 }
 ## . END _overwriteWithMocksFn }
 
@@ -106,6 +96,9 @@ _mockDconfActiveFn () {
   _dconfExe () {
     if [ "${1:-}" = 'read' ]; then
       case "${2:-}" in
+        /desktop/ibus/panel/show-icon-on-systray)
+          echo "${_mockIbusSystray}";
+          ;;
         /desktop/ibus/general/use-system-keyboard-layout)
           echo "${_mockIbusSystemKeyboard}";
           ;;
@@ -115,6 +108,9 @@ _mockDconfActiveFn () {
       esac
     elif [ "${1:-}" = 'write' ]; then
       case "${2:-}" in
+        /desktop/ibus/panel/show-icon-on-systray)
+          _mockIbusSystray="${3:-}";
+          ;;
         /desktop/ibus/general/use-system-keyboard-layout)
           _mockIbusSystemKeyboard="${3:-}";
           ;;
