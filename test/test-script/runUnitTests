@@ -2,7 +2,7 @@
 set -u;
 
 # See https://stackoverflow.com/questions/2683279
-#   Run if not sourced
+# Run if not sourced using:
 # if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 #   _assignGlobalVarsFn;
 #   _runTestFn;
@@ -94,6 +94,8 @@ _t00RunTestScriptsFn () {
   _unit_count=0;
   for _unit_file in "${_filter_list[@]}"; do
     _unit_basename="$( basename "${_unit_file}" )" || exit 1;
+    # Remove last file extension only (if exists)
+    _unit_basename="${_unit_basename%.*}";
 
     # Export dirs for use by test script
     _t00ExpectDir="${_t00DataDir}/expect/${_unit_basename}";

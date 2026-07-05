@@ -1,21 +1,28 @@
-#!/bin/bash
+# Copyright 2019-2026 MindShare Inc.
+# Unit test written for the Kubuntu Focus by
+#   Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
 #
-# _dedupRepoSrcFileFn deduplicates repo sources listed in /etc/apt.
-# It is used in package_repo/DEBIAN/postinst
+# 00300_dedupRepo.bash: Test function _dedupRepoSrcFileFn
+## TODO 2026-07-04 mmikowski: Consider deleting.
+#  A search of the project shows this is no longer used anywhere.
 #
-# TODO 2020-09-05 mmikowski: Use unit testing shunit2 or BATS per
-# https://www.leadingagile.com/2018/10/unit-testing-shell-scriptspart-one/
+# This code is designed to be sourced and run by
+#   the test harness, runUnitTests.
+#   DO NOT run this directly as that may imperil the host system.
+#
+# + All _t00-prefixed variables are from _runUnitTests.
+# + All _cm2-prefixed variables are from common.2.source
+# + All package for used to override a test package should be clearly noted.
+# + See other tests for example use of the Expect files.
+#
+# set -u is applied in _runUnitTests
 #
 
 ## BEGIN _dedupRepoSrcFileFn {
 # Purpose: Remove redundant repo sources
 #   See https://stackoverflow.com/questions/40752
-#
 #   See https://tldp.org/LDP/abs/html/process-sub.html
-#   on how we use process substitution to avoid subshells
-# Example:
-# Requires:
-# Throws:
+#     on how we use process substitution to avoid subshells
 #
 _dedupRepoSrcFileFn() {
   declare _src_list_str _is_all_ok _match_file _search_str _src_line;
@@ -105,4 +112,3 @@ _runTestFn () {
   return "${_return_int}";
 }
 ## . END _runTestFn }
-

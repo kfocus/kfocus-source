@@ -1,9 +1,19 @@
-# vim: syntax=bash:
-
 # Copyright 2019-2026 MindShare Inc.
-# Written for the Kubuntu Focus by
+# Unit test written for the Kubuntu Focus by
 #   Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
-# This code is designed to be source by runUnitTests.
+#
+# 00025_commonCheck.bash: Test common.2.source lib functions
+#
+# This code is designed to be sourced and run by
+#   the test harness, runUnitTests.
+#   DO NOT run directly as thate may imperil the host system.
+#
+# + All _t00-prefixed variables are from _runUnitTests.
+# + All _cm2-prefixed variables are from common.2.source
+# + All package for used to override a test package should be clearly noted.
+# + See other tests for example use of the Expect files.
+#
+# set -u is applied in _runUnitTests
 
 ## BEGIN Scrub beginning and trailing whitespace
 # Works like sed 's/^\s\+//' <<< "$*" | sed 's/\s\+//';
@@ -41,7 +51,7 @@ _echoFormatFn   () { printf '  %-4.4s : %-14.14s %-2.2s %-14.14s ' "$@"; }
 #   _cm2LogLevelName  : Current log name  (5 = notice,   see syslog)
 #   _cm2LogTag        : Current log prefix, e.g. 'kfocus-pick-gcc'
 #   _cm2PlasmaScriptDir : KFocus Plasma scripts dir
-#   _cm2QdbusExe      : Command for QDBus; '' if not found
+#   _cm2DbusSendExe   : Command for dbus-send; '' if not found
 #   _cm2RmExe         : File rm command, '/bin/rm';
 #   _cm2WhiptailExe   : Whiptail command, '' if not found
 #
@@ -311,7 +321,7 @@ _audit_cm2EchoModelStrFn () {
     'NUC12WSH-B3|nxg2|n|nxg1'
     'NUC12WSH-B|nxg2|n|nxg1'
 
-    # All iridiums use an SKU for identification
+    # All Iridium systems use an SKU for identification
     'iridium|ir14g1|n|ir14g1|LCS14-12i12345'
     'iridium|ir14g2|n|ir1Xg2|LCS14-13i'
     'iridium|ir16g2|n|ir1Xg2|LCS16-13i'
@@ -417,7 +427,7 @@ _audit_cm2EchoModelStrFn () {
 #     * SAME: Pull in changed dependencies and recommends.
 #     * BETTER: Keep any (auto|manual) mark on upgrades; install always
 #       sets manual.
-#     * SAME: Leaves the any config file as-is IFF it has changed,
+#     * SAME: Leaves any config file as-is IFF it has changed,
 #       otherwise it updates it.
 #       (This is the same as install with the options of
 #        Dpkg::Options of --force-confdef and --force-confold.)
@@ -550,8 +560,8 @@ _audit_cm2ChkPkgFn () {
 #     Multiple command paths may be supplied, delimited by a comma.
 #     This is useful if we want to try alternate paths.
 #     The first valid path is used.
-#   If <type> = 'filerw', value is <command> filepath if writable
-#   If <type> = 'filero', value is <command> filepath if readable
+#   If <type> = 'filerw', value is <command> filepath if writable.
+#   If <type> = 'filero', value is <command> filepath if readable.
 #   If <required> = 'required' (default), a return status of 1 is provided
 #     if any path lookup fails.
 #   If <required> = 'optional', the value is '', and the return value
@@ -998,7 +1008,7 @@ _audit_cm2TestVersFn () {
 # Summary   : _cm2LogFn <priority_key> <message>
 # Purpose   : Log to syslog with priority and message. Also echo to STDERR.
 #             Lower priority messages with an index value < _cm2LogLevelIdx
-#             are note logged.
+#             are not logged.
 # Example   : _cm2LogFn 'notice' 'This is a somewhat important message';
 # Arguments : priority_key, message
 # Globals   : _cm2LogLevelIdx, _cm2LogPriorityMap, _cm2LogIdxMap

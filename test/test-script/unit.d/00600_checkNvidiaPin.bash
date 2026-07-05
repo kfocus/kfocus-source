@@ -1,14 +1,23 @@
-#!/bin/bash
-#bashsupport disable=BP1001
+# Copyright 2019-2026 MindShare Inc.
+# Unit test written for the Kubuntu Focus by
+#   Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
 #
-## BEGIN _checkNvidiaPinFn {
-#  Purpose: Check versions and pins for Nvidia
-#  Used by: package-apt-source for Nvidia package
-#           See ticket 1605
+# 00600_checkNividiaPin.bash: Check pinning of nvidia packages
+#  Used by: package-apt-source for Nvidia package (#1605)
 #
-# set -u is set in test harness
+# This code is designed to be sourced and run by
+#   the test harness, runUnitTests.
+#   DO NOT run this directly as that may imperil the host system.
 #
-# cuda-drivers-${_nvDriverVers} appear deprecated for 595+ drivers
+# + All _t00-prefixed variables are from _runUnitTests.
+# + All _cm2-prefixed variables are from common.2.source
+# + All package for used to override a test package should be clearly noted.
+# + See other tests for example use of the Expect files.
+#
+# set -u is applied in _runUnitTests
+
+# NOTE: cuda-drivers-${_nvDriverVers} appear deprecated for 595+ drivers
+#
 _echoExtraNvPkgsFn () {
   cat << EOL
 cuda-drivers

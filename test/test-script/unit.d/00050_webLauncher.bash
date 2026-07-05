@@ -1,7 +1,19 @@
-#!/bin/bash
+# Copyright 2019-2026 MindShare Inc.
+# Unit test written for the Kubuntu Focus by
+#   Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
 #
-# Test for default web browser handler
+# 00050_webLauncher.bash: Test kfocus-web-launcher
 #
+# This code is designed to be sourced and run by
+#   the test harness, runUnitTests.
+#   DO NOT run this directly as that may imperil the host system.
+#
+# + All _t00-prefixed variables are from _runUnitTests.
+# + All _cm2-prefixed variables are from common.2.source
+# + All package for used to override a test package should be clearly noted.
+#
+# set -u is applied in _runUnitTests
+
 ## BEGIN _assertDataTable {
 _assertDataTable=(
 #  Test synopsis;Desktop file name;Args for _mainFn; Expect string
@@ -28,9 +40,10 @@ _overwriteWithMocksFn () {
 ## . END _overwriteWithMocksFn }
 
 ## BEGIN _runTestFn {
+# bashsupport disable=BP2001
 _runTestFn () {
   declare _launch_exe _fail_count _assert_count _assert_idx \
-    _msg_str _assert_data_list _arg_list _do_fail_inc;
+    _assert_line _msg_str _assert_data_list _arg_list _do_fail_inc;
 
   # shellcheck disable=SC2154,SC1090
   _launch_exe="${_t00TopDir}/package-main/usr/lib/kfocus/";
@@ -53,10 +66,12 @@ _runTestFn () {
     _msg_str+="|${_assert_idx}| of |${_assert_count}|";
     _cm2EchoFn "${_msg_str}";
 
-    # Overwrite imported variable previously found with:
+    # Overwrite variables imported from kfocus-web-launcher
     #   _desktopFile="$(xdg-settings get default-web-browser)";
+    #   _kdiagExe="$(command -v kdialog)";
     _desktopFile="${_assert_data_list[1]}";
     _kdiagExe='';
+
     _arg_list=();
     if [ -n "${_assert_data_list[2]}" ]; then
       IFS=' ' read -r -d '' -a _arg_list \
@@ -90,4 +105,3 @@ _runTestFn () {
   fi
 }
 ## . END _runTestFn }
-

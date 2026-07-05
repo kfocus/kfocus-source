@@ -1,11 +1,24 @@
-#!/bin/bash
+# Copyright 2019-2026 MindShare Inc.
+# Unit test written for the Kubuntu Focus by
+#   Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
 #
-# _chkRepoSrcFn enables, disables, and lists repo sources in /etc/apt.
-# It is used in package_repo/DEBIAN/postinst:_chkRepoSrcFn
+# 00200_chkRepoSrc.bash: Test chkRepoSrc function
+#  _chkRepoSrcFn enables, disables, and lists repo sources in /etc/apt.
+#   It WAS used in package_repo/DEBIAN/postinst:_chkRepoSrcFn
 #
-# TODO 2020-09-05 mmikowski: Use unit testing shunit2 or BATS per
-# https://www.leadingagile.com/2018/10/unit-testing-shell-scriptspart-one/
+## TODO 2026-07-04 cool mmikowski: Consider deleting.
+#  A search of the project shows this is no longer used anywhere.
 #
+# This source is designed to be sourced and run by runUnitTests.
+#   DO NOT run directly as it may imperil the host system.
+#
+# + All _t00-prefixed variables are from _runUnitTests.
+# + All _cm2-prefixed variables are from common.2.source
+# + All package for used to override a test package should be clearly noted.
+# + See other tests for example use of the Expect files.
+#
+# set -u is applied in _runUnitTest
+
 
 ## BEGIN _chkRepoSrcFn {
 # Purpose: List source files, or enable/disable repo
@@ -19,7 +32,8 @@
 #
 _chkRepoSrcFn () {
   declare _repo_src_str _act_str _prefix _src_list_str \
-    _search_str _replace_str _tgt_list_str _is_first _return_int;
+    _search_str _replace_str _tgt_list_str _is_first _file _return_int;
+
   _repo_src_str="${1:-XXX__not__XXX}";
   _act_str="${2:-list}";
   _prefix="${3:-^#*\s*deb }";
@@ -100,7 +114,7 @@ _chkRepoSrcFn () {
       done
     ;;
   esac
-  return ${_return_int};
+  return "${_return_int}";
 }
 ## . END _chkRepoSrcFn }
 

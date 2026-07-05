@@ -1,8 +1,20 @@
-#!/bin/bash
+# Copyright 2019-2026 MindShare Inc.
+# Unit test written for the Kubuntu Focus by
+#   Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
 #
-# Tests for _checkBtrfsStatusFn from kfocus-rollback-backend
+# 01300_kfocusRollback.bash:
+# Test _checkBtrfsStatusFn from kfocus-rollback-backend
 #
-# set -u is set in _runUnitTests (the test harness)
+# This code is designed to be sourced and run by
+#   the test harness, runUnitTests.
+#   DO NOT run this directly as that may imperil the host system.
+#
+# + All _t00-prefixed variables are from _runUnitTests.
+# + All _cm2-prefixed variables are from common.2.source
+# + All package for used to override a test package should be clearly noted.
+# + See other tests for example use of the Expect files.
+#
+# set -u is applied in _runUnitTest
 #
 
 ## BEGIN _overwriteWithMocksFn {
@@ -26,7 +38,7 @@ _overwriteWithMocksFn () {
   ls () {
     declare _arg_list _last_arg;
     _arg_list=( "$@" );
-    _last_arg="${_arg_list[(( ${#_arg_list[@]} - 1 ))]}"
+    _last_arg="${_arg_list[-1]}";
     2>/dev/null _cm2LsFn "${_t00RunDir}/${_last_arg}" || true;
   }
 
@@ -601,7 +613,7 @@ _unsetMocksFn () {
 ## . END _unsetMocksFn }
 
 ## BEGIN _runTestFn {
-# This MUST be called '_runTestFn' for use by the _runUnitTests
+# This MUST be called '_runTestFn' for use by ./runUnitTests
 _runTestFn () {
   declare _assert_table _fail_count _assert_count _assert_idx \
     _assert_line _bit_list _assert_prep_fn _assert_result _count_str;
@@ -683,76 +695,3 @@ _runTestFn () {
   return "${_fail_count}";
 }
 ## . END _runTestFn }
-
-# TODO: Move this reference code to rtest and cross-check
-#_checkBtrfsStatusFn () {
-#  declare _main_fs _boot_fs _main_subvols_str _boot_subvols_str;
-
-#  # The presence of /var/lib/portables or /var/lib/machines subvolumes will
-#  # interfere with snapshotting. These subvolumes may be created automatically
-#  # by systemd if it is not configured otherwise.
-#  if grep -q 'var/lib/portables' < <("${_btrfsExe}" subvolume list /) || \
-#     grep -q 'var/lib/machines' < <("${_btrfsExe}" subvolume list /); then
-#    if [ -n "$(ls -A /var/lib/portables)" ] || \
-#       [ -n "$(ls -A /var/lib/machines )" ]; then
-#      _btrfsStatus='UNSUPPORTED';
-#      return;
-#    fi
-#  fi
-
-#  if [ -d "${_rb2MainDir}" ] && [ -d "${_rb2BootDir}" ]; then
-#    if [ -d "${_rb2MainDir}/@" ] \
-#      && [ -d "${_rb2MainSnapshotDir}" ] \
-#      && [ -d "${_rb2BootDir}/@boot" ] \
-#      && [ -d "${_rb2BootSnapshotDir}" ]; then
-#      _main_fs="$(LC_ALL='C' mount | grep btrfs | grep ' on / ' \
-#        | cut -d' ' -f1)";
-#      _boot_fs="$(LC_ALL='C' mount | grep btrfs | grep ' on /boot ' \
-#        | cut -d' ' -f1)";
-#      if [ -n "${_main_fs}" ] && [ -n "${_boot_fs}" ] \
-#        && [ "${_main_fs}" != "${_boot_fs}" ]; then
-#        if [ "$(_getManualSwitchStateBackendFn)" = 'MANUAL' ]; then
-#          _btrfsStatus='SUPPORTED, MANUAL';
-#        else
-#          _btrfsStatus='SUPPORTED, AUTO';
-#        fi
-#      else
-#        _btrfsStatus='UNSUPPORTED';
-#      fi
-#    else
-#      _btrfsStatus='UNSUPPORTED';
-#    fi
-#  else
-#    if ! [ -d "${_rb2MainDir}" ] && ! [ -d "${_rb2BootDir}" ]; then
-#      _main_fs="$(LC_ALL='C' mount | grep btrfs | grep ' on / ' \
-#        | cut -d' ' -f1)";
-#      _boot_fs="$(LC_ALL='C' mount | grep btrfs | grep ' on /boot ' \
-#        | cut -d' ' -f1)";
-#      if [ -n "${_main_fs}" ] && [ -n "${_boot_fs}" ] \
-#        && [ "${_main_fs}" != "${_boot_fs}" ]; then
-#        _main_subvols_str="$("${_btrfsExe}" subvolume list / | awk '{ print $9 }' | sort)";
-#        _boot_subvols_str="$("${_btrfsExe}" subvolume list /boot | awk '{ print $9 }' | sort)";
-#        if grep -qE '^@$' <<< "${_main_subvols_str}" && \
-#          LC_ALL='C' mount | grep -q ' on /home '; then
-#          if [ -z "${_boot_subvols_str}" ]; then
-#            if ! grep -qE '^@kfocus-rollback-snapshots$' \
-#              <<< "${_main_subvols_str}"; then
-#              _btrfsStatus='SUPPORTED, NOT SET UP';
-#            else
-#              _btrfsStatus='INCONSISTENT';
-#            fi
-#          else
-#            _btrfsStatus='UNSUPPORTED';
-#          fi
-#        else
-#          _btrfsStatus='UNSUPPORTED';
-#        fi
-#      else
-#        _btrfsStatus='UNSUPPORTED';
-#      fi
-#    else
-#      _btrfsStatus='INCONSISTENT';
-#    fi
-#  fi
-#}
-## . END _checkBtrfsStatusFn }

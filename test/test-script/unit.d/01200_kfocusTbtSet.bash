@@ -1,12 +1,21 @@
-#!/bin/bash
+# Copyright 2019-2026 MindShare Inc.
+# Unit test written for the Kubuntu Focus by
+#   Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
 #
-# Test for kfocus-tbt-set
+# 01200_kfocusTbtSet.bash: Test kfocus-tbt-set
 #
-# set -u is set in _runUnitTests (the test harness)
+# This code is designed to be sourced and run by
+#   the test harness, runUnitTests.
+#   DO NOT run this directly as that may imperil the host system.
 #
+# + All _t00-prefixed variables are from _runUnitTests.
+# + All _cm2-prefixed variables are from common.2.source
+# + All package for used to override a test package should be clearly noted.
+#
+# set -u is applied in _runUnitTests
 
 ## BEGIN _overwriteWithMocksFn {
-# Purpose: Override bash methods and sourced script fns and symbols.
+# Purpose: Override sourced script functions, vars, and symbols.
 _overwriteWithMocksFn () {
   # Source executable
   # bashsupport disable=BP2001
@@ -82,7 +91,7 @@ _lsmodStateFile="$(_cm2MkTmpFileFn)";
 echo -n 'thunderbolt' > "${_lsmodStateFile}";
 
 ## BEGIN _runTestFn {
-# This MUST be called '_runTestFn' for use by the _runUnitTests
+# This MUST be called '_runTestFn' for use by ./runUnitTests
 _runTestFn () {
   declare _assert_table _fail_count _assert_count _assert_idx \
     _assert_line _bit_list _action_str _count_str _expect_subdir \
@@ -167,7 +176,7 @@ _runTestFn () {
       fi
     } | sed "s|${_t00RunDir}||g" >> "${_assertInfoFile}";
 
-    # Cacluate expect_subdir, create if not found
+    # Calculate expect_subdir, create if not found
     printf -v _expect_subdir '%s/state-%02d' "${_t00ExpectDir}" "${_assert_idx}";
     if ! [ -d "${_expect_subdir}" ]; then
       mkdir -p "${_expect_subdir}" || {

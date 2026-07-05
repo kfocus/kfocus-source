@@ -1,13 +1,24 @@
-#!/bin/bash
-## BEGIN _adviseRebootFn {
-#  Purpose: Advise reboot after install
-#  Used by: kfocus-main.postinst
-#    (use grep -ril '_adviseRebootFn')
+# Copyright 2019-2026 MindShare Inc.
+# Unit test written for the Kubuntu Focus by
+#   Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
 #
+# 00100_adviseReboot.bash: Test advise reboot function
+#
+# This code is designed to be sourced and run by
+#   the test harness, runUnitTests.
+#   DO NOT this run directly as that may imperil the host system.
+#
+# + All _t00-prefixed variables are from _runUnitTests.
+# + All _cm2-prefixed variables are from common.2.source
+# + All package for used to override a test package should be clearly noted.
+# + See other tests for example use of the Expect files.
+#
+# set -u is applied in _runUnitTests
+
 # See https://askubuntu.com/questions/993570/
 #   how-to-force-a-system-restart-is-needed-to-complete-the-update-process-message
 _adviseRebootFn () {
-  declare _lib_dir _update_dir _tgt_file _touch_file;
+  declare _lib_dir _update_dir _rbt_file _touch_file;
   _lib_dir="${_rootDir}/var/lib/update-notifier";
   _update_dir="${_lib_dir}/user.d";
 

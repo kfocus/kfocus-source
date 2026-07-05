@@ -1,12 +1,23 @@
-#!/bin/bash
+# Copyright 2019-2026 MindShare Inc.
+# Unit test written for the Kubuntu Focus by
+#   Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
 #
-# Purpose: Check kfocus-kclean
-# Used by: package-main
+# 00900_kfocusKclean.bash: Test kfocus-kclean.
+## TODO 2026-07-04 mmikowski warm: Out of Date! Reactivate when needed.
+## We may revive kfocus-kclean for resolute, and this should be updated then!
 #
-# set -u is set in _runUnitTests (the test harness)
+# This code is designed to be sourced and run by
+#   the test harness, runUnitTests.
+#   DO NOT run this directly as that may imperil the host system.
 #
-# Script for generating a list of kernel package names (purposefully not
-# called in code here):
+# + All _t00-prefixed variables are from _runUnitTests.
+# + All _cm2-prefixed variables are from common.2.source
+# + All package for used to override a test package should be clearly noted.
+#
+# set -u is applied in _runUnitTests
+
+# Script for generating a list of kernel package names (purposely not
+#   called in code here):
 _makeMockKernelListFn () {
   declare _apt_list_str _image_list _vers_str;
   _apt_list_str="$(apt list |cut -d/ -f1)";
@@ -1404,8 +1415,9 @@ _overwriteWithMocksFn () {
     fi
   }
 
-  _kcleanSetExe='_kcleanSetExe';
-  _rollbackSetExe='';
+  # Set package variables used in kfocus-kclean
+  # bashsupport disable=BP2001
+  _kcleanSetExe='_kcleanSetExe'; _rollbackSetExe='';
 }
 ## . END _overwriteWithMocksFn }
 
@@ -1434,11 +1446,16 @@ _unsetMocksFn () {
 ## . END _unsetMocksFn }
 
 ## BEGIN _runTestFn {
-# This MUST be called '_runTestFn' for use by the _runUnitTests
+# This MUST be called '_runTestFn' for use by ./runUnitTests
 # bashsupport disable=BP2001
 _runTestFn () {
   declare _exe_file _fail_count _group_count _group_idx _group_line_str \
     _arg_list _expect_file _check_str _assert_count;
+
+  ## TODO 2026-07-04 mmikowski warm: Out of Date! Reactivate when needed.
+
+  _cm2EchoFn "kfocus-kclean tests skipped as out-of-date.";
+  if true; then return 0; fi
 
   # Use function from _runUnitTests: clear out run dir and check expect dir
   if ! _t00ClearRunDirFn;    then return 1; fi

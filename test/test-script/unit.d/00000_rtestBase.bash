@@ -1,26 +1,36 @@
-#!/bin/bash
+# Copyright 2019-2026 MindShare Inc.
+# Unit test written for the Kubuntu Focus by
+#   Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
 #
-# Template test that can be used as a starting point for writing future tests
+# 00000_rtestBase.bash: EXAMPLE unit test file
+# https://www.leadingagile.com/2018/10/unit-testing-shell-scriptspart-one/
 #
-# set -u is set in _runUnitTests (the test harness)
-# TODO: Add expect dir handling
+# This code is designed to be sourced and run by
+#   the test harness, runUnitTests.
+#   DO NOT run this directly as that may imperil the host system.
 #
+# + All _t00-prefixed variables are from _runUnitTests.
+# + All _cm2-prefixed variables are from common.2.source
+# + All package for used to override a test package should be clearly noted.
+# + See other tests for example use of the Expect files.
+#
+# set -u is applied in _runUnitTests
 
 ## BEGIN _overwriteWithMocksFn {
 _overwriteWithMocksFn () {
-  # Source executable
+  declare _exe_file;
+  # Set special variable _rootDir which is used by executable
   # bashsupport disable=BP2001
   _rootDir="${_t00RunDir}";
-  # shellcheck disable=SC2154
-  _exeFile="${_t00TopDir}";
-  _exeFile+='/package-main/usr/lib/kfocus/bin/kfocus-example-app';
-  # shellcheck disable=SC1090,SC2154
-  source "${_exeFile}" || exit 1;
 
-  # Reset globals
-  ls () {
-    echo 'abc';
-  }
+  # Source executable; shellcheck disable=SC2154
+  _exe_file="${_t00TopDir}";
+  _exe_file+='/package-main/usr/lib/kfocus/bin/kfocus-example-app';
+  # shellcheck disable=SC1090,SC2154
+  source "${_exe_file}" || exit 1;
+
+  # Mock executables or functions
+  ls () { echo 'abc'; }
 }
 ## . END _overwriteWithMocksFn }
 
@@ -45,10 +55,10 @@ _getAbcIfExistsFn () {
 ## . END _getAbcIfExistsFn }
 
 ## BEGIN _runTestFn {
-# This MUST be called '_runTestFn' for use by the _runUnitTests
+# This MUST be called '_runTestFn' for use by ./runUnitTests
 _runTestFn () {
-  declare _rootDir _assert_table _fail_count _assert_count _assert_idx \
-    _assert_line _assert_id _assert_str _result_str _count_str;
+  declare _assert_table _assert_count _assert_idx _fail_count \
+    _assert_line _bit_list _assert_id _assert_str _result_str _count_str;
 
   # Clear out run dir
   if ! _t00ClearRunDirFn;    then return 1; fi
@@ -72,9 +82,9 @@ _runTestFn () {
   );
 
   ## Begin Iterate through assertions {
-  _fail_count=0;
   _assert_count="${#_assert_table[@]}";
   _assert_idx=1;
+  _fail_count=0;
 
   for _assert_line in "${_assert_table[@]}"; do
     IFS='|' read -r -d '' -a _bit_list < <(echo -n "${_assert_line}");

@@ -1,10 +1,18 @@
-#!/bin/bash
-#bashsupport disable=BP1001
+# Copyright 2019-2026 MindShare Inc.
+# Unit test written for the Kubuntu Focus by
+#   Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
 #
-# Test for default kfocus-fan on mocked hardware
+# 00605_kfocusFan.bash: Test kfocus-fan-set
 #
-# set -u is set in _runUnitTests (the test harness)
+# This code is designed to be sourced and run by
+#   the test harness, runUnitTests.
+#   DO NOT run this directly as that may imperil the host system.
 #
+# + All _t00-prefixed variables are from _runUnitTests.
+# + All _cm2-prefixed variables are from common.2.source
+# + All package for used to override a test package should be clearly noted.
+#
+# set -u is applied in _runUnitTests
 
 ## BEGIN _overwriteWithMocksFn {
 # Purpose: Overwrite functions from sourced script before running assertions
@@ -55,7 +63,7 @@ _unsetMocksFn () { true; }
 ## . END _unsetMocksFn }
 
 ## BEGIN _runTestFn {
-# This MUST be called '_runTestFn' for use by the _runUnitTests
+# ' for use by the _runUnitTests
 _runTestFn () {
   declare _fail_count _assert_table _assert_count _assert_idx _assert_line \
     _inner_str _tag_str _file _expect_file _msg _check_str _count_str;

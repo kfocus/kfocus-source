@@ -1,14 +1,20 @@
-# vim: syntax=bash:
-
 # Copyright 2019-2026 MindShare Inc.
-# Written for the Kubuntu Focus by
-#   Aaron Rainbolt, Michael Mikowski
-# This code is designed to be source by runUnitTests.
-
+# Unit test written for the Kubuntu Focus by
+#   Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
+#
+# 01100_kfocusPrepUser.bash:
 # Test for /etc/passwd parsing code from kfocus-prep-user
 #
-# set -u is set in _runUnitTests (the test harness)
+# This code is designed to be sourced and run by
+#   the test harness, runUnitTests.
+#   DO NOT run this directly as that may imperil the host system.
 #
+# + All _t00-prefixed variables are from _runUnitTests.
+# + All _cm2-prefixed variables are from common.2.source
+# + All package for used to override a test package should be clearly noted.
+# + See other tests for example use of the Expect files.
+#
+# set -u is applied in _runUnitTests
 
 ## BEGIN _parseHomeDirFromPasswdFn
 # From package-calamares-settings/kfocus/kfocus-prep-user
@@ -46,10 +52,11 @@ _parseHomeDirFromPasswdFn () {
 ## . END _parseHomeDirFromPasswdFn }
 
 ## BEGIN _runTestFn {
-# This MUST be called '_runTestFn' for use by the _runUnitTests
+# This MUST be called '_runTestFn' for use by ./runUnitTests
 _runTestFn () {
   declare _rootDir _assert_table _fail_count _assert_count _assert_idx \
-    _assert_line _assert_user_name _assert_home_str _home_str _count_str;
+    _assert_line _bit_list _assert_user_name _assert_home_str _home_str \
+    _count_str;
 
   # Clear out run dir, copy init dir
   if ! _t00ClearRunDirFn;    then return 1; fi

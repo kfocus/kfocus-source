@@ -1,9 +1,20 @@
-# vim: syntax=bash:
-
 # Copyright 2019-2026 MindShare Inc.
-# Written for the Kubuntu Focus by
-#   Michael Mikowski, Erich Eickmeyer
-# This code is designed to be source by runUnitTests.
+# Unit test written for the Kubuntu Focus by
+#   Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
+#
+# 00500_updatePciids.bash: Test function _updatePciidsFn
+#   as used in kfocus-main.postinst
+#
+# This code is designed to be sourced and run by
+#   the test harness, runUnitTests.
+#   DO NOT run this directly as that may imperil the host system.
+#
+# + All _t00-prefixed variables are from _runUnitTests.
+# + All _cm2-prefixed variables are from common.2.source
+# + All package for used to override a test package should be clearly noted.
+# + See other tests for example use of the Expect files.
+#
+# set -u is applied in _runUnitTests
 
 ## BEGIN _updatePciidsFn {
 #  Purpose  : Loads pci device details

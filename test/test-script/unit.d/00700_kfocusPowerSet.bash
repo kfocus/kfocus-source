@@ -1,25 +1,21 @@
-#!/bin/bash
+# Copyright 2019-2026 MindShare Inc.
+# Unit test written for the Kubuntu Focus by
+#   Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
 #
-#  Purpose: Test kfocus-power-set on multiple devices
-#  Used by: package-tools for Nvidia package
-#           See ticket 1756
+# 00700_kfocusPowerSet.bash: Test kfocus-power-set and kfocus-kb-color-set
+#   for all models (#1756)
 #
+# This code is designed to be sourced and run by
+#   the test harness, runUnitTests.
+#   DO NOT run this directly as that may imperil the host system.
+#
+# + All _t00-prefixed variables are from _runUnitTests.
+# + All _cm2-prefixed variables are from common.2.source
+# + All package for used to override a test package should be clearly noted.
+#
+# set -u is applied in _runUnitTests
+
 # set -u is set in test harness
-
-#  _cpuTable=(
-#    'i7-12700H;400;2300;4700'
-#    'i7-11800H;800;2300;4600'
-#    'i5-1135G7;400;2400;4200'
-#    'i7-1165G7;400;2800;4700'
-#    'i7-10870H;800;2200;5000'
-#    'i7-10875H;800;2300;5100'
-#    'i7-9750H;800;2600;4500'
-#    'i9-9900K;800;3600;5000'
-#  );
-
-# _printIntFn () {
-#   printf '%.0f' "$*";
-# }
 
 _makeRunStrFn () {
   declare _core_root_dir _noturbo_file \
@@ -34,22 +30,22 @@ _makeRunStrFn () {
     _core_loop_dir="${_core_root_dir}/cpu${_core_idx}";
     _str+="CORE ${_core_idx}";
     _str+="\n  Governor  : ";
-    _str+="$(cat ${_core_loop_dir}/cpufreq/scaling_governor)";
+    _str+="$(cat "${_core_loop_dir}/cpufreq/scaling_governor")";
     _str+="\n  Base Freq : ";
-    _str+="$(cat ${_core_loop_dir}/cpufreq/base_frequency)";
+    _str+="$(cat "${_core_loop_dir}/cpufreq/base_frequency")";
     _str+="\n  Min  Freq : ";
-    _str+="$(cat ${_core_loop_dir}/cpufreq/cpuinfo_min_freq)";
+    _str+="$(cat "${_core_loop_dir}/cpufreq/cpuinfo_min_freq")";
     _str+="\n  Max  Freq : ";
-    _str+="$(cat ${_core_loop_dir}/cpufreq/cpuinfo_max_freq)";
+    _str+="$(cat "${_core_loop_dir}/cpufreq/cpuinfo_max_freq")";
     _str+="\n  SMin Freq : ";
-    _str+="$(cat ${_core_loop_dir}/cpufreq/scaling_min_freq)";
+    _str+="$(cat "${_core_loop_dir}/cpufreq/scaling_min_freq")";
     _str+="\n  SMax Freq : ";
-    _str+="$(cat ${_core_loop_dir}/cpufreq/scaling_max_freq)";
+    _str+="$(cat "${_core_loop_dir}/cpufreq/scaling_max_freq")";
     _str+='\n';
   done
 
   _str+="\n  NoTurboInt: ";
-  _str+="$(cat ${_noturbo_file})";
+  _str+="$(cat "${_noturbo_file}")";
 
   if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
     _str+="\n  KbdState  : ";
@@ -74,7 +70,7 @@ _makeRunStrFn () {
 # Returns   : none
 #
 _normalizeCompareStrFn () {
-  declare _str _end_str _line_list _line _bit_list;
+  declare _str _end_str _line_list;
   _str="${1:-}";
   _end_str="$(echo "${_str}" | tail -n-4)";
   _str="$(

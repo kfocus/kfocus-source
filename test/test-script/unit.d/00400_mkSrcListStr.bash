@@ -1,22 +1,34 @@
-# vim: syntax=bash:
-
 # Copyright 2019-2026 MindShare Inc.
-# Written for the Kubuntu Focus by
-#   Michael Mikowski, Erich Eickmeyer
-# This code is designed to be source by runUnitTests.
+# Unit test written for the Kubuntu Focus by
+#   Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
+#
+# 00400_mkSrcListStr: Test _mkSrcListStrFn function
+## TODO 2026-07-04 mmikowski: Consider deleting.
+#  A search of the project shows this is no longer used anywhere.
+#
+# This code is designed to be sourced and run by
+#   the test harness, runUnitTests.
+#   DO NOT run this directly as that may imperil the host system.
+#
+# + All _t00-prefixed variables are from _runUnitTests.
+# + All _cm2-prefixed variables are from common.2.source
+# + All package for used to override a test package should be clearly noted.
+# + See other tests for example use of the Expect files.
+#
+# set -u is applied in _runUnitTests
 
 ## BEGIN _mkSrcListStrFn {
 # Purpose  : Create a sorted list of source files used by 'apt-get update'
 #   with the following refinements:
-#     * Exclude deprecated kfocus-recommended.list
-#     * Include /etc/apt/sources.list first
+#     * Exclude deprecated kfocus-recommended.list.
+#     * Include /etc/apt/sources.list first.
 #
 # We checked the behavior of apt in relation to the files
 # found in /etc/apt:
 # 1. Only /etc/apt/sources.list and /etc/apt/sources.list.d/*.list
 #    are used for updates. Any subdirectories are ignored.
 # 2. Files that have spaces in them and are IGNORED by apt-get.
-#    An example, 'bad idea.list', is included in the test data.
+#    An example, "bad idea.list" is included in the test data.
 # 3. Any other *.list file in /etc/apt is ignored. An example,
 #    '/etc/apt/foo.list' is included in the test data.
 #
@@ -42,7 +54,7 @@ _mkSrcListStrFn () {
 
 ## BEGIN _runTestFn {
 _runTestFn () {
-  declare _src_list_str _expect_str _fix_str;
+  declare _return_int _src_list_str _expect_str _fix_str;
 
   # Set some vars for test routines
   _rootDir="${_t00InitDir}"; # Kept for compatibility
@@ -60,7 +72,10 @@ _runTestFn () {
 EOL
 );
 
-  _fix_str=$(sed 's?^.*/test-data/initial/00400_mkSrcListStr??gm' <<< "${_src_list_str}" );
+  # shellcheck disable=SC2001
+  _fix_str="$(
+    sed 's?^.*/test-data/initial/00400_mkSrcListStr??gm' <<< "${_src_list_str}"
+  )";
 
   if [ "${_fix_str}" = "${_expect_str}" ]; then
     _cm2SucStrFn 'Repo list matches expected';

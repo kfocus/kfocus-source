@@ -1,16 +1,35 @@
-#!/bin/bash
+# Copyright 2019-2026 MindShare Inc.
+# Unit test written for the Kubuntu Focus by
+#   Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
+#
+# 00800_kfocusMime.bash: Test kfocus-mime
+#
+# This code is designed to be sourced and run by
+#   the test harness, runUnitTests.
+#   DO NOT run this directly as that may imperil the host system.
+#
+# + All _t00-prefixed variables are from _runUnitTests.
+# + All _cm2-prefixed variables are from common.2.source
+# + All package for used to override a test package should be clearly noted.
+#
+# set -u is applied in _runUnitTests
 
 ## BEGIN _getPkgInfoStrFn {
  # Purpose: Get package info for audit
  #
 _getPkgInfoStrFn () {
   declare _sniff_str _found_pkg_name _expect_pkg_name \
-    _exe_str _found_list _msg_str;
+    _exe_str _cmd_str _found_list _msg_str;
 
   _sniff_str="${1:-}";
   _expect_pkg_name="${2:-}";
 
-  _exe_str="$(readlink -f "$(command -v "${_sniff_str}" || true)")";
+  _exe_str='';
+  _cmd_str="$(command -v "${_sniff_str}" || true)";
+  if [ -n "${_cmd_str}" ]; then
+    _exe_str="$(readlink -f "${_cmd_str}")";
+  fi
+
   if [ -z "${_exe_str}" ]; then
     echo "Cannot find sniff_str '${_sniff_str}'. Please install to audit.";
     return 1;
@@ -100,8 +119,7 @@ _auditInstallFn () {
   IFS=$'\n' read -r -d '\n' -a _key_list <<< "${_key_str}";
 
   for _key in "${_key_list[@]}"; do
-    # Use this to limit tests to secial handlers
-    # if ! grep -qE '^(docker|dropbox|jetbrains-toolbox|intellij|pycharm|webstorm|virtualbox|zoom)$' <<< "${_key}"; then continue; fi
+    # Use this to limit tests to special handlers
     read -rp "Press return to test |${_key}| > ";
     "${_mimeExe}" -k "${_key}";
     _cm2EchoFn "\nPress return to proceed...\n";
@@ -146,7 +164,7 @@ _runTestFn () {
   if [[ "${_reply:-n}" =~ ^[Yy] ]]; then
     _cm2EchoFn 'ok  : User reports kfocus-power launches';
   else
-    _cm2EchoFn 'fail: User reports kfoucs-power launches';
+    _cm2EchoFn 'fail: User reports kfocus-power DID NOT launch';
     _return_int=1;
   fi
 

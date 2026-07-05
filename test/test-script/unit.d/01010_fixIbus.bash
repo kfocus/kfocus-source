@@ -1,17 +1,19 @@
-# vim: syntax=bash:
-
 # Copyright 2019-2026 MindShare Inc.
-# Written for the Kubuntu Focus by
-#   Aaron Rainbolt, Michael Mikowski
-# This code is designed to be source by runUnitTests.
-
-#All of our nested mock functions are showing up as unreachable, silence it
-#shellcheck disable=SC2317
+# Unit test written for the Kubuntu Focus by
+#   Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
 #
-# Test for default kfocus-fan on mocked hardware
+# 01010_fixIbus.bash: Test kfocus-fix-ibus
+# https://www.leadingagile.com/2018/10/unit-testing-shell-scriptspart-one/
 #
-# set -u is set in _runUnitTests (the test harness)
+# This code is designed to be sourced and run by
+#   the test harness, runUnitTests.
+#   DO NOT run this directly as that may imperil the host system.
 #
+# + All _t00-prefixed variables are from _runUnitTests.
+# + All _cm2-prefixed variables are from common.2.source
+# + All package for used to override a test package should be clearly noted.
+#
+# set -u is applied in _runUnitTests
 
 ## BEGIN _overwriteWithMocksFn {
 # Purpose: Source and overwrite function with mocks
@@ -190,7 +192,7 @@ _mockWithIbusBadConfReadonlyFn () {
 ## . END _checkIbusConfigFn }
 
 ## BEGIN _runTestFn {
-# This MUST be called '_runTestFn' for use by the _runUnitTests
+# This MUST be called '_runTestFn' for use by ./runUnitTests
 _runTestFn () {
   declare _fail_count _assert_table _assert_count _assert_idx _assert_line \
     _file _expect_file _msg _check_str _count_str _cr _testfn_str _arg_str \

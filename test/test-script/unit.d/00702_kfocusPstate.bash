@@ -1,13 +1,19 @@
-#!/bin/bash
-#shellcheck disable=SC2154
-#bashsupport disable=BP1001
+# Copyright 2019-2026 MindShare Inc.
+# Unit test written for the Kubuntu Focus by
+#   Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
 #
-# Test for default kfocus-fan on mocked hardware
+# 00000_kfocusPstate.bash: test kfocus-pstate
 #
-# set -u is set in _runUnitTests (the test harness)
+# This code is designed to be sourced and run by
+#   the test harness, runUnitTests.
+#   DO NOT run this directly as that may imperil the host system.
 #
+# + All _t00-prefixed variables are from _runUnitTests.
+# + All _cm2-prefixed variables are from common.2.source
+# + All package for used to override a test package should be clearly noted.
+#
+# set -u is applied in _runUnitTests
 
-# bashsupport disable=BP2001,BP2001,BP2001
 ## BEGIN _setMocksFn {
 # Purpose: Overwrite functions from sourced script before running assertions
 # shellcheck disable=SC2317
@@ -76,8 +82,9 @@ _EOT
     esac
   }
 
+  # The "-g" option only works inside functions (see bash help declare)
   declare -g _baseName _cm2KdiagExe _escExe _lockFile _lspciExe \
-    _powerSetExe _primeExe _profilesCtlExe _pstateSetExe _dbusExe \
+    _powerSetExe _primeExe _profilesCtlExe _pstateSetExe \
     _upowerExe _userName;
 
   _baseName='kfocus-pstate';
@@ -87,6 +94,7 @@ _EOT
 
   _cm2KdiagExe='_cm2KdiagExeFn';
   _escExe='';
+
   # TODO: Mock this
   # _kbdColorSetExe="${_t00TopDir}/package-tools/usr/lib/kfocus/bin/kfocus-kb-color-set";
   _kbdColorSetExe='';
@@ -110,13 +118,13 @@ _EOT
 #   reset here; instead they are re-source after every test in runUnitTests.
 #   See more notes in 00900.
 _unsetMocksFn () {
-  unset _baseName _cm2KdiagExe _escExe _lockFile _lspciExe \
+  unset _baseName _escExe _lockFile _lspciExe \
     _primeExe _powerSetExe _pstateSetExe _dbusExe _upowerExe _userName;
 }
 ## . END _unsetMocksFn }
 
 ## BEGIN _runTestFn {
-# This MUST be called '_runTestFn' for use by the _runUnitTests
+# This MUST be called '_runTestFn' for use by ./runUnitTests
 _runTestFn () {
   declare _cr _fail_count _assert_table _assert_count _assert_idx \
     _assert_line _lspci_str _prime_select_str _file _expect_file \

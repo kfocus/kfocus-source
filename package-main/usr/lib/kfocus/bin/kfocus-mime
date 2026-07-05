@@ -51,7 +51,8 @@ _exeLookupList=(
   'kde-connect|kdeconnect-app||kdeconnect|KDE Connect: Connect Smartphones to Desktop'
   'kdenlive|kdenlive||kdenlive|KDEnlive: Edit  Non-Linear Videos'
   'kdiff3|kdiff3||kdiff3|KDiff3: Diff and Merge Files and Directories'
-  'keepassxc|keepassxc||keepassxc|KeepassXC: Password Manager'
+  # app_id|cmd_str;with;args|sniff_str|pkg_str|descr_str
+  'keepassxc|keepassxc||keepassxc-full|KeepassXC Full: Password Manager'
   'kfocus_apps|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://kfocus.org/wf/apps.html||kfocus-main|KFocus Curated Apps: View Curated Apps in browser'
   'kfocus_conda|konsole;-e;kfocus-conda|kfocus-conda|kfocus-conda|KFocus Anaconda GPU AI Suite Installer: Install GPU accelerated deep learning'
   'kfocus_extra|konsole;-e;pkexec;kfocus-extra|kfocus-extra|kfocus-main|KFocus Extra Software Installer: Install extra optional software'
@@ -60,7 +61,7 @@ _exeLookupList=(
   'kfocus_guided|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://kfocus.org/wf||kfocus-main|KFocus Guided Solutions: View guided solutions in browser'
   'kfocus_help|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://kfocus.org/wf/help.html||kfocus-main|KFocus Reference Pages: Basic help and resources for Kubuntu Focus'
   'kfocus_kb_color|kfocus-kb-color||kfocus-kb-color|KFocus Keyboard Color Chooser: Change keyboard color and brightness'
-  'kfocus_kclean|/usr/lib/kfocus/bin/kfocus-kclean;-f|/usr/lib/kfocus/bin/kfocus-kclean|kfocus-main|KFocus Kernel Cleaner: Remove unused and old kernel files'
+   # 'kfocus_kclean|/usr/lib/kfocus/bin/kfocus-kclean; -f|/usr/lib/kfocus/bin/kfocus-kclean|kfocus-main|KFocus Kernel Cleaner: Remove unused and old kernel files'
   'kfocus_passphrase_changer|/usr/lib/kfocus/bin/kfocus-firstrun-bin;-f;diskPassphraseItem||kfocus-main|KFocus Disk Passphrase Changer: Change encrypted disk passphrases'
   'kfocus_pick_gcc|kfocus-pick-gcc||kfocus-pick-gcc|KFocus C Compiler Switcher: Change default C compiler version'
   'kfocus_power|kfocus-power||kfocus-power-bin|KFocus Power and Fan: Review and adjust power settings'
@@ -93,7 +94,7 @@ _exeLookupList=(
   'rar|konsole;-e;man rar|rar|rar|Rar: Create .rar Archive Files'
   'slack|slack;--ozone-platform=x11|slack|slack-desktop|Slack: Team Messaging'
   'spectacle|spectacle||kde-spectacle|Spectacle: Take Screenshots'
-  'steam|steam||steam|Steam: Manage and Play Games'
+  'steam|steam||steam-installer|Steam: Manage and Play Games'
   'sublime-text|subl||sublime-text|Sublime Text editor'
   'synaptic|synaptic-pkexec||synaptic|Synaptic: View, Install, and Remove Debian Packages'
   'systemsettings5|systemsettings||systemsettings|System Settings: Adjust Your System'
@@ -106,6 +107,7 @@ _exeLookupList=(
   'winff|winff||winff-qt|WinFF: Convert Video using ffmpeg'
 
   # Packages with special handlers
+  'kfocus_kclean|!kfocus-kclean|/usr/bin/true|base-files|KFocus Kernel Cleaner: Remove unused and old kernel files'
   'displaylink-driver|!displaylink-driver|displaylink-installer|displaylink-driver|DisplayLink: Driver for DisplayLink Docking Stations'
   'docker|!docker|docker|docker-ce|Docker: Container Engine'
   'dropbox|!dropbox|dropbox|dropbox|Dropbox: Sync to Cloud Storage'
@@ -197,7 +199,7 @@ function deb_azure-cli() {
 }
 # Brave is currently broken and not available from the Curated Apps webpage.
 # The key is out-of-date. We would like to fix this with a method that does
-# not require trusted.gpg.d, such as creating a sources.list file for Brave
+# not require trusted.gpg.d, such as creating a "sources.list" file for Brave
 # that embeds the key directly.
 
 #function deb_brave-browser() {
@@ -907,7 +909,7 @@ EOT
 #
 _runAppHandlerFn () {
   declare _app_id _descr_str _prompt_msg _cmd_str \
-    _exe_str _arg_list _run_list _jb_disp_str;
+    _exe_str _arg_list _run_list;
 
   _app_id="${1:-}";
   _descr_str="${2:-}";
@@ -1010,6 +1012,15 @@ EOT
       fi
       _cmd_str='flatpak';
       _arg_list=( 'run' 'fr.handbrake.ghb' );
+      ;;
+
+    kfocus_kclean)
+      _prompt_msg="$(cat <<EOT
+${_cm2HtmPStr}kfocus-kclean is not yet available for Kubuntu 26.04. <br>
+However, it may return in the future.</p>
+EOT
+      )";
+      _cmd_str='true';
       ;;
 
     kfocus_vidsync)
@@ -1243,7 +1254,7 @@ _runAppFn () {
           # Note: _cm2RunLongCmdFn prefixes commands with _escExe (pkexec)
           # unless "AS_USER" is passed immediately after the prompt message
           _reentrant_cmd_list=();
-          if [ "${INSTALL_AS_USER}" = 'y' ]; then
+          if [ "${INSTALL_AS_USER:-}" = 'y' ]; then
             _reentrant_cmd_list+=( 'AS_USER' );
           fi
           _reentrant_cmd_list+=(
@@ -1253,7 +1264,7 @@ _runAppFn () {
               "${_reentrant_cmd_list[@]}")"; then continue;
           else
             _prompt_msg="Trouble installing ${_descr}";
-            if [ -n "${_exit_str}" ]; then
+            if [ -n "${_exit_str:-}" ]; then
               _prompt_msg+=":<br>${_exit_str}";
             fi
             _promptFn "${_prompt_msg}";
@@ -1309,6 +1320,7 @@ _mainFn () {
   declare _arg1_str _arg2_str _arg_app_id;
   _arg1_str="${1:-}";
   _arg2_str="${2:-}";
+  _arg_app_id='';
 
   # Handle package and repo install with reentrant call
   if [ "${_arg1_str}" = '-i' ]; then

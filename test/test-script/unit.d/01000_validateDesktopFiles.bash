@@ -1,6 +1,21 @@
-#!/bin/bash
+# Copyright 2019-2026 MindShare Inc.
+# Unit test written for the Kubuntu Focus by
+#   Michael Mikowski, Erich Eickmeyer, Aaron Rainbolt
 #
-# Purpose: Check desktop files
+# 00000_kfocusPstate.bash: test all desktop files found in project
+#  using desktop-file-validate.
+#
+# This code is designed to be sourced and run by
+#   the test harness, runUnitTests.
+#   DO NOT run this directly as that may imperil the host system.
+#
+# + All _t00-prefixed variables are from _runUnitTests.
+# + All _cm2-prefixed variables are from common.2.source
+# + All package for used to override a test package should be clearly noted.
+#
+# set -u is applied in _runUnitTests
+#
+# Purpose:
 # Used by: package-main
 #
 # set -u is set in _runUnitTests (the test harness)
@@ -8,8 +23,8 @@
 ## BEGIN _echoDesktopFileDirsFn {
 # Purpose : Echo directories that contain desktop files for testing
 #   Only package application directories are searched.
-#   3rd-party meta packages should never be included.
-#   Other examples previously excluded:
+#   Third-party meta packages should never be included.
+#   Examples previously excluded are shown below:
 #     '^\./package-main/etc/xdg/autostart'
 #     '^\./package-dolphin-plugin-jetbrains'
 #     '^\./package-plasma-runner-jetbrains'
@@ -28,7 +43,7 @@ _echoDesktopFileDirsFn () {
 ## . END _echoDesktopFileDirsFn }
 
 ## BEGIN _runTestFn {
-# This MUST be called '_runTestFn' for use by the _runUnitTests
+# This MUST be called '_runTestFn' for use by ./runUnitTests
 _runTestFn () {
   declare _check_exe _dir_list _expect_file _run_file _test_count \
     _test_idx _pwd_dir _line _check_str;
