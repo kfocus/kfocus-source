@@ -92,7 +92,7 @@ _chkReportFanSupportFn () {
   _model_label="$(_cm2EchoModelStrFn 'label')";
   _model_code="$(_cm2EchoModelStrFn 'code')";
 
-  if [ -c /dev/tuxedo_io ]; then
+  if [ -c "${_tuxedoIoFile}" ]; then
     _is_tuxedo_io_present='y';
     # This can be used if we want more detail:
     # <br><br>The kfocus-power-fan package is installed but
@@ -206,7 +206,10 @@ _mainFn () {
 }
 
 ## BEGIN Set global vars {
+declare _rootDir _fanProfileFile _tuxedoIoFile;
+
 _rootDir='';
+_tuxedoIoFile='/dev/tuxedo_io';
 _fanProfileFile="${_rootDir}/var/lib/kfocus/fan_state"
 ## . END Set global vars }
 

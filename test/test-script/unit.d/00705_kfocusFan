@@ -1,4 +1,5 @@
 #!/bin/bash
+#bashsupport disable=BP1001
 #
 # Test for default kfocus-fan on mocked hardware
 #
@@ -86,7 +87,14 @@ _runTestFn () {
 
       if [ "${_inner_str}" = 'installed' ]; then
         _tag_str='with-power-fan';
+        # This is a kfocus-fan-set variable for a character device.
+        #   Setting it to /dev/null imitates having it in place.
+        # bashsupport disable=BP2001
+        _tuxedoIoFile='/dev/null';
       else
+        # This is a kfocus-fan-set variable for a character device.
+        #   Setting to /bin/false imitates having no device file.
+        _tuxedoIoFile='/bin/false';
         _tag_str='no-power-fan';
       fi
 
@@ -114,7 +122,6 @@ _runTestFn () {
       if [ ! -f "${_expect_file}" ]; then touch "${_expect_file}"; fi
       _check_str="$(diff -r --brief "${_expect_file}" "${_runFile}" )";
       if [ -z "${_check_str}" ]; then
-
         _cm2EchoFn "  ok  : ${_count_str} ${_msg}";
       else
         _cm2EchoFn "  fail: ${_count_str} ${_msg}";
@@ -123,6 +130,7 @@ _runTestFn () {
         (( _fail_count++ ));
       fi
       ## . End Check diffs }
+
       (( _assert_idx++ ));
     done
   done
@@ -135,7 +143,8 @@ _runTestFn () {
   fi
 
   _unsetMocksFn;
-
   return "${_fail_count}";
 }
 ## . END _runTestFn }
+
+declare _runFile;
