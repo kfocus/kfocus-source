@@ -24,7 +24,6 @@ _exeLookupList=(
   'apt-rollback|konsole;-e;man;apt-rollback|apt-rollback|apt-rollback|AptRollback: Rollback System Packages'
   'audacity|audacity||audacity|Audacity: Edit Sound'
   'aws-cli|konsole;--hold;-e;aws;help|aws|awscli|AWS: Command Line DevOps Tool'
-  'azure-cli|konsole;--hold;-e;az;--help|az|azure-cli|Azure: Command Line DevOps Tool'
   'backintime|backintime-qt||backintime-qt|BackInTime: Backup Files'
   'blender|blender||blender|Blender: 3D Modeller and Renderer'
   'code|code||code|Microsoft Visual Studio Code: Development IDE'
@@ -107,6 +106,7 @@ _exeLookupList=(
   'winff|winff||winff-qt|WinFF: Convert Video using ffmpeg'
 
   # Packages with special handlers
+  'azure-cli|!azure-cli|/usr/bin/true|base-files|Azure: Command Line DevOps Tool'
   'kfocus_kclean|!kfocus-kclean|/usr/bin/true|base-files|KFocus Kernel Cleaner: Remove unused and old kernel files'
   'displaylink-driver|!displaylink-driver|displaylink-installer|displaylink-driver|DisplayLink: Driver for DisplayLink Docking Stations'
   'docker|!docker|docker|docker-ce|Docker: Container Engine'
@@ -1012,6 +1012,15 @@ EOT
       fi
       _cmd_str='flatpak';
       _arg_list=( 'run' 'fr.handbrake.ghb' );
+      ;;
+
+    azure-cli)
+      _prompt_msg="$(cat <<EOT
+${_cm2HtmPStr}The Azure CLI is not yet available from Microsoft for <br>
+Ubuntu 26.04.</p>
+EOT
+      )";
+      _cmd_str='true';
       ;;
 
     kfocus_kclean)
