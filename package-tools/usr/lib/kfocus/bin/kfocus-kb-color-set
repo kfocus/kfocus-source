@@ -86,7 +86,7 @@ _echoSafeBoolIntFn () {
 _slurpFileFn () {
   declare _file;
   _file="${1:-}";
-  if [ -z "${_file}" ]; then 
+  if [ -z "${_file}" ]; then
     _cm2WarnStrFn "File argument cannot be empty";
     return 1;
   fi
@@ -103,7 +103,7 @@ _writeRegisterFn () {
   _file="${1:-}";
   _str="${2:-}";
   _do_create="${3:-}";
-  if [ -z "${_file}" ]; then 
+  if [ -z "${_file}" ]; then
     _cm2WarnStrFn "File argument cannot be empty";
     return 1;
   fi
@@ -147,8 +147,12 @@ _calcKbdStateFn () {
   declare _slurp_str _bright_byte _bright_int _rgb_file _hex_str _enable_int;
 
   _slurp_str="$(_slurpFileFn "${_brightFile}")";
-  _bright_byte="$(_echoSafeByteFn "${_slurp_str}")";
-  _bright_int="$(_convertBrightByteToIntFn "${_bright_byte}")"
+  if [[ "${_modelCode}" =~ ^(m2g5p|zrg1|zrg2)$ ]]; then
+    _bright_int="$(_echoSafeBrightIntFn "${_slurp_str}")";
+  else
+    _bright_byte="$(_echoSafeByteFn "${_slurp_str}")";
+    _bright_int="$(_convertBrightByteToIntFn "${_bright_byte}")";
+  fi
 
   _rgb_file="${_rgbDir}/rgb:kbd_backlight/multi_intensity";
   _slurp_str="$(_slurpFileFn "${_rgb_file}")";
@@ -208,7 +212,11 @@ _restoreKbdFn () {
 
   if [ -f "${_brightFile}" ]; then
     if [ "${_enable_int}" = '1' ]; then
-      _calc_bright_int="$(_convertBrightIntToByteFn "${_bright_int}")";
+      if [[ "${_modelCode}" =~ ^(m2g5p|zrg1|zrg2)$ ]]; then
+        _calc_bright_int="${_bright_int}";
+      else
+        _calc_bright_int="$(_convertBrightIntToByteFn "${_bright_int}")";
+      fi
     else
       _calc_bright_int=0;
     fi
@@ -463,8 +471,7 @@ _mainFn () {
 ## BEGIN Declare and assign global vars {
 declare _binName _binDir _baseDir _baseName \
   _configStateList _defaultBrightInt _defaultHexStr \
-  _dropFile _brightFile _stateFile \
-  _modelCode;
+  _dropFile _brightFile _stateFile _modelCode;
 
 _configStateList=();
 _defaultBrightByte=175;
