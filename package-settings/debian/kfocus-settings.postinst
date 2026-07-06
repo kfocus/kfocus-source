@@ -6,8 +6,8 @@
 set -e
 
 ## BEGIN Maintain adduser.local
-_thisScriptVers='24.04.1'; # BUMP THIS IF THE FOLLOWING STRING IS UPDATED
-_addUserStr="$(cat << 'EOF'
+_thisScriptVers='26.04.2'; # BUMP THIS IF THE FOLLOWING STRING IS UPDATED
+_addUserStr="$(cat << 'END_OF_ADDUSER_LOCAL'
 #!/bin/bash
 #
 # THIS IS A MACHINE GENERATED FILE. PLEASE DO NOT EDIT.
@@ -34,7 +34,7 @@ _mainFn () {
 
   declare _username _uid _gid _home_dir _hostname \
     _rsync_exe _skel_dir _loop_dir _backup_dir _effects_exe \
-    _old_prompt_str _new_prompt_str _bashrc_str;
+    _old_prompt_str _new_prompt_str _bashrc_str _desktop_link;
 
   _username="${1:-}";
   _uid="${2:-}";
@@ -56,7 +56,6 @@ _mainFn () {
   if [ -z "${_username}" ] || [ -z "${_uid}" ] \
     || [ -z "${_gid}" ] || [ -z "${_home_dir}" ]; then
     echo "  ${_baseName} ABORT: missing parameters";
-
     return 1;
   else
     echo "  - OK    : Parameters set";
@@ -100,7 +99,7 @@ _mainFn () {
     fi
   fi
 
-  # Set UX defaults in user .config directory (kwin, kcmfont, ...)
+  # Set UX defaults in user .config directory
   _effects_exe="${_rootDir}/usr/lib/kfocus/bin/kfocus-reset-effects";
   if [ -x "${_effects_exe}" ]; then
     if su -c "${_effects_exe} -d '${_home_dir}/.config'" "${_username}"; then
@@ -134,6 +133,12 @@ _mainFn () {
     else
       echo "  - ERROR : Could not create |${_backup_dir}/1|";
     fi
+  fi
+
+  # Remove redundant guided solution link from desktop
+  _desktop_link="${_home_dir}/Desktop/org.kfocus.web.howtos.desktop";
+  if [ -L "${_desktop_link}" ] || [ -e "${_desktop_link}" ]; then
+    rm -f "${_desktop_link}" || true;
   fi
 
   # Install fancy bash prompts
@@ -184,7 +189,7 @@ fi
 
 # Always exit 0 so user can be created even if this script is broken
 exit 0;
-EOF
+END_OF_ADDUSER_LOCAL
 )";
 
 _addUserStr="${_addUserStr/<_thisScriptVers_>/${_thisScriptVers}}";
