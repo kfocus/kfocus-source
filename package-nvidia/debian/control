@@ -29,35 +29,35 @@ Description:  Kubuntu Focus Nvidia pinning
  This metapackage ensures proper pinning of Nvidia
  sources prior to retrieval of all other packages.
 
-Package:      kfocus-nvidia-edge
-Architecture: all
-Pre-Depends:  kfocus-nvidia-pinning-edge
-Depends:      ${misc:Depends}, kfocus-main,
-              nvidia-driver-595-open,
-              acpid
-Recommends:   nvidia-modprobe,
-              plasma-optimus
-Breaks:       kfocus-nvidia
-Replaces:     kfocus-nvidia
-Description:  Kubuntu Focus Nvidia Edge driver metapackage
- This package installs curated Nvidia drivers for
- Kubuntu Focus systems. The Edge driver is selected for
- only validated models, and is automatically selected when
- required. Please do not install manually.
-
-# ALWAYS make sure the pinned version of kfocus-nvidia-edge
-# is set to match the version that is being released.
-# For example, if we are releasing 24.04.3,
-# kfocus-nvidia-edge MUST be pinned to that version.
-Package:      kfocus-nvidia-pinning-edge
-Architecture: all
-Depends:      ${misc:Depends}
-Breaks:       kfocus-nvidia-pinning
-Replaces:     kfocus-nvidia-pinning
-Description:  Kubuntu Focus Nvidia Edge pinning
- This metapackage ensures proper pinning of Nvidia
- sources prior to retrieval of all other packages.
- The Edge driver is selected for only validated models,
- and is automatically selected when required. Please
- do not install manually.
+# Package:      kfocus-nvidia-edge
+# Architecture: all
+# Pre-Depends:  kfocus-nvidia-pinning-edge
+# Depends:      ${misc:Depends}, kfocus-main,
+#               nvidia-driver-595-open,
+#               acpid
+# Recommends:   nvidia-modprobe,
+#               plasma-optimus
+# Breaks:       kfocus-nvidia
+# Replaces:     kfocus-nvidia
+# Description:  Kubuntu Focus Nvidia Edge driver metapackage
+# This package installs curated Nvidia drivers for
+# Kubuntu Focus systems. The Edge driver is selected for
+# only validated models, and is automatically selected when
+# required. Please do not install manually.
+#
+# # ALWAYS make sure the pinned version of kfocus-nvidia-edge
+# # is set to match the version that is being released.
+# # For example, if we are releasing 24.04.3,
+# # kfocus-nvidia-edge MUST be pinned to that version.
+# Package:      kfocus-nvidia-pinning-edge
+# Architecture: all
+# Depends:      ${misc:Depends}
+# Breaks:       kfocus-nvidia-pinning
+# Replaces:     kfocus-nvidia-pinning
+# Description:  Kubuntu Focus Nvidia Edge pinning
+# This metapackage ensures proper pinning of Nvidia
+# sources prior to retrieval of all other packages.
+# The Edge driver is selected for only validated models,
+# and is automatically selected when required. Please
+# do not install manually.
 

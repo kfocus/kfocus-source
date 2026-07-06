@@ -1,5 +1,11 @@
-kfocus-nvidia (26.04.1~beta1) resolute; urgency=medium
+kfocus-nvidia (26.04.1) resolute; urgency=medium
 
+  [ Michael S. Mikowski ]
+  * Revise to use almost all Ubuntu libs (#6674)
+  * Disable kfocus-nvidia-edge, kfocus-nvidia-pinning-edge as not required
+    (#6674)
+
+  [ Aaron Rainbolt ]
   * Update main drivers to 595-open (#6374)
   * Make nvidia and nvidia-edge driver metapackages identical (#6374)
   * kfocus-nvidia-pinning.in: Add note about what repo CUDA drivers come from
@@ -9,7 +15,7 @@ kfocus-nvidia (26.04.1~beta1) resolute; urgency=medium
     - Use kded6 API for load and unload of kscreen (#6374)
     - Port to `_cm2EchoGraphicalLoginInfoFn` API (#6374)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Fri, 26 Jun 2026 16:31:46 -0500
+ -- Michael S. Mikowski <support@kfocus.org>  Mon, 06 Jul 2026 05:09:25 -0400
 
 kfocus-nvidia (24.04.9) noble; urgency=medium
 

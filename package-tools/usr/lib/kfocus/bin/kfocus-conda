@@ -529,48 +529,57 @@ EOF
   fi
 
   ## TODO: Restore if gpu-benchmark is restored to working order
-  # if _chkCondaEnvFn 'pytorch'; then
-  #   _reply_str="$(_cm2ReadPromptYnFn \
-  #     "Benchmark PyTorch (takes about 12m + model download time)" 'n'
-  #   )";
-  #   if [ "${_reply_str}" = 'y' ]; then
-  #     _cm2SetMsgFn 'Benchmark PyTorch';
-  #     set +u;
-  #     conda activate pytorch || _exitFn;
-  #     set -u;
-  #     _cm2EchoFn 'Benchmarking Stable Diffusion 1.5...';
-  #     gpu-benchmark --model=stable-diffusion-1-5;
-  #     _cm2EchoFn 'Stable diffusion benchmark result link shown above. Copy';
-  #     _cm2EchoFn 'the URL into a browser, click "Stable Diffusion 1.5", and';
-  #     _cm2EchoFn 'find the table row matching your ID to see results.';
-  #     _cm2EchoFn 'Press Enter to continue.';
-  #     read -r;
-  #     _cm2EchoFn 'Benchmarking Qwen 3 6B...';
-  #     gpu-benchmark --model=qwen3-0-6b;
-  #     _cm2EchoFn 'Qwen benchmark result link shown above. Copy the URL into';
-  #     _cm2EchoFn 'a browser, click "Qwen 3-0-6b", and find the table row';
-  #     _cm2EchoFn 'matching your ID to see results.';
-  #     _cm2EchoFn 'Press Enter to continue.';
-  #     read -r;
-  #     set +u;
-  #     conda deactivate
-  #     set -u;
-  #   fi
-  # fi
+  if _chkCondaEnvFn 'pytorch'; then
+    _reply_str="$(_cm2ReadPromptYnFn \
+      'Benchmark PyTorch (takes about 12m + model download time)' 'n'
+    )";
+    if [ "${_reply_str}" = 'y' ]; then
+      _cm2SetMsgFn 'Benchmark PyTorch';
+      set +u;
+      conda activate pytorch || _exitFn;
+      set -u;
 
-  ## TODO: Use code /like/ this to invoke GPU Benchmark with Pytorch
-  # if _chkCondaEnvFn 'tensorflow'; then
-  #   _reply_str=$( _cm2ReadPromptYnFn \
-  #     "Benchmarks TensorFlow (takes 5-10m)" 'n'
-  #   );
-  #   if [ "${_reply_str}" = 'y' ]; then
-  #     _cm2SetMsgFn 'Benchmark TensorFlow';
-  #     set +u;
-  #     conda activate tensorflow || _exitFn;
-  #     set -u;
-  #     2>/dev/null python -c "${_testTf02Str}" || _cm2WarnFn;
-  #   fi
-  # fi
+      _reply_str="$(_cm2ReadPromptYnFn 'Run stable diffusion bench' 'n')";
+      if [ "${_reply_str}" = 'y' ]; then
+        _cm2EchoFn 'Benchmarking Stable Diffusion 1.5...';
+        gpu-benchmark --model=stable-diffusion-1-5;
+        _cm2EchoFn 'The Stable Diffusion benchmark URL should be shown above.';
+        _cm2EchoFn 'Copy this URL into a browser, click the "Stable Diffusion';
+        _cm2EchoFn '1.5" button in the middle of the page, then find the table';
+        _cm2EchoFn 'row matching the benchmark ID presented above.';
+        _cm2EchoFn;
+        _cm2EchoFn 'Press Enter to continue.';
+        read -r;
+      fi
+      _reply_str="$(_cm2ReadPromptYnFn 'Run qwen3 bench' 'n')";
+      if [ "${_reply_str}" = 'y' ]; then
+        _cm2EchoFn 'Benchmarking Qwen 3 6B...';
+        gpu-benchmark --model=qwen3-0-6b;
+        _cm2EchoFn 'The Qwen benchmark URL should be shown above.';
+        _cm2EchoFn 'Copy this URL into a browser, click the "Qwen 3-0-6b"'
+        _cm2EchoFn 'button in the middle of the page, then find the table';
+        _cm2EchoFn 'row matching the benchmark ID presented above.';
+        _cm2EchoFn;
+        _cm2EchoFn 'Press Enter to continue.';
+        read -r;
+      fi
+      _reply_str="$(_cm2ReadPromptYnFn 'Run NanoGPT bench' 'n')";
+      if [ "${_reply_str}" = 'y' ]; then
+        _cm2EchoFn 'Benchmarking NanoGPT Training...';
+        gpu-benchmark --model=nanogpt-train;
+        _cm2EchoFn 'The NanoGPU Training benchmark URL should be shown above.';
+        _cm2EchoFn 'Copy this URL into a browser, click the "NanoGPT Training"'
+        _cm2EchoFn 'button in the middle of the page, then find the table';
+        _cm2EchoFn 'row matching the benchmark ID presented above.';
+        _cm2EchoFn;
+        _cm2EchoFn 'Press Enter to continue.';
+        read -r;
+      fi
+      set +u;
+      conda deactivate
+      set -u;
+    fi
+  fi
 
   if _chkCondaEnvFn 'tensorflow'; then
     _cm2SetMsgFn 'Test TensorFlow';
@@ -581,6 +590,30 @@ EOF
     2>/dev/null python -c "${_testTf01Str}" || _cm2WarnFn;
     _cm2SucFn;
   fi
+
+  ## TODO: Use code /like/ this to invoke GPU Benchmark with Pytorch
+  if _chkCondaEnvFn 'tensorflow'; then
+    _msg='\nAs of July 2026, TensorFlow was not finding a GPU device.\n';
+    _msg+=' If this remains the case, run a benchmark will not work.\n';
+    if [ "${_nvSeriesStr}" = 'rtx50' ]; then
+      _msg+='This system has a 50-series GPU. As of July 2026, this was\n';
+      _msg+='still not supported by the TensorFlow software.\n';
+      _msg+='You may proceed with the benchmark, but you may not get\n'
+      _msg+='meaningful results.';
+    fi
+    _cm2EchoFn "${_msg}";
+    _reply_str=$( _cm2ReadPromptYnFn \
+      "Benchmarks TensorFlow (takes 5-10m)" 'n'
+    );
+    if [ "${_reply_str}" = 'y' ]; then
+      _cm2SetMsgFn 'Benchmark TensorFlow';
+      set +u;
+      conda activate tensorflow || _exitFn;
+      set -u;
+      2>/dev/null python -c "${_testTf02Str}" || _cm2WarnFn;
+    fi
+  fi
+
 
   conda activate base;
 }
