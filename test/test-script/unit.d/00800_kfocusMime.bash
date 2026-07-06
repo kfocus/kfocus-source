@@ -70,13 +70,19 @@ _getPkgInfoStrFn () {
 #
 _auditMimeHandlerFn () {
   declare _head_str _found_list _output_file _app_id_str \
-    _report_str _bit_list _app_id _sniff_str _pkg_name _report_str;
+    _report_str _bit_list _app_id _sniff_str _pkg_name _report_str \
+    _did_full_audit;
 
   _head_str='|app_id|cmd_str;with;args|sniff_str|pkg_str|descr'
   _head_str+='|diagnostics';
   _found_list=( "${_head_str}" );
+  _did_full_audit="${1:-n}";
 
-  _output_file="${_t00RunDir}/kfocus-mime-audit.txt";
+  if [ "${_did_full_audit}" = 'y' ]; then
+    _output_file="${_t00RunDir}/kfocus-mime-audit-full.txt";
+  else
+    _output_file="${_t00RunDir}/kfocus-mime-audit.txt";
+  fi
 
   # Begin Create report
   _app_id_str="$("${_mimeExe}" -l)";
@@ -128,11 +134,12 @@ _auditInstallFn () {
 
 ## BEGIN _runTestFn {
 _runTestFn () {
-  declare _check_str _return_int _reply;
+  declare _check_str _return_int _reply _did_full_audit;
 
   _return_int=0;
   _mimeExe="${_t00TopDir}/package-main/usr/lib/kfocus/";
   _mimeExe+='bin/kfocus-mime';
+  _did_full_audit='n';
 
   # Use function from test harness: clear out run dir and check expect dir
   if ! _t00ClearRunDirFn;    then return 1; fi
@@ -141,6 +148,7 @@ _runTestFn () {
   read -r -p 'Run EXTRA install check? (y/N) ' _reply;
   if [[ "${_reply:-}" =~ ^[Yy] ]]; then
     _auditInstallFn;
+    _did_full_audit='y';
   fi
 
   _cm2EchoFn 'Launching backintime; You should not be asked to '
@@ -168,7 +176,7 @@ _runTestFn () {
     _return_int=1;
   fi
 
-  _auditMimeHandlerFn;
+  _auditMimeHandlerFn "${_did_full_audit}";
   _check_str="$(diff -r --brief "${_t00ExpectDir}" "${_t00RunDir}" )";
 
   if [ -n "${_check_str}" ]; then

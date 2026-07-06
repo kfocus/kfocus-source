@@ -2,20 +2,19 @@
 |apt-rollback|konsole;-e;man;apt-rollback|apt-rollback|apt-rollback|AptRollback: Rollback System Packages|
 |audacity|audacity|audacity|audacity|Audacity: Edit Sound|
 |aws-cli|konsole;--hold;-e;aws;help|aws|awscli|AWS: Command Line DevOps Tool|
-  WARN: Found package appears incorrect: |snapd| NOT |awscli|
-|azure-cli|konsole;--hold;-e;az;--help|az|azure-cli|Azure: Command Line DevOps Tool|
 |backintime|backintime-qt|backintime-qt|backintime-qt|BackInTime: Backup Files|
 |blender|blender|blender|blender|Blender: 3D Modeller and Renderer|
 |code|code|code|code|Microsoft Visual Studio Code: Development IDE|
 |cpupower-gui|cpupower-gui|cpupower-gui|cpupower-gui|CPU Power GUI: Manage CPU power|
-|darktable|darktable|darktable|darktable||
+|darktable|darktable|darktable|darktable|DarkTable: Edit RAW Photos|
+|discord|discord|discord|discord|Discord: Group Chat Messenger|
 |dolphin|dolphin|dolphin|dolphin|Dolphin: Manage Files|
+|element-desktop|element-desktop|element-desktop|element-desktop|Element: Open-Source Instant Messaging|
 |elisa|elisa|elisa|elisa|Elisa Music Player|
-|ffmpeg|konsole;-e;man ffmpeg|ffmpeg|ffmpeg|Tools for Transcoding|
+|ffmpeg|konsole;-e;man ffmpeg|ffmpeg|ffmpeg|FFMpeg: Stream and Play Multimedia Files|
 |filezilla|filezilla|filezilla|filezilla|Filezilla: Transfer Files|
 |firefox|firefox|firefox|firefox|Firefox: Browse the Web with Mozilla Firefox|
-|gcloud|konsole;-e;main;gcloud;help|gcloud|google-cloud-cli|GCS: Google Cloud Services CLI|
-|ghb|ghb|ghb|handbrake|Handbrake: Rip and Transcode DVDs and Video|
+|gcloud|konsole;-e;gcloud;help|gcloud|google-cloud-cli|GCS: Google Cloud Services CLI|
 |git-cola|git-cola|git-cola|git-cola|Git-Cola: Explore Git Branches GUI|
 |gimp|gimp|gimp|gimp|Gimp: Edit and Create Raster Images|
 |google-chrome|google-chrome|google-chrome|google-chrome-stable|Chrome: Browse the Web with Google Chrome|
@@ -26,33 +25,34 @@
 |insync|insync;start|insync|insync-dolphin|Insync: Sync Google Drive and Others|
   WARN: Found package appears incorrect: |insync| NOT |insync-dolphin|
 |jekyll|konsole;-e;man jekyll|jekyll|jekyll|Jekyll: Create Static Web Sites|
-|jetbrains-toolbox-plain|jetbrains-toolbox|jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs|ERROR: Trouble finding installed package for /usr/bin/jetbrains-toolbox
 |kate|kate|kate|kate|Kate: Edit Text with Power|
-|kde-connect|kdeconnect-settings|kdeconnect-settings|kdeconnect|KDE Connect: Connect Smartphones to Desktop|
+|kde-connect|kdeconnect-app|kdeconnect-app|kdeconnect|KDE Connect: Connect Smartphones to Desktop|
 |kdenlive|kdenlive|kdenlive|kdenlive|KDEnlive: Edit  Non-Linear Videos|
 |kdiff3|kdiff3|kdiff3|kdiff3|KDiff3: Diff and Merge Files and Directories|
-|keepassxc|keepassxc|keepassxc|keepassxc|KeepassXC: Password Manager|
-|kfocus_apps|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://kfocus.org/wf/apps.html|/usr/lib/kfocus/bin/kfocus-web-launcher|kfocus-main|KFocus Curated Apps: find and install apps|
-|kfocus_conda|konsole;-e;kfocus-conda|kfocus-conda|kfocus-conda|KFocus Conda: Deep Learning Suite|
-|kfocus_extra|konsole;-e;pkexec;kfocus-extra|kfocus-extra|kfocus-main|KFocus Extra: Install extra and restricted software|
-|kfocus_fan|kfocus-fan|kfocus-fan|kfocus-fan|Fan Control: Select a desired fan profile.|
-  WARN: Found package appears incorrect: |kfocus-power-bin| NOT |kfocus-fan|
-|kfocus_focusrx|focusrx;-f|focusrx|kfocus-main|FocusRx: System diagnostics and repair|
-|kfocus_guided|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://kfocus.org/wf|/usr/lib/kfocus/bin/kfocus-web-launcher|kfocus-main|KFocus Guided Solutions|
-|kfocus_help|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://kfocus.org/wf/help.html|/usr/lib/kfocus/bin/kfocus-web-launcher|kfocus-main|KFocus Help: Help and FAQs|
-|kfocus_kb_color|kfocus-kb-color|kfocus-kb-color|kfocus-kb-color|Keyboard Color: Set color and intensity|
-|kfocus_kclean|/usr/lib/kfocus/bin/kfocus-kclean;-f|/usr/lib/kfocus/bin/kfocus-kclean|kfocus-main|Kernel Cleaner: Clean up old kernels|
-|kfocus_pick_gcc|kfocus-pick-gcc|kfocus-pick-gcc|kfocus-pick-gcc|KFocus Pick GCC: Select default compiler toolchain|
-|kfocus_power|kfocus-power|kfocus-power|kfocus-power|KFocus Power: Control CPU Power|
-  WARN: Found package appears incorrect: |kfocus-power-bin| NOT |kfocus-power|
-|kfocus_rollback|/usr/lib/kfocus/bin/kfocus-rollback|/usr/lib/kfocus/bin/kfocus-rollback|kfocus-rollback|KFocus Rollback: Restore the system to an earlier state|
-|kfocus_welcome|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://docs.google.com/presentation/d/e/2PACX-1vTsKGkzy_tFm2xZo-BYX7mqeLG43C2vy108qsWZ2L_c4XJGXEVh2fAt3sNvgiqXfw4OFPWynHS-32xx/pub?start=false&loop=false&delayms=3000|/usr/lib/kfocus/bin/kfocus-web-launcher|kfocus-main|KFocus Welcome Document|
-|kfocus_wizard|/usr/lib/kfocus/bin/kfocus-firstrun-bin;-f|/usr/lib/kfocus/bin/kfocus-firstrun-bin|kfocus-firstrun-bin|Welcome Wizard: Configure your apps|
+|keepassxc|keepassxc|keepassxc|keepassxc-full|KeepassXC Full: Password Manager|
+|kfocus_apps|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://kfocus.org/wf/apps.html|/usr/lib/kfocus/bin/kfocus-web-launcher|kfocus-main|KFocus Curated Apps: View Curated Apps in browser|
+|kfocus_conda|konsole;-e;kfocus-conda|kfocus-conda|kfocus-conda|KFocus Anaconda GPU AI Suite Installer: Install GPU accelerated deep learning|
+|kfocus_extra|konsole;-e;pkexec;kfocus-extra|kfocus-extra|kfocus-main|KFocus Extra Software Installer: Install extra optional software|
+|kfocus_fan|kfocus-fan|kfocus-fan|kfocus-power-bin|Fan Control: Select a desired fan profile.|
+|kfocus_focusrx|focusrx;-f|focusrx|kfocus-main|FocusRx: System maintenance and repair|
+|kfocus_guided|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://kfocus.org/wf|/usr/lib/kfocus/bin/kfocus-web-launcher|kfocus-main|KFocus Guided Solutions: View guided solutions in browser|
+|kfocus_help|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://kfocus.org/wf/help.html|/usr/lib/kfocus/bin/kfocus-web-launcher|kfocus-main|KFocus Reference Pages: Basic help and resources for Kubuntu Focus|
+|kfocus_kb_color|kfocus-kb-color|kfocus-kb-color|kfocus-kb-color|KFocus Keyboard Color Chooser: Change keyboard color and brightness|
+|kfocus_passphrase_changer|/usr/lib/kfocus/bin/kfocus-firstrun-bin;-f;diskPassphraseItem|/usr/lib/kfocus/bin/kfocus-firstrun-bin|kfocus-main|KFocus Disk Passphrase Changer: Change encrypted disk passphrases|
+  WARN: Found package appears incorrect: |kfocus-firstrun-bin| NOT |kfocus-main|
+|kfocus_pick_gcc|kfocus-pick-gcc|kfocus-pick-gcc|kfocus-pick-gcc|KFocus C Compiler Switcher: Change default C compiler version|
+|kfocus_power|kfocus-power|kfocus-power|kfocus-power-bin|KFocus Power and Fan: Review and adjust power settings|
+|kfocus_reset_effects|kfocus-reset-effects|kfocus-reset-effects|kfocus-main|KFocus Reset Defaults: Reset keyboard shortcuts, effects, and power config|
+|kfocus_reset_widgets|kfocus-reset-widgets|kfocus-reset-widgets|kfocus-main|KFocus Reset Widget: Reset desktop hint and icon widgets|
+|kfocus_rollback|/usr/lib/kfocus/bin/kfocus-rollback|/usr/lib/kfocus/bin/kfocus-rollback|kfocus-rollback|KFocus System Rollback Dashboard: Create, manage, and restore coherent system snapshots|
+|kfocus_tbt|/usr/lib/kfocus/bin/kfocus-tbt|/usr/lib/kfocus/bin/kfocus-tbt|kfocus-tools|KFocus Thunderbolt Control: Enable or disable Thunderbolt|
+  WARN: Found package appears incorrect: |kfocus-tbt| NOT |kfocus-tools|
+|kfocus_welcome|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://docs.google.com/presentation/d/e/2PACX-1vTsKGkzy_tFm2xZo-BYX7mqeLG43C2vy108qsWZ2L_c4XJGXEVh2fAt3sNvgiqXfw4OFPWynHS-32xx/pub?start=false&loop=false&delayms=3000|/usr/lib/kfocus/bin/kfocus-web-launcher|kfocus-main|KFocus Feature Guide: Explore the features of Kubuntu Focus systems|
+|kfocus_wizard|/usr/lib/kfocus/bin/kfocus-firstrun-bin;-f|/usr/lib/kfocus/bin/kfocus-firstrun-bin|kfocus-firstrun-bin|KFocus Welcome Wizard: Select tools and settings for your workflow|
 |kleopatra|kleopatra|kleopatra|kleopatra|Kleopatra: Unified Crypto GUI|
 |konsole|konsole|konsole|konsole|Konsole: Use an X Terminal Emulator|
 |krita|krita|krita|krita|Krita: Raster Image Editor|
 |kruler|kruler|kruler|kruler|Kruler: Measure Screen Objects|
-|kubectl|konsole;--hold;-e;kubectl;help|kubectl|kubectl|Kubernetes: Command Line Container Management|
 |libreoffice-base|libreoffice;--base|libreoffice|libreoffice-base|LibreOffice Database: Connect Databases|
   WARN: Found package appears incorrect: |libreoffice-common| NOT |libreoffice-base|
 |libreoffice-calc|libreoffice;--calc|libreoffice|libreoffice-calc|LibreOffice Calc: Create and Edit Spreadsheets|
@@ -65,7 +65,6 @@
   WARN: Found package appears incorrect: |libreoffice-common| NOT |libreoffice-writer|
 |lutris|lutris|lutris|lutris|Lutris: Play Games With Wine|
 |meld|meld|meld|meld|Meld: Visual Difference and Merge Tool|
-|minecraft-launcher|minecraft-launcher|minecraft-launcher|minecraft-launcher|Minecraft: Launch Minecraft|
 |nvidia-settings|nvidia-settings|nvidia-settings|nvidia-settings|Nvidia Settings: Configure Nvidia GPUs|
 |obs|obs|obs|obs-studio|OBS Studio: Record and Stream Live Video|
 |okular|okular|okular|okular|Okular: View PDFs and Other Documents|
@@ -74,15 +73,14 @@
 |plasma-discover|plasma-discover|plasma-discover|plasma-discover|Discover: Manage Software|
 |ppa-purge|konsole;-e;man ppa-purge|ppa-purge|ppa-purge|PPA Purge: Purge PPAs|
 |rar|konsole;-e;man rar|rar|rar|Rar: Create .rar Archive Files|
-|simplescreenrecorder|simplescreenrecorder|simplescreenrecorder|simplescreenrecorder|SimpleScreenRecorder: Record Your Screen with Powerful Options|
-|skype|skype|skype|skype|Skype: Video Call Platform|
-  WARN: Found package appears incorrect: |snapd| NOT |skype|
-|slack|slack|slack|slack-desktop|Slack: Team Messaging|
+|slack|slack;--ozone-platform=x11|slack|slack-desktop|Slack: Team Messaging|
+  WARN: Found package appears incorrect: |snapd| NOT |slack-desktop|
 |spectacle|spectacle|spectacle|kde-spectacle|Spectacle: Take Screenshots|
-|steam|steam|steam|steam|Steam: Manage and Play Games|
-  WARN: Found package appears incorrect: |steam-installer| NOT |steam|
+|steam|steam|steam|steam-installer|Steam: Manage and Play Games|
 |sublime-text|subl|subl|sublime-text|Sublime Text editor|
-|systemsettings5|systemsettings5|systemsettings5|systemsettings|System Settings: Adjust Your System|
+|synaptic|synaptic-pkexec|synaptic-pkexec|synaptic|Synaptic: View, Install, and Remove Debian Packages|
+|systemsettings5|systemsettings|systemsettings|systemsettings|System Settings: Adjust Your System|
+|msteams|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://www.microsoft.com/en-us/microsoft-teams/group-chat-software|/usr/lib/kfocus/bin/kfocus-web-launcher|kfocus-main|Microsoft Teams|
 |telegram-desktop|telegram-desktop|telegram-desktop|telegram-desktop|Telegram: Encrypted Instant Messenger|
   WARN: Found package appears incorrect: |snapd| NOT |telegram-desktop|
 |thunderbird|thunderbird|thunderbird|thunderbird|Thunderbird: Email and Calendar|
@@ -91,11 +89,20 @@
 |wallpapers|dolphin;/usr/share/wallpapers|dolphin|dolphin|Wallpapers: View Wallpaper Images|
 |webcamoid|webcamoid|webcamoid|webcamoid|Webcamoid: Test Your Webcam|
 |winff|winff|winff|winff-qt|WinFF: Convert Video using ffmpeg|
+|azure-cli|!azure-cli|/usr/bin/true|base-files|Azure: Command Line DevOps Tool|Special handler expected|
+|kfocus_kclean|!kfocus-kclean|/usr/bin/true|base-files|KFocus Kernel Cleaner: Remove unused and old kernel files|Special handler expected|
+|displaylink-driver|!displaylink-driver|displaylink-installer|displaylink-driver|DisplayLink: Driver for DisplayLink Docking Stations|Special handler expected|
 |docker|!docker|docker|docker-ce|Docker: Container Engine|Special handler expected|
 |dropbox|!dropbox|dropbox|dropbox|Dropbox: Sync to Cloud Storage|Special handler expected|
-|jetbrains-toolbox|!jetbrains-toolbox|jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs|Special handler expected|
-|intellij|!intellij|jetbrains-toolbox|jetbrains-toolbox|IntelliJ: JetBrains Java IDE|Special handler expected|
-|pycharm|!pycharm|jetbrains-toolbox|jetbrains-toolbox|PyCharm: JetBrains Python IDE|Special handler expected|
-|webstorm|!webstorm|jetbrains-toolbox|jetbrains-toolbox|WebStorm: JetBrains Web IDE|Special handler expected|
+|ghb|!ghb|/var/lib/flatpak/app/fr.handbrake.ghb/x86_64/stable/active/files/bin/ghb|handbrake-flathub|Handbrake: Back up encoded audio and video|Special handler expected|
+|intellij|!intellij|/home/arraybolt3/bin/jetbrains-toolbox/bin/jetbrains-toolbox|jetbrains-toolbox|IntelliJ via JetBrains Toolbox: Java IDE|Special handler expected|
+|jetbrains-toolbox|!jetbrains-toolbox|/home/arraybolt3/bin/jetbrains-toolbox/bin/jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs|Special handler expected|
+|jetbrains-toolbox-plain|!jetbrains-toolbox-plain|/home/arraybolt3/bin/jetbrains-toolbox/bin/jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs|Special handler expected|
+|kfocus_vidsync|!kfocus-vidsync|/usr/bin/true|base-files|KFocus Video Sync Utility: Change video sync settings|Special handler expected|
+|kubectl|!kubectl|/usr/bin/true|base-files|Kubernetes: Command Line Container Management|Special handler expected|
+|minecraft-launcher|!minecraft-launcher|/usr/bin/true|base-files|Minecraft: Launch Minecraft|Special handler expected|
+|pycharm|!pycharm|/home/arraybolt3/bin/jetbrains-toolbox/bin/jetbrains-toolbox|jetbrains-toolbox|PyCharm via JetBrains Toolbox: Python IDE|Special handler expected|
+|simplescreenrecorder|!simplescreenrecorder|/usr/bin/true|base-files|SimpleScreenRecorder: Record Your Screen with Powerful Options|Special handler expected|
 |virtualbox|!virtualbox|virtualbox|virtualbox|VirtualBox: Run Virtual Machines|Special handler expected|
+|webstorm|!webstorm|/home/arraybolt3/bin/jetbrains-toolbox/bin/jetbrains-toolbox|jetbrains-toolbox|WebStorm via JetBrains Toolbox: Web IDE|Special handler expected|
 |zoom|!zoom|zoom|zoom|Zoom: Start and Join Video and Web Conferencing|Special handler expected|
