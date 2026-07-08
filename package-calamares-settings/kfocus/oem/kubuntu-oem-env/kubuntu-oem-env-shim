@@ -1,7 +1,9 @@
 #!/bin/bash
 
-# This script only exists so that we can pass multiple commands and their arguments to kwin_wayland.
+# This script only exists so that we can pass multiple commands and their
+#   arguments to kwin_wayland.
 
-/usr/bin/basicwallpaper /usr/share/wallpapers/Next/contents/images/5120x2880.png &
+/usr/bin/swaybg --mode fill \
+  --image /usr/share/wallpapers/Kubuntu/contents/images_dark/7861x2545.svg &
 xhost si:localuser:root
 sudo --preserve-env=XDG_CONFIG_DIRS QT_QPA_PLATFORMTHEME=kde /usr/bin/calamares -D8
