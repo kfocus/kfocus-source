@@ -1983,14 +1983,13 @@ Kirigami.ApplicationWindow {
               // TODO: Specify image type and size?
 
               + '<p>' + ding03Str
-              + '<b>Click “Apply”</b> to change your avatar.</p>'
+              + '<b>Click “OK”</b> to change your avatar.</p>'
               ;
             interActionButton.text      = 'Continue';
             interActionButton.icon.name = 'arrow-right';
             interImageList = [
               'user_manager.webp',
-              'avatar_changer.webp',
-              'avatar_password.webp'
+              'avatar_changer.webp'
             ];
             actionName = 'nextPage';
             regenUiFn( interTemplatePage, false );
