@@ -69,7 +69,7 @@ _getPkgInfoStrFn () {
 # set -u is set in test harness
 #
 _auditMimeHandlerFn () {
-  declare _head_str _found_list _output_file _app_id_str \
+  declare _head_str _found_list _output_file _app_id_str _line \
     _report_str _bit_list _app_id _sniff_str _pkg_name _report_str \
     _did_full_audit;
 
@@ -87,8 +87,9 @@ _auditMimeHandlerFn () {
   # Begin Create report
   _app_id_str="$("${_mimeExe}" -l)";
   while read -r _app_id; do
-    _report_str='|';
-    _report_str+="$("${_mimeExe}" -r "${_app_id}")";
+    _line="$("${_mimeExe}" -r "${_app_id}")";
+    _line="$(sed -e "s@\\(^[^|]\\+|[^|]\\+|\\)${HOME}@\\1\$HOME@"<<< "${_line}";)";
+    _report_str="|${_line}";
     IFS='|' read -ra _bit_list <<< "$_report_str";
     _sniff_str="${_bit_list[3]}";
     _pkg_name="${_bit_list[4]}";
