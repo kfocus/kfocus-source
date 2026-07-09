@@ -101,6 +101,7 @@ _fixCondaEnvFn () {
       1>&2 conda activate base                    || _cm2ErrFn;
       1>&2 conda env remove --name "${_env_name}" || _cm2ErrFn;
       _cm2SucFn;
+      # bashsupport disable=BP2001
       _cm2BlockMsg="${_orig_msg}";
     fi
     _reply_str=$(_cm2ReadPromptYnFn \
@@ -423,15 +424,11 @@ _installEnvFn () {
     conda create -y --name pytorch python=3.12   || _exitFn;
     conda activate pytorch                       || _exitFn;
 
-  # IMPORTANT: To get this to work with 5070 Ti, we needed to
-  #   install special support for this gpu.
-  # Per https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/16884
+    # IMPORTANT: To get this to work with 5070 Ti, we needed to
+    #   install special support for this gpu.
+    # Per https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/16884
     _cm2EchoFn "Installing Pytorch for ${_nvSeriesStr}-series GPU";
     pip install torch torchvision torchaudio || _exitFn;
-    # gpu-benchmark is broken, see:
-    # https://github.com/United-Compute/gpu-benchmark/issues/5
-    # pip install gpu-benchmark                || _exitFn;
-
     set -u;
     _cm2SucFn;
   fi
@@ -528,7 +525,6 @@ EOF
     _cm2SucFn;
   fi
 
-  ## TODO: Restore if gpu-benchmark is restored to working order
   if _chkCondaEnvFn 'pytorch'; then
     _reply_str="$(_cm2ReadPromptYnFn \
       'Benchmark PyTorch (takes about 12m + model download time)' 'n'
@@ -536,7 +532,8 @@ EOF
     if [ "${_reply_str}" = 'y' ]; then
       _cm2SetMsgFn 'Benchmark PyTorch';
       set +u;
-      conda activate pytorch || _exitFn;
+      conda activate pytorch     || _exitFn;
+      pip install gpu-benchmark  || _exitFn;
       set -u;
 
       _reply_str="$(_cm2ReadPromptYnFn 'Run stable diffusion bench' 'n')";
@@ -649,8 +646,8 @@ for _fileName in 'common.2.source' 'arrayPath.source'; do
     _libFile="${_dir}/lib/${_fileName}";
 
     if [ -r "${_libFile}" ]; then
-      # shellcheck source=../lib/common.2.source
-      # shellcheck source=../lib/arrayPath.source
+      # shellcheck source=/usr/lib/kfocus/lib/common.2.source
+      # shellcheck source=/usr/lib/kfocus/lib/arrayPath.source
       if source "${_libFile}"; then _doExitStr='n'; break; fi
     fi
   done
