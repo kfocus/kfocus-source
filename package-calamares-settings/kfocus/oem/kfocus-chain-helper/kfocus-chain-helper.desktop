@@ -1,7 +1,10 @@
+# This does not desktop-file-validate because of $VARS
+# similar to org.kde.ksystemlog.desktop and # software-properties-qt.desktop.
+# The important thing is this works.
 [Desktop Entry]
 Categories=System;X-Kubuntu-Focus;
 Comment=Configure a secondary disk
-Exec=sudo /usr/lib/kfocus/bin/kfocus-chain-helper-ui
+Exec=pkexec env XDG_SESSION_TYPE=$XDG_SESSION_TYPE DISPLAY=$DISPLAY XAUTHORITY=$XAUTHORITY QT_STYLE_OVERRIDE=Breeze /usr/lib/kfocus/bin/kfocus-chain-helper-ui
 Icon=kfocus-bug-tools
 Keywords=multi-disk;multi disk;secondary disk
 Name=Multi-Disk Configuration Tool
@@ -9,3 +12,4 @@ StartupNotify=true
 Terminal=false
 Type=Application
 StartupWMClass=KFocus
+
