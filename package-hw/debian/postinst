@@ -597,8 +597,8 @@ _setupBootFn () {
 }
 
 _configFn () {
-  declare _config_code_dir _config_code_file _old_config_code _lib_file \
-    _config_code _fn_name _model_code;
+  declare _config_code_dir _config_code_file _old_config_code \
+    _fand_dir _lib_file _config_code _fn_name _model_code;
 
   # Get old config code
   _config_code_dir='/var/lib/kfocus';
@@ -609,6 +609,10 @@ _configFn () {
   else
     _old_config_code='';
   fi
+
+  # Ensure fan dir exists before configuring for models
+  _fand_dir='/usr/share/kfocus/kfocus_fand.d';
+  mkdir -p "${_fand_dir}" || true;
 
   # Import common and determine config_code from model matrix
   _lib_file='/usr/lib/kfocus/lib/common.2.source';
@@ -641,6 +645,7 @@ _configFn () {
   fi
   _cmXEchoFn "Hardware config code is |${_config_code}|";
 
+  # Run the found model handler function
   if ! "${_fn_name}"; then
     _cmXWarnStrFn "Function |${_fn_name}| returned an error code";
   fi
