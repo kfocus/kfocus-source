@@ -72,11 +72,15 @@ _installReposFn () {
   _cm2SetMsgFn "${_top_msg}";
 
   # We considered adding ubuntu-studio backports, but decided against for stability.
-  # If desired, here is the config line to add to _ppa_table:
-  # 'ubuntustudio-ppa-ubuntu-backports-noble.list|2024-05-31
-  #   |ppa:ubuntustudio-ppa/backports|Ubuntu Studio Backports'
+  #   If desired, here is the config line to add to _ppa_table:
+  #   'ubuntustudio-ppa-ubuntu-backports-noble.list|2024-05-31
+  #     |ppa:ubuntustudio-ppa/backports|Ubuntu Studio Backports'
+  #
+  # Kubuntu Backports PPA removed 2026-07-13 as Kubuntu 26.04 now uses Plasma
+  #   6.6 LTS. Original config line:
+  #   'kubuntu-ppa-ubuntu-backports-resolute.sources|2026-07-03
+  #     |ppa:kubuntu-ppa/backports|Kubuntu Backports'
   _ppa_table=(
-    'kubuntu-ppa-ubuntu-backports-resolute.sources|2026-07-03|ppa:kubuntu-ppa/backports|Kubuntu Backports'
     'mozillateam-ubuntu-ppa-resolute.sources|2026-07-03|ppa:mozillateam/ppa|Mozilla Team'
     'phoerious-ubuntu-keepassxc-resolute.sources|2026-07-03|ppa:phoerious/keepassxc|KeePassXC'
   );
@@ -207,11 +211,34 @@ _addGcloudSdkKeyFn () {
 
 ## BEGIN _rmObsoleteReposFn {
 _rmObsoleteReposFn () {
-  true;
+  declare _kubuntu_backports_ppa_file _birth_time _did_remove_succeed;
+
+  _cm2SetMsgFn 'Remove obsolete repos';
+  _did_remove_succeed='y';
+
   # Prior example:
   # if [ -e /etc/apt/preferences.d/kfocus-package-pinning ]; then
   #   "${_cm2RmExe}" /etc/apt/preferences.d/kfocus-package-pinning
   # fi
+
+  # Removing Kubuntu Backports as of 2026-07-13. There is no need to
+  #   ppa-purge the repo, as its current contents are being SRUd into the
+  #   Ubuntu archive.
+  _kubuntu_backports_ppa_file='/etc/apt/sources.list.d';
+  _kubuntu_backports_ppa_file+='/kubuntu-ppa-ubuntu-backports-resolute.sources';
+  if [ -f "${_kubuntu_backports_ppa_file}" ]; then
+    _birth_time="$(stat -c '%W' "${_kubuntu_backports_ppa_file}")";
+    if (( _birth_time < 1783972907 )); then
+      "${_cm2RmExe}" --force -- "${_kubuntu_backports_ppa_file}" \
+        || _did_remove_succeed='n';
+    fi
+  fi
+
+  if [ "${_did_remove_succeed}" = 'y' ]; then
+    _cm2SucFn;
+  else
+    _cm2WarnFn;
+  fi
 }
 ## . END _rmObsoleteReposFn }
 
