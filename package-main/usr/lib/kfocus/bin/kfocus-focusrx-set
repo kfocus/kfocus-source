@@ -288,7 +288,8 @@ _chkHwConfigFn () {
     #   Install pkg named like kfocus-tools<-model> (#3424)
     _tool_pkg_suffix='';
     case "${_dmi_hw_config_code}" in
-      default|generic|m2g4|m2g5|xeg2) _tool_pkg_suffix='';;
+      # For models m1 and m2g[123] (default), m2g[45], xeg1 (generic), xeg[23], arg1
+      default|generic|m2g4|m2g5|xeg[23]|arg1) _tool_pkg_suffix='';;
       nxg1)   _tool_pkg_suffix='-nxg1';;
       m2g6)   _tool_pkg_suffix='-m2g6';;
       zrg1)   _tool_pkg_suffix='-m2g6';;
@@ -343,8 +344,10 @@ _chkHwConfigFn () {
     ## . End Consider directive to adjust nvidia pkgs }
 
     ## Begin Consider directive to add synaptics touchpad support {
+    ## Synaptics is deprecated, and newer models are NOT supported.
     case "${_dmi_hw_config_code}" in
-      default|generic|xeg2)  # For models m1g1, m2g1-3 | xeg1 | xeg2
+      # For  m1 and m2g[123] (default), xeg1 (generic), xeg2
+      default|generic|xeg2)
         if ! _cm2ChkInstalledPkgFn 'xserver-xorg-input-synaptics'; then
           _msg='install-synaptics;;';
           _msg+='Synaptics touchpad driver needs to be installed.';

@@ -287,8 +287,39 @@ _cm2CatStripEchoFn () {
   tr -d '\n' < "${_cat_file}" | sed 's/ //gm';
 }
 
+_cm2CalcEdpScreenSizeFn () {
+  declare _decode_exe _edp_card_list _edp_card_str _edid_dump_str \
+    _screen_size_list _screen_width_int _screen_height_int _screen_diag_int;
+
+  _decode_exe="$(command -v 'edid-decode')";
+  [ -z "${_decode_exe}" ] && return 1;
+
+  readarray -t _edp_card_list < <(find /sys/class/drm -path '*eDP*' | sort);
+  _edid_dump_str='';
+  for _edp_card_str in "${_edp_card_list[@]}"; do
+    if _edid_dump_str="$(edid-decode "${_edp_card_str}/edid")"; then
+      break;
+    fi
+  done
+  [ -n "${_edid_dump_str}" ] || return 1;
+
+  readarray -t _screen_size_list < <(sed -nz \
+    's/.*Detailed Timing Descriptors:\n *DTD 1:[^(]*(\([0-9]\+\) mm x \([0-9]\+\) mm).*/\1\n\2\n/p' \
+    <<< "${_edid_dump_str}");
+  _screen_width_int="${_screen_size_list[0]:-}";
+  _screen_height_int="${_screen_size_list[1]:-}";
+  if [ -z "${_screen_width_int}" ] || [ -z "${_screen_height_int}" ]; then
+    return 1;
+  fi
+
+  _screen_diag_int="$(bc <<< \
+    "sqrt(${_screen_width_int}^2 + ${_screen_height_int}^2)")";
+  echo "${_screen_diag_int}";
+  return 0;
+}
+
 _cm2CalcModelCodeFn () {
-  declare _do_quiet _dmi_name _code;
+  declare _do_quiet _dmi_name _code _screen_size_mm;
   [ -n "${1:-}" ] && _do_quiet='y';
 
   if [ -n "${_cm2ModelCode}" ]; then
@@ -310,6 +341,8 @@ _cm2CalcModelCodeFn () {
 
   shopt -s nocasematch;
   case "${_dmi_name}" in
+    V54x_6x_TU)       _code='xeg3';;
+    L24x_26xJUx_JUXx) _code='arg1';;
     LCS14-15u*)       _code='ir14g3';;
     LCS16-13i*)       _code='ir16g2';;
     LCS14-13i*)       _code='ir14g2';;
@@ -332,15 +365,25 @@ _cm2CalcModelCodeFn () {
     other|*)          _code='other';;
   esac;
 
-  if [[ "${_code}" =~ ^(m2g6|zrg1)$ ]]; then
-    if [ -n "${_cm2LscpuExe}" ]; then
-      if [[ "$("${_cm2LscpuExe}"| grep -i 'model name')" =~ ' 290HX' ]]; then
-        if   [ "${_code}" = 'm2g6' ]; then _code='m2g7';
-        elif [ "${_code}" = 'zrg1' ]; then _code='zrg2';
+  # Fixup some codes that need additional info
+  case "${_code}" in
+    m2g6|zrg1)
+      if [ -n "${_cm2LscpuExe}" ]; then
+        if [[ "$("${_cm2LscpuExe}"| grep -i 'model name')" =~ ' 290HX' ]]; then
+          if   [ "${_code}" = 'm2g6' ]; then _code='m2g7';
+          elif [ "${_code}" = 'zrg1' ]; then _code='zrg2';
+          fi
         fi
       fi
-    fi
-  fi
+      ;;
+    xeg3)
+      _screen_size_mm="$(_cm2CalcEdpScreenSizeFn || 0 )";
+      # 15-inch is 380mm
+      if (( _screen_size_mm > 380 )); then
+        _code="16${_code}"; else _code="14${_code}";
+      fi
+      ;;
+  esac
 
   _cm2ModelCode="${_code}";
   [ -z "${_do_quiet:-}" ] && echo "${_cm2ModelCode}";
@@ -905,6 +948,8 @@ _cm2ModelLine='';
 _cm2ModelHeadList=();
 _cm2ModelTable=(
   'code|config_code|label|is_nv_sys|has_kb_led'
+  '14xeg3|xeg3|14 XE GEN 3|n|y'
+  '16xeg3|xeg3|16 XE GEN 3|n|y'
   'arg1|arg1|Ar GEN 1|n|y'
   'ir14g1|ir14g1|Ir14 GEN 1|n|n'
   'ir14g2|ir1Xg2|Ir14 GEN 2|n|n'
