@@ -1,3 +1,14 @@
+kfocus-hw (26.04.3~beta1) resolute; urgency=medium
+
+  * postinst: Add config for arg1, xeg3 (#6588, #6589, #6594)
+  * postinst: Comment on prior X11 touchpad configs from Noble (#6374)
+  * conf/arg1-etc_default_grub.d_kfocus.cfg: Add arg1 support (#6588)
+  * conf/xeg3-etc_default_grub.d_kfocus.cfg: Add xeg3 support (#6589, #6594)
+  * conf/xeg3-etc_modprobe.d_kfocus.conf: Add xeg3 support (#6589, #6594)
+  * kfocus-hints/unique/arg1/00_badge.png: Fix image: Ar GEN 3 -> Ar GEN 1 (#6588)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Mon, 13 Jul 2026 21:02:54 -0400
+
 kfocus-hw (26.04.2) resolute; urgency=medium
 
   * postinst: Update to ensure kfocus_fand.d exists (#6677)
