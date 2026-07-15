@@ -4,12 +4,17 @@
 # Written for Kubuntu Focus by:
 #   Aaron Rainbolt, Michael Mikowski
 #
-# Name    : kfocus-regen-hint-widget
-# Purpose : Deletes and recreates the hint widget with its existing images and
-#         :   location, to mask temporarily disappearing images in the widget.
+# Name    : kfocus-refresh-hint-widget
+# Purpose : Deletes and recreates the hint widget with its existing images,
+#         :   location, and size. This counteracts a Plasma bug where the
+#         :   current panel disappears if the underlying file is updated.
 # License : GPL v2
 # Run By  : kfocus-hw postinst
 # Spec    : 6750
+# Note    : We usually place Plasma scripts in their own files in
+#   /usr/lib/kfocus/plasma/script. However, this Bash code tightly couples
+#   the of output of one Plasma script with another. It is therefore
+#   easier to manage here as a single script.
 #
 set -u;
 
@@ -94,11 +99,6 @@ _mainFn () {
 
 ## BEGIN Declare and assign global vars {
 declare _queryRemoveHintWidgetStr _recreateHintWidgetStr;
-
-# Generally, we place Plasma scripts in their own files, but in this instance
-#   this script's Bash code is highly dependent on the output format of the
-#   first of these two scripts, and on the placeholder values in the second
-#   script. This is effectively all one script written in two languages.
 _queryRemoveHintWidgetStr="$(cat <<'EOF'
 let terminate = false;
 for (desktop of desktops()) {
