@@ -559,12 +559,12 @@ _cm2AssignExeVarsFn () {
         for _cmd_name in "${_cmd_list[@]}"; do
           _solve_str="$(command -v "${_cmd_name}" || true)";
           if [ -z "${_solve_str}" ]; then
-            _cm2WarnStrFn "Command name is empty, skipped.";
+            # _cm2WarnStrFn "Command for |${_cmd_name}| not found, skipped.";
             _solve_str='';
             continue;
           fi
           if [ ! -x "${_solve_str}" ]; then
-            _cm2WarnStrFn "Path ${_solve_str} not executable, skipped.";
+            # _cm2WarnStrFn "Path |${_solve_str}| not executable, skipped.";
             _solve_str='';
             continue;
           fi
