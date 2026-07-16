@@ -10,6 +10,11 @@
 # Run By  : kfocus-kb-color
 # Spec    : 615
 #
+# Note: This code primarily supports RGB keyboard backlights. It also has
+# save, restore, and toggle functionality for white keyboard backlights, but
+# intentionally lacks features for selecting backlight intensity. KDE provides
+# controls for the latter already.
+#
 set -u;
 
 ## == BEGIN private functions ========================================= {
@@ -140,13 +145,13 @@ _convertBrightByteToIntFn () {
 ## . END _convertBrightByteToIntFn }
 
 
-## BEGIN _calcKbdStateFn {
-# Purpose: Calculate kbd state and save to _configStateList.
+## BEGIN _rgbCalcKbdStateFn {
+# Purpose: Calculate rgb kbd state and save to _configStateList.
 #
-_calcKbdStateFn () {
+_rgbCalcKbdStateFn () {
   declare _slurp_str _bright_byte _bright_int _rgb_file _hex_str _enable_int;
 
-  _slurp_str="$(_slurpFileFn "${_brightFile}")";
+  _slurp_str="$(_slurpFileFn "${_rgbBrightFile}")";
   if [[ "${_modelCode}" =~ ^(m2g5p|zrg1|zrg2)$ ]]; then
     _bright_int="$(_echoSafeBrightIntFn "${_slurp_str}")";
   else
@@ -154,7 +159,7 @@ _calcKbdStateFn () {
     _bright_int="$(_convertBrightByteToIntFn "${_bright_byte}")";
   fi
 
-  _rgb_file="${_rgbDir}/rgb:kbd_backlight/multi_intensity";
+  _rgb_file="${_ledsDir}/rgb:kbd_backlight/multi_intensity";
   _slurp_str="$(_slurpFileFn "${_rgb_file}")";
   _hex_str="$(_convertRgbToHexFn "${_slurp_str}")";
 
@@ -163,19 +168,35 @@ _calcKbdStateFn () {
   [ "${_bright_int}" = '0' ] && _enable_int=0 || _enable_int=1;
   _configStateList=( "${_bright_int}" "${_hex_str}" "${_enable_int}" );
 }
-## . END _calcKbdStateFn }
+## . END _rgbCalcKbdStateFn }
 
-## BEGIN _readStateFileFn {
-# Purpose: Read kbd state file into _configStateList.
+## BEGIN _whiteCalcKbdStateFn {
+# Purpose: Calculate white kbd state and save to _configStateList.
 #
-_readStateFileFn () {
+_whiteCalcKbdStateFn () {
+  declare _bright_int _enable_int;
+
+  _bright_int="$(_echoSafeBrightIntFn \
+    "$(_slurpFileFn "${_whiteBrightFile}")")";
+
+  # If the kbd has brightness, then the user pressed keys.
+  #   In this case, change enable_int to 1.
+  [ "${_bright_int}" = '0' ] && _enable_int=0 || _enable_int=1;
+  _configStateList=( "${_bright_int}" "${_enable_int}" );
+}
+## . END _whiteCalcKbdStateFn }
+
+## BEGIN _rgbReadStateFileFn {
+# Purpose: Read rgb kbd state file into _configStateList.
+#
+_rgbReadStateFileFn () {
   declare _calc_file _str _val_list _bright_int _hex_str _enable_int;
-  [ -z "${1:-}" ] && _calc_file="${_stateFile}" || _calc_file="$1";
+  [ -z "${1:-}" ] && _calc_file="${_rgbStateFile}" || _calc_file="$1";
 
   # Create the state file if needed
   if [ ! -f "${_calc_file}" ]; then
-    _calcKbdStateFn;
-    _writeStateFileFn "${_calc_file}";
+    _rgbCalcKbdStateFn;
+    _rgbWriteStateFileFn "${_calc_file}";
   fi
 
   # Read and process state file contents.
@@ -190,10 +211,34 @@ _readStateFileFn () {
 }
 ## . END _readFileListFn }
 
-## BEGIN _restoreKbdFn {
-# Purpose: Restores color and brightness from _configStateList.
+## BEGIN _whiteReadStateFileFn {
+# Purpose: Read white kbd state file into _configStateList.
 #
-_restoreKbdFn () {
+_whiteReadStateFileFn () {
+  declare _calc_file _str _val_list _bright_int _enable_int;
+  [ -z "${1:-}" ] && _calc_file="${_whiteStateFile}" || _calc_file="$1";
+
+  # Create the state file if needed
+  if [ ! -f "${_calc_file}" ]; then
+    _whiteCalcKbdStateFn;
+    _whiteWriteStateFileFn "${_calc_file}";
+  fi
+
+  # Read and process state file contents.
+  _str="$(_slurpFileFn "${_calc_file}")";
+  IFS=';' read -r -a _val_list <<< "${_str}";
+
+  _bright_int="$(_echoSafeBrightIntFn "${_val_list[0]:-}")";
+  _enable_int="$(_echoSafeBoolIntFn   "${_val_list[1]:-}")";
+
+  _configStateList=( "${_bright_int}" "${_enable_int}" );
+}
+## . END _whiteReadStateFileFn }
+
+## BEGIN _rgbRestoreKbdFn {
+# Purpose: Restores color and brightness for rgb kbds from _configStateList.
+#
+_rgbRestoreKbdFn () {
   declare _bright_int _rgb_str _rgb_file \
     _enable_int _line_dir _calc_bright_int;
 
@@ -201,16 +246,16 @@ _restoreKbdFn () {
   _rgb_str="$(   _convertHexToRgbFn   "${_configStateList[1]:-}")";
   _enable_int="$(_echoSafeBoolIntFn   "${_configStateList[2]:-}")";
 
-  if [ -d "${_rgbDir}" ]; then
+  if [ -d "${_ledsDir}" ]; then
     while read -r _line_dir; do
       _rgb_file="${_line_dir}/multi_intensity";
       _writeRegisterFn "${_rgb_file}" "${_rgb_str}";
-    done < <(find "${_rgbDir}" -maxdepth 1 -mindepth 1 -type l \
+    done < <(find "${_ledsDir}" -maxdepth 1 -mindepth 1 -type l \
       | grep 'rgb:kbd_backlight'
     );
   fi
 
-  if [ -f "${_brightFile}" ]; then
+  if [ -f "${_rgbBrightFile}" ]; then
     if [ "${_enable_int}" = '1' ]; then
       if [[ "${_modelCode}" =~ ^(m2g5p|zrg1|zrg2)$ ]]; then
         _calc_bright_int="${_bright_int}";
@@ -220,30 +265,65 @@ _restoreKbdFn () {
     else
       _calc_bright_int=0;
     fi
-    _writeRegisterFn "${_brightFile}" "${_calc_bright_int}";
+    _writeRegisterFn "${_rgbBrightFile}" "${_calc_bright_int}";
   fi
 }
-## . END _restoreKbdFn }
+## . END _rgbRestoreKbdFn }
 
-## BEGIN _writeStateFileFn {
-# Purpose: Write _configStateList to the ITE file.
+## BEGIN _whiteRestoreKbdFn {
+# Purpose: Restores brightness for white kbds from _configStateList.
 #
-_writeStateFileFn () {
+_whiteRestoreKbdFn () {
+  declare _bright_int _enable_int _calc_bright_int;
+
+  _bright_int="$(_echoSafeBrightIntFn "${_configStateList[0]:-}")";
+  _enable_int="$(_echoSafeBoolIntFn   "${_configStateList[1]:-}")";
+
+  if [ -f "${_whiteBrightFile}" ]; then
+    if [ "${_enable_int}" = '1' ]; then
+      _calc_bright_int="${_bright_int}";
+    else
+      _calc_bright_int=0;
+    fi
+    _writeRegisterFn "${_whiteBrightFile}" "${_calc_bright_int}";
+  fi
+}
+## . END _whiteRestoreKbdFn }
+
+## BEGIN _rgbWriteStateFileFn {
+# Purpose: Write _configStateList to the rgb state file.
+#
+_rgbWriteStateFileFn () {
   declare _calc_file _bright_int _hex_str _enable_int _config_str;
-  [ -z "${1:-}" ] && _calc_file="${_stateFile}" || _calc_file="$1";
+  [ -z "${1:-}" ] && _calc_file="${_rgbStateFile}" || _calc_file="$1";
 
   _bright_int="$(_echoSafeBrightIntFn "${_configStateList[0]:-}")";
   _hex_str="$(   _echoSafeHexStrFn    "${_configStateList[1]:-}")";
-  _enable_int="$(_echoSafeBoolIntFn "${_configStateList[2]:-}")";
+  _enable_int="$(_echoSafeBoolIntFn   "${_configStateList[2]:-}")";
   _config_str="${_bright_int};${_hex_str};${_enable_int}";
 
   _writeRegisterFn "${_calc_file}" "${_config_str}" '_do_create';
 }
-## . END _writeStateFileFn }
+## . END _rgbWriteStateFileFn }
+
+## BEGIN _whiteWriteStateFileFn {
+# Purpose: Write _configStateList to the white state file.
+_whiteWriteStateFileFn () {
+  declare _calc_file _bright_int _enable_int _config_str;
+  [ -z "${1:-}" ] && _calc_file="${_whiteStateFile}" || _calc_file="$1";
+
+  _bright_int="$(_echoSafeBrightIntFn "${_configStateList[0]:-}")";
+  _enable_int="$(_echoSafeBoolIntFn   "${_configStateList[1]:-}")";
+  _config_str="${_bright_int};${_enable_int}";
+
+  _writeRegisterFn "${_calc_file}" "${_config_str}" '_do_create';
+}
+## . END _whiteWriteStateFileFn }
 
 ## BEGIN _restoreKbdFromConfigFn {
 # Purpose: Dispatches to set kbd from _configStateList.
 #   This must be called after the config file is read-in.
+#   This function is used for both rgb and white kbds.
 #
 _restoreKbdFromConfigFn () {
   if [ "${#_configStateList[@]}" -lt 2 ]; then
@@ -251,7 +331,11 @@ _restoreKbdFromConfigFn () {
     return 202;
   fi
 
-  _restoreKbdFn;
+  if [[ "${_modelCode}" =~ ${_rgbModelRegex} ]]; then
+    _rgbRestoreKbdFn;
+  else
+    _whiteRestoreKbdFn;
+  fi
 }
 ## . END _restoreKbdFromConfigFn }
 ## == . END private functions ========================================= }
@@ -302,8 +386,8 @@ _convertRgbToHexFn () {
 }
 ## . END _convertRgbToHexFn }
 
-## BEGIN _simpleEnableKbdFn {
-_simpleEnableKbdFn () {
+## BEGIN _rgbSimpleEnableKbdFn {
+_rgbSimpleEnableKbdFn () {
   declare _set_int;
   _set_int="$(_echoSafeBoolIntFn "${1:-}")";
   if _readInStateFileFn; then
@@ -311,12 +395,23 @@ _simpleEnableKbdFn () {
     _restoreKbdFromConfigFn;
   fi
 }
-## . END _simpleEnableKbdFn }
+## . END _rgbSimpleEnableKbdFn }
 
-## BEGIN _enableKbdFn {
-# Purpose: Enable or disable kbd. Do not change color-bright.
+## BEGIN _whiteSimpleEnableKbdFn {
+_whiteSimpleEnableKbdFn () {
+  declare _set_int;
+  _set_int="$(_echoSafeBoolIntFn "${1:-}")";
+  if _readInStateFileFn; then
+    _configStateList[1]="${_set_int}";
+    _restoreKbdFromConfigFn;
+  fi
+}
+## . END _whiteSimpleEnableKbdFn }
+
+## BEGIN _rgbEnableKbdFn {
+# Purpose: Enable or disable rgb kbd. Do not change color-bright.
 #
-_enableKbdFn () {
+_rgbEnableKbdFn () {
   declare _set_int _old_list;
 
   _set_int="$(_echoSafeBoolIntFn "${1:-}")";
@@ -326,76 +421,152 @@ _enableKbdFn () {
 
   # If the user has made the kbd visible, keep the calculated state;
   #   otherwise, keep the old state.
-  _calcKbdStateFn;
+  _rgbCalcKbdStateFn;
   if (( _configStateList[0] == 0 )); then
     _configStateList=( "${_old_list[@]}" );
   fi
 
   # Set the enabled flag, update keyboard colors, write config
   _configStateList[2]="${_set_int}";
-  _restoreKbdFn;
-  _writeStateFileFn;
+  _rgbRestoreKbdFn;
+  _rgbWriteStateFileFn;
   return;
 }
-## . END _enableKbdFn }
+## . END _rgbEnableKbdFn }
 
-## BEGIN _keepStateFn {
-# Purpose: Calculate keyboard state and store into default files
+## BEGIN _whiteEnableKbdFn {
+# Purpose: Enable or disable white kbd. Do not change brightness.
 #
-_keepStateFn () {
-  _calcKbdStateFn;
-  _writeStateFileFn;
-}
-## .END _keepStateFn }
+_whiteEnableKbdFn () {
+  declare _set_int _old_list;
 
-## BEGIN _keepSuspendStateFn {
-# Purpose: Calculate keyboard state and store into a suspend file
-#
-_keepSuspendStateFn () {
-  _calcKbdStateFn;
-  _writeStateFileFn "${_suspendFile}";
+  _set_int="$(_echoSafeBoolIntFn "${1:-}")";
+  _readInStateFileFn;
+
+  _old_list=( "${_configStateList[@]}" );
+
+  # If the user has made the kbd visible, keep the calculated state;
+  #   otherwise, keep the old state.
+  _whiteCalcKbdStateFn;
+  if (( _configStateList[0] == 0 )); then
+    _configStateList=( "${_old_list[@]}" );
+  fi
+
+  # Set the enabled flag, update keyboard colors, write config
+  _configStateList[1]="${_set_int}";
+  _whiteRestoreKbdFn;
+  _whiteWriteStateFileFn;
+  return;
 }
-## . END _keepSuspendStateFn }
+## . END _whiteEnableKbdFn }
+
+## BEGIN _rgbKeepStateFn {
+# Purpose: Calculate rgb keyboard state and store into default files
+#
+_rgbKeepStateFn () {
+  _rgbCalcKbdStateFn;
+  _rgbWriteStateFileFn;
+}
+## .END _rgbKeepStateFn }
+
+## BEGIN _whiteKeepStateFn {
+# Purpose: Calculate white keyboard state and store into default files
+#
+_whiteKeepStateFn () {
+  _whiteCalcKbdStateFn;
+  _whiteWriteStateFileFn;
+}
+## .END _whiteKeepStateFn }
+
+## BEGIN _rgbKeepSuspendStateFn {
+# Purpose: Calculate rgb keyboard state and store into a suspend file
+#
+_rgbKeepSuspendStateFn () {
+  _rgbCalcKbdStateFn;
+  _rgbWriteStateFileFn "${_rgbSuspendFile}";
+}
+## . END _rgbKeepSuspendStateFn }
+
+## BEGIN _whiteKeepSuspendStateFn {
+# Purpose: Calculate white keyboard state and store into a suspend file
+#
+_whiteKeepSuspendStateFn () {
+  _whiteCalcKbdStateFn;
+  _whiteWriteStateFileFn "${_whiteSuspendFile}";
+}
+## . END _whiteKeepSuspendStateFn }
 
 ## BEGIN _readInStateFileFn {
 # Purpose: Read state from the default file to populate configStateList
 #
 _readInStateFileFn () {
-  _readStateFileFn;
+  if [[ "${_modelCode}" =~ ${_rgbModelRegex} ]]; then
+    _rgbReadStateFileFn;
+  else
+    _whiteReadStateFileFn;
+  fi
 }
 ## . END _readInStateFileFn }
 
-## BEGIN _restoreStateFn {
-# Purpose: Read state from the default file and restore to the keyboard
+## BEGIN _rgbRestoreStateFn {
+# Purpose: Read rgb state from the default file and restore to the keyboard
 #
-_restoreStateFn () {
-  _readStateFileFn;
+_rgbRestoreStateFn () {
+  _rgbReadStateFileFn;
   _restoreKbdFromConfigFn;
 }
-## . END _restoreStateFn }
+## . END _rgbRestoreStateFn }
 
-## BEGIN _restoreSuspendStateFn {
-# Purpose: Read state from a suspend file and restore it to the keyboard
+## BEGIN _rgbRestoreSuspendStateFn {
+# Purpose: Read rgb state from a suspend file and restore it to the keyboard
 #
-_restoreSuspendStateFn () {
-  _readStateFileFn "${_suspendFile}";
-  _restoreKbdFn;
+_rgbRestoreSuspendStateFn () {
+  _rgbReadStateFileFn "${_rgbSuspendFile}";
+  _rgbRestoreKbdFn;
 }
-## . END _restoreSuspendStateFn }
+## . END _rgbRestoreSuspendStateFn }
 
-## BEGIN _listActiveStateFn {
-# Purpose: Print current kbd state to STDOUT.
+## BEGIN _whiteRestoreStateFn {
+# Purpose: Read white state from the default file and restore to the keyboard
 #
-_listActiveStateFn () {
-  _calcKbdStateFn;
+_whiteRestoreStateFn () {
+  _whiteReadStateFileFn;
+  _restoreKbdFromConfigFn;
+}
+## . END _whiteRestoreStateFn }
+
+## BEGIN _whiteRestoreSuspendStateFn {
+# Purpose: Read white state from a suspend file and restore it to the keyboard
+#
+_whiteRestoreSuspendStateFn () {
+  _whiteReadStateFileFn "${_whiteSuspendFile}";
+  _whiteRestoreKbdFn;
+}
+## . END _whiteRestoreSuspendStateFn }
+
+## BEGIN _rgbListActiveStateFn {
+# Purpose: Print current rgb kbd state to STDOUT.
+#
+_rgbListActiveStateFn () {
+  _rgbCalcKbdStateFn;
   ( IFS=';'; echo "${_configStateList[*]}"; )
 }
-## . END _listActiveStateFn }
+## . END _rgbListActiveStateFn }
 
-## BEGIN _setKbdValsFn {
-# Purpose: Set kbd brightness and color from the input string.
+## BEGIN _whiteListActiveStateFn {
+# Purpose: Print current white kbd state to STDOUT.
 #
-_setKbdValsFn () {
+_whiteListActiveStateFn () {
+  _whiteCalcKbdStateFn;
+  ( IFS=';'; echo "${_configStateList[*]}"; )
+}
+## . END _whiteListActiveStateFn }
+
+## BEGIN _rgbSetKbdValsFn {
+# Purpose: Set kbd brightness and color from the input string.
+#   This function intentionally has no white kbd equivalent.
+#
+_rgbSetKbdValsFn () {
   declare _set_str _bit_list _bright_int _hex_str _enable_int;
 
   # Parse input
@@ -409,9 +580,9 @@ _setKbdValsFn () {
   _configStateList=( "${_bright_int}" "${_hex_str}" "${_enable_int}" );
 
   # Restore and write
-  if _restoreKbdFn; then _writeStateFileFn; fi
+  if _rgbRestoreKbdFn; then _rgbWriteStateFileFn; fi
 }
-## . END _setKbdValsFn }
+## . END _rgbSetKbdValsFn }
 ## == . END functions run by mainFn =================================== }
 
 ## BEGIN _mainFn {
@@ -428,7 +599,6 @@ _setKbdValsFn () {
 # | -k       : Calculate keyboard start and write to the suspend file.
 # | -K       : Restore keyboard state from the suspend file.
 # | -l       : List active state from kbd <int:0-10>;<hex>;<0-1>.
-# | -p       :
 # | -s       : '<0-10>;<hex>' : Set brightness and color; enable is set to 1.
 # | -r       : Read and apply state from the default file.
 # | -w       : Calculate keyboard state and write to the default file.
@@ -449,20 +619,63 @@ _mainFn () {
     '-C') _convertRgbToHexFn "$*";;
     '-E')
       if [ -f "${_dropFile}" ]; then
-        _enableKbdFn "$@";
+        if [[ "${_modelCode}" =~ ${_rgbModelRegex} ]]; then
+          _rgbEnableKbdFn "$@";
+        else
+          _whiteEnableKbdFn "$@";
+        fi
       else
-        _simpleEnableKbdFn "$@";
+        if [[ "${_modelCode}" =~ ${_rgbModelRegex} ]]; then
+          _rgbSimpleEnableKbdFn "$@";
+        else
+          _whiteSimpleEnableKbdFn "$@";
+        fi
         touch "${_dropFile}";
       fi
       ;;
 
-    '-k') _keepSuspendStateFn;;
-    '-K') _restoreSuspendStateFn;;
-    '-r') _restoreStateFn;;
-    '-w') _keepStateFn;;
+    '-k')
+      if [[ "${_modelCode}" =~ ${_rgbModelRegex} ]]; then
+        _rgbKeepSuspendStateFn;
+      else
+        _whiteKeepSuspendStateFn;
+      fi
+      ;;
+    '-K')
+      if [[ "${_modelCode}" =~ ${_rgbModelRegex} ]]; then
+        _rgbRestoreSuspendStateFn;
+      else
+        _whiteRestoreSuspendStateFn;
+      fi
+      ;;
+    '-r')
+      if [[ "${_modelCode}" =~ ${_rgbModelRegex} ]]; then
+        _rgbRestoreStateFn;
+      else
+        _whiteRestoreStateFn;
+      fi
+      ;;
+    '-w')
+      if [[ "${_modelCode}" =~ ${_rgbModelRegex} ]]; then
+        _rgbKeepStateFn;
+      else
+        _whiteKeepStateFn;
+      fi
+      ;;
 
-    '-l') _listActiveStateFn;;
-    '-s') _setKbdValsFn "$@";;
+    '-l')
+      if [[ "${_modelCode}" =~ ${_rgbModelRegex} ]]; then
+        _rgbListActiveStateFn;
+      else
+        _whiteListActiveStateFn;
+      fi
+      ;;
+    '-s')
+      if ! [[ "${_modelCode}" =~ ${_rgbModelRegex} ]]; then
+        exit 0;
+      fi
+      _rgbSetKbdValsFn "$@";
+      ;;
     *) _cm2EchoFn "Option ${_opt_str} not supported";;
   esac
 }
@@ -471,17 +684,24 @@ _mainFn () {
 ## BEGIN Declare and assign global vars {
 declare _binName _binDir _baseDir _baseName \
   _configStateList _defaultBrightInt _defaultHexStr \
-  _dropFile _brightFile _stateFile _modelCode;
+  _dropFile _rgbBrightFile _whiteBrightFile _rgbStateFile _modelCode \
+  _rgbModelRegex _whiteModelRegex _whiteStateFile _rgbSuspendFile \
+  _whiteSuspendFile;
 
 _configStateList=();
 _defaultBrightByte=175;
 _defaultBrightInt=7;
 _defaultHexStr='ffff00';
 _dropFile='/run/kfocus-kb-color-set-enable';
-_brightFile='/sys/class/leds/rgb:kbd_backlight/brightness';
-_rgbDir='/sys/class/leds';
-_stateFile='/var/lib/kfocus/kbd_color_state';
-_suspendFile='/var/lib/kfocus/kbd_suspend';
+_rgbBrightFile='/sys/class/leds/rgb:kbd_backlight/brightness';
+_whiteBrightFile='/sys/class/leds/white:kbd_backlight/brightness';
+_ledsDir='/sys/class/leds';
+_rgbStateFile='/var/lib/kfocus/kbd_color_state';
+_whiteStateFile='/var/lib/kfocus/white_kbd_bright_state';
+_rgbSuspendFile='/var/lib/kfocus/rgb_kbd_suspend';
+_whiteSuspendFile='/var/lib/kfocus/white_kbd_suspend';
+_rgbModelRegex='^(m1|m2|zr)'
+_whiteModelRegex='^(14xe|16xe|ar|xe)'
 ## . END Declare and assign global vars }
 
 ## BEGIN Run main if the script is not sourced {
@@ -496,7 +716,10 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   # Get model code, skip unsupported models, set ITE mode if needed
   _modelCode="$(_cm2EchoModelStrFn 'code')";
-  if ! [[ "${_modelCode}" =~ ^(m1|m2|zr) ]]; then exit 0; fi
+  if ! [[ "${_modelCode}" =~ ${_rgbModelRegex} ]] \
+    && ! [[ "${_modelCode}" =~ ${_whiteModelRegex} ]]; then
+    exit 0;
+  fi
 
   ## Debug Code
   # declare _parent_name _debug_file;
