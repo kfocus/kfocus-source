@@ -6,7 +6,7 @@ ConditionPathExists=/usr/share/kfocus/kfocus_fand.d/fan_profile_db
 [Service]
 Type=notify-reload
 ExecStart=/usr/lib/kfocus/bin/kfocus-fand
-WatchdogSec=6
+WatchdogSec=12
 Restart=on-failure
 ReloadSignal=SIGUSR1
 
