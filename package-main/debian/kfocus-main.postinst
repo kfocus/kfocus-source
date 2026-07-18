@@ -162,57 +162,6 @@ _applyRootConfigFn () {
 }
 ## . END _applyRootConfigFn }
 
-## BEGIN _setupHintDefaultsFn {
- # Purpose: Setup hint widget. Link to default panels IFF
- #   the links do not already exist. Otherwise, we assume
- #   kfocus-hw has created the links and all is copacetic.
- #
-_setupHintDefaultsFn () {
-  declare _hints_dir _default_dir \
-    _png_list _src_path _img_file _tgt_path _msg;
-
-  # Initialize
-  _cmXSetMsgFn 'Set defaults for model hints if needed';
-  _hints_dir='/usr/share/kfocus-hints';
-
-
-  # Calculate and test default dir
-  _default_dir="${_hints_dir}/default";
-  if [ ! -d "${_default_dir}" ]; then
-    _cmXWarnStrFn "Unexpected missing default dir: ${_default_dir}";
-    _cmXWarnFn;
-    return;
-  fi
-
-  ## Begin Loop through default images {
-   # Set default image links if not already set.
-   #
-  mapfile -n30 -t _png_list < <(
-    find "${_default_dir}" -mindepth 1 -maxdepth 1 -name '*.png' | sort
-  );
-  for _src_path in "${_png_list[@]}"; do
-    _img_file="$(basename "${_src_path}")";
-    _tgt_path="${_hints_dir}/${_img_file}";
-    if [ ! -f "${_src_path}" ]; then continue; fi
-
-    if [ -f "${_tgt_path}" ]; then
-      _cmXWarnStrFn "${_tgt_path} already set. Skipped.";
-      continue;
-    fi
-
-    _msg="symlink target ${_tgt_path}";
-    if ln -s "${_src_path}" "${_tgt_path}"; then
-      _cmXSucStrFn "Created ${_msg}";
-    else
-      _cmXWarnStrFn "Could not create ${_msg}";
-    fi
-  done
-  ## . End Loop through default images }
-
-  _cmXSucFn;
-}
-## . END _setupHintDefaultsFn }
-
 ## BEGIN _cleanupFn {
 #  Purpose: Clean up of various bits
 _cleanUpFn () {
@@ -262,9 +211,6 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
       # Apply minimal skel copy for root user
       _applyRootConfigFn;
-
-      # Create links per model
-      _setupHintDefaultsFn;
 
       # Restart kfocus-focusrx-dbus-dispatch
       _restartUserServiceFn \
