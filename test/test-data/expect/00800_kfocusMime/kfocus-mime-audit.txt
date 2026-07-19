@@ -2,7 +2,6 @@
 |apt-rollback|konsole;-e;man;apt-rollback|apt-rollback|apt-rollback|AptRollback: Rollback System Packages|
 |audacity|audacity|audacity|audacity|Audacity: Edit Sound|
 |aws-cli|konsole;--hold;-e;aws;help|aws|awscli|AWS: Command Line DevOps Tool|Cannot find sniff_str 'aws'. Please install to audit.
-|azure-cli|konsole;--hold;-e;az;--help|az|azure-cli|Azure: Command Line DevOps Tool|Cannot find sniff_str 'az'. Please install to audit.
 |backintime|backintime-qt|backintime-qt|backintime-qt|BackInTime: Backup Files|
 |blender|blender|blender|blender|Blender: 3D Modeller and Renderer|Cannot find sniff_str 'blender'. Please install to audit.
 |code|code|code|code|Microsoft Visual Studio Code: Development IDE|Cannot find sniff_str 'code'. Please install to audit.
@@ -73,11 +72,10 @@
 |plasma-discover|plasma-discover|plasma-discover|plasma-discover|Discover: Manage Software|
 |ppa-purge|konsole;-e;man ppa-purge|ppa-purge|ppa-purge|PPA Purge: Purge PPAs|
 |rar|konsole;-e;man rar|rar|rar|Rar: Create .rar Archive Files|
-|slack|slack;--ozone-platform=x11|slack|slack-desktop|Slack: Team Messaging|
-  WARN: Found package appears incorrect: |snapd| NOT |slack-desktop|
+|slack|slack;--ozone-platform=x11|slack|slack-desktop|Slack: Team Messaging|Cannot find sniff_str 'slack'. Please install to audit.
 |spectacle|spectacle|spectacle|kde-spectacle|Spectacle: Take Screenshots|
 |steam|steam|steam|steam-installer|Steam: Manage and Play Games|
-|sublime-text|subl|subl|sublime-text|Sublime Text editor|
+|sublime-text|subl|subl|sublime-text|Sublime Text editor|Cannot find sniff_str 'subl'. Please install to audit.
 |synaptic|synaptic-pkexec|synaptic-pkexec|synaptic|Synaptic: View, Install, and Remove Debian Packages|
 |systemsettings5|systemsettings|systemsettings|systemsettings|System Settings: Adjust Your System|
 |msteams|/usr/lib/kfocus/bin/kfocus-web-launcher;--new-window;https://www.microsoft.com/en-us/microsoft-teams/group-chat-software|/usr/lib/kfocus/bin/kfocus-web-launcher|kfocus-main|Microsoft Teams|
@@ -88,6 +86,7 @@
 |wallpapers|dolphin;/usr/share/wallpapers|dolphin|dolphin|Wallpapers: View Wallpaper Images|
 |webcamoid|webcamoid|webcamoid|webcamoid|Webcamoid: Test Your Webcam|
 |winff|winff|winff|winff-qt|WinFF: Convert Video using ffmpeg|
+|azure-cli|!azure-cli|/usr/bin/true|base-files|Azure: Command Line DevOps Tool|Special handler expected|
 |kfocus_kclean|!kfocus-kclean|/usr/bin/true|base-files|KFocus Kernel Cleaner: Remove unused and old kernel files|Special handler expected|
 |displaylink-driver|!displaylink-driver|displaylink-installer|displaylink-driver|DisplayLink: Driver for DisplayLink Docking Stations|Special handler expected|
 |docker|!docker|docker|docker-ce|Docker: Container Engine|Special handler expected|

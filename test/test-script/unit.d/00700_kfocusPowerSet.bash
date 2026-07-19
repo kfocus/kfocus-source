@@ -98,6 +98,7 @@ _echoCpuModelNameFn () {
     'Intel(R) Core(TM) Ultra 7 255H' ) _cpu_name='u7-255h';;
     'Intel(R) Core(TM) Ultra 9 275HX') _cpu_name='u9-275hx';;
     'Intel(R) Core(TM) Ultra 9 290HX Plus') _cpu_name='u9-290hx';;
+    'Intel(R) Core(TM) Ultra X7 358H') _cpu_name='x7-358h';;
     *) _cpu_name="$(
         sed -E 's/^.*\s(i[579]-[^ ]+)(|\s.*)$/\1/' <<< "${_model_line}"
       )";;

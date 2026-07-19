@@ -21,8 +21,7 @@ if ! [ -f /etc/apt/preferences.d/kfocus-nvidia ]; then
   fi
 fi
 
-# EDGE currently enables nvidia-resume services;
-# NON-EDGE currently disables.
+# NON-EDGE and EDGE both currently enable nvidia-resume services;
 #   https://download.nvidia.com/XFree86/
 #     Linux-x86_64/570.86.16/README/powermanagement.html
 # IMPORTANT: We do NOT use deb-systemd-helper because it does NOT force
@@ -39,6 +38,12 @@ _cm2SucFn;
 _cm2SetMsgFn 'Enable helper services';
 systemctl enable kfocus-nve-resume.service  || true;
 systemctl enable kfocus-nve-suspend.service || true;
+_cm2SucFn;
+
+# 2026-07-15 m2g5, m2g6, m2g7, zrg1, zrg2 BIOS integration pending.
+# Will re-enable if possible (#6741)
+_cm2SetMsgFn 'Disable nvidia-powerd until support is available';
+systemctl disable --now nvidia-powerd.service  || true;
 _cm2SucFn;
 
 # Set performance mode only on first install not upgrade
