@@ -40,6 +40,12 @@ systemctl enable kfocus-nve-resume.service  || true;
 systemctl enable kfocus-nve-suspend.service || true;
 _cm2SucFn;
 
+# 2026-07-15 m2g5, m2g6, m2g7, zrg1, zrg2 BIOS integration pending.
+# Will re-enable if possible (#6741)
+_cm2SetMsgFn 'Disable nvidia-powerd until support is available';
+systemctl disable --now nvidia-powerd.service  || true;
+_cm2SucFn;
+
 # Set performance mode only on first install not upgrade
 case "${1:-}" in
   configure)

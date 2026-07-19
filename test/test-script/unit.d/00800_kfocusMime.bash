@@ -69,20 +69,12 @@ _getPkgInfoStrFn () {
 # set -u is set in test harness
 #
 _auditMimeHandlerFn () {
-  declare _head_str _found_list _output_file _app_id_str _line \
-    _report_str _bit_list _app_id _sniff_str _pkg_name _report_str \
-    _did_full_audit;
+  declare _head_str _found_list _app_id_str _line \
+    _report_str _bit_list _app_id _sniff_str _pkg_name _report_str;
 
   _head_str='|app_id|cmd_str;with;args|sniff_str|pkg_str|descr'
   _head_str+='|diagnostics';
   _found_list=( "${_head_str}" );
-  _did_full_audit="${1:-n}";
-
-  if [ "${_did_full_audit}" = 'y' ]; then
-    _output_file="${_t00RunDir}/kfocus-mime-audit-full.txt";
-  else
-    _output_file="${_t00RunDir}/kfocus-mime-audit.txt";
-  fi
 
   # Begin Create report
   _app_id_str="$("${_mimeExe}" -l)";
@@ -102,7 +94,7 @@ _auditMimeHandlerFn () {
   done <<< "${_app_id_str}";
   # . End Create report
 
-  printf '%s\n' "${_found_list[@]}" > "${_output_file}";
+  printf '%s\n' "${_found_list[@]}" > "${_runFile}";
 }
 ## . END _auditMimeHandlerFn
 
@@ -135,23 +127,31 @@ _auditInstallFn () {
 
 ## BEGIN _runTestFn {
 _runTestFn () {
-  declare _check_str _return_int _reply _did_full_audit;
+  declare _check_str _return_int _reply _file_name _expect_file;
 
   _return_int=0;
   _mimeExe="${_t00TopDir}/package-main/usr/lib/kfocus/";
   _mimeExe+='bin/kfocus-mime';
-  _did_full_audit='n';
 
   # Use function from test harness: clear out run dir and check expect dir
   if ! _t00ClearRunDirFn;    then return 1; fi
   if ! _t00CheckExpectDirFn; then return 1; fi
 
+  # Run a full install of apps and then the audit if desired by tester.
+  #   In this case, the output filename changes from kfocus-mime-audit.txt
+  #   to kfocus-mime-audit-full.txt and is compared to that expect file.
+  #
+  _file_name='kfocus-mime-audit';
   read -r -p 'Run EXTRA install check? (y/N) ' _reply;
   if [[ "${_reply:-}" =~ ^[Yy] ]]; then
     _auditInstallFn;
-    _did_full_audit='y';
+    _file_name+='-full';
   fi
+  _file_name+='.txt';
+  _runFile="${_t00RunDir}/${_file_name}";
+  _expect_file="${_t00ExpectDir}/${_file_name}";
 
+  # Make sure backintime blocks
   _cm2EchoFn 'Launching backintime; You should not be asked to '
   _cm2EchoFn '  confirm until it is closed.';
   "${_mimeExe}" -kf 'backintime';
@@ -165,11 +165,12 @@ _runTestFn () {
     _return_int=1;
   fi
 
+  # Make sure kfocus-power does not block
   _cm2EchoFn 'Launching kfocus-power with a url "kfocus-mime://kfocus_power"';
   "${_mimeExe}" 'kfocus-mime://kfocus_power';
   sleep 1;
   _cm2EchoFn '\n\n=====================================';
-  read -r -p 'Did kfocus-power launch? [y/N] ' _reply;
+  read -r -p 'Did kfocus-power launch WITHOUT blocking? [y/N] ' _reply;
   if [[ "${_reply:-n}" =~ ^[Yy] ]]; then
     _cm2EchoFn 'ok  : User reports kfocus-power launches';
   else
@@ -177,16 +178,21 @@ _runTestFn () {
     _return_int=1;
   fi
 
-  _auditMimeHandlerFn "${_did_full_audit}";
-  _check_str="$(diff -r --brief "${_t00ExpectDir}" "${_t00RunDir}" )";
+  # Run audit after installation using the run and expect file from above
+  _auditMimeHandlerFn;
 
-  if [ -n "${_check_str}" ]; then
-    _cm2EchoFn "fail: ${_check_str}";
-    meld "${_t00ExpectDir}" "${_t00RunDir}";
-    _return_int=1;
-  else
+  # Check output
+  _check_str="$(diff -r --brief "${_expect_file}" "${_runFile}" )";
+  if [ -z "${_check_str:-}" ]; then
     _cm2EchoFn 'ok  : Results match expected';
+  else
+    _cm2EchoFn "fail: ${_check_str}";
+    meld "${_expect_file}" "${_runFile}" ;
+    _return_int=1;
   fi
+
   return "${_return_int}";
 }
 ## . END _runTestFn }
+
+declare _runFile;
