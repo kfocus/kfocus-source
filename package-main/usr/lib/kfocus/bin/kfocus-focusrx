@@ -589,9 +589,9 @@ _chkKbdLedFn () {
   declare _model_code;
   _model_code="$(_cm2EchoModelStrFn 'code')";
 
-  if [[ "${_model_code}" =~ ^(m1|m2|zr) ]]; then
+  if [[ "${_model_code}" =~ ^(m1|m2|zr|xe|ar) ]]; then
     if [ -x "${_kbdColorSetExe}" ]; then
-      _cm2SetMsgFn 'Restore keyboard colors';
+      _cm2SetMsgFn 'Restore keyboard state';
       if "${_escExe}" "${_kbdColorSetExe}" -K; then
         _cm2SucFn; else _cm2WarnFn;
       fi

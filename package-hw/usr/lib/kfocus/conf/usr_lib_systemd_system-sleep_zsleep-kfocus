@@ -30,8 +30,11 @@ case "${1:-}" in
     # Scan and save current keyboard settings
     # Disable keyboard controls from pstate, power (#6567)
     # Store only for zr* config codes
-    if [[ "${_cfgName}" =~ ^zr ]] && [ -x "${_setKbdExe}" ]; then
+    if [[ "${_cfgName}" =~ ^(zr|xeg3|arg1) ]] && [ -x "${_setKbdExe}" ]; then
       "${_setKbdExe}" -k || true;
+      if [[ "${_cfgName}" =~ ^(xeg3|arg1) ]]; then
+        "${_setKbdExe}" -E 0 || true;
+      fi
     fi
     echo "${_baseName}: Disable XHCI on sleep to avoid premature wake";
     grep -q '^XHCI.*enable' "${_wakeFile}" && echo XHCI > "${_wakeFile}";
@@ -46,8 +49,11 @@ case "${1:-}" in
     #   This NO LONGER includes the keyboard state
     [ -x "${_pstateExe}" ] && "${_pstateExe}" || true;
     # Restore only for zr* config codes
-    if [[ "${_cfgName}" =~ ^zr ]] && [ -x "${_setKbdExe}" ]; then
+    if [[ "${_cfgName}" =~ ^(zr|xeg3) ]] && [ -x "${_setKbdExe}" ]; then
       "${_setKbdExe}" -K || true;
+      if [[ "${_cfgName}" =~ ^(xeg3|arg1) ]]; then
+        "${_setKbdExe}" -E 1 || true;
+        fi
     fi
     ;;
   *) echo "Unsupported action: ${1:-}";
