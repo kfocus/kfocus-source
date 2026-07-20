@@ -726,6 +726,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   # _parent_name="$(ps -o comm= ${PPID:-})";
   # _debug_file='/tmp/kfocus-kb-set.log';
   # echo "|${_baseName} $*| called by ${_parent_name}" >> "${_debug_file}";
+  # pstree -s "${PPID}" >> "${_debug_file}";
   # _mainFn "$@" |& tee -a "${_debug_file}";
   _mainFn "$@";
 fi

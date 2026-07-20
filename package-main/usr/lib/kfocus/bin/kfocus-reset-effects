@@ -153,6 +153,8 @@ _resetShortcutsFn () {
     'font|General|forceFontDPI|'
     'glob|KScreen|ScaleFactor|'
     'glob|KScreen|ScreenScaleFactors|'
+    # Turn off keyboard accent color by default (#6567)
+    'glob|General|DeviceLedsAccentColored|false'
 
     # Reset DPI step 2: Set desired values on devices where it matters.
     #   These settings only affects X11, which is as desired. In Wayland, this

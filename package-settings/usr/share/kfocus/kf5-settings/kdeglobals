@@ -1,4 +1,4 @@
-# Additional contents provided by 
+# Additional contents provided by
 # kfocus-settings.postinst running kfocus-reset-effects -d
 #
 [General]
@@ -13,6 +13,8 @@ menuFont=Noto Sans,11,-1,5,50,0,0,0,0,0,Regular
 shadeSortColumn=true
 smallestReadableFont=Noto Sans,10,-1,5,50,0,0,0,0,0,Regular
 toolBarFont=Noto Sans,11,-1,5,50,0,0,0,0,0,Regular
+# Turn off keyboard accent color by default (#6567)
+DeviceLedsAccentColored=false
 
 [Icons]
 Theme=breeze-dark
