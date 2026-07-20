@@ -248,15 +248,16 @@ _readNoTurboFn () {
 # Outputs   : Same as `kfocus-kb-color-set -E <int>`, if anything
 # Returns   : 0 unless _kbdColorSetExe exits non-zero
 #
-_setKbdEnableFn () {
-  # Only if tool found
-  if [ -x "${_kbdColorSetExe}" ]; then
-    # Only if model has LEDs
-    if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
-      "${_kbdColorSetExe}" -E "${1:-}";
-    fi
-  fi
-}
+# Disable keyboard controls from pstate, power (#6567)
+# _setKbdEnableFn () {
+#   # Only if tool found
+#   if [ -x "${_kbdColorSetExe}" ]; then
+#     # Only if model has LEDs
+#     if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
+#       "${_kbdColorSetExe}" -E "${1:-}";
+#     fi
+#   fi
+# }
 ## . END _setKbdEnableFn }
 
 ## BEGIN _intInRangeFn {
@@ -346,7 +347,8 @@ _scanFn () {
     read) true;;
     set)
       _setNoTurboFn "${_noturbo_int}";
-      _setKbdEnableFn "${_kbdled_int}";
+      # Disable keyboard controls from pstate, power (#6567)
+      # _setKbdEnableFn "${_kbdled_int}";
       # shellcheck disable=SC2076
       if [[ " ${_avail_gov_list[*]} " =~ " ${_altPsaveKey} " ]]; then
         _psave_key="${_altPsaveKey}";
@@ -799,9 +801,10 @@ _calcPrettyOptionsFn() {
   _turbo="${_bit_list[3]}";
   _leds="${_bit_list[4]}";
   _header_line="${_label};${_frequency};${_governor};${_turbo};";
-  if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
-    _header_line+="${_leds};";
-  fi
+  # Disable keyboard controls from pstate, power (#6567)
+  # if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
+  #   _header_line+="${_leds};";
+  # fi
   _out_computed_table_str+=$'\n'"${_header_line}";
 
   for (( _idx = 1; _idx < ${#_orig_computed_table[@]}; _idx++ )); do
@@ -837,9 +840,10 @@ _calcPrettyOptionsFn() {
     fi
 
     _line="${_label};${_frequency};${_governor};${_turbo};";
-    if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
-      _line+="${_leds};";
-    fi
+    # Disable keyboard controls from pstate, power (#6567)
+    # if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
+    #   _line+="${_leds};";
+    # fi
     _out_computed_table_str+=$'\n'"${_line}";
   done
 
@@ -970,8 +974,10 @@ _mainFn () {
 ## BEGIN Declare and assign global vars {
 declare _binName _binDir _baseDir _baseName _rootDir \
   _cpuDropFile _noTurboFile _cpuStatusFile _altPsaveKey \
-  _cpufreqSetExe _cpufreqInfoExe _nprocExe _kbdColorSetExe \
+  _cpufreqSetExe _cpufreqInfoExe _nprocExe \
   _currentModeFile _pcoreRangeFile _ecoreRangeFile _isHybridCpu;
+  # Disable keyboard controls from pstate, power (#6567)
+  # _kbdColorSetExe
 
 _rootDir='';
 _cpuDropFile='/run/kfocus-cpu-init';
@@ -998,7 +1004,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   # Import libs and assign more global vars
   _importCommonFn;
   _assignList=(
-    "_kbdColorSetExe|${_binDir}/kfocus-kb-color-set,/usr/lib/kfocus/bin/kfocus-kb-color-set||optional"
+    # Disable keyboard controls from pstate, power (#6567)
+    # "_kbdColorSetExe|${_binDir}/kfocus-kb-color-set,/usr/lib/kfocus/bin/kfocus-kb-color-set||optional"
     '_cpufreqSetExe|cpufreq-set'
     '_cpufreqInfoExe|cpufreq-info'
     '_nprocExe|nproc'

@@ -589,16 +589,17 @@ _chkKbdLedFn () {
   declare _model_code;
   _model_code="$(_cm2EchoModelStrFn 'code')";
 
-  if [[ "${_model_code}" =~ ^(m1|m2|zr) ]]; then
-    if [ -x "${_kbdColorSetExe}" ]; then
-      _cm2SetMsgFn 'Restore keyboard colors';
-      if "${_escExe}" "${_kbdColorSetExe}" -K; then
-        _cm2SucFn; else _cm2WarnFn;
-      fi
-    fi
-  fi
+  # Disable keyboard controls from pstate, power (#6567)
+  # if [[ "${_model_code}" =~ ^(m1|m2|zr) ]]; then
+  #   if [ -x "${_kbdColorSetExe}" ]; then
+  #     _cm2SetMsgFn 'Restore keyboard colors';
+  #     if "${_escExe}" "${_kbdColorSetExe}" -K; then
+  #       _cm2SucFn; else _cm2WarnFn;
+  #     fi
+  #   fi
+  # fi
 
-  # Set keycodes
+  # Set keycodes - This appears unneeded for 26.04 either
   if [[ "${_model_code}" =~ ^(zrg1|m2g5p)$ ]]; then
     "${_escExe}" "${_focusRxSetExe}" 'set-keycodes';
   fi
@@ -1207,9 +1208,9 @@ EOF
   _chkRollbackUxFn;   # UX 4013: Check for rollback, fixup icons
   _chkKbdLedFn;       # UX 3735: Check and restore keyboard LED state
   _chkIbusConfigFn;   # UX 4027: Check and apply IBUS fixup
-  # _chkDispRefreshFn;  # UX 6141: Check display refresh, apply fixups
-                        # Disabled for 26.04 as higher refresh rates seem to
-                        # work better with Wayland
+  # _chkDispRefreshFn;# UX 6141: Check display refresh, apply fixups
+                      # Disabled for 26.04 as higher refresh rates seem to
+                      # work better with Wayland
 
   # _chkKernelPkgFn;  # Disabled: See 4423, 66226a00c
   # _chkNvidiaPkgFn;  # Disabled: See 2928
@@ -1239,10 +1240,12 @@ EOF
 ## BEGIN Declare and assign global vars {
 declare _parentCmdStr _lookupList \
   _maxNagCount _binName _binDir _baseDir _baseName _escExe \
-  _focusRxDropDir _kbdColorSetExe _rootTitle _assignList \
+  _focusRxDropDir _rootTitle _assignList \
   _focusRxSetExe _focusRxVersExe _btoolExe _firstrunExe \
   _fixIbusExe _kcleanExe _resetEffectsExe _rollbackBackendExe \
   _rollbackSetExe _chainHelperExe _sysVersStr _iconStr;
+  # Disable keyboard controls from pstate, power (#6567)
+  # _kbdColorSetExe
 
 _iconStr='kfocus-bug-rx';
 
@@ -1276,7 +1279,10 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     "_chainHelperExe|${_binDir}/kfocus-chain-helper-ui||optional"
     "_firstrunExe|${_binDir}/kfocus-firstrun-bin||optional"
     "_fixIbusExe|${_binDir}/kfocus-fix-ibus||optional"
-    "_kbdColorSetExe|${_binDir}/kfocus-kb-color-set||optional"
+
+    # Disable keyboard controls from pstate, power (#6567)
+    # "_kbdColorSetExe|${_binDir}/kfocus-kb-color-set||optional"
+    #
     ## TODO 2026-06-23: Disabled for 26.04, remove if no longer needed
     # "_kcleanExe|${_binDir}/kfocus-kclean||optional"
     # "_kscreenDoctorExe|/usr/bin/kscreen-doctor||optional"

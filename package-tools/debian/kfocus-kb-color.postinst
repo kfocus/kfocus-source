@@ -7,20 +7,27 @@ set -e;
 ## BEGIN Declare common.2.source symbols
 #  IMPORTED on 2022-03-23 EXCERPT from test-scripts/common.2.source
 #
-_cm2BlockMsg='';
-_cm2EchoFn    () { 1>&2 echo -e "$*"; }
-_cm2SetMsgFn  () { _cm2BlockMsg="$*"; _cm2EchoFn "== BEGIN : ${_cm2BlockMsg}"; }
-_cm2SucFn     () { _cm2EchoFn "== . END : OK   ${_cm2BlockMsg}\n\n"; }
+# _cm2BlockMsg='';
+# _cm2EchoFn    () { 1>&2 echo -e "$*"; }
+# _cm2SetMsgFn  () { _cm2BlockMsg="$*"; _cm2EchoFn "== BEGIN : ${_cm2BlockMsg}"; }
+# _cm2SucFn     () { _cm2EchoFn "== . END : OK   ${_cm2BlockMsg}\n\n"; }
 ## . END Declare common.2.source symbols
 
-# IMPORTANT: We do NOT use deb-systemd-helper because it does NOT force
-#   the units to be enabled if previously disabled. Instead, we
-#   use systemctl ensure this is set every time.
-#   deb-systemd-helper also proved problematic.
-#
-_cm2SetMsgFn 'Enable kbd color save service';
-systemctl enable kfocus-kb-save.service || true;
-_cm2SucFn;
+systemctl enable foo.service;
+case "$1" in
+  configure)
+    # Safely mask and purge the systemd enablement states using the helper
+    if command -v deb-systemd-helper >/dev/null 2>&1; then
+        _DEB_SYSTEMD_HELPER_PURGE=1 \
+          deb-systemd-helper disable 'kfocus-kb-save.service' >/dev/null || true;
+    fi
 
+    # Reload systemd to recognize the changes
+    if [ -d /run/systemd/system ]; then
+        systemctl daemon-reload || true;
+    fi
+    ;;
+  *) true;
+esac
 # Tag to allow some debhelper commands to inject relevant code
 #DEBHELPER#

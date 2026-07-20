@@ -3,7 +3,12 @@
 set -e;
 
 case "$1" in
-  remove) deb-systemd-helper disable kfocus-kb-save.service;;
+  remove|purge|upgrade)
+    if [ -d /run/systemd/system ]; then
+      deb-systemd-invoke stop kfocus-kb-save.service >/dev/null || true;
+    fi
+    ;;
+  *) true;;
 esac
 
 # Tag to allow some debhelper commands to inject relevant code

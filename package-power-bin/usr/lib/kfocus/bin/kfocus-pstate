@@ -327,12 +327,13 @@ _EOH03
   # Set the system power profile if available
   _setPowerProfileFn "${_is_on_ac}";
 
+  # Disable keyboard controls from pstate, power (#6567)
   # Restore kbd to pre-resume state
-  if [ "${_is_resume_mode}" = 'y' ]; then
-    if [ -n "${_kbdColorSetExe}" ]; then
-      "${_escExe}" "${_kbdColorSetExe}" -K || true;
-    fi
-  fi
+  # if [ "${_is_resume_mode}" = 'y' ]; then
+  #   if [ -n "${_kbdColorSetExe}" ]; then
+  #     "${_escExe}" "${_kbdColorSetExe}" -K || true;
+  #   fi
+  # fi
 
   # Sniff gpu in use
   _gpu_mode_str='intel';
@@ -405,9 +406,10 @@ _EOH03
 
 ## BEGIN Declare and set global vars {
 declare _binName _binDir _baseName  _userName _doGui _lockFile \
-  _disabledNvDropFile _assignExeList _kbdColorSetExe _lspciExe \
-  _powerSetExe _primeExe _profilesCtlExe _pstateSetExe \
-  _upowerExe _escExe;
+  _disabledNvDropFile _assignExeList _lspciExe _powerSetExe    \
+  _primeExe _profilesCtlExe _pstateSetExe _upowerExe _escExe;
+  # Disable keyboard controls from pstate, power (#6567)
+  # _kbdColorSetExe
 
 # Sync this with the kfocus-pstate-set value
 _disabledNvDropFile='/run/kfocus-disable-nv-onbat';
@@ -436,7 +438,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     "_pstateSetExe|${_binDir}/kfocus-pstate-set"
     "_upowerExe|upower"
 
-    "_kbdColorSetExe|${_binDir}/kfocus-kb-color-set||optional"
+    # Disable keyboard controls from pstate, power (#6567)
+    # "_kbdColorSetExe|${_binDir}/kfocus-kb-color-set||optional"
     "_profilesCtlExe|powerprofilesctl||optional"
     "_primeExe|prime-select||optional"
   );
