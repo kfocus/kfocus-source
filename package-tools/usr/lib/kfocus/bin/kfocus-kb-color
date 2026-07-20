@@ -76,6 +76,30 @@ ${_key_str} to increase or decrease the effect.<br></p>
 </body></html>
 EOE
       )";;
+    14xe*)
+      _prompt_msg="$(cat <<EOE
+<html><head>${_cssStyleStr}</head><body>
+<h3>Keyboard Color Settings</h3>
+${_cm2HtmPStr}This <b>Kubuntu Focus ${_model_label}</b> system has <br>
+monochrome keyboard backlighting. As a result, <br>
+color selection is not available. Press the Fn + F4 <br>
+keys together to cycle through six levels <br>
+of brightness.</p>
+</body></html>
+EOE
+      )";;
+    16xe*)
+      _prompt_msg="$(cat <<EOE
+<html><head>${_cssStyleStr}</head><body>
+<h3>Keyboard Color Settings</h3>
+${_cm2HtmPStr}This <b>Kubuntu Focus ${_model_label}</b> system has <br>
+monochrome keyboard backlighting. As a result, <br>
+color selection is not available. Hold the Fn key <br>
+and then tap the + or - key on the numpad to <br>
+change between six levels of brightness.</p>
+</body></html>
+EOE
+      )";;
     nx*) _prompt_msg="$(cat <<EOE
 <html><head>${_cssStyleStr}</head><body>
 <h3>Keyboard Color Settings</h3>
