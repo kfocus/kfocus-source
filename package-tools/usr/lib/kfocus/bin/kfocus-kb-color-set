@@ -386,28 +386,6 @@ _convertRgbToHexFn () {
 }
 ## . END _convertRgbToHexFn }
 
-## BEGIN _rgbSimpleEnableKbdFn {
-_rgbSimpleEnableKbdFn () {
-  declare _set_int;
-  _set_int="$(_echoSafeBoolIntFn "${1:-}")";
-  if _readInStateFileFn; then
-    _configStateList[2]="${_set_int}";
-    _restoreKbdFromConfigFn;
-  fi
-}
-## . END _rgbSimpleEnableKbdFn }
-
-## BEGIN _whiteSimpleEnableKbdFn {
-_whiteSimpleEnableKbdFn () {
-  declare _set_int;
-  _set_int="$(_echoSafeBoolIntFn "${1:-}")";
-  if _readInStateFileFn; then
-    _configStateList[1]="${_set_int}";
-    _restoreKbdFromConfigFn;
-  fi
-}
-## . END _whiteSimpleEnableKbdFn }
-
 ## BEGIN _rgbEnableKbdFn {
 # Purpose: Enable or disable rgb kbd. Do not change color-bright.
 #
@@ -618,19 +596,10 @@ _mainFn () {
     '-c') _convertHexToRgbFn "$@";;
     '-C') _convertRgbToHexFn "$*";;
     '-E')
-      if [ -f "${_dropFile}" ]; then
-        if [[ "${_modelCode}" =~ ${_rgbModelRegex} ]]; then
-          _rgbEnableKbdFn "$@";
-        else
-          _whiteEnableKbdFn "$@";
-        fi
+      if [[ "${_modelCode}" =~ ${_rgbModelRegex} ]]; then
+        _rgbEnableKbdFn "$@";
       else
-        if [[ "${_modelCode}" =~ ${_rgbModelRegex} ]]; then
-          _rgbSimpleEnableKbdFn "$@";
-        else
-          _whiteSimpleEnableKbdFn "$@";
-        fi
-        touch "${_dropFile}";
+        _whiteEnableKbdFn "$@";
       fi
       ;;
 
@@ -684,7 +653,7 @@ _mainFn () {
 ## BEGIN Declare and assign global vars {
 declare _binName _binDir _baseDir _baseName \
   _configStateList _defaultBrightInt _defaultHexStr \
-  _dropFile _rgbBrightFile _whiteBrightFile _rgbStateFile _modelCode \
+  _rgbBrightFile _whiteBrightFile _rgbStateFile _modelCode \
   _rgbModelRegex _whiteModelRegex _whiteStateFile _rgbSuspendFile \
   _whiteSuspendFile;
 
@@ -692,7 +661,6 @@ _configStateList=();
 _defaultBrightByte=175;
 _defaultBrightInt=7;
 _defaultHexStr='ffff00';
-_dropFile='/run/kfocus-kb-color-set-enable';
 _rgbBrightFile='/sys/class/leds/rgb:kbd_backlight/brightness';
 _whiteBrightFile='/sys/class/leds/white:kbd_backlight/brightness';
 _ledsDir='/sys/class/leds';
