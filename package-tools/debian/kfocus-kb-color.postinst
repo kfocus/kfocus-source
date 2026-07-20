@@ -13,18 +13,18 @@ set -e;
 # _cm2SucFn     () { _cm2EchoFn "== . END : OK   ${_cm2BlockMsg}\n\n"; }
 ## . END Declare common.2.source symbols
 
-systemctl enable foo.service;
 case "$1" in
   configure)
-    # Safely mask and purge the systemd enablement states using the helper
-    if command -v deb-systemd-helper >/dev/null 2>&1; then
-        _DEB_SYSTEMD_HELPER_PURGE=1 \
-          deb-systemd-helper disable 'kfocus-kb-save.service' >/dev/null || true;
+    if [ -d /run/systemd/system ]; then
+      deb-systemd-invoke stop kfocus-kb-save.service >/dev/null || true;
     fi
+
+    # Safely mask and purge the systemd enablement states using the helper
+    deb-systemd-helper purge 'kfocus-kb-save.service' >/dev/null || true;
 
     # Reload systemd to recognize the changes
     if [ -d /run/systemd/system ]; then
-        systemctl daemon-reload || true;
+      systemctl daemon-reload || true;
     fi
     ;;
   *) true;

@@ -12,17 +12,19 @@
 #
 set -u;
 
-_optionHeader='Name;Frequency GHz;Mode;Turbo;LEDs;';
+# LEDs column removed (#6567)
+_optionHeader='Name;Frequency GHz;Mode;Turbo;';
 
 _optionTable=(
-  # _label;up_ratio;down_ratio;gov_key;noturbo_int;kbdled_int
+  # _label;up_ratio;down_ratio;gov_key;noturbo_int;
   # One of 'up_ratio' or 'down_ratio' MUST be set to 'X', and the other must
   # be set to a value between 0 and 1 inclusive.
-  'High;1;X;performance;0;1;'
-  'Normal;1;X;powersave;0;1;'
-  'Studio;0;X;performance;1;1;'
-  'Low;X;1;powersave;1;0;'
-  'Minimal;X;.5;powersave;1;0;'
+  # LEDs column removed (#6567)
+  'High;1;X;performance;0;'
+  'Normal;1;X;powersave;0;'
+  'Studio;0;X;performance;1;'
+  'Low;X;1;powersave;1;'
+  'Minimal;X;.5;powersave;1;'
 
   # These can be added back if desired. They must also be added to the
   # canonical map below.
@@ -781,8 +783,10 @@ EOH
 #
 _calcPrettyOptionsFn() {
   declare _orig_computed_table_str _bit_list _label _frequency _governor \
-    _turbo _leds _header_line _orig_computed_table _out_computed_table_str \
+    _turbo _header_line _orig_computed_table _out_computed_table_str \
     _idx _line _freq_parts _pcore_freq _ecore_freq;
+  # Disable keyboard controls from pstate, power (#6567)  
+  # _leds
 
   _orig_computed_table_str="${1:-}";
   [ -z "${_orig_computed_table_str}" ] && {
@@ -799,9 +803,9 @@ _calcPrettyOptionsFn() {
   _frequency="${_bit_list[1]}";
   _governor="${_bit_list[2]}";
   _turbo="${_bit_list[3]}";
-  _leds="${_bit_list[4]}";
   _header_line="${_label};${_frequency};${_governor};${_turbo};";
   # Disable keyboard controls from pstate, power (#6567)
+  # _leds="${_bit_list[4]}";
   # if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
   #   _header_line+="${_leds};";
   # fi
@@ -818,7 +822,8 @@ _calcPrettyOptionsFn() {
     _frequency="${_bit_list[1]}";
     _governor="${_bit_list[2]}";
     _turbo="${_bit_list[3]}";
-    _leds="${_bit_list[4]}";
+    # Disable keyboard controls from pstate, power (#6567)
+    # _leds="${_bit_list[4]}";
 
     if [ "${_governor}" = 'performance' ]; then
       _governor='PERF'; else _governor='psave';
@@ -826,9 +831,10 @@ _calcPrettyOptionsFn() {
     if [ "${_turbo}" = '0' ]; then
       _turbo='Yes'; else _turbo='No';
     fi
-    if [ "${_leds}" = '0' ]; then
-      _leds='Off'; else _leds='On';
-    fi
+    # Disable keyboard controls from pstate, power (#6567)
+    # if [ "${_leds}" = '0' ]; then
+    #   _leds='Off'; else _leds='On';
+    # fi
 
     if [ "${_isHybridCpu}" = 'y' ]; then
       IFS='|' read -r -a _freq_parts <<< "${_frequency}";
