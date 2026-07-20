@@ -9,10 +9,15 @@
 set -u;
 
 _wakeFile=/proc/acpi/wakeup;
-# Disable keyboard controls from pstate, power (#6567)
-# _setKbdExe=/usr/lib/kfocus/bin/kfocus-kb-color-set;
+_cfgCodeFile=/var/lib/kfocus/hw_config_code;
+_setKbdExe=/usr/lib/kfocus/bin/kfocus-kb-color-set;
 _pstateExe=/usr/lib/kfocus/bin/kfocus-pstate;
 _baseName='zsleep-kfocus';
+
+_cfgName='';
+if [ -r "${_cfgCodeFile}" ]; then
+  _cfgName="$(cat "${_cfgCodeFile}" || true)";
+fi
 
 _reportFn () {
   declare _grep_str;
@@ -24,7 +29,10 @@ case "${1:-}" in
   pre) # Before-suspend actions
     # Scan and save current keyboard settings
     # Disable keyboard controls from pstate, power (#6567)
-    # [ -x "${_setKbdExe}" ] && "${_setKbdExe}" -k || true;
+    # Store only for zr* config codes
+    if [[ "${_cfgName}" =~ ^zr ]] && [ -x "${_setKbdExe}" ]; then
+      "${_setKbdExe}" -k || true;
+    fi
     echo "${_baseName}: Disable XHCI on sleep to avoid premature wake";
     grep -q '^XHCI.*enable' "${_wakeFile}" && echo XHCI > "${_wakeFile}";
     _reportFn;
@@ -37,6 +45,10 @@ case "${1:-}" in
     # Disable keyboard controls from pstate, power (#6567)
     #   This NO LONGER includes the keyboard state
     [ -x "${_pstateExe}" ] && "${_pstateExe}" || true;
+    # Restore only for zr* config codes
+    if [[ "${_cfgName}" =~ ^zr ]] && [ -x "${_setKbdExe}" ]; then
+      "${_setKbdExe}" -K || true;
+    fi
     ;;
   *) echo "Unsupported action: ${1:-}";
 esac
