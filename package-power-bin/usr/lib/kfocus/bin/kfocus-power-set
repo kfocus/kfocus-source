@@ -331,7 +331,7 @@ _scanFn () {
 
   IFS=';' read -r -a _bit_list <<< "${_match_line}";
 
-  if [ "${#_bit_list[@]}" -ne 6 ]; then
+  if [ "${#_bit_list[@]}" -ne 5 ]; then
     _cm2ErrStrFn "Bad element count |${#_bit_list[@]}|";
     return 1;
   fi
