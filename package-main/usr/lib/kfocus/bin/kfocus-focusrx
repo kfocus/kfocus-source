@@ -1239,12 +1239,10 @@ EOF
 ## BEGIN Declare and assign global vars {
 declare _parentCmdStr _lookupList \
   _maxNagCount _binName _binDir _baseDir _baseName _escExe \
-  _focusRxDropDir _rootTitle _assignList \
+  _focusRxDropDir _kbdColorSetExe _rootTitle _assignList \
   _focusRxSetExe _focusRxVersExe _btoolExe _firstrunExe \
   _fixIbusExe _kcleanExe _resetEffectsExe _rollbackBackendExe \
   _rollbackSetExe _chainHelperExe _sysVersStr _iconStr;
-  # Disable keyboard controls from pstate, power (#6567)
-  # _kbdColorSetExe
 
 _iconStr='kfocus-bug-rx';
 
