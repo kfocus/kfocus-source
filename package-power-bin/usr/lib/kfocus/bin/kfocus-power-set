@@ -788,7 +788,7 @@ _calcPrettyOptionsFn() {
   declare _orig_computed_table_str _bit_list _label _frequency _governor \
     _turbo _header_line _orig_computed_table _out_computed_table_str \
     _idx _line _freq_parts _pcore_freq _ecore_freq;
-  # Disable keyboard controls from pstate, power (#6567)  
+  # Disable keyboard controls from pstate, power (#6567)
   # _led_str
 
   _orig_computed_table_str="${1:-}";
@@ -816,7 +816,7 @@ _calcPrettyOptionsFn() {
 
   for (( _idx = 1; _idx < ${#_orig_computed_table[@]}; _idx++ )); do
     IFS=';' read -r -a _bit_list <<< "${_orig_computed_table[_idx]}";
-    if (( ${#_bit_list[@]} < 5 )); then
+    if (( ${#_bit_list[@]} < 4 )); then
       _out_computed_table_str+=$'\n'"${_orig_computed_table[_idx]}";
       continue;
     fi
