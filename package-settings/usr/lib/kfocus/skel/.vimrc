@@ -72,7 +72,8 @@ set viminfo=h,'50,<10000,s1000,/1000,:100 "Set values to save to .viminfo
 " colorscheme elflord
 hi LineNr ctermfg=white ctermbg=gray
 highlight CursorColumn term=bold ctermfg=black ctermbg=green
-map <silent> ;c :set cursorcolumn!<CR>
+" show cursor row and column
+map <silent> ;c :set cursorcolumn!<CR>:set cursorline!<CR>
 set background=dark "When guessing, guess bg is dark (vs light)
 set number
 set modeline
@@ -269,7 +270,7 @@ set thesaurus+=/usr/local/share/thesaurus/mthesaur.txt
 " https://vimtricks.com/p/highlight-syntax-inside-markdown/
 " See :r !ls /usr/share/vim/vim82/syntax/
 "
-let g:markdown_fenced_languages = ['bash','css','erb=eruby','javascript','js=javascript','json','html','log=messages','messages','node=javascript','perl','php=perl','python','ruby','sass','xml','vim','yaml']
+let g:markdown_fenced_languages = ['bash','changelog', 'css','erb=eruby','javascript','js=javascript','json','html','log=messages','messages','node=javascript','perl','php=perl','python','ruby','sass','xml','vim','yaml']
 
 " Support fenced syntax highlighing for longer files (10k lines).
 " Reduce to minlines value or disable if editing is slow.
