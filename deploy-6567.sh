@@ -8,7 +8,8 @@ if sudo systemctl enable --now kfocus-kb-save; then
   echo 'kfocus-kb-save enabled.';
 else
   echo 'kfocus-kb-save NOT enabled.';
-  echo 'PLEASE FIX!';
+  echo 'ERROR: PLEASE FIX and rerun!';
+  exit 1;
 fi
 
 _path='package-hw/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus';
@@ -30,12 +31,22 @@ while read -r _path; do
   fi
 done < <(git diff --name-only RR-2026-Q3 |grep -v '^test' );
 
-read -rp 'Press enter to re-run kfocus-reset-effects -d as root';
+read -rp 'Press enter to re-run kfocus-reset-effects -d as root > ';
 sudo kfocus-reset-effects -d /usr/share/kfocus/kf5-settings;
 
-read -rp 'Press enter to clear any cached data from kfocus-power-set';
+read -rp 'Press enter to delete powerdevilrc and kdeglobals'
+rm ~/.config/powerdevilrc ~/.config/kdeglobals;
+
+read -rp 'Press enter to clear any cached data from kfocus-power-set > ';
 sudo rm -rf /run/kfocus-power*;
-# _path=package-settings/usr/share/kfocus/kf5-settings;
-# _sys_path="/${_path#*/}";
-# read -rp 'Press enter to compare kf5-settings dir';
-# sudo meld "${_path}" "/${_sys_path}";
+
+read -rp 'Press enter to compare kf5-settings dir > ';
+_path=package-settings/usr/share/kfocus/kf5-settings;
+_sys_path="/${_path#*/}";
+sudo meld "${_path}" "/${_sys_path}";
+
+read -rp 'IMPORTANT: Install kfocus-keyboard_4.22.2-0kfocus2~beta1~local1_all.deb'
+sudo apt install kfocus-keyboard_4.22.2-0kfocus2~beta1~local1_all.deb;
+read -rp 'IMPORTANT: Reboot NOW and run the tests > ';
+
+exit 0;
