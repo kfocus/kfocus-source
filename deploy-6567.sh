@@ -34,8 +34,8 @@ done < <(git diff --name-only RR-2026-Q3 |grep -v '^test' );
 read -rp 'Press enter to re-run kfocus-reset-effects -d as root > ';
 sudo kfocus-reset-effects -d /usr/share/kfocus/kf5-settings;
 
-read -rp 'Press enter to delete powerdevilrc and kdeglobals'
-rm ~/.config/powerdevilrc ~/.config/kdeglobals;
+read -rp 'Press enter to delete powerdevilrc and kdeglobals > ';
+rm -f ~/.config/powerdevilrc ~/.config/kdeglobals;
 
 read -rp 'Press enter to clear any cached data from kfocus-power-set > ';
 sudo rm -rf /run/kfocus-power*;
@@ -45,8 +45,9 @@ _path=package-settings/usr/share/kfocus/kf5-settings;
 _sys_path="/${_path#*/}";
 sudo meld "${_path}" "/${_sys_path}";
 
-read -rp 'IMPORTANT: Install kfocus-keyboard_4.22.2-0kfocus2~beta1~local1_all.deb'
-sudo apt install kfocus-keyboard_4.22.2-0kfocus2~beta1~local1_all.deb;
+read -rp 'Press enter to install kfocus-keyboard_4.22.2-0kfocus2~beta1~local1_all.deb > '
+sudo apt install ./kfocus-keyboard_4.22.2-0kfocus2~beta1~local1_all.deb;
 read -rp 'IMPORTANT: Reboot NOW and run the tests > ';
 
 exit 0;
+
