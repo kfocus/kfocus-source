@@ -42,7 +42,7 @@ case "${1:-}" in
     _reportFn;
     ;;
 
-  post) # After-suspend Actions
+  post) # After-suspend actions
     # Handle XHCI
     echo "${_baseName}: Enable XHCI on wake";
     grep -q '^XHCI.*disable' "${_wakeFile}" && echo XHCI > "${_wakeFile}";

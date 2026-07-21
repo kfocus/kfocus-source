@@ -19,7 +19,7 @@ else
   sudo meld "${_path}" "${_sys_path}";
 fi
 
-while read _path; do
+while read -r _path; do
   _sys_path="/${_path#*/}";
   if [ -r "${_path}" ] && [ -r "${_sys_path}" ]; then
     if diff -r --brief "${_path}" "${_sys_path}"; then
@@ -37,5 +37,3 @@ _path=package-settings/usr/share/kfocus/kf5-settings;
 _sys_path="/${_path#*/}";
 read -rp 'Press enter to compare kf5-settings dir';
 sudo meld "${_path}" "/${_sys_path}";
-
-
