@@ -3,7 +3,7 @@
 set -e;
 
 case "$1" in
-  remove|purge) deb-systemd-helper purge kfocus-kb-save.service;;
+  remove) deb-systemd-helper purge kfocus-kb-save.service;;
 esac
 
 # Tag to allow some debhelper commands to inject relevant code

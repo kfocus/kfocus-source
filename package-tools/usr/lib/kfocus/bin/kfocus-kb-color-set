@@ -151,6 +151,12 @@ _convertBrightByteToIntFn () {
 _rgbCalcKbdStateFn () {
   declare _slurp_str _bright_byte _bright_int _rgb_file _hex_str _enable_int;
 
+  ## TODO 2026-07-30 warm msm: This is inaccurate on zr systems, and may
+  # be on others. Instead, read and write the brightness from dbus.
+  # dbus-send --session --print-reply --dest=org.freedesktop.PowerManagement \
+  #  /org/kde/Solid/PowerManagement/Actions/KeyboardBrightnessControl \
+  #  org.kde.Solid.PowerManagement.Actions.KeyboardBrightnessControl.setKeyboardBrightness \
+  #  int32:0
   _slurp_str="$(_slurpFileFn "${_rgbBrightFile}")";
   if [[ "${_modelCode}" =~ ^(m2g5p|zrg1|zrg2)$ ]]; then
     _bright_int="$(_echoSafeBrightIntFn "${_slurp_str}")";

@@ -352,6 +352,7 @@ _scanFn () {
       _setNoTurboFn "${_noturbo_int}";
       # Disable keyboard controls from pstate, power (#6567)
       # _setKbdEnableFn "${_kbdled_int}";
+
       # shellcheck disable=SC2076
       if [[ " ${_avail_gov_list[*]} " =~ " ${_altPsaveKey} " ]]; then
         _psave_key="${_altPsaveKey}";
