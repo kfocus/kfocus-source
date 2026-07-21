@@ -33,7 +33,9 @@ done < <(git diff --name-only RR-2026-Q3 |grep -v '^test' );
 read -rp 'Press enter to re-run kfocus-reset-effects -d as root';
 sudo kfocus-reset-effects -d /usr/share/kfocus/kf5-settings;
 
-_path=package-settings/usr/share/kfocus/kf5-settings;
-_sys_path="/${_path#*/}";
-read -rp 'Press enter to compare kf5-settings dir';
-sudo meld "${_path}" "/${_sys_path}";
+read -rp 'Press enter to clear any cached data from kfocus-power-set';
+sudo rm -rf /run/kfocus-power*;
+# _path=package-settings/usr/share/kfocus/kf5-settings;
+# _sys_path="/${_path#*/}";
+# read -rp 'Press enter to compare kf5-settings dir';
+# sudo meld "${_path}" "/${_sys_path}";

@@ -660,7 +660,9 @@ _calcCanonicalFreqsFn() {
 
     IFS=';' read -r -a _canonical_parts <<< "${_canonical_match_line}";
     _out_str="${_opt_parts[0]};${_canonical_parts[1]};${_opt_parts[3]};";
-    _out_str+="${_opt_parts[4]};${_opt_parts[5]};";
+    _out_str+="${_opt_parts[4]};";
+    # Disable keyboard controls from pstate, power (#6567)
+    # _out_str+="${_opt_parts[4]};${_opt_parts[5]};";
     _out_list+=( "${_out_str}" );
   done
 
@@ -694,7 +696,7 @@ _calcOptionsFn () {
     _low_cpu_freq _opt_parts _out_parts _cpu_str _return_val \
     _canonical_table_str _canonical_freqs_list;
 
-  _out_list=();
+  # Get CPU info to develop header
   _cpu_str="$(
     lscpu \
       | grep 'Model name:' \
@@ -707,8 +709,8 @@ _calcOptionsFn () {
   _return_val='0';
   _canonical_table_str="${_freqCanonicalMap["${_cpu_str}"]:-}";
 
-  _out_list+=( "$(_cm2EchoModelStrFn 'label');${_cpu_str};${_isHybridCpu};" );
-
+  ## Begin Create header and loop through options
+  _out_list=( "$(_cm2EchoModelStrFn 'label');${_cpu_str};${_isHybridCpu};" );
   for _opt_line in "${_optionTable[@]}"; do
     # Calculate frequencies for normal and low modes even if a hardcoded
     #   table exists, for checking turboboost
@@ -733,20 +735,22 @@ _calcOptionsFn () {
       fi
     fi
   done
+  ## . End Create header and loop through options
 
-  # This occurs when Turbo Boost is disabled on kernels >= 6.11
+  # Handle situation if Turbo Boost is disabled on kernels >= 6.11
   if [ "${_normal_cpu_freq:-}" = "${_low_cpu_freq:-}" ]; then
     _cm2ErrStrFn \
       'CPU init failed, max CPU freq for normal and low power profiles are the same!';
   fi
 
+  # Fill output with canonical table fields if found
   if [ -n "${_canonical_table_str}" ]; then
     readarray -t _canonical_freqs_list <<< "$(_calcCanonicalFreqsFn \
       "${_canonical_table_str}")";
     _out_list+=( "${_canonical_freqs_list[@]}" );
   fi
 
-  ## TODO 2023-03-27 Add per-cpu messages where appropriate
+  # Add per-cpu messages where appropriate
   if [ "${#_out_list[@]}" = '1' ]; then
     _model_msg="$(cat << EOH
 <b>We do not have a frequency profile for this CPU</b>.
@@ -758,12 +762,14 @@ EOH
     _return_val='1';
   fi
 
+  # Error check
   if [ -n "${_normal_cpu_freq}" ] \
     && [ -n "${_low_cpu_freq}" ] \
     && [ "${_normal_cpu_freq}" == "${_low_cpu_freq}" ]; then
     _cm2WarnStrFn 'Possible CPU init failure, max freq == base freq!';
   fi
 
+  # Send string via STDOUT with return code
   ( IFS=$'\n'; echo "${_out_list[*]}" );
   return "${_return_val}";
 }
