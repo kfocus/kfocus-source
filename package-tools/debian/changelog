@@ -1,3 +1,14 @@
+kfocus-tools (26.04.5) resolute; urgency=medium
+
+  * kfocus-kb-color-set (#6567)
+    - Update to support white keyboard backlights
+    - Remove simple enable-disable
+    - Remove drop file
+  * kfocus-kb-color.prerm: s/disable/purge/ when removed (#6567)
+  * kfocus-kb-color: Add 1[46]xeg3, arg1 model messages (#6589, #6594)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Sun, 19 Jul 2026 21:59:00 -0400
+
 kfocus-tools (26.04.4) resolute; urgency=medium
 
   * kfocus-conda: Make more reliable, install gpu-bench on demand (#6677)

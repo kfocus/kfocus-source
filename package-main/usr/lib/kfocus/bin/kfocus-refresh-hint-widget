@@ -1,0 +1,182 @@
+#!/bin/bash
+#
+# Copyright 2025-2026 MindShare Inc.
+# Written for Kubuntu Focus by:
+#   Aaron Rainbolt, Michael Mikowski
+#
+# Name    : kfocus-refresh-hint-widget
+# Purpose : Deletes and recreates the hint widget with its existing images,
+#         :   location, and size. This counteracts a Plasma bug where the
+#         :   current panel disappears if the underlying file is updated.
+# License : GPL v2
+# Run By  : kfocus-hw postinst
+# Spec    : 6750
+# Note    : We usually place Plasma scripts in their own files in
+#   /usr/lib/kfocus/plasma/script. However, this Bash code tightly couples
+#   the of output of one Plasma script with another. It is therefore
+#   easier to manage here as a single script.
+#
+set -u;
+
+## BEGIN _importCommonFn {
+# Summary   : _importCommonFn
+# Purpose   : Load common routines, prefer relative dir
+# Example   : _importCommonFn;
+# Arguments : none
+# Globals   : Package vars _baseDir _baseName
+# Outputs   : none
+# Returns   : none
+#
+_importCommonFn () {
+  declare _lib_list _is_loaded _lib_file;
+  _lib_list=(
+    "${_baseDir}/lib/common.2.source"
+    '/usr/lib/kfocus/lib/common.2.source'
+  );
+  _is_loaded='n';
+  for _lib_file in "${_lib_list[@]}"; do
+    if [ -r "${_lib_file}" ]; then
+      # shellcheck source=/usr/lib/kfocus/lib/common.2.source
+      if source "${_lib_file}"; then
+        _is_loaded='y';
+        break;
+      fi
+    fi
+  done
+
+  if [ "${_is_loaded}" = 'n' ]; then
+    echo 1>&2 "${_baseName}: ABORT - Cannot source common lib";
+    exit 202;
+  fi
+}
+## . END _importCommonFn }
+
+## BEGIN _mainFn {
+_mainFn () {
+  declare _session_info _bit_list _uname_uid_tuple _uname_uid_list _uname \
+    _uid _hint_widget_info_list _recreate_hint_widget_str;
+
+  _session_info="$(_cm2EchoGraphicalLoginInfoFn 2>/dev/null)";
+  IFS=';' read -r -a _bit_list <<< "${_session_info}";
+
+  for _uname_uid_tuple in "${_bit_list[@]}"; do
+    IFS='|' read -r -a _uname_uid_list <<< "${_uname_uid_tuple}";
+    _uname="${_uname_uid_list[0]}";
+    _uid="${_uname_uid_list[1]}";
+
+    readarray -t _hint_widget_info_list < <(
+      sudo -u "${_uname}" \
+        XDG_RUNTIME_DIR="/run/user/${_uid}" \
+        DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${_uid}/bus" \
+        "${_cm2DbusSendExe}" --print-reply=literal --session \
+        --dest='org.kde.plasmashell' '/PlasmaShell' \
+        'org.kde.PlasmaShell.evaluateScript' \
+        "string:${_queryRemoveHintWidgetStr}" 2>/dev/null
+    );
+
+    if [ -z "${_hint_widget_info_list[0]:-}" ]; then
+      ## No hint widget, give up for this user account
+      continue;
+    fi
+
+    _recreate_hint_widget_str="${_recreateHintWidgetStr//XXX_DESKTOP_ID_XXX/${_hint_widget_info_list[0]}}";
+    _recreate_hint_widget_str="${_recreate_hint_widget_str//XXX_X_XXX/${_hint_widget_info_list[1]}}";
+    _recreate_hint_widget_str="${_recreate_hint_widget_str//XXX_Y_XXX/${_hint_widget_info_list[2]}}";
+    _recreate_hint_widget_str="${_recreate_hint_widget_str//XXX_W_XXX/${_hint_widget_info_list[3]}}";
+    _recreate_hint_widget_str="${_recreate_hint_widget_str//XXX_H_XXX/${_hint_widget_info_list[4]}}";
+    _recreate_hint_widget_str="${_recreate_hint_widget_str//XXX_CONFIG_XXX/${_hint_widget_info_list[5]}}";
+
+    sudo -u "${_uname}" \
+      XDG_RUNTIME_DIR="/run/user/${_uid}" \
+      DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${_uid}/bus" \
+      "${_cm2DbusSendExe}" --print-reply --session \
+      --dest='org.kde.plasmashell' '/PlasmaShell' \
+      'org.kde.PlasmaShell.evaluateScript' \
+      "string:${_recreate_hint_widget_str}" >/dev/null 2>&1
+  done
+}
+## . END _mainFn }
+
+## BEGIN Declare and assign global vars {
+declare _queryRemoveHintWidgetStr _recreateHintWidgetStr;
+_queryRemoveHintWidgetStr="$(cat <<'EOF'
+let terminate = false;
+for (desktop of desktops()) {
+  if (terminate) { break; }
+  for (widgetId of desktop.widgetIds) {
+    widget = desktop.widgetById(widgetId);
+    if (widget.type === 'org.kde.plasma.mediaframe') {
+      widget.currentConfigGroup = 'Paths';
+      config_data = widget.readConfig('pathList');
+      if (config_data.includes('kfocus-hints')) {
+        let widget_info_list = [
+          desktop.id,
+          widget.geometry.x,
+          widget.geometry.y,
+          widget.geometry.width,
+          widget.geometry.height,
+          config_data.replace(/\\/g, '\\\\\\\\'),
+        ];
+        if (widget_info_list.includes('')
+          || widget_info_list.includes(undefined)) {
+          terminate = true;
+          break;
+        }
+        print(widget_info_list.join('\n'));
+
+        widget.remove();
+        terminate = true;
+        break;
+      }
+    }
+  }
+}
+EOF
+)";
+
+_recreateHintWidgetStr="$(cat <<'EOF'
+let desktop_id = XXX_DESKTOP_ID_XXX;
+let orig_x = XXX_X_XXX;
+let orig_y = XXX_Y_XXX;
+let orig_w = XXX_W_XXX;
+let orig_h = XXX_H_XXX;
+let orig_config_data = 'XXX_CONFIG_XXX';
+
+desktops().forEach((desktop) => {
+  if (desktop.id === desktop_id) {
+    mediaframe_widget_obj = desktop.addWidget(
+      'org.kde.plasma.mediaframe', orig_x, orig_y, orig_w, orig_h
+    );
+    mediaframe_widget_obj.currentConfigGroup = [];
+    mediaframe_widget_obj.writeConfig('PreloadWeight', '0');
+    mediaframe_widget_obj.writeConfig('UserBackgroundHints', 'NoBackground');
+    mediaframe_widget_obj.currentConfigGroup = [ 'ConfigDialog' ];
+    mediaframe_widget_obj.writeConfig('DialogHeight', 20 * gridUnit);
+    mediaframe_widget_obj.writeConfig('DialogWidth', 25 * gridUnit);
+    mediaframe_widget_obj.currentConfigGroup = [ 'General' ];
+    mediaframe_widget_obj.writeConfig('fillMode', '1');
+    mediaframe_widget_obj.writeConfig('interval', '3600');
+    mediaframe_widget_obj.writeConfig('leftClickOpenImage', 'false');
+    mediaframe_widget_obj.writeConfig('randomize', 'false');
+    mediaframe_widget_obj.writeConfig('useBackground', 'false');
+    mediaframe_widget_obj.currentConfigGroup = [ 'Paths' ];
+    mediaframe_widget_obj.writeConfig('pathList', orig_config_data);
+  }
+});
+EOF
+)";
+## . END Declare and assign global vars }
+
+## BEGIN Run _mainFn when script is NOT sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+
+  # Import libs and assign more global vars
+  _importCommonFn;
+
+  _mainFn "$@";
+fi
+## . END Run _mainFn when script is NOT sourced }

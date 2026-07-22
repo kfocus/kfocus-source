@@ -642,6 +642,8 @@ _setupModelHintsFn () {
     fi
   done
 
+  [ -x "${_refreshHintWidgetExe}" ] && "${_refreshHintWidgetExe}" || true;
+
   _cmXSucFn;
 }
 
@@ -743,9 +745,11 @@ _configFn () {
 }
 
 ## BEGIN declare and assign package vars {
-declare _effectsExe _kf5SettingsDir _dmiName;
+declare _effectsExe _kf5SettingsDir _dmiName _refreshHintWidgetExe;
 _dmiName='';
 _effectsExe="$(command -v /usr/lib/kfocus/bin/kfocus-reset-effects || true)";
+_refreshHintWidgetExe="$(command -v \
+  /usr/lib/kfocus/bin/kfocus-refresh-hint-widget || true)";
 _kf5SettingsDir='/usr/share/kfocus/kf5-settings';
 ## . END declare and assign package vars }
 

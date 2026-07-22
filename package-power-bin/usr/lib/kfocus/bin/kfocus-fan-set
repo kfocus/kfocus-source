@@ -111,7 +111,7 @@ _chkReportFanSupportFn () {
 _EOH010
       )";;
 
-    ar*|m1*|m2*|xe*|zr*)
+    1[46]xeg3|ar*|m1*|m2*|xe*|zr*)
       if [ "${_is_tuxedo_io_present}" = 'y' ]; then return 0; fi
       _model_msg="$(cat <<_EOH020
 <b>Custom fan profiles are available</b>. Please install

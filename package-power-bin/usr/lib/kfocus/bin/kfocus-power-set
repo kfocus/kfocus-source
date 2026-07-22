@@ -12,17 +12,19 @@
 #
 set -u;
 
-_optionHeader='Name;Frequency GHz;Mode;Turbo;LEDs;';
+# LEDs column removed (#6567)
+_optionHeader='Name;Frequency GHz;Mode;Turbo;';
 
 _optionTable=(
-  # _label;up_ratio;down_ratio;gov_key;noturbo_int;kbdled_int
+  # _label;up_ratio;down_ratio;gov_key;noturbo_int;
   # One of 'up_ratio' or 'down_ratio' MUST be set to 'X', and the other must
   # be set to a value between 0 and 1 inclusive.
-  'High;1;X;performance;0;1;'
-  'Normal;1;X;powersave;0;1;'
-  'Studio;0;X;performance;1;1;'
-  'Low;X;1;powersave;1;0;'
-  'Minimal;X;.5;powersave;1;0;'
+  # LEDs column removed (#6567)
+  'High;1;X;performance;0;'
+  'Normal;1;X;powersave;0;'
+  'Studio;0;X;performance;1;'
+  'Low;X;1;powersave;1;'
+  'Minimal;X;.5;powersave;1;'
 
   # These can be added back if desired. They must also be added to the
   # canonical map below.
@@ -238,6 +240,7 @@ _readNoTurboFn () {
 }
 ## . END _readNoTurboFn }
 
+# Disable keyboard controls from pstate, power (#6567)
 ## BEGIN _setKbdEnableFn {
 # Summary   : _setKbdEnableFn <int>
 # Purpose   : Enable or disable keyboard LEDs
@@ -248,15 +251,15 @@ _readNoTurboFn () {
 # Outputs   : Same as `kfocus-kb-color-set -E <int>`, if anything
 # Returns   : 0 unless _kbdColorSetExe exits non-zero
 #
-_setKbdEnableFn () {
-  # Only if tool found
-  if [ -x "${_kbdColorSetExe}" ]; then
-    # Only if model has LEDs
-    if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
-      "${_kbdColorSetExe}" -E "${1:-}";
-    fi
-  fi
-}
+# _setKbdEnableFn () {
+#   # Only if tool found
+#   if [ -x "${_kbdColorSetExe}" ]; then
+#     # Only if model has LEDs
+#     if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
+#       "${_kbdColorSetExe}" -E "${1:-}";
+#     fi
+#   fi
+# }
 ## . END _setKbdEnableFn }
 
 ## BEGIN _intInRangeFn {
@@ -310,24 +313,25 @@ _intInRangeFn () {
 #   _isHybridCpu, _pcoreRangeList, _ecoreRangeList
 # Outputs   : In 'read' mode, outputs a string containing the
 #   following fields:
-#     profile_label;p_core_freq[|e_core_freq];governor_key;noturbo_int;kbdled_int;
+#     profile_label;p_core_freq[|e_core_freq];governor_key;noturbo_int;
 #   E-core freq will be omitted for non-hybrid CPUs.
 #   In 'set' mode, outputs nothing.
 # Returns   : 0 on success, 1 if an invalid argument is provided
 #
 _scanFn () {
   declare _match_line _mode_key _bit_list _label _up_ratio _down_ratio  \
-    _gov_key _noturbo_int _kbdled_int _avail_gov_list _proc_count       \
+    _gov_key _noturbo_int _avail_gov_list _proc_count       \
     _proc_idx _set_max_int _hw_freq_list _hw_min_int _hw_max_int        \
     _hw_base_file _hw_base_int _param_list _solve_line \
     _current_pcore_max_int _current_ecore_max_int _psave_key _msg;
+  # _kbdled_int (#6567)
 
   _match_line="${1:-}";
   _mode_key="${2:-}";
 
   IFS=';' read -r -a _bit_list <<< "${_match_line}";
 
-  if [ "${#_bit_list[@]}" -ne 6 ]; then
+  if [ "${#_bit_list[@]}" -ne 5 ]; then
     _cm2ErrStrFn "Bad element count |${#_bit_list[@]}|";
     return 1;
   fi
@@ -338,7 +342,7 @@ _scanFn () {
   _down_ratio="${_bit_list[2]}";
   _gov_key="${_bit_list[3]}";
   _noturbo_int="${_bit_list[4]}";
-  _kbdled_int="${_bit_list[5]}";
+  # _kbdled_int="${_bit_list[5]}"; (#6567)
   read -r -a _avail_gov_list < <("${_cpufreqInfoExe}" -g);
 
   _psave_key='powersave';
@@ -346,7 +350,9 @@ _scanFn () {
     read) true;;
     set)
       _setNoTurboFn "${_noturbo_int}";
-      _setKbdEnableFn "${_kbdled_int}";
+      # Disable keyboard controls from pstate, power (#6567)
+      # _setKbdEnableFn "${_kbdled_int}";
+
       # shellcheck disable=SC2076
       if [[ " ${_avail_gov_list[*]} " =~ " ${_altPsaveKey} " ]]; then
         _psave_key="${_altPsaveKey}";
@@ -383,7 +389,7 @@ _scanFn () {
     );
     _set_max_int="$(_printMaxIntFn "${_param_list[@]}")";
 
-    # `_scanFn 'read'` is typically called only if we don't have a canonical
+    # `_scanFn 'read'` is typically called only if we do not have a canonical
     #   frequency table defined for the CPU in use.
     if [ "${_mode_key}" = 'read' ]; then
       if [ "${_isHybridCpu}" = 'y' ]; then
@@ -431,10 +437,12 @@ _scanFn () {
     if [ "${_isHybridCpu}" = 'y' ]; then
       _solve_line="${_label};";
       _solve_line+="${_current_pcore_max_int}|${_current_ecore_max_int};";
-      _solve_line+="${_gov_key};${_noturbo_int};${_kbdled_int};";
+      # _solve_line+="${_gov_key};${_noturbo_int};${_kbdled_int};"; (#6567)
+      _solve_line+="${_gov_key};${_noturbo_int};";
     else
       _solve_line="${_label};${_current_pcore_max_int};${_gov_key};";
-      _solve_line+="${_noturbo_int};${_kbdled_int};";
+      # _solve_line+="${_noturbo_int};${_kbdled_int};"; (#6567)
+      _solve_line+="${_noturbo_int};";
     fi
     echo "${_solve_line}";
   fi
@@ -652,7 +660,9 @@ _calcCanonicalFreqsFn() {
 
     IFS=';' read -r -a _canonical_parts <<< "${_canonical_match_line}";
     _out_str="${_opt_parts[0]};${_canonical_parts[1]};${_opt_parts[3]};";
-    _out_str+="${_opt_parts[4]};${_opt_parts[5]};";
+    _out_str+="${_opt_parts[4]};";
+    # Disable keyboard controls from pstate, power (#6567)
+    # _out_str+="${_opt_parts[4]};${_opt_parts[5]};";
     _out_list+=( "${_out_str}" );
   done
 
@@ -686,7 +696,7 @@ _calcOptionsFn () {
     _low_cpu_freq _opt_parts _out_parts _cpu_str _return_val \
     _canonical_table_str _canonical_freqs_list;
 
-  _out_list=();
+  # Get CPU info to develop header
   _cpu_str="$(
     lscpu \
       | grep 'Model name:' \
@@ -699,8 +709,8 @@ _calcOptionsFn () {
   _return_val='0';
   _canonical_table_str="${_freqCanonicalMap["${_cpu_str}"]:-}";
 
-  _out_list+=( "$(_cm2EchoModelStrFn 'label');${_cpu_str};${_isHybridCpu};" );
-
+  ## Begin Create header and loop through options
+  _out_list=( "$(_cm2EchoModelStrFn 'label');${_cpu_str};${_isHybridCpu};" );
   for _opt_line in "${_optionTable[@]}"; do
     # Calculate frequencies for normal and low modes even if a hardcoded
     #   table exists, for checking turboboost
@@ -725,20 +735,22 @@ _calcOptionsFn () {
       fi
     fi
   done
+  ## . End Create header and loop through options
 
-  # This occurs when Turbo Boost is disabled on kernels >= 6.11
+  # Handle situation if Turbo Boost is disabled on kernels >= 6.11
   if [ "${_normal_cpu_freq:-}" = "${_low_cpu_freq:-}" ]; then
     _cm2ErrStrFn \
       'CPU init failed, max CPU freq for normal and low power profiles are the same!';
   fi
 
+  # Fill output with canonical table fields if found
   if [ -n "${_canonical_table_str}" ]; then
     readarray -t _canonical_freqs_list <<< "$(_calcCanonicalFreqsFn \
       "${_canonical_table_str}")";
     _out_list+=( "${_canonical_freqs_list[@]}" );
   fi
 
-  ## TODO 2023-03-27 Add per-cpu messages where appropriate
+  # Add per-cpu messages where appropriate
   if [ "${#_out_list[@]}" = '1' ]; then
     _model_msg="$(cat << EOH
 <b>We do not have a frequency profile for this CPU</b>.
@@ -750,12 +762,14 @@ EOH
     _return_val='1';
   fi
 
+  # Error check
   if [ -n "${_normal_cpu_freq}" ] \
     && [ -n "${_low_cpu_freq}" ] \
     && [ "${_normal_cpu_freq}" == "${_low_cpu_freq}" ]; then
     _cm2WarnStrFn 'Possible CPU init failure, max freq == base freq!';
   fi
 
+  # Send string via STDOUT with return code
   ( IFS=$'\n'; echo "${_out_list[*]}" );
   return "${_return_val}";
 }
@@ -779,8 +793,10 @@ EOH
 #
 _calcPrettyOptionsFn() {
   declare _orig_computed_table_str _bit_list _label _frequency _governor \
-    _turbo _leds _header_line _orig_computed_table _out_computed_table_str \
+    _turbo _header_line _orig_computed_table _out_computed_table_str \
     _idx _line _freq_parts _pcore_freq _ecore_freq;
+  # Disable keyboard controls from pstate, power (#6567)
+  # _led_str
 
   _orig_computed_table_str="${1:-}";
   [ -z "${_orig_computed_table_str}" ] && {
@@ -797,16 +813,17 @@ _calcPrettyOptionsFn() {
   _frequency="${_bit_list[1]}";
   _governor="${_bit_list[2]}";
   _turbo="${_bit_list[3]}";
-  _leds="${_bit_list[4]}";
   _header_line="${_label};${_frequency};${_governor};${_turbo};";
-  if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
-    _header_line+="${_leds};";
-  fi
+  # Disable keyboard controls from pstate, power (#6567)
+  # _led_str="${_bit_list[4]}";
+  # if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
+  #   _header_line+="${_led_str};";
+  # fi
   _out_computed_table_str+=$'\n'"${_header_line}";
 
   for (( _idx = 1; _idx < ${#_orig_computed_table[@]}; _idx++ )); do
     IFS=';' read -r -a _bit_list <<< "${_orig_computed_table[_idx]}";
-    if (( ${#_bit_list[@]} < 5 )); then
+    if (( ${#_bit_list[@]} < 4 )); then
       _out_computed_table_str+=$'\n'"${_orig_computed_table[_idx]}";
       continue;
     fi
@@ -815,7 +832,8 @@ _calcPrettyOptionsFn() {
     _frequency="${_bit_list[1]}";
     _governor="${_bit_list[2]}";
     _turbo="${_bit_list[3]}";
-    _leds="${_bit_list[4]}";
+    # Disable keyboard controls from pstate, power (#6567)
+    # _led_str="${_bit_list[4]}";
 
     if [ "${_governor}" = 'performance' ]; then
       _governor='PERF'; else _governor='psave';
@@ -823,9 +841,10 @@ _calcPrettyOptionsFn() {
     if [ "${_turbo}" = '0' ]; then
       _turbo='Yes'; else _turbo='No';
     fi
-    if [ "${_leds}" = '0' ]; then
-      _leds='Off'; else _leds='On';
-    fi
+    # Disable keyboard controls from pstate, power (#6567)
+    # if [ "${_led_str}" = '0' ]; then
+    #   _led_str='Off'; else _led_str='On';
+    # fi
 
     if [ "${_isHybridCpu}" = 'y' ]; then
       IFS='|' read -r -a _freq_parts <<< "${_frequency}";
@@ -837,9 +856,10 @@ _calcPrettyOptionsFn() {
     fi
 
     _line="${_label};${_frequency};${_governor};${_turbo};";
-    if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
-      _line+="${_leds};";
-    fi
+    # Disable keyboard controls from pstate, power (#6567)
+    # if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
+    #   _line+="${_led_str};";
+    # fi
     _out_computed_table_str+=$'\n'"${_line}";
   done
 
@@ -970,8 +990,10 @@ _mainFn () {
 ## BEGIN Declare and assign global vars {
 declare _binName _binDir _baseDir _baseName _rootDir \
   _cpuDropFile _noTurboFile _cpuStatusFile _altPsaveKey \
-  _cpufreqSetExe _cpufreqInfoExe _nprocExe _kbdColorSetExe \
+  _cpufreqSetExe _cpufreqInfoExe _nprocExe \
   _currentModeFile _pcoreRangeFile _ecoreRangeFile _isHybridCpu;
+  # Disable keyboard controls from pstate, power (#6567)
+  # _kbdColorSetExe
 
 _rootDir='';
 _cpuDropFile='/run/kfocus-cpu-init';
@@ -998,7 +1020,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   # Import libs and assign more global vars
   _importCommonFn;
   _assignList=(
-    "_kbdColorSetExe|${_binDir}/kfocus-kb-color-set,/usr/lib/kfocus/bin/kfocus-kb-color-set||optional"
+    # Disable keyboard controls from pstate, power (#6567)
+    # "_kbdColorSetExe|${_binDir}/kfocus-kb-color-set,/usr/lib/kfocus/bin/kfocus-kb-color-set||optional"
     '_cpufreqSetExe|cpufreq-set'
     '_cpufreqInfoExe|cpufreq-info'
     '_nprocExe|nproc'

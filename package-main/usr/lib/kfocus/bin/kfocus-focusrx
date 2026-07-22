@@ -579,31 +579,30 @@ _chkRollbackUxFn () {
 }
 ## . END _chkRollbackUxFn }
 
-# TODO: Rename this to _chkRestoreKbdFn to reflect increased scope.
-## BEGIN _chkKbdLedFn {
+## BEGIN _chkRestoreKbdFn {
 # Purpose: Restore keyboard colors for specific models.
 # Important: Enable is set by kfocus-power-set which precedes this on sign-in.
 #   All non-m2g5p|zrg1 models use modprobe settings and are not affected.
 #
-_chkKbdLedFn () {
+_chkRestoreKbdFn () {
   declare _model_code;
   _model_code="$(_cm2EchoModelStrFn 'code')";
 
-  if [[ "${_model_code}" =~ ^(m1|m2|zr) ]]; then
+  if [[ "${_model_code}" =~ ^(m1|m2|zr|xe|14xeg3|16xeg3|arg1) ]]; then
     if [ -x "${_kbdColorSetExe}" ]; then
-      _cm2SetMsgFn 'Restore keyboard colors';
+      _cm2SetMsgFn 'Restore keyboard state';
       if "${_escExe}" "${_kbdColorSetExe}" -K; then
         _cm2SucFn; else _cm2WarnFn;
       fi
     fi
   fi
 
-  # Set keycodes
+  # Set keycodes. This does not appear needed in 26.04.
   if [[ "${_model_code}" =~ ^(zrg1|m2g5p)$ ]]; then
     "${_escExe}" "${_focusRxSetExe}" 'set-keycodes';
   fi
 }
-## . END _chkKbdLedFn }
+## . END _chkRestoreKbdFn }
 
 ## BEGIN _chkXorgConfigFn {
 # Purpose: Warn if xorg.conf exists.
@@ -1205,19 +1204,19 @@ EOF
 
   _chkNvPMizerFn;     # UX 5423: Check and apply NV PMizer fixups
   _chkRollbackUxFn;   # UX 4013: Check for rollback, fixup icons
-  _chkKbdLedFn;       # UX 3735: Check and restore keyboard LED state
+  _chkRestoreKbdFn;   # UX 3735: Check and restore keyboard LED state
   _chkIbusConfigFn;   # UX 4027: Check and apply IBUS fixup
-  # _chkDispRefreshFn;  # UX 6141: Check display refresh, apply fixups
-                        # Disabled for 26.04 as higher refresh rates seem to
-                        # work better with Wayland
 
+  # _chkDispRefreshFn;# UX 6141: Check display refresh, apply fixups
+                      # Disabled for 26.04 as higher refresh rates seem to
+                      # work better with Wayland
   # _chkKernelPkgFn;  # Disabled: See 4423, 66226a00c
   # _chkNvidiaPkgFn;  # Disabled: See 2928
   # _cleanupZoomFn;   # Disabled: See 2146,2305
   # _chkExperRepoFn;  # Disabled: See 66226a00c
+  # _chkKernelCleanFn;# APP: Check kernels, offer kernel cleaner tool
+                      # Disabled for 26.04, as it may no longer be necessary
 
-  # _chkKernelCleanFn;  # APP: Check kernels, offer kernel cleaner tool
-                        # Disabled for 26.04, as it may no longer be necessary
   _chkResetEffectsFn; # APP: Force only: offer reset effects tool
   _chkXorgConfigFn;   # APP: Detect xorg, offer advice
   _offerSnapshotsFn;  # APP: Force only: offer snapshots tool
@@ -1226,7 +1225,6 @@ EOF
   _chkOemMultiDiskFn; # APP: Detect multi-disk, launch tool (MDCT)
   # TODO 2026-01-09 msm: move earlier when lock is available
   _chkPostRestoreFn;  # APP: Detect post-restore, launch tool
-
   _announceEndFn;
   _cm2EchoFn "\n== . END : OK   ${_rootTitle}\n\n";
   ## . End Run focusrx steps }
@@ -1245,7 +1243,6 @@ declare _parentCmdStr _lookupList \
   _rollbackSetExe _chainHelperExe _sysVersStr _iconStr;
 
 _iconStr='kfocus-bug-rx';
-
 _parentCmdStr="$(ps -o comm= "$PPID")";
 
 # These names are used only for DNS lookups as a means to confirm the internet
@@ -1277,9 +1274,11 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     "_firstrunExe|${_binDir}/kfocus-firstrun-bin||optional"
     "_fixIbusExe|${_binDir}/kfocus-fix-ibus||optional"
     "_kbdColorSetExe|${_binDir}/kfocus-kb-color-set||optional"
+
     ## TODO 2026-06-23: Disabled for 26.04, remove if no longer needed
     # "_kcleanExe|${_binDir}/kfocus-kclean||optional"
     # "_kscreenDoctorExe|/usr/bin/kscreen-doctor||optional"
+
     "_nvSettingsExe|nvidia-settings||optional"
     "_primeSelectExe|prime-select||optional"
     "_resetEffectsExe|${_binDir}/kfocus-reset-effects||optional"
