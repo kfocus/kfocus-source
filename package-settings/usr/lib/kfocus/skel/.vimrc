@@ -270,7 +270,7 @@ set thesaurus+=/usr/local/share/thesaurus/mthesaur.txt
 " https://vimtricks.com/p/highlight-syntax-inside-markdown/
 " See :r !ls /usr/share/vim/vim82/syntax/
 "
-let g:markdown_fenced_languages = ['bash','changelog', 'css','erb=eruby','javascript','js=javascript','json','html','log=messages','messages','node=javascript','perl','php=perl','python','ruby','sass','xml','vim','yaml']
+let g:markdown_fenced_languages = ['bash','changelog','css','erb=eruby','javascript','js=javascript','json','html','log=messages','messages','node=javascript','perl','php=perl','python','ruby','sass','xml','vim','yaml']
 
 " Support fenced syntax highlighing for longer files (10k lines).
 " Reduce to minlines value or disable if editing is slow.

@@ -1,21 +1,15 @@
-kfocus-main (26.04.8~beta3) resolute; urgency=medium
+kfocus-main (26.04.8) resolute; urgency=medium
 
-  * common.2.source: Update model table so all XE models
-    expect kbd leds (#6589, #6594)
+  * kfocus-focusrx: Extend model support to restore keyboard on login (#6567)
+  * common.2.source: Update model table so all XE models expect kbd leds
+    (#6589, #6594)
+  * kfocus-hints: Move all files and init logic to kfocus-hw (#6750)
+  * kfocus-refresh-hint-widget: Add to workaround plasma bug (#6750)
+  * kfocus-reset-effects: (#6567)
+    - Disable keyboard accent color
+    - Switch powermanagementprofilesrc to Plasma 6 powerdevilrc
 
  -- Michael S. Mikowski <support@kfocus.org>  Sun, 19 Jul 2026 21:56:11 -0400
-
-kfocus-main (26.04.8~beta2) resolute; urgency=medium
-
-  * kfocus-hints: Move all files and init logic to kfocus-hw (#6750)
-
- -- Michael S. Mikowski <support@kfocus.org>  Fri, 17 Jul 2026 21:32:19 -0400
-
-kfocus-main (26.04.8~beta1) resolute; urgency=medium
-
-  * kfocus-refresh-hint-widget: Add to workaround plasma bug (#6750)
-
- -- Michael S. Mikowski <support@kfocus.org>  Thu, 16 Jul 2026 10:33:30 -0400
 
 kfocus-main (26.04.7) resolute; urgency=medium
 

@@ -1,6 +1,12 @@
-kfocus-settings (26.04.3~beta1) resolute; urgency=medium
+kfocus-settings (26.04.3) resolute; urgency=medium
 
-  * Tweak .vimrc to show current row and col with ';c' (#6589)
+  * skel/vimrc Tweak to show column and row with ';c' key mapping (#6589)
+  * share/kfocus/kf5-settings: (#6567)
+    - kcminputrc: Add default with cursor size
+    - kdeglobals: Turn off keyboard accents by defualt
+    - plasma-welcomerc: Add comments
+    - powerdevilrc: New power config, replaces powermanagementrc
+    - powermanagementprofilesrc: Delete
 
  -- Michael S. Mikowski <support@kfocus.org>  Sun, 19 Jul 2026 21:58:01 -0400
 

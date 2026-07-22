@@ -1,14 +1,18 @@
-kfocus-power-bin (26.04.4~beta2) resolute; urgency=medium
+kfocus-power-bin (26.04.5) resolute; urgency=medium
 
   * kfocus-fan-set: Recognize fan support for 14xeg3, 16xeg3 (#6589, #6594)
+  * kfocus-fand.service: Lengthen watchdog timeout (#6747)
+  * kfocus-power-set: Remove keyboard LED support and column from output
+  * kfocus-pstate: Disable all keyboard manipulation for Plasma control (#6567)
 
  -- Michael S. Mikowski <support@kfocus.org>  Sun, 19 Jul 2026 21:57:12 -0400
 
-kfocus-power-bin (26.04.4~beta1) resolute; urgency=medium
+kfocus-power-bin (26.04.4) resolute; urgency=medium
 
-  * kfocus-fand.service: Lengthen watchdog timeout (#6747)
+  * kfocus-fand: Fix systemd watchdog timeouts (#6747)
+  * kfocus-fand: Silence a spurious error in syslog on restart (#6747)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 16 Jul 2026 13:58:20 -0500
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 22 Jul 2026 15:11:36 -0500
 
 kfocus-power-bin (26.04.3) resolute; urgency=medium
 
