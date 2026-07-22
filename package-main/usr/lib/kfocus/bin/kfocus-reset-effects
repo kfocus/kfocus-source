@@ -316,7 +316,7 @@ _EOH01
   if [ "${_reply_str}" = 'y' ]; then _resetShortcutsFn 'keep'; fi
 
   # Request to reset power management
-  _power_file="${_configDir}/powermanagementprofilesrc";
+  _power_file="${_configDir}/powerdevilrc";
   if [ -f "${_power_file}" ]; then
     _prompt_msg='Reset power management to default';
     _reply_str="$(_cm2PromptUserFn -i "${_iconStr}" "${_prompt_msg}" \
