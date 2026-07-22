@@ -503,12 +503,7 @@ void main_loop(void) {
   while (true) {
     bool write_fan_speeds = false;
 
-    poll_rslt = poll(
-      &poll_watch,
-      1,
-      (fan_profile_idx != -1 && fan_profile_present_list[fan_profile_idx])
-        ? POLL_WAIT_MS : -1
-    );
+    poll_rslt = poll(&poll_watch, 1, POLL_WAIT_MS);
     if (poll_rslt == -1) {
       err(1, "Poll failed");
     }
@@ -520,12 +515,14 @@ void main_loop(void) {
       continue;
     }
 
-    assert(fan_profile_present_list[fan_profile_idx]);
-
     watchdog_counter++;
     if (watchdog_counter == WATCHDOG_INTERVAL_SEC) {
       watchdog_counter = 0;
       sd_notify(0, "WATCHDOG=1");
+    }
+
+    if (fan_profile_idx == -1 || !fan_profile_present_list[fan_profile_idx]) {
+      continue;
     }
 
     for (size_t i = 0; i < MAX_FAN_COUNT; i++) {
