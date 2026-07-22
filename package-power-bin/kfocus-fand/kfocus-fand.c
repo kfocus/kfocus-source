@@ -486,9 +486,11 @@ void handle_signal(void) {
   case SIGCONT: /* systemd sends us this during a reload */
     /* ignore */
     return;
+  case SIGTERM: /* systemd sends us this to terminate normally */
+    exit(0);
   }
 
-  /* terminate */
+  /* terminate abnormally */
   exit(128 + signal_info.ssi_signo);
 }
 
