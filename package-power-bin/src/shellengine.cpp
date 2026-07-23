@@ -6,12 +6,16 @@ ShellEngine::ShellEngine()
 }
 
 void ShellEngine::exec(QString args) {
-    QProcess *proc = new QProcess();
-    QStringList argsList;
-    argsList.append(QStringLiteral("-c"));
-    argsList.append(args);
-    proc->start(QStringLiteral("bash"), argsList);
+    QProcess *proc = execCore(args);
     connect(proc, SIGNAL(finished(int)), this, SLOT(triggerStdout()));
+}
+
+int ShellEngine::execSync(QString args) {
+  QProcess *proc = execCore(args);
+  proc->waitForFinished();
+  m_stdout = QString::fromUtf8(proc->readAllStandardOutput());
+  proc->deleteLater();
+  return proc->exitCode();
 }
 
 void ShellEngine::ignoreResult() {
@@ -30,4 +34,13 @@ void ShellEngine::triggerStdout() {
     m_stdout = final;
     sender()->deleteLater();
     Q_EMIT stdoutChanged();
+}
+
+QProcess *ShellEngine::execCore(QString args) {
+    QProcess *proc = new QProcess();
+    QStringList argsList;
+    argsList.append(QStringLiteral("-c"));
+    argsList.append(args);
+    proc->start(QStringLiteral("bash"), argsList);
+    return proc;
 }

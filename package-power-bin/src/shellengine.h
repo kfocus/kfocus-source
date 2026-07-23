@@ -15,6 +15,7 @@ class ShellEngine : public QObject
 public:
     ShellEngine();
     Q_INVOKABLE void exec(QString args);
+    Q_INVOKABLE int  execSync(QString args);
     Q_INVOKABLE void ignoreResult();
     QString stdout() {
         return m_stdout;
@@ -28,9 +29,10 @@ public Q_SLOTS:
     void triggerStdout();
 
 private:
-    QString m_stdout;
-    QString m_commandStr;
-    bool    m_ignoreResult = false;
+    QString   m_stdout;
+    QString   m_commandStr;
+    bool      m_ignoreResult = false;
+    QProcess *execCore(QString args);
 };
 
 #endif // SHELLENGINE_H
