@@ -1,0 +1,161 @@
+#!/bin/bash
+# Copyright 2026 MindShare Inc.
+#
+# Written for the Kubuntu Focus by M. Mikowski, A. Rainbolt
+#
+# Name    : kfocus-pl-gamemode
+# Purpose : Set gamemode for Ar GEN 1 systems. This is a work-in-progress.
+# License : GPL v2
+# Run By  : Users
+# Spec    : 6789
+#
+set -u;
+
+_echoHelpFn () {
+  cat << EOT
+${_baseName} is a utility to set parameter to maximize GPU performance on
+Intel Panther Lake systems. This is a WIP and may be applied automatically by
+kfocus-pstate in the future.
+
+Usage:
+
++ Run as a pseudo-daemon to maximize iGPU performance:
+  watch -n8 ${_baseName} on;
+
++ Reset values to default. What is 'default' is different when the system
+  is on Battery versus AC power:
+  ${_baseName} off;
+
++ Get this help:
+  ${_baseName} help;
+
+EOT
+}
+
+_echoCommonStatsFn () {
+  echo;
+  echo "Check Operational GPU Clock";
+  cat /sys/devices/pci0000:00/0000:00:02.0/tile0/gt0/freq0/act_freq;
+
+  echo;
+  echo "Show throttle reasons (0/none when budget is clear)";
+  cat /sys/devices/pci0000:00/0000:00:02.0/tile0/gt0/freq0/throttle/status;
+  cat /sys/devices/pci0000:00/0000:00:02.0/tile0/gt0/freq0/throttle/reasons;
+}
+
+_setGameModeFn () {
+  declare _power_key _max_freq_int _min_freq_int \
+    _mmio_cap_int _sub_cap_int;
+
+  echo 'SET GAME MODE';
+  echo "Run this as |watch -n8 ${_baseName}|";
+  echo;
+
+  _power_key="$(cat /run/kfocus-power-current-mode)";
+  if [ "${_power_key}" != 'Low' ]; then
+    echo "Setting CPU mode to low to maximize GPU power";
+    pkexec "${_powerSetExe}" 'Low';
+  fi
+
+  echo 'Check GT0 min/max frequency boundaries'
+  _max_freq_int="$(cat "${_maxFreqFile}")";
+  _min_freq_int="$(cat "${_minFreqFile}")";
+  echo "Max Freq should be 2500 is |${_max_freq_int}|";
+  echo "MinFreq should be   100 is |${_min_freq_int}|";
+
+  _mmio_cap_int="$(cat "${_mmioCapFile}")";
+  if (( _mmio_cap_int < _gameMmioCapTgt )); then
+    echo "Reset mmio_cap from |${_mmio_cap_int}| to |${_gameMmioCapTgt}|";
+    echo "${_gameMmioCapTgt}" |sudo tee "${_mmioCapFile}" > /dev/null;
+  fi
+
+  _sub_cap_int="$(cat "${_subCapFile}")";
+  if (( _sub_cap_int < _gameSubCapTgt )); then
+    echo "Reset sub_cap from |${_sub_cap_int}| to |${_gameSubCapTgt}|";
+    echo "${_gameSubCapTgt}" |sudo tee "${_subCapFile}" > /dev/null;
+  fi
+
+  echo;
+  echo -n "Check MMIO Package Power Cap       |${_gameMmioCapTgt}|: ";
+  cat "${_mmioCapFile}";
+  echo -n "Check iGPU Dedicated Subdomain Cap |${_gameSubCapTgt}|: ";
+  cat "${_subCapFile}";
+
+  _echoCommonStatsFn;
+}
+
+_restoreStdModeFn () {
+  declare _mmio_cap_int _sub_cap_int;
+
+  echo -n "Resetting power state to default ... ";
+  if "${_pstateExe}" > /dev/null 2>&1; then
+    echo 'OK';
+  else
+    echo 'ERROR';
+  fi
+
+  _mmio_cap_int="$(cat "${_mmioCapFile}")";
+  if (( _mmio_cap_int > _stdMmioCapTgt )); then
+    echo "Reset mmio_cap from |${_mmio_cap_int}| to |${_stdMmioCapTgt}|";
+    echo "${_stdMmioCapTgt}" |sudo tee "${_mmioCapFile}" > /dev/null;
+  fi
+
+  _sub_cap_int="$(cat "${_subCapFile}")";
+  if (( _sub_cap_int > "${_stdSubCapTgt}" )); then
+    echo "Reset sub_cap from |${_sub_cap_int}| to |${_stdSubCapTgt}|";
+    echo "${_stdSubCapTgt}" |sudo tee "${_subCapFile}" > /dev/null;
+  fi
+
+  echo;
+  echo -n "Check MMIO Package Power Cap       |${_stdMmioCapTgt}|: ";
+  cat "${_mmioCapFile}";
+  echo -n "Check iGPU Dedicated Subdomain Cap |${_stdSubCapTgt}|: ";
+  cat "${_subCapFile}";
+
+  _echoCommonStatsFn;
+}
+
+## BEGIN _mainFn {
+_mainFn () {
+  case "${1:-}" in
+    on)  _setGameModeFn;;
+    off) _restoreStdModeFn;;
+    *) _echoHelpFn;
+  esac
+}
+## . END _mainFn }
+
+## BEGIN Declare global variables {
+declare _gameMmioCapTgt _gameSubCapTgt _stdMmioCapTgt _stdSubCapTgt \
+  _powerSetExe _pstateExe _mmioCapFile _subCapFile _baseFreqDir _baseCapDir \
+  _maxFreqFile _minFreqFile _mmioCapFile _subCapFile \
+  _binName _binDir _baseDir _baseName;
+
+_gameMmioCapTgt=65000000;
+_gameSubCapTgt=45000000;
+_stdMmioCapTgt=15000000;
+_stdSubCapTgt=0;
+_powerSetExe='/usr/lib/kfocus/bin/kfocus-power-set';
+_pstateExe='/usr/lib/kfocus/bin/kfocus-pstate';
+
+_baseFreqDir='/sys/devices/pci0000:00/0000:00:02.0/tile0/gt0/freq0';
+_baseCapDir='/sys/class/powercap';
+
+_maxFreqFile="${_baseFreqDir}/max_freq";
+_minFreqFile="${_baseFreqDir}/min_freq";
+_mmioCapFile="${_baseCapDir}/intel-rapl-mmio";
+_mmioCapFile+='/intel-rapl-mmio:0/constraint_0_power_limit_uw';
+_subCapFile="${_baseCapDir}/intel-rapl/intel-rapl:0";
+_subCapFile+='/intel-rapl:0:0/constraint_0_power_limit_uw';
+## . END Declare global variables }
+
+## BEGIN Run main if script is not sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+  # _importCommonFn;
+  _mainFn "$@";
+fi
+## . END Run main if script is not sourced }
