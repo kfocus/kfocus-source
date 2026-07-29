@@ -9,54 +9,7 @@
 # Run By  : Users
 # Spec    : 6789
 #
-# 1. This is a power-cap issue, requires balance with CPU
-# 2. Generally, using Low CPU without Turbo provides best GPU performance
-#    on benchmarks; CPU is NOT the bottleneck; iGPU needs the power
-# 3. Sensitive to PL limits; should likely NOT be run on battery
-# 4. To Deploy
-#   + Use common.2.source to make everything easier
-#   + Use routine to load variable to ensure they exist (files, dirs, exes)
-#   + Make Standalone app that appears for PL systems only
-#   + Prevent running on non-Arg1 systems
-#   + On start, provides kdialog notifying of what it does with OK or Cancel
-#   + On ok, keeps a window open until killed
-#   + Closing window will run _restoreStdModeFn
-#   + Trap any kills to run _restoreStdModeFn
-#
 set -u;
-
-## BEGIN _importCommonFn {
-# Summary   : _importCommonFn
-# Purpose   : Load common routines, prefer relative dir
-# Example   : _importCommonFn;
-# Arguments : none
-# Globals   : Package vars _baseDir _baseName
-# Outputs   : none
-# Returns   : none
-#
-_importCommonFn () {
-  declare _lib_list _is_loaded _lib_file;
-  _lib_list=(
-    "${_baseDir}/lib/common.2.source"
-    '/usr/lib/kfocus/lib/common.2.source'
-  );
-  _is_loaded='n';
-  for _lib_file in "${_lib_list[@]}"; do
-    if [ -r "${_lib_file}" ]; then
-      # shellcheck source=/usr/lib/kfocus/lib/common.2.source
-      if source "${_lib_file}"; then
-        _is_loaded='y';
-        break;
-      fi
-    fi
-  done
-
-  if [ "${_is_loaded}" = 'n' ]; then
-    echo 1>&2 "${_baseName}: ABORT - Cannot source common lib";
-    exit 202;
-  fi
-}
-## . END _importCommonFn }
 
 _echoHelpFn () {
   cat << EOT
@@ -66,17 +19,15 @@ kfocus-pstate in the future.
 
 Usage:
 
-+ Run this to to maximize iGPU performance:
-  When done, press CTRL+C to revert.
-    ${_baseName} on;
++ Run as a pseudo-daemon to maximize iGPU performance:
+  watch -n8 ${_baseName} on;
 
 + Reset values to default. What is 'default' is different when the system
-  is on Battery versus AC power. When you press CTRL+C, this is
-  automatically run.
-    ${_baseName} off;
+  is on Battery versus AC power:
+  ${_baseName} off;
 
 + Get this help:
-    ${_baseName} help;
+  ${_baseName} help;
 
 EOT
 }
@@ -100,9 +51,7 @@ _setGameModeFn () {
   echo "Run this as |watch -n8 ${_baseName}|";
   echo;
 
-  # This is before loop
-  # _power_key="$(cat /run/kfocus-power-current-mode)";
-  _power_key="$(${_powerSetExe} -r)";
+  _power_key="$(cat /run/kfocus-power-current-mode)";
   if [ "${_power_key}" != 'Low' ]; then
     echo "Setting CPU mode to low to maximize GPU power";
     pkexec "${_powerSetExe}" 'Low';
@@ -162,6 +111,7 @@ _restoreStdModeFn () {
   cat "${_mmioCapFile}";
   echo -n "Check iGPU Dedicated Subdomain Cap |${_stdSubCapTgt}|: ";
   cat "${_subCapFile}";
+
   _echoCommonStatsFn;
 }
 
@@ -185,10 +135,14 @@ _gameMmioCapTgt=65000000;
 _gameSubCapTgt=45000000;
 _stdMmioCapTgt=15000000;
 _stdSubCapTgt=0;
+_powerSetExe='/usr/lib/kfocus/bin/kfocus-power-set';
+_pstateExe='/usr/lib/kfocus/bin/kfocus-pstate';
 
 _baseFreqDir='/sys/devices/pci0000:00/0000:00:02.0/tile0/gt0/freq0';
 _baseCapDir='/sys/class/powercap';
 
+_maxFreqFile="${_baseFreqDir}/max_freq";
+_minFreqFile="${_baseFreqDir}/min_freq";
 _mmioCapFile="${_baseCapDir}/intel-rapl-mmio";
 _mmioCapFile+='/intel-rapl-mmio:0/constraint_0_power_limit_uw';
 _subCapFile="${_baseCapDir}/intel-rapl/intel-rapl:0";
@@ -201,56 +155,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _binDir="$(   dirname  "${_binName}" )" || exit 101;
   _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
   _baseName="$( basename "${_binName}" )" || exit 101;
-  _importCommonFn;
-
-  if [ "$(_cm2EchoModelStrFn)" != 'arg1' ]; then
-    _cm2PromptUserFn 'Model is not supported' 'p';
-    exit;
-  fi
-  _assignList=(
-    '_powerSetExe|/usr/lib/kfocus/bin/kfocus-power-set'
-    '_pstateExe|/usr/lib/kfocus/bin/kfocus-pstate'
-    "_maxFreqFile|${_baseFreqDir}/max_freq|filero"
-    "_minFreqFile|${_baseFreqDir}/min_freq|filero"
-  );
-
-  _cm2AssignExeVarsFn "${_assignList[@]}" || {
-    _cm2PromptUserFn 'All expected files not not found.' 'p';
-    exit 1;
-  }
+  # _importCommonFn;
   _mainFn "$@";
 fi
 ## . END Run main if script is not sourced }
-
-
-# | Panther Lake Game Mode      |
-# |   for Kubuntu Focus Systems |
-# |                             |
-# | <error message here>        |
-# |                  [ Cancel ] |
-#
-
-# | Panther Lake Game Mode                                |
-# |   for Kubuntu Focus Systems                           |
-# |                                                       |
-# | Kubuntu Focus provides this tool to raise power       |
-# | limits for the Panther Lake Xe GPU. In some cases,    |
-# | frame rates can be increased by 50%, although it      |
-# | may have the opposite effect on CPU-intensive games.  |
-# |                                                       |
-# |                               [ Run Now ] [ Cancel ]  |
-#
-
-# | Panther Lake Game Mode                                |
-# |   for Kubuntu Focus Systems                           |
-# |                                                       |
-# | The system is currently in Game Mode. You may run     |
-# | your GPU-intensive task now with maximum performance. |
-# |                                                       |
-# | This tool will only run on AC. Unplugging the system  |
-# | will end this mode and revert to standard power       |
-# | management, as will clicking the button below.        |
-# |                                                       |
-# |                                         [ Stop Now ]  |
-#
-
