@@ -239,7 +239,7 @@ _chkHwConfigFn () {
   #   This changes many config file, DPI, hints widget.
   #
   # Do it if the _do_force flag is set
-  if [ "${_do_force}" = 'y' ]; then
+  if [ "${_do_force}" = 'y' ] || [ -f "${_reconfigForceFile}" ]; then
     _msg='reconfig-hw;;Hardware reconfigure forced.';
     _reason_list+=( "${_msg}" );
     _is_hw_reconfig='y';
@@ -289,7 +289,8 @@ _chkHwConfigFn () {
     _tool_pkg_suffix='';
     case "${_dmi_hw_config_code}" in
       # For models m1 and m2g[123] (default), m2g[45], xeg1 (generic), xeg[23], arg1
-      default|generic|m2g4|m2g5|xeg[23]|arg1) _tool_pkg_suffix='';;
+      default|generic|m2g4|m2g5|xeg[23]) _tool_pkg_suffix='';;
+      arg1)   _tool_pkg_suffix='-arg1';;
       nxg1)   _tool_pkg_suffix='-nxg1';;
       m2g6)   _tool_pkg_suffix='-m2g6';;
       zrg1)   _tool_pkg_suffix='-m2g6';;
@@ -424,6 +425,7 @@ _fixHwConfigFn () {
   mkdir -p "${_varLibDir}"                   || return 1;
   # This is set only on post-install configuration
   echo "${_model_code}" > "${_hwModelCodeFile}" || true;
+  rm -f "${_reconfigForceFile}" || true;
 }
 ## . END_fixHwConfigFn }
 
@@ -486,6 +488,7 @@ declare  _binName _binDir _baseName _assignList \
 _varLibDir='/var/lib/kfocus';
 _hwConfigCodeFile="${_varLibDir}/hw_config_code";
 _hwModelCodeFile="${_varLibDir}/hw_model_code";
+_reconfigForceFile="${_varLibDir}/hw_reconfig_force";
 ## . END Declare global variables }
 
 ## BEGIN Run main if the script is not sourced {

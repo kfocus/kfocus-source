@@ -185,6 +185,13 @@ function addInputPanelFn ( arg_panel_obj ) {
 //== BEGIN addExtraIconsFn {
 function addExtraIconsFn ( arg_panel_obj ) {
   // Add only if installed
+  if ( applicationExists( 'kfocus-pl-gamemode' ) ) {
+    const gamemode_obj = arg_panel_obj.addWidget( 'org.kde.plasma.icon' );
+    gamemode_obj.writeConfig( 'localPath', '/usr/share/applications/kfocus-pl-gamemode.desktop' );
+    gamemode_obj.currentConfigGroup = [ 'General' ];
+    gamemode_obj.writeConfig( 'url', 'file:///usr/share/applications/kfocus-pl-gamemode.desktop' );
+  }
+  // Add only if installed
   if ( applicationExists( 'org.kfocus.power' ) ) {
     const power_obj = arg_panel_obj.addWidget( 'org.kde.plasma.icon' );
     power_obj.writeConfig( 'localPath', '/usr/share/applications/org.kfocus.power.desktop' );
