@@ -5,8 +5,8 @@
 #   Michael Mikowski, Erich Eickmeyer, and Aaron Rainbolt
 #
 # NOTES:
-# 1. Any X11 configs are unsupported. These are removed over concern with
-#    conflicts with XWayland.
+# (1) Any X11 configs are unsupported. These are removed over concern with
+#    conflicts with XWayland (#6
 #
 ## TODO: Move to tested userspace after expect results verified
 #
@@ -79,8 +79,7 @@ _handle_defaultFn () {
     '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
     # Add   a sleep script which toggles xhci and pstate management
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
-
-    # Clear any X11 trackpad config (1)
+    # Clear any X11 trackpad config
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
     # Clear any DPI file; this is superseded by _supplementXdgConfigsFn
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
@@ -88,6 +87,8 @@ _handle_defaultFn () {
     '/etc/tlp.d/kfocus.conf|'
     # Add   kfocus-fand configuration
     '/usr/share/kfocus/kfocus_fand.d/fan_profile_db|/usr/lib/kfocus/conf/dflt-usr_share_kfocus_kfocus_fand.d_fan_profile_db'
+    # Clear SDDM service config
+    '/etc/systemd/system/sddm.service.d/90-kfocus.conf|'
   );
 }
 
@@ -108,8 +109,7 @@ _handle_genericFn () {
     '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
     # Clear a sleep script which toggles xhci and pstate management
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
-
-    # Clear any X11 trackpad config (1)
+    # Clear any X11 trackpad config
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
     # Clear any DPI file; this is superseded by _supplementXdgConfigsFn
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
@@ -117,6 +117,8 @@ _handle_genericFn () {
     '/etc/tlp.d/kfocus.conf|'
     # Add   kfocus-fand configuration
     '/usr/share/kfocus/kfocus_fand.d/fan_profile_db|/usr/lib/kfocus/conf/dflt-usr_share_kfocus_kfocus_fand.d_fan_profile_db'
+    # Clear SDDM service config
+    '/etc/systemd/system/sddm.service.d/90-kfocus.conf|'
   );
 }
 
@@ -137,8 +139,7 @@ _handle_xeg2Fn () {
     '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
     # Add   a sleep script which toggles xhci and pstate management
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
-
-    # Clear any X11 trackpad config (1)
+    # Clear any X11 trackpad config
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
     # Clear any DPI file; this is superseded by _supplementXdgConfigsFn
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
@@ -146,6 +147,8 @@ _handle_xeg2Fn () {
     '/etc/tlp.d/kfocus.conf|'
     # Add   kfocus-fand configuration
     '/usr/share/kfocus/kfocus_fand.d/fan_profile_db|/usr/lib/kfocus/conf/dflt-usr_share_kfocus_kfocus_fand.d_fan_profile_db'
+    # Clear SDDM service config
+    '/etc/systemd/system/sddm.service.d/90-kfocus.conf|'
   );
 }
 
@@ -166,8 +169,7 @@ _handle_xeg3Fn () {
     '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
     # Add   a sleep script which toggles xhci and pstate management
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
-
-    # Clear any X11 model-specific trackpad config (1)
+    # Clear any X11 model-specific trackpad config
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
     # Clear any DPI file; this is superseded by _supplementXdgConfigsFn
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
@@ -175,6 +177,8 @@ _handle_xeg3Fn () {
     '/etc/tlp.d/kfocus.conf|'
     # Add   kfocus-fand configuration
     '/usr/share/kfocus/kfocus_fand.d/fan_profile_db|/usr/lib/kfocus/conf/dflt-usr_share_kfocus_kfocus_fand.d_fan_profile_db'
+    # Clear SDDM service config
+    '/etc/systemd/system/sddm.service.d/90-kfocus.conf|'
   );
 }
 
@@ -195,8 +199,7 @@ _handle_arg1Fn () {
     '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
     # Add   a sleep script which toggles xhci and pstate management
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
-
-    # Clear any X11 model-specific trackpad config (1)
+    # Clear any X11 trackpad config
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
     # Clear any DPI file; this is superseded by _supplementXdgConfigsFn
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
@@ -204,6 +207,8 @@ _handle_arg1Fn () {
     '/etc/tlp.d/kfocus.conf|'
     # Add   kfocus-fand configuration
     '/usr/share/kfocus/kfocus_fand.d/fan_profile_db|/usr/lib/kfocus/conf/dflt-usr_share_kfocus_kfocus_fand.d_fan_profile_db'
+    # Add   SDDM service config to allow Gfx init (#6785)
+    '/etc/systemd/system/sddm.service.d/90-kfocus.conf|/usr/lib/kfocus/conf/arg1_etc_systemd_system_sddm.service.d_90-kfocus.conf'
   );
 }
 
@@ -224,7 +229,6 @@ _handle_ir14g1Fn () {
     '/etc/modules-load.d/kfocus.conf|'
     # Clear a sleep script which toggles xhci and pstate management
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
-
     # Clear any X11 trackpad config (1)
     #   WAS /usr/lib/kfocus/conf/ir14g1-usr_share_X11_xorg.conf.d_80-kfocus.conf
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
@@ -234,6 +238,8 @@ _handle_ir14g1Fn () {
     '/etc/tlp.d/kfocus.conf|'
     # Clear kfocus-fand configuration
     '/usr/share/kfocus/kfocus_fand.d/fan_profile_db|'
+    # Clear SDDM service config
+    '/etc/systemd/system/sddm.service.d/90-kfocus.conf|'
   );
 }
 
@@ -263,6 +269,8 @@ _handle_ir1Xg2Fn () {
     '/etc/tlp.d/kfocus.conf|'
     # Clear kfocus-fand configuration
     '/usr/share/kfocus/kfocus_fand.d/fan_profile_db|'
+    # Clear SDDM service config
+    '/etc/systemd/system/sddm.service.d/90-kfocus.conf|'
   );
 }
 
@@ -283,7 +291,6 @@ _handle_ir1Xg3Fn () {
     '/etc/modules-load.d/kfocus.conf|'
     # Clear a sleep script which toggles xhci and pstate management
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
-
     # Clear any X11 trackpad config (1)
     #   WAS /usr/lib/kfocus/conf/ir1xg3-usr_share_X11_xorg.conf.d_80-kfocus.conf
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
@@ -293,6 +300,8 @@ _handle_ir1Xg3Fn () {
     '/etc/tlp.d/kfocus.conf|'
     # Clear kfocus-fand configuration
     '/usr/share/kfocus/kfocus_fand.d/fan_profile_db|'
+    # Clear SDDM service config
+    '/etc/systemd/system/sddm.service.d/90-kfocus.conf|'
   );
 }
 
@@ -326,6 +335,8 @@ _handle_m2g4Fn () {
     '/etc/tlp.d/kfocus.conf|'
     # Add   kfocus-fand configuration
     '/usr/share/kfocus/kfocus_fand.d/fan_profile_db|/usr/lib/kfocus/conf/dflt-usr_share_kfocus_kfocus_fand.d_fan_profile_db'
+    # Clear SDDM service config
+    '/etc/systemd/system/sddm.service.d/90-kfocus.conf|'
   );
 }
 
@@ -360,6 +371,8 @@ _handle_m2g5Fn () {
     '/etc/tlp.d/kfocus.conf|'
     # Add   kfocus-fand configuration
     '/usr/share/kfocus/kfocus_fand.d/fan_profile_db|/usr/lib/kfocus/conf/dflt-usr_share_kfocus_kfocus_fand.d_fan_profile_db'
+    # Clear SDDM service config
+    '/etc/systemd/system/sddm.service.d/90-kfocus.conf|'
   );
 
   ## Begin Add symlink for m2g5p1 thunderbolt blacklist
@@ -408,6 +421,8 @@ _handle_zrg1Fn () {
     '/etc/tlp.d/kfocus.conf|'
     # Add   kfocus-fand configuration
     '/usr/share/kfocus/kfocus_fand.d/fan_profile_db|/usr/lib/kfocus/conf/m2g6-usr_share_kfocus_kfocus_fand.d_fan_profile_db'
+    # Clear SDDM service config
+    '/etc/systemd/system/sddm.service.d/90-kfocus.conf|'
   );
 }
 
@@ -441,6 +456,8 @@ _handle_m2g6Fn () {
     '/etc/tlp.d/kfocus.conf|'
     # Add   kfocus-fand configuration
     '/usr/share/kfocus/kfocus_fand.d/fan_profile_db|/usr/lib/kfocus/conf/m2g6-usr_share_kfocus_kfocus_fand.d_fan_profile_db'
+    # Clear SDDM service config
+    '/etc/systemd/system/sddm.service.d/90-kfocus.conf|'
   );
 }
 
@@ -461,7 +478,7 @@ _handle_nxg1Fn () {
     '/etc/modules-load.d/kfocus.conf|'
     # Clear a sleep script which toggles xhci and pstate management
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
-    # Clear any X11 trackpad config (1)
+    # Clear any X11 trackpad config
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
     # Clear any DPI file; this is superseded by _supplementXdgConfigsFn
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
@@ -469,6 +486,8 @@ _handle_nxg1Fn () {
     '/etc/tlp.d/kfocus.conf|'
     # Clear kfocus-fand configuration
     '/usr/share/kfocus/kfocus_fand.d/fan_profile_db|'
+    # Clear SDDM service config
+    '/etc/systemd/system/sddm.service.d/90-kfocus.conf|'
   );
 }
 # hw_config_code 'other' handles unrecognized hw_model_codes
@@ -488,7 +507,7 @@ _handle_otherFn () {
     '/etc/modules-load.d/kfocus.conf|'
     # Clear a sleep script which toggles xhci and pstate management
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
-    # Clear any X11 trackpad config (1)
+    # Clear any X11 trackpad config
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
     # Clear any DPI file; this is superseded by _supplementXdgConfigsFn
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
@@ -496,6 +515,8 @@ _handle_otherFn () {
     '/etc/tlp.d/kfocus.conf|'
     # Clear kfocus-fand configuration
     '/usr/share/kfocus/kfocus_fand.d/fan_profile_db|'
+    # Clear SDDM service config
+    '/etc/systemd/system/sddm.service.d/90-kfocus.conf|'
   );
 }
 
@@ -530,7 +551,7 @@ _cleanupGrubFileFn () {
 }
 
 _setupSymlinkTableFn () {
-  declare _line _msg _do_rm_link _link_list _cmd_list;
+  declare _line _msg _do_rm_link _link_list _tgt_dir _cmd_list;
   _cmXSetMsgFn 'Set up symlinks';
 
   if [ "${#_symlinkTable[@]}" = '0' ]; then
@@ -560,20 +581,35 @@ _setupSymlinkTableFn () {
 
     # Remove the old link or file
     if [ "${_do_rm_link}" = 'y' ]; then
-      _msg="symlink target ${_link_list[0]}";
+      _msg="symlink target |${_link_list[0]}|";
       if rm -f "${_link_list[0]}"; then
         _cmXSucStrFn "Removed ${_msg}";
       else
-        _cmXWarnStrFn "Could not remove ${_msg}";
+        _cmXWarnStrFn "SKIP: Could not remove ${_msg}";
+        continue;
       fi
     fi
 
     # Do not symlink or copy if the source is empty
     if [ -z "${_link_list[1]}" ]; then continue; fi
 
+    # Validate and optionally create target dir
+    _tgt_dir="$(dirname "${_link_list[0]}")";
+    if [ -e "${_tgt_dir}" ]; then
+      if ! [ -d "${_tgt_dir}" ]; then
+        _cmXWarnStrFn "SKIP: Target is NOT a dir |${_tgt_dir}|";
+        continue;
+      fi
+    else
+      if ! mkdir -p "${_tgt_dir}"; then
+        _cmXWarnStrFn "SKIP: Could not make target dir |${_tgt_dir}|";
+        continue;
+      fi
+    fi
+
     # Do not symlink or copy and warn if the source not found
     if [ ! -f "${_link_list[1]}" ]; then
-      _cmXWarnStrFn "Symlink source ${_link_list[1]} not found";
+      _cmXWarnStrFn "SKIP: Symlink source ${_link_list[1]} not found";
       continue;
     fi
 
@@ -669,7 +705,7 @@ _setupBootFn () {
 
 _configFn () {
   declare _config_code_dir _config_code_file _old_config_code \
-    _fand_dir _lib_file _config_code _fn_name _model_code;
+    _lib_file _config_code _fn_name _model_code;
 
   # Get old config code
   _config_code_dir='/var/lib/kfocus';
@@ -680,10 +716,6 @@ _configFn () {
   else
     _old_config_code='';
   fi
-
-  # Ensure fan dir exists before configuring for models
-  _fand_dir='/usr/share/kfocus/kfocus_fand.d';
-  mkdir -p "${_fand_dir}" || true;
 
   # Import common and determine config_code from model matrix
   _lib_file='/usr/lib/kfocus/lib/common.2.source';
