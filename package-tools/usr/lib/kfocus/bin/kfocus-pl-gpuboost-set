@@ -3,9 +3,9 @@
 #
 # Written for the Kubuntu Focus by M. Mikowski, A. Rainbolt
 #
-# Name    : kfocus-pl-gamemode-set
-# Purpose : Service and pkexec-runnable interface to enable gamemode for
-#           Ar GEN 1 systems.
+# Name    : kfocus-pl-gpuboost-set
+# Purpose : Service and pkexec-runnable interface to improve GPU performance
+#           for Ar GEN 1 systems.
 # License : GPL v2
 # Run By  : Users
 # Spec    : 6789
@@ -45,15 +45,15 @@ _importCommonFn () {
 }
 ## . END _importCommonFn }
 
-## BEGIN _cleanupGameModeServiceFn {
-_cleanupGameModeServiceFn () {
-  declare _mmio_cap_int _sub_cap_int;
+## BEGIN _cleanupGpuBoostServiceFn {
+_cleanupGpuBoostServiceFn () {
+  declare _mmio_cap_int _sub_cap_int _gpuboost_pid_list _gpuboost_pid;
 
   # We intentionally do not call kfocus-pstate here, so we don't fight the
   # user if we ended up disabling the service due to them picking a different
   # frequency mode.
 
-  _cm2EchoFn "Disabling game mode.";
+  _cm2EchoFn "Disabling GPU Boost.";
 
   _mmio_cap_int="$(cat "${_mmioCapFile}")";
   if (( _mmio_cap_int > _stdMmioCapTgt )); then
@@ -65,18 +65,34 @@ _cleanupGameModeServiceFn () {
     echo "${_stdSubCapTgt}" > "${_subCapFile}";
   fi
 
+  readarray -t _gpuboost_pid_list < <(pgrep kfocus-pl-gpub)
+  for _gpuboost_pid in "${_gpuboost_pid_list[@]}"; do
+    if [ "${_gpuboost_pid}" != "$$" ]; then
+      pkill -P "${_gpuboost_pid}";
+    fi
+  done
+
   trap '' EXIT INT TERM;
   exit 0;
 }
-## . END _cleanupGameModeServiceFn }
+## . END _cleanupGpuBoostServiceFn }
 
-## BEGIN _gameModeServiceFn {
-_gameModeServiceFn () {
-  declare _power_key _battery_state_str _mmio_cap_int _sub_cap_int;
+## BEGIN _gpuBoostServiceFn {
+_gpuBoostServiceFn () {
+  declare _ac_online_file _alt_str _power_key _ac_online_int _mmio_cap_int \
+    _sub_cap_int;
 
-  trap _cleanupGameModeServiceFn EXIT INT TERM;
+  trap _cleanupGpuBoostServiceFn EXIT INT TERM;
 
-  _cm2EchoFn "Enabling game mode and monitoring.";
+  _cm2EchoFn "Enabling GPU Boost and monitoring.";
+
+  _ac_online_file='/sys/class/power_supply/AC';
+  for _alt_str in '' 0 1 2; do
+    if [ -f "${_ac_online_file}${_alt_str}/online" ]; then
+      _ac_online_file+="${_alt_str}/online";
+      break;
+    fi
+  done
 
   "${_powerSetExe}" 'Low' || exit 1;
 
@@ -86,8 +102,8 @@ _gameModeServiceFn () {
       break;
     fi
 
-    _battery_state_str="$(upower -b | grep 'state:' | awk '{ print $2 }')";
-    if [ "${_battery_state_str}" = 'discharging' ]; then
+    _ac_online_int="$(cat "${_ac_online_file}")";
+    if [ "${_ac_online_int}" != '1' ]; then
       break;
     fi
 
@@ -104,19 +120,19 @@ _gameModeServiceFn () {
     sleep 8;
   done
 
-  _cleanupGameModeServiceFn;
+  _cleanupGpuBoostServiceFn;
 }
-## . END _gameModeServiceFn }
+## . END _gpuBoostServiceFn }
 
 ## BEGIN _mainFn {
 _mainFn () {
   case "${1:-}" in
     # 'restart' will start the service if it isn't already running, as well as
     # restart it if it is running
-    on)  systemctl restart kfocus-pl-gamemode.service;;
-    off) systemctl stop kfocus-pl-gamemode.service;;
-    service) _gameModeServiceFn;;
-    *) _cm2EchoFn "Option ${1:-} not supported"; exit 1;;
+    on)  systemctl restart kfocus-pl-gpuboost.service;;
+    off) systemctl stop kfocus-pl-gpuboost.service;;
+    service) _gpuBoostServiceFn;;
+    *) _cm2EchoFn "Option |${1:-}| not supported"; exit 1;;
   esac
 }
 ## . END _mainFn }

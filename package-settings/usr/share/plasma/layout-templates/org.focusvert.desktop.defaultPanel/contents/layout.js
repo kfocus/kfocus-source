@@ -114,7 +114,7 @@ function addIconTasksFn( arg_panel_obj ) {
       : 'applications:org.kde.discover.desktop'
   ;
 
-  // Available preferred:// options include browser, email, filemanger, terminal.
+  // Available preferred:// options include browser, email, file manager, terminal.
   // Email doesn't seem to work though, although it doesn't show either.
   // We show the KDE defaults though to incentivize their use, and because using
   // preferred:// seems to have the panel set its own order while using explicit
@@ -129,7 +129,7 @@ function addIconTasksFn( arg_panel_obj ) {
     // 'preferred://email' // does not work
   ];
   icontasks_obj.writeConfig( 'launchers', launcher_list );
-  // This provides padding to systemtray or other adjacent items
+  // This provides padding to system tray or other adjacent items
   arg_panel_obj.addWidget( 'org.kde.plasma.marginsseparator' );
 }
 //== . END addIconTasksFn }
@@ -138,7 +138,7 @@ function addIconTasksFn( arg_panel_obj ) {
 // Determine whether to add the Input Method Panel widget.
 // This is only done if the system locale language ID is a member
 // of the embedded whitelist. These IDs are known to pull in one of
-// KDEs supported IME backends when choosen during installation
+// KDEs supported IME backends when chosen during installation
 // of common distributions.
 //
 function addInputPanelFn ( arg_panel_obj ) {
@@ -185,11 +185,11 @@ function addInputPanelFn ( arg_panel_obj ) {
 //== BEGIN addExtraIconsFn {
 function addExtraIconsFn ( arg_panel_obj ) {
   // Add only if installed
-  if ( applicationExists( 'kfocus-pl-gamemode' ) ) {
-    const gamemode_obj = arg_panel_obj.addWidget( 'org.kde.plasma.icon' );
-    gamemode_obj.writeConfig( 'localPath', '/usr/share/applications/kfocus-pl-gamemode.desktop' );
-    gamemode_obj.currentConfigGroup = [ 'General' ];
-    gamemode_obj.writeConfig( 'url', 'file:///usr/share/applications/kfocus-pl-gamemode.desktop' );
+  if ( applicationExists( 'kfocus-pl-gpuboost' ) ) {
+    const gpuboost_obj = arg_panel_obj.addWidget( 'org.kde.plasma.icon' );
+    gpuboost_obj.writeConfig( 'localPath', '/usr/share/applications/kfocus-pl-gpuboost.desktop' );
+    gpuboost_obj.currentConfigGroup = [ 'General' ];
+    gpuboost_obj.writeConfig( 'url', 'file:///usr/share/applications/kfocus-pl-gpuboost.desktop' );
   }
   // Add only if installed
   if ( applicationExists( 'org.kfocus.power' ) ) {
@@ -208,7 +208,7 @@ function addExtraIconsFn ( arg_panel_obj ) {
   // Add only if installed
   if ( applicationExists( 'backintime-qt' ) ) {
     const backup_obj = arg_panel_obj.addWidget( 'org.kde.plasma.icon' );
-    // Write this config with out setting a group to match
+    // Write this config without setting a group to match
     //   qdbus6 org.kde.plasmashell /PlasmaShell \
     //     org.kde.PlasmaShell.dumpCurrentLayoutJS;
     backup_obj.writeConfig( 'localPath', '/usr/share/applications/backintime-qt.desktop' );

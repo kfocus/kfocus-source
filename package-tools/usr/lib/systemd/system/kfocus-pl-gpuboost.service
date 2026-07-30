@@ -3,6 +3,6 @@ Description=Adjusts GPU power consumption for KFocus Panther Lake systems
 
 [Service]
 Type=exec
-ExecStart=/usr/lib/kfocus/bin/kfocus-pl-gamemode-set service
+ExecStart=/usr/lib/kfocus/bin/kfocus-pl-gpuboost-set service
 
 # No Install section, this should never automatically start.

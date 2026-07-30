@@ -3,8 +3,8 @@
 #
 # Written for the Kubuntu Focus by M. Mikowski, A. Rainbolt
 #
-# Name    : kfocus-pl-gamemode
-# Purpose : GUI for enabling and disabling kfocus-pl-gamemode.service.
+# Name    : kfocus-pl-gpuboost
+# Purpose : GUI for enabling and disabling kfocus-pl-gpuboost.service.
 # License : GPL v2
 # Run By  : Users
 # Spec    : 6789
@@ -54,14 +54,25 @@ _assignGlobalUiVarsFn () {
   _header_str='<h3 style="color:#f7941d">';
   _table_str='<table style="width:100%;margin-right:32px">';
 
-  _windowTitle='KFocus Panther Lake Game Mode';
+  _windowTitle='KFocus Panther Lake GPU Boost';
+  _iconStr='kfocus-bug-gpuboost';
 
   _notSupportedMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_table_str}
 ${_brow_str}${_header_str}System Not Supported</h3>${_erow_str}
 
 ${_brow_str}This tool is only useful on a Kubuntu Focus Ar GEN 1 system. <br>
-Please uninstall the kfocus-pl-gamemode package.${_erow_str}</table>
+Please uninstall the kfocus-pl-gpuboost package.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+
+  _noAcMsg="$(cat <<EOF
+${_cm2HtmBeginStr}${_table_str}
+${_brow_str}${_header_str}No AC Power</h3>${_erow_str}
+
+${_brow_str}GPU Boost cannot be enabled on battery, because it requires <br>
+power only available when on AC power.${_erow_str}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
@@ -79,29 +90,29 @@ EOF
 
   _startMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_table_str}
-${_brow_str}${_header_str}Enable Game Mode?</h3>${_erow_str}
+${_brow_str}${_header_str}Enable GPU Boost?</h3>${_erow_str}
 
 ${_brow_str}Kubuntu Focus provides this tool to raise power limits <br>
-for the Panther Lake Xe GPU. In some cases, frame <br>
-rates can be increased by 50%, although it may have <br>
-the opposite effect on CPU-intensive games.${_erow_str}
+for the Panther Lake Xe GPU. In some cases, game frame <br>
+rates can be increased by 50%, although it may have the <br>
+opposite effect on CPU-intensive games.${_erow_str}
 
-${_brow_str}Enable Game Mode now?${_erow_str}</table>
+${_brow_str}Enable GPU Boost now?${_erow_str}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
 
   _runningMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_table_str}
-${_brow_str}${_header_str}Game Mode Running</h3>${_erow_str}
+${_brow_str}${_header_str}GPU Boost Active</h3>${_erow_str}
 
-${_brow_str}The system is currently in Game Mode. You may run your <br>
+${_brow_str}GPU Boost is currently active. You may run your <br>
 GPU-intensive task now with maximum performance.${_erow_str}
 
 ${_brow_str}This tool will only run on AC. Unplugging the system or <br>
 using KFocus Power & Fan to change the CPU frequency <br>
 profile will end this mode and revert to standard power <br>
-management. You may leave Game Mode at any time by <br>
+management. You may disable GPU Boost at any time by <br>
 clicking the button below.${_erow_str}</table>
 ${_cm2HtmEndStr}
 EOF
@@ -111,15 +122,29 @@ EOF
 
 ## BEGIN _mainFn {
 _mainFn () {
-  declare _should_start_service _monitor_pid;
+  declare _should_start_service _ac_online_file _alt_str _ac_online_int;
 
-  if [ "$(_cm2EchoModelStrFn)" != 'arg1' ]; then
-    _cm2PromptUserFn "${_notSupportedMsg}" "${_windowTitle}" 's';
+  if [ "$(_cm2EchoModelStrFn 'code')" != 'arg1' ]; then
+    _cm2PromptUserFn -i "${_iconStr}" "${_notSupportedMsg}" "${_windowTitle}" 's';
     exit 0;
   fi
 
-  if [ "$(systemctl is-active kfocus-pl-gamemode.service)" != 'active' ]; then
+  _ac_online_file='/sys/class/power_supply/AC';
+  for _alt_str in '' 0 1 2; do
+    if [ -f "${_ac_online_file}${_alt_str}/online" ]; then
+      _ac_online_file+="${_alt_str}/online";
+      break;
+    fi
+  done
+  _ac_online_int="$(cat "${_ac_online_file}")";
+  if [ "${_ac_online_int}" != '1' ]; then
+    _cm2PromptUserFn -i "${_iconStr}" "${_noAcMsg}" "${_windowTitle}" 's';
+    exit 0;
+  fi
+
+  if [ "$(systemctl is-active kfocus-pl-gpuboost.service)" != 'active' ]; then
     _should_start_service="$(kdialog \
+      --icon "${_iconStr}" \
       --title "${_windowTitle}" \
       --yesno "${_startMsg}" \
       --yes-label='Run Now' \
@@ -128,38 +153,28 @@ _mainFn () {
       exit 0;
     fi
 
-    pkexec "${_gamemodeSetExe}" 'on' || {
+    pkexec "${_gpuboostSetExe}" 'on' || {
       _cm2PromptUserFn \
-        "${_errorMsg//XXX_ERROR_MSG_XXX/Could not start Game Mode service}" \
+        -i "${_iconStr}" \
+        "${_errorMsg//XXX_ERROR_MSG_XXX/Could not start GPU Boost service}" \
         "${_windowTitle}" \
         's';
       exit 1;
     }
   fi
 
-  # Service is active at this point
-  _monitor_pid=''
-  trap 'kill "${_monitor_pid}"' EXIT INT TERM HUP;
-  (
-    while true; do
-      if [ "$(systemctl is-active kfocus-pl-gamemode.service)" != 'active' ];
-        then kill $$;
-      fi
-      sleep 5;
-    done
-  ) &
-  _monitor_pid="$!";
+  # NOTE: The backend may terminate this script if it terminates itself.
 
   kdialog \
+    --icon "${_iconStr}" \
     --title "${_windowTitle}" \
     --msgbox "${_runningMsg}" \
     --ok-label='Stop Now';
 
-  kill "${_monitor_pid}";
-
-  pkexec "${_gamemodeSetExe}" 'off' || {
+  pkexec "${_gpuboostSetExe}" 'off' || {
     _cm2PromptUserFn \
-      "${_errorMsg//XXX_ERROR_MSG_XXX/Could not stop Game Mode service}" \
+      -i "${_iconStr}" \
+      "${_errorMsg//XXX_ERROR_MSG_XXX/Could not stop GPU Boost service}" \
       "${_windowTitle}" \
       's';
     exit 1;
@@ -177,9 +192,9 @@ _mainFn () {
 ## . END _mainFn }
 
 ## BEGIN Declare global variables {
-declare _binName _binDir _baseDir _baseName _assignList _gamemodeSetExe \
-  _powerSetExe _pstateExe _windowTitle _notSupportedMsg _errorMsg _startMsg \
-  _runningMsg;
+declare _binName _binDir _baseDir _baseName _assignList _gpuboostSetExe \
+  _powerSetExe _pstateExe _windowTitle _iconStr _notSupportedMsg _noAcMsg \
+  _errorMsg _startMsg _runningMsg;
 ## . END Declare global variables }
 
 ## BEGIN Run main if script is not sourced {
@@ -193,7 +208,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _importCommonFn;
 
   _assignList=(
-    '_gamemodeSetExe|/usr/lib/kfocus/bin/kfocus-pl-gamemode-set'
+    '_gpuboostSetExe|/usr/lib/kfocus/bin/kfocus-pl-gpuboost-set'
     '_powerSetExe|/usr/lib/kfocus/bin/kfocus-power-set'
     '_pstateExe|/usr/lib/kfocus/bin/kfocus-pstate'
   );
