@@ -45,9 +45,63 @@ _importCommonFn () {
 }
 ## . END _importCommonFn }
 
+## BEGIN _echoAcOnlineFileFn {
+_echoAcOnlineFileFn () {
+  local _ac_online_file _alt_str;
+
+  _ac_online_file='/sys/class/power_supply/AC';
+  for _alt_str in '' 0 1 2; do
+    if [ -f "${_ac_online_file}${_alt_str}/online" ]; then
+      _ac_online_file+="${_alt_str}/online";
+      break;
+    fi
+  done
+
+  echo "${_ac_online_file}";
+}
+## . END _echoAcOnlineFileFn }
+
+## BEGIN _checkAcOnlineFn {
+_checkAcOnlineFn () {
+  local _ac_online_file _ac_online_str;
+
+  _ac_online_file="${1:-}";
+  [ -z "${_ac_online_file}" ] && return 1;
+
+  _ac_online_str="$(cat "${_ac_online_file}")";
+  if [ "${_ac_online_str}" = '1' ]; then
+    return 0;
+  fi
+  return 1;
+}
+## . END _checkAcOnlineFn }
+
+## BEGIN _daemonExitNotifyFn {
+_daemonExitNotifyFn () {
+  declare _session_info _bit_list _uname_uid_tuple _uname_uid_list _uname _uid
+
+  _session_info="$(_cm2EchoGraphicalLoginInfoFn)";
+  IFS=';' read -r -a _bit_list <<< "${_session_info}";
+
+  for _uname_uid_tuple in "${_bit_list[@]}"; do
+    IFS='|' read -r -a _uname_uid_list <<< "${_uname_uid_tuple}";
+    _uname="${_uname_uid_list[0]}";
+    _uid="${_uname_uid_list[1]}";
+
+    sudo -u "${_uname}" \
+      XDG_RUNTIME_DIR="/run/user/${_uid}" \
+      DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${_uid}/bus" \
+      dbus-send --print-reply --session \
+        --dest=org.kfocus.gpuboost \
+        /org/kfocus/gpuboost \
+        org.kfocus.gpuboost.DaemonExitNotify >/dev/null 2>&1 || true;
+  done
+}
+## . END _daemonExitNotifyFn }
+
 ## BEGIN _cleanupGpuBoostServiceFn {
 _cleanupGpuBoostServiceFn () {
-  declare _mmio_cap_int _sub_cap_int _gpuboost_pid_list _gpuboost_pid;
+  declare _mmio_cap_int _sub_cap_int;
 
   # We intentionally do not call kfocus-pstate here, so we don't fight the
   # user if we ended up disabling the service due to them picking a different
@@ -65,12 +119,7 @@ _cleanupGpuBoostServiceFn () {
     echo "${_stdSubCapTgt}" > "${_subCapFile}";
   fi
 
-  readarray -t _gpuboost_pid_list < <(pgrep kfocus-pl-gpub)
-  for _gpuboost_pid in "${_gpuboost_pid_list[@]}"; do
-    if [ "${_gpuboost_pid}" != "$$" ]; then
-      pkill -P "${_gpuboost_pid}";
-    fi
-  done
+  _daemonExitNotifyFn;
 
   trap '' EXIT INT TERM;
   exit 0;
@@ -79,31 +128,24 @@ _cleanupGpuBoostServiceFn () {
 
 ## BEGIN _gpuBoostServiceFn {
 _gpuBoostServiceFn () {
-  declare _ac_online_file _alt_str _power_key _ac_online_int _mmio_cap_int \
-    _sub_cap_int;
+  declare _ac_online_file _power_key _mmio_cap_int _sub_cap_int \
+    _first_loop_run;
 
   trap _cleanupGpuBoostServiceFn EXIT INT TERM;
 
   _cm2EchoFn "Enabling GPU Boost and monitoring.";
 
-  _ac_online_file='/sys/class/power_supply/AC';
-  for _alt_str in '' 0 1 2; do
-    if [ -f "${_ac_online_file}${_alt_str}/online" ]; then
-      _ac_online_file+="${_alt_str}/online";
-      break;
+  _ac_online_file="$(_echoAcOnlineFileFn)";
+
+  _first_loop_run='y';
+  while _checkAcOnlineFn "${_ac_online_file}"; do
+    if [ "${_first_loop_run}" = 'y' ]; then
+      "${_powerSetExe}" 'Low' || exit 1;
+      _first_loop_run='n';
     fi
-  done
 
-  "${_powerSetExe}" 'Low' || exit 1;
-
-  while true; do
     _power_key="$("${_powerSetExe}" -r)";
     if [ "${_power_key}" != 'Low' ]; then
-      break;
-    fi
-
-    _ac_online_int="$(cat "${_ac_online_file}")";
-    if [ "${_ac_online_int}" != '1' ]; then
       break;
     fi
 
@@ -132,6 +174,7 @@ _mainFn () {
     on)  systemctl restart kfocus-pl-gpuboost.service;;
     off) systemctl stop kfocus-pl-gpuboost.service;;
     service) _gpuBoostServiceFn;;
+    checkAc) _checkAcOnlineFn "$(_echoAcOnlineFileFn)";;
     *) _cm2EchoFn "Option |${1:-}| not supported"; exit 1;;
   esac
 }
