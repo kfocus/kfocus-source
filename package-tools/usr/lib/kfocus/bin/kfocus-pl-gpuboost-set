@@ -76,9 +76,24 @@ _checkAcOnlineFn () {
 }
 ## . END _checkAcOnlineFn }
 
-## BEGIN _daemonExitNotifyFn {
-_daemonExitNotifyFn () {
-  declare _session_info _bit_list _uname_uid_tuple _uname_uid_list _uname _uid
+## BEGIN _daemonStateChangeNotifyFn {
+_daemonStateChangeNotifyFn () {
+  declare _is_running _dbus_method_str _session_info _bit_list \
+    _uname_uid_tuple _uname_uid_list _uname _uid;
+
+  _is_running="${1:-}";
+  case "${_is_running}" in
+    'y')
+      _dbus_method_str='org.kfocus.gpuboost.DaemonStartNotify';
+      ;;
+    'n')
+      _dbus_method_str='org.kfocus.gpuboost.DaemonExitNotify';
+      ;;
+    *)
+      _cm2ErrStrFn 'Invalid running state provided!';
+      return 1;
+      ;;
+  esac
 
   _session_info="$(_cm2EchoGraphicalLoginInfoFn)";
   IFS=';' read -r -a _bit_list <<< "${_session_info}";
@@ -94,10 +109,10 @@ _daemonExitNotifyFn () {
       dbus-send --print-reply --session \
         --dest=org.kfocus.gpuboost \
         /org/kfocus/gpuboost \
-        org.kfocus.gpuboost.DaemonExitNotify >/dev/null 2>&1 || true;
+        "${_dbus_method_str}" >/dev/null 2>&1 || true;
   done
 }
-## . END _daemonExitNotifyFn }
+## . END _daemonStateChangeNotifyFn }
 
 ## BEGIN _cleanupGpuBoostServiceFn {
 _cleanupGpuBoostServiceFn () {
@@ -119,7 +134,7 @@ _cleanupGpuBoostServiceFn () {
     echo "${_stdSubCapTgt}" > "${_subCapFile}";
   fi
 
-  _daemonExitNotifyFn;
+  _daemonStateChangeNotifyFn 'n';
 
   trap '' EXIT INT TERM;
   exit 0;
@@ -131,6 +146,10 @@ _gpuBoostServiceFn () {
   declare _ac_online_file _power_key _mmio_cap_int _sub_cap_int \
     _first_loop_run;
 
+  if [ -z "${_mmioCapFile}" ] || [ -z "${_subCapFile}" ]; then
+    return 1;
+  fi
+
   trap _cleanupGpuBoostServiceFn EXIT INT TERM;
 
   _cm2EchoFn "Enabling GPU Boost and monitoring.";
@@ -140,13 +159,8 @@ _gpuBoostServiceFn () {
   _first_loop_run='y';
   while _checkAcOnlineFn "${_ac_online_file}"; do
     if [ "${_first_loop_run}" = 'y' ]; then
-      "${_powerSetExe}" 'Low' || exit 1;
+      _daemonStateChangeNotifyFn 'y' || exit 1;
       _first_loop_run='n';
-    fi
-
-    _power_key="$("${_powerSetExe}" -r)";
-    if [ "${_power_key}" != 'Low' ]; then
-      break;
     fi
 
     _mmio_cap_int="$(cat "${_mmioCapFile}")";
@@ -171,10 +185,10 @@ _mainFn () {
   case "${1:-}" in
     # 'restart' will start the service if it isn't already running, as well as
     # restart it if it is running
-    on)  systemctl restart kfocus-pl-gpuboost.service;;
-    off) systemctl stop kfocus-pl-gpuboost.service;;
+    on)  systemctl --no-block restart kfocus-pl-gpuboost.service;;
+    off) systemctl --no-block stop kfocus-pl-gpuboost.service;;
     service) _gpuBoostServiceFn;;
-    checkAc) _checkAcOnlineFn "$(_echoAcOnlineFileFn)";;
+    #checkAc) _checkAcOnlineFn "$(_echoAcOnlineFileFn)";;
     *) _cm2EchoFn "Option |${1:-}| not supported"; exit 1;;
   esac
 }
@@ -182,9 +196,9 @@ _mainFn () {
 
 ## BEGIN Declare global variables {
 declare _binName _binDir _baseDir _baseName _assignList _gameMmioCapTgt \
-  _gameSubCapTgt _stdMmioCapTgt _stdSubCapTgt _powerSetExe \
+  _gameSubCapTgt _stdMmioCapTgt _stdSubCapTgt \
   _mmioCapFile _subCapFile _baseFreqDir _baseCapDir _mmioCapFile _subCapFile;
-  # _maxFreqFile _minFreqFile _pstateExe ;
+  # _maxFreqFile _minFreqFile _pstateExe _powerSetExe;
 
 _gameMmioCapTgt=65000000;
 _gameSubCapTgt=45000000;
@@ -205,12 +219,12 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   # Import libs and assign more global vars
   _importCommonFn;
   _assignList=(
-    '_powerSetExe|/usr/lib/kfocus/bin/kfocus-power-set'
+    #'_powerSetExe|/usr/lib/kfocus/bin/kfocus-power-set'
     #'_pstateExe|/usr/lib/kfocus/bin/kfocus-pstate'
     #"_maxFreqFile|${_baseFreqDir}/max_freq|filero"
     #"_minFreqFile|${_baseFreqDir}/min_freq|filero"
-    "_mmioCapFile|${_baseCapDir}/intel-rapl-mmio/intel-rapl-mmio:0/constraint_0_power_limit_uw|filerw"
-    "_subCapFile|${_baseCapDir}/intel-rapl/intel-rapl:0/intel-rapl:0:0/constraint_0_power_limit_uw|filerw"
+    "_mmioCapFile|${_baseCapDir}/intel-rapl-mmio/intel-rapl-mmio:0/constraint_0_power_limit_uw|filerw|optional"
+    "_subCapFile|${_baseCapDir}/intel-rapl/intel-rapl:0/intel-rapl:0:0/constraint_0_power_limit_uw|filerw|optional"
   );
 
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then

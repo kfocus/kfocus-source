@@ -15,6 +15,7 @@ from typing import Any, NoReturn
 from PyQt6.QtCore import (
     pyqtClassInfo,
     pyqtSlot,
+    Qt,
     QTimer,
 )
 from PyQt6.QtGui import (
@@ -32,6 +33,7 @@ from PyQt6.QtWidgets import (
     QRadioButton,
     QPushButton,
     QWidget,
+    QSpacerItem,
 )
 from PyQt6.QtDBus import (
     QDBusConnection,
@@ -42,9 +44,8 @@ from PyQt6.QtDBus import (
 GPUBOOST_SET_EXE: str = "/usr/lib/kfocus/bin/kfocus-pl-gpuboost-set"
 WINDOW_TITLE: str = "KFocus Panther Lake GPU Boost Tool"
 
-ENABLED_RADIO_TEXT: str = "GPU Boost ENABLED"
-ENABLED_NOAC_RADIO_TEXT: str = (
-    'GPU Boost ENABLED <font color="#f7941d">(Plug in AC)</font>'
+ENABLED_RADIO_TEXT: str = (
+    'GPU Boost ENABLED <br><font color="#f7941d">(AC Required)</font>'
 )
 DISABLED_RADIO_TEXT: str = "GPU Boost DISABLED"
 
@@ -71,7 +72,7 @@ class GpuBoostDialog(QDialog):
 
         super().__init__(parent)
 
-        self.resize(440, 440)
+        # self.resize(440, 380)
         self.setWindowTitle(WINDOW_TITLE)
 
         self.core_layout: QVBoxLayout = QVBoxLayout()
@@ -84,91 +85,153 @@ class GpuBoostDialog(QDialog):
         )
         self.top_grid_layout.addWidget(self.header_label, 0, 1, 1, 4)
 
-        self.desc_label: QLabel = QLabel(
-            "<p>This tool will boost frame rates up to 50% on Kubuntu Focus "
-            + "Panther Lake systems when plugged in. This is done by raising "
-            + "power limits. CPU-intensive applications may slow down.</p>"
-            + "<p>GPU boost is always disabled and cannot be used on battery. "
-            + "Changing frequency profile settings in the Power and Fan tool "
-            + "will also disable GPU boost.</p>"
+        self.boost_info_layout: QHBoxLayout = QHBoxLayout()
+        self.boost_info_button: QPushButton = QPushButton(
+            QIcon.fromTheme("info-symbolic"), ""
         )
-        self.desc_label.setWordWrap(True)
-        self.top_grid_layout.addWidget(self.desc_label, 1, 1, 1, 4)
-
-        self.enabled_radio_button: QRadioButton = QRadioButton(
-            ENABLED_RADIO_TEXT
+        self.boost_info_label: QLabel = QLabel(
+            "<p>Boost Panther Lake GPU speed up to 50%.</p>"
         )
-        self.top_grid_layout.addWidget(self.enabled_radio_button, 2, 1, 1, 1)
+        #self.boost_info_label.setSizePolicy(
+        #    QSizePolicy.Policy.Expanding,
+        #    QSizePolicy.Policy.Preferred,
+        #)
+        self.boost_info_layout.addWidget(self.boost_info_button)
+        self.boost_info_layout.addWidget(self.boost_info_label)
+        self.boost_info_layout.addStretch()
+        self.boost_info_button.clicked.connect(self.msg_boost_info)
+        self.top_grid_layout.addLayout(self.boost_info_layout, 1, 1, 1, 4)
 
-        self.disabled_radio_button: QRadioButton = QRadioButton(
-            DISABLED_RADIO_TEXT
+        self.ac_needed_layout: QHBoxLayout = QHBoxLayout()
+        self.ac_needed_button: QPushButton = QPushButton(
+            QIcon.fromTheme("info-symbolic"), ""
         )
-        self.top_grid_layout.addWidget(self.disabled_radio_button, 3, 1, 1, 1)
+        self.ac_needed_label: QLabel = QLabel(
+            "<p>Boost is not available on battery.</p>"
+        )
+        self.ac_needed_layout.addWidget(self.ac_needed_button)
+        self.ac_needed_layout.addWidget(self.ac_needed_label)
+        self.ac_needed_layout.addStretch()
+        self.ac_needed_button.clicked.connect(self.msg_ac_needed)
+        self.top_grid_layout.addLayout(self.ac_needed_layout, 2, 1, 1, 4)
 
-        self.top_grid_layout.setColumnStretch(2, 1)
+        self.more_perf_layout: QHBoxLayout = QHBoxLayout()
+        self.more_perf_button: QPushButton = QPushButton(
+            QIcon.fromTheme("info-symbolic"), ""
+        )
+        self.more_perf_label: QLabel = QLabel(
+            "<p>Additional tweaks can increase performance.</p>"
+        )
+        self.more_perf_layout.addWidget(self.more_perf_button)
+        self.more_perf_layout.addWidget(self.more_perf_label)
+        self.more_perf_layout.addStretch()
+        self.more_perf_button.clicked.connect(self.msg_more_perf)
+        self.top_grid_layout.addLayout(self.more_perf_layout, 3, 1, 1, 4)
+
+        self.sect_spacer: QSpacerItem = QSpacerItem(0, 32)
+        self.top_grid_layout.addItem(self.sect_spacer, 4, 0, 1, 1)
+
+        self.enabled_radio_button: QRadioButton = QRadioButton()
+        self.top_grid_layout.addWidget(self.enabled_radio_button, 5, 1, 1, 1)
+        self.top_grid_layout.setAlignment(
+            self.enabled_radio_button,
+            Qt.AlignmentFlag.AlignTop,
+        )
+        # We can't use the text field of QRadioButton because it does not support rich text.
+        self.enabled_radio_button_label: QLabel = QLabel(ENABLED_RADIO_TEXT)
+        self.enabled_radio_button.toggled.connect(self.enabled_button_toggled)
+        self.top_grid_layout.addWidget(self.enabled_radio_button_label, 5, 2, 1, 1)
+        self.top_grid_layout.setAlignment(
+            self.enabled_radio_button_label,
+            Qt.AlignmentFlag.AlignTop,
+        )
+
+        self.disabled_radio_button: QRadioButton = QRadioButton()
+        self.top_grid_layout.addWidget(self.disabled_radio_button, 6, 1, 1, 1)
+        self.disabled_radio_button_label: QLabel = QLabel(DISABLED_RADIO_TEXT)
+        self.disabled_radio_button.toggled.connect(self.disabled_button_toggled)
+        self.top_grid_layout.addWidget(self.disabled_radio_button_label, 6, 2, 1, 1)
+
+        self.top_grid_layout.setColumnStretch(3, 1)
 
         self.gpuboost_logo_label: QLabel = QLabel()
         self.gpuboost_logo_label.setPixmap(
             QIcon.fromTheme("kfocus-bug-gpuboost").pixmap(78, 78)
         )
-        self.top_grid_layout.addWidget(self.gpuboost_logo_label, 2, 3, 2, 1)
+        self.top_grid_layout.addWidget(self.gpuboost_logo_label, 5, 4, 2, 1)
 
-        self.top_grid_layout.setColumnStretch(4, 1)
         self.top_grid_layout.setColumnStretch(5, 1)
 
         self.core_layout.addLayout(self.top_grid_layout)
         self.core_layout.addStretch()
 
+        self.lower_spacer: QSpacerItem = QSpacerItem(0, 32)
+        self.core_layout.addItem(self.lower_spacer)
+
         self.button_layout: QHBoxLayout = QHBoxLayout()
         self.button_layout.addStretch()
-
-        self.exit_button: QPushButton = QPushButton("Exit")
-        self.exit_button.setIcon(QIcon.fromTheme("application-exit"))
-        self.exit_button.clicked.connect(self.accept)
-        self.button_layout.addWidget(self.exit_button)
+        self.close_button: QPushButton = QPushButton("Close")
+        self.close_button.clicked.connect(self.accept)
+        self.button_layout.addWidget(self.close_button)
+        self.button_layout.setContentsMargins(0, 0, 0, 0)
+        self.close_button.setContentsMargins(0, 0, 0, 0)
         self.core_layout.addLayout(self.button_layout)
+        self.core_layout.setContentsMargins(24, 24, 24, 24)
         self.setLayout(self.core_layout)
-
-        current_backend_state: str = subprocess.run(
-            [
-                "systemctl",
-                "status",
-                "kfocus-pl-gpuboost.service",
-            ],
-            capture_output=True,
-            encoding="utf-8",
-            check=False,
-        ).stdout.strip()
-        if current_backend_state == "active":
-            self.enabled_radio_button.setChecked(True)
-        else:
-            self.disabled_radio_button.setChecked(True)
-            self.check_ac_state()
 
         self.ignore_next_toggle: bool = False
 
-        self.enabled_radio_button.toggled.connect(self.enabled_button_toggled)
-        self.disabled_radio_button.toggled.connect(self.disabled_button_toggled)
+        self.check_state_timer: QTimer = QTimer()
+        self.check_state_timer.setInterval(3000)
+        self.check_state_timer.setSingleShot(True)
+        self.check_state_timer.timeout.connect(self.poll_service_state)
+
+        self.poll_service_state()
 
         self.show()
 
-    def check_ac_state(self) -> None:
+    def msg_boost_info(self) -> None:
         """
-        Checks if AC power is available and updates the UI accordingly.
+        Shows a hint to the user about how GPU boost works.
         """
 
-        is_ac_available: bool = (
-            subprocess.run(
-                ["/usr/lib/kfocus/bin/kfocus-pl-gpuboost-set", "checkAc"],
-                capture_output=False,
-                check=False,
-            ).returncode
-            == 0
+        QMessageBox.information(
+            self,
+            WINDOW_TITLE,
+            "<br>GPU performance is throttled by default to improve battery "
+            + "life and allow faster CPU performance. Raising GPU power "
+            + "limits will likely improve sustained performance for games, "
+            + "AI tools, and other GPU-intensive workloads, but may shorten "
+            + "battery life and slow down CPU-intensive applications."
         )
-        if is_ac_available:
-            self.enabled_radio_button.setText(ENABLED_RADIO_TEXT)
-        else:
-            self.enabled_radio_button.setText(ENABLED_NOAC_RADIO_TEXT)
+
+    def msg_ac_needed(self) -> None:
+        """
+        Shows a hint to the user about why GPU boost is unavailable on
+        battery.
+        """
+
+        QMessageBox.information(
+            self,
+            WINDOW_TITLE,
+            "<br>The GPU can only make use of increased power limits if the "
+            + "system is plugged into AC power. Unplugging the system while "
+            + "GPU Boost is enabled will automatically disable it."
+        )
+
+    def msg_more_perf(self) -> None:
+        """
+        Shows a hint to the user about how to get better GPU performance.
+        """
+
+        QMessageBox.information(
+            self,
+            WINDOW_TITLE,
+            '<br>In the "Power and Fan Tool," you can set the CPU '
+            + '"Power Profile" to "Powersave," or set "Frequency Profile"'
+            + 'to "Low." Both allow more power to be allocated to the '
+            + 'GPU and further increase its performance.'
+        )
 
     def enabled_button_toggled(self, is_checked: bool) -> None:
         """
@@ -195,8 +258,8 @@ class GpuBoostDialog(QDialog):
         ):
             self.ignore_next_toggle = True
             self.disabled_radio_button.setChecked(True)
-
-        self.check_ac_state()
+        else:
+            self.check_state_timer.start()
 
     def disabled_button_toggled(self, is_checked: bool) -> None:
         """
@@ -223,17 +286,41 @@ class GpuBoostDialog(QDialog):
         ):
             self.ignore_next_toggle = True
             self.enabled_radio_button.setChecked(True)
+        else:
+            self.check_state_timer.start()
 
-        self.check_ac_state()
-
-    def daemon_exit_notify(self) -> None:
+    def daemon_state_change_notify(self, is_running: bool) -> None:
         """
-        Updates the UI if the GPU Boost service voluntarily terminates.
+        Updates the UI if the GPU Boost service starts or terminates without
+        the frontend's intervention.
         """
 
-        self.ignore_next_toggle = True
-        self.disabled_radio_button.setChecked(True)
-        self.check_ac_state()
+        if is_running:
+            if not self.enabled_radio_button.isChecked():
+                self.ignore_next_toggle = True
+                self.enabled_radio_button.setChecked(True)
+        else:
+            if not self.disabled_radio_button.isChecked():
+                self.ignore_next_toggle = True
+                self.disabled_radio_button.setChecked(True)
+
+    def poll_service_state(self) -> None:
+        """
+        Uses systemctl to check if the service is running and updates the UI
+        accordingly.
+        """
+
+        current_backend_state: str = subprocess.run(
+            [
+                "systemctl",
+                "is-active",
+                "kfocus-pl-gpuboost.service",
+            ],
+            capture_output=True,
+            encoding="utf-8",
+            check=False,
+        ).stdout.strip()
+        self.daemon_state_change_notify(current_backend_state == "active")
 
 
 @pyqtClassInfo("D-Bus Interface", "org.kfocus.gpuboost")  # type: ignore
@@ -266,7 +353,19 @@ class GpuBoostDBusAdaptor(QDBusAbstractAdaptor):
         parent_obj: Any = self.parent()
         assert isinstance(parent_obj, GpuBoostDialog)
         gbd: GpuBoostDialog = parent_obj
-        gbd.daemon_exit_notify()
+        gbd.daemon_state_change_notify(is_running=False)
+
+    # pylint: disable=invalid-name
+    @pyqtSlot()
+    def DaemonStartNotify(self) -> None:
+        """
+        Informs the frontend that the backend has started.
+        """
+
+        parent_obj: Any = self.parent()
+        assert isinstance(parent_obj, GpuBoostDialog)
+        gbd: GpuBoostDialog = parent_obj
+        gbd.daemon_state_change_notify(is_running=True)
 
 
 def main() -> NoReturn:
