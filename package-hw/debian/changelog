@@ -1,10 +1,12 @@
-kfocus-hw (26.04.5~beta1) resolute; urgency=medium
+kfocus-hw (26.04.5) resolute; urgency=medium
 
   * postinst: Force a reconfigure for hardware on arg1 systems if
     kfocus-tools-arg1 is not installed (#6789)
-  * Fix occasional autologin session crashes on arg1 (#6785)
+  * postinst: Generalize conf dir creation for all files (#6789)
+  * arg1_etc_systemd_system_sddm.service.d_90-kfocus.conf: Fix occasional
+    autologin session crashes on arg1 (#6785)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 29 Jul 2026 18:22:56 -0500
+ -- Michael S. Mikowski <support@kfocus.org>  Thu, 06 Aug 2026 14:32:35 -0400
 
 kfocus-hw (26.04.4) resolute; urgency=medium
 
