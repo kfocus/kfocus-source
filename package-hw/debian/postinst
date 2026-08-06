@@ -6,7 +6,7 @@
 #
 # NOTES:
 # (1) Any X11 configs are unsupported. These are removed over concern with
-#    conflicts with XWayland (#6
+#    conflicts with XWayland (#6563)
 #
 ## TODO: Move to tested userspace after expect results verified
 #
@@ -89,7 +89,8 @@ _handle_defaultFn () {
     '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
     # Add   a sleep script which toggles xhci and pstate management
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
-    # Clear any X11 trackpad config
+
+    # Clear any X11 trackpad config (1)
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
     # Clear any DPI file; this is superseded by _supplementXdgConfigsFn
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
@@ -119,7 +120,8 @@ _handle_genericFn () {
     '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
     # Clear a sleep script which toggles xhci and pstate management
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
-    # Clear any X11 trackpad config
+
+    # Clear any X11 trackpad config (1)
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
     # Clear any DPI file; this is superseded by _supplementXdgConfigsFn
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
@@ -149,7 +151,8 @@ _handle_xeg2Fn () {
     '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
     # Add   a sleep script which toggles xhci and pstate management
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
-    # Clear any X11 trackpad config
+
+    # Clear any X11 trackpad config (1)
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
     # Clear any DPI file; this is superseded by _supplementXdgConfigsFn
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
@@ -179,7 +182,8 @@ _handle_xeg3Fn () {
     '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
     # Add   a sleep script which toggles xhci and pstate management
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
-    # Clear any X11 model-specific trackpad config
+
+    # Clear any X11 model-specific trackpad config (1)
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
     # Clear any DPI file; this is superseded by _supplementXdgConfigsFn
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
@@ -209,7 +213,8 @@ _handle_arg1Fn () {
     '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
     # Add   a sleep script which toggles xhci and pstate management
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
-    # Clear any X11 trackpad config
+
+    # Clear any X11 model-specific trackpad config (1)
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
     # Clear any DPI file; this is superseded by _supplementXdgConfigsFn
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
@@ -246,6 +251,7 @@ _handle_ir14g1Fn () {
     '/etc/modules-load.d/kfocus.conf|'
     # Clear a sleep script which toggles xhci and pstate management
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
+
     # Clear any X11 trackpad config (1)
     #   WAS /usr/lib/kfocus/conf/ir14g1-usr_share_X11_xorg.conf.d_80-kfocus.conf
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
@@ -277,6 +283,7 @@ _handle_ir1Xg2Fn () {
     '/etc/modules-load.d/kfocus.conf|'
     # Clear a sleep script which toggles xhci and pstate management
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
+
     # Clear any X11 trackpad config (1)
     #   WAS /usr/lib/kfocus/conf/ir14g1-usr_share_X11_xorg.conf.d_80-kfocus.conf
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
@@ -308,6 +315,7 @@ _handle_ir1Xg3Fn () {
     '/etc/modules-load.d/kfocus.conf|'
     # Clear a sleep script which toggles xhci and pstate management
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
+
     # Clear any X11 trackpad config (1)
     #   WAS /usr/lib/kfocus/conf/ir1xg3-usr_share_X11_xorg.conf.d_80-kfocus.conf
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
@@ -343,6 +351,7 @@ _handle_m2g4Fn () {
     '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
     # Add a sleep script which toggles xhci and pstate management
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
+
     # Clear any X11 trackpad config (1)
     #   WAS /usr/lib/kfocus/conf/m2g4-usr_share_X11_xorg.conf.d_80-kfocus.conf
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
@@ -378,6 +387,7 @@ _handle_m2g5Fn () {
     # Add   a list of modules to load on boot such as keyboard, fan on M/XE
     '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
     # Add   a sleep script which toggles xhci and pstate management
+
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
     # Clear any X11 trackpad config (1)
     #   WAS /usr/lib/kfocus/conf/m2g5-usr_share_X11_xorg.conf.d_80-kfocus.conf
@@ -429,6 +439,7 @@ _handle_zrg1Fn () {
     '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
     # Add   a sleep script which toggles xhci and pstate management
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
+
     # Clear any X11 trackpad config (1)
     #   WAS /usr/lib/kfocus/conf/zrg1-usr_share_X11_xorg.conf.d_80-kfocus.conf
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
@@ -464,6 +475,7 @@ _handle_m2g6Fn () {
     '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
     # Add   a sleep script which toggles xhci and pstate management
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
+
     # Clear any X11 trackpad config (1)
     #   WAS /usr/lib/kfocus/conf/m2g6-usr_share_X11_xorg.conf.d_80-kfocus.conf
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
@@ -495,7 +507,8 @@ _handle_nxg1Fn () {
     '/etc/modules-load.d/kfocus.conf|'
     # Clear a sleep script which toggles xhci and pstate management
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
-    # Clear any X11 trackpad config
+
+    # Clear any X11 trackpad config (1)
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
     # Clear any DPI file; this is superseded by _supplementXdgConfigsFn
     '/usr/share/kfocus/kf5-settings/kcmfonts|'
@@ -524,7 +537,8 @@ _handle_otherFn () {
     '/etc/modules-load.d/kfocus.conf|'
     # Clear a sleep script which toggles xhci and pstate management
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|'
-    # Clear any X11 trackpad config
+
+    # Clear any X11 trackpad config (1)
     '/usr/share/X11/xorg.conf.d/80-kfocus.conf|'
     # Clear any DPI file; this is superseded by _supplementXdgConfigsFn
     '/usr/share/kfocus/kf5-settings/kcmfonts|'

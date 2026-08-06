@@ -143,7 +143,7 @@ _cleanupGpuBoostServiceFn () {
 
 ## BEGIN _gpuBoostServiceFn {
 _gpuBoostServiceFn () {
-  declare _ac_online_file _power_key _mmio_cap_int _sub_cap_int \
+  declare _ac_online_file _mmio_cap_int _sub_cap_int \
     _first_loop_run;
 
   if [ -z "${_mmioCapFile}" ] || [ -z "${_subCapFile}" ]; then
