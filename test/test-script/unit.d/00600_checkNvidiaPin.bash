@@ -16,11 +16,11 @@
 #
 # set -u is applied in _runUnitTests
 
-# NOTE: cuda-drivers-${_nvDriverVers} appear deprecated for 595+ drivers
+# NOTE: cuda-drivers and cuda-drivers-${_nvDriverVers} appear deprecated
+#   for 595+ drivers
 #
 _echoExtraNvPkgsFn () {
   cat << EOL
-cuda-drivers
 kfocus-nvidia
 kfocus-nvidia-edge
 kfocus-nvidia-pinning

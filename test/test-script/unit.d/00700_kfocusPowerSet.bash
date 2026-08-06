@@ -47,10 +47,11 @@ _makeRunStrFn () {
   _str+="\n  NoTurboInt: ";
   _str+="$(cat "${_noturbo_file}")";
 
-  if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
-    _str+="\n  KbdState  : ";
-    _str+="$("${_kbColorSetExe}" -l | cut -f3 -d';')";
-  fi
+  # This is no longer handled in kfocus-power-set (#6567)
+  # if [ "$(_cm2EchoModelStrFn 'has_kb_led')" = 'y' ]; then
+  #   _str+="\n  KbdState  : ";
+  #   _str+="$("${_kbColorSetExe}" -l | cut -f3 -d';')";
+  # fi
   echo -e "${_str}";
 }
 
@@ -221,14 +222,14 @@ _testApiFn () {
 ## . END _testApiFn }
 
 ## BEGIN Declare and assign globals {
-declare _modelCode _cpuName _toolDir _kbColorSetExe _powerSetExe _assignList;
+declare _modelCode _cpuName _toolDir _powerSetExe _assignList;
 _modelCode="$(_cm2EchoModelStrFn 'code')";
 _cpuName="$(_echoCpuModelNameFn)";
 _toolDir="${_t00TopDir}/package-tools/usr/lib/kfocus/bin";
 _powerDir="${_t00TopDir}/package-power-bin/usr/lib/kfocus/bin";
 
 _assign_list=(
-  "_kbColorSetExe|${_toolDir}/kfocus-kb-color-set"
+  # "_kbColorSetExe|${_toolDir}/kfocus-kb-color-set" (#6567)
   "_powerSetExe|${_powerDir}/kfocus-power-set"
 );
 if ! _cm2AssignExeVarsFn "${_assign_list[@]}"; then

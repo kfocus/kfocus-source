@@ -7,9 +7,9 @@ import org.kde.kirigami as Kirigami
 Kirigami.ApplicationWindow {
   id            : root
   title         : 'Power and Fan'
-  width         : Kirigami.Units.gridUnit * 32
+  width         : Kirigami.Units.gridUnit * 27
   height        : Kirigami.Units.gridUnit * 36
-  minimumWidth  : Kirigami.Units.gridUnit * 32
+  minimumWidth  : Kirigami.Units.gridUnit * 25
   minimumHeight : Kirigami.Units.gridUnit * 36
 
   pageStack.initialPage: Kirigami.Page {
@@ -202,7 +202,7 @@ Kirigami.ApplicationWindow {
             Layout.rightMargin     : 2
             Layout.preferredWidth  : (coreLayout.width
               - (Layout.rightMargin * freqGrid.columns * 2))
-              * (isFirstElement ? 0.25 : colIndex === 1 ? 0.30 : 0.45
+              * (isFirstElement ? 0.25 : colIndex === 1 ? 0.35 : 0.40
                 / (freqGrid.columns - 2))
             Layout.preferredHeight : 30
 

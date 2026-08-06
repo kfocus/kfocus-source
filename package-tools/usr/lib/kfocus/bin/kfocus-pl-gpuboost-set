@@ -1,0 +1,237 @@
+#!/bin/bash
+# Copyright 2026 MindShare Inc.
+#
+# Written for the Kubuntu Focus by M. Mikowski, A. Rainbolt
+#
+# Name    : kfocus-pl-gpuboost-set
+# Purpose : Service and pkexec-runnable interface to improve GPU performance
+#           for Ar GEN 1 systems.
+# License : GPL v2
+# Run By  : Users
+# Spec    : 6789
+#
+set -u;
+
+## BEGIN _importCommonFn {
+# Summary   : _importCommonFn
+# Purpose   : Load common routines, prefer relative dir
+# Example   : _importCommonFn;
+# Arguments : none
+# Globals   : Package vars _baseDir _baseName
+# Outputs   : none
+# Returns   : none
+#
+_importCommonFn () {
+  declare _lib_list _is_loaded _lib_file;
+  _lib_list=(
+    "${_baseDir}/lib/common.2.source"
+    '/usr/lib/kfocus/lib/common.2.source'
+  );
+  _is_loaded='n';
+  for _lib_file in "${_lib_list[@]}"; do
+    if [ -r "${_lib_file}" ]; then
+      # shellcheck source=/usr/lib/kfocus/lib/common.2.source
+      if source "${_lib_file}"; then
+        _is_loaded='y';
+        break;
+      fi
+    fi
+  done
+
+  if [ "${_is_loaded}" = 'n' ]; then
+    echo 1>&2 "${_baseName}: ABORT - Cannot source common lib";
+    exit 202;
+  fi
+}
+## . END _importCommonFn }
+
+## BEGIN _echoAcOnlineFileFn {
+_echoAcOnlineFileFn () {
+  local _ac_online_file _alt_str;
+
+  _ac_online_file='/sys/class/power_supply/AC';
+  for _alt_str in '' 0 1 2; do
+    if [ -f "${_ac_online_file}${_alt_str}/online" ]; then
+      _ac_online_file+="${_alt_str}/online";
+      break;
+    fi
+  done
+
+  echo "${_ac_online_file}";
+}
+## . END _echoAcOnlineFileFn }
+
+## BEGIN _checkAcOnlineFn {
+_checkAcOnlineFn () {
+  local _ac_online_file _ac_online_str;
+
+  _ac_online_file="${1:-}";
+  [ -z "${_ac_online_file}" ] && return 1;
+
+  _ac_online_str="$(cat "${_ac_online_file}")";
+  if [ "${_ac_online_str}" = '1' ]; then
+    return 0;
+  fi
+  return 1;
+}
+## . END _checkAcOnlineFn }
+
+## BEGIN _daemonStateChangeNotifyFn {
+_daemonStateChangeNotifyFn () {
+  declare _is_running _dbus_method_str _session_info _bit_list \
+    _uname_uid_tuple _uname_uid_list _uname _uid;
+
+  _is_running="${1:-}";
+  case "${_is_running}" in
+    'y')
+      _dbus_method_str='org.kfocus.gpuboost.DaemonStartNotify';
+      ;;
+    'n')
+      _dbus_method_str='org.kfocus.gpuboost.DaemonExitNotify';
+      ;;
+    *)
+      _cm2ErrStrFn 'Invalid running state provided!';
+      return 1;
+      ;;
+  esac
+
+  _session_info="$(_cm2EchoGraphicalLoginInfoFn)";
+  IFS=';' read -r -a _bit_list <<< "${_session_info}";
+
+  for _uname_uid_tuple in "${_bit_list[@]}"; do
+    IFS='|' read -r -a _uname_uid_list <<< "${_uname_uid_tuple}";
+    _uname="${_uname_uid_list[0]}";
+    _uid="${_uname_uid_list[1]}";
+
+    sudo -u "${_uname}" \
+      XDG_RUNTIME_DIR="/run/user/${_uid}" \
+      DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${_uid}/bus" \
+      dbus-send --print-reply --session \
+        --dest=org.kfocus.gpuboost \
+        /org/kfocus/gpuboost \
+        "${_dbus_method_str}" >/dev/null 2>&1 || true;
+  done
+}
+## . END _daemonStateChangeNotifyFn }
+
+## BEGIN _cleanupGpuBoostServiceFn {
+_cleanupGpuBoostServiceFn () {
+  declare _mmio_cap_int _sub_cap_int;
+
+  # We intentionally do not call kfocus-pstate here, so we don't fight the
+  # user if we ended up disabling the service due to them picking a different
+  # frequency mode.
+
+  _cm2EchoFn "Disabling GPU Boost.";
+
+  _mmio_cap_int="$(cat "${_mmioCapFile}")";
+  if (( _mmio_cap_int > _stdMmioCapTgt )); then
+    echo "${_stdMmioCapTgt}" > "${_mmioCapFile}";
+  fi
+
+  _sub_cap_int="$(cat "${_subCapFile}")";
+  if (( _sub_cap_int > "${_stdSubCapTgt}" )); then
+    echo "${_stdSubCapTgt}" > "${_subCapFile}";
+  fi
+
+  _daemonStateChangeNotifyFn 'n';
+
+  trap '' EXIT INT TERM;
+  exit 0;
+}
+## . END _cleanupGpuBoostServiceFn }
+
+## BEGIN _gpuBoostServiceFn {
+_gpuBoostServiceFn () {
+  declare _ac_online_file _mmio_cap_int _sub_cap_int \
+    _first_loop_run;
+
+  if [ -z "${_mmioCapFile}" ] || [ -z "${_subCapFile}" ]; then
+    return 1;
+  fi
+
+  trap _cleanupGpuBoostServiceFn EXIT INT TERM;
+
+  _cm2EchoFn "Enabling GPU Boost and monitoring.";
+
+  _ac_online_file="$(_echoAcOnlineFileFn)";
+
+  _first_loop_run='y';
+  while _checkAcOnlineFn "${_ac_online_file}"; do
+    if [ "${_first_loop_run}" = 'y' ]; then
+      _daemonStateChangeNotifyFn 'y' || exit 1;
+      _first_loop_run='n';
+    fi
+
+    _mmio_cap_int="$(cat "${_mmioCapFile}")";
+    if (( _mmio_cap_int < _gameMmioCapTgt )); then
+      echo "${_gameMmioCapTgt}" > "${_mmioCapFile}";
+    fi
+
+    _sub_cap_int="$(cat "${_subCapFile}")";
+    if (( _sub_cap_int < _gameSubCapTgt )); then
+      echo "${_gameSubCapTgt}" > "${_subCapFile}";
+    fi
+
+    sleep 8;
+  done
+
+  _cleanupGpuBoostServiceFn;
+}
+## . END _gpuBoostServiceFn }
+
+## BEGIN _mainFn {
+_mainFn () {
+  case "${1:-}" in
+    # 'restart' will start the service if it isn't already running, as well as
+    # restart it if it is running
+    on)  systemctl --no-block restart kfocus-pl-gpuboost.service;;
+    off) systemctl --no-block stop kfocus-pl-gpuboost.service;;
+    service) _gpuBoostServiceFn;;
+    #checkAc) _checkAcOnlineFn "$(_echoAcOnlineFileFn)";;
+    *) _cm2EchoFn "Option |${1:-}| not supported"; exit 1;;
+  esac
+}
+## . END _mainFn }
+
+## BEGIN Declare global variables {
+declare _binName _binDir _baseDir _baseName _assignList _gameMmioCapTgt \
+  _gameSubCapTgt _stdMmioCapTgt _stdSubCapTgt \
+  _mmioCapFile _subCapFile _baseFreqDir _baseCapDir _mmioCapFile _subCapFile;
+  # _maxFreqFile _minFreqFile _pstateExe _powerSetExe;
+
+_gameMmioCapTgt=65000000;
+_gameSubCapTgt=45000000;
+_stdMmioCapTgt=15000000;
+_stdSubCapTgt=0;
+
+_baseFreqDir='/sys/devices/pci0000:00/0000:00:02.0/tile0/gt0/freq0';
+_baseCapDir='/sys/class/powercap';
+## . END Declare global variables }
+
+## BEGIN Run main if script is not sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+
+  # Import libs and assign more global vars
+  _importCommonFn;
+  _assignList=(
+    #'_powerSetExe|/usr/lib/kfocus/bin/kfocus-power-set'
+    #'_pstateExe|/usr/lib/kfocus/bin/kfocus-pstate'
+    #"_maxFreqFile|${_baseFreqDir}/max_freq|filero"
+    #"_minFreqFile|${_baseFreqDir}/min_freq|filero"
+    "_mmioCapFile|${_baseCapDir}/intel-rapl-mmio/intel-rapl-mmio:0/constraint_0_power_limit_uw|filerw|optional"
+    "_subCapFile|${_baseCapDir}/intel-rapl/intel-rapl:0/intel-rapl:0:0/constraint_0_power_limit_uw|filerw|optional"
+  );
+
+  if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
+    _cm2ErrStrFn 'Could not assign variables';
+    exit 1;
+  fi
+
+  _mainFn "$@";
+fi
+## . END Run main if script is not sourced }

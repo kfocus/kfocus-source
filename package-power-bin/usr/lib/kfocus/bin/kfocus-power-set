@@ -102,13 +102,13 @@ _checkSetFlockFn () {
   _did_get_lock='n;'
   if ! [ -e "${_currentModeFile}" ]; then
     install -m 644 /dev/null "${_currentModeFile}" || {
-      _logWrapFn 'err' "Could not install |${_currentModeFile}|!";
+      _cm2ErrStrFn 'Required commands not found';
       return 2;
     }
   fi
 
   exec 211>>"${_currentModeFile}" || {
-    _logWrapFn 'err' 'Lock file permission denied!';
+    _cm2ErrStrFn 'Lock file permission denied!';
     return 2;
   };
   for (( _idx=0; _idx < 11; _idx++ )); do
@@ -121,7 +121,7 @@ _checkSetFlockFn () {
   done
 
   if [ "${_did_get_lock}" = 'n' ]; then
-    _cm2WarnStrFn 'Could not get lock file after ten seconds!'
+    _cm2ErrStrFn 'Could not get lock file after ten seconds!'
     return 1;
   fi
 }

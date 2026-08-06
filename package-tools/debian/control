@@ -15,6 +15,8 @@ Recommends:   kfocus-conda,
               kfocus-tbt,
               kfocus-recover-mount
 Breaks:       kfocus-eth-yt6801,
+              kfocus-pl-gpuboost,
+              kfocus-tools-arg1,
               kfocus-tools-ir1xg3,
               kfocus-tools-m2g6,
               kfocus-tools-nxg1,
@@ -33,6 +35,8 @@ Recommends:   kfocus-eth-yt6801,
               kfocus-tbt,
               kfocus-recover-mount
 Breaks:       kfocus-keyboard,
+              kfocus-pl-gpuboost,
+              kfocus-tools-arg1,
               kfocus-tools-m2g6,
               kfocus-tools-nxg1,
               kfocus-tools-other,
@@ -52,6 +56,8 @@ Recommends:   kfocus-conda,
               kfocus-tbt,
               kfocus-recover-mount
 Breaks:       kfocus-eth-yt6801,
+              kfocus-pl-gpuboost,
+              kfocus-tools-arg1,
               kfocus-tools-ir1xg3,
               kfocus-tools-nxg1,
               kfocus-tools-other,
@@ -71,6 +77,8 @@ Recommends:   kfocus-conda,
               kfocus-recover-mount
 Breaks:       kfocus-eth-yt6801,
               kfocus-keyboard,
+              kfocus-pl-gpuboost,
+              kfocus-tools-arg1,
               kfocus-tools-ir1xg3,
               kfocus-tools-m2g6,
               kfocus-tools-other,
@@ -78,6 +86,27 @@ Breaks:       kfocus-eth-yt6801,
 Description:  Kubuntu Focus Tools - NX Metapackage
  This metapackage installs the Kubuntu Focus tools
  for the NX desktops.
+
+Package:      kfocus-tools-arg1
+Architecture: all
+Depends:      ${misc:Depends},
+              kfocus-keyboard
+Recommends:   kfocus-conda,
+              kfocus-kb-color,
+              kfocus-pick-gcc,
+              kfocus-pl-gpuboost,
+              kfocus-power-bin,
+              kfocus-tbt,
+              kfocus-recover-mount
+Breaks:       kfocus-eth-yt6801,
+              kfocus-tools-ir1xg3,
+              kfocus-tools-m2g6,
+              kfocus-tools-nxg1,
+              kfocus-tools-other,
+              kfocus-tools
+Description:  Kubuntu Focus Tools Metapackage
+ This metapackage installs the Kubuntu Focus tools
+ for the Ar laptops.
 
 Package:      kfocus-tools-other
 Architecture: all
@@ -90,6 +119,8 @@ Recommends:   kfocus-conda,
               kfocus-recover-mount
 Breaks:       kfocus-eth-yt6801,
               kfocus-keyboard,
+              kfocus-pl-gpuboost,
+              kfocus-tools-arg1,
               kfocus-tools-ir1xg3,
               kfocus-tools-m2g6,
               kfocus-tools-nxg1,
@@ -160,3 +191,10 @@ Architecture: any
 Depends:      ${misc:Depends}, ${shlibs:Depends}
 Description:  KFocus system disk mount tool
  Allows mounting internal system disks from a live ISO for recovery.
+
+Package:      kfocus-pl-gpuboost
+Architecture: all
+Depends:      ${misc:Depends}, ${shlibs:Depends}, python3-pyqt6
+Description:  KFocus Panther Lake GPU Boost tool
+ Use this tool to increase GPU performance on select Kubuntu Focus Panther
+ Lake systems.
