@@ -221,9 +221,9 @@ _handle_arg1Fn () {
     '/etc/systemd/system/sddm.service.d/90-kfocus.conf|/usr/lib/kfocus/conf/arg1_etc_systemd_system_sddm.service.d_90-kfocus.conf'
   );
 
+  # The tools package changed, so this ensures focusrx installs
+  #   kfocus-tools-arg1 on the next login (#6789)
   if ! _cmXChkInstalledPkgFn 'kfocus-tools-arg1'; then
-    # The tools package changed, so this ensures focusrx installs
-    #   kfocus-tools-arg1 on the next login.
     mkdir -p "${_configCodeDir}" || true;
     touch "${_configCodeDir}/hw_reconfig_force" || true;
   fi
