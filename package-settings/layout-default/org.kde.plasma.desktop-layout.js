@@ -1,4 +1,6 @@
-/*globals gridUnit, screenGeometry, panelIds, panelById, desktops */
+/*globals gridUnit, screenGeometry, panelIds, panelById, desktops,
+ loadTemplate, desktopsForActivity, currentActivity */
+
 /* Plasma scripting API: https://develop.kde.org/docs/plasma/scripting/api/
  *
  * Copyright: 2025 MindShare Inc.
@@ -6,14 +8,13 @@
  * License: GPLv2
  *
  * Passed ESLint 2025-08-04
- * */
+*/
 
 loadTemplate("org.kfocus.desktop.defaultPanel");
 
 // Given two points on a curve, return y at x (rounded)
 function getScaleNumFn ( map ) {
-  // noinspection ES6ConvertVarToLetConst
-  var
+  let
     s = (map.y2 - map.y1 ) / (map.x2 - map.x1 ),
     k = map.y2 - (s * map.x2),
     solve_num = k + map.x * s,
@@ -26,8 +27,7 @@ function getScaleNumFn ( map ) {
   return round_num;
 }
 
-// noinspection ES6ConvertVarToLetConst
-var
+const
   scaleMatrix = {
     large : {
       // Inverse scale with DPI: Icon height
@@ -111,7 +111,7 @@ function quantizeToGridFn(px) {
 //   scaled-and-cropped.
 //
 function tweakWallpapersFn () {
-  var desktop_list, j, desktop_obj;
+  let desktop_list, j, desktop_obj;
   desktop_list = desktopsForActivity(currentActivity());
   for ( j = 0; j < desktop_list.length; j++) {
     desktop_obj = desktop_list[j];
@@ -125,8 +125,7 @@ function tweakWallpapersFn () {
 // Purpose: Defines and loads serialized layout
 //
 function setLayoutFn () {
-  // noinspection ES6ConvertVarToLetConst
-  var rect_obj, screen_w_px, screen_h_px, scale_key, scale_map,
+  let rect_obj, screen_w_px, screen_h_px, scale_key, scale_map,
     icon_h_px, icon_padx_px, icon_space_px, icon_top_px, icon_w_px,
     widget_padx_px, widget_pady_px, widget_w_px, widget_h_px,
     widget_x_px, widget_y_px, icon_x_px, panel_obj,
