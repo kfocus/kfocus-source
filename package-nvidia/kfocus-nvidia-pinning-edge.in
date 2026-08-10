@@ -127,17 +127,16 @@ Pin-Priority: 1002
 # it is disallowed with a pin-priority below.
 Package: cuda-toolkit*
 # Pin: release o=NVIDIA
-Pin: version 12.*
+Pin: version 13.*
 Pin-Priority: 1006
 
-Package: libnvinfer8
+Package: libnvinfer10
 # Pin: release o=NVIDIA
-Pin: version *cuda12.0
+Pin: version *cuda13.2
 Pin-Priority: 1006
 
-Package: libcudnn8
-# Pin: release o=NVIDIA
-Pin: version *cuda12.2
+Package: libcudnn9-cuda-13
+Pin: release o=NVIDIA
 Pin-Priority: 1006
 
 # BLACKLIST (always ignore) all other files not listed above
