@@ -3,6 +3,7 @@
 # prevent the user from intentionally installing it, but keep it from being
 # unintentionally installed.
 Package: wslu
+Pin: release o=*
 Pin-Priority: 50
 
 # Use Thunderbird from the Mozilla Team PPA.
@@ -29,7 +30,9 @@ Pin: release o=Ubuntu
 Pin-Priority: 1001
 
 # Prohibit the installation of Debian's CUDA packages, these are unsupported
-# and will likely cause issues with NVIDIA's CUDA packages
+# and will likely cause issues with NVIDIA's CUDA packages. These are here
+# because these packages should be avoided even if kfocus-nvidia is not
+# installed.
 Package: nvidia-cuda-toolkit
 Pin: release o=*
 Pin-Priority: -1

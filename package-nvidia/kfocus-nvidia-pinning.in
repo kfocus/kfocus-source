@@ -90,11 +90,14 @@ Package: cuda-drivers cuda-drivers-535
 Pin: version 535.309.*
 Pin-Priority: 1001
 
+# The latest version of CUDA supported by the 535 drivers is CUDA 12.x.
 Package: cuda-toolkit*
 # Pin: release o=NVIDIA
 Pin: version 12.*
 Pin-Priority: 1006
 
+# libnvinfer10 is also an option:
+# https://docs.nvidia.com/deeplearning/tensorrt/latest/installing-tensorrt/prerequisites.html
 Package: libnvinfer8
 # Pin: release o=NVIDIA
 Pin: version *cuda12.0
@@ -112,3 +115,6 @@ Pin-Priority: 1006
 Package: *
 Pin: release o=NVIDIA
 Pin-Priority: 100
+
+# Debian nvidia-cuda-toolkit and nvidia-cuda-samples packages are
+# blacklisted in package-apt-source, kfocus-package-pin.

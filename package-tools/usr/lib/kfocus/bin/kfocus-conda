@@ -184,12 +184,12 @@ _installEnvFn () {
       ## cuda-toolkit's version is managed by kfocus-nvidia-pinning{,-edge}
       ## and doesn't need any special handling here.
       _pkg_suffix='-edge';
-      _nvinfer_pkg_suffix='10';
       _cudnn_pkg_suffix='9-cuda-13';
+      _nvinfer_pkg_suffix='10';
     else
       _pkg_suffix='';
-      _nvinfer_pkg_suffix='8';
       _cudnn_pkg_suffix='8';
+      _nvinfer_pkg_suffix='8';
     fi
 
     if _cm2ChkInstalledPkgFn   "kfocus-nvidia-pinning${_pkg_suffix}" \

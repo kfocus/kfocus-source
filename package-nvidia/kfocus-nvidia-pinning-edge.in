@@ -124,7 +124,7 @@ Pin-Priority: 1002
 # == CUDA Nvidia Packages =============================================
 # The cuda-drivers package is no longer installable or advisable with the
 # 595 drivers. Instead, it is redundant with nvidia-driver-595-open and
-# it is disallowed with a pin-priority below.
+# it is disallowed in the BLACKLIST below.
 Package: cuda-toolkit*
 # Pin: release o=NVIDIA
 Pin: version 13.*
@@ -146,3 +146,6 @@ Pin-Priority: 1006
 Package: *
 Pin: release o=NVIDIA
 Pin-Priority: 100
+
+# Debian nvidia-cuda-toolkit and nvidia-cuda-samples packages are
+# blacklisted in package-apt-source, kfocus-package-pin.
