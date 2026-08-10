@@ -28,3 +28,12 @@ Package: dkms
 Pin: release o=Ubuntu
 Pin-Priority: 1001
 
+# Prohibit the installation of Debian's CUDA packages, these are unsupported
+# and will likely cause issues with NVIDIA's CUDA packages
+Package: nvidia-cuda-toolkit
+Pin: release o=*
+Pin-Priority: -1
+
+Package: nvidia-cuda-samples
+Pin: release o=*
+Pin-Priority: -1
