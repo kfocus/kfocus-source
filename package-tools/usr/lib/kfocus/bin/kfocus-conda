@@ -173,20 +173,30 @@ _installEnvFn () {
     _conda_oldstyle_vers _conda_installed_vers _conda_expect_dir \
     _conda_expect01_exe _conda_expect02_exe _conda_install_file \
     _conda_repo_url _conda_md5sum _is_new_conda _chk_str \
-    _do_install_tensorflow _msg _conda_pkg_url __conda_setup;
+    _do_install_tensorflow _msg _conda_pkg_url _nvinfer_pkg_suffix \
+    _cudnn_pkg_suffix __conda_setup;
 
   ## Begin Install GPU Libs
   _cm2SetMsgFn 'Check GPU and install libs if needed';
   if [ -n "${_nvSeriesStr}" ]; then
     _cm2EchoFn "\nNvidia ${_nvSeriesStr}-series GPU found";
-    _pkg_suffix='';
-    [ "${_nvSeriesStr}" = 'rtx50' ] && _pkg_suffix='-edge';
+    if [ "${_nvSeriesStr}" = 'rtx50' ]; then
+      ## cuda-toolkit's version is managed by kfocus-nvidia-pinning{,-edge}
+      ## and doesn't need any special handling here.
+      _pkg_suffix='-edge';
+      _nvinfer_pkg_suffix='10';
+      _cudnn_pkg_suffix='9-cuda-13';
+    else
+      _pkg_suffix='';
+      _nvinfer_pkg_suffix='8';
+      _cudnn_pkg_suffix='8';
+    fi
 
     if _cm2ChkInstalledPkgFn   "kfocus-nvidia-pinning${_pkg_suffix}" \
       && _cm2ChkInstalledPkgFn "kfocus-nvidia${_pkg_suffix}" \
       && _cm2ChkInstalledPkgFn 'cuda-toolkit' \
-      && _cm2ChkInstalledPkgFn 'libcudnn8' \
-      && _cm2ChkInstalledPkgFn 'libnvinfer8'; then
+      && _cm2ChkInstalledPkgFn "libcudnn${_cudnn_pkg_suffix}" \
+      && _cm2ChkInstalledPkgFn "libnvinfer${_nvinfer_pkg_suffix}"; then
       _cm2EchoFn "All ${_nvSeriesStr}-series libraries appear installed";
     else
       _cm2EchoFn "Install ${_nvSeriesStr}-series required libraries.";
@@ -201,7 +211,8 @@ _installEnvFn () {
           _exitFn;
         fi
         if "${_escExe}" apt-get install "kfocus-nvidia${_pkg_suffix}" \
-          cuda-toolkit libcudnn8 libnvinfer8; then
+          cuda-toolkit "libcudnn${_cudnn_pkg_suffix}" \
+          "libnvinfer${_nvinfer_pkg_suffix}"; then
           _cm2SucStrFn 'Library installation successful.';
         else
           _cm2ErrStrFn 'Abort: Could not install all libraries.';
