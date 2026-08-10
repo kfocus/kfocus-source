@@ -85,7 +85,7 @@ _chkCondaEnvFn () {
       conda activate base;
     fi
   fi
-  return ${_ret_int};
+  return "${_ret_int}";
 }
 
 _fixCondaEnvFn () {
