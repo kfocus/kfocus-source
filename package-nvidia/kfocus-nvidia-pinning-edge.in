@@ -24,132 +24,126 @@
 # IMPORTANT: This must be done so that the pinning package is
 # installed first, then the supporting drivers are installed on the
 # next upgrade.
+# Although specified, the `Pin: release` is NOT honored.
 #
 Package: kfocus-nvidia-edge
-Pin: release l=Kubuntu Focus PPA, v=24.04, n=noble
+# Pin: release o=LP-PPA-kfocus-team-release
 Pin: version XXX_PKG_VER_XXX
 Pin-Priority: 1006
 
 # == Core Nvidia Packages =============================================
 # 1st: Core nvidia packages from kfocus-team-release repo
-# Although specified, v 570.169-0ubuntu0.24.04.1~kfocus1
-#   is NOT honored.
+# Although specified, the `Pin: version` is NOT honored.
+#
 Package: nvidia-* libnvidia-* xserver-xorg-video-nvidia-*
-Pin: version 570.169-0ubuntu0.24.04.1~kfocus1
+# Pin: version 595.84-0ubuntu0.24.04.1+kfocus1
 Pin: release o=LP-PPA-kfocus-team-release
 Pin-Priority: 1006
 
 ## BEGIN BETA SECTION - deleted from release packages
-# DISABLED FOR 24.04.8~beta5; release packages will be preferred
 # 1st: Core nvidia packages from kfocus-team-package-testing repo
-# Note: Although specified, v 570.169-0ubuntu0.24.04.1~kfocus1
-#   is NOT honored.
-# Package: nvidia-* libnvidia-* xserver-xorg-video-nvidia-*
-# Pin: version 570.169-0ubuntu0.24.04.1~kfocus1
-# Pin: release o=LP-PPA-kfocus-team-package-testing
-# Pin-Priority: 1006
-## . END BETA SECTION - deleted from release packages
-
-# 2rd: Core nvidia packages version 570.169.* from highest-ranked repo
-# Note: Although specified, kfocus-team-release repo constraint
-#    is NOT honored.
+# Although specified, the `Pin: version` is NOT honored.
+#
 Package: nvidia-* libnvidia-* xserver-xorg-video-nvidia-*
-Pin: release o=LP-PPA-kfocus-team-release
-Pin: version 570.169.*
-Pin-Priority: 1005
-
-# == Utility Nvidia Packages ==========================================
-# Prefer versions of nvidia-settings, nvidia-modrobe, and libnvctrl0
-#   in a hierarchy. These packages are frequently OOD in Ubuntu repos.
-#   Use `apt-cache policy nvidia-settings nvidia-modprobe libnvctrl0`
-#   to inspect selection results.
-
-# 1st: Utility nvidia packages from kfocus-team-release repo
-# Note: Although specified, v 570.169-0ubuntu0.24.04.1~kfocus1
-#   is NOT honored.
-Package: nvidia-settings nvidia-modprobe libxnvctrl0
-Pin: version 570.169-0ubuntu0.24.04.1~kfocus1
-Pin: release o=LP-PPA-kfocus-team-release
+# Pin: version 595.84-0ubuntu0.24.04.1+kfocus1
+Pin: release o=LP-PPA-kfocus-team-package-testing
 Pin-Priority: 1006
-
-## BEGIN BETA SECTION - deleted from release packages
-# DISABLED FOR 24.04.8~beta5; release packages will be preferred
-# 1st: Utility nvidia packages from kfocus-team-package-testing repo
-# Note: Although specified, v 570.169-0ubuntu0.24.04.1~kfocus1
-#   is NOT honored.
-# Package: nvidia-settings nvidia-modprobe libxnvctrl0
-# Pin: version 570.169-0ubuntu0.24.04.1~kfocus1
-# Pin: release o=LP-PPA-kfocus-team-package-testing
-# Pin-Priority: 1006
 ## . END BETA SECTION - deleted from release packages
 
-# 2nd: Utility nvidia packages version 570.169.* from highest-ranked repo
-# Note: Although specified, kfocus-team-release repo constraint
-#    is NOT honored.
-Package: nvidia-settings nvidia-modprobe libxnvctrl0
-Pin: release o=LP-PPA-kfocus-team-release
-Pin: version 570.169.*
-Pin-Priority: 1006
-
-# 3rd: Utility nvidia packages version 570.169.* from highest-ranked repo
-# Note: Although specified, ubuntu repo constraint is NOT honored.
-Package: nvidia-settings nvidia-modprobe libxnvctrl0
-Pin: release l=Ubuntu, v=24.04, n=noble
-Pin: version 570.169.*
+# 2nd: Core nvidia packages version 595.84.* from highest-ranked repo
+# Although specified, the `Pin: release` is NOT honored.
+#
+Package: nvidia-* libnvidia-* xserver-xorg-video-nvidia-*
+# Pin: release o=LP-PPA-kfocus-team-release
+Pin: version 595.84.*
 Pin-Priority: 1005
 
-# 4th: Utility nvidia packages, version 570.169.*
-# Note: Although specified, nvidia developer.download.nvidia.com repo
-#   constraint is NOT honored.
-Package: nvidia-settings nvidia-modprobe libxnvctrl0
-Pin: release o=NVIDIA,l=NVIDIA CUDA
-Pin: origin developer.download.nvidia.com
-Pin: version 570.169.*
-Pin-Priority: 1003
-
-# 5th Utility nvidia packages, version 570.* from highest-ranked repo
-# Note: Although specified, nvidia developer.download.nvidia.com repo
-#   constraint is NOT honored.
-Package: nvidia-settings nvidia-modprobe libxnvctrl0
-Pin: release o=NVIDIA,l=NVIDIA CUDA
-Pin: origin developer.download.nvidia.com
-Pin: version 570.*
-Pin-Priority: 1002
-
-# BLACKLIST (alway ignore) other core and util packages from nvidia repos
-Package: nvidia-* libnvidia-* xserver-xorg-video-nvidia-* libxnvctrl0
-Pin: release o=NVIDIA,l=NVIDIA CUDA
-Pin: origin developer.download.nvidia.com
-Pin-Priority: -1
-
-# == CUDA Nvidia Packages =============================================
-# Pin cuda-drivers to use version 570.169.*, fallback to versions
-#   570.153 and 570.148.
-
-# 1st: CUDA nvidia packages, version 570.169.*
-# Note: Although specified, nvidia  developer.download.nvidia.com repo
-#   constraint is NOT honored.
-Package: cuda-drivers cuda-drivers-570
-Pin: release o=NVIDIA,l=NVIDIA CUDA
-Pin: origin developer.download.nvidia.com
-Pin: version 570.169.*
-Pin-Priority: 1006
-
-# 2nd: CUDA nvidia packages, version 570.153.*
-# Note: Although specified, nvidia developer.download.nvidia.com repo
-#   constraint is not honored.
-Package: cuda-drivers cuda-drivers-570
-Pin: release o=NVIDIA,l=NVIDIA CUDA
-Pin: origin developer.download.nvidia.com
-Pin: version 570.158.*
-Pin-Priority: 1005
-
-# 3rd: CUDA nvidia packages, version 570.148.*
-# Note: Although specified, nvidia developer.download.nvidia.com repo
-#   constraint is not honored.
-Package: cuda-drivers cuda-drivers-570
-Pin: release o=NVIDIA, l=NVIDIA CUDA
-Pin: origin developer.download.nvidia.com
-Pin: version 570.148.*
+# 3rd: Core nvidia packages version 595.* from highest-ranked repo
+# Although specified, the `Pin: release` is NOT honored.
+#
+Package: nvidia-* libnvidia-* xserver-xorg-video-nvidia-*
+# Pin: release o=LP-PPA-kfocus-team-release
+Pin: version 595.*
 Pin-Priority: 1004
 
+# == Utility Nvidia Packages ==========================================
+# Prefer versions of nvidia-settings, nvidia-modprobe, libxnvctrl0,
+#   libxnvctrl-dev from kfocus or nvidia. These packages are frequently OOD in
+#   Ubuntu repos. Use `apt-cache policy` to inspect the results.
+
+# 1st: Utility nvidia packages from kfocus-team-release repo
+# Although specified, the `Pin: version` is NOT honored.
+#
+Package: nvidia-settings nvidia-modprobe libxnvctrl0 libxnvctrl-dev
+# Pin: version 595.84-0ubuntu0.24.04.1+kfocus1
+Pin: release o=LP-PPA-kfocus-team-release
+Pin-Priority: 1006
+
+## BEGIN BETA SECTION - deleted from release packages
+# 1st: Utility nvidia packages from kfocus-team-package-testing repo
+# Although specified, the `Pin: version` is NOT honored.
+#
+Package: nvidia-settings nvidia-modprobe libxnvctrl0 libxnvctrl-dev
+# Pin: version 595.84-0ubuntu0.24.04.1+kfocus1
+Pin: release o=LP-PPA-kfocus-team-package-testing
+Pin-Priority: 1006
+## . END BETA SECTION - deleted from release packages
+
+# 2nd: Utility nvidia packages version 595.84.* from highest-ranked repo
+# Although specified, the `Pin: release` is NOT honored.
+#
+Package: nvidia-settings nvidia-modprobe libxnvctrl0 libxnvctrl-dev
+# Pin: release o=LP-PPA-kfocus-team-release
+Pin: version 595.84.*
+Pin-Priority: 1006
+
+# 3rd: Utility nvidia packages version 595.84.* from highest-ranked repo
+# Although specified, the `Pin: release` is NOT honored.
+#
+Package: nvidia-settings nvidia-modprobe libxnvctrl0 libxnvctrl-dev
+# Pin: release o=Ubuntu
+Pin: version 595.84.*
+Pin-Priority: 1005
+
+# 4th: Utility nvidia packages, version 595.84.*
+# Although specified, the `Pin: release` is NOT honored.
+#
+Package: nvidia-settings nvidia-modprobe libxnvctrl0 libxnvctrl-dev
+# Pin: release o=NVIDIA
+Pin: version 595.84.*
+Pin-Priority: 1003
+
+# 5th Utility nvidia packages, version 595.* from highest-ranked repo
+# Although specified, the `Pin: release` is NOT honored.
+#
+Package: nvidia-settings nvidia-modprobe libxnvctrl0 libxnvctrl-dev
+# Pin: release o=NVIDIA
+Pin: version 595.*
+Pin-Priority: 1002
+
+# == CUDA Nvidia Packages =============================================
+# The cuda-drivers package is no longer installable or advisable with the
+# 595 drivers. Instead, it is redundant with nvidia-driver-595-open and
+# it is disallowed with a pin-priority below.
+Package: cuda-toolkit*
+# Pin: release o=NVIDIA
+Pin: version 12.*
+Pin-Priority: 1006
+
+Package: libnvinfer8
+# Pin: release o=NVIDIA
+Pin: version *cuda12.0
+Pin-Priority: 1006
+
+Package: libcudnn8
+# Pin: release o=NVIDIA
+Pin: version *cuda12.2
+Pin-Priority: 1006
+
+# BLACKLIST (always ignore) all other files not listed above
+# A priority of 100 means packages will be overridden by other
+# repos by default, while still allowing installation when needed.
+#
+Package: *
+Pin: release o=NVIDIA
+Pin-Priority: 100

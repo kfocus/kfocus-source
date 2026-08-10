@@ -14,97 +14,101 @@
 # Priority = 1000 will downgrade IFF a higher priority (e.g. Ubuntu)
 #   offers new version
 # Priority > 1000 will downgrade even from lower-priority repo
+#
+# If more than one selector matches a package at the same priority, the
+# the match nearest the top of this file wins.
+# See https://askubuntu.com/questions/135339
 
 # == Paired kfocus-nvidia Package =====================================
 # Pair pinning with a specific kfocus-nvidia package version.
 # IMPORTANT: This must be done so that the pinning package is
 # installed first, then the supporting drivers are installed on the
 # next upgrade.
+# Although specified, the `Pin: release` is NOT honored.
 #
 Package: kfocus-nvidia
-Pin: release l=Kubuntu Focus PPA, v=24.04, n=noble
+# Pin: release o=LP-PPA-kfocus-team-release
 Pin: version XXX_PKG_VER_XXX
 Pin-Priority: 1006
 
-# == Core Nvidia Packages =============================================
-# Use Nvidia supplied versions of nvidia-settings, nvidia-modrobe, and
-#   libnvctrl0 by default (priority 1000). These are frequently OOD in Ubuntu
-#   'noble' repos; however, they will be selected from 'noble' IFF they
-#   are the correct version (priority 1001). This is set in the final
-#   stanza of this file.
-# IMPORTANT! THIS MUST COME BEFORE the BLACKLIST match below to work.
-# Alternate selector: Pin: release l=NVIDIA CUDA
+# == Utility Nvidia Packages ==========================================
+# Prefer versions of nvidia-settings, nvidia-modrobe, libxnvctrl0,
+#   lixnvctrl-dev from kfocus or nvidia. These packages are frequently OOD in
+#   Ubuntu repos. Use `apt-cache policy` to inspect the results.
+
+# 1st: Utility nvidia packages from kfocus-team-release repo
+# Although specified, the `Pin: version` is NOT honored.
 #
-Package: nvidia-settings nvidia-modprobe libxnvctrl0
-Pin: origin "developer.download.nvidia.com"
+Package: nvidia-settings nvidia-modprobe libxnvctrl0 libxnvctrl-dev
+# Pin: version 535.*
+Pin: release o=LP-PPA-kfocus-team-release
+Pin-Priority: 1006
+
+## BEGIN BETA SECTION - deleted from release packages
+# 1st: Utility nvidia packages from kfocus-team-package-testing repo
+# Although specified, the `Pin: version` is NOT honored.
+#
+Package: nvidia-settings nvidia-modprobe libxnvctrl0 libxnvctrl-dev
+# Pin: version 535.*
+Pin: release o=LP-PPA-kfocus-team-package-testing
+Pin-Priority: 1006
+## . END BETA SECTION - deleted from release packages
+
+# 2nd: Utility nvidia packages version 535.* from highest-ranked repo
+# Although specified, the `Pin: release` is NOT honored.
+#
+Package: nvidia-settings nvidia-modprobe libxnvctrl0 libxnvctrl-dev
+# Pin: release o=LP-PPA-kfocus-team-release
 Pin: version 535.*
-Pin-Priority: 1000
+Pin-Priority: 1006
 
-# BLACKLIST (alway ignore) nvidia-driver packages from the NVIDIA
-#   repository (Priority -1) execpt for specific files such as
-#   nvidia-modprobe and nvidia-settings are above.
-# Alternate selector: Pin: release l=NVIDIA CUDA
+# 3rd: Utility nvidia packages version 535.* from highest-ranked repo
+# Although specified, the `Pin: release` is NOT honored.
 #
-Package: nvidia-* libnvidia-* xserver-xorg-*
-Pin: origin "developer.download.nvidia.com"
-Pin-Priority: -1
+Package: nvidia-settings nvidia-modprobe libxnvctrl0 libxnvctrl-dev
+# Pin: release o=Ubuntu
+Pin: version 535.*
+Pin-Priority: 1005
 
-# Pin cuda-drivers to use version 535.230 because we found sometimes later
+# 4th: Utility nvidia packages, version 535.*
+# Although specified, the `Pin: release` is NOT honored.
+#
+Package: nvidia-settings nvidia-modprobe libxnvctrl0 libxnvctrl-dev
+# Pin: release o=NVIDIA
+Pin: version 535.*
+Pin-Priority: 1003
+
+# == CUDA Nvidia Packages =============================================
+# Pin cuda-drivers to use version 535.309 because we found sometimes later
 #   version to require newer packages not available in ubuntu repo. This was
-#   last updated on 2025-05-19, and 535.230 is the latest cuda-drivers version
-#   on that date. The 1001 Priority causes a version to be installed even if
-#   it does not come from the target release ('noble') and forces a downgrade
-#   if required.
-#
-#   This can be updated occassionally because the metapackage
-#   description indicates >= for required package.
-#   See apt-cache show nvidia-drivers-535 to see which drivers are required,
-#   and apt-cache policy nvidia-driver-535 to see installed ubuntu version.
-#
-# The 1001 Priority causes a version to be installed even if
-#   it does not come from the target release ('noble') and forces a downgrade
-#   if required.
-#
-# IMPORTANT! THIS MUST COME BEFORE the cuda* match below,
-#   and PRIORITY MUST BE >= 1001 for this to work.
-# Alternate selector: Pin: release l=NVIDIA CUDA
+#   last updated on 2026-08-10, and 535.309 is the latest cuda-drivers version
+#   on that date.
+# Although specified, the `Pin: origin` is NOT honored.
 #
 Package: cuda-drivers cuda-drivers-535
-Pin: origin "developer.download.nvidia.com"
-Pin: version 535.230.*
+# Pin: origin "developer.download.nvidia.com"
+Pin: version 535.309.*
 Pin-Priority: 1001
 
-# Prefer all cuda* 535 packages from NVIDIA over any Ubuntu packages of the
-#   same name and version from any other respository. The 1000 Priority
-#   causes a version to be installed even if does not come from the target
-#   release ('noble').
-# Alternate selector: Pin: release l=NVIDIA CUDA
-#
-Package: cuda*
-Pin: origin "developer.download.nvidia.com"
-Pin: version 535.*
-Pin-Priority: 1000
+Package: cuda-toolkit*
+# Pin: release o=NVIDIA
+Pin: version 12.*
+Pin-Priority: 1006
 
-# Favor all nvidia-driver packages from the target release ('noble').
-#   The 1000 Priority causes a new version from this origin to be installed
-#   unless there is the same version from a target release. Since this IS the
-#   target release specification, and the 1000 Priority forces a downgrade
-#   and prevents packages from proceeding beyond 535.
-#
-Package: nvidia-* libnvidia-* xserver-xorg-*
-Pin: release l=Ubuntu, v=24.04, n=noble
-Pin: version 535.*
-Pin-Priority: 1000
+Package: libnvinfer8
+# Pin: release o=NVIDIA
+Pin: version *cuda12.0
+Pin-Priority: 1006
 
-# Use Ubuntu supplied versions of nvidia-settings, nvidia-modrobe, and
-#   libnvctrl0 if available from the 'noble' repository (priority 1001)
-#   instead of Nvidia (1000) IFF they are the correct version.
-#   However, these packages are frequently OOD in Ubuntu repos.
-#   Use `apt-cache policy nvidia-settings nvidia-modprobe libnvctrl0`
-#   to see current Ubuntu versions.
-#
-Package: nvidia-settings nvidia-modprobe libxnvctrl0
-Pin: release l=Ubuntu, v=24.04, n=noble
-Pin: version 535.*
-Pin-Priority: 1001
+Package: libcudnn8
+# Pin: release o=NVIDIA
+Pin: version *cuda12.2
+Pin-Priority: 1006
 
+# BLACKLIST (always ignore) all other files not listed above
+# A priority of 100 means packages will be overridden by other
+# repos by default, while still allowing installation when needed.
+#
+Package: *
+Pin: release o=NVIDIA
+Pin-Priority: 100
