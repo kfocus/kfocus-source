@@ -5,8 +5,8 @@ Maintainer: Ubuntu Kernel Team <kernel-team@lists.ubuntu.com>
 Standards-Version: 3.9.8
 Build-Depends: dpkg (>= 1.13.19), debhelper (>= 11), gawk
 Build-Depends-Arch:
- linux-kfocus-headers-6.17.0-22,
- linux-headers-6.17.0-22-kfocus,
+ linux-kfocus-headers-7.0.0-28,
+ linux-headers-7.0.0-28-kfocus,
 Vcs-Git: https://github.com/kfocus/kfocus-source.git
 
 Package: linux-headers-kfocus-24.04-kfocus
@@ -55,10 +55,21 @@ Description: KFocus Linux kernel tools
  This package will always depend on the latest KFocus kernel tools
  available.
 
+Package: linux-cloud-tools-kfocus-24.04-kfocus
+Architecture: amd64
+Section: kernel
+Provides: linux-cloud-tools
+Replaces: linux-cloud-tools-kfocus-24.04, linux-cloud-tools-generic-hwe-24.04-kfocus
+Conflicts: linux-cloud-tools-kfocus-24.04, linux-cloud-tools-generic-hwe-24.04-kfocus
+Depends: ${misc:Depends}, linux-cloud-tools-${kernel-abi-version}-kfocus
+Description: KFocus Linux kernel cloud tools
+ This package will always depend on the latest KFocus kernel cloud tools
+ available.
+
 Package: linux-kfocus-24.04-kfocus
 Architecture: amd64
 Section: kernel
-Provides: kernel-testing--linux-kfocus--full--kfocus, kernel-testing--linux-kfocus--full--preferred,
+Provides: kernel-testing--linux-kfocus--full--kfocus, kernel-testing--linux-kfocus--full--preferred, kernel-testing--linux-kfocus--modules-extra--kfocus,
 Replaces: linux-kfocus-24.04, linux-generic-hwe-24.04-kfocus
 Conflicts: linux-kfocus-24.04, linux-generic-hwe-24.04-kfocus
 Depends: ${misc:Depends}, linux-image-kfocus-24.04-kfocus (= ${binary:Version}), linux-headers-kfocus-24.04-kfocus (= ${binary:Version})

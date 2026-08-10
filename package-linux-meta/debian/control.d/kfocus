@@ -44,10 +44,21 @@ Description: KFocus Linux kernel tools
  This package will always depend on the latest KFocus kernel tools
  available.
 
+Package: linux-cloud-tools-kfocus${variant:suffix}-kfocus
+Architecture: amd64
+Section: kernel
+Provides: linux-cloud-tools
+Replaces: linux-cloud-tools-kfocus${variant:suffix}, linux-cloud-tools-generic-hwe-24.04-kfocus
+Conflicts: linux-cloud-tools-kfocus${variant:suffix}, linux-cloud-tools-generic-hwe-24.04-kfocus
+Depends: ${misc:Depends}, linux-cloud-tools-${kernel-abi-version}-kfocus
+Description: KFocus Linux kernel cloud tools
+ This package will always depend on the latest KFocus kernel cloud tools
+ available.
+
 Package: linux-kfocus${variant:suffix}-kfocus
 Architecture: amd64
 Section: kernel
-Provides: ${test:provides-full-kfocus} ${test:provides-full-preferred}
+Provides: ${test:provides-full-kfocus} ${test:provides-full-preferred} ${test:provides-modules-extra-kfocus}
 Replaces: linux-kfocus${variant:suffix}, linux-generic-hwe-24.04-kfocus
 Conflicts: linux-kfocus${variant:suffix}, linux-generic-hwe-24.04-kfocus
 Depends: ${misc:Depends}, linux-image-kfocus${variant:suffix}-kfocus (= ${binary:Version}), linux-headers-kfocus${variant:suffix}-kfocus (= ${binary:Version})
