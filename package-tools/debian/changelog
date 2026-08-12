@@ -1,3 +1,15 @@
+kfocus-tools (24.04.15~beta2) noble; urgency=medium
+
+  * kfocus-conda:
+    - Unbreak PyTorch installation (#6825)
+    - Fix cuDNN and TensorRT installation (#6825)
+    - Offer cuDNN and TensorRT installation as separate steps from CUDA
+      installation (#6825)
+    - Only offer cuDNN and TensorRT on rtx50-series cards, older versions can
+      be installed manually for rtx40-series and earlier (#6825)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 12 Aug 2026 17:49:19 -0500
+
 kfocus-tools (24.04.15~beta1) noble; urgency=medium
 
   * kfocus-conda: Upgrade kfocus-nvidia-edge systems to CUDA 13 (#6557)

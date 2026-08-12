@@ -1,3 +1,12 @@
+kfocus-nvidia (24.04.10~beta2) noble; urgency=medium
+
+  * kfocus-nvidia-pinning-edge:
+    - Fully blacklist cuda-drivers, redundant with nvidia-driver-595-open
+      (#6825)
+    - Adjust pinning for cuDNN and TensorRT (#6825)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 12 Aug 2026 17:48:05 -0500
+
 kfocus-nvidia (24.04.10~beta1) noble; urgency=medium
 
   * kfocus-nvidia-pinning-edge: Upgrade to NVIDIA 595 drivers (#6557)
