@@ -436,7 +436,7 @@ _installEnvFn () {
   # Per https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/16884
     _cm2EchoFn "Installing Pytorch for ${_nvSeriesStr}-series GPU";
     pip install --pre torch torchvision torchaudio \
-      --index-url https://download.pytorch.org/whl/nightly/cu128 || _exitFn;
+      --index-url https://download.pytorch.org/whl/nightly/cu126 || _exitFn;
     pip install gpu-benchmark                    || _exitFn;
 
     set -u;
