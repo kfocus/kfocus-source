@@ -23,7 +23,7 @@ EOL
 }
 
 _checkNvidiaPinFn () {
-  declare _suffix _pkg_list _loop_pkg_name \
+  declare _pkg_list _loop_pkg_name \
     _loop_policy_str _loop_mark_idx _loop_candi_str;
 
   # Create package inspection list
@@ -54,7 +54,12 @@ _checkNvidiaPinFn () {
       | grep -m 1 -n '^\s*\*\*\*\s' \
       | cut -f1 -d':'
     )";
-    _loop_mark_idx="$(printf '%i' "${_loop_mark_idx}")";
+    if [[ "${_loop_mark_idx}" =~ ^[0-9]+$ ]]; then
+      _loop_mark_idx="$(printf '%i' "${_loop_mark_idx}")";
+    else
+      _loop_mark_idx=0;
+    fi
+
     if [ "${_loop_mark_idx}" -lt 5 ]; then
       _loop_mark_idx=5;
     fi
@@ -70,7 +75,7 @@ _checkNvidiaPinFn () {
       >> "${_t00RunDir}/package-candidates";
   done
 }
-## . END _checkNvidiaPinn }
+## . END _checkNvidiaPinFn }
 
 declare _nvDriverVers _nvDriverSuffix _expectDir;
 
@@ -93,7 +98,7 @@ _runTestFn () {
   #   will automatically update.
   #
   if [[ "$(_cm2EchoModelStrFn 'config_code')" =~ ^(m2g6|zrg1)$ ]]; then
-    _nvDriverVers='570'; _nvDriverSuffix='570-open';
+    _nvDriverVers='595'; _nvDriverSuffix='595-open';
     _expectDir="${_t00ExpectDir}/edge";
   else
     _nvDriverVers='535'; _nvDriverSuffix='535';
