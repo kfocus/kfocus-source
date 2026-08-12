@@ -124,7 +124,11 @@ Pin-Priority: 1002
 # == CUDA Nvidia Packages =============================================
 # The cuda-drivers package is no longer installable or advisable with the
 # 595 drivers. Instead, it is redundant with nvidia-driver-595-open and
-# it is disallowed in the BLACKLIST below.
+# it is disallowed.
+Package: cuda-drivers*
+Pin: release o=NVIDIA
+Pin-Priority: -1
+
 Package: cuda-toolkit*
 # Pin: release o=NVIDIA
 Pin: version 13.*
