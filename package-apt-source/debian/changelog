@@ -1,3 +1,12 @@
+kfocus-apt-source (24.04.7~beta1) noble; urgency=medium
+
+  * Fix wslu pinning
+  * Blacklist nvidia-cuda-toolkit and nvidia-cuda-samples packages, these are
+    unsupported and CUDA should be installed via NVIDIA's cuda-toolkit package
+    (#6557)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 10 Aug 2026 17:10:06 -0500
+
 kfocus-apt-source (24.04.6) noble; urgency=medium
 
   * No-change rebuild (#6073)
