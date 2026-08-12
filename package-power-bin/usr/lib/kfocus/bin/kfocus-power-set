@@ -694,15 +694,19 @@ _calcCanonicalFreqsFn() {
 _calcOptionsFn () {
   declare _opt_line _out_list _out_str _model_msg _normal_cpu_freq \
     _low_cpu_freq _opt_parts _out_parts _cpu_str _return_val \
-    _canonical_table_str _canonical_freqs_list;
+    _canonical_table_str _canonical_freqs_list _sed_trim_str;
 
   # Get CPU info to develop header
+  _sed_trim_str='s/^ *//; ';
+  _sed_trim_str+='s/(\(R\|TM\))//g; ';
+  _sed_trim_str+='s/[0-9]\+\(st\|nd\|rd\|th\) Gen //g; ';
+  _sed_trim_str+='s/ @ [0-9]\.[0-9]\+GHz//;';
   _cpu_str="$(
     lscpu \
       | grep 'Model name:' \
       | grep -v 'BIOS Model name:' \
       | awk -F':' '{ print $2 }' \
-      | sed 's/^ *//; s/(\(R\|TM\))//g'
+      | sed "${_sed_trim_str}"
   )";
   _normal_cpu_freq='';
   _low_cpu_freq='';
