@@ -135,6 +135,30 @@ Pin: version 13.*
 Pin-Priority: 1006
 
 # BEGIN cuDNN Pinning {
+Package: cudnn
+Pin: release o=NVIDIA
+Pin-Priority: 1006
+
+Package: cudnn-jit
+Pin: release o=NVIDIA
+Pin-Priority: 1006
+
+Package: cudnn9
+Pin: release o=NVIDIA
+Pin-Priority: 1006
+
+Package: cudnn9-jit
+Pin: release o=NVIDIA
+Pin-Priority: 1006
+
+Package: cudnn9-cuda-13
+Pin: release o=NVIDIA
+Pin-Priority: 1006
+
+Package: cudnn9-jit-cuda-13
+Pin: release o=NVIDIA
+Pin-Priority: 1006
+
 Package: libcudnn9-cuda-13
 Pin: release o=NVIDIA
 Pin-Priority: 1006
@@ -160,6 +184,10 @@ Pin: release o=NVIDIA
 Pin-Priority: 1006
 
 Package: libcudnn9-samples
+Pin: release o=NVIDIA
+Pin-Priority: 1006
+
+Package: libcudnn-frontend-dev
 Pin: release o=NVIDIA
 Pin-Priority: 1006
 # . END cuDNN Pinning }
