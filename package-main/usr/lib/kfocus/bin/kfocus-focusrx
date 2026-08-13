@@ -376,47 +376,8 @@ _chkOemMultiDiskFn () {
 ## . END _chkOemMultiDiskFn }
 
 ## BEGIN _chkNvPMizerFn {
-_chkNvPMizerFn () {
-  declare _title _param_key _tgt_idx _current_idx _rc_file _sed_str;
-
-  # Skip if no exe, not the correct package, or not running nvidia
-  if [ -z "${_nvSettingsExe}" ] || [ -z "${_primeSelectExe}" ]; then return; fi
-  if ! _cm2ChkInstalledPkgFn 'kfocus-nvidia-edge'; then return; fi
-
-  _title='Set PowerMizerMode for kfocus-nvidia-edge';
-  _cm2SetMsgFn "${_title}";
-  if ! [[ "$("${_primeSelectExe}" query)" =~ ^(nvidia|on-demand) ]]; then
-    _cm2SucStrFn 'Skipped, display mode does not use framebuffer.';
-    _cm2SucFn;
-    return;
-  fi
-
-  # Declare values
-  _param_key='GPUPowerMizerMode';
-  _tgt_idx=1;
-
-  # Query first to see if a change is required
-  _current_idx="$("${_nvSettingsExe}" -q "${_param_key}" -t)";
-  if [ "${_current_idx:-}" = "${_tgt_idx}" ]; then
-    _cm2SucStrFn 'Skipped, parameter already set.';
-    _cm2SucFn;
-    return;
-  fi
-
-  _rc_file="${HOME}/.nvidia-settings-rc";
-  if [ -f "${_rc_file}" ]; then
-    _sed_str="s/${_param_key}=[0-9]\$/${_param_key}=${_tgt_idx}/";
-    sed -i "${_sed_str}" "${_rc_file}" || true;
-  fi
-
-  if "${_nvSettingsExe}" -a "${_param_key}=${_tgt_idx}"; then
-    _cm2SucStrFn 'Parameter set as directed.';
-    _cm2SucFn;
-  else
-    _cm2WarnStrFn 'Parameter setting did not work.';
-    _cm2WarnFn;
-  fi
-}
+# Removed, can be retrieved from commit
+# bbf85c68b566ae6ff51d05bfd8369bf1c4c60ad0 if we need it back.
 ## . END _chkNvPMizerFn }
 
 ## BEGIN _chkDispRefreshFn {
@@ -1202,7 +1163,9 @@ EOF
   _ensureCrontabFn;   # CFG: Ensure crontab for BackInTime
   _chkHwConfigFn;     # CFG: 6204 Update kfocus pkgs and config for hw
 
-  _chkNvPMizerFn;     # UX 5423: Check and apply NV PMizer fixups
+  # _chkNvPMizerFn;   # UX 5423: Check and apply NV PMizer fixups
+                      # Disabled for 26.04 as it is unnecessary with the
+                      # current NVIDIA drivers
   _chkRollbackUxFn;   # UX 4013: Check for rollback, fixup icons
   _chkRestoreKbdFn;   # UX 3735: Check and restore keyboard LED state
   _chkIbusConfigFn;   # UX 4027: Check and apply IBUS fixup
