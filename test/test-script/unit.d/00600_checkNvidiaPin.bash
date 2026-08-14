@@ -64,7 +64,9 @@ _checkNvidiaPinFn () {
       | grep -m 1 -n '^\s*\*\*\*\s' \
       | cut -f1 -d':'
     )";
-    if [ -z "${_loop_mark_idx:-}" ]; then
+    if [[ "${_loop_mark_idx}" =~ ^[0-9]+$ ]]; then
+      _loop_mark_idx="$(printf '%i' "${_loop_mark_idx}")";
+    else
       _loop_mark_idx=0;
     fi
 
