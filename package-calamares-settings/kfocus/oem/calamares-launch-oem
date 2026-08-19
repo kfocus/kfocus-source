@@ -33,10 +33,10 @@ for _dev_file in "${_block_list[@]}"; do
 done
 
 _msg="$(cat <<EOL
-You are about to install the OS in OEM mode. This will prepare the system for
-distribution to an end user, providing them with an account setup wizard. If
-you do not need this capability, please cancel and use the normal install
-method.
+<p>You are about to install the OS in OEM mode. This will prepare the system
+for distribution to an end user, providing them with an account setup wizard.
+If you do not need this capability, please cancel and use the normal install
+method.</p>
 EOL
 )";
 

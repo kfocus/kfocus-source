@@ -6,8 +6,8 @@ export QT_QPA_PLATFORMTHEME=kde
 
 if [ -e '/etc/calamares/OEM_MODE_ACTIVATED' ]; then
   _msg="$(cat <<EOL
-The installer was previously run in OEM mode. Please reboot to reset the
-configuration and try again.
+<p>The installer was previously run in OEM mode. Please reboot to reset the
+configuration and try again.</p>
 EOL
   )";
   kdialog --msgbox "${_msg}";
@@ -18,7 +18,7 @@ export BROWSER='sudo -H -u kubuntu firefox'
 
 # Detect multi-disk and offer OEM mode if so
 _disk_count=0;
-IFS=$'\n' read -r -d '' -a _block_list <<< "$( 
+IFS=$'\n' read -r -d '' -a _block_list <<< "$(
   find /dev/ -maxdepth 1 -type b \
   | grep -E '^/dev/(sd[a-z]|nvme[0-9]n1|vd[a-z])$'
 )";
