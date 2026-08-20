@@ -12,4 +12,23 @@ else
     kwin_wayland --xwayland --no-lockscreen kubuntu-installer-prompt;
 fi
 # If it exits...
+
+# We need to restart xdg-desktop-portal.service once Plasma is fully started,
+# or else everything will be stuck with xdg-desktop-portal-gtk due to an
+# environment variable mixup. We also need to restart
+# xdg-desktop-portal-gtk.service, since it can crash trying to find an X
+# server that doesn't exist.
+mkdir -p "${HOME}/.config/autostart"
+cat <<EOF > "${HOME}/.config/autostart/portal-fix.desktop"
+[Desktop Entry]
+Name=Fix XDG desktop portals in a live session
+Exec=systemctl --user restart xdg-desktop-portal.service
+Type=Application
+Terminal=false
+EOF
+
 startplasma-wayland
+
+# Clean up the portal fix file so it doesn't cause a redundant restart if the
+# user logs into Plasma directly.
+rm -f "${HOME}/.config/autostart/portal-fix.desktop"
