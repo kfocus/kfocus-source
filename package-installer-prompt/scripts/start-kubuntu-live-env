@@ -1,10 +1,10 @@
 #!/bin/bash
 # Starts the Kubuntu Live Environment.
 
-export XDG_SESSION_CLASS="user"
-export XDG_SESSION_DESKTOP="KDE"
-export DESKTOP_SESSION="plasma"
-export QT_QPA_PLATFORMTHEME="kde"
+export XDG_SESSION_CLASS="user";
+export XDG_SESSION_DESKTOP="KDE";
+export DESKTOP_SESSION="plasma";
+export QT_QPA_PLATFORMTHEME="kde";
 
 if [[ $(cat /proc/cmdline) =~ "oem-config/enable=true" ]]; then
     kwin_wayland --xwayland --no-lockscreen /usr/bin/calamares-launch-oem;
@@ -15,10 +15,8 @@ fi
 
 # We need to restart xdg-desktop-portal.service once Plasma is fully started,
 # or else everything will be stuck with xdg-desktop-portal-gtk due to an
-# environment variable mixup. We also need to restart
-# xdg-desktop-portal-gtk.service, since it can crash trying to find an X
-# server that doesn't exist.
-mkdir -p "${HOME}/.config/autostart"
+# environment variable mixup.
+mkdir -p "${HOME}/.config/autostart";
 cat <<EOF > "${HOME}/.config/autostart/portal-fix.desktop"
 [Desktop Entry]
 Name=Fix XDG desktop portals in a live session
@@ -27,8 +25,8 @@ Type=Application
 Terminal=false
 EOF
 
-startplasma-wayland
+startplasma-wayland;
 
 # Clean up the portal fix file so it doesn't cause a redundant restart if the
 # user logs into Plasma directly.
-rm -f "${HOME}/.config/autostart/portal-fix.desktop"
+rm -f "${HOME}/.config/autostart/portal-fix.desktop";
