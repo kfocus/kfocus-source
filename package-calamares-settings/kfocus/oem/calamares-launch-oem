@@ -1,100 +1,170 @@
 #!/bin/bash
 #
-# Enables OEM installation mode in Calamares.
+# Copyright 2024 - 2026 Lubuntu Developers <lubuntu-devel@lists.ubuntu.com>
+# Copyright 2024 - 2026 Kubuntu Developers <kubuntu-devel@lists.ubuntu.com>
+# Copyright 2024 - 2026 MindShare Inc.
+#
+# Adapted for the Kubuntu Focus from Kubuntu's Calamares scripts by
+# A. Rainbolt.
+#
+# Name     : calamares-launch-oem
+# Summary  : calamares-launch-oem
+# Purpose  : Launches the Calamares installer in OEM mode.
+# License  : GPLv2
+# Run By   : Users
+# Spec     : 6740
+#
+set -u;
 
-if [ -e '/etc/calamares/OEM_MODE_ACTIVATED' ]; then
-  export BROWSER='sudo -H -u kubuntu firefox'
-  sudo --preserve-env=XDG_CONFIG_DIRS BROWSER="${BROWSER}" calamares -D8;
-  exit;
-fi
+## BEGIN _importCommonFn {
+# Purpose: Import the common library with _cm2* symbols
+#
+_importCommonFn () {
+  declare _lib_file;
+  _lib_file="/usr/lib/kfocus/lib/common.2.source";
+  if [ -r "${_lib_file}" ]; then
+    # shellcheck source=../../../package-main/usr/lib/kfocus/lib/common.2.source
+    source "${_lib_file}" || exit 202;
+  else
+    echo 1>&2 "${_baseName}: ABORT - Cannot source lib |${_lib_file}|";
+    exit 202;
+  fi
+}
+## . END _importCommonFn }
 
-# Detect multi-disk and offer OEM mode if so
-_disk_count=0;
-IFS=$'\n' read -r -d '' -a _block_list <<< "$(
-  find /dev/ -maxdepth 1 -type b \
-  | grep -E '^/dev/(sd[a-z]|nvme[0-9]n1|vd[a-z])$'
-)";
-for _dev_file in "${_block_list[@]}"; do
-    _byte_int="$(blockdev --getsize64 "${_dev_file}")";
-  _mib_int=$(( _byte_int / 1048576 ));
-  _trans_key="$(lsblk -ndo tran "${_dev_file}")";
+## BEGIN _mainFn {
+_mainFn () {
+  declare _brow_str _erow_str _header_str _table_str _win_title _icon_str \
+    _disk_count _dev_file _byte_int _mib_int _trans_key _msg _block_list _ans;
 
-  # Skip device if not the right disk type
-  if ! [[ "${_trans_key}" =~ ^(sata|nvme|virtio)$ ]]; then
-    continue;
+  _brow_str='<tr><td style="padding:8px 32px 8px 0">';
+  _erow_str='</td></tr>';
+  _header_str='<h3 style="color:#f7941d">';
+  _table_str='<table style="width:100%;margin-right:32px">';
+  _win_title='Kubuntu 26.04 LTS with Focus Tools Installer';
+  _icon_str='kfocus-bug-tools';
+
+  if ! /usr/bin/calamares-m2g6-restrict; then
+    exit 1;
   fi
 
-  # Skip device if less than 64 GB
-  if (( "${_mib_int}" < 65536 )); then
-    continue;
+  if [ -e '/etc/calamares/OEM_MODE_ACTIVATED' ]; then
+    # bashsupport disable=BP2001
+    export BROWSER='sudo -H -u kubuntu firefox'
+    sudo --preserve-env=XDG_CONFIG_DIRS BROWSER="${BROWSER}" calamares -D8;
+    exit 0;
   fi
 
-  (( _disk_count++ )) || true;
-done
+  # Detect multi-disk and offer OEM mode if so
+  _disk_count=0;
+  IFS=$'\n' read -r -d '' -a _block_list <<< "$(
+    find /dev/ -maxdepth 1 -type b \
+      | grep -E '^/dev/(sd[a-z]|nvme[0-9]n1|vd[a-z])$'
+  )";
+  for _dev_file in "${_block_list[@]}"; do
+    _byte_int="$(sudo blockdev --getsize64 "${_dev_file}")";
+    _mib_int=$(( _byte_int / 1048576 ));
+    _trans_key="$(lsblk -ndo tran "${_dev_file}")";
 
-_msg="$(cat <<EOL
-You are about to install the OS in OEM mode. This will prepare the system for
-distribution to an end user, providing them with an account setup wizard. If
-you do not need this capability, please cancel and use the normal install
-method.
-EOL
-)";
+    # Skip device if not the right disk type
+    if ! [[ "${_trans_key}" =~ ^(sata|nvme|virtio)$ ]]; then
+      continue;
+    fi
 
-# Report multi-disk
-if (( _disk_count > 1 )); then
-  _msg+="$(cat <<EOL
+    # Skip device if less than 64 GB
+    if (( _mib_int < 65536 )); then
+      continue;
+    fi
 
-<p>The system has multiple disks present. To properly configure a secondary
-disk after installation, you MUST install the Kubuntu Focus Suite to a single
-disk using a default installation option (such as Erase Disk). Do NOT use
-manual partitioning, and do NOT change the default filesystem.</p>
+    (( _disk_count++ )) || true;
+  done
 
-<p>It is fine to enable encryption or disable the creation of a swap file if
-desired. See <a
-href="https://kfocus.org/wf/reinstall.html#bkm_multi_disk_configuration">https://kfocus.org/wf/reinstall.html#bkm_multi_disk_configuration</a>
-for more information.</p>
+  _msg="$(cat <<EOL
+${_cm2HtmBeginStr}${_table_str}
+${_brow_str}${_header_str}Proceed With OEM Install?</h3>${_erow_str}
+
+${_brow_str}You are about to install the OS in OEM mode. This will <br>
+prepare the system for distribution to an end user, providing <br>
+them with an account setup wizard. If you do not need this <br>
+capability, please cancel and use the normal install method.${_erow_str}
 EOL
   )";
-fi
 
-_msg+="$(cat <<EOL
+  # Report multi-disk
+  if (( _disk_count > 1 )); then
+    _msg+="$(cat <<EOL
 
-<p>Are you sure you want to continue?</p>
+${_brow_str}The system has multiple disks present. To properly configure <br>
+a secondary disk after installation, you MUST install Kubuntu <br>
+26.04 LTS with Focus Tools to a single disk using a default <br>
+installation option (such as Erase Disk). Do NOT use manual <br>
+partitioning, and do NOT change the default filesystem.${_erow_str}
+
+${_brow_str}It is fine to enable encryption or disable the creation of a <br>
+swap file if desired. For more information, see: <br>
+<a href="https://kfocus.org/wf/reinstall.html#bkm_multi_disk_configuration">https://kfocus.org/wf/reinstall.html#bkm_multi_disk_configuration</a>${_erow_str}
 EOL
-)";
+    )";
+  fi
 
-if kdialog --warningyesno "${_msg}"; then
-  # Tweak branding to make it clear that OEM installation mode is active
-  # Disabled, this was an older image, and there's an OEM item in the left
-  # sidebar so it's not really that important
-  # sudo cp /etc/calamares/branding/kubuntu/welcome-oem.png /etc/calamares/branding/kubuntu/welcome.png;
+  _msg+="$(cat <<EOL
 
-  # Don't remove Calamares from the installed system.
-  sudo sed -i '/- calamares$/d' /etc/calamares/modules/packages.conf;
-  sudo sed -i '/- calamares-data$/d' /etc/calamares/modules/packages.conf;
-  sudo sed -i '/- libcalamaresui3.3$/d' /etc/calamares/modules/packages.conf;
+${_brow_str}Are you sure you want to continue?${_erow_str}</table>
+${_cm2HtmEndStr}
+EOL
+  )";
 
-  # Swap around the position of the kfocus-prep-user module
-  sed -i "/- shellprocess@kfocus-prep-user/d" /etc/calamares/settings.conf;
-  sed -i "/- packages$/a \ \ - shellprocess@kfocus-prep-user" /etc/calamares/settings.conf;
+  _ans="$(_cm2PromptUserFn -i "${_icon_str}" "${_msg}" "${_win_title}" 'w')";
+  if [ "${_ans}" = 'y' ]; then
+    # Tweak branding to make it clear that OEM installation mode is active
+    # Disabled, this was an older image, and there's an OEM item in the left
+    # sidebar so it's not really that important
+    # sudo cp /etc/calamares/branding/kubuntu/welcome-oem.png /etc/calamares/branding/kubuntu/welcome.png;
 
-  # Enable oemid module, backslashes are needed for proper indentation
-  sudo sed -i "/- welcome$/a \ \ - oemid" /etc/calamares/settings.conf;
+    # Don't remove Calamares from the installed system.
+    sudo sed -i '/- calamares$/d' /etc/calamares/modules/packages.conf;
+    sudo sed -i '/- calamares-data$/d' /etc/calamares/modules/packages.conf;
+    sudo sed -i '/- libcalamaresui3.3$/d' /etc/calamares/modules/packages.conf;
 
-  # Enable OEM prep module
-  sudo sed -i "/- packages$/a \ \ - shellprocess@oemprep" /etc/calamares/settings.conf;
+    # Swap around the position of the kfocus-prep-user module
+    sed -i "/- shellprocess@kfocus-prep-user/d" /etc/calamares/settings.conf;
+    sed -i "/- packages$/a \ \ - shellprocess@kfocus-prep-user" /etc/calamares/settings.conf;
 
-  # Fix OEM UID
-  sudo sed -i "/- shellprocess@oemprep$/a \ \ - shellprocess@fix-oem-uid" /etc/calamares/settings.conf;
+    # Enable oemid module, backslashes are needed for proper indentation
+    sudo sed -i "/- welcome$/a \ \ - oemid" /etc/calamares/settings.conf;
 
-  # Force the user of an OEM configuration user
-  sudo cp /etc/calamares/modules/users.conf.oem /etc/calamares/modules/users.conf;
+    # Enable OEM prep module
+    sudo sed -i "/- packages$/a \ \ - shellprocess@oemprep" /etc/calamares/settings.conf;
 
-  # Drop a file so that it can be seen that OEM installation mode is already
-  # active
-  sudo touch /etc/calamares/OEM_MODE_ACTIVATED;
+    # Fix OEM UID
+    sudo sed -i "/- shellprocess@oemprep$/a \ \ - shellprocess@fix-oem-uid" /etc/calamares/settings.conf;
 
-  # Launch Calamares
-  export BROWSER='sudo -H -u kubuntu firefox'
-  sudo --preserve-env=XDG_CONFIG_DIRS BROWSER="${BROWSER}" calamares -D8;
+    # Force the user of an OEM configuration user
+    sudo cp /etc/calamares/modules/users.conf.oem /etc/calamares/modules/users.conf;
+
+    # Drop a file so that it can be seen that OEM installation mode is already
+    # active
+    sudo touch /etc/calamares/OEM_MODE_ACTIVATED;
+
+    # Launch Calamares
+    export BROWSER='sudo -H -u kubuntu firefox'
+    sudo --preserve-env=XDG_CONFIG_DIRS BROWSER="${BROWSER}" calamares -D8;
+  fi
+}
+## . END _mainFn }
+
+## BEGIN Declare global variables {
+declare _binName _binDir _baseDir _baseName
+## . END Declare global variables }
+
+## BEGIN Run main if the script is not sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"        )" || exit 101;
+  _binDir="$(   dirname  "${_binName}"  )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"   )" || exit 101;
+  _baseName="$( basename "${_binName}"  )" || exit 101;
+  _importCommonFn;
+
+  _mainFn "$@";
 fi
+## . END Run main if the script is not sourced }
