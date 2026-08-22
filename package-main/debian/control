@@ -37,7 +37,7 @@ Recommends:   backintime-qt,
               kfocus-meta,
               kfocus-power-bin,
               kfocus-qwe,
-              kfocus-tools-other | kfocus-tools | kfocus-tools-nxg1 | kfocus-tools-m2g6,
+              kfocus-tools-other | kfocus-tools | kfocus-tools-nxg1 | kfocus-tools-m2g6 | kfocus-tools-arg1,
               kio-admin,
               memtest86+,
               vlc,
@@ -48,12 +48,14 @@ Description:  Kubuntu Focus System Integration
  for Kubuntu Focus computers. This includes Kubuntu Focus
  Tools like the Welcome Wizard, System Rollback, and FocusRx.
 
-# Replacements 2024-04-11
+# Replacements 2024-04-11 for Noble
 # exfat-utils => exfatprogs
 #   exfat-fuse is no longer needed as of kernel 5.7
 #   https://askubuntu.com/questions/1403900
 # vulkan-utils => vulkan-tools
 #   https://answers.launchpad.net/ubuntu/+question/696491
+# Support for krdc with krfb
+#   intel-media-va-driver-non-free, libopenh264-8
 #
 Package:      kfocus-meta
 Architecture: all
@@ -85,6 +87,7 @@ Recommends:   7zip,
               htop,
               hwinfo,
               inkscape,
+              intel-media-va-driver-non-free,
               kdenlive,
               kdiff3,
               keepassxc,
@@ -93,6 +96,7 @@ Recommends:   7zip,
               kio-extras,
               kleopatra,
               kruler,
+              libopenh264-8,
               libreoffice-base,
               libvulkan1,
               libvulkan1:i386,
