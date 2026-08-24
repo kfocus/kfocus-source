@@ -1,0 +1,109 @@
+#!/bin/bash
+
+set -u;
+
+declare _rootDir _mountinfoStr _bitList _mountPoint _mountDevice \
+  _filesystemType _tmpMountDir _msg _snapshotMetaDb;
+
+_filesystemType='';
+_mountDevice='';
+_tmpMountDir='';
+
+# Clean up the temporary toplevel subvolume mount
+_cleanupFn () {
+  if [ -n "${_tmpMountDir}" ]; then
+    umount "${_tmpMountDir}" || true
+    rmdir  "${_tmpMountDir}" || true
+  fi
+}
+
+# Print an error message, clean up, and exit 1
+_cleanupErrExitFn () {
+  declare _msg;
+  _msg="${1:-}";
+  echo "${_msg}";
+  _cleanupFn;
+  exit 1;
+}
+
+# Handle arguments
+_rootDir="${1:-}";
+[ -z "${_rootDir}" ] && _cleanupErrExitFn 'No root directory provided!';
+
+# BEGIN Locate root device
+while read -r _mountinfoStr; do
+  IFS=' ' read -r -a _bitList <<< "${_mountinfoStr}";
+  if (( ${#_bitList[@]} != 11 )); then
+    _cleanupErrExitFn 'Too few fields in mountinfo line!';
+  fi
+
+  _mountPoint="${_bitList[4]}";
+  if [ "${_mountPoint}" != "${_rootDir}" ]; then
+    continue;
+  fi
+
+  _filesystemType="${_bitList[8]}";
+  _mountDevice="${_bitList[9]}";
+  break;
+done < /proc/self/mountinfo
+# . END Locate root device
+
+# Bail if we could not find a root device
+if [ -z "${_mountDevice}" ]; then
+  _msg='Unable to determine the device containing the root filesystem!';
+  _cleanupErrExitFn "${_msg}";
+fi
+
+# Bail without erroring if the root filesystem is not BTRFS
+if [ "${_filesystemType}" != 'btrfs' ]; then
+  exit 0;
+fi
+
+# Mount the toplevel to a new temporary directory
+#
+# subvolid 5 is always the toplevel subvolume, which is what eventually gets
+#   mounted at /btrfs_main in the installed system
+_tmpMountDir="$(mktemp --directory)" \
+  || _cleanupErrExitFn 'Could not create a temporary mount directory!';
+mount -t btrfs -o subvolid=5 "${_mountDevice}" "${_tmpMountDir}" || {
+  _cleanupErrExitFn "Could not mount |${_mountDevice}| to |${_tmpMountDir}|!";
+}
+mountpoint "${_tmpMountDir}" >/dev/null 2>&1 || {
+  _msg="Mounted |${_mountDevice}| to |${_tmpMountDir}|, but it is still ";
+  _msg+="not a mountpoint!";
+  _cleanupErrExitFn "${_msg}";
+}
+
+_snapshotMetaDb="${_tmpMountDir}/kfocus-rollback-snapshot-metadb";
+
+# Create the snapshot metadb file with correct ownership and permissions
+#
+# This is adapted from kfocus-rollback-backend's source code
+if [ -f "${_snapshotMetaDb}" ]; then
+  if [ "$(stat -c '%a' "${_snapshotMetaDb}")" != '644' ]; then
+    chmod '0644' "${_snapshotMetaDb}" \
+      || _cleanupErrExitFn 'Failed to fix permissions on snapshot metadb!';
+  fi
+  if [ "$(stat -c '%u' "${_snapshotMetaDb}")" != '0' ]; then
+    chown root:root "${_snapshotMetaDb}" \
+      || _cleanupErrExitFn 'Failed to fix ownership on snapshot metadb!';
+  fi
+elif [ -e "${_snapshotMetaDb}" ]; then
+  _cleanupErrExitFn 'Metadb is not a regular file!';
+else
+  touch "${_snapshotMetaDb}" \
+    || _cleanupErrExitFn 'Could not create snapshot metadb!';
+  chmod '0644' "${_snapshotMetaDb}" \
+    || _cleanupErrExitFn 'Failed to set permissions on snapshot metadb!';
+fi
+
+# Enable automatic snapshots
+kwriteconfig6 \
+  --file  "${_snapshotMetaDb}" \
+  --group 'global' \
+  --key   'manualSwitchState' \
+          'AUTO' \
+  || _cleanupErrExitFn 'Failed to set manual switch state to |auto|!';
+
+_cleanupFn;
+exit 0;

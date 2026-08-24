@@ -9,6 +9,7 @@ all:
 	(cd kfocus && mkdir oemconfig && cd oemconfig && mkdir -p usr/bin && mkdir -p etc/calamares && mkdir -p usr/share/wayland-sessions && mkdir -p usr/libexec && mkdir -p etc && mkdir -p usr/share/applications && mkdir -p home/oem/Desktop && mkdir -p usr/lib/kfocus/bin)
 	(cp kfocus/calamares-logs-helper kfocus/oemconfig/usr/bin/)
 	(cp kfocus/kfocus-prep-user kfocus/oemconfig/usr/libexec/)
+	(cp kfocus/kfocus-enable-autosnapshot kfocus/oemconfig/usr/libexec/)
 	(cp kfocus/oem/sddm.conf kfocus/oemconfig/etc/)
 	(cp kfocus/oem/sudoers.oem kfocus/oemconfig/etc/ && chmod 400 kfocus/oemconfig/etc/sudoers.oem)
 	(cp kfocus/oem/calamares-oemfinish.sh kfocus/oemconfig/usr/libexec/)

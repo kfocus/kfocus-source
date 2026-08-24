@@ -139,6 +139,9 @@ EOL
     # Fix OEM UID
     sudo sed -i "/- shellprocess@oemprep$/a \ \ - shellprocess@fix-oem-uid" /etc/calamares/settings.conf;
 
+    # Don't enable automatic snapshots for the OEM configuration environment
+    sudo sed -i "/- shellprocess@autosnapshot/d" /etc/calamares/settings.conf;
+
     # Force the user of an OEM configuration user
     sudo cp /etc/calamares/modules/users.conf.oem /etc/calamares/modules/users.conf;
 
