@@ -1530,7 +1530,7 @@ Kirigami.ApplicationWindow {
 
             pageTitleText   = 'File Backup';
             topImage.source = imgDir + 'file_backup.svg';
-            topHeading.text = 'Snapshot and Recover Files';
+            topHeading.text = 'Backup and Recover Files';
             primaryText.text
               = '<p><b>BackInTime can create point-in-time file backups to '
               + 'local or remote disks.</b> We recommend you use it to '
