@@ -383,7 +383,7 @@ Kirigami.ApplicationWindow {
 
             Kirigami.InlineMessage {
                 id                  : pageNotice
-                type                : Kirigami.MessageType.Info
+                type                : Kirigami.MessageType.Information
                 Layout.fillWidth    : true
                 Layout.bottomMargin : Kirigami.Units.gridUnit
             }
@@ -1439,6 +1439,13 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'systemRollbackItem':
+            let system_rollback_state;
+            exeRun.execSync(
+              'pkexec '
+              + systemDataMap.binDir
+              + '/kfocus-rollback-set getManualSwitchState' );
+            system_rollback_state = exeRun.stdout.trim();
+
             initPageFn([
               topImage,     topHeading,
               pageNotice,   primaryText,
@@ -1450,9 +1457,11 @@ Kirigami.ApplicationWindow {
             topImage.source = imgDir + 'rollback.svg';
             topHeading.text = 'Manage and Restore Snapshots';
             pageNotice.text
-              = 'Kubuntu Focus Systems automatically take snapshots of '
-              + 'system files before software updates. This can be changed '
-              + 'in the System Rollback tool.'
+              = 'Automatic Snapshots are '
+              + (system_rollback_state === 'AUTO'
+                ? '<b>enabled</b>.'
+                : '<b>disabled</b>.')
+              + ' You can toggle this setting in the System Rollback tool.'
               ;
             primaryText.text
               = '<p><b>The System Rollback tool</b> snapshots system files and '
@@ -1525,7 +1534,7 @@ Kirigami.ApplicationWindow {
             primaryText.text
               = '<p><b>BackInTime can create point-in-time file backups to '
               + 'local or remote disks.</b> We recommend you use it to '
-              + 'backup home directories, and use System Rollback to snapshot
+              + 'backup home directories, and use System Rollback to snapshot '
               + 'system files. Unlike System Rollback, BackInTime is not '
               + 'enabled by default.<br></p>'
 
