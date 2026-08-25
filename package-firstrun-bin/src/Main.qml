@@ -1452,11 +1452,11 @@ Kirigami.ApplicationWindow {
             pageNotice.text
               = 'Kubuntu Focus Systems automatically take snapshots of '
               + 'system files before software updates. This can be changed '
-              + 'in the system rollback tool.'
+              + 'in the System Rollback tool.'
               ;
             primaryText.text
-              = '<p><b>The System Rollback tool</b> snapshots and restores '
-              + 'system files upon request. This allows you to quickly '
+              = '<p><b>The System Rollback tool</b> snapshots system files and '
+              + 'restores them upon request. This allows you to quickly '
               + 'recover from failed upgrades, kernel issues, and other OS '
               + 'problems.<br></p>'
 
@@ -1562,7 +1562,7 @@ Kirigami.ApplicationWindow {
               + 'icon</b>. ' + ding04Str + 'Browse backups on the left, '
               + ding05Str + 'select files on the right, and '
               + ding06Str + 'adjust settings. See General > Schedule at the '
-              + 'bottom to set automatic snapshots.<br></p>'
+              + 'bottom to set automatic backups.<br></p>'
 
               + '<p>' + ding07Str
               + '<b>Click on the backup icon next to the system tray</b> to '
