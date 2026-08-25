@@ -1524,9 +1524,10 @@ Kirigami.ApplicationWindow {
             topHeading.text = 'Snapshot and Recover Files';
             primaryText.text
               = '<p><b>BackInTime can create point-in-time file backups to '
-              + 'local or remote disks.</b> We recommend it be used to '
-              + 'backup home directories. It is not enabled by '
-              + 'default.<br></p>'
+              + 'local or remote disks.</b> We recommend you use it to '
+              + 'backup home directories, and use System Rollback to snapshot
+              + 'system files. Unlike System Rollback, BackInTime is not '
+              + 'enabled by default.<br></p>'
 
               + '<p><b>See more in the</b> '
               + '<a href="https://kfocus.org/wf/backup">Backups Guided '
