@@ -1,0 +1,160 @@
+#!/bin/bash
+#shellcheck disable=SC2031
+#
+# Copyright 2019-2026 MindShare Inc.
+#
+# Written for the Kubuntu Focus by A. Rainbolt.
+#
+# Name     : calamares-m2g6-restrict
+# Summary  : calamares-m2g6-restrict
+# Purpose  : Discourages users from installing Kubuntu 26.04 LTS with Focus
+#            Tools on M2 GEN 6 systems due to driver incompatibilities
+# Example  : calamares-m2g6-restrict
+# License  : GPLv2
+# Run By   : Calamares launcher scripts
+# Spec     : 6834
+#
+set -u;
+
+## BEGIN _importCommonFn {
+# Purpose: Import the common library with _cm2* symbols
+#
+_importCommonFn () {
+  declare _lib_file;
+  _lib_file="/usr/lib/kfocus/lib/common.2.source";
+  if [ -r "${_lib_file}" ]; then
+    # shellcheck source=../../package-main/usr/lib/kfocus/lib/common.2.source
+    source "${_lib_file}" || exit 202;
+  else
+    echo 1>&2 "${_baseName}: ABORT - Cannot source lib |${_lib_file}|";
+    exit 202;
+  fi
+}
+## . END _importCommonFn }
+
+## BEGIN _mainFn {
+_mainFn () {
+  declare _bold_str _brow_lp_str _brow_rp_str _center_header_str _code_str \
+    _erow_str _left_header_str _table_str _win_title _model_code \
+    _override_flag _override_str _msg _icon_str _typed_override_str \
+    _exit_int _reject_msg;
+
+  _bold_str='<b style="color:#f7941d">';
+  _brow_lp_str='<tr><td style="padding:8px 0 8px 32px">';
+  _brow_rp_str='<tr><td style="padding:8px 32px 8px 0">';
+  _center_header_str='<h3 style="color:#f7941d;text-align:center">';
+  _code_str='<code style="color:#4daa4d">';
+  _erow_str='</td></tr>';
+  _left_header_str='<h3 style="color:#f7941d">';
+  _table_str='<table style="width:100%;margin-right:32px">';
+  _win_title='Kubuntu 26.04 LTS with Focus Tools Installer';
+  _icon_str='kfocus-bug-tools';
+
+  _model_code="$(_cm2EchoModelStrFn 'code')";
+  _override_flag='/etc/calamares/M2G6_OVERRIDE_READY';
+  _override_str='I understand NVIDIA graphics will not work and still wish ';
+  _override_str+='to proceed.';
+
+  #_model_code='m2g6';
+
+  [ "${CALAMARES_SKIP_M2G6_RESTRICT:-}" = 'y' ] && exit 0;
+
+  if [ "${_model_code}" = 'm2g6' ]; then
+    if [ -f "${_override_flag}" ]; then
+      _msg="$(cat <<EOL
+${_cm2HtmBeginStr}${_table_str}
+${_brow_lp_str}${_center_header_str}Installation Not
+Recommended</h3>${_erow_str}
+
+${_brow_lp_str}Due to an NVIDIA driver issue specific to this M2 GEN 6 model,
+Kubuntu 26.04 LTS with <br>
+Focus Tools and other recent Linux distros are unable to use the discrete GPU.
+A software <br>
+or BIOS update will likely fix this in the future. Kubuntu Focus will release
+an updated ISO <br>
+once this issue is resolved.${_erow_str}
+
+${_brow_lp_str}If you are a Kubuntu Focus developer, have been directed by
+Kubuntu Focus support to <br>
+attempt an installation, or are very brave, type the following string and
+click "OK":${_erow_str}
+
+${_brow_lp_str}${_code_str}${_override_str}</code><${_erow_str}</table>
+${_cm2HtmEndStr}
+EOL
+      )";
+      _typed_override_str="$("${_cm2KdiagExe}" --icon "${_icon_str}" \
+        --title "${_win_title}" --inputbox "${_msg}")";
+      _exit_int="$?";
+      _reject_msg="$(cat <<EOL
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}Installation Blocked</h3>${_erow_str}
+
+${_brow_rp_str}The override was not activated because <br>
+XXX_REASON_XXX.${_erow_str}
+
+${_brow_rp_str}The installer will now exit.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOL
+      )";
+      if [ "${_exit_int}" = '0' ]; then
+        if [  "${_typed_override_str}" = "${_override_str}" ]; then
+          exit 0;
+        elif [ -z "${_typed_override_str}" ]; then
+          sudo rm -f "${_override_flag}" || true;
+          _reject_msg="${_reject_msg//XXX_REASON_XXX/no confirmation string was provided}";
+        else
+          _reject_msg="${_reject_msg//XXX_REASON_XXX/the confirmation string was not entered correctly}"
+        fi
+      else
+        sudo rm -f "${_override_flag}" || true;
+        _reject_msg="${_reject_msg//XXX_REASON_XXX/the cancel button was pressed}";
+      fi
+      _cm2PromptUserFn -i "${_icon_str}" "${_reject_msg}" "${_win_title}" 's';
+      exit 1;
+    else
+      _msg="$(cat <<EOL
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}Installation Blocked</h3>${_erow_str}
+
+${_brow_rp_str}${_bold_str}Will not install to this M2 GEN 6 laptop due to a
+model-specific driver issue.</b>${_erow_str}
+
+${_brow_rp_str}Due to an NVIDIA driver issue specific to this model, Kubuntu
+26.04 LTS <br>
+with Focus Tools and other recent Linux distros are unable to use the <br>
+discrete GPU. A software or BIOS update will likely fix this in the
+future. <br>
+Kubuntu Focus will release an updated ISO once this issue is
+resolved.${_erow_str}
+
+${_brow_rp_str}The installer will now exit. Although it is not recommended, if
+you wish to <br>
+bypass this restriction, you may launch this installer
+again.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOL
+      )";
+      sudo touch "${_override_flag}";
+      _cm2PromptUserFn -i "${_icon_str}" "${_msg}" "${_win_title}" 's';
+      exit 1;
+    fi
+  fi
+}
+## . END _mainFn }
+
+## BEGIN Declare global variables {
+declare _binName _binDir _baseDir _baseName
+## . END Declare global variables }
+
+## BEGIN Run main if the script is not sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"        )" || exit 101;
+  _binDir="$(   dirname  "${_binName}"  )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"   )" || exit 101;
+  _baseName="$( basename "${_binName}"  )" || exit 101;
+  _importCommonFn;
+
+  _mainFn "$@";
+fi
+## . END Run main if the script is not sourced }

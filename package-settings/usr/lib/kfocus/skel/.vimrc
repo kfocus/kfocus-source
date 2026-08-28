@@ -191,7 +191,7 @@ map ;l :%s?\([\.!?]\) \s\+?\1 ?gc<CR>
 "   You may need to use this for X11 sessions with xsel:
 "   map ;v :set paste<CR>:r !xsel --clipboard --output<CR>:set nopaste<CR>
 " The following works with Wayland and XWayland apps
-map ;v :set paste<CR>:r !wl-paste<CR>:set nopaste<CR>
+map ;v :set paste<CR>:-1r !wl-paste<CR>:set nopaste<CR>
 
 " C-J format JSON blob and tighten up leading and single-line entries
 map <C-J> :set paste<CR>1Givar j = GA; console.log(JSON.stringify(j,null,2));1G^vG:!node<CR> :%s?^\(\s*{\)\s*\n\s*?\1 ?g<CR>:%s?^\(\s*{[^,}]*\)\n\s*}?\1 }?g<CR>
@@ -276,6 +276,18 @@ let g:markdown_fenced_languages = ['bash','changelog','css','erb=eruby','javascr
 " Reduce to minlines value or disable if editing is slow.
 " See https://github.com/vim/vim/issues/2790
 syntax sync minlines=10000
+
+" Run only for markdown files; highlight backtick and bold text by color
+autocmd FileType markdown call s:MarkdownCustomHighlights()
+
+function! s:MarkdownCustomHighlights()
+  " Color for inline code ticks (e.g., `code`)
+  highlight markdownCode ctermfg=Cyan guifg=Cyan
+
+  " Color for bold text (e.g., **bold**)
+  highlight markdownCode ctermfg=Cyan guifg=Cyan
+  highlight htmlBold ctermfg=Red guifg=Red cterm=bold gui=bold
+endfunction
 
 " =====[ Wrap for vimdiff, both panes ] ===============================
 function! VimdiffWrap ()

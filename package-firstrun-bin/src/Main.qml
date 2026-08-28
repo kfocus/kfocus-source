@@ -381,6 +381,13 @@ Kirigami.ApplicationWindow {
                 Layout.alignment    : Qt.AlignHCenter
             }
 
+            Kirigami.InlineMessage {
+                id                  : pageNotice
+                type                : Kirigami.MessageType.Information
+                Layout.fillWidth    : true
+                Layout.bottomMargin : Kirigami.Units.gridUnit
+            }
+
             Controls.Label {
                 id       : primaryText
                 wrapMode : Text.WordWrap
@@ -723,7 +730,7 @@ Kirigami.ApplicationWindow {
     function initPageFn ( visible_elements_list ) {
         var all_elements_list = [
             actionButton,        busyIndicator,
-            clearButton,
+            clearButton,         pageNotice,
             headerHighlightRect, instructionsText,
             interActionButton,   interContinueLabel,
             interSkipButton,     interTopHeading,
@@ -1432,22 +1439,35 @@ Kirigami.ApplicationWindow {
             break;
 
         case 'systemRollbackItem':
+            let system_rollback_state;
+            exeRun.execSync(
+              'pkexec '
+              + systemDataMap.binDir
+              + '/kfocus-rollback-set getManualSwitchState' );
+            system_rollback_state = exeRun.stdout.trim();
+
             initPageFn([
-              topImage,       topHeading,
-              primaryText,    actionButton,
-              previousButton, skipButton
+              topImage,     topHeading,
+              pageNotice,   primaryText,
+              actionButton, previousButton,
+              skipButton
             ]);
 
             pageTitleText   = 'System Rollback';
             topImage.source = imgDir + 'rollback.svg';
             topHeading.text = 'Manage and Restore Snapshots';
+            pageNotice.text
+              = 'Automatic Snapshots are '
+              + (system_rollback_state === 'AUTO'
+                ? '<b>enabled</b>.'
+                : '<b>disabled</b>.')
+              + ' You can toggle this setting in the System Rollback tool.'
+              ;
             primaryText.text
-              = '<p><b>The System Rollback tool</b> snapshots and restores '
-              + 'system files upon request, allowing you to quickly recover '
-              + 'from failed upgrades, kernel issues, and other OS problems. '
-              + 'It can automatically take snapshots both '
-              + 'periodically and before software updates, although this '
-              + 'is not enabled by default.<br></p>'
+              = '<p><b>The System Rollback tool</b> snapshots system files and '
+              + 'restores them upon request. This allows you to quickly '
+              + 'recover from failed upgrades, kernel issues, and other OS '
+              + 'problems.<br></p>'
 
               + '<p><b>System Rollback does not snapshot files in /home</b>. '
               + 'For more info, see the '
@@ -1510,13 +1530,13 @@ Kirigami.ApplicationWindow {
 
             pageTitleText   = 'File Backup';
             topImage.source = imgDir + 'file_backup.svg';
-            topHeading.text = 'Snapshot and Recover Files';
+            topHeading.text = 'Backup and Recover Files';
             primaryText.text
-              = '<p><b>BackInTime takes snapshots of your home '
-              + 'directory</b> so you can recover information that was '
-              + 'later changed or removed. We\'ve configured it to '
-              + 'ignore folders where cloud drives and software repos '
-              + 'are usually located.<br></p>'
+              = '<p><b>BackInTime can create point-in-time file backups to '
+              + 'local or remote disks.</b> We recommend you use it to '
+              + 'backup home directories, and use System Rollback to snapshot '
+              + 'system files. Unlike System Rollback, BackInTime is not '
+              + 'enabled by default.<br></p>'
 
               + '<p><b>See more in the</b> '
               + '<a href="https://kfocus.org/wf/backup">Backups Guided '
@@ -1548,11 +1568,11 @@ Kirigami.ApplicationWindow {
               + '<b>Once installed, the BackInTime app</b> should appear as '
               + 'shown.<br></p>'
 
-              + '<p>' + ding03Str + '<b>Take snapshots with the Disk '
-              + 'icon</b>. ' + ding04Str + 'Browse snapshots on the left, '
+              + '<p>' + ding03Str + '<b>Create backups with the Disk '
+              + 'icon</b>. ' + ding04Str + 'Browse backups on the left, '
               + ding05Str + 'select files on the right, and '
               + ding06Str + 'adjust settings. See General > Schedule at the '
-              + 'bottom to set automatic snapshots.<br></p>'
+              + 'bottom to set automatic backups.<br></p>'
 
               + '<p>' + ding07Str
               + '<b>Click on the backup icon next to the system tray</b> to '
