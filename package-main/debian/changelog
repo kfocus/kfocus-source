@@ -1,3 +1,13 @@
+kfocus-main (26.04.11~beta1) resolute; urgency=medium
+
+  * kfocus-focusrx: Remove unused _chkNvPMizerFn (#6779)
+  * kfocus-focusrx: Add non-ineractive widget reset on hardware change (#6858)
+    Avoids an issue where widgets can get poorly resized for different screen.
+  * kfocus-reset-effects: NC comment clean with directions to old code (#6579)
+  * kfocus-reset-widgets: Add 'non-interactive' reset (#6585)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Sat, 29 Aug 2026 17:10:21 -0400
+
 kfocus-main (26.04.10) resolute; urgency=medium
 
   * Add kfocus-tools-arg1 to recommends list (#6850)
