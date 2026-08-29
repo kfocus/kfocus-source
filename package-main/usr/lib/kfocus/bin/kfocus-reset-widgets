@@ -98,6 +98,17 @@ EOF
 _mainFn () {
   declare _reply;
 
+  # Support non-interactive quiet run
+  if [ "${1:-}" = 'non-interactive' ]; then
+    if _cm2RunPlasmaScriptFn 'removeKfocusWidgets.js'; then
+      if _cm2RunPlasmaScriptFn 'createKfocusWidgets.js'; then
+        exit 0;
+      fi
+    fi
+    exit 1;
+  fi
+
+  # Proceed with interactive run
   _reply="$(_cm2PromptUserFn -i "${_iconStr}" "${_doResetWidgetsMsg}" \
     "${_winTitle}" 'a')";
 

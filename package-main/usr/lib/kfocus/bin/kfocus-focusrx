@@ -540,8 +540,12 @@ _EOH06
   # Note: _cm2RunLongCmdFn prefixes commands with pkexec
   if _output_str="$(
     _cm2RunLongCmdFn "${_prompt_msg}" \
-      "${_focusRxSetExe}" 'fix-hw-config' "${_reason_str}"
+      "${_focusRxSetExe}" 'fix-hw-config' "${_reason_str}";
   )"; then
+
+    # Reset widgets to circumvent breakage on resize (#6858)
+    if [ -n "${_resetWidgetsExe}" ]; then "${_resetWidgetsExe}" || true; fi
+
     _prompt_msg="$(cat << _EOH07
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}Reboot Now?</h3>
@@ -1282,6 +1286,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     "_nvSettingsExe|nvidia-settings||optional"
     "_primeSelectExe|prime-select||optional"
     "_resetEffectsExe|${_binDir}/kfocus-reset-effects||optional"
+    "_resetWidgetsExe|${_binDir}/kfocus-reset-widgets||optional"
     "_rollbackBackendExe|${_binDir}/kfocus-rollback-backend||optional"
     "_rollbackExe|${_binDir}/kfocus-rollback||optional"
     "_rollbackSetExe|${_binDir}/kfocus-rollback-set||optional"
