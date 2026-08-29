@@ -376,53 +376,14 @@ _chkOemMultiDiskFn () {
 ## . END _chkOemMultiDiskFn }
 
 ## BEGIN _chkNvPMizerFn {
-_chkNvPMizerFn () {
-  declare _title _param_key _tgt_idx _current_idx _rc_file _sed_str;
-
-  # Skip if no exe, not the correct package, or not running nvidia
-  if [ -z "${_nvSettingsExe}" ] || [ -z "${_primeSelectExe}" ]; then return; fi
-  if ! _cm2ChkInstalledPkgFn 'kfocus-nvidia-edge'; then return; fi
-
-  _title='Set PowerMizerMode for kfocus-nvidia-edge';
-  _cm2SetMsgFn "${_title}";
-  if ! [[ "$("${_primeSelectExe}" query)" =~ ^(nvidia|on-demand) ]]; then
-    _cm2SucStrFn 'Skipped, display mode does not use framebuffer.';
-    _cm2SucFn;
-    return;
-  fi
-
-  # Declare values
-  _param_key='GPUPowerMizerMode';
-  _tgt_idx=1;
-
-  # Query first to see if a change is required
-  _current_idx="$("${_nvSettingsExe}" -q "${_param_key}" -t)";
-  if [ "${_current_idx:-}" = "${_tgt_idx}" ]; then
-    _cm2SucStrFn 'Skipped, parameter already set.';
-    _cm2SucFn;
-    return;
-  fi
-
-  _rc_file="${HOME}/.nvidia-settings-rc";
-  if [ -f "${_rc_file}" ]; then
-    _sed_str="s/${_param_key}=[0-9]\$/${_param_key}=${_tgt_idx}/";
-    sed -i "${_sed_str}" "${_rc_file}" || true;
-  fi
-
-  if "${_nvSettingsExe}" -a "${_param_key}=${_tgt_idx}"; then
-    _cm2SucStrFn 'Parameter set as directed.';
-    _cm2SucFn;
-  else
-    _cm2WarnStrFn 'Parameter setting did not work.';
-    _cm2WarnFn;
-  fi
-}
+# 6779: Disabled: While required for fast screens for X11/Noble, is not needed
+#   for Wayland/Resolute. See `noble` branch to revive.
 ## . END _chkNvPMizerFn }
 
 ## BEGIN _chkDispRefreshFn {
-# kscreen-doctor's output format has changed substantially. This function MUST
-# be reworked for Plasma 6 if we bring it back. See the `noble` branch if we
-# need to revive this.
+# 6556: Disabled: While required for fast screens for X11/Noble, is not needed
+#   for Wayland/Resolute. See the `noble` branch to revive. Beware,
+# kscreen-doctor output is changed in resolute, and would need rework.
 ## . END _chkDispRefreshFn }
 
 ## BEGIN _chkHwConfigFn {
@@ -544,7 +505,9 @@ _EOH06
   )"; then
 
     # Reset widgets to circumvent breakage on resize (#6858)
-    if [ -n "${_resetWidgetsExe}" ]; then "${_resetWidgetsExe}" || true; fi
+    if [ -n "${_resetWidgetsExe}" ]; then
+      "${_resetWidgetsExe}" 'non-interactive' || true;
+    fi
 
     _prompt_msg="$(cat << _EOH07
 ${_cm2HtmBeginStr}
@@ -1206,14 +1169,14 @@ EOF
   _ensureCrontabFn;   # CFG: Ensure crontab for BackInTime
   _chkHwConfigFn;     # CFG: 6204 Update kfocus pkgs and config for hw
 
-  _chkNvPMizerFn;     # UX 5423: Check and apply NV PMizer fixups
+  # _chkNvPMizerFn;   # UX 5423: Check and apply NV PMizer fixups
+                      # UX 6779: Not needed for Wayland/Resolute
   _chkRollbackUxFn;   # UX 4013: Check for rollback, fixup icons
   _chkRestoreKbdFn;   # UX 3735: Check and restore keyboard LED state
   _chkIbusConfigFn;   # UX 4027: Check and apply IBUS fixup
 
   # _chkDispRefreshFn;# UX 6141: Check display refresh, apply fixups
-                      # Disabled for 26.04 as higher refresh rates seem to
-                      # work better with Wayland
+                      # UX 6556: Not needed for Wayland/Resolute
   # _chkKernelPkgFn;  # Disabled: See 4423, 66226a00c
   # _chkNvidiaPkgFn;  # Disabled: See 2928
   # _cleanupZoomFn;   # Disabled: See 2146,2305
