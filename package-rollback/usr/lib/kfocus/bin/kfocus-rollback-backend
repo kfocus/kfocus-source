@@ -95,6 +95,7 @@ _assignGlobalUiVarsFn () {
   _browStr='<tr><td style="padding:8px 32px 8px 0">';
   _erowStr='</td></tr>';
   _tableStr='<table style="width:100%;margin-right:32px">';
+  _indStr='\&nbsp; ';
 
   _prepareFailMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
@@ -116,27 +117,35 @@ ${_browStr}<h3 style="color:#f7941d">System Rollback: Low Disk Space</h3>
 ${_erowStr}
 
 ${_browStr}The root (/) partition has only XXX_REMAINING_PERCENT_XXX%
-unallocated space remaining. To <br>
-minimize the chance of file corruption, System Rollback has paused<br>
-snapshot maintenance until at least 15% is available. Please free up<br>
-disk space as soon as possible.${_erowStr}
+unallocated space<br>
+remaining. Snapshots should not be taken and are paused<br>
+until at least 15% is available. We suggest the following<br>
+steps to increase unallocated space, stopping once more<br>
+than 15% is again available:
+${_erowStr}
 
-${_browStr}&bull; Remove unused files from /home using Dolphin. This works on<br>
-this system because /home shares disk space with the root file system.<br>
-<br>
-&bull; Purge software packages with Discover or apt.<br>
-<br>
-&bull; Move or delete databases, VMs, or logs from the root filesystem. To<br>
-move big data to another partition, see advice at<br>
-<a href="https://kfocus.org/wf/big-data">https://kfocus.org/wf/big-data</a>.<br>
-<br>
-&bull; Delete large snapshots or free up disk space using Rollback
-Dashboard.<br>
-Click on "Show Snapshot Sizes" to see the space used by each
-snapshot.${_erowStr}</table><br>
+${_browStr}
+1. In Rollback Dashboard:<br>
+#a. Click <code>[Free Up Disk Space]</code>
+ &gt; <code>[Quick Clean]</code>.<br>
+#b. Click <code>[Show Snapshot Sizes]</code>, then delete<br>
+##large snapshots until the condition clears.<br>
+#c. <b>If you don't need need any snapshots</b>,<br>
+##Click <code>[Free Up Disk Space]</code>
+ &gt; <code>[Deep Clean]</code>.<br>
+##<b>WARNING: This will delete all snapshots!</b><br>
+2. In Dolphin or Konsole, remove big files from <code>/home</code>.<br>
+#This works on this system because <code>/home</code> shares space<br>
+#with the root filesystem. Good candidates are VMs<br>
+#and games from Steam.<br>
+3. If you have big data like databases, VMs, or logs on<br>
+#the root filesystem, delete them or move to another<br>
+#partition: <a href="https://kfocus.org/wf/big-data">https://kfocus.org/wf/big-data</a>.
+${_erowStr}</table><br>
 ${_cm2HtmEndStr}
 EOF
   )";
+  _lowDiskWithHomeMsg="${_lowDiskWithHomeMsg//#/$_indStr}";
 
   _lowDiskWithoutHomeMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
@@ -144,26 +153,35 @@ ${_browStr}<h3 style="color:#f7941d">System Rollback: Low Disk Space</h3>
 ${_erowStr}
 
 ${_browStr}The root (/) partition has only XXX_REMAINING_PERCENT_XXX%
-unallocated space remaining. To <br>
-minimize the chance of file corruption, System Rollback has paused<br>
-snapshot maintenance until at least 15% is available. Please free up<br>
-disk space as soon as possible.${_erowStr}
+unallocated space<br>
+remaining. Snapshots should not be taken and are paused<br>
+until at least 15% is available. We suggest the following<br>
+steps to increase unallocated space, stopping once more<br>
+than 15% is again available:
+${_erowStr}
 
-${_browStr}&bull; Purge software packages with Discover or apt.<br>
+${_browStr}
+1. In Rollback Dashboard:<br>
+#a. Click <code>[Free Up Disk Space]</code>
+ &gt; <code>[Quick Clean]</code>.<br>
+#b. Click <code>[Show Snapshot Sizes]</code>, then delete<br>
+##large snapshots until the condition clears.<br>
+#c. <b>If you don't need need any snapshots</b>,<br>
+##Click <code>[Free Up Disk Space]</code>
+ &gt; <code>[Deep Clean]</code>.<br>
+##<b>WARNING: This will delete all snapshots!</b><br>
+2. If you have big data like databases, VMs, or logs on<br>
+#the root filesystem, delete them or move to another<br>
+#partition:<a href="https://kfocus.org/wf/big-data">https://kfocus.org/wf/big-data</a>.<br>
 <br>
-&bull; Move or delete databases, VMs, or logs from the root filesystem. To<br>
-move big data to another partition, see advice at<br>
-<a href="https://kfocus.org/wf/big-data">https://kfocus.org/wf/big-data</a>.<br>
-<br>
-&bull; Delete large snapshots or free up disk space using Rollback
-Dashboard.<br>
-Click on "Show Snapshot Sizes" to see the space used by each snapshot.<br>
-<br>
-&bull; You do not need to remove files from /home, as it is on a separate
-disk.${_erowStr}</table><br>
+You do not need to remove files from <code>/home</code>, as it is on a<br>
+separate parition.${_erowStr}</table><br>
+${_erowStr}</table><br>
+
 ${_cm2HtmEndStr}
 EOF
   )";
+  _lowDiskWithoutHomeMsg="${_lowDiskWithoutHomeMsg//#/$_indStr}";
 
   _lowBootMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
