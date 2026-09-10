@@ -1,7 +1,0 @@
-[Unit]
-Description=FocusRx BTRFS maintenance service
-
-[Service]
-Type=oneshot
-RemainAfterExit=no
-ExecStart=/usr/lib/kfocus/bin/kfocus-focusrx-system -s
