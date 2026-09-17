@@ -78,7 +78,6 @@ _exeLookupList=(
   'konsole|konsole||konsole|Konsole: Use an X Terminal Emulator'
   'krita|krita||krita|Krita: Raster Image Editor'
   'kruler|kruler||kruler|Kruler: Measure Screen Objects'
-  'kubectl|konsole;--hold;-e;kubectl;help|kubectl|kubectl|Kubernetes: Command Line Container Management'
   'libreoffice-base|libreoffice;--base||libreoffice-base|LibreOffice Database: Connect Databases'
   'libreoffice-calc|libreoffice;--calc||libreoffice-calc|LibreOffice Calc: Create and Edit Spreadsheets'
   'libreoffice-draw|libreoffice;--draw||libreoffice-draw|LibreOffice Drawing: Create Vector and Raster Images'
@@ -280,14 +279,6 @@ function deb_keepassxc() {
   PPA="ppa:phoerious/keepassxc"
   PRETTY_NAME="KeePassXC"
   WEBSITE="https://keepassxc.org/"
-}
-function deb_kubectl() {
-  GPG_KEY_URL="https://packages.cloud.google.com/apt/doc/apt-key.gpg"
-  APT_LIST_NAME="kubectl"
-  # APT_REPO_URL="deb https://apt.kubernetes.io/ kubernetes-xenial main"
-  APT_REPO_URL="deb [signed-by=/usr/share/keyrings/kubectl-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main"
-  PRETTY_NAME="Kubernetes"
-  WEBSITE="https://kubernetes.io"
 }
 function deb_lutris() {
   PPA="ppa:lutris-team/lutris"
