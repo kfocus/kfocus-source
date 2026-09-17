@@ -16,5 +16,15 @@ _cm2SucStrFn  () { _cm2EchoFn "ok  : ${*}"; }
 _cm2SetMsgFn "Refresh package list"
 if apt-get update; then _cm2SucFn; else _cm2WarnFn; fi
 
+if [ "${1:-}" = 'configure' ]; then
+  if ! dpkg --compare-versions "${2:-}" ge '24.04.10'; then
+    # A Linux kernel upgrade will have removed the older NVIDIA drivers. Tell
+    # FocusRx to reconfigure the system on the next reboot.
+    touch '/var/lib/kfocus/hw_reconfig_force';
+    # Make a reboot popup appear.
+    touch '/var/run/reboot-required';
+  fi
+fi
+
 # Tag to allow some debhelper commands to inject relevant code
 #DEBHELPER#
