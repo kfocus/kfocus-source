@@ -31,7 +31,7 @@ _importCommonFn() {
 _optimizeDiskFn () {
   [ -z "${_rollbackBackendExe}" ] && return;
   "${_rollbackBackendExe}" 'trimSnapshots';
-  "${_rollbackBackendExe}" 'btrfsMaintain';
+  "${_rollbackBackendExe}" 'btrfsMaintain' 'manual';
 }
 ## . END _optimizeDiskFn }
 

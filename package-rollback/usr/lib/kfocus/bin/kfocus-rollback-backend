@@ -1755,6 +1755,25 @@ _readMetadbFn () {
 }
 ## . END private _readMetadbFn }
 
+## BEGIN private _resetMaintainTimerFn {
+# Summary   : _resetMaintainTimerFn
+# Purpose   : Resets the BTRFS maintenance timer in kfocus-btrfs-watcher if
+#           : a reset FIFO exists.
+# Example   : _resetMaintainTimerFn
+# Arguments : none
+# Globals   : _rb2TimerResetFifo
+# Outputs   : none
+# Returns   : none
+# Throws    : none
+#
+_resetMaintainTimerFn () {
+  if [ -p "${_rb2TimerResetFifo}" ]; then
+    # Any character can be used here, kfocus-btrfs-watcher doesn't care what.
+    echo -n '.' | tee "${_rb2TimerResetFifo}" >/dev/null 2>&1
+  fi
+}
+## . END private _resetMaintainTimerFn }
+
 ## BEGIN private _trapExitFn {
 # Summary   : _trapExitFn
 # Purpose   : Catches unexpected exits and logs them.
@@ -2125,13 +2144,15 @@ _aptSnapshotPublicFn () {
 
 
 ## BEGIN _btrfsDeepCleanPublicFn {
-# Summary   : _btrfsDeepCleanPublicFn
+# Summary   : _btrfsDeepCleanPublicFn [triggerType]
 # Purpose   : Runs an intensive BTRFS optimization routine. Currently, this
 #             deletes all snapshots, balances main and boot filesystems
 #             (forcing a balance on the main FS), and defragments highly
 #             fragmented files on the main filesystem.
-# Example   : _btrfsDeepCleanPublicFn
-# Arguments : none
+# Example   : _btrfsDeepCleanPublicFn 'manual'
+# Arguments :
+#   triggerType - 'auto' if the maintenance operation was triggered
+#     automatically by the system, 'manual' otherwise.
 # Globals   : none
 # Outputs   : Log info
 # Returns   : none
@@ -2146,10 +2167,18 @@ _aptSnapshotPublicFn () {
 #     - Could not defragment files on the main filesystem.
 #
 _btrfsDeepCleanPublicFn () {
+  declare _trigger_type_str;
+  _trigger_type_str="${1:-auto}";
+
   _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
     'BTRFS status prevents BTRFS deep cleaning!';
 
   _logWrapFn 'notice' "BTRFS deep clean operation started.";
+
+  if [ "${_trigger_type_str}" = 'manual' ]; then
+    _resetMaintainTimerFn;
+  fi
+
   _deleteAllSnapshotsFn    || _logExitFn 'alert' '2' \
     'Failed to delete all snapshots during BTRFS deep cleaning!';
   _balanceMainFn 'y'       || _logExitFn 'alert' '2' \
@@ -2163,11 +2192,13 @@ _btrfsDeepCleanPublicFn () {
 ## . END _btrfsDeepCleanPublicFn }
 
 ## BEGIN _btrfsMaintainPublicFn {
-# Summary   : _btrfsMaintainPublicFn
+# Summary   : _btrfsMaintainPublicFn [triggerType]
 # Purpose   : Runs routine snapshot maintenance. Currently, this simply
 #             balances main and boot filesystems.
-# Example   : _btrfsMaintainPublicFn
-# Arguments : none
+# Example   : _btrfsMaintainPublicFn 'auto'
+# Arguments :
+#   triggerType - 'auto' if the maintenance operation was triggered
+#     automatically by the system, 'manual' otherwise.
 # Globals   : none
 # Outputs   : Log info
 # Returns   : none
@@ -2180,10 +2211,18 @@ _btrfsDeepCleanPublicFn () {
 #     - Could not balance boot filesystem.
 #
 _btrfsMaintainPublicFn () {
+  declare _trigger_type_str;
+  _trigger_type_str="${1:-auto}";
+
   _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
     'BTRFS status prevents BTRFS maintenance!';
 
-  _logWrapFn 'notice' "Routine BTRFS maintenance started.";
+  _logWrapFn 'notice' "BTRFS maintenance started.";
+
+  if [ "${_trigger_type_str}" = 'manual' ]; then
+    _resetMaintainTimerFn;
+  fi
+
   _balanceMainFn 'n'       || _logExitFn 'alert' '2' \
     'Issues encountered balancing main filesystem!';
   _balanceBootFn           || _logExitFn 'alert' '2' \
@@ -3314,8 +3353,8 @@ _mainFn () {
 
   case "${_mode_str}" in
     'aptSnapshot')             _aptSnapshotPublicFn;;
-    'btrfsDeepClean')          _btrfsDeepCleanPublicFn;;
-    'btrfsMaintain')           _btrfsMaintainPublicFn;;
+    'btrfsDeepClean')          _btrfsDeepCleanPublicFn       "${1:-}";;
+    'btrfsMaintain')           _btrfsMaintainPublicFn        "${1:-}";;
     'checkBootUnallocSpace')   _checkBootUnallocSpacePublicFn;;
     'checkBulkDirs')           _checkBulkDirsPublicFn;;
     'checkEchoLockDir')        _checkEchoLockDirFn;;

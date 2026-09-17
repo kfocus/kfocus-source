@@ -57,7 +57,7 @@ Kirigami.ApplicationWindow {
       + '--why="Freeing up disk space"'
       + ' '
       + rollbackStr
-      + 'btrfsDeepClean'
+      + 'btrfsDeepClean manual'
     property var    reasonIconMap            : ({
       "System Schedule"       : "clock",
       "Before Package Change" : "system-upgrade",
@@ -1721,7 +1721,7 @@ Kirigami.ApplicationWindow {
         backend.inhibitClose = true;
         authAttemptAction = '"Quick Clean"';
         switchViewFn( balanceDiskWaitView );
-        balanceDiskEngine.exec( rollbackStr + 'btrfsMaintain' );
+        balanceDiskEngine.exec( rollbackStr + 'btrfsMaintain manual' );
     }
 
     function optimizeDiskFn() {

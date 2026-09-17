@@ -32,13 +32,16 @@
 #include <limits.h>
 #include <signal.h>
 #include <assert.h>
+#include <sys/types.h>
 
 #define HOUR_SEC_COUNT 3600
 #define MAINT_TIMER_PATH "/var/lib/kfocus/btrfs_maint_timer"
+#define TIMER_RESET_FIFO_PATH "/run/kfocus-btrfs-timer-reset"
 /* 4 hours, in milliseconds */
 #define MAINT_TIMER_EXP_MS 14400000
 /* 5 minutes, in milliseconds */
 #define MAINT_BOOT_THRESH_MS 300000
+#define RESET_FIFO_DRAIN_LEN 8
 
 bool main_loop_active = false;
 bool prepare_to_terminate = false;
@@ -58,6 +61,12 @@ enum fs_info {
 };
 
 void signal_handler(int signal_num) {
+  if (access(TIMER_RESET_FIFO_PATH, F_OK) == 0) {
+    /* If this fails, oh well. We could print a warning but it would eb a bit
+     * tricky since we can't use printf here. */
+    unlink(TIMER_RESET_FIFO_PATH);
+  }
+
   if (!main_loop_active) {
     _exit(0);
   }
@@ -150,7 +159,6 @@ int get_poll_timeout(struct timespec *debounce_ts_list,
   }
 
   assert(solve_timeout_ms < INT_MAX);
-  assert(solve_timeout_ms > 0);
   solve_timeout_ms += 1; /* don't trigger just before a timer expires */
   return solve_timeout_ms;
 }
@@ -288,32 +296,54 @@ int main(int argc, char **argv) {
 
   /* Working variables */
   size_t path_data_len = 0;
-  int *path_fd_list;
-  int *fan_fd_list;
-  struct pollfd *fan_poll_list;
-  bool *fs_mod_flag_list;
-  struct timespec *debounce_ts_list;
-  struct timespec *debounce_max_ts_list;
-  uint64_t *fs_size_list;
-  uint64_t *fs_alloc_threshold_list;
-  time_t *fs_overfull_timeout_list;
-  struct stat statbuf;
-  struct statfs statfsbuf;
+  int *path_fd_list = NULL;
+  int *fan_fd_list = NULL;
+  size_t poll_fd_len = 0;
+  struct pollfd *poll_fd_list = NULL;
+  bool *fs_mod_flag_list = NULL;
+  struct timespec *debounce_ts_list = NULL;
+  struct timespec *debounce_max_ts_list = NULL;
+  uint64_t *fs_size_list = NULL;
+  uint64_t *fs_alloc_threshold_list = NULL;
+  time_t *fs_overfull_timeout_list = NULL;
+  struct stat statbuf = { 0 };
+  struct statfs statfsbuf = { 0 };
   uint64_t fs_alloc = 0;
   char fanbuf[4096];
-  ssize_t fanlen;
+  ssize_t fanlen = 0;
   struct fanotify_event_metadata *fem = NULL;
   struct timespec ts = { 0 };
   struct timespec last_ts = { 0 };
   uint32_t maint_timer_ms = 0;
   uint32_t elapsed_ms = 0;
   struct sigaction act = { 0 };
+  int reset_fifo_fd = 0;
+  size_t reset_fifo_idx = 0;
+  char *reset_fifo_drain = NULL;
+  ssize_t reset_fifo_drain_readlen = 0;
 
   /* Set up a signal handler */
   act.sa_handler = signal_handler;
   sigemptyset(&act.sa_mask);
   if (sigaction(SIGTERM, &act, NULL) == -1) {
     perror("Cannot set up signal handler");
+    exit(1);
+  }
+
+  /* Set up timer reset FIFO */
+  if (access(TIMER_RESET_FIFO_PATH, F_OK) == 0) {
+    if (unlink(TIMER_RESET_FIFO_PATH) != 0) {
+      perror("Cannot delete old timer reset FIFO");
+      exit(1);
+    }
+  }
+  if (mkfifo(TIMER_RESET_FIFO_PATH, 0644) != 0) {
+    perror("Cannot create timer reset FIFO");
+    exit(1);
+  }
+  reset_fifo_fd = open(TIMER_RESET_FIFO_PATH, O_RDWR);
+  if (reset_fifo_fd == -1) {
+    perror("Cannot open timer reset FIFO");
     exit(1);
   }
 
@@ -332,15 +362,29 @@ int main(int argc, char **argv) {
       break;
     }
   }
+  reset_fifo_idx = path_data_len;
+  poll_fd_len = path_data_len + 1;
+
+  /*
+   * Layout of poll_fd_list:
+   *
+   * 0 to path_data_len - 1: fanotify FDs
+   * path_data_len: timer reset FIFO FD
+   *
+   * path_data_len is copied to reset_fifo_idx to make it less confusing when
+   * referring to the timer reset FIFO.
+   */
+
   path_fd_list             = safe_calloc(path_data_len, sizeof(int));
   fan_fd_list              = safe_calloc(path_data_len, sizeof(int));
-  fan_poll_list            = safe_calloc(path_data_len, sizeof(struct pollfd));
+  poll_fd_list             = safe_calloc(poll_fd_len, sizeof(struct pollfd));
   fs_mod_flag_list         = safe_calloc(path_data_len, sizeof(bool));
   debounce_ts_list         = safe_calloc(path_data_len, sizeof(struct timespec));
   debounce_max_ts_list     = safe_calloc(path_data_len, sizeof(struct timespec));
   fs_size_list             = safe_calloc(path_data_len, sizeof(uint64_t));
   fs_alloc_threshold_list  = safe_calloc(path_data_len, sizeof(uint64_t));
   fs_overfull_timeout_list = safe_calloc(path_data_len, sizeof(time_t));
+  reset_fifo_drain         = safe_calloc(RESET_FIFO_DRAIN_LEN, sizeof(char));
 
   /* Open and register paths */
   for (size_t i = 0; i < path_data_len; ++i) {
@@ -382,8 +426,8 @@ int main(int argc, char **argv) {
       perror(NULL);
       exit(1);
     }
-    fan_poll_list[i].fd = fan_fd_list[i];
-    fan_poll_list[i].events = POLLIN;
+    poll_fd_list[i].fd = fan_fd_list[i];
+    poll_fd_list[i].events = POLLIN;
     if (fanotify_mark(
       fan_fd_list[i],
       FAN_MARK_ADD | FAN_MARK_FILESYSTEM,
@@ -403,6 +447,8 @@ int main(int argc, char **argv) {
     );
     fs_alloc_threshold_list[i] = (fs_size_list[i] * threshold_pct_list[i]) / 100;
   }
+  poll_fd_list[reset_fifo_idx].fd = reset_fifo_fd;
+  poll_fd_list[reset_fifo_idx].events = POLLIN;
 
   /* Load maintenance timer duration from file */
   maint_timer_ms = load_maint_timer();
@@ -418,8 +464,8 @@ int main(int argc, char **argv) {
   main_loop_active = true;
   while (
     poll(
-      fan_poll_list,
-      path_data_len,
+      poll_fd_list,
+      poll_fd_len,
       get_poll_timeout(
         debounce_ts_list,
         debounce_max_ts_list,
@@ -435,15 +481,28 @@ int main(int argc, char **argv) {
       perror(NULL);
       exit(1);
     }
-    elapsed_ms = (uint32_t)(
-        ((ts.tv_sec      * 1000) + (ts.tv_nsec      / 1000000))
-      - ((last_ts.tv_sec * 1000) + (last_ts.tv_nsec / 1000000))
-    );
-    maint_timer_ms += elapsed_ms;
+
+    if (poll_fd_list[reset_fifo_idx].revents & POLLIN) {
+      maint_timer_ms = 0;
+      /* Drain the FIFO so we don't get notified about it endlessly */
+      reset_fifo_drain_readlen = read(reset_fifo_fd, reset_fifo_drain,
+        RESET_FIFO_DRAIN_LEN);
+      if (reset_fifo_drain_readlen == -1) {
+        perror("Could not drain timer reset FIFO");
+        exit(1);
+      }
+    } else {
+      elapsed_ms = (uint32_t)(
+          ((ts.tv_sec      * 1000) + (ts.tv_nsec      / 1000000))
+        - ((last_ts.tv_sec * 1000) + (last_ts.tv_nsec / 1000000))
+      );
+      maint_timer_ms += elapsed_ms;
+    }
+
     last_ts = ts;
 
     for (size_t i = 0; i < path_data_len; ++i) {
-      if (fan_poll_list[i].revents & POLLIN) {
+      if (poll_fd_list[i].revents & POLLIN) {
         if (!fs_mod_flag_list[i]) {
           debounce_max_ts_list[i] = ts;
           debounce_max_ts_list[i].tv_sec += 5;

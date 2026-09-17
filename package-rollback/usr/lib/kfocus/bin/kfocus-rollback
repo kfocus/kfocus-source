@@ -1262,7 +1262,7 @@ _mainFn () {
           if [ "${_reply_str}" = 'y' ]; then
             # NOTE: _cm2RunLongCmdFn prefixes commands with pkexec
             _cm2RunLongCmdFn 'Quick cleaning disk...' \
-              "${_rollbackBackendExe}" 'btrfsMaintain';
+              "${_rollbackBackendExe}" 'btrfsMaintain' 'manual';
             _handleOperationExitIntFn 'optimize' "$?";
           else
             "${_promptCmdList[@]}" "${_operationCancelledMsg}" "${_winTitle}"
@@ -1274,7 +1274,7 @@ _mainFn () {
           if [ "${_reply_str}" = 'y' ]; then
             # NOTE: _cm2RunLongCmdFn prefixes commands with pkexec
             _cm2RunLongCmdFn 'Deep cleaning disk...' \
-              "${_rollbackBackendExe}" 'btrfsDeepClean';
+              "${_rollbackBackendExe}" 'btrfsDeepClean' 'manual';
             _handleOperationExitIntFn 'optimize' "$?";
           else
             "${_promptCmdList[@]}" "${_operationCancelledMsg}" "${_winTitle}"
@@ -1284,15 +1284,6 @@ _mainFn () {
           "${_promptCmdList[@]}" "${_operationCancelledMsg}" "${_winTitle}";
           ;;
       esac
-      # _reply_str="$("${_promptCmdList[@]}" "${_doOptimizeMsg}" "${_winTitle}" 'o')";
-      # if [ "${_reply_str}" = 'y' ]; then
-      #   # NOTE: _cm2RunLongCmdFn prefixes commands with pkexec
-      #   _cm2RunLongCmdFn 'Optimizing disk...' \
-      #     "${_rollbackBackendExe}" 'btrfsDeepClean';
-      #   _handleOperationExitIntFn 'optimize' "$?";
-      # else
-      #   "${_promptCmdList[@]}" "${_operationCancelledMsg}" "${_winTitle}";
-      # fi
       ;;
     'protect')
       if [ -z "$(_rollbackSetFn 'getSnapshotList')" ]; then
