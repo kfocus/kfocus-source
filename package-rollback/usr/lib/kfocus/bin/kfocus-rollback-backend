@@ -95,6 +95,7 @@ _assignGlobalUiVarsFn () {
   _browStr='<tr><td style="padding:8px 32px 8px 0">';
   _erowStr='</td></tr>';
   _tableStr='<table style="width:100%;margin-right:32px">';
+  _indStr='\&nbsp; \&nbsp;\&nbsp;';
 
   _prepareFailMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
@@ -112,31 +113,37 @@ EOF
 
   _lowDiskWithHomeMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
-${_browStr}<h3 style="color:#f7941d">System Rollback: Low Disk Space</h3>
-${_erowStr}
+${_browStr}<h3 style="color:#f7941d">System Rollback: Low Disk
+Space</h3>${_erowStr}
 
 ${_browStr}The root (/) partition has only XXX_REMAINING_PERCENT_XXX%
-unallocated space remaining. To <br>
-minimize the chance of file corruption, System Rollback has paused<br>
-snapshot maintenance until at least 15% is available. Please free up<br>
-disk space as soon as possible.${_erowStr}
+unallocated space remaining.<br>
+Snapshots should not be taken and are paused until at least<br>
+15% is available. We suggest the following steps to increase<br>
+unallocated space, stopping once more than 15% is available:
+${_erowStr}
 
-${_browStr}&bull; Remove unused files from /home using Dolphin. This works on<br>
-this system because /home shares disk space with the root file system.<br>
+${_browStr}
+1. In Rollback Dashboard:<br>
+@a. Click <code>[Free Up Disk Space]</code>
+ &gt; <code>[Quick Clean]</code>.<br>
+@b. Click <code>[Show Snapshot Sizes]</code>, then delete large snapshots.<br>
+@c. <b>If you don't need need any snapshots</b>, click<br>
+@@<code>[Free Up Disk Space]</code> &gt; <code>[Deep Clean]</code>.<br>
 <br>
-&bull; Purge software packages with Discover or apt.<br>
+2. Remove big files from <code>/home</code>. This works on this system
+because<br>
+@<code>/home</code> shares space with the root filesystem. Good candidates<br>
+@are VMs and big apps like games from Steam.<br>
 <br>
-&bull; Move or delete databases, VMs, or logs from the root filesystem. To<br>
-move big data to another partition, see advice at<br>
-<a href="https://kfocus.org/wf/big-data">https://kfocus.org/wf/big-data</a>.<br>
-<br>
-&bull; Delete large snapshots or free up disk space using Rollback
-Dashboard.<br>
-Click on "Show Snapshot Sizes" to see the space used by each
-snapshot.${_erowStr}</table><br>
+3. If you have big data like databases, VMs, or logs on the root<br>
+@filesystem, delete them or move to another partition:<br>
+@<a href="https://kfocus.org/wf/big-data">https://kfocus.org/wf/big-data</a>.
+${_erowStr}</table><br>
 ${_cm2HtmEndStr}
 EOF
   )";
+  _lowDiskWithHomeMsg="${_lowDiskWithHomeMsg//@/$_indStr}";
 
   _lowDiskWithoutHomeMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
@@ -144,26 +151,30 @@ ${_browStr}<h3 style="color:#f7941d">System Rollback: Low Disk Space</h3>
 ${_erowStr}
 
 ${_browStr}The root (/) partition has only XXX_REMAINING_PERCENT_XXX%
-unallocated space remaining. To <br>
-minimize the chance of file corruption, System Rollback has paused<br>
-snapshot maintenance until at least 15% is available. Please free up<br>
-disk space as soon as possible.${_erowStr}
+unallocated space remaining.<br>
+Snapshots should not be taken and are paused until at least<br>
+15% is available. We suggest the following steps to increase<br>
+unallocated space, stopping once more than 15% is available:
+${_erowStr}
 
-${_browStr}&bull; Purge software packages with Discover or apt.<br>
+${_browStr}
+1. In Rollback Dashboard:<br>
+@a. Click <code>[Free Up Disk Space]</code>
+ &gt; <code>[Quick Clean]</code>.<br>
+@b. Click <code>[Show Snapshot Sizes]</code>, then delete large snapshots.<br>
+@c. <b>If you don't need need any snapshots</b>, click<br>
+@@<code>[Free Up Disk Space]</code> &gt; <code>[Deep Clean]</code>.<br>
 <br>
-&bull; Move or delete databases, VMs, or logs from the root filesystem. To<br>
-move big data to another partition, see advice at<br>
-<a href="https://kfocus.org/wf/big-data">https://kfocus.org/wf/big-data</a>.<br>
+2. If you have big data like databases, VMs, or logs on the root<br>
+@filesystem, delete them or move to another partition:<br>
+@<a href="https://kfocus.org/wf/big-data">https://kfocus.org/wf/big-data</a>.<br>
 <br>
-&bull; Delete large snapshots or free up disk space using Rollback
-Dashboard.<br>
-Click on "Show Snapshot Sizes" to see the space used by each snapshot.<br>
-<br>
-&bull; You do not need to remove files from /home, as it is on a separate
-disk.${_erowStr}</table><br>
+You do not need to remove files from <code>/home</code>, as it is on a<br>
+separate partition.${_erowStr}</table><br>
 ${_cm2HtmEndStr}
 EOF
   )";
+  _lowDiskWithoutHomeMsg="${_lowDiskWithoutHomeMsg//@/$_indStr}";
 
   _lowBootMsg="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
@@ -1744,6 +1755,25 @@ _readMetadbFn () {
 }
 ## . END private _readMetadbFn }
 
+## BEGIN private _resetMaintainTimerFn {
+# Summary   : _resetMaintainTimerFn
+# Purpose   : Resets the BTRFS maintenance timer in kfocus-btrfs-watcher if
+#           : a reset FIFO exists.
+# Example   : _resetMaintainTimerFn
+# Arguments : none
+# Globals   : _rb2TimerResetFifo
+# Outputs   : none
+# Returns   : none
+# Throws    : none
+#
+_resetMaintainTimerFn () {
+  if [ -p "${_rb2TimerResetFifo}" ]; then
+    # Any character can be used here, kfocus-btrfs-watcher doesn't care what.
+    echo -n '.' | tee "${_rb2TimerResetFifo}" >/dev/null 2>&1
+  fi
+}
+## . END private _resetMaintainTimerFn }
+
 ## BEGIN private _trapExitFn {
 # Summary   : _trapExitFn
 # Purpose   : Catches unexpected exits and logs them.
@@ -2114,13 +2144,15 @@ _aptSnapshotPublicFn () {
 
 
 ## BEGIN _btrfsDeepCleanPublicFn {
-# Summary   : _btrfsDeepCleanPublicFn
+# Summary   : _btrfsDeepCleanPublicFn [triggerType]
 # Purpose   : Runs an intensive BTRFS optimization routine. Currently, this
 #             deletes all snapshots, balances main and boot filesystems
 #             (forcing a balance on the main FS), and defragments highly
 #             fragmented files on the main filesystem.
-# Example   : _btrfsDeepCleanPublicFn
-# Arguments : none
+# Example   : _btrfsDeepCleanPublicFn 'manual'
+# Arguments :
+#   triggerType - 'auto' if the maintenance operation was triggered
+#     automatically by the system, 'manual' otherwise.
 # Globals   : none
 # Outputs   : Log info
 # Returns   : none
@@ -2135,10 +2167,18 @@ _aptSnapshotPublicFn () {
 #     - Could not defragment files on the main filesystem.
 #
 _btrfsDeepCleanPublicFn () {
+  declare _trigger_type_str;
+  _trigger_type_str="${1:-auto}";
+
   _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
     'BTRFS status prevents BTRFS deep cleaning!';
 
   _logWrapFn 'notice' "BTRFS deep clean operation started.";
+
+  if [ "${_trigger_type_str}" = 'manual' ]; then
+    _resetMaintainTimerFn;
+  fi
+
   _deleteAllSnapshotsFn    || _logExitFn 'alert' '2' \
     'Failed to delete all snapshots during BTRFS deep cleaning!';
   _balanceMainFn 'y'       || _logExitFn 'alert' '2' \
@@ -2152,11 +2192,13 @@ _btrfsDeepCleanPublicFn () {
 ## . END _btrfsDeepCleanPublicFn }
 
 ## BEGIN _btrfsMaintainPublicFn {
-# Summary   : _btrfsMaintainPublicFn
+# Summary   : _btrfsMaintainPublicFn [triggerType]
 # Purpose   : Runs routine snapshot maintenance. Currently, this simply
 #             balances main and boot filesystems.
-# Example   : _btrfsMaintainPublicFn
-# Arguments : none
+# Example   : _btrfsMaintainPublicFn 'auto'
+# Arguments :
+#   triggerType - 'auto' if the maintenance operation was triggered
+#     automatically by the system, 'manual' otherwise.
 # Globals   : none
 # Outputs   : Log info
 # Returns   : none
@@ -2169,10 +2211,18 @@ _btrfsDeepCleanPublicFn () {
 #     - Could not balance boot filesystem.
 #
 _btrfsMaintainPublicFn () {
+  declare _trigger_type_str;
+  _trigger_type_str="${1:-auto}";
+
   _checkBtrfsStatusSetUpFn || _logExitFn 'warn' '1' \
     'BTRFS status prevents BTRFS maintenance!';
 
-  _logWrapFn 'notice' "Routine BTRFS maintenance started.";
+  _logWrapFn 'notice' "BTRFS maintenance started.";
+
+  if [ "${_trigger_type_str}" = 'manual' ]; then
+    _resetMaintainTimerFn;
+  fi
+
   _balanceMainFn 'n'       || _logExitFn 'alert' '2' \
     'Issues encountered balancing main filesystem!';
   _balanceBootFn           || _logExitFn 'alert' '2' \
@@ -3303,8 +3353,8 @@ _mainFn () {
 
   case "${_mode_str}" in
     'aptSnapshot')             _aptSnapshotPublicFn;;
-    'btrfsDeepClean')          _btrfsDeepCleanPublicFn;;
-    'btrfsMaintain')           _btrfsMaintainPublicFn;;
+    'btrfsDeepClean')          _btrfsDeepCleanPublicFn       "${1:-}";;
+    'btrfsMaintain')           _btrfsMaintainPublicFn        "${1:-}";;
     'checkBootUnallocSpace')   _checkBootUnallocSpacePublicFn;;
     'checkBulkDirs')           _checkBulkDirsPublicFn;;
     'checkEchoLockDir')        _checkEchoLockDirFn;;
@@ -3342,9 +3392,9 @@ _mainFn () {
 ## . END _mainFn }
 
 ## BEGIN Declare and assign global vars {
-declare _binName _binDir _baseName _baseDir \
-  _btrfsStatus _lockDir _lockFile _metaGlobalKeyList _metaSnapshotKeyList \
-  _snapshotMetaDb _libTable _browStr _erowStr _tableStr _prepareFailMsg \
+declare _binName _binDir _baseName _baseDir _btrfsStatus _lockDir \
+  _lockFile _metaGlobalKeyList _metaSnapshotKeyList _snapshotMetaDb \
+  _libTable _browStr _erowStr _tableStr _indStr _prepareFailMsg \
   _lowDiskWithHomeMsg _lowDiskWithoutHomeMsg _lowBootMsg _inconsistentMsg \
   _btrfsExe _btduExe _filefragExe _btrfsBalanceExe _kwriteconfig6Exe \
   _kreadconfig6Exe _diffExe _legacySnapshotReasonFile _bulkLocationPathList \

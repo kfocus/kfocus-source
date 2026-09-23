@@ -44,10 +44,6 @@ _mainFn () {
   _win_title='Kubuntu 26.04 LTS with Focus Tools Installer';
   _icon_str='kfocus-bug-tools';
 
-  if ! /usr/bin/calamares-m2g6-restrict; then
-    exit 1;
-  fi
-
   if [ -e '/etc/calamares/OEM_MODE_ACTIVATED' ]; then
     # bashsupport disable=BP2001
     export BROWSER='sudo -H -u kubuntu firefox'

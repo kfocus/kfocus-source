@@ -200,7 +200,7 @@ _maintainBtrfsFn () {
       _cm2WarnFn; return;
     fi
     # Balance main and boot partitions if needed
-    "${_rollbackBackendExe}" 'btrfsMaintain';
+    "${_rollbackBackendExe}" 'btrfsMaintain' 'auto';
     _return_code="$?"
     if [ "${_return_code}" != '0' ] && [ "${_return_code}" != '1' ]; then
       _cm2WarnFn; return;

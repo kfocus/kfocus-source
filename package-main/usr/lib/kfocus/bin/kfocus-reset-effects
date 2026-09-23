@@ -340,51 +340,13 @@ _EOH01
   # Rebuild desktop cache
   kbuildsycoca6 || true;
 
-  # OLD IMPLEMENTATION: Restart reconfigured applications without relog
-  #   This has been disabled, because restarting kwin_wayland kills or
-  #   confuses many apps, including Chrome.
-#  # Confirm application of settings
-#  # shellcheck disable=SC2181
-#  _prompt_msg="$(cat <<_EOH02
-#${_cm2HtmBeginStr}
-#<h3 style="color:#f7941d">KFocus Reset Effects Finished</h3>
-#${_cm2HtmPStr}To apply effects, press OK to reload plasma, <br>
-#reload the window manager, and reset the keyboard <br>
-#shortcuts.</p>
-#
-#${_cm2HtmPStr}This should apply most changes, but for all <br>
-#to apply, you must log out and back in.<br></p>
-#
-#${_cm2HtmEndStr}
-#_EOH02
-#  )";
-#  _cm2PromptUserFn -i "${_iconStr}" "${_prompt_msg}" "${_rootTitle}";
-#
-#  # Reload global key mappings. The keyword "kglobalaccel" is NOT a typo.
-#  # kglobalaccel now works in a weird way and this no longer works.
-#  # kquitapp6 kglobalaccel && sleep 2 && kglobalaccel6 &
-#  # # shellcheck disable=SC2181
-#  # if [ "$?" = '0' ]; then disown "$!"; fi
-#  # sleep 1;
-#
-#  # Replace plasma shell
-#  nohup plasmashell --replace > /dev/null 2>&1 &
-#  # shellcheck disable=SC2181
-#  if [ "$?" = '0' ]; then disown "$!"; fi
-#  sleep 2;
-#
-#  # Replace window manager
-#  # kwin is now kwin_wayland for Wayland, and kwin_x11 for X11. Restarting
-#  # kwin_wayland may result in data loss.
-#  # nohup kwin --replace > /dev/null 2>&1 &
-#  # # shellcheck disable=SC2181
-#  # if [ "$?" = '0' ]; then disown "$!"; fi
-#  # sleep 2;
-
-  # NEW IMPLEMENTATION: Prompt user to log out and back in immediately. There
-  #   is some risk of desktop components rewriting their configuration files
-  #   before or during logout, which will result in an incomplete settings
-  #   reset. See ticket 6579 for details and other possible implementations.
+  # 6579: NEW IMPLEMENTATION: Prompt user to log out and back in immediately.
+  #   There is some risk of desktop components rewriting their configuration
+  #   files before or during logout, which will result in an incomplete
+  #   settings reset. See `noble` branch for method which reset plasma_shell
+  #   and kwin on X11. This was was removed for Waylan/Resolute because this
+  #   can confuse or kill many apps including Chrome.
+  #
   _prompt_msg="$(cat <<_EOH02
 ${_cm2HtmBeginStr}
 <h3 style="color:#f7941d">KFocus Reset Effects Finished</h3>

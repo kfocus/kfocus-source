@@ -47,14 +47,6 @@ _mainFn () {
   # bashsupport disable=BP2001
   export QT_QPA_PLATFORMTHEME=kde
 
-  if /usr/bin/calamares-m2g6-restrict; then
-    # Prevent the restrict dialog from showing up twice on multi-disk systems
-    # bashsupport disable=BP2001
-    export CALAMARES_SKIP_M2G6_RESTRICT='y';
-  else
-    exit 1;
-  fi
-
   if [ -e '/etc/calamares/OEM_MODE_ACTIVATED' ]; then
     _msg="$(cat <<EOL
 ${_cm2HtmBeginStr}${_table_str}
