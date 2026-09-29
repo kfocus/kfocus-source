@@ -82,7 +82,7 @@ EOF
 _mainFn () {
   declare _ans _current_ts _eol_ts _days_remain_str _eol_notif_str;
 
-  _current_ts="$(date +%s)";
+  _current_ts="$(date --utc +%s)";
   _eol_ts='1808611200'; # Timestamp of April 25, 2027 UTC
   _eol_notif_str='remains supported until';
   _days_remain_str="$(( (_eol_ts - _current_ts) / 86400 ))";
