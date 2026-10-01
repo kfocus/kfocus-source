@@ -1353,14 +1353,12 @@ Kirigami.ApplicationWindow {
             pageTitleText   = 'Extra Software';
             topImage.source = imgDir + 'extra_software.svg';
             topHeading.text
-              = 'Install MS Fonts, VirtualBox Extensions, and More';
+              = 'Install MS Fonts, DVD Support, and More';
             primaryText.text
               = '<p><b>Some software is restricted</b>, '
               + 'meaning you have to approve certain agreements before '
               + 'you install it. We recommend you at least install the '
-              + 'MS fonts to assist in compatibility. If you use '
-              + 'VirtualBox, we also recommend adding the VirtualBox '
-              + 'Extension Pack.<br></p>'
+              + 'MS fonts to assist in compatibility.<br></p>'
 
               + '<p><b>You may always revisit this later</b> using Start '
               + 'Menu &gt; Kubuntu Focus Tools &gt; Extra Software Installer.</p>'

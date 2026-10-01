@@ -53,20 +53,6 @@ _installExtraFn () {
     fi
   fi
 
-  if _cm2ChkInstalledPkgFn 'virtualbox-ext-pack'; then
-    _cm2SucStrFn 'Virtualbox Extension Pack already installed';
-  else
-    _reply="$(_cm2ReadPromptYnFn 'Install Virtualbox Extension Pack' 'n')";
-    if [ "${_reply}" = 'y' ]; then
-      _cm2SetMsgFn 'Install Virtualbox Extension Pack (virtualbox-ext-pack)';
-      if apt-get install -y virtualbox-ext-pack; then
-        _cm2SucFn; else _cm2WarnFn;
-      fi
-    else
-      _cm2EchoFn;
-    fi
-  fi
-
   if _cm2ChkInstalledPkgFn 'libdvd-pkg'; then
     _cm2SucStrFn 'DVD support package already installed.';
   else

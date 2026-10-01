@@ -1,3 +1,15 @@
+kfocus-main (24.04.33~beta2) noble; urgency=medium
+
+  * control: Add kfocus-vbox metapackage to install the latest VirtualBox
+    package from Oracle (#6805)
+  * kfocus-extra: Do not offer the VirtualBox extension pack (#6805)
+  * kfocus-focusrx: Direct the user to install kfocus-vbox if VirtualBox is in
+    use (#6805)
+  * kfocus-mime: Adjust the VirtualBox installer to use kfocus-vbox (#6805)
+  * kfocus-mime: Remove references to the VirtualBox extension pack (#6805)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 01 Oct 2026 16:03:54 -0500
+
 kfocus-main (24.04.33~beta1) noble; urgency=medium
 
   * kfocus-focusrx-set: Add force-reconfigure mechanism (#6805)

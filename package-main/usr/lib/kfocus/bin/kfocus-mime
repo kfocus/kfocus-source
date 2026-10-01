@@ -120,7 +120,7 @@ _exeLookupList=(
   'intellij|!intellij|jetbrains-toolbox|jetbrains-toolbox|IntelliJ: JetBrains Java IDE'
   'jetbrains-toolbox|!jetbrains-toolbox|jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs'
   'pycharm|!pycharm|jetbrains-toolbox|jetbrains-toolbox|PyCharm: JetBrains Python IDE'
-  'virtualbox|!virtualbox||virtualbox|VirtualBox: Run Virtual Machines'
+  'virtualbox|!virtualbox||kfocus-vbox|VirtualBox: Run Virtual Machines'
   'webstorm|!webstorm|jetbrains-toolbox|jetbrains-toolbox|WebStorm: JetBrains Web IDE'
   'zoom|!zoom||zoom|Zoom: Start and Join Video and Web Conferencing'
 
@@ -754,21 +754,7 @@ EOT02
 }
 
 _handleVboxSetupFn () {
-  declare _msg0a _msg0b _msg0c _ans_str;
-
-  _msg0a="$(cat <<EOT0A
-${_cm2HtmBeginStr}
-${_cm2HtmPStr}The 'VirtualBox Extension Pack' does not appear <br>
-installed. This is required to access hardware<br>
-features like USB device integration.</p>
-
-${_cm2HtmPStr}To install the extension pack now, open a <br>
-terminal and run the following:</p>
-
-${_cm2HtmPStr}<code>sudo apt install virtualbox-ext-pack</code><br></p>
-${_cm2HtmEndStr}
-EOT0A
-  )";
+  declare _msg0b _msg0c _ans_str;
 
   _msg0b="$(cat <<EOT0B
 ${_cm2HtmBeginStr}
@@ -794,12 +780,6 @@ more VirtualBox features.</p>
 ${_cm2HtmEndStr}
 EOT0C
   )";
-
-  if _cm2ChkInstalledPkgFn 'virtualbox-ext-pack'; then
-    _cm2EchoFn 'VirtualBox Extension Pack installed';
-  else
-    _promptFn "${_msg0a}";
-  fi
 
   if _isUserInGroupFn 'vboxusers'; then
     _cm2EchoFn "User '${_userName}' is in 'vboxusers' group";

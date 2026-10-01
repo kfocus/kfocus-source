@@ -167,3 +167,13 @@ Depends:      ${misc:Depends}, ${shlibs:Depends},
 Description:  Transitional Dummy Package for kfocus-power-bin
  This is a transitional dummy package.
  It can be safely removed.
+
+Package:      kfocus-vbox
+Architecture: all
+Depends:      ${misc:Depends}, ${shlibs:Depends},
+              virtualbox-7.2
+Breaks:       virtualbox (<< 7.2.20~), virtualbox-source, virtualbox-dkms, virtualbox-ext-pack
+Replaces:     virtualbox (<< 7.2.20~), virtualbox-source, virtualbox-dkms, virtualbox-ext-pack
+Description:  Kubuntu Focus VirtualBox Metapackage
+ This package depends on the latest major version of VirtualBox available from
+ Oracle.
