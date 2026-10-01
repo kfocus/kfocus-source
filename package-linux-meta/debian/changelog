@@ -1,3 +1,10 @@
+linux-meta-kfocus (7.0.0-28.28~24.04+kfocus4) noble; urgency=medium
+
+  * Use Breaks instead of Replaces for NVIDIA migration (#6805)
+  * Add Breaks/Replaces against cuda-drivers-570 (#6805)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 01 Oct 2026 10:52:15 -0500
+
 linux-meta-kfocus (7.0.0-28.28~24.04+kfocus3) noble; urgency=medium
 
   * Add conflict with nvidia-driver-570 (#6805)

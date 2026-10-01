@@ -12,8 +12,9 @@ Package: linux-image-kfocus${variant:suffix}-kfocus
 Architecture: amd64
 Section: kernel
 Provides: ${dkms:v4l2loopback-modules} ${dkms:zfs-modules} ${dkms:ivsc-modules} ${dkms:virtualbox-guest-modules} ${dkms:wireguard-linux-compat-modules}
-Replaces: linux-image-kfocus${variant:suffix}, linux-image-generic-hwe-24.04-kfocus, nvidia-driver-570-open, nvidia-dkms-570-open, nvidia-kernel-source-570-open, nvidia-driver-570, nvidia-dkms-570, nvidia-kernel-source-570
-Conflicts: linux-image-kfocus${variant:suffix}, linux-image-generic-hwe-24.04-kfocus, nvidia-driver-570-open, nvidia-dkms-570-open, nvidia-kernel-source-570-open, nvidia-driver-570, nvidia-dkms-570, nvidia-kernel-source-570
+Replaces: linux-image-kfocus${variant:suffix}, linux-image-generic-hwe-24.04-kfocus, nvidia-driver-570-open, nvidia-dkms-570-open, nvidia-kernel-source-570-open, nvidia-driver-570, nvidia-dkms-570, nvidia-kernel-source-570, cuda-drivers-570
+Breaks: nvidia-driver-570-open, nvidia-dkms-570-open, nvidia-kernel-source-570-open, nvidia-driver-570, nvidia-dkms-570, nvidia-kernel-source-570, cuda-drivers-570
+Conflicts: linux-image-kfocus${variant:suffix}, linux-image-generic-hwe-24.04-kfocus
 Depends: ${misc:Depends}, linux-image-unsigned-${kernel-abi-version}-kfocus, linux-firmware [amd64], intel-microcode [amd64], amd64-microcode [amd64]
 Recommends: thermald [amd64]
 Description: KFocus Linux kernel image
