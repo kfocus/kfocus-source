@@ -109,31 +109,63 @@ _formatFn () {
 # Returns   : none
 #
 _mainFn () {
-  declare _opt_str _test_str _out_str;
+  declare _opt_str _test_str _out_str _msg _cmd_list;
 
   # Example option handling
   local OPTIND=1;
   while getopts ':i:j:k:x' _opt_str; do
     case "${_opt_str}" in
-      i|j|k) _cm2EchoFn "Option found ${_opt_str} value ${OPTARG}";;
+      i|j|k)
+        _cm2EchoFn "Option found ${_opt_str} value ${OPTARG}";
+        shift;; # shift off argument
       x) _cm2EchoFn "Option found ${_opt_str}";;
       *) _cm2EchoFn "Option ${_opt_str} not supported";;
     esac
   done
   shift $((OPTIND-1));
+  _cm2EchoFn "DEBUG: Left-over arguments are |$*|";
 
-  _cm2EchoFn "Left overs are |$*|";
-
-  # Example on how to match spaces or boundaries using sed
+  # Example: match spaces or boundaries using sed
   _test_str='thunderbird-locale-en gimp-help-en-gb thunderbird-locale-en-gb hunspell-en-au hunspell-en-ca hunspell-en-gb hunspell-en-za hyphen-en-gb hyphen-en-us libreoffice-help-en-gb libreoffice-help-en-us libreoffice-l10n-en-gb libreoffice-l10n-en-za mythes-en-au mythes-en-us thunderbird-locale-en-us'
   _out_str="$(sed -E 's?(^| )thunderbird([^ ]*|$)??g' <<< "${_test_str}")";
-  echo "Thunderbird free? ${_out_str}";
+  # echo "Thunderbird free? ${_out_str}";
+
+  # Example: Use a custom library
+  _msg="$(cat << EOT
+${_cm2HtmBeginStr}${_cm2HtmH3Str}Important VirtualBox Upgrade</h3>
+<p>This system appears to be using an official Oracle release of Virtualbox.
+However, there is no guarantee that it will stay up to date and compatible
+with future kernels.</p>
+
+</p>To fix this, the Focus Team created a <code>kfocus-vbox</code>
+package so you can always have a tested, official version of Virtual Box
+from Oracle that works with the current kernel.</p>
+
+<p>We recommend you install this package now. If you wish to install
+it later, you may select it from
+<a href="https://kfocus.org/wf/apps.html">Curated Apps</a>.
+</p>${_cm2HtmEndStr}
+EOT
+  )"
+  # <p>Install the <b>KFocus VirtualBox</b> package now?</p>
+  _cmd_list=( "${_libDir}/pyqt-dialog.py" );
+  _cmd_list+=( "--window-title='Critical VirtualBox Upgrade'" );
+  _cmd_list+=( '--checkbox-label="I am ready to continue"' );
+  _cmd_list+=( "--message-html='${_msg}'" );
+  _cmd_list+=( "--cancel-label='No Thanks'" "--ok-label='Install Now'" );
+
+
+  if "${_cmd_list[@]}"; then
+    echo "The user clicked OK";
+  else
+    echo "The user clicked Cancel";
+  fi
 }
 ## . END _mainFn }
 
 ## BEGIN Declare and assign global vars {
 # <= Declare all package variables
-declare _userId _binName _binDir _baseName _baseDir;
+declare _userId _binName _binDir _baseName _baseDir _libDir;
 
 # <= Set values that will load for tests
 _userId="$(id -u)";
@@ -151,6 +183,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _baseName="$( basename "${_binName}" )" || exit 101;
 
   # Import libs and assign more global vars
+  _libDir="${_baseDir}/lib";
   _importCommonFn;
 
   _assignList=(

@@ -303,7 +303,8 @@ au VimEnter * if &diff | call VimdiffWrap() | endif
 set mmp=20000 " was set mmp=5000
 
 " =====[ From defaults.vim: Remember cursor position ]=================
-if 1
+" We expect an IDE to provide its own cursor position logic
+if !has('ide')
   " Put these in an autocmd group, so that you can revert them with:
   " :augroup vimStartup | au! | augroup END
   augroup vimStartup
