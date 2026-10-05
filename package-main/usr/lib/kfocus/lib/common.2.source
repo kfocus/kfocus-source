@@ -578,13 +578,16 @@ _cm2StripTagsFn () {
 _cm2PromptUserFn () {
   declare _icon_key _opt_str _prompt_str _window_title _query_type \
     _cmd_list _ans_str _key_list _val_list _default_option_str _params_list \
-    _params_idx _cycle_idx _default_key;
+    _params_idx _cycle_idx _default_key _enable_strict _query_out_str \
+    _query_ret_int;
 
   _icon_key='kfocus-bug-rx';
+  _enable_strict='n'
   local OPTIND=1;
-  while getopts ':i:' _opt_str; do
+  while getopts ':i:s' _opt_str; do
     case "${_opt_str}" in
       i) _icon_key="${OPTARG:-$_icon_key}";;
+      s) _enable_strict='y';;
       *) true;;
     esac
   done
@@ -601,9 +604,13 @@ _cm2PromptUserFn () {
 
   # Handle GUI presentation
   if [ "${_cm2IsTty}" = 'n' ]; then
-    _cmd_list=(
-      "${_cm2KdiagExe}" '--icon' "${_icon_key}" \
-      '--title' "${_window_title}"
+    if [ "${_enable_strict}" = 'y' ]; then
+      _cmd_list=( "${_cm2StrictDiagExe}" );
+    else
+      _cmd_list=( "${_cm2KdiagExe}" );
+    fi
+    _cmd_list+=(
+      '--icon' "${_icon_key}" '--title' "${_window_title}"
     );
 
     # These arguments *must* be inserted before the actual '--yesno' argument
@@ -619,66 +626,94 @@ _cm2PromptUserFn () {
       w) _cmd_list+=('--warningyesno');;
       s) _cmd_list+=('--sorry');;
       e) _cmd_list+=('--error');;
-      r) _cmd_list+=('--radiolist');;
+      r)_cmd_list+=('--radiolist');;
       d) _cmd_list+=('--combobox');;
       *) _cmd_list+=('--msgbox');;
     esac
 
     _cmd_list+=("${_prompt_str}");
-    if [ "${_query_type}" = 'r' ]; then
-      shift 3;
-      _cmd_list+=( "$@" );
-      _ans_str="$("${_cmd_list[@]}")";
-    elif [ "${_query_type}" = 'd' ]; then
-      shift 3;
-      # KDialog's combo box feature takes only a list of strings as input,
-      # while _cm2PromptUserFn expects a list of three-item tuples, each
-      # consisting of a key, a user-displayed value, and an on-off setting. To
-      # make these APIs compatible, this code ignores the on-off setting and
-      # correlates the user-displayed values shown by KDialog to the keys
-      # passed to the function, allowing the combo box feature to behave
-      # similar to the radio list feature.
-      _key_list=();
-      _val_list=();
-      _default_option_str='';
-      _params_list=( "$@" );
-      _cycle_idx=0;
-      for (( _params_idx=0; _params_idx < $#; _params_idx++ )); do
-        if (( _cycle_idx == 0 )); then
-          _key_list+=( "${_params_list[_params_idx]}" );
-        elif (( _cycle_idx == 1 )); then
-          _cmd_list+=( "${_params_list[_params_idx]}" );
-          _val_list+=( "${_params_list[_params_idx]}" );
-        elif (( _cycle_idx == 2 )); then
-          if [ "${_params_list[_params_idx]}" = 'on' ]; then
-            _default_option_str="${_params_list[((_params_idx - 1))]}";
-          elif [ "${_params_list[_params_idx]}" = 'off' ]; then
-            true; # this doesn't do anything but is an allowable value
-          else
-            _cm2WarnStrFn 'Unrecognized combo box toggle provided.'
-            return 1;
+
+    case "${_query_type}" in
+      r)
+        shift 3;
+        _cmd_list+=( "$@" );
+        ;;
+      d)
+        shift 3;
+        # KDialog's combo box feature takes only a list of strings as input,
+        # while _cm2PromptUserFn expects a list of three-item tuples, each
+        # consisting of a key, a user-displayed value, and an on-off setting.
+        # To make these APIs compatible, this code ignores the on-off setting
+        # and correlates the user-displayed values shown by KDialog to the
+        # keys passed to the function, allowing the combo box feature to
+        # behave similar to the radio list feature.
+        _key_list=();
+        _val_list=();
+        _default_option_str='';
+        _params_list=( "$@" );
+        _cycle_idx=0;
+        for (( _params_idx=0; _params_idx < $#; _params_idx++ )); do
+          if (( _cycle_idx == 0 )); then
+            _key_list+=( "${_params_list[_params_idx]}" );
+          elif (( _cycle_idx == 1 )); then
+            _cmd_list+=( "${_params_list[_params_idx]}" );
+            _val_list+=( "${_params_list[_params_idx]}" );
+          elif (( _cycle_idx == 2 )); then
+            if [ "${_params_list[_params_idx]}" = 'on' ]; then
+              _default_option_str="${_params_list[((_params_idx - 1))]}";
+            elif [ "${_params_list[_params_idx]}" = 'off' ]; then
+              true; # this doesn't do anything but is an allowable value
+            else
+              _cm2WarnStrFn 'Unrecognized combo box toggle provided.'
+              return 1;
+            fi
+            _cycle_idx=-1;
           fi
-          _cycle_idx=-1;
+          (( _cycle_idx++ )) || true;
+        done
+        if [ -n "${_default_option_str}" ]; then
+          _cmd_list+=( "--default=${_default_option_str}" );
         fi
-        (( _cycle_idx++ )) || true;
-      done
-      if [ -n "${_default_option_str}" ]; then
-        _cmd_list+=( "--default=${_default_option_str}" );
+    esac
+
+    # TODO: Don't use an infinite loop here
+    while true; do
+      _query_out_str="$("${_cmd_list[@]}")"
+      _query_ret_int="$?";
+      if [ "${_enable_strict}" = 'n' ] || [ "${_query_ret_int}" -le 1 ]; then
+        break
       fi
-      _ans_str="$("${_cmd_list[@]}")";
-      for (( _params_idx=0; _params_idx < ${#_key_list[@]}; \
-        _params_idx++ )); do
-        if [ "${_ans_str}" = "${_val_list[_params_idx]}" ]; then
-          _ans_str="${_key_list[_params_idx]}";
-          break;
+    done
+
+    case "${_query_type}"  in
+      r)
+        _ans_str="${_query_out_str}";
+        ;;
+      d)
+        for (( _params_idx=0; _params_idx < ${#_key_list[@]}; \
+          _params_idx++ )); do
+          if [ "${_query_out_str}" = "${_val_list[_params_idx]}" ]; then
+            _ans_str="${_key_list[_params_idx]}";
+            break;
+          fi
+        done
+        ;;
+      A)
+        # Yes and No labels are inverted
+        if [ "${_query_ret_int}" = '0' ]; then
+          _ans_str='n';
+        else
+          _ans_str='y';
         fi
-      done
-    # Handle inverted Yes and No labels
-    elif [ "${_query_type}" = 'A' ]; then
-      if "${_cmd_list[@]}"; then _ans_str='n'; else _ans_str='y'; fi
-    else
-      if "${_cmd_list[@]}"; then _ans_str='y'; else _ans_str='n'; fi
-    fi
+        ;;
+      *)
+        if [ "${_query_ret_int}" = '0' ]; then
+          _ans_str='y';
+        else
+          _ans_str='n';
+        fi
+        ;;
+    esac
 
   # Handle TTY presentation
   else
@@ -869,6 +904,7 @@ if [ -z "${_cm2KdiagExe}" ]; then
   _cm2WarnStrFn 'No kdialog executable found. Fallback to terminal.';
   _cm2IsTty='y';
 fi
+_cm2StrictDiagExe="/usr/lib/kfocus/bin/kfocus-strict-dialog"
 
 # Set shared strings
 _cm2BlockMsg='';
@@ -887,7 +923,7 @@ _cm2LogLevelName='notice';
 _cm2LogTag='';
 _cm2PlasmaScriptDir='/usr/lib/kfocus/plasma/script';
 _cm2QdbusExe="$(command -v qdbus || true)";
-_cm2RmExe='/bin/rm';
+_cm2RmExe='/usr/bin/rm';
 _cm2WhiptailExe="$(command -v whiptail || true)";
 
 # Export Strings
@@ -896,7 +932,7 @@ export _cm2Arg01 _cm2Arg02 _cm2BlockMsg _cm2HtmBeginStr _cm2HtmEndStr      \
   _cm2HtmH3Str _cm2HtmPStr _cm2IsTty _cm2KdiagExe _cm2ModelCode _cm2RmExe  \
   _cm2CliType _cm2WhiptailExe _cm2LogExe _cm2LogIdxMap _cm2LogLevelIdx     \
   _cm2LogLevelName _cm2LogCodeMap _cm2LogTag _cm2PlasmaScriptDir           \
-  _cm2QdbusExe;
+  _cm2QdbusExe _cm2StrictDiagExe;
 
 # Export Functions
 export -f _cm2AskExitFn _cm2AssignExeVarsFn \

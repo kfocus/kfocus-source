@@ -325,17 +325,20 @@ _EOH05
 
 ## BEGIN _chkVirtualBoxFn {
 _chkVirtualBoxFn () {
-  declare _vbox_vm_path _kfocus_vbox_pkg _other_vbox_pkg_list _nag_key \
-    _title _nag_msg _should_offer_vbox _other_vbox_pkg _prompt_msg _ans_str \
-    _inst_rslt_str _func_successful;
+  declare _vbox_vm_path _kfocus_vbox_pkg _ubuntu_vbox_pkg_list \
+    _oracle_vbox_pkg_list _nag_key _title _nag_msg _should_offer_vbox \
+    _ubuntu_vbox_pkg _oracle_vbox_pkg _prompt_msg _ans_str _inst_rslt_str \
+    _func_successful _using_oracle_vbox;
 
   _vbox_vm_path="${HOME}/VirtualBox VMs";
   _kfocus_vbox_pkg='kfocus-vbox';
-  _other_vbox_pkg_list=(
+  _ubuntu_vbox_pkg_list=(
     'virtualbox'
     'virtualbox-source'
     'virtualbox-dkms'
     'virtualbox-ext-pack'
+  )
+  _oracle_vbox_pkg_list=(
     'virtualbox-7.0'
     'virtualbox-7.1'
     'virtualbox-7.2'
@@ -350,6 +353,7 @@ _chkVirtualBoxFn () {
   _nag_key='kfocus-virtualbox-offer';
   _should_offer_vbox='n';
   _func_successful='y';
+  _using_oracle_vbox='n';
 
   _title='Install KFocus VirtualBox Package';
   _cm2SetMsgFn "${_title}";
@@ -373,30 +377,63 @@ _chkVirtualBoxFn () {
   fi
 
   if [ "${_should_offer_vbox}" = 'n' ]; then
-    for _other_vbox_pkg in "${_other_vbox_pkg_list[@]}"; do
-      if _cm2ChkInstalledPkgFn "${_other_vbox_pkg}"; then
+    for _ubuntu_vbox_pkg in "${_ubuntu_vbox_pkg_list[@]}"; do
+      if _cm2ChkInstalledPkgFn "${_ubuntu_vbox_pkg}"; then
         _should_offer_vbox='y';
         break;
       fi
     done
   fi
 
+  if [ "${_should_offer_vbox}" = 'n' ]; then
+    for _oracle_vbox_pkg in "${_oracle_vbox_pkg_list[@]}"; do
+      if _cm2ChkInstalledPkgFn "${_oracle_vbox_pkg}"; then
+        _should_offer_vbox='y';
+        _using_oracle_vbox='y';
+        break;
+      fi
+    done
+  fi
+
   if [ "${_should_offer_vbox}" = 'y' ]; then
-    _prompt_msg="$(cat <<EOF
+    if [ "${_using_oracle_vbox}" = 'y' ]; then
+      _prompt_msg="$(cat <<EOF
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}${_title}</h3>
 
-${_cm2HtmPStr}This system appears to be using VirtualBox. To ensure <br>
-VirtualBox works and future software updates work <br>
-smoothly, we recommend installing the <code>kfocus-vbox</code> <br>
-package to install and manage VirtualBox from Oracle's <br>
-repository.</p>
+${_cm2HtmPStr}This system appears to be using an official Oracle release <br>
+of Virtualbox. However, there is no guarantee that it will <br>
+stay up to date and compatible with future kernels.</p>
+
+${_cm2HtmPStr}To fix this, the Focus Team has assembled a kfocus-vbox <br>
+package to install and manage a tested, official version of <br>
+VirtualBox from Oracle's official repository.</p>
 
 ${_cm2HtmPStr}Install the KFocus VirtualBox package now?</p>
 ${_cm2HtmEndStr}
 EOF
-    )";
-    _ans_str="$(_cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 'a')";
+      )";
+    else
+      _prompt_msg="$(cat <<EOF
+${_cm2HtmBeginStr}
+${_cm2HtmH3Str}${_title}</h3>
+
+${_cm2HtmPStr}This system appears to be using VirtualBox. The 7.x kernel <br>
+does not support the VirtualBox version provided by the <br>
+Ubuntu repositories. A recent kernel update likely removed <br>
+VirtualBox if it was installed.</p>
+
+${_cm2HtmPStr}To fix this, the Focus Team has assembled a
+<code>kfocus-vbox</code> <br>
+package to install and manage a tested, official version of <br>
+VirtualBox from Oracle's official repository.</p>
+
+${_cm2HtmPStr}Install the KFocus VirtualBox package now?</p>
+${_cm2HtmEndStr}
+EOF
+      )";
+    fi
+    _ans_str="$(_cm2PromptUserFn -s "${_prompt_msg}" "${_win_title}" 'o')";
 
     if [ "${_ans_str}" = 'y' ]; then
       _prompt_msg='Installing KFocus VirtualBox package';
@@ -413,6 +450,7 @@ ${_cm2HtmEndStr}
 EOF
         )";
         _cm2PromptUserFn "${_prompt_msg}" "${_win_title}";
+        _testNagCountFn 'fill' "${_nag_key}" 1;
       else
         _cm2WarnStrFn 'kfocus-vbox installation failed';
         _cm2WarnStrFn "${_inst_rslt_str}";
@@ -432,8 +470,8 @@ EOF
       fi
     else
       _cm2SucStrFn 'kfocus-vbox installation skipped on user request';
+      _testNagCountFn 'fill' "${_nag_key}" 1;
     fi
-    _testNagCountFn 'fill' 'kfocus-ibus-count' 1;
   fi
 
   if [ "${_func_successful}" = 'y' ]; then
