@@ -1,0 +1,79 @@
+#!/bin/bash
+#
+# Copyright 2026-2026 MindShare Inc.
+#
+# Written for the Kubuntu Focus by A. Rainbolt.
+#
+# Name     : kfocus-pkg-installer
+# Summary  : kfocus-pkg-installer <pkg_name>
+# Purpose  : Installs the specified package non-interactively. Needed to make
+#          : a pkexec prompt look nicer.
+# Example  : kfocus-pkg-installer kfocus-vbox
+# License  : GPLv2
+# Run By   : kfocus-focusrx
+# Spec     : 6805
+#
+# shellcheck source=../lib/common.2.source
+#
+set -u;
+
+## BEGIN _importCommonFn {
+_importCommonFn () {
+  declare _lib_list _is_loaded _lib_file;
+  _lib_list=(
+    "${_baseDir}/lib/common.2.source"
+    '/usr/lib/kfocus/lib/common.2.source'
+  );
+  _is_loaded='n';
+  for _lib_file in "${_lib_list[@]}"; do
+    if [ -r "${_lib_file}" ]; then
+      # shellcheck disable=SC1090
+      if source "${_lib_file}"; then
+        _is_loaded='y';
+        break;
+      fi
+    fi
+  done
+
+  if [ "${_is_loaded}" = 'n' ]; then
+    echo 1>&2 "${_baseName}: ABORT - Cannot source common lib";
+    exit 202;
+  fi
+}
+## . END _importCommonFn }
+
+## BEGIN _mainFn {
+_mainFn () {
+  declare _pkg_name;
+  _pkg_name="${1:-}";
+  [ -n "${_pkg_name}" ] || {
+    _cm2WarnStrFn 'No package name provided!';
+    exit 1;
+  }
+
+  env \
+    DEBIAN_FRONTEND=noninteractive \
+    apt-get \
+    -o 'Dpkg::Options::=--force-confdef' \
+    -o 'Dpkg::Options::=--force-confold' \
+    -q -y install "${_pkg_name}";
+}
+## . END _mainFn }
+
+## BEGIN Declare and assign global vars {
+declare _binName _binDir _baseDir _baseName;
+## . END Declare and assign global vars }
+
+## BEGIN Run fi2MainFn when script is NOT sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+
+  _importCommonFn;
+
+  _mainFn "$@";
+fi
+## . END Run fi2MainFn when script is NOT sourced }
+
