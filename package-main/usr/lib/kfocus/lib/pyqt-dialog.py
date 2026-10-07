@@ -4,7 +4,8 @@ import argparse, subprocess, sys
 #import subprocess
 #import argparse
 from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtGui import QIcon, QPalette, QColor, QCursor, QGuiApplication
+# Later from PyQt6.QtGui:  QPalette, QColor, QCursor,
+from PyQt6.QtGui import QIcon, QGuiApplication
 from PyQt6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -46,7 +47,8 @@ class UltraStrictDialog(QDialog):
     def init_ui(self):
         self.setWindowTitle(self.window_title)
 
-        # Apply an elegant dark theme stylesheet with custom padding around the whole dialog content
+        # Apply an elegant dark theme stylesheet with custom padding around
+        # the whole dialog content
         # self.setStyleSheet("""
         #     QDialog {
         #         /* background-color: #1e1e24; */
@@ -173,7 +175,8 @@ class UltraStrictDialog(QDialog):
 
         self.move(x, y)
 
-    def sound_alert(self):
+    @staticmethod
+    def sound_alert():
         try:
             # Try PulseAudio player first using a standard system alert path
             subprocess.Popen(
@@ -181,6 +184,7 @@ class UltraStrictDialog(QDialog):
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
             )
         except FileNotFoundError:
+            # noinspection PyBroadException
             try:
                 # Fallback for newer PipeWire-native platforms
                 subprocess.Popen(
@@ -205,7 +209,7 @@ class UltraStrictDialog(QDialog):
         self.btn_cancel.setEnabled(is_checked)
 
     # Intercept window state changes and overrides requests to minimize
-    def changeEvent(self, event):
+    def changeEvent(self, event, **kwargs):
         if event.type() == event.Type.WindowStateChange:
             if self.windowState() & Qt.WindowState.WindowMinimized:
                 self.setWindowState(self.windowState() & ~Qt.WindowState.WindowMinimized | Qt.WindowState.WindowActive)
@@ -214,10 +218,10 @@ class UltraStrictDialog(QDialog):
         super().changeEvent(event)
 
     @staticmethod
-    def closeEvent(event):
+    def closeEvent(event, **kwargs):
         event.ignore()
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event, **kwargs):
         if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_Escape):
             event.ignore()
         else:
