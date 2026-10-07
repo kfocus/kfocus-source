@@ -113,6 +113,8 @@ _exeLookupList=(
   'winff|winff||winff-qt|WinFF: Convert Video using ffmpeg'
 
   # Packages with special handlers
+  # app_id|cmd_str;with;args|sniff_str|pkg_str|descr_str
+  # 1       2                 3         4       5
   'displaylink-driver|!displaylink-driver|displaylink-installer|displaylink-driver|DisplayLink: Driver for DisplayLink Docking Stations'
   'docker|!docker|docker|docker-ce|Docker: Container Engine'
   'dropbox|!dropbox|dropbox|dropbox|Dropbox: Sync to Cloud Storage'
@@ -120,7 +122,7 @@ _exeLookupList=(
   'intellij|!intellij|jetbrains-toolbox|jetbrains-toolbox|IntelliJ: JetBrains Java IDE'
   'jetbrains-toolbox|!jetbrains-toolbox|jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs'
   'pycharm|!pycharm|jetbrains-toolbox|jetbrains-toolbox|PyCharm: JetBrains Python IDE'
-  'virtualbox|!virtualbox||kfocus-vbox|VirtualBox: Run Virtual Machines'
+  'virtualbox|!virtualbox|kfocus-vbox|kfocus-vbox|KFocus Curated VirtualBox: Run Virtual Machines'
   'webstorm|!webstorm|jetbrains-toolbox|jetbrains-toolbox|WebStorm: JetBrains Web IDE'
   'zoom|!zoom||zoom|Zoom: Start and Join Video and Web Conferencing'
 
@@ -299,7 +301,7 @@ function deb_lutris() {
 #   GPG_KEY_URL="https://deb.nodesource.com/gpgkey/nodesource.gpg.key"
 #   APT_REPO_URL="deb https://deb.nodesource.com/node_16.x jammy main"
 #   APT_LIST_NAME="nodesource"
-#   PRETTY_NAME="NodeJS 16.x"
+#   PRETTY_NAME="Node.js 16.x"
 # }
 function deb_nvidia-cuda() {
   APT_KEY_URL="https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub"
@@ -880,7 +882,7 @@ EOT
 
     virtualbox)
       _handleVboxSetupFn;
-      _cmd_str='virtualbox';
+      _cmd_str='kfocus-vbox';
       ;;
 
     zoom)
