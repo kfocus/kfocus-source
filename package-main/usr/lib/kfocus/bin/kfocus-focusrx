@@ -478,9 +478,11 @@ EOF
         )";
         _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 's';
       fi
-    else
+    elif [ "${_dialog_ret}" = '1' ]; then
       _cm2SucStrFn 'kfocus-vbox installation skipped on user request';
       _testNagCountFn 'fill' "${_nag_key}" 1;
+    else
+      _cm2WarnStrFn 'kfocus-vbox install prompt closed improperly!';
     fi
   fi
 
