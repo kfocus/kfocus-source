@@ -372,18 +372,12 @@ _chkVirtualBoxFn () {
     return;
   fi
 
-  if [ -d "${_vbox_vm_path}" ]; then
-    _should_offer_vbox='y';
-  fi
-
-  if [ "${_should_offer_vbox}" = 'n' ]; then
-    for _ubuntu_vbox_pkg in "${_ubuntu_vbox_pkg_list[@]}"; do
-      if _cm2ChkInstalledPkgFn "${_ubuntu_vbox_pkg}"; then
-        _should_offer_vbox='y';
-        break;
-      fi
-    done
-  fi
+  for _ubuntu_vbox_pkg in "${_ubuntu_vbox_pkg_list[@]}"; do
+    if _cm2ChkInstalledPkgFn "${_ubuntu_vbox_pkg}"; then
+      _should_offer_vbox='y';
+      break;
+    fi
+  done
 
   if [ "${_should_offer_vbox}" = 'n' ]; then
     for _oracle_vbox_pkg in "${_oracle_vbox_pkg_list[@]}"; do
@@ -395,6 +389,12 @@ _chkVirtualBoxFn () {
     done
   fi
 
+  if [ "${_should_offer_vbox}" = 'n' ]; then
+    if [ -d "${_vbox_vm_path}" ]; then
+      _should_offer_vbox='y';
+    fi
+  fi
+
   if [ "${_should_offer_vbox}" = 'y' ]; then
     if [ "${_using_oracle_vbox}" = 'y' ]; then
       _prompt_msg="$(cat <<EOF
@@ -402,11 +402,11 @@ ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}${_title}</h3>
 
 ${_cm2HtmPStr}This system appears to be using an official Oracle release of
-Virtualbox. <span style="color:#888888">However, there is no guarantee that it
+VirtualBox. <span style="color:#888888">However, there is no guarantee that it
 will stay up to date and compatible with future kernels.</span></p>
 
-${_cm2HtmPStr}The Focus Team has assembled a kfocus-vbox package
-<span style="color:#888888">to fix this. This makes sure the installed version
+${_cm2HtmPStr}The Focus Team has created a kfocus-vbox package
+<span style="color:#888888">to fix this. It ensures the installed version
 of VirtualBox is an official Oracle package that worked with the kernel when
 last validated.</span></p>
 
@@ -426,8 +426,8 @@ VirtualBox. <span style="color:#888888">The 7.x kernel does not support the
 VirtualBox version provided by the Ubuntu repositories. A recent kernel update
 likely removed VirtualBox if it was installed.</span></p>
 
-${_cm2HtmPStr}The Focus Team has assembled a kfocus-vbox package
-<span style="color:#888888">to fix this. This makes sure the installed version
+${_cm2HtmPStr}The Focus Team has created a kfocus-vbox package
+<span style="color:#888888">to fix this. It ensures the installed version
 of VirtualBox is an official Oracle package that worked with the kernel when
 last validated.</span></p>
 
