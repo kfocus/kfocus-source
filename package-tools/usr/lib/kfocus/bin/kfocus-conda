@@ -27,7 +27,7 @@ _getNvSeriesStrFn () {
     1>&2 cat << _EOL01
 ${_baseName}: No NVIDIA GPU detected
 
-This script must be run with an Nvidia GPU and the nvidia_drm module loaded.
+This app must be run with an Nvidia GPU and the nvidia_drm module loaded.
 If you have an Nvidia GPU, please switch to "Nvidia (Performance)" or "Nvidia
 (On-Demand)" mode using either the GPU selector in the system tray or
 nvidia-settings.
@@ -62,7 +62,7 @@ your GPU information:
 
 sudo update-pciids
 
-And then run this script again.
+And then run this app again.
 
 _EOL02
 
@@ -766,7 +766,7 @@ _welcomeStr="$(cat << '_HERE06';
 KUBUNTU FOCUS DEEP LEARNING SUITE
   See https://kfocus.org/wf/deep.html for more information.
 
-Use this script to install Anaconda and selectively install GPU accelerated
+Use this app to install Anaconda and selectively install GPU accelerated
  Jupyter Notebook, PyTorch, TensorFlow, and Theano.
 
 BY PROCEEDING YOU ACKNOWLEDGE AND AGREE TO THE LICENSE AGREEMENT AT
@@ -847,7 +847,7 @@ conda config --set auto_activate_base false;
 
 1>&2 cat << _EOL0X
 
-This script disables conda environments, so you can continue to run
+This app disables conda environments, so you can continue to run
 system Python scripts like backintime-qt when you open a new bash
 session (like when opening a new terminal tab). To enable the conda
 environment, use the following:
@@ -856,6 +856,12 @@ environment, use the following:
 * Use 'false' with the above to disable auto-enable.
 * Deactivate the default conda environment with 'conda deactivate'.
   This will allow you to run system Python scripts again.
+
+IMPORTANT: Do not be tempted to install the nvidia-cuda-toolkit,
+nvidia-cudnn, or nvidia-cuda-samples packages! These are outdated Debian
+packages. The proper cuda-toolkit, cuDNN, and TensorRT packages may be
+installed using this app, and you may run CUDA samples using the
+instructions at https://docs.nvidia.com/cuda/cuda-samples/.
 _EOL0X
 
 _cm2AskExitFn 0 "\n${_baseName} complete. Press return to exit.";

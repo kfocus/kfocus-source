@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 #
 # Copyright 2016-2026 MindShare Inc.
-# Written for Kubuntu Focus by Aaron Rainbolt.
+# Written for Kubuntu Focus by A. Rainbolt and M. Mikowski.
 #
 # Name    : kfocus_strict_dialog.py
 # Purpose : Present dialogs to the user that are hard to dismiss without

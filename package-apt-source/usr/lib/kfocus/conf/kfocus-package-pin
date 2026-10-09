@@ -41,6 +41,10 @@ Package: nvidia-cuda-samples
 Pin: release o=*
 Pin-Priority: -1
 
+Package: nvidia-cudnn
+Pin: release o=*
+Pin-Priority: -1
+
 # Prohibit installation of Ubuntu VirtualBox packages, these are frequently
 # incompatible with the latest HWE/OEM kernel. We provide Oracle's packages
 # instead.

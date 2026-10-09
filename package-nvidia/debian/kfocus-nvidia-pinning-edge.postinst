@@ -20,9 +20,10 @@ if [ "${1:-}" = 'configure' ]; then
   if ! dpkg --compare-versions "${2:-}" ge '24.04.10'; then
     # A Linux kernel upgrade will have removed the older NVIDIA drivers. Tell
     # FocusRx to reconfigure the system on the next reboot.
-    touch '/var/lib/kfocus/hw_reconfig_force';
+    mkdir -p '/var/lib/kfocus' || true;
+    touch '/var/lib/kfocus/hw_reconfig_force' || true;
     # Make a reboot popup appear.
-    touch '/var/run/reboot-required';
+    touch '/var/run/reboot-required' || true;
   fi
 fi
 

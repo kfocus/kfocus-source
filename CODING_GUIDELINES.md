@@ -118,7 +118,7 @@ fi # close if statement
 ## Structure
 Most shell apps should have the following structure to facilitate test
 development and provide consistency. We use `set -u;` to throw errors on
-undefined variables. We DO NOT use `set -e` to exit on errors however.
+undefined variables. We DO NOT use `set -e` to exit on errors, however.
 Test or trap errors instead. See `kfocus-example-app` as a more complete
 example.
 
