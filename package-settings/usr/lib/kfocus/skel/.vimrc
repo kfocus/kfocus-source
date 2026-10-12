@@ -86,7 +86,9 @@ endif
 
 " ====[ Indentation ]==================================================
 set autoindent      "Retain indentation on next line
-set mouse=c         "Fix neovim behavior
+if has('nvim')
+  set mouse=c       "Fix neovim behavior
+endif
 set smartindent     "Turn on autoindenting of blocks
 set textwidth=78    "Wrap at column 78
 set nojoinspaces    "Single-space after periods during wrap
@@ -105,7 +107,7 @@ vmap <BS> x
 
 " Fold (see /usr/share/vim/vim73/syntax/javascript.vim
 let javaScript_fold=0
-set foldlevel=99
+set foldlevel=999
 
 " ====[ Tab formating ]================================================
 set expandtab       "Convert all tabs that are typed to spaces
@@ -169,12 +171,6 @@ set timeout timeoutlen=300 ttimeoutlen=300
 
 " Clear search highlights by pressing Ctrl + L
 nnoremap <C-l> :nohlsearch<CR><C-l>
-
-" e Edit the next file
-" Conflicts with normal use of e to move forward to a word, disabled by
-" default.
-"
-" map e :n
 
 " ;k Trim trailing space, ;kk clears checkboxes
 map <silent> ;k  :call TrimTrailingWhiteSpace()<CR>
