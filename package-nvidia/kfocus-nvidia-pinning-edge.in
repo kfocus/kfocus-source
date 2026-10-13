@@ -122,13 +122,23 @@ Pin: version 595.*
 Pin-Priority: 1002
 
 # == CUDA Nvidia Packages =============================================
+# Debian nvidia-cuda-toolkit and nvidia-cuda-samples packages are
+# blacklisted in package-apt-source, kfocus-package-pin. They are there
+# because we want to prevent installation of these OOD Debian packages
+# under all circumstances, even if the kfocus-nvidia* packages are not
+# installed. 
+#
 # The cuda-drivers package is no longer installable or advisable with the
 # 595 drivers. Instead, it is redundant with nvidia-driver-595-open and
 # it is disallowed.
+#
 Package: cuda-drivers*
 Pin: release o=NVIDIA
 Pin-Priority: -1
 
+# Ubuntu provides cuda-toolkit, but it is not as complete as that from NVIDIA,
+# so we use those packages instead.
+#
 Package: cuda-toolkit*
 # Pin: release o=NVIDIA
 Pin: version 13.*
@@ -329,5 +339,3 @@ Package: *
 Pin: release o=NVIDIA
 Pin-Priority: 100
 
-# Debian nvidia-cuda-toolkit and nvidia-cuda-samples packages are
-# blacklisted in package-apt-source, kfocus-package-pin.

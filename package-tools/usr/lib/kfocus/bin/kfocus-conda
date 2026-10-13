@@ -2,7 +2,8 @@
 #
 # Copyright 2020-2026 MindShare Inc.
 # Written for the Kubuntu Focus by:
-# Michael Mikowski, Vishwas Mruthyunjaya, Erich Eickmeyer
+# Michael Mikowski, Vishwas Mruthyunjaya,
+#   Aaron Rainbolt, Erich Eickmeyer
 #
 # Name    : kfocus-conda
 # Purpose : Install Anaconda AI environments
@@ -101,6 +102,7 @@ _fixCondaEnvFn () {
       1>&2 conda activate base                    || _cm2ErrFn;
       1>&2 conda env remove --name "${_env_name}" || _cm2ErrFn;
       _cm2SucFn;
+      # bashsupport disable=BP2001
       _cm2BlockMsg="${_orig_msg}";
     fi
     _reply_str=$(_cm2ReadPromptYnFn \
@@ -173,7 +175,7 @@ _installEnvFn () {
     _conda_oldstyle_vers _conda_installed_vers _conda_expect_dir \
     _conda_expect01_exe _conda_expect02_exe _conda_install_file \
     _conda_repo_url _conda_md5sum _is_new_conda _chk_str \
-    _do_install_tensorflow _msg _conda_pkg_url __conda_setup;
+    _conda_pkg_url __conda_setup;
 
   if [ "${_nvSeriesStr}" = 'rtx50' ]; then
     _pkg_suffix='-edge';
@@ -221,6 +223,8 @@ _installEnvFn () {
   _cm2SucFn;
   ## . End Install GPU Libs
 
+  ## Install of CUDNN and TensorRT require 595 drivers.
+  ## At present, using rtx50 as a surrogate.
   if [ "${_nvSeriesStr}" = 'rtx50' ]; then
     ## Begin Install cuDNN
     if _cm2ChkInstalledPkgFn "cudnn9-cuda-13"; then
@@ -276,9 +280,6 @@ _installEnvFn () {
   _conda_install_file='Anaconda3-2024.10-1-Linux-x86_64.sh';
   _conda_pkg_url="${_conda_repo_url}/${_conda_install_file}";
 
-  # _conda_md5sum='b3332806aa15750d6bc4e604f9110622';
-  # _conda_install_file='Anaconda3-2023.03-1-Linux-x86_64.sh';
-
   # Report unexpected exe, get installed conda version
   if [ -e "${_conda_installed_exe}" ]; then
     if [   "${_conda_installed_exe}" != "${_conda_expect01_exe}" ] \
@@ -309,28 +310,6 @@ _installEnvFn () {
         _exitFn;
       fi
     fi
-  fi
-
-  if [[  "${_conda_installed_vers}" =~ ^2[3-9]\.|^4.12.0$ ]]; then
-    _cm2EchoFn "Using compatible conda version |${_conda_installed_vers}|.";
-  else
-    _conda_oldstyle_vers="$(
-      conda list anaconda$ |tail -n0 |awk '{print $2}'
-    )";
-    case "${_conda_oldstyle_vers}" in
-    '') _cm2EchoFn 'Conda does not appear installed';;
-    '2020.11'|'2020.07')
-      _cm2WarnStrFn "Conda version |${_conda_oldstyle_vers}| found in";
-      _cm2WarnStrFn "the current installation |${_conda_expect_dir}";
-      _cm2WarnStrFn 'is an older version. Use kfocus-conda-legacy-v01';
-      _cm2WarnStrFn 'to continue using this installation. Exiting...';
-      _exitFn;;
-    *) _cm2WarnStrFn "Conda version |${_conda_oldstyle_vers}| found in";
-      _cm2WarnStrFn "the current installation |${_conda_expect_dir}|";
-      _cm2WarnStrFn  "is not a supported version. Please move this";
-      _cm2WarnStrFn  "directory aside before proceeding. Exiting...";
-      _exitFn;;
-    esac
   fi
 
   if [ -d "${_conda_expect_dir}" ]; then
@@ -439,20 +418,8 @@ _installEnvFn () {
     _cm2EchoFn;
   fi
 
-  ## TODO mxnet is not supported with cuda > 10.2
-  # This is maintained here for reference.
-  #
-  # _reply_str=$( _fixCondaEnvFn 'mxnet-cu102') || _exitFn;
-  # if [ "${_reply_str}" = 'y' ]; then
-  #   _cm2SetMsgFn 'Install Mxnet-cu102';
-  #   set +u;
-  #   conda activate base                         || _exitFn;
-  #   conda create -y --name mxnet python=3.12    || _exitFn;
-  #   conda activate mxnet                        || _exitFn;
-  #   conda install -c anaconda mxnet-cu102       || _exitFn;
-  #   set -u;
-  #   _cm2SucFn;
-  # fi
+  # See earlier versions of this app for mxnet installation.
+  # As of 2024, this is deprecated and no longer supported.
 
   # Pytorch
   # https://pytorch.org/get-started/locally/#linux-anaconda
@@ -475,8 +442,6 @@ _installEnvFn () {
       pip install --pre torch torchvision torchaudio \
         --index-url https://download.pytorch.org/whl/nightly/cu126 || _exitFn;
     fi
-
-    pip install gpu-benchmark || _exitFn;
     set -u;
     _cm2SucFn;
   fi
@@ -490,77 +455,32 @@ _installEnvFn () {
 
   # TensorFlow does not work with 5000-series GPUs, see
   # https://github.com/tensorflow/tensorflow/issues/89272
+  #
   _reply_str=$( _fixCondaEnvFn 'tensorflow') || _exitFn;
   if [ "${_reply_str}" = 'y' ]; then
-    _do_install_tensorflow='n';
-    if [ "${_nvSeriesStr}" = 'rtx50' ]; then
-      _msg="$(cat <<EOF
-This RTX50-series GPU may not be supported by TensorFlow yet. Are you sure you
-want to install TensorFlow anyway
-EOF
-      )"
-      if [ "$(_cm2ReadPromptYnFn "${_msg}" 'n')" = 'y' ]; then
-        _do_install_tensorflow='y';
-      fi
-    else
-      _do_install_tensorflow='y';
-    fi
+    _cm2SetMsgFn 'Install TensorFlow';
+    set +u;
+    conda activate base || _exitFn;
 
-    if [ "${_do_install_tensorflow}" = 'y' ]; then
-      _cm2SetMsgFn 'Install TensorFlow';
-      set +u;
-      conda activate base || _exitFn;
-
-      _cm2EchoFn "Installing TensorFlow for ${_nvSeriesStr}-series GPU";
-      conda create -n tensorflow pip python=3.12 || _exitFn;
-      conda activate tensorflow                  || _exitFn;
-      # Prefer now not to specify a version, but 2.12.0 does work with GPU
-      # Latest as of 2025-05-30 is 2.19.0, does not.
-      # 2.12.0 is not available with Python 3.12.
-      # pip install -Iv tensorflow==2.12.0         || _exitFn;
-      pip install -Iv 'tensorflow[and-cuda]'     || _exitFn;
-      # Deprecated ai-benchmark
-      # pip install ai-benchmark                 || _exitFn;
-      conda activate base                        || _exitFn;
-      set -u;
-      _cm2SucFn;
-    fi
+    _cm2EchoFn "Installing TensorFlow for ${_nvSeriesStr}-series GPU";
+    conda create -n tensorflow pip python=3.12 || _exitFn;
+    conda activate tensorflow                  || _exitFn;
+    # Prefer now not to specify a version, but 2.12.0 does work with GPU
+    # Latest as of 2025-05-30 is 2.19.0, does not.
+    # 2.12.0 is not available with Python 3.12.
+    # pip install -Iv tensorflow==2.12.0         || _exitFn;
+    pip install -Iv 'tensorflow[and-cuda]'     || _exitFn;
+    # Deprecated ai-benchmark
+    # pip install ai-benchmark                 || _exitFn;
+    conda activate base                        || _exitFn;
+    set -u;
+    _cm2SucFn;
   fi
 
-  # Theano
-  # This appears limited to Python 3.10, which implies it is old. Disabled.
-  #
-  # _reply_str=$( _fixCondaEnvFn 'theano') || _exitFn;
-  # if [ "${_reply_str}" = 'y' ]; then
-  #   _cm2SetMsgFn 'Install Theano';
-  #   set +u;
-  #   conda activate base                       || _exitFn;
-  #   conda create -y --name theano python=3.10 || _exitFn;
-  #   conda activate theano                     || _exitFn;
-  #   conda install theano pygpu                || _exitFn;
-  #   conda activate base                       || _exitFn;
-  #   set -u;
-  #   _cm2SucFn;
-  # fi
+  # See earlier versions of this app for Theano and mxnet usage.
+  # As of 2024, these are deprecated and no longer supported.
 
-  ## mxnet
-  # This not supported with cuda 11.7 (requires 10.2)
-  #   which means it is now way old. Disabled.
-  #
-  # if _chkCondaEnvFn 'mxnet'; then
-  #   _cm2SetMsgFn 'Test Mxnet';
-  #   set +u;
-  #   conda activate mxnet || _exitFn;
-  #   set -u;
-  #
-  #   2>/dev/null python -c "${_testMxnetStr}" || _cm2WarnFn;
-  #   _cm2SucFn;
-  # fi
-
-  ## TODO add theano test for GPU.
-  # This is close:
-  # https://stackoverflow.com/questions/34328467
-
+  ## Begin Test PyTorch
   _cm2EchoFn;
   if _chkCondaEnvFn 'pytorch'; then
     _cm2SetMsgFn 'Test Pytorch';
@@ -571,50 +491,64 @@ EOF
     2>/dev/null python -c "${_testPytorchStr}" || _cm2WarnFn;
     _cm2SucFn;
   fi
+  ## . End test PyTorch
 
+  ## Begin Bench PyTorch
   if _chkCondaEnvFn 'pytorch'; then
     _reply_str="$(_cm2ReadPromptYnFn \
-      "Benchmark PyTorch (takes about 12m + model download time)" 'n'
+      'Benchmark PyTorch (takes about 12m + model download time)' 'n'
     )";
     if [ "${_reply_str}" = 'y' ]; then
       _cm2SetMsgFn 'Benchmark PyTorch';
       set +u;
-      conda activate pytorch || _exitFn;
+      conda activate pytorch     || _exitFn;
+      pip install gpu-benchmark  || _exitFn;
       set -u;
-      _cm2EchoFn 'Benchmarking Stable Diffusion 1.5...';
-      gpu-benchmark --model=stable-diffusion-1-5;
-      _cm2EchoFn 'Stable diffusion benchmark result link shown above. Copy';
-      _cm2EchoFn 'the URL into a browser, click "Stable Diffusion 1.5", and';
-      _cm2EchoFn 'find the table row matching your ID to see results.';
-      _cm2EchoFn 'Press Enter to continue.';
-      read -r;
-      _cm2EchoFn 'Benchmarking Qwen 3 6B...';
-      gpu-benchmark --model=qwen3-0-6b;
-      _cm2EchoFn 'Qwen benchmark result link shown above. Copy the URL into';
-      _cm2EchoFn 'a browser, click "Qwen 3-0-6b", and find the table row';
-      _cm2EchoFn 'matching your ID to see results.';
-      _cm2EchoFn 'Press Enter to continue.';
-      read -r;
+
+      _reply_str="$(_cm2ReadPromptYnFn 'Run stable diffusion bench' 'n')";
+      if [ "${_reply_str}" = 'y' ]; then
+        _cm2EchoFn 'Benchmarking Stable Diffusion 1.5...';
+        gpu-benchmark --model=stable-diffusion-1-5;
+        _cm2EchoFn 'The Stable Diffusion benchmark URL should be shown above.';
+        _cm2EchoFn 'Copy this URL into a browser, click the "Stable Diffusion';
+        _cm2EchoFn '1.5" button in the middle of the page, then find the table';
+        _cm2EchoFn 'row matching the benchmark ID presented above.';
+        _cm2EchoFn;
+        _cm2EchoFn 'Press Enter to continue.';
+        read -r;
+      fi
+      _reply_str="$(_cm2ReadPromptYnFn 'Run qwen3 bench' 'n')";
+      if [ "${_reply_str}" = 'y' ]; then
+        _cm2EchoFn 'Benchmarking Qwen 3 6B...';
+        gpu-benchmark --model=qwen3-0-6b;
+        _cm2EchoFn 'The Qwen benchmark URL should be shown above.';
+        _cm2EchoFn 'Copy this URL into a browser, click the "Qwen 3-0-6b"'
+        _cm2EchoFn 'button in the middle of the page, then find the table';
+        _cm2EchoFn 'row matching the benchmark ID presented above.';
+        _cm2EchoFn;
+        _cm2EchoFn 'Press Enter to continue.';
+        read -r;
+      fi
+      _reply_str="$(_cm2ReadPromptYnFn 'Run NanoGPT bench' 'n')";
+      if [ "${_reply_str}" = 'y' ]; then
+        _cm2EchoFn 'Benchmarking NanoGPT Training...';
+        gpu-benchmark --model=nanogpt-train;
+        _cm2EchoFn 'The NanoGPU Training benchmark URL should be shown above.';
+        _cm2EchoFn 'Copy this URL into a browser, click the "NanoGPT Training"'
+        _cm2EchoFn 'button in the middle of the page, then find the table';
+        _cm2EchoFn 'row matching the benchmark ID presented above.';
+        _cm2EchoFn;
+        _cm2EchoFn 'Press Enter to continue.';
+        read -r;
+      fi
       set +u;
       conda deactivate
       set -u;
     fi
   fi
+  ## . End Bench PyTorch
 
-  ## TODO: Use code /like/ this to invoke GPU Benchmark with Pytorch
-  # if _chkCondaEnvFn 'tensorflow'; then
-  #   _reply_str=$( _cm2ReadPromptYnFn \
-  #     "Benchmarks TensorFlow (takes 5-10m)" 'n'
-  #   );
-  #   if [ "${_reply_str}" = 'y' ]; then
-  #     _cm2SetMsgFn 'Benchmark TensorFlow';
-  #     set +u;
-  #     conda activate tensorflow || _exitFn;
-  #     set -u;
-  #     2>/dev/null python -c "${_testTf02Str}" || _cm2WarnFn;
-  #   fi
-  # fi
-
+  ## Begin Test TensorFlow
   if _chkCondaEnvFn 'tensorflow'; then
     _cm2SetMsgFn 'Test TensorFlow';
     set +u;
@@ -624,6 +558,10 @@ EOF
     2>/dev/null python -c "${_testTf01Str}" || _cm2WarnFn;
     _cm2SucFn;
   fi
+  ## . End Test TensorFlow
+
+  # See earlier of this version for bench using deprecated AIBenchmark
+  # and _testTf02Str.
 
   conda activate base;
 }
@@ -706,18 +644,8 @@ unset __conda_setup
 _HERE01
 )";
 
-## TODO mxnet is not supported with cuda 11.7 (10.2 is latest)
-# This is maintained here for reference.
-#
-# _testMxnetStr=$(cat << '_HERE03';
-# # Test script to test if mxnet uses GPU
-# import mxnet as mx
-# a = mx.nd.ones((2, 3), mx.gpu())
-# b = a * 2 + 1
-# b.asnumpy()
-# print('GPU acceleration confirmed in mxnet', mx.__version__)
-# _HERE03
-# );
+# See earlier versions of this app for Theano and mxnet usage.
+# As of 2024, these are deprecated and no longer supported.
 
 _testPytorchStr="$(cat << '_HERE04';
 import torch
@@ -742,24 +670,8 @@ print( 'Devices   : ', tf.config.list_physical_devices('GPU') )
 _HERE05
 )";
 
-_testTf02Str="$(cat << '_HERE05a';
-import tensorflow as tf
-print( 'TF Version: ', tf.__version__ )
-print( 'Devices   : ', tf.config.list_physical_devices('GPU') )
-
-# See https://github.com/tensorflow/tensorflow/issues/24496
-from tensorflow.compat.v1 import ConfigProto
-from tensorflow.compat.v1 import InteractiveSession
-config = ConfigProto()
-config.gpu_options.allow_growth = True
-session = InteractiveSession(config=config)
-
-from ai_benchmark import AIBenchmark
-benchmark = AIBenchmark()
-results = benchmark.run()
-
-_HERE05a
-)";
+# We used to have _testTf02Str for using AIBenchmark. This is now deprecated.
+# See earlier versions of this app for details.
 
 _welcomeStr="$(cat << '_HERE06';
 
@@ -767,7 +679,7 @@ KUBUNTU FOCUS DEEP LEARNING SUITE
   See https://kfocus.org/wf/deep.html for more information.
 
 Use this app to install Anaconda and selectively install GPU accelerated
- Jupyter Notebook, PyTorch, TensorFlow, and Theano.
+ Jupyter Notebook, PyTorch, TensorFlow.
 
 BY PROCEEDING YOU ACKNOWLEDGE AND AGREE TO THE LICENSE AGREEMENT AT
 https://docs.anaconda.com/
