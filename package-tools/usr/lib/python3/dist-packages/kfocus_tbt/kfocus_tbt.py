@@ -1,5 +1,17 @@
 #!/usr/bin/python3
-
+#
+# Copyright 2026-2026 MindShare Inc.
+#
+# Written for the Kubuntu Focus by A. Rainbolt and M. Mikowski
+#
+# Name     : kfocus-tbt
+# Summary  : kfocus-tbt
+# Purpose  : A simple utility for enabling and disabling Thunderbolt on Linux.
+# Example  : kfocus-tbt
+# License  : GPLv3
+# Run By   : Users
+# Spec     : 4788
+#
 # pylint: disable=broad-exception-caught
 
 """

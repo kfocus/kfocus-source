@@ -1,5 +1,18 @@
 #!/usr/bin/python3
-
+#
+# Copyright 2026-2026 MindShare Inc.
+#
+# Written for the Kubuntu Focus by A. Rainbolt and M. Mikwoski.
+#
+# Name     : kfocus-pl-gpuboost
+# Summary  : kfocus-pl-gpuboost
+# Purpose  : A simple utility for controlling the GPU Boost feature on Ar GEN
+#          : 1 systems.
+# Example  : kfocus-pl-gpuboost
+# License  : GPLv3
+# Run By   : Users
+# Spec     : 6789
+#
 # pylint: disable=broad-exception-caught
 
 """
