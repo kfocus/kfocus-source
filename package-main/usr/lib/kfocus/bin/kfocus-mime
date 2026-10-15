@@ -1034,10 +1034,11 @@ EOT
 
     kubectl)
       _prompt_msg="$(cat <<EOT
-${_cm2HtmPStr}kubectl cannot be automatically installed, as the version to <br>
-install depends on the cluster you are managing.</p>
+${_cm2HtmPStr}<b>kubectl</b> used to be directly installable as a curated app, <br>
+but Google now requires you install a version that matches <br>
+the cluster you are managing.</p>
 
-${_cm2HtmPStr}To install kubectl, follow the instructions at <br>
+${_cm2HtmPStr}Please see Google&apos;s instructions on how to do this at <br>
 <a href="https://kubernetes.io/docs/tasks/tools/install-kubectl-linux"
 >https://kubernetes.io/docs/tasks/tools/install-kubectl-linux</a>.</p>
 EOT
