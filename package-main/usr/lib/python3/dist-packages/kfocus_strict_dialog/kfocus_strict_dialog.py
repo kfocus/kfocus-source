@@ -6,7 +6,7 @@
 # Name    : kfocus_strict_dialog.py
 # Purpose : Present dialogs to the user that are hard to dismiss without
 #         : reading.
-# License : GPL v2
+# License : GPL v3
 # Run By  : Users
 # Spec    : 6805
 #
