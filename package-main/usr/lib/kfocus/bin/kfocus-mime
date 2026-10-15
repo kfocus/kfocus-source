@@ -78,7 +78,6 @@ _exeLookupList=(
   'konsole|konsole||konsole|Konsole: Use an X Terminal Emulator'
   'krita|krita||krita|Krita: Raster Image Editor'
   'kruler|kruler||kruler|Kruler: Measure Screen Objects'
-  'kubectl|konsole;--hold;-e;kubectl;help|kubectl|kubectl|Kubernetes: Command Line Container Management'
   'libreoffice-base|libreoffice;--base||libreoffice-base|LibreOffice Database: Connect Databases'
   'libreoffice-calc|libreoffice;--calc||libreoffice-calc|LibreOffice Calc: Create and Edit Spreadsheets'
   'libreoffice-draw|libreoffice;--draw||libreoffice-draw|LibreOffice Drawing: Create Vector and Raster Images'
@@ -121,6 +120,7 @@ _exeLookupList=(
   'ghb|!ghb|/var/lib/flatpak/app/fr.handbrake.ghb/x86_64/stable/active/files/bin/ghb|handbrake-flathub|Handbrake: Back up encoded audio and video'
   'intellij|!intellij|jetbrains-toolbox|jetbrains-toolbox|IntelliJ: JetBrains Java IDE'
   'jetbrains-toolbox|!jetbrains-toolbox|jetbrains-toolbox|jetbrains-toolbox|JetBrains Toolbox: Industry Standard IDEs'
+  'kubectl|!kubectl|/usr/bin/true|base-files|Kubernetes: Command Line Container Management'
   'pycharm|!pycharm|jetbrains-toolbox|jetbrains-toolbox|PyCharm: JetBrains Python IDE'
   'virtualbox|!virtualbox|kfocus-vbox|kfocus-vbox|KFocus Curated VirtualBox: Run Virtual Machines'
   'webstorm|!webstorm|jetbrains-toolbox|jetbrains-toolbox|WebStorm: JetBrains Web IDE'
@@ -921,7 +921,19 @@ EOT
       _cmd_str='flatpak';
       _arg_list=( 'run' 'fr.handbrake.ghb' );
       ;;
+    kubectl)
+      _prompt_msg="$(cat <<EOT
+${_cm2HtmPStr}<b>kubectl</b> used to be directly installable as a curated app, <br>
+but Google now requires you install a version that matches <br>
+the cluster you are managing.</p>
 
+${_cm2HtmPStr}Please see Google&apos;s instructions on how to do this at <br>
+<a href="https://kubernetes.io/docs/tasks/tools/install-kubectl-linux"
+>https://kubernetes.io/docs/tasks/tools/install-kubectl-linux</a>.</p>
+EOT
+      )";
+      _cmd_str='true';
+      ;;
     *) true;;
   esac
 
