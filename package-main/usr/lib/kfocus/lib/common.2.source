@@ -936,7 +936,7 @@ _cm2SudoEFn() {
   [ "${#arg_list[@]}" = '0' ] && return 1;
 
   readarray -t -d '' env_list < <(env -0);
-  cmd_list=( "sudo" "${env_list[@]}" "${arg_list[@]}" );
+  cmd_list=( "sudo" "env" "${env_list[@]}" "${arg_list[@]}" );
   "${cmd_list[@]}";
 }
 
