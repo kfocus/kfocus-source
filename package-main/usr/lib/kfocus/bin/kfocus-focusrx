@@ -355,7 +355,7 @@ _chkBtrfsSetUpFn () {
 _chkOemMultiDiskFn () {
 
   # Skip if required tool not installed
-  [ -z "${_chainHelperExe}" ] && return;
+  [ -z "${_chainHelperLaunchExe}" ] && return;
 
   _title='Launch Disk Chaining Helper';
   _cm2SetMsgFn "${_title}";
@@ -368,8 +368,7 @@ _chkOemMultiDiskFn () {
 
   # Use sudo here always, pkexec wrecks the GUI. We can do this here
   # because the OEM user does not need a password for sudo.
-  sudo XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-}" DISPLAY="${DISPLAY:-}" \
-    "${_chainHelperExe}" 'quietExit';
+   "${_chainHelperLaunchExe}" 'quietExit';
 
   _cm2SucFn;
 }
@@ -1207,7 +1206,7 @@ declare _parentCmdStr _lookupList \
   _focusRxDropDir _kbdColorSetExe _rootTitle _assignList \
   _focusRxSetExe _focusRxVersExe _btoolExe _firstrunExe \
   _fixIbusExe _kcleanExe _resetEffectsExe _rollbackBackendExe \
-  _rollbackSetExe _chainHelperExe _sysVersStr _iconStr;
+  _rollbackSetExe _chainHelperLaunchExe _sysVersStr _iconStr;
 
 _iconStr='kfocus-bug-rx';
 _parentCmdStr="$(ps -o comm= "$PPID")";
@@ -1237,7 +1236,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     "_focusRxVersExe|${_binDir}/kfocus-rx-version"
 
     "_btoolExe|${_binDir}/kfocus-btool||optional"
-    "_chainHelperExe|${_binDir}/kfocus-chain-helper-ui||optional"
+    "_chainHelperLaunchExe|${_binDir}/kfocus-chain-helper-launch||optional"
     "_firstrunExe|${_binDir}/kfocus-firstrun-bin||optional"
     "_fixIbusExe|${_binDir}/kfocus-fix-ibus||optional"
     "_kbdColorSetExe|${_binDir}/kfocus-kb-color-set||optional"

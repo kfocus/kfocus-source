@@ -117,6 +117,8 @@ _echoFormatFn   () { printf '  %-4.4s : %-14.14s %-2.2s %-14.14s ' "$@"; }
 #   12   _cm2RunPlasmaScriptFn      : Run a plasmashell script
 #   13   _cm2EchoGraphicalLoginInfoFn : Echo username and UID for graphical
 #                                       logins
+#   14   _cm2SudoEFn                : Mimic 'sudo -E' by injecting a full
+#                                     environment into the command line
 
 #####
 # See CONTRIBUTING.md, Header Section for function doc template

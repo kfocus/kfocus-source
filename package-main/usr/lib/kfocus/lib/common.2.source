@@ -929,6 +929,17 @@ _cm2EchoGraphicalLoginInfoFn() {
   printf '%s\n' "${_info_list[${#_info_list[@]}-1]}";
 }
 
+_cm2SudoEFn() {
+  declare env_list arg_list cmd_list;
+
+  arg_list=( "$@" );
+  [ "${#arg_list[@]}" = '0' ] && return 1;
+
+  readarray -t -d '' env_list < <(env -0);
+  cmd_list=( "sudo" "${env_list[@]}" "${arg_list[@]}" );
+  "${cmd_list[@]}";
+}
+
 # Regression tests only
 _cm2SetIsTtyFn () {
   if [[ "${1:-}" =~ ^[Yy] ]]; then
