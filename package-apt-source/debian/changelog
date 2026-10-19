@@ -1,3 +1,13 @@
+kfocus-apt-source (26.04.4~beta1) resolute; urgency=medium
+
+  * kfocus-package-pin: Blacklist nvidia-cuda-* and nvidia-cudnn packages from
+    Debian (#6936)
+  * kfocus-package-pin: Fix wslu pin (#6936)
+  * nvidia-cuda.list: Update to 26.04 repo (#6936)
+  * nv-cuda.asc: Update to 26.04 key (#6936)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 19 Oct 2026 14:26:52 -0500
+
 kfocus-apt-source (26.04.3) resolute; urgency=medium
 
   [ Aaron Rainbolt ]
