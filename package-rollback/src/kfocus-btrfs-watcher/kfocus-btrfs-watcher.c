@@ -62,7 +62,7 @@ enum fs_info {
 
 void signal_handler(int signal_num) {
   if (access(TIMER_RESET_FIFO_PATH, F_OK) == 0) {
-    /* If this fails, oh well. We could print a warning but it would eb a bit
+    /* If this fails, oh well. We could print a warning but it would be a bit
      * tricky since we can't use printf here. */
     unlink(TIMER_RESET_FIFO_PATH);
   }
