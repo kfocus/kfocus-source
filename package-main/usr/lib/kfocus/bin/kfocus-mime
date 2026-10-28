@@ -537,6 +537,9 @@ function install_ppa() {
 _installDisplaylinkDriverFn() {
   declare _url;
 
+  # Necessary to prevent an unsupported kernel from being installed!
+  _aptGetInstallUnattended 'evdi-dkms';
+
   _url='https://www.synaptics.com/sites/default/files/Ubuntu/pool';
   _url+='/stable/main/all/synaptics-repository-keyring.deb';
   install_deb "${_url}";
