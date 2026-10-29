@@ -34,121 +34,199 @@ _importCommonFn () {
 
 ## BEGIN _mainFn {
 _mainFn () {
-  declare _brow_str _erow_str _header_str _table_str _win_title _icon_str \
-    _disk_count _dev_file _byte_int _mib_int _trans_key _msg _block_list _ans;
+  declare _brow_rp_str _brow_lp_str _erow_str _left_header_str \
+    _center_header_str _table_str _win_title _icon_str _msg _ans \
+    _oem_active_file _oem_mode _option_list _continue_label;
 
-  _brow_str='<tr><td style="padding:8px 32px 8px 0">';
+  _brow_lp_str='<tr><td style="padding:8px 0 8px 32px">';
+  _brow_rp_str='<tr><td style="padding:8px 32px 8px 0">';
   _erow_str='</td></tr>';
-  _header_str='<h3 style="color:#f7941d">';
+  _left_header_str='<h3 style="color:#f7941d">';
+  _center_header_str='<h3 style="color:#f7941d;text-align:center">';
   _table_str='<table style="width:100%;margin-right:32px">';
   _win_title='Kubuntu 26.04 LTS with Focus Tools Installer';
   _icon_str='kfocus-bug-tools';
+  _oem_active_file='/etc/calamares/OEM_MODE_ACTIVATED';
 
-  if [ -e '/etc/calamares/OEM_MODE_ACTIVATED' ]; then
+  if [ -f "${_oem_active_file}" ]; then
+    _oem_mode="$(cat "${_oem_active_file}")";
+    _msg="$(cat <<EOL
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}Proceed With OEM Install?</h3>${_erow_str}
+
+${_brow_rp_str}<b>The OEM installer was previously launched and the
+&quot;${_oem_mode}&quot; <br>
+mode selected.</b> The installer will now launch in this mode again. To <br>
+select a different mode, reboot the system and launch the OEM <br>
+installer again.${_erow_str}
+
+${_brow_rp_str}Do you wish to continue?${_erow_str}</table>
+${_cm2HtmEndStr}
+EOL
+    )";
+    _continue_label="Continue in \"${_oem_mode}\" mode";
+    if ! kdialog --icon="${_icon_str}" --title="${_win_title}" \
+      --warningcontinuecancel "${_msg}" \
+      --continue-label="${_continue_label}"; then
+      exit 0;
+    fi
+
+    if [ "${_oem_mode}" = 'partfirst' ]; then
+      sudo partitionmanager;
+    fi
+
     # bashsupport disable=BP2001
     export BROWSER='sudo -H -u kubuntu firefox'
     sudo --preserve-env=XDG_CONFIG_DIRS BROWSER="${BROWSER}" calamares -D8;
-    exit 0;
+    exit;
+  elif [ -e "${_oem_active_file}" ]; then
+    # Something other than a file exists here, bail out
+    _msg="$(cat <<EOL
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}Error</h3>${_erow_str}
+
+${_brow_rp_str}${_oem_active_file} exists, but is not a file! Bailing
+out.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOL
+    )";
+    _cm2PromptUserFn -i "${_icon_str}" "${_msg}" 's';
+    exit 1;
   fi
-
-  # Detect multi-disk and offer OEM mode if so
-  _disk_count=0;
-  IFS=$'\n' read -r -d '' -a _block_list <<< "$(
-    find /dev/ -maxdepth 1 -type b \
-      | grep -E '^/dev/(sd[a-z]|nvme[0-9]n1|vd[a-z])$'
-  )";
-  for _dev_file in "${_block_list[@]}"; do
-    _byte_int="$(sudo blockdev --getsize64 "${_dev_file}")";
-    _mib_int=$(( _byte_int / 1048576 ));
-    _trans_key="$(lsblk -ndo tran "${_dev_file}")";
-
-    # Skip device if not the right disk type
-    if ! [[ "${_trans_key}" =~ ^(sata|nvme|virtio)$ ]]; then
-      continue;
-    fi
-
-    # Skip device if less than 64 GB
-    if (( _mib_int < 65536 )); then
-      continue;
-    fi
-
-    (( _disk_count++ )) || true;
-  done
 
   _msg="$(cat <<EOL
 ${_cm2HtmBeginStr}${_table_str}
-${_brow_str}${_header_str}Proceed With OEM Install?</h3>${_erow_str}
+${_brow_lp_str}${_center_header_str}${_win_title}</h3>${_erow_str}
 
-${_brow_str}You are about to install the OS in OEM mode. This will <br>
-prepare the system for distribution to an end user, providing <br>
-them with an account setup wizard. If you do not need this <br>
-capability, please cancel and use the normal install method.${_erow_str}
-EOL
-  )";
+${_brow_lp_str}<b>You are about to install the OS in OEM mode.</b> This will
+prepare the system for distribution <br>
+to an end user, providing them with an account setup wizard. This is
+useful if you are <br>
+reinstalling the OS on a Kubuntu Focus system, preparing a system
+for someone else, or <br>
+installing onto a system with multiple disks.${_erow_str}
 
-  # Report multi-disk
-  if (( _disk_count > 1 )); then
-    _msg+="$(cat <<EOL
+${_brow_lp_str}After installation, the included Multi-Disk Configuration Tool
+(MDCT) will help you set up <br>
+any secondary disks or partitions.${_erow_str}
 
-${_brow_str}The system has multiple disks present. To properly configure <br>
-a secondary disk after installation, you MUST install Kubuntu <br>
-26.04 LTS with Focus Tools to a single disk using a default <br>
-installation option (such as Erase Disk). Do NOT use manual <br>
-partitioning, and do NOT change the default filesystem.${_erow_str}
+${_brow_lp_str}Three different install methods are provided:${_erow_str}
 
-${_brow_str}It is fine to enable encryption or disable the creation of a <br>
-swap file if desired. For more information, see: <br>
-<a href="https://kfocus.org/wf/reinstall.html#bkm_multi_disk_configuration">https://kfocus.org/wf/reinstall.html#bkm_multi_disk_configuration</a>${_erow_str}
-EOL
-    )";
-  fi
+${_brow_lp_str}<ul>
+<li><b>Standard</b>: This is the normal installation mode. Use if you
+want the entire system <br>
+disk to be dedicated to the root and boot partitions.</li>
 
-  _msg+="$(cat <<EOL
+<li><b>500 GB install</b>: Same as Standard, but limits the size of the
+root partition to 500 GB <br>
+and allocates any remaining space on the system disk to a secondary partition.
+The <br>
+MDCT will help you format and use this partition.
+<b style="color: #da4453">IMPORTANT: This will select the <br>
+"Erase disk" option by default.</b></li>
 
-${_brow_str}Are you sure you want to continue?${_erow_str}</table>
+<li><b>Partition, then install</b>: Launches KDE Partition Manager before
+launching the <br>
+installer in Standard mode. This gives you the opportunity to delete the <br>
+main and boot <partitions of an old installation while preserving a home or
+data partition on the same <br>
+disk. Use this mode if you are reinstalling Kubuntu and want to <br>
+preserve a home or data partition on the system disk.</li>
+</ul>${_erow_str}
+
+${_brow_lp_str}You can enable encryption or disable the creation of a swap file
+if desired. Right-click and <br>
+copy the following link into a browser to learn more: <br>
+<a
+href="https://kfocus.org/wf/reinstall.html#bkm_multi_disk_configuration"
+>https://kfocus.org/wf/reinstall.html#bkm_multi_disk_configuration</a>${_erow_str}
+
+${_brow_lp_str}Select the desired install method, then click "OK" to
+continue.${_erow_str}</table>
 ${_cm2HtmEndStr}
 EOL
   )";
+  _option_list=(
+    'standard' 'Standard' 'on'
+    '500gb' '500 GB install' 'off'
+    'partfirst' 'Partition, then install' 'off'
+    'cancel' 'Cancel' 'off'
+  );
 
-  _ans="$(_cm2PromptUserFn -i "${_icon_str}" "${_msg}" "${_win_title}" 'w')";
-  if [ "${_ans}" = 'y' ]; then
-    # Tweak branding to make it clear that OEM installation mode is active
-    # Disabled, this was an older image, and there's an OEM item in the left
-    # sidebar so it's not really that important
-    # sudo cp /etc/calamares/branding/kubuntu/welcome-oem.png /etc/calamares/branding/kubuntu/welcome.png;
+  _ans="$(_cm2PromptUserFn -i "${_icon_str}" "${_msg}" "${_win_title}" 'd' \
+    "${_option_list[@]}")";
+  case "${_ans}" in
+    'standard')
+      true;
+      ;;
+    '500gb')
+      # Restrict root partition size to 500 GB
+      sudo sed -i 's/size: 100%/size: 500G/' /etc/calamares/modules/partition.conf
+      # Allocate the rest of the main disk to a secondary partition
+      sudo sed -i "/size: 500G$/a \ \ \ \ - name: 'kfocus_data'\n      filesystem: unformatted\n      noEncrypt: true\n      size: 100%" \
+        /etc/calamares/modules/partition.conf
+      # Select "Erase disk" by default and disallow manual partitioning
+      sudo sed -i "/initialSwapChoice: file/a initialPartitioningChoice: erase\nallowManualPartitioning: false" \
+        /etc/calamares/modules/partition.conf
+      ;;
+    'partfirst')
+      sudo partitionmanager;
+      ;;
+    *)
+      _msg="$(cat <<EOL
+${_cm2HtmBeginStr}${_table_str}
+${_brow_rp_str}${_left_header_str}Installation Canceled</h3>${_erow_str}
 
-    # Don't remove Calamares from the installed system.
-    sudo sed -i '/- calamares$/d' /etc/calamares/modules/packages.conf;
-    sudo sed -i '/- calamares-data$/d' /etc/calamares/modules/packages.conf;
-    sudo sed -i '/- libcalamaresui3.3$/d' /etc/calamares/modules/packages.conf;
+${_brow_rp_str}The OEM installation process has been
+canceled.${_erow_str}</table>
+${_cm2HtmEndStr}
+EOL
+      )";
+      _cm2PromptUserFn -i "${_icon_str}" "${_msg}" "${_win_title}";
+      exit 0;
+      ;;
+  esac
 
-    # Swap around the position of the kfocus-prep-user module
-    sed -i "/- shellprocess@kfocus-prep-user/d" /etc/calamares/settings.conf;
-    sed -i "/- packages$/a \ \ - shellprocess@kfocus-prep-user" /etc/calamares/settings.conf;
+  # Tweak branding to make it clear that OEM installation mode is active
+  # Disabled, this was an older image, and there's an OEM item in the left
+  # sidebar so it's not really that important
+  # sudo cp /etc/calamares/branding/kubuntu/welcome-oem.png /etc/calamares/branding/kubuntu/welcome.png;
 
-    # Enable oemid module, backslashes are needed for proper indentation
-    sudo sed -i "/- welcome$/a \ \ - oemid" /etc/calamares/settings.conf;
+  # Don't remove Calamares from the installed system.
+  sudo sed -i '/- calamares$/d' /etc/calamares/modules/packages.conf;
+  sudo sed -i '/- calamares-data$/d' /etc/calamares/modules/packages.conf;
+  sudo sed -i '/- libcalamaresui3.3$/d' /etc/calamares/modules/packages.conf;
 
-    # Enable OEM prep module
-    sudo sed -i "/- packages$/a \ \ - shellprocess@oemprep" /etc/calamares/settings.conf;
+  # Swap around the position of the kfocus-prep-user module
+  sudo sed -i "/- shellprocess@kfocus-prep-user/d" /etc/calamares/settings.conf;
+  sudo sed -i "/- packages$/a \ \ - shellprocess@kfocus-prep-user" \
+    /etc/calamares/settings.conf;
 
-    # Fix OEM UID
-    sudo sed -i "/- shellprocess@oemprep$/a \ \ - shellprocess@fix-oem-uid" /etc/calamares/settings.conf;
+  # Enable oemid module, backslashes are needed for proper indentation
+  sudo sed -i "/- welcome$/a \ \ - oemid" /etc/calamares/settings.conf;
 
-    # Don't enable automatic snapshots for the OEM configuration environment
-    sudo sed -i "/- shellprocess@autosnapshot/d" /etc/calamares/settings.conf;
+  # Enable OEM prep module
+  sudo sed -i "/- packages$/a \ \ - shellprocess@oemprep" \
+    /etc/calamares/settings.conf;
 
-    # Force the user of an OEM configuration user
-    sudo cp /etc/calamares/modules/users.conf.oem /etc/calamares/modules/users.conf;
+  # Fix OEM UID
+  sudo sed -i "/- shellprocess@oemprep$/a \ \ - shellprocess@fix-oem-uid" \
+    /etc/calamares/settings.conf;
 
-    # Drop a file so that it can be seen that OEM installation mode is already
-    # active
-    sudo touch /etc/calamares/OEM_MODE_ACTIVATED;
+  # Don't enable automatic snapshots for the OEM configuration environment
+  sudo sed -i "/- shellprocess@autosnapshot/d" /etc/calamares/settings.conf;
 
-    # Launch Calamares
-    export BROWSER='sudo -H -u kubuntu firefox'
-    sudo --preserve-env=XDG_CONFIG_DIRS BROWSER="${BROWSER}" calamares -D8;
-  fi
+  # Force the user of an OEM configuration user
+  sudo cp /etc/calamares/modules/users.conf.oem \
+    /etc/calamares/modules/users.conf;
+
+  # Drop a file so that it can be seen that OEM installation mode is already
+  # active
+  echo "${_ans}" | sudo tee "${_oem_active_file}" >/dev/null;
+
+  # Launch Calamares
+  export BROWSER='sudo -H -u kubuntu firefox'
+  sudo --preserve-env=XDG_CONFIG_DIRS BROWSER="${BROWSER}" calamares -D8;
 }
 ## . END _mainFn }
 
