@@ -1,27 +1,24 @@
-kfocus-main (26.04.12~beta3) resolute; urgency=medium
+kfocus-main (26.04.13~beta1) resolute; urgency=medium
 
   * common.2.source: Don't rely on sudo's env injection in sudo -E emulation
     (#6893)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 19 Oct 2026 17:09:23 -0500
-
-kfocus-main (26.04.12~beta2) resolute; urgency=medium
-
   * Forward-port kfocus-strict-dialog from Noble (#6933)
   * kfocus-focusrx: Re-enable Multi-Disk Configuration Tool autostart in OEM
     mode (#6893)
   * kfocus-mime: Improve messaging for the kubectl Curated App redirect
     (#6944)
   * common.2.source: Add "sudo -E" emulation function (#6893)
-
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Mon, 19 Oct 2026 14:37:47 -0500
-
-kfocus-main (26.04.12~beta1) resolute; urgency=medium
-
   * Reset cleanup timer when a manual quick or deep clean is performed (#6865)
   * kfocue-mime: Restore Azure Curated App (#6716)
 
- -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 17 Sep 2026 15:33:09 -0500
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 29 Oct 2026 09:31:33 -0500
+
+kfocus-main (26.04.12) resolute; urgency=medium
+
+  * kfocus-mime: Prevent installation of an unsupported kernel when installing
+    DisplayLink drivers. (#6973)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Wed, 28 Oct 2026 17:55:18 -0500
 
 kfocus-main (26.04.11) resolute; urgency=medium
 
