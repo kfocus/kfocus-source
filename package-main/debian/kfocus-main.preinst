@@ -42,6 +42,15 @@ _mainFn () {
       #   exit 1;
       # fi
 
+      _cm2SetMsgFn 'Divert kubuntu-driver-manager';
+      if dpkg-divert --package 'kfocus-main' --add --rename --divert \
+        '/usr/bin/kubuntu-driver-manager.kfocus-orig' \
+        '/usr/bin/kubuntu-driver-manager'; then
+        _cm2SucFn;
+      else
+        _cm2WarnFn;
+      fi
+
       _cm2SetMsgFn 'Divert non-instructive backintime icon';
       _orig_file='/usr/share/icons/hicolor/scalable/apps/backintime.svg';
       _replace_file='/usr/share/icons/breeze/actions/24/backup.svg';

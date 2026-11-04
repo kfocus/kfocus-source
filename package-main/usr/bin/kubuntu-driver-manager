@@ -1,0 +1,133 @@
+#!/bin/bash
+#
+# Copyright 2026 MindShare Inc.
+#
+# Written for the Kubuntu Focus by A. Rainbolt.
+#
+# Name     : kubuntu-driver-manager
+# Summary  : kubuntu-driver-manager
+# Purpose  : Warn the user before launching the original
+#          : kubuntu-driver-manager.
+# Example  : kubuntu-driver-manager
+# License  : GPLv2
+# Run By   : Users
+# Spec     : 6452
+#
+set -u;
+
+## BEGIN _importCommonFn {
+# Summary   : _importCommonFn
+# Purpose   : Load common routines, prefer relative dir
+# Example   : _importCommonFn;
+# Arguments : none
+# Globals   : Package vars _baseDir _baseName
+# Outputs   : none
+# Returns   : none
+#
+_importCommonFn () {
+  declare _lib_list _is_loaded _lib_file;
+  _lib_list=(
+    "${_baseDir}/lib/common.2.source"
+    '/usr/lib/kfocus/lib/common.2.source'
+  );
+  _is_loaded='n';
+  for _lib_file in "${_lib_list[@]}"; do
+    if [ -r "${_lib_file}" ]; then
+      # shellcheck source=../lib/kfocus/lib/common.2.source
+      if source "${_lib_file}"; then
+        _is_loaded='y';
+        break;
+      fi
+    fi
+  done
+
+  if [ "${_is_loaded}" = 'n' ]; then
+    echo 1>&2 "${_baseName}: ABORT - Cannot source common lib";
+    exit 202;
+  fi
+}
+## . END _importCommonFn }
+
+## BEGIN _assignGlobalUiVarsFn {
+_assignGlobalUiVarsFn () {
+  _winTitle='Driver Manager';
+  _browStr='<tr><td style="padding:8px 32px 8px 0">';
+  _erowStr='</td></tr>';
+  _headerStr='<h3 style="color:#f7941d">';
+  _tableStr='<table style="width:100%;margin-right:32px">';
+
+  _launchWarningStr="$(cat <<EOF
+${_cm2HtmBeginStr}${_tableStr}
+${_browStr}${_headerStr}Launch Driver Manager?</h3>${_erowStr}
+
+${_browStr}Kubuntu Focus systems automatically install optimized and validated
+drivers specifically for your hardware. Replacing these drivers can degrade
+performance and break important capabilities, and is therefore strongly
+discouraged.</p>
+
+<p>See more on the
+<a href="https://kfocus.org/wf/systems.html#bkm_model_validation"
+>System Support</a> page. You can write support@kfocus.org if you have any
+questions.${_erowStr}
+
+${_browStr}Launch Driver Manager anyway?${_erowStr}</table>
+${_cm2HtmEndStr}
+EOF
+  )";
+}
+## . END _assignGlobalUiVarsFn }
+
+## BEGIN _mainFn {
+_mainFn () {
+  declare _do_launch_manager;
+
+  _do_launch_manager='y';
+
+  if [ "$(_cm2EchoModelStrFn 'code')" != 'other' ]; then
+    if ! "${_strictDialogExe}" --icon "${_iconStr}" --title "${_winTitle}" \
+      --warningyesno "${_launchWarningStr}"; then
+      _do_launch_manager='n';
+    fi
+  fi
+
+  if [ "${_do_launch_manager}" = 'y' ]; then
+    "${_origDriverManagerExe}";
+    return 0;
+  fi
+
+  _cm2SucStrFn 'Not launching manager';
+}
+## . END _mainFn }
+
+## BEGIN Declare and assign global vars {
+declare _binName _binDir _baseDir _baseName _assignList \
+  _strictDialogExe _origDriverManagerExe _winTitle _browStr _erowStr \
+  _headerStr _tableStr _iconStr;
+
+_iconStr='kfocus-bug-tools'
+## . END Declare and assign global vars }
+
+## BEGIN Run mainFn when script is NOT sourced {
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _binName="$(  readlink -f "$0"       )" || exit 101;
+  _binDir="$(   dirname  "${_binName}" )" || exit 101;
+  _baseDir="$(  dirname  "${_binDir}"  )" || exit 101;
+  _baseName="$( basename "${_binName}" )" || exit 101;
+
+  # Import libs and assign more global vars
+  _importCommonFn;
+
+  _assignList=(
+    '_strictDialogExe|/usr/bin/kfocus-strict-dialog'
+    '_origDriverManagerExe|/usr/bin/kubuntu-driver-manager.kfocus-orig'
+  );
+  if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
+    _cm2WarnStrFn 'Could not assign variables';
+    exit 1;
+  fi
+
+  _assignGlobalUiVarsFn;
+
+  _mainFn "$@";
+fi
+## . END Run mainFn when script is NOT sourced }
