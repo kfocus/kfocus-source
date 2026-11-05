@@ -324,6 +324,290 @@ _EOH05
 }
 ## . END _chkUpdateBiosFn }
 
+## BEGIN _chkVirtualBoxFn {
+_chkVirtualBoxFn () {
+  declare _vbox_vm_path _kfocus_vbox_pkg _ubuntu_vbox_pkg_list \
+    _oracle_vbox_pkg_list _nag_key _title _nag_msg _should_offer_vbox \
+    _ubuntu_vbox_pkg _oracle_vbox_pkg _prompt_msg _dialog_ret _inst_rslt_str \
+    _func_successful _using_oracle_vbox;
+
+  _vbox_vm_path="${HOME}/VirtualBox VMs";
+  _kfocus_vbox_pkg='kfocus-vbox';
+  _ubuntu_vbox_pkg_list=(
+    'virtualbox'
+    'virtualbox-source'
+    'virtualbox-dkms'
+    'virtualbox-ext-pack'
+  )
+  _oracle_vbox_pkg_list=(
+    'virtualbox-7.0'
+    'virtualbox-7.1'
+    'virtualbox-7.2'
+    'virtualbox-7.3'
+    'virtualbox-7.4'
+    'virtualbox-8.0'
+    'virtualbox-8.1'
+    'virtualbox-8.2'
+    'virtualbox-8.3'
+    'virtualbox-8.4'
+  )
+  _nag_key='kfocus-virtualbox-offer';
+  _should_offer_vbox='n';
+  _func_successful='y';
+  _using_oracle_vbox='n';
+
+  _title='Install KFocus VirtualBox Package';
+  _cm2SetMsgFn "${_title}";
+  _win_title="${_rootTitle}: ${_title}";
+
+  if _cm2ChkInstalledPkgFn "${_kfocus_vbox_pkg}"; then
+    _cm2SucStrFn 'kfocus-vbox already installed.';
+    _cm2SucFn;
+    _testNagCountFn 'fill' "${_nag_key}" '1';
+    return;
+  fi
+
+  if ! _nag_msg="$(_testNagCountFn 'check' "${_nag_key}" '1')"; then
+    _cm2SucStrFn 'View count limit reached.';
+    _cm2SucFn;
+    return;
+  fi
+
+  for _ubuntu_vbox_pkg in "${_ubuntu_vbox_pkg_list[@]}"; do
+    if _cm2ChkInstalledPkgFn "${_ubuntu_vbox_pkg}"; then
+      _should_offer_vbox='y';
+      break;
+    fi
+  done
+
+  if [ "${_should_offer_vbox}" = 'n' ]; then
+    for _oracle_vbox_pkg in "${_oracle_vbox_pkg_list[@]}"; do
+      if _cm2ChkInstalledPkgFn "${_oracle_vbox_pkg}"; then
+        _should_offer_vbox='y';
+        _using_oracle_vbox='y';
+        break;
+      fi
+    done
+  fi
+
+  if [ "${_should_offer_vbox}" = 'n' ]; then
+    if [ -d "${_vbox_vm_path}" ]; then
+      _should_offer_vbox='y';
+    fi
+  fi
+
+  if [ "${_should_offer_vbox}" = 'y' ]; then
+    if [ "${_using_oracle_vbox}" = 'y' ]; then
+      _prompt_msg="$(cat <<EOF
+${_cm2HtmBeginStr}
+${_cm2HtmH3Str}${_title}</h3>
+
+${_cm2HtmPStr}This system appears to be using an official Oracle release of
+VirtualBox. <span style="color:#888888">However, there is no guarantee that it
+will stay up to date and compatible with future kernels.</span></p>
+
+${_cm2HtmPStr}The Focus Team has created a kfocus-vbox package
+<span style="color:#888888">to fix this. It ensures the installed version
+of VirtualBox is an official Oracle package that worked with the kernel when
+last validated.</span></p>
+
+${_cm2HtmPStr}We recommend you install this package now.
+<span style="color:#888888">If you wish to install it later, you may select it
+from <a href="https://kfocus.org/wf/apps.html">Curated Apps</a>.</span></p>
+${_cm2HtmEndStr}
+EOF
+      )";
+    else
+      _prompt_msg="$(cat <<EOF
+${_cm2HtmBeginStr}
+${_cm2HtmH3Str}${_title}</h3>
+
+${_cm2HtmPStr}This system appears to be using
+VirtualBox. <span style="color:#888888">The 7.x kernel does not support the
+VirtualBox version provided by the Ubuntu repositories. A recent kernel update
+likely removed VirtualBox if it was installed.</span></p>
+
+${_cm2HtmPStr}The Focus Team has created a kfocus-vbox package
+<span style="color:#888888">to fix this. It ensures the installed version
+of VirtualBox is an official Oracle package that worked with the kernel when
+last validated.</span></p>
+
+${_cm2HtmPStr}We recommend you install this package now.
+<span style="color:#888888">If you wish to install it later, you may select it
+from <a href="https://kfocus.org/wf/apps.html">Curated Apps</a>.</span></p>
+${_cm2HtmEndStr}
+EOF
+      )";
+    fi
+    "${_kdiagStrictExe}" \
+      --title="${_win_title}" \
+      --icon="kfocus-bug-rx" \
+      --confirm-check-label='I have read and understood this message.' \
+      --confirm-timeout=5 \
+      --warningyesno="${_prompt_msg}" \
+      --yes-label='Install Now' \
+      --no-label='No Thanks';
+    _dialog_ret="$?";
+
+    if [ "${_dialog_ret}" = '0' ]; then
+      _prompt_msg='Installing KFocus VirtualBox package';
+      if _inst_rslt_str="$(_cm2RunLongCmdFn "${_prompt_msg}" \
+        "${_kfocusInstPkgExe}" 'kfocus-vbox')"; then
+        _cm2SucStrFn 'kfocus-vbox installation successful';
+        _prompt_msg="$(cat <<EOF
+${_cm2HtmBeginStr}
+${_cm2HtmH3Str}KFocus VirtualBox Package Installed</h3>
+
+${_cm2HtmPStr}The <code>kfocus-vbox</code> package was <br>
+successfully installed.</p>
+${_cm2HtmEndStr}
+EOF
+        )";
+        _cm2PromptUserFn "${_prompt_msg}" "${_win_title}";
+        _testNagCountFn 'fill' "${_nag_key}" 1;
+      else
+        _cm2WarnStrFn 'kfocus-vbox installation failed';
+        _cm2WarnStrFn "${_inst_rslt_str}";
+        _func_successful='n';
+        _prompt_msg="$(cat <<EOF
+${_cm2HtmBeginStr}
+${_cm2HtmH3Str}KFocus VirtualBox Package Install Failed</h3>
+
+${_cm2HtmPStr}The <code>kfocus-vbox</code> package could not be <br>
+installed! Details:</p>
+
+<pre>${_inst_rslt_str}</pre>
+${_cm2HtmEndStr}
+EOF
+        )";
+        _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 's';
+      fi
+    elif [ "${_dialog_ret}" = '1' ]; then
+      _cm2SucStrFn 'kfocus-vbox installation skipped on user request';
+      _testNagCountFn 'fill' "${_nag_key}" 1;
+    else
+      _cm2WarnStrFn 'kfocus-vbox install prompt closed improperly!';
+    fi
+  fi
+
+  if [ "${_func_successful}" = 'y' ]; then
+    _cm2SucFn;
+  else
+    _cm2WarnFn;
+  fi
+}
+## . END _chkVirtualBoxFn }
+
+## BEGIN _chkEvdiFn {
+_chkEvdiFn () {
+  declare _evdi_removed_flag _nag_key _title _win_title _nag_msg _prompt_msg \
+    _dialog_ret _inst_rslt_str _func_successful _evdi_pkg;
+
+  _evdi_pkg='evdi';
+  _evdi_removed_flag='/var/lib/kfocus/evdi-dkms-removed';
+  _nag_key='kfocus-evdi-offer';
+  _func_successful='y';
+
+  _title='Install Synaptics EVDI Driver';
+  _cm2SetMsgFn "${_title}";
+  _win_title="${_rootTitle}: ${_title}";
+
+  if _cm2ChkInstalledPkgFn "${_evdi_pkg}"; then
+    _cm2SucStrFn "${_evdi_pkg} already installed.";
+    _cm2SucFn;
+    _testNagCountFn 'fill' "${_nag_key}" '1';
+    return;
+  fi
+
+  if ! apt-cache show "${_evdi_pkg}" >/dev/null 2>&1; then
+    _cm2SucStrFn "${_evdi_pkg} not available.";
+    _cm2SucFn;
+    _testNagCountFn 'fill' "${_nag_key}" '1';
+    return;
+  fi
+
+  if ! _nag_msg="$(_testNagCountFn 'check' "${_nag_key}" '1')"; then
+    _cm2SucStrFn 'View count limit reached.';
+    _cm2SucFn;
+    return;
+  fi
+
+  if [ -f "${_evdi_removed_flag}" ]; then
+    _prompt_msg="$(cat <<EOF
+${_cm2HtmBeginStr}
+${_cm2HtmH3Str}${_title}</h3>
+
+${_cm2HtmPStr}The Ubuntu DisplayLink EVDI driver has been removed
+<span style="color:#888888">because it is incompatible with a recent kernel
+upgrade to version 7.3. This driver is typically used to drive multiple
+monitors through an external USB-C dock.</span></p>
+
+${_cm2HtmPStr}If you still require this driver,
+<span style="color:#888888">FocusRx can install the compatible Synaptic EVDI
+version now. If you'd rather install it later, click the "DisplayLink" icon in
+the <a href="https://kfocus.org/wf/apps.html">Curated Apps</a> page.</span></p>
+${_cm2HtmEndStr}
+EOF
+    )";
+    "${_kdiagStrictExe}" \
+      --title="${_win_title}" \
+      --icon="kfocus-bug-rx" \
+      --confirm-check-label='I have read and understood this message.' \
+      --confirm-timeout=5 \
+      --warningyesno="${_prompt_msg}" \
+      --yes-label='Install Now' \
+      --no-label='No Thanks';
+    _dialog_ret="$?";
+
+    if [ "${_dialog_ret}" = '0' ]; then
+      _prompt_msg='Installing Synaptic EVDI package';
+      if _inst_rslt_str="$(_cm2RunLongCmdFn "${_prompt_msg}" \
+        "${_kfocusInstPkgExe}" "${_evdi_pkg}")"; then
+        _cm2SucStrFn "${_evdi_pkg} installation successful";
+        _prompt_msg="$(cat <<EOF
+${_cm2HtmBeginStr}
+${_cm2HtmH3Str}Synaptic EVDI Package Installed</h3>
+
+${_cm2HtmPStr}The <code>${_evdi_pkg}</code> package was successfully
+installed.</p>
+${_cm2HtmEndStr}
+EOF
+        )";
+        _cm2PromptUserFn "${_prompt_msg}" "${_win_title}";
+        _testNagCountFn 'fill' "${_nag_key}" 1;
+      else
+        _cm2WarnStrFn "${_evdi_pkg} installation failed";
+        _cm2WarnStrFn "${_inst_rslt_str}";
+        _func_successful='n';
+        _prompt_msg="$(cat <<EOF
+${_cm2HtmBeginStr}
+${_cm2HtmPStr}Synaptic EVDI Package Install Failed</h3>
+
+${_cm2HtmPStr}The <code>${_evdi_pkg}</code> package could not be <br>
+installed! Details:</p>
+
+<pre>${_inst_rslt_str}</pre>
+${_cm2HtmEndStr}
+EOF
+        )";
+        _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 's';
+      fi
+    elif [ "${_dialog_ret}" = '1' ]; then
+      _cm2SucStrFn "${_evdi_pkg} installation skipped on user request";
+      _testNagCountFn 'fill' "${_nag_key}" 1;
+    else
+      _cm2WarnStrFn "${_evdi_pkg} install prompt closed improperly!";
+    fi
+  fi
+
+  if [ "${_func_successful}" = 'y' ]; then
+    _cm2SucFn;
+  else
+    _cm2WarnFn;
+  fi
+}
+## . END _chkEvdiFn }
+
 ## BEGIN _chkBtrfsSetUpFn {
 #
 _chkBtrfsSetUpFn () {
@@ -1188,9 +1472,12 @@ EOF
   _offerSnapshotsFn;  # APP: Force only: offer snapshots tool
 
   _chkUpdateBiosFn;   # APP: Detect BIOS upgrade, launch tool
+  _chkVirtualBoxFn;   # APP: Detect VirtualBox VM presence, offer install
+  _chkEvdiFn;         # DRIVER: Detect previous evdi-dkms presence, offer evdi
   _chkOemMultiDiskFn; # APP: Detect multi-disk, launch tool (MDCT)
   # TODO 2026-01-09 msm: move earlier when lock is available
   _chkPostRestoreFn;  # APP: Detect post-restore, launch tool
+
   _announceEndFn;
   _cm2EchoFn "\n== . END : OK   ${_rootTitle}\n\n";
   ## . End Run focusrx steps }
@@ -1206,7 +1493,8 @@ declare _parentCmdStr _lookupList \
   _focusRxDropDir _kbdColorSetExe _rootTitle _assignList \
   _focusRxSetExe _focusRxVersExe _btoolExe _firstrunExe \
   _fixIbusExe _kcleanExe _resetEffectsExe _rollbackBackendExe \
-  _rollbackSetExe _chainHelperLaunchExe _sysVersStr _iconStr;
+  _rollbackSetExe _chainHelperLaunchExe _sysVersStr _iconStr _kdiagStrictExe \
+  _kfocusInstPkgExe;
 
 _iconStr='kfocus-bug-rx';
 _parentCmdStr="$(ps -o comm= "$PPID")";
@@ -1252,6 +1540,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     "_rollbackBackendExe|${_binDir}/kfocus-rollback-backend||optional"
     "_rollbackExe|${_binDir}/kfocus-rollback||optional"
     "_rollbackSetExe|${_binDir}/kfocus-rollback-set||optional"
+    "_kdiagStrictExe|${_binDir}/kfocus-strict-dialog"
+    "_kfocusInstPkgExe|${_binDir}/kfocus-pkg-installer"
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2ErrStrFn 'Could not assign variables';

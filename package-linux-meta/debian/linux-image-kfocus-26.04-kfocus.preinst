@@ -1,0 +1,51 @@
+#!/bin/bash
+set -e;
+
+## { BEGIN Declare common.2.source symbols
+#  IMPORT 2022-03-23 EXCERPT from test/test-scripts/common.2.source
+_cm2BlockMsg='';
+_cm2EchoFn    () { 1>&2 echo -e "$*";  }
+_cm2SetMsgFn  () { _cm2BlockMsg="$*"; _cm2EchoFn "== BEGIN : ${_cm2BlockMsg}"; }
+_cm2SucFn     () { _cm2EchoFn "== . END : OK   ${_cm2BlockMsg}\n\n"; }
+_cm2WarnFn    () { _cm2EchoFn "== . END : WARN Could not ${_cm2BlockMsg}\n\n"; }
+_cm2ChkInstalledPkgFn () {
+  declare _pkg_name _status_str;
+  _pkg_name="${1:-}";
+  _status_str="$( 2>&1 \
+    dpkg-query -f '${db:Status-abbrev}' -W "${_pkg_name}"
+  )";
+  if grep -qE '^.i ' <<< "${_status_str}"; then return 0; fi
+  return 1;
+}
+## } . END Declare common.2.source symbols
+
+## BEGIN _mainFn {
+_mainFn () {
+  declare _kfocus_state_dir _evdi_removed_flag;
+  _kfocus_state_dir='/var/lib/kfocus';
+  _evdi_removed_flag="${_kfocus_state_dir}/evdi-dkms-removed";
+
+  case "${1:-}" in
+    abort-upgrade)
+    ;;
+
+    install|upgrade)
+      if _cm2ChkInstalledPkgFn 'evdi-dkms'; then
+        _cm2SetMsgFn 'Flag evdi-dkms removal';
+        mkdir -p "${_kfocus_state_dir}" || true;
+        touch "${_evdi_removed_flag}" || true;
+        if [ -f "${_evdi_removed_flag}" ]; then
+          _cm2SucFn;
+        else
+          _cm2WarnFn;
+        fi
+      fi
+    ;;
+  esac
+}
+## . END _mainFn }
+
+_mainFn "$@";
+
+# Tag to allow some debhelper commands to inject relevant code
+#DEBHELPER#

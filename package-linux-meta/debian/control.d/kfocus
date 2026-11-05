@@ -16,8 +16,18 @@ Section: kernel
 Conflicts:
  linux-image-fb-kfocus${variant:suffix}-kfocus,
  linux-image-kfocus${variant:suffix},
+ virtualbox (<< 7.2.20~),
+ virtualbox-source,
+ virtualbox-dkms,
+ virtualbox-ext-pack,
+ evdi-dkms
 Replaces:
  linux-image-kfocus${variant:suffix},
+ virtualbox (<< 7.2.20~),
+ virtualbox-source,
+ virtualbox-dkms,
+ virtualbox-ext-pack,
+ evdi-dkms
 Provides: ${dkms:ivsc-modules} ${dkms:virtualbox-guest-modules} ${dkms:wireguard-linux-compat-modules} ${dkms:ipu6-modules}
 Depends: ${misc:Depends},
  linux-image-unsigned-${kernel-abi-version}-kfocus,

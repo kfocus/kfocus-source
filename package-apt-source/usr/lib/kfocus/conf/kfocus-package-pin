@@ -55,3 +55,31 @@ Package: printer-driver-hpijs
 Pin: release o=*
 Pin-Priority: -1
 
+# Prohibit installation of Ubuntu VirtualBox packages, these are frequently
+# incompatible with the latest HWE/OEM kernel. We provide Oracle's packages
+# instead.
+Package: virtualbox
+Pin: release o=*
+Pin-Priority: -1
+
+Package: virtualbox-source
+Pin: release o=*
+Pin-Priority: -1
+
+Package: virtualbox-dkms
+Pin: release o=*
+Pin-Priority: -1
+
+Package: virtualbox-ext-pack
+Pin: release o=*
+Pin-Priority: -1
+
+Package: virtualbox-qt
+Pin: release o=*
+Pin-Priority: -1
+
+# Prohibit installation of Ubuntu evdi-dkms, this is also incompatible with the
+# latest OEM kernel and Synaptic's package must be used instead.
+Package: evdi-dkms
+Pin: release o=*
+Pin-Priority: -1

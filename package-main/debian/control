@@ -158,3 +158,13 @@ Depends:      ${misc:Depends},
 Description:  Kubuntu Focus Common Libraries
  This package provides the common libraries and custom menu
  for Kubuntu Focus Tools.
+
+Package:      kfocus-vbox
+Architecture: all
+Depends:      ${misc:Depends}, ${shlibs:Depends},
+              virtualbox-7.2
+Breaks:       virtualbox (<< 7.2.20~), virtualbox-source, virtualbox-dkms, virtualbox-ext-pack
+Replaces:     virtualbox (<< 7.2.20~), virtualbox-source, virtualbox-dkms, virtualbox-ext-pack
+Description:  Kubuntu Focus VirtualBox Metapackage
+ This package depends on the latest major version of VirtualBox available from
+ Oracle.
