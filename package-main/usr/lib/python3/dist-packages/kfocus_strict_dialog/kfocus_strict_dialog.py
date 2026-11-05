@@ -91,6 +91,12 @@ class StrictBaseDialog(QDialog):
                 QIcon.fromTheme(body_icon_name).pixmap(64, 64)
             )
         self.body_text_label: QLabel = QLabel(body_text)
+        self.body_text_label.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextSelectableByKeyboard
+            | Qt.TextInteractionFlag.TextSelectableByMouse
+            | Qt.TextInteractionFlag.LinksAccessibleByKeyboard
+            | Qt.TextInteractionFlag.LinksAccessibleByMouse
+        )
         self.body_text_label.setWordWrap(True)
         self.body_text_label.setOpenExternalLinks(True)
 
