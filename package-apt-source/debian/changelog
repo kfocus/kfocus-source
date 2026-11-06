@@ -1,3 +1,12 @@
+kfocus-apt-source (26.04.4~beta2) resolute; urgency=medium
+
+  * Add Oracle's VirtualBox repo (#6952)
+  * kfocus-package-pin:
+    - Blacklist installation of Ubuntu's outdated VirtualBox packages (#6952)
+    - Blacklist installation of Ubuntu's outdated evdi-dkms package (#6988)
+
+ -- Aaron Rainbolt <arainbolt@kfocus.org>  Thu, 05 Nov 2026 17:24:49 -0600
+
 kfocus-apt-source (26.04.4~beta1) resolute; urgency=medium
 
   * kfocus-package-pin: Blacklist nvidia-cuda-* and nvidia-cudnn packages from

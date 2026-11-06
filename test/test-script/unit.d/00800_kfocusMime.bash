@@ -80,6 +80,7 @@ _auditMimeHandlerFn () {
   _app_id_str="$("${_mimeExe}" -l)";
   while read -r _app_id; do
     _line="$("${_mimeExe}" -r "${_app_id}")";
+    # shellcheck disable=SC2001
     _line="$(sed -e "s@\\(^[^|]\\+|[^|]\\+|\\)${HOME}@\\1\$HOME@"<<< "${_line}";)";
     _report_str="|${_line}";
     IFS='|' read -ra _bit_list <<< "$_report_str";
@@ -127,8 +128,9 @@ _auditInstallFn () {
 
 ## BEGIN _runTestFn {
 _runTestFn () {
-  declare _check_str _return_int _reply _file_name _expect_file;
+  declare  _tty_file _check_str _return_int _reply _file_name _expect_file;
 
+  _tty_file="$(tty)";
   _return_int=0;
   _mimeExe="${_t00TopDir}/package-main/usr/lib/kfocus/";
   _mimeExe+='bin/kfocus-mime';
@@ -142,35 +144,39 @@ _runTestFn () {
   #   to kfocus-mime-audit-full.txt and is compared to that expect file.
   #
   _file_name='kfocus-mime-audit';
-  read -r -p 'Run EXTRA install check? (y/N) ' _reply;
-  if [[ "${_reply:-}" =~ ^[Yy] ]]; then
-    _auditInstallFn;
-    _file_name+='-full';
+
+  # Only run this if STDERR is not redirected
+  if [ -t 2 ]; then
+    read -r -p 'Run EXTRA install check? (y/N) ' _reply;
+    if [[ "${_reply:-}" =~ ^[Yy] ]]; then
+      _auditInstallFn;
+      _file_name+='-full';
+    fi
   fi
   _file_name+='.txt';
   _runFile="${_t00RunDir}/${_file_name}";
   _expect_file="${_t00ExpectDir}/${_file_name}";
 
   # Make sure backintime blocks
-  _cm2EchoFn 'Launching backintime; You should not be asked to '
-  _cm2EchoFn '  confirm until it is closed.';
-  "${_mimeExe}" -kf 'backintime';
+  _cm2EchoFn 'Launching backintime; Please close it to proceed.' 2>"${_tty_file}";
+  "${_mimeExe}" -kf 'backintime' >/dev/null;
 
   _cm2EchoFn '\n\n=====================================';
-  read -r -p 'Does launching backintime block? [y/N] ' _reply;
+  read -r -p 'Did launching backintime block? [y/N] ' _reply 2>"${_tty_file}";
   if [[ "${_reply:-n}" =~ ^[Yy] ]]; then
-    _cm2EchoFn 'ok  : User reports -kf does block backintime launch';
+    _cm2EchoFn 'ok  : User reports -kf does block backintime launch'
   else
-    _cm2EchoFn 'fail: User reports -kf does NOT block backintime launch';
+    _cm2EchoFn 'fail: User reports -kf does NOT block backintime launch'
     _return_int=1;
   fi
 
   # Make sure kfocus-power does not block
-  _cm2EchoFn 'Launching kfocus-power with a url "kfocus-mime://kfocus_power"';
+  _cm2EchoFn 'Launch kfocus-power with a url. Please close it.' 2>"${_tty_file}";
   "${_mimeExe}" 'kfocus-mime://kfocus_power';
   sleep 1;
   _cm2EchoFn '\n\n=====================================';
-  read -r -p 'Did kfocus-power launch WITHOUT blocking? [y/N] ' _reply;
+  read -r -p 'Did kfocus-power launch WITHOUT blocking? [y/N] ' _reply 2>"${_tty_file}";
+
   if [[ "${_reply:-n}" =~ ^[Yy] ]]; then
     _cm2EchoFn 'ok  : User reports kfocus-power launches';
   else
@@ -187,7 +193,8 @@ _runTestFn () {
     _cm2EchoFn 'ok  : Results match expected';
   else
     _cm2EchoFn "fail: ${_check_str}";
-    meld "${_expect_file}" "${_runFile}" ;
+    # Only run this if STDERR is not redirected
+    if [ -t 2 ]; then meld "${_expect_file}" "${_runFile}"; fi
     _return_int=1;
   fi
 
@@ -196,3 +203,4 @@ _runTestFn () {
 ## . END _runTestFn }
 
 declare _runFile;
+

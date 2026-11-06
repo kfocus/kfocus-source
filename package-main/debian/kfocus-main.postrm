@@ -21,10 +21,10 @@ _mainFn () {
   declare _orig_file;
 
   case "${1:-}" in
-    abort-upgrade|failed-upgrade|purge|upgrade)
+    abort-upgrade|failed-upgrade|upgrade)
     ;;
 
-    remove|disappear|abort-install)
+    remove|disappear|abort-install|purge)
 
       ## TODO 2026-06-03: This appears no longer needed. Remove after
       ## confirmation.
@@ -37,6 +37,15 @@ _mainFn () {
       #   _cm2WarnFn;
       #   exit 1;
       # fi
+
+      _cm2SetMsgFn 'Revert kubuntu-driver-manager diversion';
+      if dpkg-divert --package 'kfocus-main' --remove --rename --divert \
+        '/usr/bin/kubuntu-driver-manager.kfocus-orig' \
+        '/usr/bin/kubuntu-driver-manager'; then
+        _cm2SucFn;
+      else
+        _cm2WarnFn;
+      fi
 
       _cm2SetMsgFn 'Revert non-instructive backintime icon';
       _orig_file='/usr/share/icons/hicolor/scalable/apps/backintime.svg';

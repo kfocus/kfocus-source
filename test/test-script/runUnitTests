@@ -79,7 +79,7 @@ _t00RunTestScriptsFn () {
   for _unit_file in "${_unit_list[@]}"; do
     for _filter_str in "${_arg_list[@]}"; do
       _filter_str="$(_cm2EscapeRxCharsFn "${_filter_str}")";
-      if grep -E "^./${_filter_str}" <<< "${_unit_file}"; then
+      if grep -qE "^./${_filter_str}" <<< "${_unit_file}"; then
         _filter_list+=("${_unit_file}");
         break;
       fi
@@ -92,6 +92,7 @@ _t00RunTestScriptsFn () {
   ## Begin Iterate over unit files {
   _fail_list=();
   _unit_count=0;
+  echo 'BEGIN run unit tests';
   for _unit_file in "${_filter_list[@]}"; do
     _unit_basename="$( basename "${_unit_file}" )" || exit 1;
     # Remove last file extension only (if exists)
@@ -112,16 +113,15 @@ _t00RunTestScriptsFn () {
     source "${_unit_file}";
 
     if [ "$(type -t _runTestFn)" = 'function' ]; then
-        _cm2EchoFn "=====> BEGIN : ${_unit_basename}";
       if _runTestFn; then
-        _cm2EchoFn "<===== PASS  : ${_unit_basename}\n";
+        echo "pass  : ${_unit_basename}";
       else
-        _cm2EchoFn "<===== FAIL  : ${_unit_basename}\n";
-        _fail_list+=( "$_unit_basename" );
+        echo "fail  : ${_unit_basename}";
+        _fail_list+=( "  x $_unit_basename" );
       fi
     else
-      _cm2EchoFn "<===== FAIL  : ${_unit_basename}: NO _runTestFn exported\n";
-      _fail_list+=( "$_unit_basename" );
+      echo  "fail  : ${_unit_basename}: NO _runTestFn exported";
+      _fail_list+=( "  x $_unit_basename" );
     fi
     (( _unit_count++ ));
 
@@ -129,24 +129,25 @@ _t00RunTestScriptsFn () {
     # shellcheck disable=SC1090
     source "${_t00BinDir}/common.2.source";
   done;
+  echo 'END   run unit tests';
+  echo;
   ## End Iterate over unit files }
 
   # Summarize results and return results
   if [ "${_filter_list[*]}" = "${_unit_list[*]}" ]; then
-    _cm2EchoFn $'\nAll unit tests run...';
+    echo 'All unit tests run.';
   else
-    _cm2EchoFn "\nIMPORTANT: Selected tests match ^|${_filter_list[*]}|";
+    echo "Ran ONLY tests matching pattern ^|${_filter_list[*]}|";
   fi
 
   if [ "${#_fail_list[@]}" -gt 0 ]; then
-    _cm2EchoFn "====== FAIL! ${#_fail_list[@]} of ${_unit_count} tests failed:";
-    ( IFS=$'\n'; _cm2EchoFn "${_fail_list[*]}" );
+    echo "FAIL  : ${#_fail_list[@]}/${_unit_count} tests failed:";
+    ( IFS=$'\n'; echo "${_fail_list[*]}" );
     _return_int=1;
   else
-    _cm2EchoFn "====== SUCCESS - all ${_unit_count} tests passed.";
+    echo "PASS  : All ${_unit_count} tests passed.";
   fi
-  _cm2EchoFn;
-
+  echo;
   return "${_return_int}";
 }
 

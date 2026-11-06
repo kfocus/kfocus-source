@@ -172,7 +172,7 @@ _audit_cm2EchoStackFn () {
   # shellcheck disable=SC2001
   _solve_str="$(  sed 's/[0-9]\+/xxx/g' <<< "${_solve_str}"  )";
 
-  printf '  %-.40s\n' "Assert for ${_asset_fn_str}";
+  printf '  %-.40s\n' "Assert for ${_asset_fn_str}" >&2;
   if [ "${_solve_str}" = "${_expect_str}" ]; then
     _cm2EchoFn "  ok   : Solved matches expected";
     return 0;
@@ -366,10 +366,10 @@ _audit_cm2EchoModelStrFn () {
       _calc_str="$(_cm2EchoModelStrFn "${_col_key}")";
       if [ "${_expect_str}" = "${_calc_str}"  ]; then
         printf '  ok   : Col key | %-12.12s | matches | %-12.12s |\n' \
-          "${_col_key}" "${_expect_str}";
+          "${_col_key}" "${_expect_str}" >&2;
       else
         printf '  fail : Col key | %-12.12s | NOMATCH | %-12.12s |\n' \
-          "${_col_key}" "${_expect_str}";
+          "${_col_key}" "${_expect_str}" >&2;
         _cm2EchoFn "    Found string is |${_calc_str}|";
         _did_assert_fail='y';
       fi
@@ -466,7 +466,7 @@ _audit_cm2ChkInstalledPkgFn () {
     fi
     # _cm2EchoFn "Processing ${_loop_pkg_name}";
     _skip_count=0;
-    printf '  %-40.40s' "Assert for ${_loop_pkg_name}";
+    printf '  %-40.40s' "Assert for ${_loop_pkg_name}" >&2;
     if _cm2ChkInstalledPkgFn "${_loop_pkg_name}"; then
       _cm2EchoFn "  ok   : Found pkg";
     else
@@ -476,7 +476,7 @@ _audit_cm2ChkInstalledPkgFn () {
   done
 
   for _loop_pkg_name in fake-package-name to-not-be-found; do
-    printf '  %-40.40s' "Assert for ${_loop_pkg_name}";
+    printf '  %-40.40s' "Assert for ${_loop_pkg_name}" >&2;
     if _cm2ChkInstalledPkgFn "${_loop_pkg_name}"; then
       _cm2EchoFn "  fail : found";
       _ret_int=1;
@@ -525,7 +525,7 @@ _audit_cm2ChkPkgFn () {
 
   for _loop_line in "${_assert_table[@]}"; do
     IFS='|' read -r -a _bit_list <<< "${_loop_line}";
-    printf '  %-40.40s' "Assert for ${_bit_list[0]}";
+    printf '  %-40.40s' "Assert for ${_bit_list[0]}" >&2;
 
     _cm2ChkPkgFn "${_bit_list[0]}";
     _chk_int="$?";
@@ -538,7 +538,7 @@ _audit_cm2ChkPkgFn () {
     fi
 
     _chk_str="$(_cm2EchoInstalledVersFn "${_bit_list[0]}")";
-    printf '  %-40.40s' "Assert ${_bit_list[0]} v${_chk_str}";
+    printf '  %-40.40s' "Assert ${_bit_list[0]} v${_chk_str}" >&2;
 
     _chk_int=0;
     if [ -z "${_chk_str}" ]; then _chk_int=1; fi
@@ -844,11 +844,10 @@ Press OK to continue.';
 ## . END _cm2PromptUserFn }
 #
 _audit_cm2PromptUserFn () {
-  declare _assert_table _exit_int _is_tty_save _is_tty _loop_line \
+  declare _tty_file _assert_table _exit_int _is_tty_save _is_tty _loop_line \
     _bit_list _type_str _prompt_str _ans_str;
 
-  # TODO: Test whiptail mode!
-
+  _tty_file="$(tty)";
   _assert_table=( 'a|y' 'a|n' 'A|n' 'A|n' 'w|y' 'w|n' 'p|' );
   _exit_int=0;
   # shellcheck disable=SC2154
@@ -856,10 +855,13 @@ _audit_cm2PromptUserFn () {
 
   for _is_tty in n y; do
     _cm2SetIsTtyFn "${_is_tty}";
+
+    # Important: we redirect printf to STDERR, but then also ensure that
+    #   it is shown because it is required for interactive testing.
     if [ "${_is_tty}" = 'n' ]; then
-      printf '  %-.72s\n\n' 'Please answer in GUI'
+      printf '  %-.72s\n\n' 'Please answer in GUI' 2>"${_tty_file}" >&2;
     else
-      printf '  %-.72s\n\n' 'Please answer in the terminal'
+      printf '  %-.72s\n\n' 'Please answer in the terminal' 2>"${_tty_file}" >&2
     fi
 
     for _loop_line in "${_assert_table[@]}"; do
@@ -885,10 +887,10 @@ _audit_cm2PromptUserFn () {
         fi
       fi
       if [ "${_is_tty}" = 'n' ]; then
-        printf '  %-.72s\n' "Assert $(_cm2StripTagsFn "${_prompt_str}")";
+        printf '  %-.72s\n' "Assert $(_cm2StripTagsFn "${_prompt_str}")" >&2;
       fi
       _ans_str="$(
-        _cm2PromptUserFn "${_prompt_str}" "${_type_str}" "${_bit_list[0]}"
+        _cm2PromptUserFn "${_prompt_str}" "${_type_str}" "${_bit_list[0]}" 2>"${_tty_file}"
       )";
       if [ "${_ans_str}" = "${_bit_list[1]:-}" ]; then
         _cm2EchoFn '  ok   : pass';
