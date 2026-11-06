@@ -35,7 +35,8 @@ _importCommonFn () {
 ## BEGIN _mainFn {
 _mainFn () {
   local _brow_str _erow_str _header_str _table_str _win_title _icon_str \
-    _msg _disk_count _dev_file _byte_int _mib_int _trans_key _block_list _ans;
+    _msg _disk_count _dev_file _byte_int _mib_int _trans_key _block_list _ans \
+    _should_offer_oem;
 
   _brow_str='<tr><td style="padding:8px 32px 8px 0">';
   _erow_str='</td></tr>';
@@ -66,6 +67,7 @@ EOL
 
   # Detect multi-disk and offer OEM mode if so
   _disk_count=0;
+  _should_offer_oem='n';
   IFS=$'\n' read -r -d '' -a _block_list <<< "$(
     find /dev/ -maxdepth 1 -type b \
       | grep -E '^/dev/(sd[a-z]|nvme[0-9]n1|vd[a-z])$'
@@ -84,26 +86,51 @@ EOL
     if (( _mib_int < 65536 )); then
       continue;
     fi
+    # Offer OEM mode if one disk is 2 TB or larger (we check for larger than
+    # 1.8 TiB to account for size differences)
+    if (( _mib_int > 1887436 )); then
+      _should_offer_oem='y';
+    fi
 
     (( _disk_count++ )) || true;
+    if (( _disk_count > 1 )); then
+      _should_offer_oem='y';
+    fi
   done
 
   # Report multi-disk
-  if (( _disk_count > 1 )); then
-    _msg="$(cat <<EOL
+  if [ "${_should_offer_oem}" = 'y' ]; then
+    if (( _disk_count > 1 )); then
+      _msg="$(cat <<EOL
 ${_cm2HtmBeginStr}${_table_str}
 ${_brow_str}${_header_str}Multiple Disks Detected</h3>${_erow_str}
 
 ${_brow_str}The system has multiple disks present. If you intend to use <br>
 one of these disks as a home or data disk, you should install <br>
-Kubuntu Focus Suite using OEM mode. You will be able to <br>
-configure the second disk after installation using the <br>
+Kubuntu 26.04 LTS with KFS using OEM mode. You will be <br>
+able to configure the second disk after installation using the <br>
 Multi-Disk Configuration Tool.${_erow_str}
 
 ${_brow_str}Launch OEM installer now?${_erow_str}</table>
 ${_cm2HtmEndStr}
 EOL
-    )";
+      )";
+    else
+      _msg="$(cat <<EOL
+${_cm2HtmBeginStr}${_table_str}
+${_brow_str}${_header_str}Large Disk Detected </h3>${_erow_str}
+
+${_brow_str}The system has a large (>= 1.8 TiB) disk present. If you <br>
+intend to split this disk into system and home or data <br>
+partitions, you should install Kubuntu 26.04 LTS with KFS <br>
+using OEM mode. You will be able to format additional <br>
+partitions using the Multi-Disk Configuration Tool.${_erow_str}
+
+${_brow_str}Launch OEM installer now?${_erow_str}</table>
+${_cm2HtmEndStr}
+EOL
+      )";
+    fi
     _ans="$(_cm2PromptUserFn -i "${_icon_str}" "${_msg}" "${_win_title}" 'a')";
     if [ "${_ans}" = 'y' ]; then
       exec calamares-launch-oem;
