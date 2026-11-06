@@ -15,7 +15,8 @@ Architecture: amd64
 Section: kernel
 Conflicts:
  linux-image-fb-kfocus${variant:suffix}-kfocus,
- linux-image-kfocus${variant:suffix},
+ linux-image-kfocus${variant:suffix}
+Breaks:
  virtualbox (<< 7.2.20~),
  virtualbox-source,
  virtualbox-dkms,
