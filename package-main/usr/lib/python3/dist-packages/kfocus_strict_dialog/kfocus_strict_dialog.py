@@ -45,9 +45,13 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 from PyQt6.QtMultimedia import (
-    QMediaPlayer,
     QAudioOutput,
+    QMediaPlayer,
 )
+
+
+# From https://doc.qt.io/qt-6/qwidget.html#maximumWidth-prop
+MAX_WIDGET_EXTENT: int = 16777215
 
 
 # pylint: disable=too-many-instance-attributes
@@ -61,6 +65,7 @@ class StrictBaseDialog(QDialog):
     # pylint: disable=too-many-arguments, too-many-positional-arguments, too-many-statements
     def __init__(
         self,
+        width_em: int | None,
         win_icon_name: str | None,
         win_title: str,
         body_icon_name: str | None,
@@ -79,6 +84,8 @@ class StrictBaseDialog(QDialog):
             | Qt.WindowType.WindowStaysOnTopHint
         )
 
+        self.width_em: int | None = width_em
+
         if win_icon_name is not None:
             self.setWindowIcon(QIcon.fromTheme(win_icon_name))
         self.setWindowTitle(win_title)
@@ -92,8 +99,7 @@ class StrictBaseDialog(QDialog):
             )
         self.body_text_label: QLabel = QLabel(body_text)
         self.body_text_label.setTextInteractionFlags(
-            Qt.TextInteractionFlag.TextSelectableByKeyboard
-            | Qt.TextInteractionFlag.TextSelectableByMouse
+            Qt.TextInteractionFlag.TextSelectableByMouse
             | Qt.TextInteractionFlag.LinksAccessibleByKeyboard
             | Qt.TextInteractionFlag.LinksAccessibleByMouse
         )
@@ -165,6 +171,19 @@ class StrictBaseDialog(QDialog):
             self.audio_output.setVolume(1.0)
 
         # Buttons are defined by child classes.
+
+    def set_ideal_size(self) -> None:
+        """
+        Constrains the width of the body text, then resizes the window to its
+        ideal size.
+        """
+
+        em_size: int = self.fontMetrics().horizontalAdvance("M")
+
+        if self.width_em is not None:
+            self.body_text_label.setFixedWidth(self.width_em * em_size)
+
+        self.adjustSize()
 
     def get_notification_sound_path(self, sound_name: str) -> str | None:
         """
@@ -265,6 +284,7 @@ class StrictOkDialog(StrictBaseDialog):
     # pylint: disable=too-many-arguments, too-many-positional-arguments
     def __init__(
         self,
+        width_em: int | None,
         win_icon_name: str | None,
         win_title: str,
         body_icon_name: str | None,
@@ -276,6 +296,7 @@ class StrictOkDialog(StrictBaseDialog):
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(
+            width_em,
             win_icon_name,
             win_title,
             body_icon_name,
@@ -307,7 +328,7 @@ class StrictOkDialog(StrictBaseDialog):
         self.button_layout.addWidget(self.ok_button)
 
         self.core_layout.addLayout(self.button_layout)
-        self.adjustSize()
+        self.set_ideal_size()
 
         if self.confirm_checkbox is None:
             self.confirm_timeout_expired.connect(
@@ -346,6 +367,7 @@ class StrictYesNoDialog(StrictBaseDialog):
     # pylint: disable=too-many-arguments, too-many-positional-arguments
     def __init__(
         self,
+        width_em: int | None,
         win_icon_name: str | None,
         win_title: str,
         body_icon_name: str | None,
@@ -358,6 +380,7 @@ class StrictYesNoDialog(StrictBaseDialog):
         parent: QWidget | None = None,
     ):
         super().__init__(
+            width_em,
             win_icon_name,
             win_title,
             body_icon_name,
@@ -395,7 +418,7 @@ class StrictYesNoDialog(StrictBaseDialog):
         self.button_layout.addWidget(self.no_button)
 
         self.core_layout.addLayout(self.button_layout)
-        self.adjustSize()
+        self.set_ideal_size()
 
         if self.confirm_checkbox is None:
             self.confirm_timeout_expired.connect(
@@ -457,6 +480,7 @@ def main() -> NoReturn:
     signal_timer.start(500)
     signal_timer.timeout.connect(lambda: None)
 
+    width_em: int | None = None
     win_icon_name: str | None = None
     win_title: str | None = None
     body_icon_name: str | None = None
@@ -473,6 +497,12 @@ def main() -> NoReturn:
         description=(
             "A partial KDialog reimplementation that is harder to ignore."
         ),
+    )
+    arg_parser.add_argument(
+        "--width",
+        type=int,
+        metavar="WIDTH_EM",
+        help="The width of the width, in ems.",
     )
     arg_parser.add_argument(
         "--icon",
@@ -576,6 +606,7 @@ def main() -> NoReturn:
     )
     args: argparse.Namespace = arg_parser.parse_args()
 
+    width_em = args.width
     win_icon_name = args.icon
     win_title = args.title
     confirm_checkbox_text = args.confirm_check_label
@@ -610,6 +641,7 @@ def main() -> NoReturn:
         assert body_icon_name is not None
         assert notification_sound_name is not None
         ok_dialog: StrictOkDialog = StrictOkDialog(
+            width_em,
             win_icon_name,
             win_title,
             body_icon_name,
@@ -627,6 +659,7 @@ def main() -> NoReturn:
         assert body_icon_name is not None
         assert notification_sound_name is not None
         yes_no_dialog: StrictYesNoDialog = StrictYesNoDialog(
+            width_em,
             win_icon_name,
             win_title,
             body_icon_name,

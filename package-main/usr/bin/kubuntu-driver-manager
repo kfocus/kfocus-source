@@ -51,26 +51,28 @@ _importCommonFn () {
 ## BEGIN _assignGlobalUiVarsFn {
 _assignGlobalUiVarsFn () {
   _winTitle='Driver Manager';
-  _browStr='<tr><td style="padding:8px 32px 8px 0">';
+  _browStr='<tr><td style="padding:8px 0 8px 0">';
   _erowStr='</td></tr>';
   _headerStr='<h3 style="color:#f7941d">';
-  _tableStr='<table style="width:100%;margin-right:32px">';
+  _tableStr='<table style="width:100%;margin-right:1.5em">';
 
   _launchWarningStr="$(cat <<EOF
 ${_cm2HtmBeginStr}${_tableStr}
 ${_browStr}${_headerStr}Launch Driver Manager?</h3>${_erowStr}
 
-${_browStr}Kubuntu Focus systems automatically install optimized and validated
-drivers specifically for your hardware. Replacing these drivers can degrade
-performance and break important capabilities, and is therefore strongly
-discouraged.</p>
+${_browStr}<b>Kubuntu Focus systems automatically install optimized
+drivers</b> validated specifically for your hardware.${_erowStr}
 
-<p>See more on the
+${_browStr}<b>Replacing these drivers by using the Driver Manager can
+break important features</b> and degrade performance. Its use is therefore
+strongly discouraged by the Focus Team.</p>
+
+<p><b>See more on the
 <a href="https://kfocus.org/wf/systems.html#bkm_model_validation"
->System Support</a> page. You can write support@kfocus.org if you have any
-questions.${_erowStr}
+>System Support</a> page.</b> You can write support@kfocus.org if you have
+further questions.${_erowStr}
 
-${_browStr}Launch Driver Manager anyway?${_erowStr}</table>
+${_browStr}<b>Launch Driver Manager anyway?</b>${_erowStr}</table>
 ${_cm2HtmEndStr}
 EOF
   )";
@@ -84,8 +86,8 @@ _mainFn () {
   _do_launch_manager='y';
 
   if [ "$(_cm2EchoModelStrFn 'code')" != 'other' ]; then
-    if ! "${_strictDialogExe}" --icon "${_iconStr}" --title "${_winTitle}" \
-      --warningyesno "${_launchWarningStr}"; then
+    if ! "${_strictDialogExe}" --width 31 --icon "${_iconStr}" \
+      --title "${_winTitle}" --warningyesno "${_launchWarningStr}"; then
       _do_launch_manager='n';
     fi
   fi
