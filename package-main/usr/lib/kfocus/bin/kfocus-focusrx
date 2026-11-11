@@ -500,40 +500,38 @@ EOF
 
 ## BEGIN _chkEvdiFn {
 _chkEvdiFn () {
-  declare _evdi_removed_flag _nag_key _title _win_title _nag_msg _prompt_msg \
+  declare _evdi_removed_flag _title _win_title _prompt_msg \
     _dialog_ret _inst_rslt_str _func_successful _evdi_pkg;
 
   _evdi_pkg='evdi';
-  _evdi_removed_flag='/var/lib/kfocus/evdi-dkms-removed';
-  _nag_key='kfocus-evdi-offer';
+  _evdi_removed_flag="${HOME}/.config/kfocus-migrate-evdi-dkms";
   _func_successful='y';
 
   _title='Install Synaptics EVDI Driver';
   _cm2SetMsgFn "${_title}";
   _win_title="${_rootTitle}: ${_title}";
 
+  if ! [ -f "${_evdi_removed_flag}" ]; then
+    _cm2SucStrFn 'EVDI migration not needed.';
+    _cm2SucFn;
+    return;
+  fi
+
   if _cm2ChkInstalledPkgFn "${_evdi_pkg}"; then
+    rm "${_evdi_removed_flag}";
     _cm2SucStrFn "${_evdi_pkg} already installed.";
     _cm2SucFn;
-    _testNagCountFn 'fill' "${_nag_key}" '1';
     return;
   fi
 
   if ! apt-cache show "${_evdi_pkg}" >/dev/null 2>&1; then
+    rm "${_evdi_removed_flag}";
     _cm2SucStrFn "${_evdi_pkg} not available.";
     _cm2SucFn;
-    _testNagCountFn 'fill' "${_nag_key}" '1';
     return;
   fi
 
-  if ! _nag_msg="$(_testNagCountFn 'check' "${_nag_key}" '1')"; then
-    _cm2SucStrFn 'View count limit reached.';
-    _cm2SucFn;
-    return;
-  fi
-
-  if [ -f "${_evdi_removed_flag}" ]; then
-    _prompt_msg="$(cat <<EOF
+  _prompt_msg="$(cat <<EOF
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}${_title}</h3>
 
@@ -548,23 +546,23 @@ version now. If you'd rather install it later, click the "DisplayLink" icon in
 the <a href="https://kfocus.org/wf/apps.html">Curated Apps</a> page.</span></p>
 ${_cm2HtmEndStr}
 EOF
-    )";
-    "${_kdiagStrictExe}" \
-      --title="${_win_title}" \
-      --icon="kfocus-bug-rx" \
-      --confirm-check-label='I have read and understood this message.' \
-      --confirm-timeout=5 \
-      --warningyesno="${_prompt_msg}" \
-      --yes-label='Install Now' \
-      --no-label='No Thanks';
-    _dialog_ret="$?";
+  )";
+  "${_kdiagStrictExe}" \
+    --title="${_win_title}" \
+    --icon="kfocus-bug-rx" \
+    --confirm-check-label='I have read and understood this message.' \
+    --confirm-timeout=5 \
+    --warningyesno="${_prompt_msg}" \
+    --yes-label='Install Now' \
+    --no-label='No Thanks';
+  _dialog_ret="$?";
 
-    if [ "${_dialog_ret}" = '0' ]; then
-      _prompt_msg='Installing Synaptic EVDI package';
-      if _inst_rslt_str="$(_cm2RunLongCmdFn "${_prompt_msg}" \
-        "${_kfocusInstPkgExe}" "${_evdi_pkg}")"; then
-        _cm2SucStrFn "${_evdi_pkg} installation successful";
-        _prompt_msg="$(cat <<EOF
+  if [ "${_dialog_ret}" = '0' ]; then
+    _prompt_msg='Installing Synaptic EVDI package';
+    if _inst_rslt_str="$(_cm2RunLongCmdFn "${_prompt_msg}" \
+      "${_kfocusInstPkgExe}" "${_evdi_pkg}")"; then
+      _cm2SucStrFn "${_evdi_pkg} installation successful";
+      _prompt_msg="$(cat <<EOF
 ${_cm2HtmBeginStr}
 ${_cm2HtmH3Str}Synaptic EVDI Package Installed</h3>
 
@@ -572,14 +570,14 @@ ${_cm2HtmPStr}The <code>${_evdi_pkg}</code> package was successfully
 installed.</p>
 ${_cm2HtmEndStr}
 EOF
-        )";
-        _cm2PromptUserFn "${_prompt_msg}" "${_win_title}";
-        _testNagCountFn 'fill' "${_nag_key}" 1;
-      else
-        _cm2WarnStrFn "${_evdi_pkg} installation failed";
-        _cm2WarnStrFn "${_inst_rslt_str}";
-        _func_successful='n';
-        _prompt_msg="$(cat <<EOF
+      )";
+      _cm2PromptUserFn "${_prompt_msg}" "${_win_title}";
+      rm "${_evdi_removed_flag}";
+    else
+      _cm2WarnStrFn "${_evdi_pkg} installation failed";
+      _cm2WarnStrFn "${_inst_rslt_str}";
+      _func_successful='n';
+      _prompt_msg="$(cat <<EOF
 ${_cm2HtmBeginStr}
 ${_cm2HtmPStr}Synaptic EVDI Package Install Failed</h3>
 
@@ -589,15 +587,14 @@ installed! Details:</p>
 <pre>${_inst_rslt_str}</pre>
 ${_cm2HtmEndStr}
 EOF
-        )";
-        _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 's';
-      fi
-    elif [ "${_dialog_ret}" = '1' ]; then
-      _cm2SucStrFn "${_evdi_pkg} installation skipped on user request";
-      _testNagCountFn 'fill' "${_nag_key}" 1;
-    else
-      _cm2WarnStrFn "${_evdi_pkg} install prompt closed improperly!";
+      )";
+      _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 's';
     fi
+  elif [ "${_dialog_ret}" = '1' ]; then
+    _cm2SucStrFn "${_evdi_pkg} installation skipped on user request";
+    rm "${_evdi_removed_flag}";
+  else
+    _cm2WarnStrFn "${_evdi_pkg} install prompt closed improperly!";
   fi
 
   if [ "${_func_successful}" = 'y' ]; then
@@ -650,8 +647,6 @@ _chkOemMultiDiskFn () {
     return;
   fi
 
-  # Use sudo here always, pkexec wrecks the GUI. We can do this here
-  # because the OEM user does not need a password for sudo.
    "${_chainHelperLaunchExe}" 'quietExit';
 
   _cm2SucFn;
@@ -817,6 +812,73 @@ _EOH07
   _cm2SucFn;
 }
 ## . END _chkHwConfigFn }
+
+## BEGIN _fixupKernelFn {
+_fixupKernelFn () {
+  declare _core_kernel_metapkg _core_kernel_metapkg_vers \
+    _core_kernel_metapkg_target_vers _fixup_rslt_str _bit_list _removed_pkg \
+    _prompt_msg _title _win_title;
+
+  _core_kernel_metapkg='linux-kfocus-26.04-kfocus';
+  _core_kernel_metapkg_target_vers='7.3.0-10.10+kfocus5';
+
+  _title='Fixup Kernel';
+  _cm2SetMsgFn "${_title}";
+  _win_title="${_rootTitle}: ${_title}";
+
+  # Check if KFocus kernel meta is installed
+  if ! _cm2ChkInstalledPkgFn "${_core_kernel_metapkg}"; then
+    _cm2SucStrFn 'KFocus kernel not in use.';
+    _cm2SucFn;
+    return;
+  fi
+
+  # Check if KFocus kernel meta is already an acceptable version
+  _core_kernel_metapkg_vers="$(dpkg-query -f '${Version}' \
+    -W "${_core_kernel_metapkg}")";
+  if dpkg --compare-versions "${_core_kernel_metapkg_vers}" \
+    ge "${_core_kernel_metapkg_target_vers}"; then
+    _cm2SucStrFn 'Kernel fixups already applied.';
+    _cm2SucFn;
+    return;
+  fi
+
+  # Force the installation of the latest kernel if it is out of date, removing
+  #   packages that may prevent this
+  if ! _fixup_rslt_str="$(_cm2RunLongCmdFn 'Upgrading kernel...' \
+    "${_focusRxSetExe}" 'fixup-kernel')"; then
+    _cm2WarnStrFn "${_fixup_rslt_str}";
+    _prompt_msg="$(cat <<EOF
+${_cm2HtmBeginStr}
+${_cm2HtmH3Str}Kernel Upgrade Failed</h3>
+
+${_cm2HtmPStr}A kernel upgrade could not be installed! Details:</p>
+
+<pre>${_fixup_rslt_str}</pre>
+${_cm2HtmEndStr}
+EOF
+    )";
+    _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 's';
+    _cm2WarnFn;
+    return;
+  fi
+
+  # Note that while the fixup-kernel routine may remove Ubuntu's VirtualBox
+  #   packages, it does not report this fact, as VirtualBox migration has to be
+  #   handled specially.
+  #
+  # We use 'touch' rather than an internal variable because the user may
+  # reboot the system between installing the kernel and migrating to the new
+  # EVDI package.
+  IFS='|' read -r -a _bit_list <<< "${_fixup_rslt_str}";
+  for _removed_pkg in "${_bit_list[@]}"; do
+    touch "${HOME}/.config/kfocus-migrate-${_removed_pkg}";
+  done
+
+  _cm2SucStrFn 'Kernel update installed.';
+  _cm2SucFn;
+}
+## . END _fixupKernelFn }
 
 ## BEGIN _chkRollbackUxFn {
 # Purpose: Get rid of the kfocus-rollback icon in the panel if kfocus-rollback
@@ -1445,12 +1507,20 @@ EOF
   fi
 
   ## Begin Run focusrx steps {
+  # Order as below:
+  #   CFG: System and package configuration
+  #   UX: GUI configuration
+  #   APP: Run an app
+  #
   _cm2EchoFn "== BEGIN :      ${_rootTitle}\n";
   _announceStartFn;
   _chkBtrfsSetUpFn;   # CFG: Setup BTRFS Snapshot Setup if possible
   _runDropScriptsFn;  # CFG: Force only: offer package repair CLI
   _ensureCrontabFn;   # CFG: Ensure crontab for BackInTime
   _chkHwConfigFn;     # CFG: 6204 Update kfocus pkgs and config for hw
+  _fixupKernelFn;     # CFG: 6999 Remove blocking evdi and VBox, update kernel
+  _chkEvdiFn;         # CFG: Detect previous evdi-dkms presence, offer evdi
+  _chkVirtualBoxFn;   # CFG: Detect VirtualBox VM presence, offer install
 
   # _chkNvPMizerFn;   # UX 5423: Check and apply NV PMizer fixups
                       # UX 6779: Not needed for Wayland/Resolute
@@ -1472,8 +1542,6 @@ EOF
   _offerSnapshotsFn;  # APP: Force only: offer snapshots tool
 
   _chkUpdateBiosFn;   # APP: Detect BIOS upgrade, launch tool
-  _chkVirtualBoxFn;   # APP: Detect VirtualBox VM presence, offer install
-  _chkEvdiFn;         # DRIVER: Detect previous evdi-dkms presence, offer evdi
   _chkOemMultiDiskFn; # APP: Detect multi-disk, launch tool (MDCT)
   # TODO 2026-01-09 msm: move earlier when lock is available
   _chkPostRestoreFn;  # APP: Detect post-restore, launch tool
@@ -1533,6 +1601,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     # "_kcleanExe|${_binDir}/kfocus-kclean||optional"
     # "_kscreenDoctorExe|/usr/bin/kscreen-doctor||optional"
 
+    "_kdiagStrictExe|${_binDir}/kfocus-strict-dialog"
+    "_kfocusInstPkgExe|${_binDir}/kfocus-pkg-installer"
     "_nvSettingsExe|nvidia-settings||optional"
     "_primeSelectExe|prime-select||optional"
     "_resetEffectsExe|${_binDir}/kfocus-reset-effects||optional"
@@ -1540,8 +1610,6 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     "_rollbackBackendExe|${_binDir}/kfocus-rollback-backend||optional"
     "_rollbackExe|${_binDir}/kfocus-rollback||optional"
     "_rollbackSetExe|${_binDir}/kfocus-rollback-set||optional"
-    "_kdiagStrictExe|${_binDir}/kfocus-strict-dialog"
-    "_kfocusInstPkgExe|${_binDir}/kfocus-pkg-installer"
   );
   if ! _cm2AssignExeVarsFn "${_assignList[@]}"; then
     _cm2ErrStrFn 'Could not assign variables';

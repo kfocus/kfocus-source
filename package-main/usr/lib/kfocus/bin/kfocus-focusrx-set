@@ -458,6 +458,51 @@ _setKeyCodesFn () {
 }
 ## . END _setKeyCodesFn }
 
+## BEGIN _fixupKernelFn {
+_fixupKernelFn () {
+  declare _conflict_pkg_list _conflict_pkg_str _bit_list _pkg_name \
+    _do_make_migrate_flag _out_str _purge_info_str _core_kernel_metapkg \
+    _kernel_update_info_str;
+
+  # pkg_name|do_make_migrate_flag
+  _conflict_pkg_list=(
+    'virtualbox|n'
+    'virtualbox-source|n'
+    'virtualbox-dkms|n'
+    'virtualbox-ext-pack|n'
+    'evdi-dkms|y'
+  );
+  _core_kernel_metapkg='linux-kfocus-26.04-kfocus'
+  _out_str='';
+
+  for _conflict_pkg_str in "${_conflict_pkg_list[@]}"; do
+    IFS='|' read -r -a _bit_list <<< "${_conflict_pkg_str}";
+    _pkg_name="${_bit_list[0]}";
+    _do_make_migrate_flag="${_bit_list[1]}";
+    if ! _purge_info_str="$(apt-get purge -y "${_pkg_name}" 2>&1)"; then
+      echo "${_purge_info_str}";
+      return 1;
+    fi
+    if [ "${_do_make_migrate_flag}" = 'y' ]; then
+      if [ -z "${_out_str}" ]; then
+        _out_str="${_pkg_name}";
+      else
+        _out_str+="|${_pkg_name}";
+      fi
+    fi
+  done
+
+  if ! _kernel_update_info_str="$(_cm2SmartInstallPkgsFn \
+    "${_core_kernel_metapkg}")"; then
+    echo "${_kernel_update_info_str}";
+    return 1;
+  fi
+
+  echo "${_out_str}";
+  return 0;
+}
+## . END _fixupKernelFn }
+
 ## BEGIN _mainFn {
 _mainFn () {
   declare _arg_str _report_str;
@@ -475,6 +520,7 @@ _mainFn () {
     'prep-snapshot'   ) _prepareSnapshotFn;;
     'clear-restore'   ) _clearRestoreFn;;
     'set-keycodes'    ) _setKeyCodesFn;;
+    'fixup-kernel'    ) _fixupKernelFn || exit 1;;
     *) _cm2WarnStrFn "Unrecognized directive |${_arg_str}|";;
   esac
 }

@@ -87,7 +87,8 @@ _mainFn () {
 
   if [ "$(_cm2EchoModelStrFn 'code')" != 'other' ]; then
     if ! "${_strictDialogExe}" --width 31 --icon "${_iconStr}" \
-      --title "${_winTitle}" --warningyesno "${_launchWarningStr}"; then
+      --title "${_winTitle}" --warningyesno "${_launchWarningStr}" \
+      --default-button 1; then
       _do_launch_manager='n';
     fi
   fi

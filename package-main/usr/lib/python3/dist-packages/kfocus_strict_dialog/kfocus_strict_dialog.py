@@ -377,6 +377,7 @@ class StrictYesNoDialog(StrictBaseDialog):
         notification_sound_name: str,
         yes_button_text: str,
         no_button_text: str,
+        default_button: int | None,
         parent: QWidget | None = None,
     ):
         super().__init__(
@@ -414,6 +415,11 @@ class StrictYesNoDialog(StrictBaseDialog):
         if self.confirm_timeout > 0 or self.confirm_checkbox is not None:
             self.yes_button.setEnabled(False)
             self.no_button.setEnabled(False)
+        match default_button:
+            case 0:
+                self.yes_button.setDefault(True)
+            case 1:
+                self.no_button.setDefault(True)
         self.button_layout.addWidget(self.yes_button)
         self.button_layout.addWidget(self.no_button)
 
@@ -491,6 +497,7 @@ def main() -> NoReturn:
     ok_button_text: str | None = None
     yes_button_text: str | None = None
     no_button_text: str | None = None
+    default_button: int | None = None
 
     arg_parser: argparse.ArgumentParser = argparse.ArgumentParser(
         prog="kfocus-strict-dialog",
@@ -604,6 +611,15 @@ def main() -> NoReturn:
         help="The text to display on the 'No' button of a yes/no dialog.",
         default="No",
     )
+    arg_parser.add_argument(
+        "--default-button",
+        type=int,
+        metavar="BUTTON_IDX",
+        help=(
+            "The index of the button that should be highlighted as default. "
+            + "Only works with --yesno and --warningyesno."
+        ),
+    )
     args: argparse.Namespace = arg_parser.parse_args()
 
     width_em = args.width
@@ -614,6 +630,21 @@ def main() -> NoReturn:
     ok_button_text = args.ok_label
     yes_button_text = args.yes_label
     no_button_text = args.no_label
+    default_button = args.default_button
+
+    if (
+        default_button is not None
+        and (
+            args.yesno is None
+            and args.warningyesno is None
+        )
+    ):
+        print(
+            "ERROR: --button-index must be used with --yesno or "
+            + "--warningyesno.",
+            file=sys.stderr
+        )
+        sys.exit(255)
 
     if args.msgbox is not None:
         body_text = args.msgbox
@@ -669,13 +700,14 @@ def main() -> NoReturn:
             notification_sound_name,
             yes_button_text,
             no_button_text,
+            default_button,
         )
         yes_no_dialog.play_notification_sound()
         yes_no_dialog.exec()
         sys.exit(yes_no_dialog.result())
     else:
         print("ERROR: No body text argument provided.", file=sys.stderr)
-        sys.exit(2)
+        sys.exit(255)
 
 
 if __name__ == "__main__":
