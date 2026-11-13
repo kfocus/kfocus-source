@@ -1,0 +1,20 @@
+Source: kubuntu-contribute
+Maintainer: Kubuntu Developers <kubuntu-devel@lists.ubuntu.com>
+Uploaders: Aaron Rainbolt <arraybolt3@ubuntu.com>
+Section: misc
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.4
+Vcs-Browser: https://code.launchpad.net/~kubuntu-packagers/kubuntu-packaging/+git/kubuntu-contribute
+Vcs-Git: git://git.launchpad.net/~kubuntu-packagers/kubuntu-packaging/+git/kubuntu-contribute
+Homepage: https://kubuntu.org
+
+Package: kubuntu-contribute
+Architecture: all
+Depends: python3, python3-pyqt6, ${misc:Depends}, ${shlibs:Depends}
+Pre-Depends: ${misc:Pre-Depends}
+Description: Informs users how to contribute to Kubuntu
+ This application provides pointers for how to donate to Kubuntu,
+ purchase hardware that supports the Kubuntu ecosystem, and get started
+ contributing to Kubuntu. A generic "contribute" dialog offers all
+ three options, while a more focused "donate" dialog directs the user
+ to Kubuntu's donation portal.

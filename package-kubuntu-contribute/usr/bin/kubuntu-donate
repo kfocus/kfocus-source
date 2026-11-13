@@ -1,0 +1,9 @@
+#!/usr/bin/python3
+
+# SPDX-FileCopyrightText: 2026 - 2026 Kubuntu Contributors <kubuntu-devel@lists.ubuntu.com>
+# SPDX-License-Identifier: GPL-3.0
+
+import sys
+from kubuntu_contribute.kubuntu_contribute import main
+sys.argv = ["kubuntu-donate", "--mode=donate"]
+main()
