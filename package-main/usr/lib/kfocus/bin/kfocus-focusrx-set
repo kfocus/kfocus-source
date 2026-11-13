@@ -489,7 +489,7 @@ _fixupKernelFn () {
       return 1;
     fi
 
-    if [ "${_pkg_name_list[0]}" = 'displaylink-driver' ]; then
+    if [ "${_rm_pkg_list[0]}" = 'displaylink-driver' ]; then
       _do_reinstall_displaylink='y';
     fi
   done
