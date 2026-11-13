@@ -498,113 +498,6 @@ EOF
 }
 ## . END _chkVirtualBoxFn }
 
-## BEGIN _chkEvdiFn {
-_chkEvdiFn () {
-  declare _evdi_removed_flag _title _win_title _prompt_msg \
-    _dialog_ret _inst_rslt_str _func_successful _evdi_pkg;
-
-  _evdi_pkg='evdi';
-  _evdi_removed_flag="${HOME}/.config/kfocus-migrate-evdi-dkms";
-  _func_successful='y';
-
-  _title='Install Synaptics EVDI Driver';
-  _cm2SetMsgFn "${_title}";
-  _win_title="${_rootTitle}: ${_title}";
-
-  if ! [ -f "${_evdi_removed_flag}" ]; then
-    _cm2SucStrFn 'EVDI migration not needed.';
-    _cm2SucFn;
-    return;
-  fi
-
-  if _cm2ChkInstalledPkgFn "${_evdi_pkg}"; then
-    rm "${_evdi_removed_flag}";
-    _cm2SucStrFn "${_evdi_pkg} already installed.";
-    _cm2SucFn;
-    return;
-  fi
-
-  if ! apt-cache show "${_evdi_pkg}" >/dev/null 2>&1; then
-    rm "${_evdi_removed_flag}";
-    _cm2SucStrFn "${_evdi_pkg} not available.";
-    _cm2SucFn;
-    return;
-  fi
-
-  _prompt_msg="$(cat <<EOF
-${_cm2HtmBeginStr}
-${_cm2HtmH3Str}${_title}</h3>
-
-${_cm2HtmPStr}The Ubuntu DisplayLink EVDI driver has been removed
-<span style="color:#888888">because it is incompatible with a recent kernel
-upgrade to version 7.3. This driver is typically used to drive multiple
-monitors through an external USB-C dock.</span></p>
-
-${_cm2HtmPStr}If you still require this driver,
-<span style="color:#888888">FocusRx can install the compatible Synaptic EVDI
-version now. If you'd rather install it later, click the "DisplayLink" icon in
-the <a href="https://kfocus.org/wf/apps.html">Curated Apps</a> page.</span></p>
-${_cm2HtmEndStr}
-EOF
-  )";
-  "${_kdiagStrictExe}" \
-    --title="${_win_title}" \
-    --icon="kfocus-bug-rx" \
-    --confirm-check-label='I have read and understood this message.' \
-    --confirm-timeout=5 \
-    --warningyesno="${_prompt_msg}" \
-    --yes-label='Install Now' \
-    --no-label='No Thanks';
-  _dialog_ret="$?";
-
-  if [ "${_dialog_ret}" = '0' ]; then
-    _prompt_msg='Installing Synaptic EVDI package';
-    if _inst_rslt_str="$(_cm2RunLongCmdFn "${_prompt_msg}" \
-      "${_kfocusInstPkgExe}" "${_evdi_pkg}")"; then
-      _cm2SucStrFn "${_evdi_pkg} installation successful";
-      _prompt_msg="$(cat <<EOF
-${_cm2HtmBeginStr}
-${_cm2HtmH3Str}Synaptic EVDI Package Installed</h3>
-
-${_cm2HtmPStr}The <code>${_evdi_pkg}</code> package was successfully
-installed.</p>
-${_cm2HtmEndStr}
-EOF
-      )";
-      _cm2PromptUserFn "${_prompt_msg}" "${_win_title}";
-      rm "${_evdi_removed_flag}";
-    else
-      _cm2WarnStrFn "${_evdi_pkg} installation failed";
-      _cm2WarnStrFn "${_inst_rslt_str}";
-      _func_successful='n';
-      _prompt_msg="$(cat <<EOF
-${_cm2HtmBeginStr}
-${_cm2HtmPStr}Synaptic EVDI Package Install Failed</h3>
-
-${_cm2HtmPStr}The <code>${_evdi_pkg}</code> package could not be <br>
-installed! Details:</p>
-
-<pre>${_inst_rslt_str}</pre>
-${_cm2HtmEndStr}
-EOF
-      )";
-      _cm2PromptUserFn "${_prompt_msg}" "${_win_title}" 's';
-    fi
-  elif [ "${_dialog_ret}" = '1' ]; then
-    _cm2SucStrFn "${_evdi_pkg} installation skipped on user request";
-    rm "${_evdi_removed_flag}";
-  else
-    _cm2WarnStrFn "${_evdi_pkg} install prompt closed improperly!";
-  fi
-
-  if [ "${_func_successful}" = 'y' ]; then
-    _cm2SucFn;
-  else
-    _cm2WarnFn;
-  fi
-}
-## . END _chkEvdiFn }
-
 ## BEGIN _chkBtrfsSetUpFn {
 #
 _chkBtrfsSetUpFn () {
@@ -1519,7 +1412,6 @@ EOF
   _ensureCrontabFn;   # CFG: Ensure crontab for BackInTime
   _chkHwConfigFn;     # CFG: 6204 Update kfocus pkgs and config for hw
   _fixupKernelFn;     # CFG: 6999 Remove blocking evdi and VBox, update kernel
-  _chkEvdiFn;         # CFG: Detect previous evdi-dkms presence, offer evdi
   _chkVirtualBoxFn;   # CFG: Detect VirtualBox VM presence, offer install
 
   # _chkNvPMizerFn;   # UX 5423: Check and apply NV PMizer fixups

@@ -494,24 +494,39 @@ _cm2SmartInstallPkgsFn () {
 }
 
 _cm2ChkInstalledPkgFn () {
-  declare _pkg_name _status_str;
-  _pkg_name="${1:-}";
-  _status_str="$( 2>&1 \
-    dpkg-query -f '${db:Status-abbrev}' -W "${_pkg_name}"
-  )";
-  if grep -qE '^.i ' <<< "${_status_str}"; then return 0; fi
-  return 1;
+  declare _pkg_name_list _pkg_name _status_str;
+
+  _pkg_name_list=( "$@" );
+  [ "${#_pkg_name_list[@]}" = '0' ] && return 1;
+
+  for _pkg_name in "${_pkg_name_list[@]}"; do
+    if [ "${_pkg_name:$(( ${#_pkg_name} - 1 ))}" = '-' ]; then continue; fi
+    _status_str="$( 2>&1 \
+      dpkg-query -f '${db:Status-abbrev}' -W "${_pkg_name}"
+    )";
+    if ! grep -qE '^.i ' <<< "${_status_str}"; then
+      return 1;
+    fi
+  done
+
+  return 0;
 }
 
 _cm2ChkPkgFn () {
-  declare _pkg_str _pkg_count;
-  _pkg_str="${1:-}";
-  if [ -z "${_pkg_str}" ]; then return 1; fi
-  _pkg_count="$(apt-cache search -n "^${_pkg_str}\$" |wc -l)";
+  declare _pkg_name_list _pkg_name _pkg_count;
 
-  if [ "${_pkg_count}" = '1' ]; then
-    return 0; else return 1;
-  fi
+  _pkg_name_list=( "$@" );
+  [ "${#_pkg_name_list[@]}" = '0' ] && return 1;
+
+  for _pkg_name in "${_pkg_name_list[@]}"; do
+    if [ "${_pkg_name:$(( ${#_pkg_name} - 1 ))}" = '-' ]; then continue; fi
+    _pkg_count="$(apt-cache search -n "^${_pkg_name}\$" |wc -l)";
+    if [ "${_pkg_count}" != '1' ]; then
+      return 1;
+    fi
+  done
+
+  return 0;
 }
 
 _cm2EchoInstalledVersFn () {

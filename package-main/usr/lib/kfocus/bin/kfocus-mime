@@ -32,7 +32,7 @@ _exeLookupList=(
   'darktable|darktable||darktable|DarkTable: Edit RAW Photos'
   'discord|discord||discord|Discord: Group Chat Messenger'
   'dolphin|dolphin||dolphin|Dolphin: Manage Files'
-  'element-desktop|element-desktop||element-desktop|Element: Open-Source Instant Messaging'
+  'element-desktop|element-desktop||element-desktop,element-io-archive-keyring|Element: Open-Source Instant Messaging'
   'elisa|elisa||elisa|Elisa Music Player'
   'ffmpeg|konsole;-e;man ffmpeg|ffmpeg|ffmpeg|FFMpeg: Stream and Play Multimedia Files'
   'filezilla|filezilla||filezilla|Filezilla: Transfer Files'
@@ -45,7 +45,7 @@ _exeLookupList=(
   'gvim|gvim||vim-gtk3|Vim GUI: Edit Text With Extreme Power'
   'gwenview|gwenview||gwenview|Gwenview: Image and Document Viewer'
   'inkscape|inkscape||inkscape|Inkscape: Edit Scalable Vector Graphics'
-  'insync|insync;start||insync-dolphin|Insync: Sync Google Drive and Others'
+  'insync|insync;start||insync,insync-dolphin-kde6|Insync: Sync Google Drive and Others'
   'jekyll|konsole;-e;man jekyll|jekyll|jekyll|Jekyll: Create Static Web Sites'
   'kate|kate||kate|Kate: Edit Text with Power'
   'kde-connect|kdeconnect-app||kdeconnect|KDE Connect: Connect Smartphones to Desktop'
@@ -108,8 +108,8 @@ _exeLookupList=(
 
   # Packages with special handlers
   'kfocus_kclean|!kfocus-kclean|/usr/bin/true|base-files|KFocus Kernel Cleaner: Remove unused and old kernel files'
-  'displaylink-driver|!displaylink-driver|displaylink-installer|displaylink-driver|DisplayLink: Driver for DisplayLink Docking Stations'
-  'docker|!docker|docker|docker-ce|Docker: Container Engine'
+  'displaylink-driver|!displaylink-driver|displaylink-installer|displaylink-driver,evdi,evdi-dkms-|DisplayLink: Driver for DisplayLink Docking Stations'
+  'docker|!docker|docker|docker-ce,docker-compose-plugin|Docker: Container Engine'
   'dropbox|!dropbox|dropbox|dropbox|Dropbox: Sync to Cloud Storage'
   'ghb|!ghb|/var/lib/flatpak/app/fr.handbrake.ghb/x86_64/stable/active/files/bin/ghb|handbrake-flathub|Handbrake: Back up encoded audio and video'
   "intellij|!intellij|$HOME/bin/jetbrains-toolbox/bin/jetbrains-toolbox|jetbrains-toolbox|IntelliJ via JetBrains Toolbox: Java IDE"
@@ -227,7 +227,6 @@ function deb_docker-ce() {
   APT_KEY_URL="https://download.docker.com/linux/ubuntu/gpg"
   APT_LIST_NAME="docker"
   APT_REPO_URL="deb [arch=${HOST_ARCH}] https://download.docker.com/linux/ubuntu ${UBUNTU_CODENAME} stable"
-  APT_EXTRA_PKGLIST=('docker-compose-plugin')
   PRETTY_NAME="Docker Engine"
   WEBSITE="https://www.docker.com/"
 }
@@ -243,7 +242,6 @@ function deb_element-desktop() {
   GPG_KEY_URL="https://packages.element.io/debian/element-io-archive-keyring.gpg"
   APT_LIST_NAME="element-io"
   APT_REPO_URL="deb [signed-by=/usr/share/keyrings/element-io-archive-keyring.gpg] https://packages.element.io/debian/ default main"
-  APT_EXTRA_PKGLIST=('element-io-archive-keyring')
   PRETTY_NAME="Element"
   WEBSITE="https://element.io/"
 }
@@ -255,7 +253,7 @@ function deb_google-chrome-stable() {
   PRETTY_NAME="Google Chrome"
   WEBSITE="https://www.google.com/chrome/"
 }
-function deb_insync-dolphin() {
+function deb_insync() {
   PRETTY_NAME="Insync"
   WEBSITE="https://www.insynchq.com/"
   CUSTOM_FUNC_NAME="_installInsyncDolphinFn"
@@ -331,8 +329,9 @@ function _makeAppListFn () {
   );
 }
 function version_deb() {
-  if _cm2ChkInstalledPkgFn "${APP}"; then
-    dpkg -s "${APP}" | grep ^Version: | cut -d' ' -f2
+  # shellcheck disable=SC2086
+  if _cm2ChkInstalledPkgFn ${PKG_LIST_STR//,/ }; then
+    dpkg -s "${PKG_LIST_STR%%,*}" | grep ^Version: | cut -d' ' -f2
   else
     echo ""
   fi
@@ -342,12 +341,13 @@ function unroll_url() {
 }
 # Extracted from validate_deb() and main
 function _readPkgRepoInfoFn () {
-  declare _pkg_name;
-  _pkg_name="${1:-}";
+  declare _pkg_list_str _pkg_name;
+  _pkg_list_str="${1:-}";
+  _pkg_name="${_pkg_list_str%%,*}";
   _makeAppListFn;
 
   export CACHE_DIR ERROR_STR HOST_CPU HOST_ARCH USER_AGENT UBUNTU_CODENAME \
-    APT_KEY_URL GPG_KEY_URL APT_LIST_NAME APT_REPO_URL APT_EXTRA_PKGLIST PPA \
+    APT_KEY_URL GPG_KEY_URL APT_LIST_NAME APT_REPO_URL PPA \
     ARCHS_SUPPORTED METHOD EULA SNAP_PKG_NAME URL VERSION_INSTALLED \
     VERSION_PUBLISHED PRETTY_NAME WEBSITE CUSTOM_FUNC_NAME FLATHUB_PKG_NAME \
     INSTALL_AS_USER;
@@ -382,7 +382,6 @@ function _readPkgRepoInfoFn () {
   GPG_KEY_URL='';
   APT_LIST_NAME='';
   APT_REPO_URL='';
-  APT_EXTRA_PKGLIST=();
   PPA='';
   ARCHS_SUPPORTED='amd64';
   METHOD='website';
@@ -400,7 +399,7 @@ function _readPkgRepoInfoFn () {
 
   # Source the variables
   if "deb_${_pkg_name}"; then
-    APP="${_pkg_name}";
+    PKG_LIST_STR="${_pkg_list_str}";
   else
     ERROR_STR="ABORT: Could not find info for |${_pkg_name}|";
     return 1;
@@ -446,11 +445,8 @@ function install_apt() {
   update_apt;
 
   # Install all packages as a group
-  if (( "${#APT_EXTRA_PKGLIST[@]}" > 0 )); then
-    _aptGetInstallUnattended "${APP}" "${APT_EXTRA_PKGLIST[@]}";
-  else
-    _aptGetInstallUnattended "${APP}";
-  fi
+  # shellcheck disable=SC2086
+  _aptGetInstallUnattended ${PKG_LIST_STR//,/ };
 }
 function _isUserInActiveGroupFn () {
   declare _group_name;
@@ -512,7 +508,8 @@ function install_deb() {
     return
   fi
 
-  if ! _cm2ChkInstalledPkgFn "${APP}"; then
+  # shellcheck disable=SC2086
+  if ! _cm2ChkInstalledPkgFn ${PKG_LIST_STR//,/ }; then
     download_deb "${URL}"
     _aptGetInstallUnattended "${CACHE_DIR}/${FILE}"
   fi
@@ -523,8 +520,9 @@ function install_deb() {
 function install_ppa() {
   if apt-add-repository -y --no-update "${PPA}"; then
     update_apt
-    if ! _cm2ChkInstalledPkgFn "${APP}"; then
-      _aptGetInstallUnattended "${APP}"
+    # shellcheck disable=SC2086
+    if ! _cm2ChkInstalledPkgFn ${PKG_LIST_STR//,/ }; then
+      _aptGetInstallUnattended ${PKG_LIST_STR//,/ };
     fi
   else
     # Remove repo if something when wrong
@@ -542,9 +540,6 @@ _installDisplaylinkDriverFn() {
   install_deb "${_url}";
 
   update_apt;
-  # Necessary to prevent an unsupported kernel from being installed!
-  _aptGetInstallUnattended 'evdi';
-
   install_apt;
 }
 ## . END _installDisplaylinkDriverFn }
@@ -663,14 +658,14 @@ _echoKeyListFn () {
 # Returns   : 0 on success, 1 on failure.
 #
 _echoInstallPromptMsgFn () {
-  declare _app_id _pkg_name _descr_str _prompt_msg _report_str;
+  declare _app_id _pkg_list_str _descr_str _prompt_msg _report_str;
 
   _app_id="${1:-}";
-  _pkg_name="${2:-}";
+  _pkg_list_str="${2:-}";
   _descr_str="${3:-Package}";
   _prompt_msg='';
 
-  if _cm2ChkPkgFn "${_pkg_name}" || [ "${METHOD:-}" = 'custom' ]; then
+  if _cm2ChkPkgFn ${_pkg_list_str//,/ } || [ "${METHOD:-}" = 'custom' ]; then
     echo -e "\n\"${_descr_str}\" is available ";
     echo -e "but it is not installed.";
     echo -e "\nInstall and start now?\n";
@@ -716,17 +711,20 @@ _echoInstallPromptMsgFn () {
 ## BEGIN _installPkgFn {
 # Purpose: Install requested package
 _installPkgFn () {
-  declare _pkg_name;
-  _pkg_name="${1:-}";
+  declare _app_id _pkg_list_str _pkg_list;
+  _app_id="${1:-}";
+  _pkg_list_str="$(IFS=$'\n'; grep -E "^${_app_id}\|" \
+    <<< "${_exeLookupList[*]}" | cut -d'|' -f4)";
+  IFS=',' read -r -a _pkg_list <<< "${_pkg_list_str}";
 
   # Install if already found in repo
-  if _cm2ChkPkgFn "${_pkg_name}"; then
-    _aptGetInstallUnattended "${_pkg_name}";
+  if _cm2ChkPkgFn "${_pkg_list[@]}"; then
+    _aptGetInstallUnattended "${_pkg_list[@]}";
     return;
   fi
 
   # Read repo info for pkg_name
-  _readPkgRepoInfoFn "${_pkg_name}";
+  _readPkgRepoInfoFn "${_pkg_list_str}";
   if [ -n "${ERROR_STR:-}" ]; then
     echo -e "${ERROR_STR:-}";
     exit 1;
@@ -1156,7 +1154,7 @@ EOT
 #
 _runAppFn () {
   declare _arg1_str _arg2_str _arg_app_id _do_report        \
-    _prompt_msg _pkg_name _line_str _bit_list _app_id       \
+    _prompt_msg _pkg_list_str _line_str _bit_list _app_id       \
     _full_cmd_str _sniff_str _descr _cmd_str _do_handler    \
     _arg_list _report_str _sniff_exe _app_exe               \
     _install_prompt_msg  _ans_str _exit_str _idx _reentrant_cmd_list;
@@ -1178,7 +1176,7 @@ _runAppFn () {
     exit 1;
   fi
 
-  _pkg_name='';
+  _pkg_list_str='';
   _line_str="$(
     IFS=$'\n'; grep -E "^${_arg_app_id}\|" <<< "${_exeLookupList[*]}"
   )";
@@ -1193,7 +1191,7 @@ _runAppFn () {
   _app_id="${_bit_list[0]}";
   _full_cmd_str="${_bit_list[1]}";
   _sniff_str="${_bit_list[2]}";
-  _pkg_name="${_bit_list[3]}";
+  _pkg_list_str="${_bit_list[3]}";
   _descr="${_bit_list[4]}";
 
   # Split _cmd_str, _arg_list from _full_cmd_str
@@ -1213,7 +1211,7 @@ _runAppFn () {
 
   if [ "${_do_report}" = 'y' ]; then
     _report_str="${_app_id}|${_full_cmd_str}|${_sniff_str}"
-    _report_str+="|${_pkg_name}|${_descr}";
+    _report_str+="|${_pkg_list_str}|${_descr}";
     if [ "${_do_handler}" = 'y' ]; then
       _report_str+='|Special handler expected|';
     fi
@@ -1222,7 +1220,7 @@ _runAppFn () {
   fi
 
   # Exit if pkg_name is not in the table
-  if [ -z "${_pkg_name}" ]; then
+  if [ -z "${_pkg_list_str}" ]; then
     _prompt_msg="Sorry, |${_arg_app_id}| is not supported";
     _promptFn "${_prompt_msg}";
     exit 1;
@@ -1241,9 +1239,9 @@ _runAppFn () {
     # Try to install the package using (may install repository too)
     if [ ! -x "${_sniff_exe}" ] && [ "${_idx}" = '0' ]; then
       # TODO 2022-05-05 TEPID msm: Verify package comes from desired upstream repo
-      _readPkgRepoInfoFn "${_pkg_name}";
+      _readPkgRepoInfoFn "${_pkg_list_str}";
       if _install_prompt_msg="$(
-        _echoInstallPromptMsgFn "${_app_id}" "${_pkg_name}" "${_descr}"
+        _echoInstallPromptMsgFn "${_app_id}" "${_pkg_list_str}" "${_descr}"
         )"; then
         _ans_str="$(
           _cm2PromptUserFn -i "${_iconStr}" "${_install_prompt_msg:-}" \
@@ -1263,7 +1261,7 @@ _runAppFn () {
             _reentrant_cmd_list+=( 'AS_USER' );
           fi
           _reentrant_cmd_list+=(
-            "Installing ${_pkg_name}" "${_binName}" '-i' "${_pkg_name}"
+            "Installing ${_app_id}" "${_binName}" '-i' "${_app_id}"
           );
           if _exit_str="$(_cm2RunLongCmdFn \
               "${_reentrant_cmd_list[@]}")"; then continue;

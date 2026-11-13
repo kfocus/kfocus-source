@@ -460,45 +460,53 @@ _setKeyCodesFn () {
 
 ## BEGIN _fixupKernelFn {
 _fixupKernelFn () {
-  declare _conflict_pkg_list _conflict_pkg_str _bit_list _pkg_name \
-    _do_make_migrate_flag _out_str _purge_info_str _core_kernel_metapkg \
-    _kernel_update_info_str;
+  declare _conflict_pkg_list _conflict_pkg_str _pkg_name_list \
+    _purge_info_str _core_kernel_metapkg _pkg_name \
+    _rm_pkg_list _do_reinstall_displaylink _inst_rslt_str;
 
-  # pkg_name|do_make_migrate_flag
+  # pkg_list|do_make_migrate_flag
   _conflict_pkg_list=(
-    'virtualbox|n'
-    'virtualbox-source|n'
-    'virtualbox-dkms|n'
-    'virtualbox-ext-pack|n'
-    'evdi-dkms|y'
+    'virtualbox,virtualbox-source,virtualbox-dkms,virtualbox-ext-pack'
+    'displaylink-driver,evdi-dkms'
   );
   _core_kernel_metapkg='linux-kfocus-26.04-kfocus'
-  _out_str='';
+  _do_reinstall_displaylink='n';
 
   for _conflict_pkg_str in "${_conflict_pkg_list[@]}"; do
-    IFS='|' read -r -a _bit_list <<< "${_conflict_pkg_str}";
-    _pkg_name="${_bit_list[0]}";
-    _do_make_migrate_flag="${_bit_list[1]}";
-    if ! _purge_info_str="$(apt-get purge -y "${_pkg_name}" 2>&1)"; then
+    IFS=',' read -r -a _pkg_name_list <<< "${_conflict_pkg_str}";
+    _rm_pkg_list=();
+
+    for _pkg_name in "${_pkg_name_list[@]}"; do
+      if _cm2ChkInstalledPkgFn "${_pkg_name}"; then
+        _rm_pkg_list+=( "${_pkg_name}" );
+      fi
+    done
+
+    if [ "${#_rm_pkg_list[@]}" = '0' ]; then continue; fi
+
+    if ! _purge_info_str="$(apt-get purge -y "${_rm_pkg_list[@]}" 2>&1)"; then
       echo "${_purge_info_str}";
       return 1;
     fi
-    if [ "${_do_make_migrate_flag}" = 'y' ]; then
-      if [ -z "${_out_str}" ]; then
-        _out_str="${_pkg_name}";
-      else
-        _out_str+="|${_pkg_name}";
-      fi
+
+    if [ "${_pkg_name_list[0]}" = 'displaylink-driver' ]; then
+      _do_reinstall_displaylink='y';
     fi
   done
 
-  if ! _kernel_update_info_str="$(_cm2SmartInstallPkgsFn \
-    "${_core_kernel_metapkg}")"; then
-    echo "${_kernel_update_info_str}";
+  if ! _inst_rslt_str="$(_cm2SmartInstallPkgsFn \
+    "${_core_kernel_metapkg}" 2>&1)"; then
+    echo "${_inst_rslt_str}";
     return 1;
   fi
 
-  echo "${_out_str}";
+  if [ "${_do_reinstall_displaylink}" = 'y' ]; then
+    if ! _inst_rslt_str="$("${_mimeExe}" -i 'displaylink-driver')"; then
+      echo "${_inst_rslt_str}";
+      return 1;
+    fi
+  fi
+
   return 0;
 }
 ## . END _fixupKernelFn }
@@ -529,7 +537,7 @@ _mainFn () {
 ## BEGIN Declare global variables {
 declare  _binName _binDir _baseName _assignList \
   _focusRxVersExe _rollbackBackendExe _btoolExe _hwConfigCodeFile \
-  _hwModelCodeFile;
+  _hwModelCodeFile _mimeExe;
 
 _varLibDir='/var/lib/kfocus';
 _hwConfigCodeFile="${_varLibDir}/hw_config_code";
@@ -549,6 +557,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     "_focusRxVersExe|${_binDir}/kfocus-rx-version"
     "_rollbackBackendExe|${_binDir}/kfocus-rollback-backend||optional"
     "_btoolExe|${_binDir}/kfocus-btool||optional"
+    "_mimeExe|${_binDir}/kfocus-mime"
   );
   if ! _cm2AssignExeVarsFn  "${_assignList[@]}"; then
     _cm2ErrStrFn 'Could not assign variable';
