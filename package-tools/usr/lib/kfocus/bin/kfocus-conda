@@ -2,7 +2,8 @@
 #
 # Copyright 2020-2026 MindShare Inc.
 # Written for the Kubuntu Focus by:
-# Michael Mikowski, Vishwas Mruthyunjaya, Erich Eickmeyer
+# Michael Mikowski, Vishwas Mruthyunjaya, 
+#   Aaron Rainbolt, Erich Eickmeyer
 #
 # Name    : kfocus-conda
 # Purpose : Install Anaconda AI environments
@@ -27,7 +28,7 @@ _getNvSeriesStrFn () {
     1>&2 cat << _EOL01
 ${_baseName}: No NVIDIA GPU detected
 
-This script must be run with an Nvidia GPU and the nvidia_drm module loaded.
+This app must be run with an Nvidia GPU and the nvidia_drm module loaded.
 If you have an Nvidia GPU, please switch to "Nvidia (Performance)" or "Nvidia
 (On-Demand)" mode using either the GPU selector in the system tray or
 nvidia-settings.
@@ -62,7 +63,7 @@ your GPU information:
 
 sudo update-pciids
 
-And then run this script again.
+And then run this app again.
 
 _EOL02
 
@@ -186,9 +187,7 @@ _installEnvFn () {
 
     if _cm2ChkInstalledPkgFn   "kfocus-nvidia-pinning${_pkg_suffix}" \
       && _cm2ChkInstalledPkgFn "kfocus-nvidia${_pkg_suffix}" \
-      && _cm2ChkInstalledPkgFn 'cuda-toolkit' \
-      && _cm2ChkInstalledPkgFn 'libcudnn9-cuda-13' \
-      && _cm2ChkInstalledPkgFn 'libnvinfer10'; then
+      && _cm2ChkInstalledPkgFn 'cuda-toolkit'; then
       _cm2EchoFn "All ${_nvSeriesStr}-series libraries appear installed";
     else
       _cm2EchoFn "Install ${_nvSeriesStr}-series required libraries.";
@@ -203,7 +202,7 @@ _installEnvFn () {
           _exitFn;
         fi
         if "${_escExe}" apt-get install "kfocus-nvidia${_pkg_suffix}" \
-          cuda-toolkit libcudnn9-cuda-13 libnvinfer10; then
+          cuda-toolkit; then
           _cm2SucStrFn 'Library installation successful.';
         else
           _cm2ErrStrFn 'Abort: Could not install all libraries.';
@@ -220,6 +219,46 @@ _installEnvFn () {
   fi
   _cm2SucFn;
   ## . End Install GPU Libs
+
+  ## Begin Install cuDNN
+  if _cm2ChkInstalledPkgFn "cudnn9-cuda-13"; then
+    _cm2EchoFn "cuDNN appears installed";
+  else
+    _cm2EchoFn "Install cuDNN.";
+    _reply_str=$( _cm2ReadPromptYnFn 'Install cuDNN now' 'y' );
+
+    if [ "${_reply_str}" = 'y' ]; then
+      if "${_escExe}" apt-get install 'cudnn9-cuda-13'; then
+        _cm2SucStrFn 'Installed cuDNN.';
+      else
+        _cm2ErrStrFn 'Abort: Could not install cuDNN.';
+        _exitFn;
+      fi
+    else
+      _cm2EchoFn 'Skipping cuDNN installation.';
+    fi
+  fi
+  ## . End Install cuDNN
+
+  ## Begin Install TensorRT
+  if _cm2ChkInstalledPkgFn "tensorrt"; then
+    _cm2EchoFn "TensorRT appears installed";
+  else
+    _cm2EchoFn "Install TensorRT.";
+    _reply_str=$( _cm2ReadPromptYnFn 'Install TensorRT now' 'y' );
+
+    if [ "${_reply_str}" = 'y' ]; then
+      if "${_escExe}" apt-get install 'tensorrt'; then
+        _cm2SucStrFn 'Installed TensorRT.';
+      else
+        _cm2ErrStrFn 'Abort: Could not install TensorRT.';
+        _exitFn;
+      fi
+    else
+      _cm2EchoFn 'Skipping TensorRT installation.';
+    fi
+  fi
+  ## . End Install TensorRT
 
   ## Begin Install or Update Conda
   _cm2SetMsgFn 'Begin Install or Update Conda';
@@ -266,24 +305,6 @@ _installEnvFn () {
       fi
     fi
   fi
-
-  ## This no longer appears necessary.
-  # if [  "${_conda_installed_vers}" = '25.11.1' ] \
-  #   || _cm2TestVersFn "${_conda_installed_vers}" '25.11.1'; then
-  #   _cm2EchoFn "Using compatible conda version |${_conda_installed_vers}|.";
-  # else
-  #   _conda_oldstyle_vers="$(
-  #     conda list anaconda$ |tail -n0 |awk '{print $2}'
-  #   )";
-  #   case "${_conda_oldstyle_vers}" in
-  #   '') _cm2EchoFn 'Conda does not appear installed';;
-  #   *) _cm2WarnStrFn "Conda version |${_conda_oldstyle_vers}| found in";
-  #     _cm2WarnStrFn "the current installation |${_conda_expect_dir}|";
-  #     _cm2WarnStrFn  "is not a supported version. Please move this";
-  #     _cm2WarnStrFn  "directory aside before proceeding. Exiting...";
-  #     _exitFn;;
-  #   esac
-  # fi
 
   if [ -d "${_conda_expect_dir}" ]; then
     _reply_str=$( _cm2ReadPromptYnFn \
@@ -398,20 +419,8 @@ _installEnvFn () {
     _cm2EchoFn;
   fi
 
-  ## TODO mxnet is not supported with cuda > 10.2
-  # This is maintained here for reference.
-  #
-  # _reply_str=$( _fixCondaEnvFn 'mxnet-cu102') || _exitFn;
-  # if [ "${_reply_str}" = 'y' ]; then
-  #   _cm2SetMsgFn 'Install Mxnet-cu102';
-  #   set +u;
-  #   conda activate base                         || _exitFn;
-  #   conda create -y --name mxnet python=3.12    || _exitFn;
-  #   conda activate mxnet                        || _exitFn;
-  #   conda install -c anaconda mxnet-cu102       || _exitFn;
-  #   set -u;
-  #   _cm2SucFn;
-  # fi
+  # See earlier versions of this app for mxnet installation.
+  # As of 2024, this is deprecated and no longer supported.
 
   # Pytorch
   # https://pytorch.org/get-started/locally/#linux-anaconda
@@ -429,6 +438,9 @@ _installEnvFn () {
     # Per https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/16884
     _cm2EchoFn "Installing Pytorch for ${_nvSeriesStr}-series GPU";
     pip install torch torchvision torchaudio || _exitFn;
+    ## TODO: If this is broken, consider the following from Noble
+    # pip install --pre torch torchvision torchaudio \
+    #  --index-url https://download.pytorch.org/whl/nightly/cu132 || _exitFn;
     set -u;
     _cm2SucFn;
   fi
@@ -442,16 +454,18 @@ _installEnvFn () {
 
   # TensorFlow does not work with 5000-series GPUs, see
   # https://github.com/tensorflow/tensorflow/issues/89272
-  # This is still true as of 2026-05-14.
+  #
   _reply_str=$( _fixCondaEnvFn 'tensorflow') || _exitFn;
   if [ "${_reply_str}" = 'y' ]; then
     _do_install_tensorflow='n';
+    ## TODO: As of 2026-10-08 this appears fixed for 'rtx50'-series;
+    #  Confirm and remove this string if so.
     if [ "${_nvSeriesStr}" = 'rtx50' ]; then
       _msg="$(cat <<EOF
 This RTX50-series GPU may not be supported by TensorFlow yet. Are you sure you
 want to install TensorFlow anyway
 EOF
-      )"
+      )";
       if [ "$(_cm2ReadPromptYnFn "${_msg}" 'n')" = 'y' ]; then
         _do_install_tensorflow='y';
       fi
@@ -480,40 +494,10 @@ EOF
     fi
   fi
 
-  # Theano
-  # This appears limited to Python 3.10, which implies it is old. Disabled.
-  #
-  # _reply_str=$( _fixCondaEnvFn 'theano') || _exitFn;
-  # if [ "${_reply_str}" = 'y' ]; then
-  #   _cm2SetMsgFn 'Install Theano';
-  #   set +u;
-  #   conda activate base                       || _exitFn;
-  #   conda create -y --name theano python=3.10 || _exitFn;
-  #   conda activate theano                     || _exitFn;
-  #   conda install theano pygpu                || _exitFn;
-  #   conda activate base                       || _exitFn;
-  #   set -u;
-  #   _cm2SucFn;
-  # fi
+  # See earlier versions of this app for Theano and mxnet usage.
+  # As of 2024, these are deprecated and no longer supported.
 
-  ## mxnet
-  # This not supported with cuda 11.7 (requires 10.2)
-  #   which means it is now way old. Disabled.
-  #
-  # if _chkCondaEnvFn 'mxnet'; then
-  #   _cm2SetMsgFn 'Test Mxnet';
-  #   set +u;
-  #   conda activate mxnet || _exitFn;
-  #   set -u;
-  #
-  #   2>/dev/null python -c "${_testMxnetStr}" || _cm2WarnFn;
-  #   _cm2SucFn;
-  # fi
-
-  ## TODO add theano test for GPU.
-  # This is close:
-  # https://stackoverflow.com/questions/34328467
-
+  ## Begin Test PyTorch
   _cm2EchoFn;
   if _chkCondaEnvFn 'pytorch'; then
     _cm2SetMsgFn 'Test Pytorch';
@@ -524,7 +508,9 @@ EOF
     2>/dev/null python -c "${_testPytorchStr}" || _cm2WarnFn;
     _cm2SucFn;
   fi
+  ## . End test PyTorch
 
+  ## Begin Bench PyTorch
   if _chkCondaEnvFn 'pytorch'; then
     _reply_str="$(_cm2ReadPromptYnFn \
       'Benchmark PyTorch (takes about 12m + model download time)' 'n'
@@ -577,7 +563,9 @@ EOF
       set -u;
     fi
   fi
+  ## . End Bench PyTorch
 
+  ## Begin Test TensorFlow
   if _chkCondaEnvFn 'tensorflow'; then
     _cm2SetMsgFn 'Test TensorFlow';
     set +u;
@@ -587,30 +575,10 @@ EOF
     2>/dev/null python -c "${_testTf01Str}" || _cm2WarnFn;
     _cm2SucFn;
   fi
+  ## . End Test TensorFlow
 
-  ## TODO: Use code /like/ this to invoke GPU Benchmark with Pytorch
-  if _chkCondaEnvFn 'tensorflow'; then
-    _msg='\nAs of July 2026, TensorFlow was not finding a GPU device.\n';
-    _msg+=' If this remains the case, run a benchmark will not work.\n';
-    if [ "${_nvSeriesStr}" = 'rtx50' ]; then
-      _msg+='This system has a 50-series GPU. As of July 2026, this was\n';
-      _msg+='still not supported by the TensorFlow software.\n';
-      _msg+='You may proceed with the benchmark, but you may not get\n'
-      _msg+='meaningful results.';
-    fi
-    _cm2EchoFn "${_msg}";
-    _reply_str=$( _cm2ReadPromptYnFn \
-      "Benchmarks TensorFlow (takes 5-10m)" 'n'
-    );
-    if [ "${_reply_str}" = 'y' ]; then
-      _cm2SetMsgFn 'Benchmark TensorFlow';
-      set +u;
-      conda activate tensorflow || _exitFn;
-      set -u;
-      2>/dev/null python -c "${_testTf02Str}" || _cm2WarnFn;
-    fi
-  fi
-
+  # See earlier of this version for bench using deprecated AIBenchmark
+  # and _testTf02Str.
 
   conda activate base;
 }
@@ -646,8 +614,8 @@ for _fileName in 'common.2.source' 'arrayPath.source'; do
     _libFile="${_dir}/lib/${_fileName}";
 
     if [ -r "${_libFile}" ]; then
-      # shellcheck source=/usr/lib/kfocus/lib/common.2.source
-      # shellcheck source=/usr/lib/kfocus/lib/arrayPath.source
+      # shellcheck source=../lib/common.2.source
+      # shellcheck source=../lib/arrayPath.source
       if source "${_libFile}"; then _doExitStr='n'; break; fi
     fi
   done
@@ -693,18 +661,8 @@ unset __conda_setup
 _HERE01
 )";
 
-## TODO mxnet is not supported with cuda 11.7 (10.2 is latest)
-# This is maintained here for reference.
-#
-# _testMxnetStr=$(cat << '_HERE03';
-# # Test script to test if mxnet uses GPU
-# import mxnet as mx
-# a = mx.nd.ones((2, 3), mx.gpu())
-# b = a * 2 + 1
-# b.asnumpy()
-# print('GPU acceleration confirmed in mxnet', mx.__version__)
-# _HERE03
-# );
+# See earlier versions of this app for Theano and mxnet usage.
+# As of 2024, these are deprecated and no longer supported.
 
 _testPytorchStr="$(cat << '_HERE04';
 import torch
@@ -729,32 +687,16 @@ print( 'Devices   : ', tf.config.list_physical_devices('GPU') )
 _HERE05
 )";
 
-_testTf02Str="$(cat << '_HERE05a';
-import tensorflow as tf
-print( 'TF Version: ', tf.__version__ )
-print( 'Devices   : ', tf.config.list_physical_devices('GPU') )
-
-# See https://github.com/tensorflow/tensorflow/issues/24496
-from tensorflow.compat.v1 import ConfigProto
-from tensorflow.compat.v1 import InteractiveSession
-config = ConfigProto()
-config.gpu_options.allow_growth = True
-session = InteractiveSession(config=config)
-
-from ai_benchmark import AIBenchmark
-benchmark = AIBenchmark()
-results = benchmark.run()
-
-_HERE05a
-)";
+# We used to have _testTf02Str for using AIBenchmark. This is now deprecated.
+# See earlier versions of this app for details.
 
 _welcomeStr="$(cat << '_HERE06';
 
 KUBUNTU FOCUS DEEP LEARNING SUITE
   See https://kfocus.org/wf/deep.html for more information.
 
-Use this script to install Anaconda and selectively install GPU accelerated
- Jupyter Notebook, PyTorch, TensorFlow, and Theano.
+Use this app to install Anaconda and selectively install GPU accelerated
+ Jupyter Notebook, PyTorch, TensorFlow.
 
 BY PROCEEDING YOU ACKNOWLEDGE AND AGREE TO THE LICENSE AGREEMENT AT
 https://docs.anaconda.com/
@@ -834,7 +776,7 @@ conda config --set auto_activate_base false;
 
 1>&2 cat << _EOL0X
 
-This script disables conda environments, so you can continue to run
+This app disables conda environments, so you can continue to run
 system Python scripts like backintime-qt when you open a new bash
 session (like when opening a new terminal tab). To enable the conda
 environment, use the following:
@@ -843,6 +785,12 @@ environment, use the following:
 * Use 'false' with the above to disable auto-enable.
 * Deactivate the default conda environment with 'conda deactivate'.
   This will allow you to run system Python scripts again.
+
+IMPORTANT: Do not be tempted to install the nvidia-cuda-toolkit,
+nvidia-cudnn, or nvidia-cuda-samples packages! These are outdated Debian
+packages. The proper cuda-toolkit, cuDNN, and TensorRT packages may be
+installed using this app, and you may run CUDA samples using the
+instructions at https://docs.nvidia.com/cuda/cuda-samples/.
 _EOL0X
 
 _cm2AskExitFn 0 "\n${_baseName} complete. Press return to exit.";
