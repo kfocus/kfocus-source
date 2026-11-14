@@ -39,8 +39,62 @@ _cmXChkInstalledPkgFn () {
   if grep -qE '^.i ' <<< "${_status_str}"; then return 0; fi
   return 1;
 }
+_cmXToggleFileStr () {
+  declare _key _file _str _find_rx _repl_rx;
+  _key="${1:-}"; _file="${2:-}"; _str="${3:-}";
 
+  # Validate arguments
+  if [[ ! "${_key}" =~ ^(on|off)$ || -z "${_file}" || -z "${_str}" ]]; then
+    _cmXWarnStrFn "Usage: _cmXToggleFileStrFn <file> <on|off> <str>";
+    return 1;
+  fi
+
+  # If the file does not exist, create it
+  #   Also Ensure the target is a writable regular file
+  if [[ ! -e "${_file}" ]]; then touch -- "${_file}" || return 1; fi
+  if [[ ! -f "${_file}" || ! -w "${_file}" ]]; then return 1; fi
+
+  # Escape regex metacharacters and the '|' delimiter for safe sed matching
+  # Escape '&', '\', and '|' for safe sed replacement string
+  _find_rx="$(printf '%s' "${_str}" | sed -e 's/[.[\*^$|]/\\&/g')";
+  _repl_rx="$(printf '%s' "${_str}" | sed -e 's/[&\|]/\\&/g')";
+
+  # Replace standalone line matching "${_str}" with "# ${_str}".
+  #   Lines already matching "# ${_str}" or anything else are untouched.
+  if [[ "${_key}" == "off" ]]; then
+    sed -i -E "s|^[[:blank:]]*${_find_rx}[[:blank:]]*$|# ${_repl_rx}|" \
+      -- "${_file}" || return 1;
+  # Replace standalone line matching "# ${_str}" with "${_str}"
+  else
+    sed -i -E "s|^[[:blank:]]*#[[:blank:]]+${_find_rx}[[:blank:]]*$|${_repl_rx}|" \
+      -- "${_file}" || return 1;
+    # Append
+    # 4.c: If neither '<target>' nor '# <target>' exists on its own line, append '<target>'
+    if ! grep -Eq "^[[:blank:]]*(#[[:blank:]]+)?${_find_rx}[[:blank:]]*$" \
+      -- "${_file}"; then
+      printf '%s\n' "${_str}" >> "${_file}" || return 1;
+    fi
+  fi
+  return 0;
+}
 ## . END Declare common.2.source symbols }
+
+## BEGIN _setInitramfsGfxModulesFn {
+# Purpose: Set all modules in /etc/initramfs-tools/modules
+#   specified, and unset in _initramfsGfxModuleList that are not.
+#
+_setInitramfsGfxModulesFn () {
+  declare _arg_mod_list _mod_key _toggle_key;
+  _arg_mod_list=("$@");
+  for _mod_key in "${_initramfsGfxModuleList[@]}"; do
+    if [[ " ${_arg_mod_list[*]} " =~ " ${_mod_key} " ]]; then
+      _toggle_key='on';
+    else
+      _toggle_key='off';
+    fi
+    _cmXToggleFileStr "${_toggle_key}" "${_initramfsModFile}" "${_mod_key}";
+  done
+}
 
 ## BEGIN _supplementXdgConfigsFn {
 # Purpose: Set UX defaults in XDG_CONFIG_DIR kfocus/kf5-settings
@@ -77,6 +131,8 @@ _supplementXdgConfigsFn () {
 _handle_defaultFn () {
   # target |  source | do_file_backup
   _symlinkTable+=(
+    # Clear mods in _initramfsGfxModuleList from /etc/initramfs-tools/modules
+    '_setInitramfsGfxModulesFn|'
     # Clear bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|'
     # Add   boot params
@@ -108,6 +164,8 @@ _handle_defaultFn () {
 #
 _handle_genericFn () {
   _symlinkTable+=(
+    # Clear mods in _initramfsGfxModuleList from /etc/initramfs-tools/modules
+    '_setInitramfsGfxModulesFn|'
     # Clear bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|'
     # Clear boot params
@@ -139,6 +197,8 @@ _handle_genericFn () {
 #
 _handle_xeg2Fn () {
   _symlinkTable+=(
+    # Clear mods in _initramfsGfxModuleList from /etc/initramfs-tools/modules
+    '_setInitramfsGfxModulesFn|'
     # Clear bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|'
     # Add   boot params for to minimize flicker
@@ -170,6 +230,8 @@ _handle_xeg2Fn () {
 #
 _handle_xeg3Fn () {
   _symlinkTable+=(
+    # Clear mods in _initramfsGfxModuleList from /etc/initramfs-tools/modules
+    '_setInitramfsGfxModulesFn|'
     # Clear bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|'
     # Add   boot params for to minimize flicker
@@ -201,6 +263,8 @@ _handle_xeg3Fn () {
 #
 _handle_arg1Fn () {
   _symlinkTable+=(
+    # Clear mods in _initramfsGfxModuleList from /etc/initramfs-tools/modules
+    '_setInitramfsGfxModulesFn|'
     # Add   bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
     # Add   boot params for to minimize flicker
@@ -239,6 +303,8 @@ _handle_arg1Fn () {
 #
 _handle_ir14g1Fn () {
   _symlinkTable+=(
+    # Clear mods in _initramfsGfxModuleList from /etc/initramfs-tools/modules
+    '_setInitramfsGfxModulesFn|'
     # Add   bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
     # Add   boot params to minimize flicker
@@ -271,6 +337,8 @@ _handle_ir14g1Fn () {
 #
 _handle_ir1Xg2Fn () {
   _symlinkTable+=(
+    # Clear mods in _initramfsGfxModuleList from /etc/initramfs-tools/modules
+    '_setInitramfsGfxModulesFn|'
     # Add   bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
     # Add   boot params to minimize flicker
@@ -303,6 +371,8 @@ _handle_ir1Xg2Fn () {
 #
 _handle_ir1Xg3Fn () {
   _symlinkTable+=(
+    # Add  i915 from _initramfsGfxModuleList to /etc/initramfs-tools/modules
+    '_setInitramfsGfxModulesFn|i915'
     # Add   bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
     # Add   boot params to use deep sleep
@@ -339,6 +409,8 @@ _handle_m2g4Fn () {
       systemd-backlight@backlight:nvidia_0.service >/dev/null;
   fi
   _symlinkTable+=(
+    # Clear mods in _initramfsGfxModuleList from /etc/initramfs-tools/modules
+    '_setInitramfsGfxModulesFn|'
     # Add   bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
     # Add   boot params for m2g4
@@ -376,6 +448,8 @@ _handle_m2g5Fn () {
       systemd-backlight@backlight:nvidia_0.service >/dev/null;
   fi
   _symlinkTable+=(
+    # Clear mods in _initramfsGfxModuleList from /etc/initramfs-tools/modules
+    '_setInitramfsGfxModulesFn|'
     # Add   bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
     # Add   boot params for m2g5
@@ -387,7 +461,6 @@ _handle_m2g5Fn () {
     # Add   a list of modules to load on boot such as keyboard, fan on M/XE
     '/etc/modules-load.d/kfocus.conf|/usr/lib/kfocus/conf/etc_modules-load.d_kfocus.conf'
     # Add   a sleep script which toggles xhci and pstate management
-
     '/usr/lib/systemd/system-sleep/zsleep-kfocus|/usr/lib/kfocus/conf/usr_lib_systemd_system-sleep_zsleep-kfocus'
     # Clear any X11 trackpad config (1)
     #   WAS /usr/lib/kfocus/conf/m2g5-usr_share_X11_xorg.conf.d_80-kfocus.conf
@@ -427,6 +500,8 @@ _handle_zrg1Fn () {
       systemd-backlight@backlight:nvidia_0.service >/dev/null;
   fi
   _symlinkTable+=(
+    # Clear mods in _initramfsGfxModuleList from /etc/initramfs-tools/modules
+    '_setInitramfsGfxModulesFn|'
     # Add   bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
     # Add   boot params
@@ -463,6 +538,8 @@ _handle_m2g6Fn () {
       systemd-backlight@backlight:nvidia_0.service >/dev/null;
   fi
   _symlinkTable+=(
+    # Clear mods in _initramfsGfxModuleList from /etc/initramfs-tools/modules
+    '_setInitramfsGfxModulesFn|'
     # Add   bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
     # Add   boot params
@@ -495,6 +572,8 @@ _handle_m2g6Fn () {
 #
 _handle_nxg1Fn () {
   _symlinkTable+=(
+    # Clear mods in _initramfsGfxModuleList from /etc/initramfs-tools/modules
+    '_setInitramfsGfxModulesFn|'
     # Clear bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|'
     # Add   boot param to prevent flicker
@@ -525,6 +604,8 @@ _handle_nxg1Fn () {
 #
 _handle_otherFn () {
   _symlinkTable+=(
+    # Clear mods in _initramfsGfxModuleList from /etc/initramfs-tools/modules
+    '_setInitramfsGfxModulesFn|'
     # Clear bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|'
     # Clear boot params
@@ -593,9 +674,21 @@ _setupSymlinkTableFn () {
 
   for _line in "${_symlinkTable[@]}"; do
     IFS='|' read -r -a _link_list <<<"${_line}";
-    _msg='';
-    _do_rm_link='y';
 
+    if ! [[ "${_link_list[0]}" =~ ^/ ]]; then
+      if [ "$(type -t "${_link_list[0]}")" = 'function' ]; then
+        if "${_link_list[@]}"; then
+          _cmXSucStrFn "Ran |${_link_list[*]}|";
+        else
+          _cmXWarnStrFn "SKIP: Non-zero exit running |${_link_list[*]}|";
+        fi
+      else
+        _cmXWarnStrFn "SKIP: |${_link_list[0]}| is not a function";
+      fi
+      continue;
+    fi
+
+    _do_rm_link='y';
     # Backup target if (a) directed, and ...
     if [ "${_link_list[2]:-}" = 'y' ]; then
       # ... (b) the target is a file and the source exists, and ...
@@ -807,13 +900,21 @@ _configFn () {
 }
 
 ## BEGIN declare and assign package vars {
-declare _effectsExe _kf5SettingsDir _dmiName _refreshHintWidgetExe;
+declare _configCodeDir _dmiName _initramfsGfxModuleList _initramfsModFile \
+  _kf5SettingsDir _effectsExe _refreshHintWidgetExe;
+
+_configCodeDir='/var/lib/kfocus';
 _dmiName='';
+# This list is limited to i915 at present because other things might set this
+# such as nvidia or intel graphics drivers. The 'xe' driver may become important.
+# TODO: Check to confirm per model.
+_initramfsGfxModuleList=( 'i915' );
+_initramfsModFile='/etc/initramfs-tools/modules';
+_kf5SettingsDir='/usr/share/kfocus/kf5-settings';
+
 _effectsExe="$(command -v /usr/lib/kfocus/bin/kfocus-reset-effects || true)";
 _refreshHintWidgetExe="$(command -v \
   /usr/lib/kfocus/bin/kfocus-refresh-hint-widget || true)";
-_kf5SettingsDir='/usr/share/kfocus/kf5-settings';
-_configCodeDir='/var/lib/kfocus';
 ## . END declare and assign package vars }
 
 # Table line structure is 'target|source|do_safe_backup'

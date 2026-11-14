@@ -1,3 +1,11 @@
+kfocus-hw (26.04.6~beta1) resolute; urgency=medium
+
+  * debian/posinst: Add _setInitramfsGfxModulesFn to toggle
+    /etc/initramfs-tools/modules (#6034)
+  * debian/posinst: Add directive to run functions with symlinks (#6034)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Fri, 13 Nov 2026 20:21:42 -0500
+
 kfocus-hw (26.04.5) resolute; urgency=medium
 
   * postinst: Force a reconfigure for hardware on arg1 systems if
