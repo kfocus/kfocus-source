@@ -513,13 +513,22 @@ _audit_cm2ChkInstalledPkgFn () {
 #
 ## BEGIN _audit_cm2ChkPkgFn {
 _audit_cm2ChkPkgFn () {
-  declare _assert_table _ret_int _loop_line _bit_list _chk_int _chk_str;
+  declare _assert_table _ret_int _loop_line _bit_list _arg_list \
+    _chk_int _chk_str _vers_expect_list _vers_expect_idx \
+    _vers_loop_pkg _vers_str _vers_expect_int;
   _assert_table=(
-    'kfocus-main|0'
-    'fake-package-name|1'
-    'konsole|0'
-    'konsole-|1|Partials should not be supported'
-    'linux-image|1|There should be no package only called linux-image'
+    # _pkg_list, _find_expect, _vers_expect_list, descr
+    'kfocus-main|0|0|Single package match'
+    'fake-package-name|1|1|Fake Package, no match'
+    'konsole|0|0|Single package match'
+    'konsole-|0|0|Package with a trailing "-" is ignored'
+    'kfocus-m|1|1|Partials are not be supported'
+    'linux-image|1|1|No package only called linux-image'
+    'kfocus-main kfocus-hw|0|0 0|Valid pkg list'
+    'konsole- kfocus-main kfocus-hw|0|0 0|List with remove suffix1'
+    'kfocus-main konsole- kfocus-hw|0|0 0|List with remove suffix2'
+    'kfocus-main kfocus-hw konsole-|0|0 0|List with remove suffix3'
+    'kfocus-main kfocus-hw fake-package-name|1|0 0 1|Bad package in list'
   );
   _ret_int=0;
 
@@ -527,7 +536,9 @@ _audit_cm2ChkPkgFn () {
     IFS='|' read -r -a _bit_list <<< "${_loop_line}";
     printf '  %-40.40s' "Assert for ${_bit_list[0]}" >&2;
 
-    _cm2ChkPkgFn "${_bit_list[0]}";
+    # This call allows for multiple space slimited
+    read -r -a _arg_list <<< "${_bit_list[0]}";
+    _cm2ChkPkgFn "${_arg_list[@]}";
     _chk_int="$?";
 
     if [ "${_chk_int}" = "${_bit_list[1]}" ]; then
@@ -537,17 +548,29 @@ _audit_cm2ChkPkgFn () {
       _ret_int=1;
     fi
 
-    _chk_str="$(_cm2EchoInstalledVersFn "${_bit_list[0]}")";
-    printf '  %-40.40s' "Assert ${_bit_list[0]} v${_chk_str}" >&2;
+    # This loop checks versions for packages; packages that are marked for
+    # removal are skipped. Expected return values are in bit_list[2].
+    read -r -a _vers_expect_list <<< "${_bit_list[2]}";
+    _vers_expect_idx=0;
+    for _vers_loop_pkg in "${_arg_list[@]}"; do
+      # Skip pkg marked for removal
+      if [[ "${_vers_loop_pkg}" =~ ^.*-$ ]]; then continue; fi
 
-    _chk_int=0;
-    if [ -z "${_chk_str}" ]; then _chk_int=1; fi
-    if [ "${_chk_int}" = "${_bit_list[1]}" ]; then
-      _cm2EchoFn "  ok   : pkg version find match";
-    else
-      _cm2EchoFn "  fail : ${_chk_int} != ${_bit_list[1]} |${_chk_str}|";
-      _ret_int=1;
-    fi
+      # Announce assert
+      _vers_str="$(_cm2EchoInstalledVersFn "${_vers_loop_pkg}")";
+      printf '  %-40.40s' "  Version ${_vers_loop_pkg} v${_vers_str}" >&2;
+
+      _chk_int=0;
+      if [ -z "${_vers_str}" ]; then _chk_int=1; fi
+      _vers_expect_int="${_vers_expect_list[$_vers_expect_idx]}";
+      if (( "${_chk_int}" == "${_vers_expect_int}" ));
+        then _cm2EchoFn "  ok   : version check |${_vers_expect_int}|";
+      else
+        _cm2EchoFn "  fail : version check |${_vers_expect_int}|";
+        _ret_int=1;
+      fi
+      (( _vers_expect_idx++ )) || true;
+    done
   done
   return "${_ret_int}";
 }
