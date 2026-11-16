@@ -83,7 +83,7 @@ _normalizeCompareStrFn () {
   for _line in "${_line_list[@]}"; do
     mapfile -t -d '|' _bit_list <<< "${_line}";
     _bit_list=("${_bit_list[@]:1}");
-    (IFS='|'; echo "${_bit_list[5]}|${_bit_list[*]}");
+    (IFS='|'; echo "${_bit_list[5]:-}|${_bit_list[*]}");
   done | sort -rn |sed '/^\s*$/q' | head -n-1
   echo "${_end_str}";
 }

@@ -536,7 +536,7 @@ _audit_cm2ChkPkgFn () {
     IFS='|' read -r -a _bit_list <<< "${_loop_line}";
     printf '  %-40.40s' "Assert for ${_bit_list[0]}" >&2;
 
-    # This call allows for multiple space slimited
+    # This call allows for list of packges
     read -r -a _arg_list <<< "${_bit_list[0]}";
     _cm2ChkPkgFn "${_arg_list[@]}";
     _chk_int="$?";
