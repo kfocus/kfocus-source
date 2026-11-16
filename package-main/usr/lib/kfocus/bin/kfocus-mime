@@ -120,7 +120,7 @@ _exeLookupList=(
   'minecraft-launcher|!minecraft-launcher|/usr/bin/true|base-files|Minecraft: Launch Minecraft'
   "pycharm|!pycharm|$HOME/bin/jetbrains-toolbox/bin/jetbrains-toolbox|jetbrains-toolbox|PyCharm via JetBrains Toolbox: Python IDE"
   'simplescreenrecorder|!simplescreenrecorder|/usr/bin/true|base-files|SimpleScreenRecorder: Record Your Screen with Powerful Options'
-  'virtualbox|!virtualbox||virtualbox|VirtualBox: Run Virtual Machines'
+  'virtualbox|!virtualbox|kfocus-vbox|kfocus-vbox|KFocus Curated VirtualBox: Run Virtual Machines'
   "webstorm|!webstorm|$HOME/bin/jetbrains-toolbox/bin/jetbrains-toolbox|jetbrains-toolbox|WebStorm via JetBrains Toolbox: Web IDE"
   'zoom|!zoom||zoom|Zoom: Start and Join Video and Web Conferencing'
 
@@ -665,6 +665,7 @@ _echoInstallPromptMsgFn () {
   _descr_str="${3:-Package}";
   _prompt_msg='';
 
+  # shellcheck disable=SC2086
   if _cm2ChkPkgFn ${_pkg_list_str//,/ } || [ "${METHOD:-}" = 'custom' ]; then
     echo -e "\n\"${_descr_str}\" is available ";
     echo -e "but it is not installed.";
@@ -808,21 +809,7 @@ EOT02
 }
 
 _handleVboxSetupFn () {
-  declare _msg0a _msg0b _msg0c _ans_str;
-
-  _msg0a="$(cat <<EOT0A
-${_cm2HtmBeginStr}
-${_cm2HtmPStr}The 'VirtualBox Extension Pack' does not appear <br>
-installed. This is required to access hardware<br>
-features like USB device integration.</p>
-
-${_cm2HtmPStr}To install the extension pack now, open a <br>
-terminal and run the following:</p>
-
-${_cm2HtmPStr}<code>sudo apt install virtualbox-ext-pack</code><br></p>
-${_cm2HtmEndStr}
-EOT0A
-  )";
+  declare _msg0b _msg0c _ans_str;
 
   _msg0b="$(cat <<EOT0B
 ${_cm2HtmBeginStr}
@@ -848,12 +835,6 @@ more VirtualBox features.</p>
 ${_cm2HtmEndStr}
 EOT0C
   )";
-
-  if _cm2ChkInstalledPkgFn 'virtualbox-ext-pack'; then
-    _cm2EchoFn 'VirtualBox Extension Pack installed';
-  else
-    _promptFn "${_msg0a}";
-  fi
 
   if _isUserInGroupFn 'vboxusers'; then
     _cm2EchoFn "User '${_userName}' is in 'vboxusers' group";
@@ -976,7 +957,7 @@ EOT
 
     virtualbox)
       _handleVboxSetupFn;
-      _cmd_str='virtualbox';
+      _cmd_str='kfocus-vbox';
       ;;
 
     zoom)

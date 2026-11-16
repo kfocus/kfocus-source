@@ -40,7 +40,7 @@ Package: nvidia-* libnvidia-* xserver-xorg-video-nvidia-*
 Pin: release o=LP-PPA-kfocus-team-release
 Pin-Priority: 1006
 
-## BEGIN BETA SECTION - deleted from release packages
+## BEGIN BETA SECTION
 # 1st: Core nvidia packages from kfocus-team-package-testing repo
 # Although specified, the `Pin: version` is NOT honored.
 #
@@ -48,7 +48,7 @@ Package: nvidia-* libnvidia-* xserver-xorg-video-nvidia-*
 # Pin: version 595.71.05-0ubuntu0.26.04.1+kfocus1
 Pin: release o=LP-PPA-kfocus-team-package-testing
 Pin-Priority: 1006
-## . END BETA SECTION - deleted from release packages
+## . END BETA SECTION
 
 # 2nd: Core nvidia packages version 595.71.* from highest-ranked repo
 # Although specified, the `Pin: release` is NOT honored.
@@ -79,7 +79,7 @@ Package: nvidia-settings nvidia-modprobe libxnvctrl0 libxnvctrl-dev
 Pin: release o=LP-PPA-kfocus-team-release
 Pin-Priority: 1006
 
-## BEGIN BETA SECTION - deleted from release packages
+## BEGIN BETA SECTION
 # 1st: Utility nvidia packages from kfocus-team-package-testing repo
 # Although specified, the `Pin: version` is NOT honored.
 #
@@ -87,7 +87,7 @@ Package: nvidia-settings nvidia-modprobe libxnvctrl0 libxnvctrl-dev
 # Pin: version 595.71.05-0ubuntu0.26.04.1+kfocus1
 Pin: release o=LP-PPA-kfocus-team-package-testing
 Pin-Priority: 1006
-## . END BETA SECTION - deleted from release packages
+## . END BETA SECTION
 
 # 2nd: Utility nvidia packages version 595.71.* from highest-ranked repo
 # Although specified, the `Pin: release` is NOT honored.
