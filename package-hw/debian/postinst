@@ -572,8 +572,8 @@ _handle_m2g6Fn () {
 #
 _handle_nxg1Fn () {
   _symlinkTable+=(
-    # Clear mods in _initramfsGfxModuleList from /etc/initramfs-tools/modules
-    '_setInitramfsGfxModulesFn|'
+    # Add  i915 from _initramfsGfxModuleList to /etc/initramfs-tools/modules
+    '_setInitramfsGfxModulesFn|i915'
     # Clear bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|'
     # Add   boot param to prevent flicker
