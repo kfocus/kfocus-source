@@ -177,12 +177,13 @@ _resetShortcutsFn () {
 
     # Reset powerdevilrc settings
     # On most systems, balanced is preferred for powerprofile on AC, but
-    # there are exceptions.
+    # there are exceptions (#6034).
     #
     # Step 1: Reset default to 'balanced' for all models
     'pdev|AC!Performance|PowerProfile|balanced'
 
     # Step 2: Adjust other values for outliers
+    # ir14g3 has low performance on balanced, bump to 'performance' on AC
     'pdev|AC!Performance|PowerProfile|performance|ir14g3'
   );
 

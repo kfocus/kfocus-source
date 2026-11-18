@@ -100,7 +100,13 @@ _setPowerProfileFn () {
 
   _msg='Set preferred mode for ';
   if [ "${_is_on_ac}" = 'y' ]; then
-    _target_key='balanced';
+    # Exception for Ir14g3 and similar to match powerdevilrc (#6034)
+    # ir14g3 has low performance on balanced, bump to 'performance' on AC
+    if [ "$(_cm2EchoModelStrFn 'code')" = 'ir14g3' ]; then
+      _target_key='performance';
+    else
+      _target_key='balanced';
+    fi
     _msg+='AC power';
   else
     _target_key='power-saver';
