@@ -946,14 +946,14 @@ _cm2EchoGraphicalLoginInfoFn() {
 }
 
 _cm2SudoEFn() {
-  declare env_list arg_list cmd_list;
+  declare _env_list _arg_list _cmd_list;
 
-  arg_list=( "$@" );
-  [ "${#arg_list[@]}" = '0' ] && return 1;
+  _arg_list=( "$@" );
+  [ "${#_arg_list[@]}" = '0' ] && return 1;
 
-  readarray -t -d '' env_list < <(env -0);
-  cmd_list=( "sudo" "env" "${env_list[@]}" "${arg_list[@]}" );
-  "${cmd_list[@]}";
+  readarray -t -d '' _env_list < <(env -0);
+  _cmd_list=( 'sudo' 'env' "${_env_list[@]}" "${_arg_list[@]}" );
+  echo "${_cmd_list[@]}";
 }
 
 # Regression tests only
@@ -1054,6 +1054,6 @@ export -f _cm2AskExitFn _cm2AssignExeVarsFn \
   _cm2ReadPromptYnFn _cm2RunLongCmdFn _cm2SetMsgFn _cm2StripTagsFn        \
   _cm2SucFn _cm2SucStrFn _cm2TestVersFn _cm2TrapErrorFn _cm2TrapExitFn    \
   _cm2TrapInterruptFn _cm2WarnFn _cm2WarnStrFn _cm2SetIsTtyFn             \
-  _cm2SetCliTypeFn _cm2SetLogLevelFn _cm2SetLogTagFn _cm2LogFn            \
-  _cm2ReinstallPkgsFn _cm2SmartInstallPkgsFn;
+  _cm2SudoEFn _cm2SetCliTypeFn _cm2SetLogLevelFn _cm2SetLogTagFn          \
+  _cm2LogFn _cm2ReinstallPkgsFn _cm2SmartInstallPkgsFn;
 ## . END Execute when sourced }
