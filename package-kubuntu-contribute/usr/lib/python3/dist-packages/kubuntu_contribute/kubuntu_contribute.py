@@ -11,6 +11,7 @@ or otherwise contribute to Kubuntu.
 import sys
 import signal
 import argparse
+import functools
 from enum import Enum
 from typing import NoReturn
 from types import FrameType
@@ -44,8 +45,8 @@ class ThemedColor(Enum):
     """
 
     BLUE = 1
-    #GREEN = 2
-    #RED = 3
+    # GREEN = 2
+    # RED = 3
 
 
 def get_themed_color(color: ThemedColor) -> str:
@@ -54,26 +55,42 @@ def get_themed_color(color: ThemedColor) -> str:
     the system's color scheme somewhat.
     """
 
-    light_theme: bool = QApplication.palette().color(
-        QPalette.ColorGroup.Normal, QPalette.ColorRole.Text
-    ).value() < 128
+    light_theme: bool = (
+        QApplication.palette()
+        .color(QPalette.ColorGroup.Normal, QPalette.ColorRole.Text)
+        .value()
+        < 128
+    )
 
     if light_theme:
         match color:
             case ThemedColor.BLUE:
                 return "#ecf6fc"
-            #case ThemedColor.GREEN:
+            # case ThemedColor.GREEN:
             #    return "#ddfbe8"
-            #case ThemedColor.RED:
+            # case ThemedColor.RED:
             #    return "#faeced"
     else:
         match color:
             case ThemedColor.BLUE:
                 return "#122b38"
-            #case ThemedColor.GREEN:
+            # case ThemedColor.GREEN:
             #    return "#0d2c1b"
-            #case ThemedColor.RED:
+            # case ThemedColor.RED:
             #    return "#3c161a"
+
+
+def open_url(
+    url_str: str, feedback_label: QLabel, feedback_hide_timer: QTimer
+) -> None:
+    """
+    Opens a URL in a web browser and displays a feedback label momentarily. The
+    provided timer must be configured to hide the label when it times out.
+    """
+
+    QDesktopServices.openUrl(QUrl(url_str))
+    feedback_label.setVisible(True)
+    feedback_hide_timer.start()
 
 
 # pylint: disable=too-many-instance-attributes
@@ -101,9 +118,7 @@ class ContributeDialog(QDialog):
 
         self.content_grid: QGridLayout = QGridLayout()
         self.kubuntu_logo: QLabel = QLabel()
-        self.kubuntu_logo.setPixmap(
-            QIcon.fromTheme("vcs-added").pixmap(96, 96)
-        )
+        self.kubuntu_logo.setPixmap(QIcon.fromTheme("vcs-added").pixmap(96, 96))
         self.kubuntu_logo.setContentsMargins(16, 0, 16, 16)
         self.kubuntu_logo.setAlignment(
             Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop
@@ -112,7 +127,8 @@ class ContributeDialog(QDialog):
 
         self.desc_label: QLabel = QLabel("""\
 <p>Kubuntu exists today thanks to the support of numerous donors and
-contributors around the world. You can support us in several ways:</p>""")
+contributors around the world. Click a button below to open a webpage in your
+browser.</p>""")
         self.desc_label.setWordWrap(True)
         self.desc_label.setContentsMargins(8, 0, 0, 16)
         self.content_grid.addWidget(self.desc_label, 0, 1, 1, 1)
@@ -182,14 +198,29 @@ more!</p>""")
         self.core_layout.addLayout(self.content_grid)
         self.core_layout.addStretch()
 
-        self.bottom_button_layout: QHBoxLayout = QHBoxLayout()
-        self.bottom_button_layout.addStretch()
+        self.bottom_layout: QHBoxLayout = QHBoxLayout()
+        self.feedback_label: QLabel = QLabel(
+            '<p style="color:#22aa22">Please check your browser.</p>'
+        )
+        self.feedback_label.setContentsMargins(14, 0, 0, 0)
+        self.bottom_layout.addWidget(self.feedback_label)
+        self.feedback_label.setVisible(False)
+
+        self.feedback_hide_timer: QTimer = QTimer()
+        self.feedback_hide_timer.setInterval(3000)
+        self.feedback_hide_timer.setSingleShot(True)
+        self.feedback_hide_timer.timeout.connect(
+            functools.partial(self.feedback_label.setVisible, False)
+        )
+
+        self.bottom_layout.addStretch()
+
         self.close_button: QPushButton = QPushButton(
             QIcon.fromTheme("dialog-close"), "Close"
         )
         self.close_button.clicked.connect(self.accept)
-        self.bottom_button_layout.addWidget(self.close_button)
-        self.core_layout.addLayout(self.bottom_button_layout)
+        self.bottom_layout.addWidget(self.close_button)
+        self.core_layout.addLayout(self.bottom_layout)
 
         self.setLayout(self.core_layout)
 
@@ -198,8 +229,10 @@ more!</p>""")
         Opens the donation portal.
         """
 
-        QDesktopServices.openUrl(
-            QUrl("https://kubuntu.org/app/contribute/donate/")
+        open_url(
+            "https://kubuntu.org/app/contribute/donate",
+            self.feedback_label,
+            self.feedback_hide_timer,
         )
 
     def buy_clicked(self) -> None:
@@ -207,8 +240,10 @@ more!</p>""")
         Opens the buy page.
         """
 
-        QDesktopServices.openUrl(
-            QUrl("https://kubuntu.org/app/contribute/buy")
+        open_url(
+            "https://kubuntu.org/app/contribute/buy",
+            self.feedback_label,
+            self.feedback_hide_timer,
         )
 
     def volunteer_clicked(self) -> None:
@@ -216,8 +251,10 @@ more!</p>""")
         Opens the contribution webpage.
         """
 
-        QDesktopServices.openUrl(
-            QUrl("https://kubuntu.org/app/contribute/contribute")
+        open_url(
+            "https://kubuntu.org/app/contribute/contribute",
+            self.feedback_label,
+            self.feedback_hide_timer,
         )
 
 
@@ -270,27 +307,38 @@ even better for users around the world.</p>""")
         self.core_layout.addLayout(self.content_layout)
         self.core_layout.addStretch()
 
-        self.bottom_button_layout: QHBoxLayout = QHBoxLayout()
-        self.bottom_button_layout.addStretch()
+        self.bottom_layout: QHBoxLayout = QHBoxLayout()
+        self.feedback_label: QLabel = QLabel(
+            '<p style="color:#22aa22">Please check your browser.</p>'
+        )
+        self.feedback_label.setContentsMargins(14, 0, 0, 0)
+        self.bottom_layout.addWidget(self.feedback_label)
+        self.feedback_label.setVisible(False)
+
+        self.feedback_hide_timer: QTimer = QTimer()
+        self.feedback_hide_timer.setInterval(3000)
+        self.feedback_hide_timer.setSingleShot(True)
+        self.feedback_hide_timer.timeout.connect(
+            functools.partial(self.feedback_label.setVisible, False)
+        )
+
+        self.bottom_layout.addStretch()
+
         self.donate_button: QPushButton = QPushButton(
-            QIcon.fromTheme("donate-symbolic"), "Donate Now"
+            QIcon.fromTheme("donate-symbolic"), "Open Donate Webpage"
         )
         self.donate_button.setStyleSheet(
             f"background-color: {get_themed_color(ThemedColor.BLUE)}"
         )
         self.donate_button.clicked.connect(self.donate_clicked)
-        self.bottom_button_layout.addWidget(self.donate_button)
+        self.bottom_layout.addWidget(self.donate_button)
 
         self.close_button: QPushButton = QPushButton(
             QIcon.fromTheme("dialog-close"), "Close"
         )
         self.close_button.clicked.connect(self.accept)
-        self.bottom_button_layout.addWidget(self.close_button)
-        self.core_layout.addLayout(self.bottom_button_layout)
-
-        self.accept_timer: QTimer = QTimer()
-        self.accept_timer.setInterval(500)
-        self.accept_timer.timeout.connect(self.accept)
+        self.bottom_layout.addWidget(self.close_button)
+        self.core_layout.addLayout(self.bottom_layout)
 
         self.setLayout(self.core_layout)
 
@@ -299,8 +347,11 @@ even better for users around the world.</p>""")
         Opens the donation portal and exits.
         """
 
-        QDesktopServices.openUrl(QUrl("https://kubuntu.org/app/donate/donate"))
-        self.accept_timer.start()
+        open_url(
+            "https://kubuntu.org/app/donate/donate",
+            self.feedback_label,
+            self.feedback_hide_timer,
+        )
 
 
 # pylint: disable=unused-argument
@@ -361,6 +412,7 @@ def main() -> NoReturn:
     keepalive_timer.start()
     app_dialog.show()
     sys.exit(app.exec())
+
 
 if __name__ == "__main__":
     main()
