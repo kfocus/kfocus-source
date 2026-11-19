@@ -117,7 +117,7 @@ _echoFormatFn   () { printf '  %-4.4s : %-14.14s %-2.2s %-14.14s ' "$@"; }
 #   12   _cm2RunPlasmaScriptFn      : Run a plasmashell script
 #   13   _cm2EchoGraphicalLoginInfoFn : Echo username and UID for graphical
 #                                       logins
-#   14   _cm2SudoEFn                : Mimic 'sudo -E' by injecting a full
+#   14   _cm2SudoEnvFn              : Mimic 'sudo -E' by injecting a full
 #                                     environment into the command line
 
 #####
@@ -514,7 +514,7 @@ _audit_cm2ChkInstalledPkgFn () {
 ## BEGIN _audit_cm2ChkPkgFn {
 _audit_cm2ChkPkgFn () {
   declare _assert_table _ret_int _loop_line _bit_list _arg_list \
-    _chk_int _chk_str _vers_expect_list _vers_expect_idx \
+    _chk_int _vers_expect_list _vers_expect_idx \
     _vers_loop_pkg _vers_str _vers_expect_int;
   _assert_table=(
     # _pkg_list, _find_expect, _vers_expect_list, descr
@@ -536,7 +536,7 @@ _audit_cm2ChkPkgFn () {
     IFS='|' read -r -a _bit_list <<< "${_loop_line}";
     printf '  %-40.40s' "Assert for ${_bit_list[0]}" >&2;
 
-    # This call allows for list of packges
+    # This call allows for list of packages
     read -r -a _arg_list <<< "${_bit_list[0]}";
     _cm2ChkPkgFn "${_arg_list[@]}";
     _chk_int="$?";

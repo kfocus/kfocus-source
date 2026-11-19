@@ -945,7 +945,7 @@ _cm2EchoGraphicalLoginInfoFn() {
   printf '%s\n' "${_info_list[${#_info_list[@]}-1]}";
 }
 
-_cm2SudoEFn() {
+_cm2SudoEnvFn () {
   declare _env_list _arg_list _cmd_list;
 
   _arg_list=( "$@" );
@@ -953,7 +953,7 @@ _cm2SudoEFn() {
 
   readarray -t -d '' _env_list < <(env -0);
   _cmd_list=( 'sudo' 'env' "${_env_list[@]}" "${_arg_list[@]}" );
-  echo "${_cmd_list[@]}";
+  "${_cmd_list[@]}";
 }
 
 # Regression tests only
@@ -1054,6 +1054,6 @@ export -f _cm2AskExitFn _cm2AssignExeVarsFn \
   _cm2ReadPromptYnFn _cm2RunLongCmdFn _cm2SetMsgFn _cm2StripTagsFn        \
   _cm2SucFn _cm2SucStrFn _cm2TestVersFn _cm2TrapErrorFn _cm2TrapExitFn    \
   _cm2TrapInterruptFn _cm2WarnFn _cm2WarnStrFn _cm2SetIsTtyFn             \
-  _cm2SudoEFn _cm2SetCliTypeFn _cm2SetLogLevelFn _cm2SetLogTagFn          \
+  _cm2SudoEnvFn _cm2SetCliTypeFn _cm2SetLogLevelFn _cm2SetLogTagFn        \
   _cm2LogFn _cm2ReinstallPkgsFn _cm2SmartInstallPkgsFn;
 ## . END Execute when sourced }
