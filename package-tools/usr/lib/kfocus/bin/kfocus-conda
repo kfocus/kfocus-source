@@ -464,13 +464,31 @@ _installEnvFn () {
     _cm2EchoFn "Installing TensorFlow for ${_nvSeriesStr}-series GPU";
     conda create -n tensorflow pip python=3.12 || _exitFn;
     conda activate tensorflow                  || _exitFn;
-    # Prefer now not to specify a version, but 2.12.0 does work with GPU
-    # Latest as of 2025-05-30 is 2.19.0, does not.
-    # 2.12.0 is not available with Python 3.12.
-    # pip install -Iv tensorflow==2.12.0         || _exitFn;
+
     pip install -Iv 'tensorflow[and-cuda]'     || _exitFn;
-    # Deprecated ai-benchmark
-    # pip install ai-benchmark                 || _exitFn;
+
+    # TF needs help with ibrary paths as of 2026-1-20
+    [ -n "${CONDA_PREFIX}" ]                   || _exitFn;
+    _extra_lib_str="$(
+      python -c 'import os, glob, site; print(":".join(glob.glob(os.path.join(site.getsitepackages()[0],"nvidia/*/lib"))))'
+    )";
+    _activate_dir="${CONDA_PREFIX}/etc/conda/activate.d";
+    _env_vars_file="${_activate_dir}/env_vars.sh";
+    mkdir -p  "${_activate_dir}"               || _exitFn;
+    echo "export LD_LIBRARY_PATH=${_extra_lib_str}:$LD_LIBRARY_PATH" \
+      > "${_env_vars_file}"                    || _exitFn;
+
+    _msg="$(cat << 'EOF'
+TensorFlow warns about compiling the kernels on the fly from PTX instructions.
+Instead of 30 minutes, however, this usually takes just a few minutes.
+We increase the cache size to 4.0 GB so this only need be done once.
+EOF
+    )";
+    _cm2EchoFn "${_msg}";
+    cat << 'EOF' >> "${_env_vars_file}"
+export CUDA_CACHE_MAXSIZE=4294967296
+export CUDA_CACHE_PATH=$HOME/.nv/ComputeCache
+EOF
     conda activate base                        || _exitFn;
     set -u;
     _cm2SucFn;
