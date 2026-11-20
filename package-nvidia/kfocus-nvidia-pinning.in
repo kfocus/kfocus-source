@@ -36,7 +36,7 @@ Pin-Priority: 1006
 # Although specified, the `Pin: version` is NOT honored.
 #
 Package: nvidia-* libnvidia-* xserver-xorg-video-nvidia-*
-# Pin: version 595.71.05-0ubuntu0.26.04.1+kfocus1
+# Pin: version 595.99.02-0ubuntu0.26.04.1+kfocus1
 Pin: release o=LP-PPA-kfocus-team-release
 Pin-Priority: 1006
 
@@ -45,17 +45,17 @@ Pin-Priority: 1006
 # Although specified, the `Pin: version` is NOT honored.
 #
 Package: nvidia-* libnvidia-* xserver-xorg-video-nvidia-*
-# Pin: version 595.71.05-0ubuntu0.26.04.1+kfocus1
+# Pin: version 595.99.02-0ubuntu0.26.04.1+kfocus1
 Pin: release o=LP-PPA-kfocus-team-package-testing
 Pin-Priority: 1006
 ## . END BETA SECTION
 
-# 2nd: Core nvidia packages version 595.71.* from highest-ranked repo
+# 2nd: Core nvidia packages version 595.99.* from highest-ranked repo
 # Although specified, the `Pin: release` is NOT honored.
 #
 Package: nvidia-* libnvidia-* xserver-xorg-video-nvidia-*
 # Pin: release o=LP-PPA-kfocus-team-release
-Pin: version 595.71.*
+Pin: version 595.99.*
 Pin-Priority: 1005
 
 # 3rd: Core nvidia packages version 595.* from highest-ranked repo
@@ -75,7 +75,7 @@ Pin-Priority: 1004
 # Although specified, the `Pin: version` is NOT honored.
 #
 Package: nvidia-settings nvidia-modprobe libxnvctrl0 libxnvctrl-dev
-# Pin: version 595.71.05-0ubuntu0.26.04.1+kfocus1
+# Pin: version 595.99.02-0ubuntu0.26.04.1+kfocus1
 Pin: release o=LP-PPA-kfocus-team-release
 Pin-Priority: 1006
 
@@ -84,33 +84,33 @@ Pin-Priority: 1006
 # Although specified, the `Pin: version` is NOT honored.
 #
 Package: nvidia-settings nvidia-modprobe libxnvctrl0 libxnvctrl-dev
-# Pin: version 595.71.05-0ubuntu0.26.04.1+kfocus1
+# Pin: version 595.99.02-0ubuntu0.26.04.1+kfocus1
 Pin: release o=LP-PPA-kfocus-team-package-testing
 Pin-Priority: 1006
 ## . END BETA SECTION
 
-# 2nd: Utility nvidia packages version 595.71.* from highest-ranked repo
+# 2nd: Utility nvidia packages version 595.99.* from highest-ranked repo
 # Although specified, the `Pin: release` is NOT honored.
 #
 Package: nvidia-settings nvidia-modprobe libxnvctrl0 libxnvctrl-dev
 # Pin: release o=LP-PPA-kfocus-team-release
-Pin: version 595.71.*
+Pin: version 595.99.*
 Pin-Priority: 1006
 
-# 3rd: Utility nvidia packages version 595.71.* from highest-ranked repo
+# 3rd: Utility nvidia packages version 595.99.* from highest-ranked repo
 # Although specified, the `Pin: release` is NOT honored.
 #
 Package: nvidia-settings nvidia-modprobe libxnvctrl0 libxnvctrl-dev
 # Pin: release o=Ubuntu
-Pin: version 595.71.*
+Pin: version 595.99.*
 Pin-Priority: 1005
 
-# 4th: Utility nvidia packages, version 595.71.*
+# 4th: Utility nvidia packages, version 595.99.*
 # Although specified, the `Pin: release` is NOT honored.
 #
 Package: nvidia-settings nvidia-modprobe libxnvctrl0 libxnvctrl-dev
 # Pin: release o=NVIDIA
-Pin: version 595.71.*
+Pin: version 595.99.*
 Pin-Priority: 1003
 
 # 5th Utility nvidia packages, version 595.* from highest-ranked repo
@@ -126,14 +126,14 @@ Pin-Priority: 1002
 # blacklisted in package-apt-source, kfocus-package-pin. They are there
 # because we want to prevent installation of these OOD Debian packages
 # under all circumstances, even if the kfocus-nvidia* packages are not
-# installed. 
+# installed.
 #
 # The cuda-drivers package is no longer installable or advisable with the
 # 595 drivers. Instead, it is redundant with nvidia-driver-595-open and
-# it is disallowed.
+# it is disallowed from ALL sources including Ubuntu.
 #
 Package: cuda-drivers*
-Pin: release o=NVIDIA
+Pin: release o=*
 Pin-Priority: -1
 
 # Ubuntu provides cuda-toolkit, but it is not as complete as that from NVIDIA,
@@ -205,129 +205,130 @@ Pin-Priority: 1006
 # ---
 
 # BEGIN TensorRT Pinning {
+# These use POSIX Extended Regex patterns
 Package: libnvinfer-bin
 # Pin: release o=NVIDIA
-Pin: version *cuda13.2
+Pin: version /cuda13\.[0-9.-]+$/
 Pin-Priority: 1006
 
 Package: libnvinfer-dev
 # Pin: release o=NVIDIA
-Pin: version *cuda13.2
+Pin: version /cuda13\.[0-9.-]+$/
 Pin-Priority: 1006
 
 Package: libnvinfer-dispatch-dev
 # Pin: release o=NVIDIA
-Pin: version *cuda13.2
+Pin: version /cuda13\.[0-9.-]+$/
 Pin-Priority: 1006
 
 Package: libnvinfer-dispatch11
 # Pin: release o=NVIDIA
-Pin: version *cuda13.2
+Pin: version /cuda13\.[0-9.-]+$/
 Pin-Priority: 1006
 
 Package: libnvinfer-headers-dev
 # Pin: release o=NVIDIA
-Pin: version *cuda13.2
+Pin: version /cuda13\.[0-9.-]+$/
 Pin-Priority: 1006
 
 Package: libnvinfer-headers-plugin-dev
 # Pin: release o=NVIDIA
-Pin: version *cuda13.2
+Pin: version /cuda13\.[0-9.-]+$/
 Pin-Priority: 1006
 
 Package: libnvinfer-headers-python-plugin-dev
 # Pin: release o=NVIDIA
-Pin: version *cuda13.2
+Pin: version /cuda13\.[0-9.-]+$/
 Pin-Priority: 1006
 
 Package: libnvinfer-lean-dev
 # Pin: release o=NVIDIA
-Pin: version *cuda13.2
+Pin: version /cuda13\.[0-9.-]+$/
 Pin-Priority: 1006
 
 Package: libnvinfer-lean11
 # Pin: release o=NVIDIA
-Pin: version *cuda13.2
+Pin: version /cuda13\.[0-9.-]+$/
 Pin-Priority: 1006
 
 Package: libnvinfer-plugin-dev
 # Pin: release o=NVIDIA
-Pin: version *cuda13.2
+Pin: version /cuda13\.[0-9.-]+$/
 Pin-Priority: 1006
 
 Package: libnvinfer-plugin11
 # Pin: release o=NVIDIA
-Pin: version *cuda13.2
+Pin: version /cuda13\.[0-9.-]+$/
 Pin-Priority: 1006
 
 Package: libnvinfer-safe-headers-dev
 # Pin: release o=NVIDIA
-Pin: version *cuda13.2
+Pin: version /cuda13\.[0-9.-]+$/
 Pin-Priority: 1006
 
 Package: libnvinfer-vc-plugin-dev
 # Pin: release o=NVIDIA
-Pin: version *cuda13.2
+Pin: version /cuda13\.[0-9.-]+$/
 Pin-Priority: 1006
 
 Package: libnvinfer-vc-plugin11
 # Pin: release o=NVIDIA
-Pin: version *cuda13.2
+Pin: version /cuda13\.[0-9.-]+$/
 Pin-Priority: 1006
 
 Package: libnvinfer-win-builder-resource11
 # Pin: release o=NVIDIA
-Pin: version *cuda13.2
+Pin: version /cuda13\.[0-9.-]+$/
 Pin-Priority: 1006
 
 Package: libnvinfer11
 # Pin: release o=NVIDIA
-Pin: version *cuda13.2
+Pin: version /cuda13\.[0-9.-]+$/
 Pin-Priority: 1006
 
 Package: libnvonnxparsers-dev
 # Pin: release o=NVIDIA
-Pin: version *cuda13.2
+Pin: version /cuda13\.[0-9.-]+$/
 Pin-Priority: 1006
 
 Package: libnvonnxparsers11
 # Pin: release o=NVIDIA
-Pin: version *cuda13.2
+Pin: version /cuda13\.[0-9.-]+$/
 Pin-Priority: 1006
 
 Package: python3-libnvinfer-dev
 # Pin: release o=NVIDIA
-Pin: version *cuda13.2
+Pin: version /cuda13\.[0-9.-]+$/
 Pin-Priority: 1006
 
 Package: python3-libnvinfer-dispatch
 # Pin: release o=NVIDIA
-Pin: version *cuda13.2
+Pin: version /cuda13\.[0-9.-]+$/
 Pin-Priority: 1006
 
 Package: python3-libnvinfer-lean
 # Pin: release o=NVIDIA
-Pin: version *cuda13.2
+Pin: version /cuda13\.[0-9.-]+$/
 Pin-Priority: 1006
 
 Package: python3-libnvinfer
 # Pin: release o=NVIDIA
-Pin: version *cuda13.2
+Pin: version /cuda13\.[0-9.-]+$/
 Pin-Priority: 1006
 
 Package: tensorrt-dev
 # Pin: release o=NVIDIA
-Pin: version *cuda13.2
+Pin: version /cuda13\.[0-9.-]+$/
 Pin-Priority: 1006
 
 Package: tensorrt-libs
 # Pin: release o=NVIDIA
-Pin: version *cuda13.2
+Pin: version /cuda13\.[0-9.-]+$/
 Pin-Priority: 1006
 
 Package: tensorrt
 # Pin: release o=NVIDIA
-Pin: version *cuda13.2
+Pin: version /cuda13\.[0-9.-]+$/
 Pin-Priority: 1006
 # . END TensorRT Pinning }
 
