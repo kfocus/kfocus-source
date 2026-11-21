@@ -467,7 +467,7 @@ _installEnvFn () {
 
     pip install -Iv 'tensorflow[and-cuda]'     || _exitFn;
 
-    # TF needs help with ibrary paths as of 2026-1-20
+    # TF needs help with Library paths as of 2026-11-20, version 2.21.0
     [ -n "${CONDA_PREFIX}" ]                   || _exitFn;
     _extra_lib_str="$(
       python -c 'import os, glob, site; print(":".join(glob.glob(os.path.join(site.getsitepackages()[0],"nvidia/*/lib"))))'

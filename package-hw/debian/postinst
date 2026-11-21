@@ -338,7 +338,7 @@ _handle_ir14g1Fn () {
 _handle_ir1Xg2Fn () {
   _symlinkTable+=(
     # Clear mods in _initramfsGfxModuleList from /etc/initramfs-tools/modules
-    '_setInitramfsGfxModulesFn|'
+    '_setInitramfsGfxModulesFn|i915'
     # Add   bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
     # Add   boot params to minimize flicker
