@@ -8,8 +8,6 @@
 # (1) Any X11 configs are unsupported. These are removed over concern with
 #    conflicts with XWayland (#6563)
 #
-## TODO: Move to tested userspace after expect results verified
-#
 set -e;
 
 ## BEGIN Declare common.2.source symbols {
@@ -87,6 +85,7 @@ _setInitramfsGfxModulesFn () {
   declare _arg_mod_list _mod_key _toggle_key;
   _arg_mod_list=("$@");
   for _mod_key in "${_initramfsGfxModuleList[@]}"; do
+    # shellcheck disable=SC2076
     if [[ " ${_arg_mod_list[*]} " =~ " ${_mod_key} " ]]; then
       _toggle_key='on';
     else
@@ -131,7 +130,7 @@ _supplementXdgConfigsFn () {
 _handle_defaultFn () {
   # target |  source | do_file_backup
   _symlinkTable+=(
-    # Clear mods in _initramfsGfxModuleList from /etc/initramfs-tools/modules
+    # Disable mods from _initramfsGfxModuleList in /etc/initramfs-tools/modules
     '_setInitramfsGfxModulesFn|'
     # Clear bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|'
@@ -164,7 +163,7 @@ _handle_defaultFn () {
 #
 _handle_genericFn () {
   _symlinkTable+=(
-    # Clear mods in _initramfsGfxModuleList from /etc/initramfs-tools/modules
+    # Disable mods from _initramfsGfxModuleList in /etc/initramfs-tools/modules
     '_setInitramfsGfxModulesFn|'
     # Clear bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|'
@@ -197,7 +196,7 @@ _handle_genericFn () {
 #
 _handle_xeg2Fn () {
   _symlinkTable+=(
-    # Clear mods in _initramfsGfxModuleList from /etc/initramfs-tools/modules
+    # Disable mods from _initramfsGfxModuleList in /etc/initramfs-tools/modules
     '_setInitramfsGfxModulesFn|'
     # Clear bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|'
@@ -230,7 +229,7 @@ _handle_xeg2Fn () {
 #
 _handle_xeg3Fn () {
   _symlinkTable+=(
-    # Clear mods in _initramfsGfxModuleList from /etc/initramfs-tools/modules
+    # Disable mods from _initramfsGfxModuleList in /etc/initramfs-tools/modules
     '_setInitramfsGfxModulesFn|'
     # Clear bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|'
@@ -263,7 +262,7 @@ _handle_xeg3Fn () {
 #
 _handle_arg1Fn () {
   _symlinkTable+=(
-    # Clear mods in _initramfsGfxModuleList from /etc/initramfs-tools/modules
+    # Disable mods from _initramfsGfxModuleList in /etc/initramfs-tools/modules
     '_setInitramfsGfxModulesFn|'
     # Add   bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
@@ -303,8 +302,8 @@ _handle_arg1Fn () {
 #
 _handle_ir14g1Fn () {
   _symlinkTable+=(
-    # Clear mods in _initramfsGfxModuleList from /etc/initramfs-tools/modules
-    '_setInitramfsGfxModulesFn|'
+    # Enable i915  from _initramfsGfxModuleList in /etc/initramfs-tools/modules
+    '_setInitramfsGfxModulesFn|i915'
     # Add   bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
     # Add   boot params to minimize flicker
@@ -337,7 +336,7 @@ _handle_ir14g1Fn () {
 #
 _handle_ir1Xg2Fn () {
   _symlinkTable+=(
-    # Clear mods in _initramfsGfxModuleList from /etc/initramfs-tools/modules
+    # Enable i915  from _initramfsGfxModuleList in /etc/initramfs-tools/modules
     '_setInitramfsGfxModulesFn|i915'
     # Add   bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
@@ -371,7 +370,7 @@ _handle_ir1Xg2Fn () {
 #
 _handle_ir1Xg3Fn () {
   _symlinkTable+=(
-    # Add  i915 from _initramfsGfxModuleList to /etc/initramfs-tools/modules
+    # Enable i915  from _initramfsGfxModuleList in /etc/initramfs-tools/modules
     '_setInitramfsGfxModulesFn|i915'
     # Add   bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
@@ -409,7 +408,7 @@ _handle_m2g4Fn () {
       systemd-backlight@backlight:nvidia_0.service >/dev/null;
   fi
   _symlinkTable+=(
-    # Clear mods in _initramfsGfxModuleList from /etc/initramfs-tools/modules
+    # Disable mods from _initramfsGfxModuleList in /etc/initramfs-tools/modules
     '_setInitramfsGfxModulesFn|'
     # Add   bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
@@ -448,7 +447,7 @@ _handle_m2g5Fn () {
       systemd-backlight@backlight:nvidia_0.service >/dev/null;
   fi
   _symlinkTable+=(
-    # Clear mods in _initramfsGfxModuleList from /etc/initramfs-tools/modules
+    # Disable mods from _initramfsGfxModuleList in /etc/initramfs-tools/modules
     '_setInitramfsGfxModulesFn|'
     # Add   bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
@@ -500,7 +499,7 @@ _handle_zrg1Fn () {
       systemd-backlight@backlight:nvidia_0.service >/dev/null;
   fi
   _symlinkTable+=(
-    # Clear mods in _initramfsGfxModuleList from /etc/initramfs-tools/modules
+    # Disable mods from _initramfsGfxModuleList in /etc/initramfs-tools/modules
     '_setInitramfsGfxModulesFn|'
     # Add   bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
@@ -538,7 +537,7 @@ _handle_m2g6Fn () {
       systemd-backlight@backlight:nvidia_0.service >/dev/null;
   fi
   _symlinkTable+=(
-    # Clear mods in _initramfsGfxModuleList from /etc/initramfs-tools/modules
+    # Disable mods from _initramfsGfxModuleList in /etc/initramfs-tools/modules
     '_setInitramfsGfxModulesFn|'
     # Add   bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|/usr/lib/kfocus/conf/etc_default_console-setup|y'
@@ -572,7 +571,7 @@ _handle_m2g6Fn () {
 #
 _handle_nxg1Fn () {
   _symlinkTable+=(
-    # Add  i915 from _initramfsGfxModuleList to /etc/initramfs-tools/modules
+    # Enable i915  from _initramfsGfxModuleList in /etc/initramfs-tools/modules
     '_setInitramfsGfxModulesFn|i915'
     # Clear bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|'
@@ -604,7 +603,7 @@ _handle_nxg1Fn () {
 #
 _handle_otherFn () {
   _symlinkTable+=(
-    # Clear mods in _initramfsGfxModuleList from /etc/initramfs-tools/modules
+    # Disable mods from _initramfsGfxModuleList in /etc/initramfs-tools/modules
     '_setInitramfsGfxModulesFn|'
     # Clear bigger tty fonts for the HiDPI screen
     '/etc/default/console-setup|'
@@ -802,6 +801,7 @@ _setupModelHintsFn () {
     fi
   done
 
+  # shellcheck disable=SC2015
   [ -x "${_refreshHintWidgetExe}" ] && "${_refreshHintWidgetExe}" || true;
 
   _cmXSucFn;
@@ -846,7 +846,7 @@ _configFn () {
   _model_code='';
 
   if [ -r "${_lib_file}" ]; then
-    # shellcheck disable=1091,1090 source=/usr/lib/kfocus/lib/common.2.source
+    # shellcheck disable=SC1091,SC1090 source=/usr/lib/kfocus/lib/common.2.source
     source "${_lib_file}" || true;
     if [ "$(type -t _cm2EchoModelStrFn)" = 'function' ]; then
       _model_code="$(_cm2EchoModelStrFn 'code')";

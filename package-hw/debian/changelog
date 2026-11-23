@@ -1,3 +1,10 @@
+kfocus-hw (26.04.6~beta3) resolute; urgency=medium
+
+  * posinst: initramfs-tools/modules: Enable i915 module for for models that
+    need it to show undistorted boot splash: nxg1-3, irX1-3 (#6410)
+
+ -- Michael S. Mikowski <support@kfocus.org>  Mon, 23 Nov 2026 16:06:40 -0500
+
 kfocus-hw (26.04.6~beta2) resolute; urgency=medium
 
   * postinst: Add i915 graphics drivers to initramfs for NX models (#6410)
