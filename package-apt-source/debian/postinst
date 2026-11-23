@@ -242,6 +242,13 @@ _rmObsoleteReposFn () {
 }
 ## . END _rmObsoleteReposFn }
 
+## BEGIN _aptUpdateFn {
+_aptUpdateFn () {
+  _cm2SetMsgFn "Refresh package list";
+  if apt-get update; then _cm2SucFn; else _cm2WarnFn; fi
+}
+## . END _aptUpdateFn }
+
 ## BEGIN MAIN {
 #  See https://stackoverflow.com/questions/2683279
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
@@ -251,7 +258,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     ;;
 
     configure|upgrade)
-       # Install recommended 3rd-party repos
+      # Install recommended 3rd-party repos
       _installReposFn;
       # Add trusted keys for repos
       _addTrustedKeysFn;
@@ -259,6 +266,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
       _addGcloudSdkKeyFn;
       # Remove obsolete repos
       _rmObsoleteReposFn;
+      # Update apt sources
+      _aptUpdateFn;
     ;;
   esac
   exit 0;

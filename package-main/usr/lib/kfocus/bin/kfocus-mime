@@ -660,7 +660,8 @@ _echoKeyListFn () {
 # Returns   : 0 on success, 1 on failure.
 #
 _echoInstallPromptMsgFn () {
-  declare _app_id _pkg_list_str _descr_str _prompt_msg _report_str;
+  declare _app_id _pkg_list_str _descr_str _prompt_msg _report_str \
+    _pretty_apt_repo_str;
 
   _app_id="${1:-}";
   _pkg_list_str="${2:-}";
@@ -693,15 +694,23 @@ _echoInstallPromptMsgFn () {
   fi
 
   case "${METHOD:-}" in
-    apt)  _report_str="  APT: ${APT_REPO_URL:-}";;
-    ppa)  _report_str="  PPA: ${PPA:-}";;
-    website) _report_str="  WEB: ${URL:-}";;
+    apt)
+      # shellcheck disable=SC2001
+      if [[ "${APT_REPO_URL:-}" =~ ^([^\[]*\[[^\]]*\])\ (.*)$ ]]; then
+        _pretty_apt_repo_str="${BASH_REMATCH[1]}"$'\n'"  ${BASH_REMATCH[2]}";
+      else
+        _pretty_apt_repo_str="${APT_REPO_URL:-}";
+      fi
+      _report_str="  Repo to add: APT: ${_pretty_apt_repo_str}";
+      ;;
+    ppa)     _report_str="  Repo to add:\n  PPA: ${PPA:-}";;
+    website) _report_str="  Repo to add:\n  WEB: ${URL:-}";;
     *) echo -e "ABORT: Method '${METHOD:-}' is not supported.\n";
        return 1;;
   esac;
 
   echo -e "\n'${_descr_str}' is available."
-  echo -e "Shall we install this repo now?";
+  echo -e "Shall we add the repo, then install and start this app now?";
   echo -e "\n${_report_str}\n\n   ";
 
   if [ -n "${EULA:-}" ]; then
@@ -832,8 +841,8 @@ ${_cm2HtmPStr}VirtualBox is installed, and the user <br>
 group is not active.</p>
 
 ${_cm2HtmPStr}Please log out and back in to activate <br>
-the 'vboxusers' group so you can use <br>
-more VirtualBox features.</p>
+the 'vboxusers' group so VirtualBox can list<br>
+USB devices and provide other features.</p>
 ${_cm2HtmEndStr}
 EOT0C
   )";
@@ -1242,6 +1251,17 @@ _runAppFn () {
           _reentrant_cmd_list=();
           if [ "${INSTALL_AS_USER:-}" = 'y' ]; then
             _reentrant_cmd_list+=( 'AS_USER' );
+          else
+            # Two polkit prompts cannot appear at the same time.
+            if pgrep 'polkit-agent-he' >/dev/null 2>&1; then
+              _prompt_msg="Another application is waiting for ";
+              _prompt_msg+="authorization. &nbsp; &nbsp; &nbsp; <br>";
+              _prompt_msg+="Accept or cancel that application's prompt ";
+              _prompt_msg+="first,<br>";
+              _prompt_msg+="then try again.";
+              _promptFn "${_prompt_msg}";
+              exit 1;
+            fi
           fi
           _reentrant_cmd_list+=(
             "Installing ${_app_id}" "${_binName}" '-i' "${_app_id}"
